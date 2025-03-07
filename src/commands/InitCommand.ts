@@ -548,8 +548,7 @@ AppDataSource.initialize().then(async () => {
     protected static getDockerComposeTemplate(database: string): string {
         switch (database) {
             case "mysql":
-                return `version: '3'
-services:
+                return `services:
 
   mysql:
     image: "mysql:8.0.30"
@@ -563,8 +562,7 @@ services:
 
 `
             case "mariadb":
-                return `version: '3'
-services:
+                return `services:
 
   mariadb:
     image: "mariadb:10.8.4"
@@ -578,8 +576,7 @@ services:
 
 `
             case "postgres":
-                return `version: '3'
-services:
+                return `services:
 
   postgres:
     image: "postgres:14.5"
@@ -592,8 +589,7 @@ services:
 
 `
             case "cockroachdb":
-                return `version: '3'
-services:
+                return `services:
 
   cockroachdb:
     image: "cockroachdb/cockroach:v22.1.6"
@@ -604,8 +600,7 @@ services:
 `
             case "sqlite":
             case "better-sqlite3":
-                return `version: '3'
-services:
+                return `services:
 `
             case "oracle":
                 throw new TypeORMError(
@@ -613,8 +608,7 @@ services:
                 ) // todo: implement for oracle as well
 
             case "mssql":
-                return `version: '3'
-services:
+                return `services:
 
   mssql:
     image: "microsoft/mssql-server-linux:rc2"
@@ -626,8 +620,7 @@ services:
 
 `
             case "mongodb":
-                return `version: '3'
-services:
+                return `services:
 
   mongodb:
     image: "mongo:5.0.12"
@@ -637,8 +630,7 @@ services:
 
 `
             case "spanner":
-                return `version: '3'
-services:
+                return `services:
 
   spanner:
     image: gcr.io/cloud-spanner-emulator/emulator:1.4.1
