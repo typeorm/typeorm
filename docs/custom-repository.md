@@ -55,7 +55,7 @@ export class UserController {
 Transactions have their own scope of execution: they have their own query runner, entity manager and repository instances.
 That's why using global (data source's) entity manager and repositories won't work in transactions.
 In order to execute queries properly in scope of transaction you **must** use provided entity manager
-and it's `getRepository` method. In order to use custom repositories within transaction,
+and its `getRepository` method. In order to use custom repositories within transaction,
 you must use `withRepository` method of the provided entity manager instance:
 
 ```typescript

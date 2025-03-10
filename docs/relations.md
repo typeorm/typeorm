@@ -21,12 +21,15 @@ There are several types of relations:
 
 There are several options you can specify for relations:
 
--   `eager: boolean` - If set to true, the relation will always be loaded with the main entity when using `find*` methods or `QueryBuilder` on this entity
--   `cascade: boolean | ("insert" | "update")[]` - If set to true, the related object will be inserted and updated in the database. You can also specify an array of [cascade options](#cascade-options).
--   `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` - specifies how foreign key should behave when referenced object is deleted
--   `nullable: boolean` - Indicates whether this relation's column is nullable or not. By default it is nullable.
--   `orphanedRowAction: "nullify" | "delete" | "soft-delete" | disable` - When a parent is saved (cascading enabled) without a child/children that still exists in database, this will control what shall happen to them.
-  _delete_ will remove these children from database. _soft-delete_ will mark children as soft-deleted. _nullify_ will remove the relation key. _disable_ will keep the relation intact. To delete, one has to use their own repository.
+-   `eager: boolean` (default: `false`) - If set to true, the relation will always be loaded with the main entity when using `find*` methods or `QueryBuilder` on this entity
+-   `cascade: boolean | ("insert" | "update")[]` (default: `false`) - If set to true, the related object will be inserted and updated in the database. You can also specify an array of [cascade options](#cascade-options).
+-   `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` (default: `RESTRICT`) - specifies how foreign key should behave when referenced object is deleted
+-   `nullable: boolean` (default: `true`) - Indicates whether this relation's column is nullable or not. By default it is nullable.
+-   `orphanedRowAction: "nullify" | "delete" | "soft-delete" | "disable"` (default: `disable`) - When a parent is saved (cascading enabled) without a child/children that still exists in database, this will control what shall happen to them.
+    - _delete_ will remove these children from database.
+    - _soft-delete_ will mark children as soft-deleted.
+    - _nullify_ will remove the relation key.
+    - _disable_ will keep the relation intact. To delete, one has to use their own repository.
 
 ## Cascades
 

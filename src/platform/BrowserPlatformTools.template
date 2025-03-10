@@ -116,7 +116,7 @@ export class PlatformTools {
     }
 
     /**
-     * Logging functions needed by AdvancedConsoleLogger (but here without chalk)
+     * Logging functions needed by AdvancedConsoleLogger (but here without ANSI colors)
      */
     static logInfo(prefix: string, info: any) {
         console.info(prefix + " ", info);
