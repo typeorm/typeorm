@@ -261,9 +261,7 @@ ${downSqls.join(`
     ): string {
         const migrationName = `${camelCase(name, true)}${timestamp}`
 
-        return `const { MigrationInterface, QueryRunner } = require("typeorm");
-
-module.exports = class ${migrationName} {
+        return `module.exports = class ${migrationName} {
     name = '${migrationName}'
 
     async up(queryRunner) {
