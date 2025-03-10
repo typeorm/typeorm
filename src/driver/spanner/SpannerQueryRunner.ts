@@ -25,6 +25,7 @@ import { QueryResult } from "../../query-runner/QueryResult"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { SpannerDriver } from "./SpannerDriver"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -2237,6 +2238,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     ): Promise<void> {
         throw new TypeORMError(
             `spanner driver does not support change table comment.`,
+        )
+    }
+
+    changeTableVersioning(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `${this.driver.options.type} driver does not support change versioning.`,
         )
     }
 }

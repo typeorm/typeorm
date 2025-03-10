@@ -8,6 +8,7 @@ import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
+import { TemporalTableOptions } from "../../schema-builder/options/TemporalTableOptions"
 import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
@@ -28,6 +29,7 @@ import { QueryLock } from "../../query-runner/QueryLock"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -2723,6 +2725,20 @@ export class SqlServerQueryRunner
                 await Promise.all(
                     allTablesResults.map((tablesResult) => {
                         if (tablesResult["TABLE_NAME"].startsWith("#")) {
+                            return
+                        }
+
+                        const tablePath = `"${tablesResult["TABLE_CATALOG"]}"."${tablesResult["TABLE_SCHEMA"]}"."${tablesResult["TABLE_NAME"]}"`
+                        const alterTableSql = `IF OBJECTPROPERTY(OBJECT_ID('${tablePath}'), 'TableTemporalType') = 2
+                                               ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = OFF)`
+
+                        return this.query(alterTableSql)
+                    }),
+                )
+
+                await Promise.all(
+                    allTablesResults.map((tablesResult) => {
+                        if (tablesResult["TABLE_NAME"].startsWith("#")) {
                             // don't try to drop temporary tables
                             return
                         }
@@ -2832,6 +2848,7 @@ export class SqlServerQueryRunner
             TABLE_CATALOG: string
             TABLE_SCHEMA: string
             TABLE_NAME: string
+            HISTORY_TABLE: string
         }[] = []
 
         if (!tableNames) {
@@ -2881,15 +2898,12 @@ export class SqlServerQueryRunner
                         })
                         .join(" OR ")
 
-                    return `
-                    SELECT DISTINCT
-                        "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME"
-                    FROM "${database}"."INFORMATION_SCHEMA"."TABLES"
-                    WHERE
-                          "TABLE_TYPE" = 'BASE TABLE' AND
-                          "TABLE_CATALOG" = '${database}' AND
-                          ${tablesCondition}
-                `
+                    return `SELECT DISTINCT "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME", "t3"."name" "HISTORY_TABLE"
+                            FROM "${database}"."INFORMATION_SCHEMA"."TABLES" "t1"
+                            INNER JOIN "${database}"."sys"."tables" t2 on OBJECT_ID("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME") = object_id
+                            LEFT JOIN "${database}"."sys"."tables" "t3" on t2.history_table_id = t3.object_id
+                            WHERE "TABLE_TYPE" = 'BASE TABLE' AND
+                            "TABLE_CATALOG" = '${database}' AND ${tablesCondition}`
                 })
                 .join(" UNION ALL ")
 
@@ -2917,9 +2931,13 @@ export class SqlServerQueryRunner
                 const condition = tables
                     .map(
                         ({ TABLE_SCHEMA, TABLE_NAME }) =>
-                            `("TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "TABLE_NAME" = '${TABLE_NAME}')`,
+                            // ignore hidden columns which are used for temporal tables
+                            `("TABLE_SCHEMA" = '${TABLE_SCHEMA}' AND "TABLE_NAME" = '${TABLE_NAME}' AND (
+                                COLUMNPROPERTY(OBJECT_ID('${TABLE_SCHEMA}.${TABLE_NAME}') , "COLUMNS"."COLUMN_NAME", 'IsHidden') IS NULL OR
+                                COLUMNPROPERTY(OBJECT_ID('${TABLE_SCHEMA}.${TABLE_NAME}') , "COLUMNS"."COLUMN_NAME", 'IsHidden') = 0
+                            ))`,
                     )
-                    .join("OR")
+                    .join(" OR ")
 
                 return (
                     `SELECT "COLUMNS".*, "cc"."is_persisted", "cc"."definition" ` +
@@ -3070,6 +3088,12 @@ export class SqlServerQueryRunner
                     schema,
                     db,
                 )
+
+                table.versioning = dbTable["HISTORY_TABLE"]
+                    ? {
+                          historyTable: dbTable["HISTORY_TABLE"],
+                      }
+                    : false
 
                 const defaultCollation = dbCollations.find(
                     (dbCollation) =>
@@ -3527,11 +3551,27 @@ export class SqlServerQueryRunner
      * Builds and returns SQL for create table.
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
-        const columnDefinitions = table.columns
-            .map((column) =>
-                this.buildCreateColumnSql(table, column, false, true),
+        const columns = table.columns.map((column) =>
+            this.buildCreateColumnSql(table, column, false, true),
+        )
+
+        if (table.versioning) {
+            const { validFrom, validTo } = this.getVersioningOptions(
+                table,
+                table.versioning,
             )
-            .join(", ")
+
+            columns.push(
+                `${validFrom} DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL`,
+            )
+            columns.push(
+                `${validTo} DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL`,
+            )
+            columns.push(`PERIOD FOR SYSTEM_TIME (${validFrom}, ${validTo})`)
+        }
+
+        const columnDefinitions = columns.join(", ")
+
         let sql = `CREATE TABLE ${this.escapePath(table)} (${columnDefinitions}`
 
         table.columns
@@ -3640,6 +3680,20 @@ export class SqlServerQueryRunner
 
         sql += `)`
 
+        if (table.versioning) {
+            const { dataConsistencyCheck, historyTable } =
+                this.getVersioningOptions(table, table.versioning)
+
+            const options = [
+                `HISTORY_TABLE = ${historyTable}`,
+                `DATA_CONSISTENCY_CHECK = ${
+                    dataConsistencyCheck ? "ON" : "OFF"
+                }`,
+            ].join(", ")
+
+            sql += ` WITH (SYSTEM_VERSIONING = ON ${`(${options})`})`
+        }
+
         return new Query(sql)
     }
 
@@ -3650,10 +3704,16 @@ export class SqlServerQueryRunner
         tableOrName: Table | string,
         ifExist?: boolean,
     ): Query {
-        const query = ifExist
-            ? `DROP TABLE IF EXISTS ${this.escapePath(tableOrName)}`
-            : `DROP TABLE ${this.escapePath(tableOrName)}`
-        return new Query(query)
+        const query = []
+        const tablePath = this.escapePath(tableOrName)
+
+        query.push(
+            `IF OBJECTPROPERTY(OBJECT_ID('${tablePath}'), 'TableTemporalType') = 2 ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = OFF)`,
+        )
+
+        query.push(`DROP TABLE ${ifExist ? "IF EXISTS " : ""}${tablePath}`)
+
+        return new Query(query.join("; "))
     }
 
     protected createViewSql(view: View): Query {
@@ -4049,6 +4109,45 @@ export class SqlServerQueryRunner
         )
     }
 
+    /**
+     * History table must be in two-part name format.
+     * E.q. 'dbo.user_history'
+     */
+    private getHistoryTableName(
+        table: Table,
+        versioning: TemporalTableOptions | boolean,
+    ) {
+        const { schema, tableName } = this.driver.parseTableName(table)
+
+        return typeof versioning === "boolean"
+            ? `${schema}.${tableName}_temporal_history`
+            : `${schema}.${versioning.historyTable}`
+    }
+
+    private getVersioningOptions(
+        table: Table,
+        versioning: TemporalTableOptions | boolean,
+    ): TemporalTableOptions {
+        const historyTable = this.getHistoryTableName(table, versioning)
+
+        return {
+            dataConsistencyCheck:
+                typeof versioning !== "boolean" &&
+                versioning?.dataConsistencyCheck === false
+                    ? false
+                    : true,
+            historyTable,
+            validFrom:
+                typeof versioning !== "boolean" && versioning.validFrom
+                    ? versioning.validFrom
+                    : "valid_from",
+            validTo:
+                typeof versioning !== "boolean" && versioning.validTo
+                    ? versioning.validTo
+                    : "valid_to",
+        }
+    }
+
     protected isEnumCheckConstraint(name: string): boolean {
         return name.indexOf("CHK_") !== -1 && name.indexOf("_ENUM") !== -1
     }
@@ -4171,5 +4270,75 @@ export class SqlServerQueryRunner
         throw new TypeORMError(
             `sqlserver driver does not support change table comment.`,
         )
+    }
+
+    /**
+     * Change table versioning.
+     */
+    async changeTableVersioning(
+        table: Table,
+        metadata: EntityMetadata,
+    ): Promise<void> {
+        const tablePath = this.escapePath(table)
+
+        if (table.versioning && !metadata.versioning) {
+            const { versioning } = table
+            const { dataConsistencyCheck, historyTable, validFrom, validTo } =
+                this.getVersioningOptions(table, versioning)
+
+            const options = [
+                `HISTORY_TABLE = ${historyTable}`,
+                `DATA_CONSISTENCY_CHECK = ${
+                    dataConsistencyCheck ? "ON" : "OFF"
+                }`,
+            ].join(", ")
+
+            const upQueries = [
+                `ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = OFF)`,
+                `ALTER TABLE ${tablePath} DROP PERIOD FOR SYSTEM_TIME`,
+                `ALTER TABLE ${tablePath} DROP COLUMN ${validFrom}, ${validTo}`,
+                `DROP TABLE ${this.escapePath(historyTable ?? "")}`,
+            ]
+
+            const downQueries = [
+                `ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = ON (${options}))`,
+            ]
+
+            await this.executeQueries(
+                upQueries.map((sql) => new Query(sql)),
+                downQueries.map((sql) => new Query(sql)),
+            )
+        } else if (!table.versioning && metadata.versioning) {
+            const { versioning } = metadata
+            const { dataConsistencyCheck, historyTable, validFrom, validTo } =
+                this.getVersioningOptions(table, versioning)
+
+            const options = [
+                `HISTORY_TABLE = ${historyTable}`,
+                `DATA_CONSISTENCY_CHECK = ${
+                    dataConsistencyCheck ? "ON" : "OFF"
+                }`,
+            ].join(", ")
+
+            const upQueries = [
+                `ALTER TABLE ${tablePath}
+                    ADD ${validFrom} DATETIME2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL,
+                    ${validTo} DATETIME2 GENERATED ALWAYS AS ROW END HIDDEN NOT NULL,
+                    PERIOD FOR SYSTEM_TIME (${validFrom}, ${validTo})`,
+                `ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = ON (${options}))`,
+            ]
+
+            const downQueries = [
+                `ALTER TABLE ${tablePath} SET (SYSTEM_VERSIONING = OFF)`,
+                `ALTER TABLE ${tablePath} DROP PERIOD FOR SYSTEM_TIME`,
+                `ALTER TABLE ${tablePath} DROP COLUMN ${validFrom}, ${validTo}`,
+                `DROP TABLE ${this.escapePath(historyTable ?? "")}`,
+            ]
+
+            await this.executeQueries(
+                upQueries.map((sql) => new Query(sql)),
+                downQueries.map((sql) => new Query(sql)),
+            )
+        }
     }
 }

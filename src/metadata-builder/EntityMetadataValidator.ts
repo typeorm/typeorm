@@ -193,6 +193,15 @@ export class EntityMetadataValidator {
                 )
         }
 
+        if (
+            entityMetadata.versioning &&
+            !["mariadb", "mssql"].includes(driver.options.type)
+        ) {
+            throw new TypeORMError(
+                `Temporal (system-versioned) tables are only supported for MariaDB and Sql Server.`,
+            )
+        }
+
         // Postgres supports only STORED generated columns.
         if (driver.options.type === "postgres") {
             const virtualColumn = entityMetadata.columns.find(

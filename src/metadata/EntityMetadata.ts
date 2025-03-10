@@ -23,6 +23,7 @@ import { ClosureTreeOptions } from "./types/ClosureTreeOptions"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { shorten } from "../util/StringUtils"
+import { TemporalTableOptions } from "../schema-builder/options/TemporalTableOptions"
 
 /**
  * Contains all entity metadata.
@@ -520,6 +521,12 @@ export class EntityMetadata {
      * Table comment. Not supported by all database types.
      */
     comment?: string
+
+    /**
+     * The value 'true' enables system versioning. You can also customize each option like
+     * start row column, history table, etc.
+     */
+    versioning?: TemporalTableOptions | boolean
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -1068,6 +1075,8 @@ export class EntityMetadata {
             this.tableMetadataArgs.type === "closure-junction"
 
         this.comment = this.tableMetadataArgs.comment
+
+        this.versioning = this.tableMetadataArgs.versioning
     }
 
     /**
