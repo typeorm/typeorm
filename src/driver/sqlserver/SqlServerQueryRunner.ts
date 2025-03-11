@@ -669,7 +669,7 @@ export class SqlServerQueryRunner
             downQueries.push(deleteQuery)
         }
 
-        const schemaName = `dbo`
+        const schemaName = await this.getCurrentSchema()
 
         // add table comment for mssql
         if (table.comment) {
@@ -699,7 +699,7 @@ export class SqlServerQueryRunner
 
         // add column comments for mssql
         for (const column of table.columns) {
-            if(!column.comment) continue
+            if (!column.comment) continue
             const upsql = `	IF ((SELECT COUNT(*) FROM ::fn_listextendedproperty('MS_Description',
                     'SCHEMA', N'${schemaName}',
                     'TABLE', N'${table.name}','COLUMN',N'${column.name}'
@@ -717,16 +717,15 @@ export class SqlServerQueryRunner
                         'TABLE', N'${table.name}',
                         'COLUMN',N'${column.name}'`
 
-                upQueries.push(new Query(upsql))
+            upQueries.push(new Query(upsql))
 
-                const downsql = `EXEC sp_dropextendedproperty
+            const downsql = `EXEC sp_dropextendedproperty
                     'MS_Description',
                     'SCHEMA', N'${schemaName}',
                     'TABLE', N'${table.name}',
                     'COLUMN',N'${column.name}'
                     `
             downQueries.push(new Query(downsql))
-
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -3104,6 +3103,32 @@ export class SqlServerQueryRunner
             this.query(indicesSql),
         ])
 
+        const getTableComment = async (
+            tableName: string,
+            columnName?: string,
+        ) => {
+            let sql = ""
+
+            if (columnName) {
+                sql = `SELECT * FROM ::fn_listextendedproperty('MS_Description',
+                    'SCHEMA', N'${currentSchema}',
+                    'TABLE', N'${tableName}' ,'COLUMN', N'${columnName}')`
+            } else {
+                sql = `SELECT * FROM ::fn_listextendedproperty('MS_Description',
+                        'SCHEMA', N'${currentSchema}',
+                        'TABLE',  N'${tableName}' ,NULL,NULL)`
+            }
+            type Obj = {
+                objtype: string
+                objname: string
+                name: string
+                value: string
+            }
+
+            const result: Obj[] = await this.query(sql )
+            return result?.[0]?.value || ""
+        }
+
         // create table schemas for loaded tables
         return await Promise.all(
             dbTables.map(async (dbTable) => {
@@ -3420,6 +3445,9 @@ export class SqlServerQueryRunner
                                 }
                             }
 
+                            const comment = await getTableComment(table.name,tableColumn.name)
+                            tableColumn.comment = comment
+
                             return tableColumn
                         }),
                 )
@@ -3577,6 +3605,9 @@ export class SqlServerQueryRunner
                         where: constraint["CONDITION"],
                     })
                 })
+
+                const comment = await getTableComment(dbTable["TABLE_NAME"])
+                table.comment = comment
 
                 return table
             }),

@@ -143,7 +143,7 @@ export class SqlServerDriver implements Driver {
         "rowversion",
         "bool", // synonym for bit
         "boolean", // synonym for bit
-        "json" // synonym for nvarchar(max)
+        "json", // synonym for nvarchar(max)
     ]
 
     /**
@@ -528,7 +528,8 @@ export class SqlServerDriver implements Driver {
 
         if (value === null || value === undefined) return value
 
-        if (columnMetadata.type === Boolean ||
+        if (
+            columnMetadata.type === Boolean ||
             columnMetadata.type === "bool" ||
             columnMetadata.type === "boolean"
         ) {
@@ -550,8 +551,9 @@ export class SqlServerDriver implements Driver {
             return DateUtils.mixedDateToDate(value, false, true)
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value)
-        } else if (columnMetadata.type === "simple-json" ||
-           columnMetadata.type === "json"
+        } else if (
+            columnMetadata.type === "simple-json" ||
+            columnMetadata.type === "json"
         ) {
             return DateUtils.simpleJsonToString(value)
         } else if (columnMetadata.type === "simple-enum") {
@@ -573,9 +575,10 @@ export class SqlServerDriver implements Driver {
                   )
                 : value
 
-        if (columnMetadata.type === Boolean ||
-            columnMetadata.type === 'bool' ||
-            columnMetadata.type === 'boolean'
+        if (
+            columnMetadata.type === Boolean ||
+            columnMetadata.type === "bool" ||
+            columnMetadata.type === "boolean"
         ) {
             value = value ? true : false
         } else if (
@@ -592,7 +595,8 @@ export class SqlServerDriver implements Driver {
             value = DateUtils.mixedTimeToString(value)
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value)
-        } else if (columnMetadata.type === "simple-json" ||
+        } else if (
+            columnMetadata.type === "simple-json" ||
             columnMetadata.type === "json"
         ) {
             value = DateUtils.stringToSimpleJson(value)
@@ -627,7 +631,8 @@ export class SqlServerDriver implements Driver {
             return "nvarchar"
         } else if (column.type === Date) {
             return "datetime"
-        } else if (column.type === Boolean ||
+        } else if (
+            column.type === Boolean ||
             column.type === "bool" ||
             column.type === "boolean"
         ) {
@@ -710,11 +715,12 @@ export class SqlServerDriver implements Driver {
         )
             return "255"
 
-        if(column.type === 'simple-json' ||
-            column.type === 'json' ||
-            column.type === 'simple-array'
+        if (
+            column.type === "simple-json" ||
+            column.type === "json" ||
+            column.type === "simple-array"
         )
-            return 'max'
+            return "max"
         return ""
     }
 
@@ -729,7 +735,7 @@ export class SqlServerDriver implements Driver {
         let type = column.type
 
         // used 'getColumnLength()' method, because SqlServer sets `varchar` and `nvarchar` length to 1 by default.
-       const  columnLength = this.getColumnLength(column)
+        const columnLength = this.getColumnLength(column)
         if (columnLength) {
             type += `(${columnLength})`
         } else if (
