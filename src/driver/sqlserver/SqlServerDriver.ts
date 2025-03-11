@@ -143,7 +143,7 @@ export class SqlServerDriver implements Driver {
         "rowversion",
         "bool", // synonym for bit
         "boolean", // synonym for bit
-        "json"
+        "json" // synonym for nvarchar(max)
     ]
 
     /**
