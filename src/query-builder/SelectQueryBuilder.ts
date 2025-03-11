@@ -3103,6 +3103,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             this.selects = []
+
             if (this.findOptions.relations) {
                 const relations = Array.isArray(this.findOptions.relations)
                     ? OrmUtils.propertyPathsToTruthyObject(
@@ -3345,21 +3346,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.expressionMap.useTransaction = true
             }
 
-            // if (this.orderBys.length) {
-            //     this.orderBys.forEach(orderBy => {
-            //         this.addOrderBy(orderBy.alias, orderBy.direction, orderBy.nulls);
-            //     });
-            // }
+            // Add treatJsNullAsSqlNull and throwOnUndefinedInFind options
+            if (this.findOptions.treatJsNullAsSqlNull !== undefined) {
+                this.expressionMap.treatJsNullAsSqlNull =
+                    this.findOptions.treatJsNullAsSqlNull
+            }
 
-            // todo
-            // if (this.options.options && this.options.options.eagerRelations) {
-            //     this.queryBuilder
-            // }
-
-            // todo
-            // if (this.findOptions.options && this.findOptions.listeners === false) {
-            //     this.callListeners(false);
-            // }
+            if (this.findOptions.throwOnUndefinedInFind !== undefined) {
+                this.expressionMap.throwOnUndefinedInFind =
+                    this.findOptions.throwOnUndefinedInFind
+            }
         }
     }
 
@@ -4242,7 +4238,40 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         } else {
             let andConditions: string[] = []
             for (let key in where) {
-                if (where[key] === undefined || where[key] === null) continue
+                const parameterValue = where[key]
+
+                // Handle undefined values
+                if (parameterValue === undefined) {
+                    if (this.expressionMap.throwOnUndefinedInFind) {
+                        throw new TypeORMError(
+                            `Undefined value encountered in property '${key}' of the find operation. ` +
+                                `Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.`,
+                        )
+                    }
+                    continue
+                }
+
+                // Handle null values
+                if (parameterValue === null) {
+                    if (!this.expressionMap.treatJsNullAsSqlNull) {
+                        continue // Skip null values by default
+                    }
+
+                    // If treatJsNullAsSqlNull is true, transform JS null to SQL NULL
+                    const propertyPath = embedPrefix
+                        ? embedPrefix + "." + key
+                        : key
+                    const column =
+                        metadata.findColumnWithPropertyPathStrict(propertyPath)
+                    if (column) {
+                        let aliasPath = `${alias}.${propertyPath}`
+                        if (column.isVirtualProperty && column.query) {
+                            aliasPath = `(${column.query(alias)})`
+                        }
+                        andConditions.push(`${aliasPath} IS NULL`)
+                        continue
+                    }
+                }
 
                 const propertyPath = embedPrefix ? embedPrefix + "." + key : key
                 const column =

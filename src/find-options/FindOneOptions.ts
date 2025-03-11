@@ -111,4 +111,16 @@ export interface FindOneOptions<Entity = any> {
      * If this is set to true, SELECT query in a `find` method will be executed in a transaction.
      */
     transaction?: boolean
+
+    /**
+     * When true, JavaScript null values will be treated as SQL NULL in find operations.
+     * By default, null values are skipped in where conditions.
+     */
+    treatJsNullAsSqlNull?: boolean
+
+    /**
+     * When true, throws an error if undefined is encountered in a find operation.
+     * By default, undefined values are skipped in where conditions.
+     */
+    throwOnUndefinedInFind?: boolean
 }
