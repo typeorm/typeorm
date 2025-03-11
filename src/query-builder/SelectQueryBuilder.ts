@@ -3346,7 +3346,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.expressionMap.useTransaction = true
             }
 
-            // Add treatJsNullAsSqlNull and throwOnUndefinedInFind options
+            // if (this.orderBys.length) {
+            //     this.orderBys.forEach(orderBy => {
+            //         this.addOrderBy(orderBy.alias, orderBy.direction, orderBy.nulls);
+            //     });
+            // }
+
+            // todo
+            // if (this.options.options && this.options.options.eagerRelations) {
+            //     this.queryBuilder
+            // }
+
             if (this.findOptions.treatJsNullAsSqlNull !== undefined) {
                 this.expressionMap.treatJsNullAsSqlNull =
                     this.findOptions.treatJsNullAsSqlNull
@@ -4240,7 +4250,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             for (let key in where) {
                 const parameterValue = where[key]
 
-                // Handle undefined values
                 if (parameterValue === undefined) {
                     if (this.expressionMap.throwOnUndefinedInFind) {
                         throw new TypeORMError(
@@ -4251,7 +4260,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     continue
                 }
 
-                // Handle null values
                 if (parameterValue === null) {
                     if (!this.expressionMap.treatJsNullAsSqlNull) {
                         continue // Skip null values by default
