@@ -113,7 +113,7 @@ export interface FindOneOptions<Entity = any> {
     transaction?: boolean
 
     /**
-     * When true, JavaScript null values will be treated as SQL NULL in find operations.
+     * When true, null values will be treated as SQL NULL in find operations.
      * By default, null values are skipped in where conditions.
      */
     treatJsNullAsSqlNull?: boolean
