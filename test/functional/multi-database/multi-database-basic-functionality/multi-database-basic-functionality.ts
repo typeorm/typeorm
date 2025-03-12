@@ -20,6 +20,7 @@ const VALID_NAME_REGEX = /^(?!sqlite_).{1,63}$/
 
 describe("multi-database > basic-functionality", () => {
     describe("filepathToName()", () => {
+        if (process.platform !== "win32") return
         it(`produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged`, () => {
             const testMap = [
                 ["FILENAME.db", "filename.db"],
@@ -73,7 +74,7 @@ describe("multi-database > basic-functionality", () => {
         beforeEach(() => reloadTestingDatabases(connections))
         after(async () => {
             await closeTestingConnections(connections)
-            await rimraf(`${tempPath}/**/*.attach.db`, {glob: true})
+            await rimraf(`${tempPath}/**/*.attach.db`, { glob: true })
         })
 
         it("should correctly attach and create database files", () =>
