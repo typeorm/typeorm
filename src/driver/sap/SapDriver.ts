@@ -99,17 +99,18 @@ export class SapDriver implements Driver {
     /**
      * Gets list of supported column data types by a driver.
      *
-     * @see https://help.sap.com/viewer/4fe29514fd584807ac9f2a04f6754767/2.0.03/en-US/20a1569875191014b507cf392724b7eb.html
+     * @see https://help.sap.com/docs/SAP_HANA_PLATFORM/4fe29514fd584807ac9f2a04f6754767/20a1569875191014b507cf392724b7eb.html
+     * @see https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/data-types
      */
     supportedDataTypes: ColumnType[] = [
         "tinyint",
         "smallint",
-        "int",
+        "int", // alias for "integer"
         "integer",
         "bigint",
         "smalldecimal",
         "decimal",
-        "dec",
+        "dec", // alias for "decimal"
         "real",
         "double",
         "float",
@@ -118,17 +119,17 @@ export class SapDriver implements Driver {
         "seconddate",
         "timestamp",
         "boolean",
-        "char",
-        "nchar",
-        "varchar",
+        "char", // not officially supported
+        "nchar", // not officially supported
+        "varchar", // deprecated
         "nvarchar",
-        "text",
-        "alphanum",
-        "shorttext",
+        "text", // deprecated
+        "alphanum", // deprecated
+        "shorttext", // deprecated
         "array",
         "varbinary",
         "blob",
-        "clob",
+        "clob", // deprecated
         "nclob",
         "st_geometry",
         "st_point",
@@ -254,6 +255,7 @@ export class SapDriver implements Driver {
         }
 
         if (this.options.database) dbParams.databaseName = this.options.database
+        if (this.options.schema) dbParams.currentSchema = this.options.schema
         if (this.options.encrypt) dbParams.encrypt = this.options.encrypt
         if (this.options.sslValidateCertificate)
             dbParams.validateCertificate = this.options.sslValidateCertificate
@@ -564,6 +566,8 @@ export class SapDriver implements Driver {
     }): string {
         if (column.type === Number || column.type === "int") {
             return "integer"
+        } else if (column.type === "dec") {
+            return "decimal"
         } else if (column.type === String) {
             return "nvarchar"
         } else if (column.type === Date) {
@@ -578,7 +582,7 @@ export class SapDriver implements Driver {
             column.type === "simple-array" ||
             column.type === "simple-json"
         ) {
-            return "text"
+            return "nclob"
         } else if (column.type === "simple-enum") {
             return "nvarchar"
         } else {

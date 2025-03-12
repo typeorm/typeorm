@@ -1,8 +1,6 @@
-version: "3"
 services:
   # mysql
   mysql:
-    platform: linux/amd64
     image: "mysql:5.7.37"
     container_name: "typeorm-mysql"
     ports:
@@ -65,9 +63,9 @@ services:
     ports:
       - "1521:1521"
     #volumes:
-     # - oracle-data:/opt/oracle/oradata
+    # - oracle-data:/opt/oracle/oradata
     healthcheck:
-      test: [ "CMD", "/opt/oracle/checkDBStatus.sh" ]
+      test: ["CMD", "/opt/oracle/checkDBStatus.sh"]
       interval: 2s
 
   # google cloud spanner
@@ -118,7 +116,6 @@ services:
   #   container_name: "typeorm-redis"
   #   ports:
   #     - "6379:6379"
-
 #volumes:
 #  volume-hana-xe:
 #  mysql8_volume:
