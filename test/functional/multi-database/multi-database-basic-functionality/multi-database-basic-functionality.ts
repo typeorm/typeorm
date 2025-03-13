@@ -25,13 +25,13 @@ describe("multi-database > basic-functionality", () => {
             it(`[${platform}] produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged`, () => {
                 const testMap = [
                     ["FILENAME.db", "filename.db"],
-                    ["..\\FILENAME.db", platform === 'win32' ? "../filename.db" : "..\\FILENAME.db"],
-                    [".\\FILENAME.db", platform === 'win32' ? "./filename.db" : ".\\FILENAME.db"],
+                    ["..\\FILENAME.db", platform === 'win32' ? "../filename.db" : "..\\filename.db"],
+                    [".\\FILENAME.db", platform === 'win32' ? "./filename.db" : ".\\filename.db"],
                     [
                         "..\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\FILENAME.db",
                         platform === 'win32'
                             ? "../longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/filename.db"
-                            : "..\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\FILENAME.db",
+                            : "..\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\filename.db",
                     ],
                     ["C:\\dirFILENAME.db", "C:\\dirFILENAME.db"],
                     ["/dir/filename.db", "/dir/filename.db"],
