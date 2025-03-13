@@ -44,4 +44,9 @@ export interface PostgresConnectionCredentialsOptions {
      * the service using this connection. Defaults to 'undefined'
      */
     readonly applicationName?: string
+
+    /**
+     * Database socket path
+     */
+    readonly socketPath?: string
 }

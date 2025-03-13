@@ -1482,6 +1482,7 @@ export class PostgresDriver implements Driver {
                 application_name:
                     options.applicationName ?? credentials.applicationName,
                 max: options.poolSize,
+                socketPath: options.socketPath,
             },
             options.extra || {},
         )
