@@ -571,8 +571,8 @@ export class SqlServerDriver implements Driver {
                 : value
 
         if (columnMetadata.type === Boolean ||
-            columnMetadata.type === 'bool' ||
-            columnMetadata.type === 'boolean'
+            columnMetadata.type === "bool" ||
+            columnMetadata.type === "boolean"
         ) {
             value = value ? true : false
         } else if (
