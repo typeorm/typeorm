@@ -17,6 +17,7 @@ describe("github issues > #10431 When requesting nested relations on foreign key
                 entities: [Category, Product],
                 schemaCreate: true,
                 dropSchema: true,
+                enabledDrivers: ["postgres"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
