@@ -52,7 +52,7 @@ describe("cli init command", () => {
     for (const databaseOption of databaseOptions) {
         it(`should work with ${databaseOption} option`, (done) => {
             exec(
-                `${cliPath} init --name ${testProjectName} --database ${databaseOption}`,
+                `node ${cliPath} init --name ${testProjectName} --database ${databaseOption}`,
                 (error, stdout, stderr) => {
                     if (error) console.log(error)
                     expect(error).to.not.exist

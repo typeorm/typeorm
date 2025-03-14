@@ -1,40 +1,60 @@
-# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-# https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-nodejs
-# https://docs.github.com/en/actions/use-cases-and-examples/using-containerized-services/creating-postgresql-service-containers
-
-name: mutation-test
+name: mutation-testing
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 */14 * *"
-  
+    - cron: "0 0 1 * *"
+
 jobs:
-  # These tests run in standard node containers with their db attached as a service
-  mutation-database-tests:
-    strategy:
-      fail-fast: false
-      matrix:
-        node-container: ["node:18"]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-    uses: ./.github/workflows/database-tests.yml
-    with:
-      node-container: ${{matrix.node-container}}
-      run-type: 'mutation'
-    secrets:
-      STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+  mutation-testing:
+    runs-on: ubuntu-latest
+    container: "node:18"
+    
+    services:
+      mongodb:
+        image: mongo:5.0.12
+      mssql:
+        image: "mcr.microsoft.com/mssql/server:2022-latest"
+        env:
+          SA_PASSWORD: "Admin12345"
+          ACCEPT_EULA: "Y"
+      mysql:
+        image: mysql:5.7.37
+        env:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
+          MYSQL_DATABASE: "test"
+      mariadb:
+        image: mariadb:10.10.3
+        env:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
+          MYSQL_DATABASE: "test"
+      postgres:
+        image: postgis/postgis:14-3.3
+        env:
+          POSTGRES_USERNAME: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
+      - run: cp .github/workflows/test/for-mutation-testing.ormconfig.json ormconfig.json
 
-  # These tests run with custom docker image attributes that can't be specified in a GHA service
-  mutation-database-compose-tests:
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [18.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-    uses: ./.github/workflows/database-compose-tests.yml
-    with:
-      node-version: ${{matrix.node-version}}
-      run-type: 'mutation'
-    secrets:
-      STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+      - run: npx stryker run
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mutation-testing
+          path: ./reports/mutation/mutation.html
+

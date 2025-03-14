@@ -1,10 +1,10 @@
-import { CommandUtils } from "./CommandUtils"
-import * as path from "path"
-import * as yargs from "yargs"
-import chalk from "chalk"
+import ansi from "ansis"
 import { exec } from "child_process"
+import path from "path"
+import yargs from "yargs"
 import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
+import { CommandUtils } from "./CommandUtils"
 
 /**
  * Generates a new project with TypeORM.
@@ -125,26 +125,24 @@ export class InitCommand implements yargs.CommandModule {
 
             if (args.name) {
                 console.log(
-                    chalk.green(
-                        `Project created inside ${chalk.blue(
-                            basePath,
-                        )} directory.`,
-                    ),
+                    ansi.green`Project created inside ${ansi.blue(
+                        basePath,
+                    )} directory.`,
                 )
             } else {
                 console.log(
-                    chalk.green(`Project created inside current directory.`),
+                    ansi.green`Project created inside current directory.`,
                 )
             }
 
-            console.log(chalk.green(`Please wait, installing dependencies...`))
+            console.log(ansi.green`Please wait, installing dependencies...`)
             if (args.pm && installNpm) {
                 await InitCommand.executeCommand("npm install", basePath)
             } else {
                 await InitCommand.executeCommand("yarn install", basePath)
             }
 
-            console.log(chalk.green(`Done! Start playing with a new project!`))
+            console.log(ansi.green`Done! Start playing with a new project!`)
         } catch (err) {
             PlatformTools.logCmdErr("Error during project initialization:", err)
             process.exit(1)
@@ -550,8 +548,7 @@ AppDataSource.initialize().then(async () => {
     protected static getDockerComposeTemplate(database: string): string {
         switch (database) {
             case "mysql":
-                return `version: '3'
-services:
+                return `services:
 
   mysql:
     image: "mysql:8.0.30"
@@ -565,8 +562,7 @@ services:
 
 `
             case "mariadb":
-                return `version: '3'
-services:
+                return `services:
 
   mariadb:
     image: "mariadb:10.8.4"
@@ -580,8 +576,7 @@ services:
 
 `
             case "postgres":
-                return `version: '3'
-services:
+                return `services:
 
   postgres:
     image: "postgres:14.5"
@@ -594,8 +589,7 @@ services:
 
 `
             case "cockroachdb":
-                return `version: '3'
-services:
+                return `services:
 
   cockroachdb:
     image: "cockroachdb/cockroach:v22.1.6"
@@ -606,8 +600,7 @@ services:
 `
             case "sqlite":
             case "better-sqlite3":
-                return `version: '3'
-services:
+                return `services:
 `
             case "oracle":
                 throw new TypeORMError(
@@ -615,8 +608,7 @@ services:
                 ) // todo: implement for oracle as well
 
             case "mssql":
-                return `version: '3'
-services:
+                return `services:
 
   mssql:
     image: "microsoft/mssql-server-linux:rc2"
@@ -628,8 +620,7 @@ services:
 
 `
             case "mongodb":
-                return `version: '3'
-services:
+                return `services:
 
   mongodb:
     image: "mongo:5.0.12"
@@ -639,8 +630,7 @@ services:
 
 `
             case "spanner":
-                return `version: '3'
-services:
+                return `services:
 
   spanner:
     image: gcr.io/cloud-spanner-emulator/emulator:1.4.1
