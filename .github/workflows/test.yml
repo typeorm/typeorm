@@ -35,7 +35,6 @@ jobs:
     uses: ./.github/workflows/database-tests.yml
     with:
       node-container: ${{matrix.node-container}}
-      run-type: 'coverage'
 
 
   # These tests run with custom docker image attributes that can't be specified in a GHA service
@@ -48,7 +47,6 @@ jobs:
     uses: ./.github/workflows/database-compose-tests.yml
     with:
       node-version: ${{matrix.node-version}}
-      run-type: 'coverage'
 
   windows-database-tests:
     uses: ./.github/workflows/windows-database-tests.yml
