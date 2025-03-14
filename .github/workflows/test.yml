@@ -50,8 +50,11 @@ jobs:
       node-version: ${{matrix.node-version}}
       run-type: 'coverage'
 
+  windows-database-tests:
+    uses: ./.github/workflows/windows-database-tests.yml
+
   # Run with most databases possible to provide the coverage of the tests
   coverage:
     if: ${{ always() }}
-    needs: [database-tests, database-compose-tests]
+    needs: [database-tests, database-compose-tests, windows-database-tests]
     uses: ./.github/workflows/coverage.yml
