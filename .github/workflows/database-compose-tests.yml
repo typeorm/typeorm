@@ -6,9 +6,6 @@ on:
       node-version:
         required: true
         type: string
-      run-type:
-        required: true
-        type: string
 
 jobs:
   oracle:
