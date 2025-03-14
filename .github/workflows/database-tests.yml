@@ -45,6 +45,11 @@ jobs:
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: inputs.run-type == 'mutation'
+        with:
+          name: mitation-cockroachdb
+          path: ./reports/mutation/mutation.html
       
 
   mongodb:
@@ -76,6 +81,11 @@ jobs:
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: inputs.run-type == 'mutation'
+        with:
+          name: mitation-mongodb
+          path: ./reports/mutation/mutation.html
 
 
   mssql:
@@ -112,6 +122,11 @@ jobs:
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: inputs.run-type == 'mutation'
+        with:
+          name: mitation-mssql
+          path: ./reports/mutation/mutation.html
 
 
   mysql_mariadb:
@@ -155,6 +170,11 @@ jobs:
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: inputs.run-type == 'mutation'
+        with:
+          name: mitation-myssql_mariadb
+          path: ./reports/mutation/mutation.html
 
 
   better-sqlite3:
@@ -184,6 +204,11 @@ jobs:
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: inputs.run-type == 'mutation'
+        with:
+          name: mitation-better-sqlite3
+          path: ./reports/mutation/mutation.html
 
 
   sqlite:
@@ -213,6 +238,11 @@ jobs:
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: inputs.run-type == 'mutation'
+        with:
+          name: mitation-sqlite
+          path: ./reports/mutation/mutation.html
 
 
   sqljs:
@@ -241,6 +271,11 @@ jobs:
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: inputs.run-type == 'mutation'
+        with:
+          name: mitation-sqljs
+          path: ./reports/mutation/mutation.html
 
 
   postgres:
@@ -281,3 +316,8 @@ jobs:
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: inputs.run-type == 'mutation'
+        with:
+          name: mitation-postgres
+          path: ./reports/mutation/mutation.html

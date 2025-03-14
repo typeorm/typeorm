@@ -44,3 +44,8 @@ jobs:
         if: inputs.run-type == 'mutation'
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: inputs.run-type == 'mutation'
+        with:
+          name: mitation-oracle
+          path: ./reports/mutation/mutation.html
