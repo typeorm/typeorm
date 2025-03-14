@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import {
-    createTestingConnections,
     closeTestingConnections,
+    createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
@@ -62,8 +62,8 @@ describe("github issues > #7079 Error when sorting by an embedded entity while u
                     .createQueryBuilder("post")
                     .leftJoinAndSelect("post.user", "user")
                     .orderBy("post.blog.date")
-                    .take(2)
-                    .skip(1)
+                    .limit(2)
+                    .offset(1)
                     .getMany()
                 expect(result.length).eq(2)
             }),
