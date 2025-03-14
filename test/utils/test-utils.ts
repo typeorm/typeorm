@@ -591,3 +591,21 @@ export async function createTypeormMetadataTable(
         true,
     )
 }
+
+export function withPlatform<R>(platform: string, fn: () => R): R {
+    const realPlatform = process.platform
+
+    Object.defineProperty(process, `platform`, {
+        configurable: true,
+        value: platform,
+    })
+
+    const result = fn()
+
+    Object.defineProperty(process, `platform`, {
+        configurable: true,
+        value: realPlatform,
+    })
+
+    return result
+}
