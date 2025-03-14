@@ -27,3 +27,6 @@ jobs:
       - run: npx nyc npm run test
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
+        with:
+          flag-name: oracle-${{ inputs.node-version }}
+          parallel: true
