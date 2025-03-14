@@ -243,8 +243,9 @@
     "package": "gulp package",
     "pack": "gulp pack",
     "lint": "eslint .",
-    "format": "prettier --write --end-of-line auto \"./src/**/*.ts\" \"./test/**/*.ts\" \"./sample/**/*.ts\"",
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 2"
+    "format": "prettier --cache --write --end-of-line auto \"./src/**/*.ts\" \"./test/**/*.ts\" \"./sample/**/*.ts\"",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1",
+    "docs.dev": "cd docs && npm run start"    
   },
   "bin": {
     "typeorm": "./cli.js",
