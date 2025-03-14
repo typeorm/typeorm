@@ -9,9 +9,6 @@ on:
       run-type:
         required: true
         type: string
-    secrets:
-      STRYKER_DASHBOARD_API_KEY:
-        required: false
 
 jobs:
   oracle:
@@ -30,22 +27,6 @@ jobs:
       - run: docker compose -f .github/workflows/test/oracle.docker-compose up -d
       - run: npm i
       - run: cp .github/workflows/test/oracle.ormconfig.json ormconfig.json
-
       - run: npx nyc npm run test
-        if: inputs.run-type == 'coverage'
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
-        if: inputs.run-type == 'coverage'
-        with:
-          flag-name: oracle-${{ inputs.node-version }}
-          parallel: true
-        
-      - run: npx stryker run --dashboard.module oracle
-        if: inputs.run-type == 'mutation'
-        env:
-          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
-      - uses: actions/upload-artifact@v4
-        if: inputs.run-type == 'mutation'
-        with:
-          name: mitation-oracle
-          path: ./reports/mutation/mutation.html
