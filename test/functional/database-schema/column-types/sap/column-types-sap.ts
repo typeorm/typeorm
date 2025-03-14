@@ -24,6 +24,7 @@ describe("database schema > column types > sap", () => {
     it("all types should work correctly - persist and hydrate", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // this test contains data types that are available only in SAP HANA 2.0 and that have been removed in SAP HANA Cloud
                 const postRepository = connection.getRepository(Post)
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post")
@@ -179,7 +180,7 @@ describe("database schema > column types > sap", () => {
                     .type.should.be.equal("varbinary")
                 table!
                     .findColumnByName("simpleArray")!
-                    .type.should.be.equal("text")
+                    .type.should.be.equal("nclob")
             }),
         ))
 

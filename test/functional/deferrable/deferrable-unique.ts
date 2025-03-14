@@ -1,15 +1,17 @@
 import "reflect-metadata"
+import { expect } from "chai"
+
+import { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+
 import { Company } from "./entity/Company"
 import { Office } from "./entity/Office"
-import { expect } from "chai"
 
-describe("deferrable uq constraints should be check at the end of transaction", () => {
+describe("deferrable unique constraint", () => {
     let connections: DataSource[]
     before(
         async () =>
@@ -21,7 +23,7 @@ describe("deferrable uq constraints should be check at the end of transaction", 
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("use initially deferred deferrable uq constraints", () =>
+    it("initially deferred unique should be validated at the end of transaction", () =>
         Promise.all(
             connections.map(async (connection) => {
                 await connection.manager.transaction(async (entityManager) => {
@@ -63,7 +65,7 @@ describe("deferrable uq constraints should be check at the end of transaction", 
             }),
         ))
 
-    it("use initially immediated deferrable uq constraints", () =>
+    it("initially immediate unique should be validated at the end at transaction with deferred check time", () =>
         Promise.all(
             connections.map(async (connection) => {
                 await connection.manager.transaction(async (entityManager) => {

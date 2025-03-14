@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "private": true,
-  "version": "0.3.20",
+  "version": "0.3.21",
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
   "license": "MIT",
   "readmeFilename": "README.md",
@@ -127,7 +127,7 @@
     "husky": "^8.0.3",
     "mocha": "^10.8.2",
     "mongodb": "^6.3.0",
-    "mssql": "^10.0.1",
+    "mssql": "^11.0.1",
     "mysql": "^2.18.1",
     "mysql2": "^3.9.7",
     "nyc": "^17.1.0",
@@ -136,7 +136,7 @@
     "prettier": "^2.8.8",
     "redis": "^4.6.4",
     "remap-istanbul": "^0.13.0",
-    "rimraf": "^5.0.10",
+    "rimraf": "^6.0.1",
     "sinon": "^15.0.1",
     "sinon-chai": "^3.7.0",
     "source-map-support": "^0.5.21",
@@ -150,11 +150,11 @@
   "peerDependencies": {
     "@google-cloud/spanner": "^5.18.0",
     "@sap/hana-client": "^2.12.25",
-    "better-sqlite3": "^8.0.0 || ^9.0.0",
+    "better-sqlite3": "^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0" ,
     "hdb-pool": "^0.1.6",
     "ioredis": "^5.0.4",
     "mongodb": "^5.8.0",
-    "mssql": "^9.1.1 || ^10.0.1",
+    "mssql": "^9.1.1 || ^10.0.1 || ^11.0.1",
     "mysql2": "^2.2.5 || ^3.0.1",
     "oracledb": "^6.3.0",
     "pg": "^8.5.1",
@@ -222,17 +222,17 @@
   },
   "dependencies": {
     "@sqltools/formatter": "^1.2.5",
+    "ansis": "^3.9.0",
     "app-root-path": "^3.1.0",
     "buffer": "^6.0.3",
-    "chalk": "^4.1.2",
-    "cli-highlight": "^2.1.11",
     "dayjs": "^1.11.9",
     "debug": "^4.3.4",
     "dotenv": "^16.0.3",
     "glob": "^10.4.5",
     "sha.js": "^2.4.11",
+    "sql-highlight": "^6.0.0",
     "tslib": "^2.5.0",
-    "uuid": "^9.0.0",
+    "uuid": "^11.0.5",
     "yargs": "^17.6.2"
   },
   "scripts": {
@@ -245,7 +245,7 @@
     "lint": "eslint .",
     "format": "prettier --cache --write --end-of-line auto \"./src/**/*.ts\" \"./test/**/*.ts\" \"./sample/**/*.ts\"",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1",
-    "docs.dev": "cd docs && npm run start"    
+    "docs.dev": "cd docs && npm run start"
   },
   "bin": {
     "typeorm": "./cli.js",
