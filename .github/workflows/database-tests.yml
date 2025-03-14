@@ -177,7 +177,6 @@ jobs:
       - run: npx nyc npm run test
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
-        if: inputs.run-type == 'coverage'
         with:
           flag-name: sqljs-${{ inputs.node-container }}
           parallel: true
