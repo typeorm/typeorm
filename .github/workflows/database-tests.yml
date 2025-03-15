@@ -31,6 +31,7 @@ jobs:
         with:
           flag-name: crdb-${{ inputs.node-container }}
           parallel: true
+      
 
   mongodb:
     runs-on: ubuntu-latest
@@ -76,7 +77,6 @@ jobs:
       - run: npm install mssql@${{ matrix.mssql-version }}
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
-      - run: npm test
       - run: npx nyc npm run test
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
