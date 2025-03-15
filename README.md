@@ -17,8 +17,8 @@
     <a href='https://coveralls.io/github/typeorm/typeorm?branch=master'>
         <img src='https://coveralls.io/repos/github/typeorm/typeorm/badge.svg?branch=master' alt='Coverage Status' />
     </a>
-    <a href='https://dashboard.stryker-mutator.io/reports/github.com/OSA413/typeorm/master'>
-        <img src='https://img.shields.io/endpoint?style=flat&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2FOSA413%2Ftypeorm%2Fmaster' alt='Mutation testing badge' />
+    <a href='https://dashboard.stryker-mutator.io/reports/github.com/typeorm/typeorm/master'>
+        <img src='https://img.shields.io/endpoint?style=flat&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Ftypeorm%2Ftypeorm%2Fmaster' alt='Mutation testing badge' />
     </a>
   <br>
   <br>
