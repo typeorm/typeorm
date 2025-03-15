@@ -279,6 +279,8 @@ export class CockroachQueryRunner
             parameters,
         )
 
+        await broadcasterResult.wait()
+
         const queryStartTime = +new Date()
 
         if (this.isTransactionActive && this.storeQueries) {

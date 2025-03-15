@@ -200,6 +200,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     parameters,
                 )
 
+                await broadcasterResult.wait()
+
                 const queryStartTime = +new Date()
                 databaseConnection.query(
                     query,
@@ -3200,7 +3202,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         table: Table,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(
