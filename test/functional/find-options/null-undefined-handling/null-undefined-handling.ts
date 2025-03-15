@@ -240,6 +240,42 @@ describe("find options > null and undefined handling", () => {
                     }
                 }),
             ))
+
+        it("should not throw an error for properties that are not provided", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await prepareData(connection)
+
+                    // Test with QueryBuilder - only specify title
+                    const postsWithQb = await connection
+                        .createQueryBuilder(Post, "post")
+                        .setFindOptions({
+                            where: {
+                                title: "Post #1",
+                            },
+                        })
+                        .getMany()
+
+                    // Should return post1 without throwing an error
+                    postsWithQb.should.be.eql([
+                        { id: 1, title: "Post #1", text: "About post #1" },
+                    ])
+
+                    // Test with Repository - only specify title
+                    const postsWithRepo = await connection
+                        .getRepository(Post)
+                        .find({
+                            where: {
+                                title: "Post #2",
+                            },
+                        })
+
+                    // Should return post2 without throwing an error
+                    postsWithRepo.should.be.eql([
+                        { id: 2, title: "Post #2", text: null },
+                    ])
+                }),
+            ))
     })
 
     describe("with both options enabled", () => {
