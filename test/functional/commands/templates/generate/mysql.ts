@@ -13,9 +13,7 @@ export class TestMigration1610975184784 implements MigrationInterface {
     }
 
 }`,
-    javascript: `const { MigrationInterface, QueryRunner } = require("typeorm");
-
-module.exports = class TestMigration1610975184784 {
+    javascript: `module.exports = class TestMigration1610975184784 {
     name = 'TestMigration1610975184784'
 
     async up(queryRunner) {
