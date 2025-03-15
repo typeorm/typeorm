@@ -20,10 +20,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "18.x"
+
       - uses: actions/checkout@v4
+
       - run: npm i
       - run: npm run lint
 
+      # run formatting and fail if any changes are detected
+      - run: npm run format
+      - run: git add --all
+      - run: git status --porcelain
+      - run: git diff --cached --exit-code || (echo "::error::Formatting changes are required. Please run 'npm run format' and commit the changes." && exit 1)
 
   # These tests run in standard node containers with their db attached as a service
   database-tests:
@@ -35,7 +42,6 @@ jobs:
     uses: ./.github/workflows/database-tests.yml
     with:
       node-container: ${{matrix.node-container}}
-
 
   # These tests run with custom docker image attributes that can't be specified in a GHA service
   database-compose-tests:
