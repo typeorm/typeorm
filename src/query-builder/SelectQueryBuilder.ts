@@ -3098,6 +3098,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             this.selects = []
+
             if (this.findOptions.relations) {
                 const relations = Array.isArray(this.findOptions.relations)
                     ? OrmUtils.propertyPathsToTruthyObject(
@@ -4235,9 +4236,40 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     .join(" OR ")
             }
         } else {
-            const andConditions: string[] = []
-            for (const key in where) {
-                if (where[key] === undefined || where[key] === null) continue
+            let andConditions: string[] = []
+            for (let key in where) {
+                const parameterValue = where[key]
+
+                if (parameterValue === undefined) {
+                    if (this.expressionMap.throwOnUndefinedInFind) {
+                        throw new TypeORMError(
+                            `Undefined value encountered in property '${key}' of the find operation. ` +
+                                `Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.`,
+                        )
+                    }
+                    continue
+                }
+
+                if (parameterValue === null) {
+                    if (!this.expressionMap.treatJsNullAsSqlNull) {
+                        continue // Skip null values by default
+                    }
+
+                    // If treatJsNullAsSqlNull is true, transform JS null to SQL NULL
+                    const propertyPath = embedPrefix
+                        ? embedPrefix + "." + key
+                        : key
+                    const column =
+                        metadata.findColumnWithPropertyPathStrict(propertyPath)
+                    if (column) {
+                        let aliasPath = `${alias}.${propertyPath}`
+                        if (column.isVirtualProperty && column.query) {
+                            aliasPath = `(${column.query(alias)})`
+                        }
+                        andConditions.push(`${aliasPath} IS NULL`)
+                        continue
+                    }
+                }
 
                 const propertyPath = embedPrefix ? embedPrefix + "." + key : key
                 const column =
