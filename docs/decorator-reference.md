@@ -382,12 +382,12 @@ Special column that is never saved to the database and thus acts as a readonly p
 Each time you call `find` or `findOne` from the entity manager, the value is recalculated based on the query function that was provided in the VirtualColumn Decorator. The alias argument passed to the query references the exact entity alias of the generated query behind the scenes.
 
 ```typescript
-@Entity({ name: "companies", alias: "COMP" })
-export class Company extends BaseEntity {
+@Entity({ name: "companies" })
+export class Company {
   @PrimaryColumn("varchar", { length: 50 })
   name: string;
 
-  @VirtualColumn({ query: (alias) => `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}.name` })
+  @VirtualColumn({ query: (alias) => `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}."name"` })
   totalEmployeesCount: number;
 
   @OneToMany((type) => Employee, (employee) => employee.company)
@@ -395,7 +395,7 @@ export class Company extends BaseEntity {
 }
 
 @Entity({ name: "employees" })
-export class Employee extends BaseEntity {
+export class Employee {
   @PrimaryColumn("varchar", { length: 50 })
   name: string;
 
