@@ -2882,11 +2882,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     })
                 })
             } else {
-                if (column.isVirtualProperty) {
-                    // Do not add unselected virtual properties to final select
-                    return
-                }
-
                 finalSelects.push({
                     selection: selectionPath,
                     aliasName: DriverUtils.buildAlias(
@@ -4298,7 +4293,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (column) {
                     let aliasPath = `${alias}.${propertyPath}`
                     if (column.isVirtualProperty && column.query) {
-                        aliasPath = `(${column.query(alias)})`
+                        aliasPath = `(${column.query(this.escape(alias))})`
                     }
                     // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
 
@@ -4308,13 +4303,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         parameterValue = where[key].value
                     }
                     if (column.transformer) {
-                        parameterValue instanceof FindOperator
-                            ? parameterValue.transformValue(column.transformer)
-                            : (parameterValue =
-                                  ApplyValueTransformers.transformTo(
-                                      column.transformer,
-                                      parameterValue,
-                                  ))
+                        if (parameterValue instanceof FindOperator) {
+                            parameterValue.transformValue(column.transformer)
+                        } else {
+                            parameterValue = ApplyValueTransformers.transformTo(
+                                column.transformer,
+                                parameterValue,
+                            )
+                        }
                     }
 
                     // if (parameterValue === null) {
