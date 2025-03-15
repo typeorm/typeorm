@@ -3351,16 +3351,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // if (this.options.options && this.options.options.eagerRelations) {
             //     this.queryBuilder
             // }
-
-            if (this.findOptions.treatJsNullAsSqlNull !== undefined) {
-                this.expressionMap.treatJsNullAsSqlNull =
-                    this.findOptions.treatJsNullAsSqlNull
-            }
-
-            if (this.findOptions.throwOnUndefinedInFind !== undefined) {
-                this.expressionMap.throwOnUndefinedInFind =
-                    this.findOptions.throwOnUndefinedInFind
-            }
         }
     }
 

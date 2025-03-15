@@ -1,6 +1,6 @@
 # Handling Null and Undefined Values in Find Operations
 
-TypeORM provides fine-grained control over how `null` and `undefined` values are handled in find operations through two configuration options: `treatJsNullAsSqlNull` and `throwOnUndefinedInFind`.
+TypeORM provides fine-grained control over how `null` and `undefined` values are handled in find operations through two connection-level configuration options: `treatJsNullAsSqlNull` and `throwOnUndefinedInFind`.
 
 ## Default Behavior
 
@@ -23,42 +23,34 @@ const posts2 = await repository.find({
 
 ## Treating JavaScript null as SQL NULL
 
-You can change how `null` values are handled using the `treatJsNullAsSqlNull` option. When enabled, JavaScript `null` values in where conditions will be transformed into SQL `NULL` values:
+You can change how `null` values are handled using the `treatJsNullAsSqlNull` option in your connection configuration:
 
 ```typescript
-// Connection-level configuration
 const dataSource = new DataSource({
     // ... other options
     treatJsNullAsSqlNull: true
 });
+```
 
-// Or per-query configuration
+When enabled, JavaScript `null` values in where conditions will be transformed into SQL `NULL` values. For example:
+
+```typescript
+// With treatJsNullAsSqlNull: true
+// This will only return posts where the text column is NULL in the database
 const posts = await repository.find({
     where: {
         text: null
-    },
-    treatJsNullAsSqlNull: true
+    }
 });
 ```
-
-In this case, the query will only return posts where the `text` column is `NULL` in the database.
 
 ## Throwing on Undefined Values
 
 The `throwOnUndefinedInFind` option allows you to catch potential programming errors by throwing when `undefined` values are encountered in find operations:
 
 ```typescript
-// Connection-level configuration
 const dataSource = new DataSource({
     // ... other options
-    throwOnUndefinedInFind: true
-});
-
-// Or per-query configuration
-const posts = await repository.find({
-    where: {
-        text: undefined // This will throw an error
-    },
     throwOnUndefinedInFind: true
 });
 ```
@@ -71,8 +63,15 @@ TypeORMError: Undefined value encountered in property 'text' of the find operati
 Note that this only applies to explicitly set `undefined` values. Properties that are not provided in the where clause are still ignored:
 
 ```typescript
+// This will throw an error with throwOnUndefinedInFind: true
+const posts1 = await repository.find({
+    where: {
+        text: undefined
+    }
+});
+
 // This will NOT throw an error, even with throwOnUndefinedInFind enabled
-const posts = await repository.find({
+const posts2 = await repository.find({
     where: {
         title: "My Post" // text property is not provided, so it's ignored
     }

@@ -166,23 +166,13 @@ await timber.remove()
 
 ## Null and Undefined Handling
 
-TypeORM provides fine-grained control over how `null` and `undefined` values are handled in find operations through two configuration options:
+TypeORM provides fine-grained control over how `null` and `undefined` values are handled in find operations through two connection-level configuration options:
 
 ```typescript
-// Connection-level configuration
 const dataSource = new DataSource({
     // ... other options
     treatJsNullAsSqlNull: true,    // Convert JavaScript null to SQL NULL
     throwOnUndefinedInFind: true   // Throw on undefined in find operations
-})
-
-// Or per-query configuration
-const posts = await repository.find({
-    where: {
-        text: null
-    },
-    treatJsNullAsSqlNull: true,
-    throwOnUndefinedInFind: true
 })
 ```
 
