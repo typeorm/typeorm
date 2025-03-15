@@ -3351,6 +3351,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // if (this.options.options && this.options.options.eagerRelations) {
             //     this.queryBuilder
             // }
+
+            // todo
+            // if (this.findOptions.options && this.findOptions.listeners === false) {
+            //     this.callListeners(false);
+            // }
         }
     }
 
