@@ -245,7 +245,7 @@
     "lint": "eslint .",
     "format": "prettier --cache --write --end-of-line auto \"./src/**/*.ts\" \"./test/**/*.ts\" \"./sample/**/*.ts\"",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1",
-    "docs.dev": "cd docs && npm run start"
+    "docs:dev": "cd new_doc && npm run start"
   },
   "bin": {
     "typeorm": "./cli.js",
