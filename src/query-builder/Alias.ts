@@ -1,6 +1,7 @@
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { TypeORMError } from "../error"
+import { TemporalTableOptions } from "../schema-builder/options/TemporalTableOptions"
 
 /**
  */
@@ -19,6 +20,12 @@ export class Alias {
      * If this alias is for sub query.
      */
     subQuery?: string
+
+    /**
+     * The value 'true' enables system versioning. You can also customize each option like
+     * start row column, history table, etc.
+     */
+    versioning?: TemporalTableOptions | boolean
 
     constructor(alias?: Alias) {
         ObjectUtils.assign(this, alias || {})
