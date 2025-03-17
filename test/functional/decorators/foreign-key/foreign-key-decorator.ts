@@ -93,6 +93,29 @@ describe("decorators > foreign-key", () => {
                         )
                         .orderBy("orders.id", "ASC")
                         .getRawMany()
+                        .then((orders) =>
+                            orders.map(
+                                ({
+                                    orders_id,
+                                    orders_cityId,
+                                    orders_dispatchCityId,
+                                    users_ref,
+                                    city_id,
+                                    dispatchCity_id,
+                                    ...order
+                                }) => ({
+                                    orders_id: parseInt(orders_id),
+                                    orders_cityId: parseInt(orders_cityId),
+                                    orders_dispatchCityId: parseInt(
+                                        orders_dispatchCityId,
+                                    ),
+                                    users_ref: parseInt(users_ref),
+                                    city_id: parseInt(city_id),
+                                    dispatchCity_id: parseInt(dispatchCity_id),
+                                    ...order,
+                                }),
+                            ),
+                        )
 
                     ordersViaQueryBuilder.length.should.be.eql(2)
 
