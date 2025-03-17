@@ -168,6 +168,7 @@ export class PostgresDriver implements Driver {
         "cidr",
         "inet",
         "macaddr",
+        "macaddr8",
         "tsvector",
         "tsquery",
         "uuid",
