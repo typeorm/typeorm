@@ -28,7 +28,7 @@ export class Order {
     @ForeignKey("cities")
     cityId: number
 
-    @Column()
+    @Column({ length: 2 })
     dispatchCountryCode: string
 
     @ManyToOne(() => Country)

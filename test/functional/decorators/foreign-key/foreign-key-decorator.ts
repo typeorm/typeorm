@@ -99,7 +99,9 @@ describe("decorators > foreign-key", () => {
                                     orders_id,
                                     orders_cityId,
                                     orders_dispatchCityId,
+                                    orders_user_uuid,
                                     users_ref,
+                                    users_uuid,
                                     city_id,
                                     dispatchCity_id,
                                     ...order
@@ -109,7 +111,10 @@ describe("decorators > foreign-key", () => {
                                     orders_dispatchCityId: parseInt(
                                         orders_dispatchCityId,
                                     ),
+                                    orders_user_uuid:
+                                        orders_user_uuid.toLowerCase(),
                                     users_ref: parseInt(users_ref),
+                                    users_uuid: users_uuid.toLowerCase(),
                                     city_id: parseInt(city_id),
                                     dispatchCity_id: parseInt(dispatchCity_id),
                                     ...order,
@@ -173,6 +178,12 @@ describe("decorators > foreign-key", () => {
                             },
                             order: { id: "asc" },
                         })
+                        .then((orders) =>
+                            orders.map(({ userUuid, ...order }) => ({
+                                userUuid: userUuid.toLowerCase(),
+                                ...order,
+                            })),
+                        )
 
                     ordersViaFind.length.should.be.eql(2)
 
