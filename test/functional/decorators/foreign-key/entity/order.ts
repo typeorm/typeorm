@@ -1,4 +1,10 @@
-import { Column, Entity, ForeignKey, PrimaryColumn } from "../../../../../src"
+import {
+    Column,
+    Entity,
+    ForeignKey,
+    ManyToOne,
+    PrimaryColumn,
+} from "../../../../../src"
 import { City } from "./city"
 import { Country } from "./country"
 
@@ -21,4 +27,16 @@ export class Order {
     @Column()
     @ForeignKey("cities")
     cityId: number
+
+    @Column()
+    dispatchCountryCode: string
+
+    @ManyToOne(() => Country)
+    dispatchCountry: Country
+
+    @Column()
+    dispatchCityId: number
+
+    @ManyToOne(() => City)
+    dispatchCity: City
 }

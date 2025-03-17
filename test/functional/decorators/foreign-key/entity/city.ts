@@ -15,4 +15,7 @@ export class City {
     @Column({ length: 2 })
     @ForeignKey("countries", { onDelete: "CASCADE", onUpdate: "CASCADE" })
     countryCode: string
+
+    @Column()
+    name: string
 }

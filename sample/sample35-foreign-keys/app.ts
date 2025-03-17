@@ -48,27 +48,44 @@ dataSource.initialize().then(
                 userUuid: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
                 cityId: 1,
                 countryCode: "US",
+                dispatchCityId: 1,
+                dispatchCountryCode: "US",
             },
             {
                 id: 2,
                 userUuid: "c9bf9e57-1685-4c89-bafb-ff5af830be8a",
                 cityId: 2,
                 countryCode: "UA",
+                dispatchCityId: 1,
+                dispatchCountryCode: "US",
             },
         ])
 
-        const orders = await dataSource
+        const ordersViaQueryBuilder = await dataSource
             .createQueryBuilder(Order, "orders")
             .leftJoinAndSelect(User, "users", "users.uuid = orders.userUuid")
             .leftJoinAndSelect(
                 Country,
-                "countries",
-                "countries.code = orders.countryCode",
+                "country",
+                "country.code = orders.countryCode",
             )
-            .leftJoinAndSelect("cities", "cities", "cities.id = orders.cityId")
+            .leftJoinAndSelect("cities", "city", "city.id = orders.cityId")
+            .leftJoinAndSelect("orders.dispatchCountry", "dispatchCountry")
+            .leftJoinAndSelect("orders.dispatchCity", "dispatchCity")
+            .orderBy("orders.id", "ASC")
             .getRawMany()
 
-        console.log(orders)
+        console.log(ordersViaQueryBuilder)
+
+        const ordersViaFind = await dataSource.getRepository(Order).find({
+            relations: {
+                dispatchCountry: true,
+                dispatchCity: true,
+            },
+            order: { id: "asc" },
+        })
+
+        console.log(ordersViaFind)
     },
     (error) => console.log("Cannot connect: ", error),
 )

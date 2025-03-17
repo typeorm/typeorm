@@ -991,6 +991,18 @@ export class Order {
     @Column()
     @ForeignKey("cities")
     cityId: number
+
+    @Column()
+    dispatchCountryCode: string
+
+    @ManyToOne(() => Country)
+    dispatchCountry: Country
+
+    @Column()
+    dispatchCityId: number
+
+    @ManyToOne(() => City)
+    dispatchCity: City
 }
 ```
 
@@ -1004,6 +1016,9 @@ export class City {
     @Column({ length: 2 })
     @ForeignKey("countries", { onDelete: "CASCADE", onUpdate: "CASCADE" })
     countryCode: string
+
+    @Column()
+    name: string
 }
 ```
 
