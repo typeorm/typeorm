@@ -228,7 +228,7 @@ export class OrmUtils {
     }
 
     static replaceEmptyObjectsWithBooleans(obj: any) {
-        for (let key in obj) {
+        for (const key in obj) {
             if (obj[key] && typeof obj[key] === "object") {
                 if (Object.keys(obj[key]).length === 0) {
                     obj[key] = true
@@ -240,8 +240,8 @@ export class OrmUtils {
     }
 
     static propertyPathsToTruthyObject(paths: string[]) {
-        let obj: any = {}
-        for (let path of paths) {
+        const obj: any = {}
+        for (const path of paths) {
             const props = path.split(".")
             if (!props.length) continue
 
@@ -249,7 +249,7 @@ export class OrmUtils {
                 obj[props[0]] = {}
             }
             let recursiveChild = obj[props[0]]
-            for (let [key, prop] of props.entries()) {
+            for (const [key, prop] of props.entries()) {
                 if (key === 0) continue
 
                 if (recursiveChild[prop]) {

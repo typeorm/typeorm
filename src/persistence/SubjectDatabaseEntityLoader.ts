@@ -141,7 +141,7 @@ export class SubjectDatabaseEntityLoader {
                 })
 
                 // this way we tell what subjects we tried to load database entities of
-                for (let subject of allSubjects) {
+                for (const subject of allSubjects) {
                     subject.databaseEntityLoaded = true
                 }
             },

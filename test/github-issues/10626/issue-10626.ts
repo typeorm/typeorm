@@ -47,7 +47,7 @@ describe("github issues > #10626 Postgres CREATE INDEX CONCURRENTLY bug", () => 
                 await dataSource.synchronize()
 
                 const queryRunner = dataSource.createQueryRunner()
-                let table = await queryRunner.getTable("user")
+                const table = await queryRunner.getTable("user")
                 if (table) {
                     await queryRunner.dropIndex(table, table?.indices[0])
                 }
