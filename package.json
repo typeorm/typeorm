@@ -82,8 +82,8 @@
     "lint": "eslint .",
     "pack": "gulp pack",
     "package": "gulp package",
-    "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
-    "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
+    "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --recursive --timeout 90000 ./build/compiled/test",
+    "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --recursive --timeout 90000 ./build/compiled/test",
     "watch": "./node_modules/.bin/tsc -w"
   },
   "dependencies": {
@@ -103,6 +103,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
+    "@sap/hana-client": "^2.24.21",
     "@tsconfig/node16": "^16.1.3",
     "@types/chai": "^4.3.20",
     "@types/chai-as-promised": "^7.1.8",
@@ -130,6 +131,7 @@
     "gulp-sourcemaps": "^3.0.0",
     "gulp-typescript": "^6.0.0-alpha.1",
     "gulpclass": "^0.2.0",
+    "hdb-pool": "^0.1.6",
     "mocha": "^10.8.2",
     "mongodb": "^6.15.0",
     "mssql": "^11.0.1",

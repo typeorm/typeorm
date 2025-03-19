@@ -1,0 +1,24 @@
+[
+  {
+    "skip": false,
+    "name": "sap",
+    "type": "sap",
+    "host": "localhost",
+    "port": 39041,
+    "username": "SYSTEM",
+    "password": "HXEHana1",
+    "logging": false
+  },
+
+  {
+    "skip": true,
+    "name": "postgres",
+    "type": "postgres",
+    "host": "postgres",
+    "port": 5432,
+    "username": "postgres",
+    "password": "postgres",
+    "database": "postgres",
+    "logging": false
+  }
+]

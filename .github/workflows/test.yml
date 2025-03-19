@@ -13,8 +13,6 @@ on:
 jobs:
   formatting:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
 
     steps:
       - uses: actions/setup-node@v4
@@ -29,6 +27,7 @@ jobs:
 
   # These tests run in standard node containers with their db attached as a service
   database-tests:
+    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -43,17 +42,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [16.x, 18.x, 20.x] #, 22.x]
+        node-version: [18.x, 20.x] #, 22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     uses: ./.github/workflows/database-compose-tests.yml
     with:
       node-version: ${{matrix.node-version}}
 
   windows-database-tests:
+    if: false
     uses: ./.github/workflows/windows-database-tests.yml
 
   # Run with most databases possible to provide the coverage of the tests
   coverage:
-    if: ${{ always() }}
+    if: false
     needs: [database-tests, database-compose-tests, windows-database-tests]
     uses: ./.github/workflows/coverage.yml

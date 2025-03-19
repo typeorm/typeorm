@@ -1,0 +1,29 @@
+services:
+  hanaexpress:
+    image: "saplabs/hanaexpress:2.00.076.00.20240701.1"
+    container_name: "typeorm-hanaexpress"
+    hostname: hxe
+    command:
+      [
+        "--passwords-url",
+        "file:////hana/hxe-config.json",
+        "--agree-to-sap-license",
+      ]
+    ulimits:
+      nofile: 1048576
+    sysctls:
+      - kernel.shmall=3145728 # System-wide limit of total shared memory, in 4k pages
+      - kernel.shmmax=1073741824 # Maximum shared memory segment sizes
+      - kernel.shmmni=4096 # Maximum number of shared memory segments
+      - net.ipv4.ip_local_port_range=40000 60999
+    volumes:
+      - volume-hana-xe:/hana/mounts
+      - ../../../docker/hana/hxe-config.json:/hana/hxe-config.json
+    ports:
+      - "39041:39041"
+    healthcheck:
+      test: "/hana/shared/HXE/exe/linuxx86_64/hdb/hdbsql -n localhost:39041 -u SYSTEM -p HXEHana1 \"\\s\""
+      interval: 5s
+
+volumes:
+  volume-hana-xe:
