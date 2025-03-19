@@ -155,7 +155,8 @@ export class IndexMetadata {
             )
                 this.synchronize = options.args.synchronize
             this.isUnique = !!options.args.unique
-            this.isSpatial = !!options.args.spatial
+            this.isSpatial =
+                !!options.args.spatial || options.args.type === "gist"
             this.isFulltext = !!options.args.fulltext
             this.isNullFiltered = !!options.args.nullFiltered
             this.parser = options.args.parser
