@@ -17,6 +17,7 @@ import { View } from "./view/View"
 import { ViewUtils } from "./util/ViewUtils"
 import { DriverUtils } from "../driver/DriverUtils"
 import { PostgresQueryRunner } from "../driver/postgres/PostgresQueryRunner"
+import { TypeORMError } from "../error"
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -403,11 +404,19 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                             typeof this.connection.driver
                                 .compareTableIndexTypes === "function" &&
                             !this.connection.driver.compareTableIndexTypes(
-                                indexMetadata.type,
-                                tableIndex.type,
+                                indexMetadata,
+                                tableIndex,
                             )
                         )
                             return true
+
+                        if (
+                            !this.connection.driver.isIndicesTypeSupported() &&
+                            indexMetadata.type
+                        )
+                            throw new TypeORMError(
+                                `Current database driver does not support index 'type' property`,
+                            )
 
                         if (
                             this.connection.driver.isFullTextColumnTypeSupported() &&
@@ -1003,6 +1012,18 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 .map((indexMetadata) => TableIndex.create(indexMetadata))
 
             if (newIndices.length === 0) continue
+
+            if (
+                newIndices.find(
+                    (idx) =>
+                        !!idx.type &&
+                        !this.connection.driver.isIndicesTypeSupported(),
+                )
+            ) {
+                throw new TypeORMError(
+                    `Current database driver does not support index 'type' property`,
+                )
+            }
 
             this.connection.logger.logSchemaBuild(
                 `adding new indices ${newIndices
