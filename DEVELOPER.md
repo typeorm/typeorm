@@ -2,15 +2,11 @@
 
 This document describes how to set up your development environment and run TypeORM test cases.
 
-- [Building and Testing TypeORM](#building-and-testing-typeorm)
-  - [Prerequisite Software](#prerequisite-software)
-  - [Getting the Sources](#getting-the-sources)
-  - [Installing NPM Modules](#installing-npm-modules)
-  - [ORM config](#orm-config)
-  - [Building](#building)
-  - [Running Tests Locally](#running-tests-locally)
-    - [Faster developer cycle for editing code and running tests](#faster-developer-cycle-for-editing-code-and-running-tests)
-  - [Using Docker](#using-docker)
+* [Prerequisite Software](#prerequisite-software)
+* [Getting the Sources](#getting-the-sources)
+* [Installing NPM Modules](#installing-npm-modules)
+* [Building](#building)
+* [Running Tests Locally](#running-tests-locally)
 
 See the [contribution guidelines](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md)
 if you'd like to contribute to TypeORM.
@@ -23,7 +19,7 @@ following products on your development machine:
 * [Git](http://git-scm.com) and/or the **GitHub app** (for [Mac](http://mac.github.com) or
   [Windows](http://windows.github.com)); [GitHub's Guide to Installing
   Git](https://help.github.com/articles/set-up-git) is a good source of information.
-* [Node.js](http://nodejs.org), (use version 16.20.0) which is used to run a development web server,
+* [Node.js](http://nodejs.org), (use 16.20.0) which is used to run a development web server,
   run tests, and generate distributable files.
   Depending on your system, you can install Node either from source or as a pre-packaged bundle.
 * [Mysql](https://www.mysql.com/) is required to run tests on this platform (or docker)
@@ -85,6 +81,7 @@ You can link (or simply copy/paste) this directory into your project and test Ty
 To build the distribution package of TypeORM packed into a `.tgz`, run:
 
 ```shell
+nvm use 16.20.0
 npm run pack
 ```
 
