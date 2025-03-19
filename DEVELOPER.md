@@ -19,7 +19,7 @@ following products on your development machine:
 * [Git](http://git-scm.com) and/or the **GitHub app** (for [Mac](http://mac.github.com) or
   [Windows](http://windows.github.com)); [GitHub's Guide to Installing
   Git](https://help.github.com/articles/set-up-git) is a good source of information.
-* [Node.js](http://nodejs.org), (better to install latest version) which is used to run a development web server,
+* [Node.js](http://nodejs.org), (use 16.20.0) which is used to run a development web server,
   run tests, and generate distributable files.
   Depending on your system, you can install Node either from source or as a pre-packaged bundle.
 * [Mysql](https://www.mysql.com/) is required to run tests on this platform (or docker)
@@ -54,6 +54,7 @@ git remote add upstream https://github.com/typeorm/typeorm.git
 Install all TypeORM dependencies by running this command:
 
 ```shell
+nvm use 16.20.0
 npm install
 ```
 
@@ -80,6 +81,7 @@ You can link (or simply copy/paste) this directory into your project and test Ty
 To build the distribution package of TypeORM packed into a `.tgz`, run:
 
 ```shell
+nvm use 16.20.0
 npm run pack
 ```
 
