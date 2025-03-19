@@ -316,14 +316,19 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         parameters?: any[],
         onEnd?: Function,
         onError?: Function,
+        executionOptions?: any,
     ): Promise<ReadStream> {
         if (this.isReleased) {
             throw new QueryRunnerAlreadyReleasedError()
         }
 
-        const executionOptions = {
+        const currentExecutionOptions = {
             autoCommit: !this.isTransactionActive,
             outFormat: this.driver.oracle.OUT_FORMAT_OBJECT,
+        }
+
+        if (executionOptions) {
+            Object.assign(currentExecutionOptions, executionOptions)
         }
 
         const databaseConnection = await this.connect()
@@ -334,7 +339,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const stream = databaseConnection.queryStream(
                 query,
                 parameters,
-                executionOptions,
+                currentExecutionOptions,
             )
             if (onEnd) {
                 stream.on("end", onEnd)
