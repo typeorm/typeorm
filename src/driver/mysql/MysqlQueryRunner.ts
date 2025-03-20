@@ -200,7 +200,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     parameters,
                 )
 
-                const queryStartTime = +new Date()
+                const queryStartTime = Date.now()
                 databaseConnection.query(
                     query,
                     parameters,
@@ -208,7 +208,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         // log slow queries if maxQueryExecution time is set
                         const maxQueryExecutionTime =
                             this.driver.options.maxQueryExecutionTime
-                        const queryEndTime = +new Date()
+                        const queryEndTime = Date.now()
                         const queryExecutionTime = queryEndTime - queryStartTime
 
                         if (
