@@ -971,6 +971,12 @@ This decorator allows you to create a database foreign key for a specific column
 This decorator can be applied to columns or an entity itself.
 Use it on a column when an foreign key on a single column is needed
 and use it on the entity when a single foreign key on multiple columns is required.
+
+> Note: **Do not use this decorator with relations.** Foreign keys are created automatically for relations
+> which you define using [Relation decorators](#relation-decorators) (`@ManyToOne`, `@OneToOne`, etc).
+> The `@ForeignKey` decorator should only be used to create foreign keys in the database when you
+> don't want to define an equivalent entity relationship.
+
 Examples:
 
 ```typescript
