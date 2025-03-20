@@ -30,5 +30,5 @@ dataSource.initialize().then(
             .then((post) => console.log("Post has been saved: ", post))
             .catch((error) => console.log("Cannot save. Error: ", error))
     },
-(error) => console.log("Cannot connect: ", error),
+    (error) => console.log("Cannot connect: ", error),
 )
