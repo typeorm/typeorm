@@ -243,8 +243,8 @@
     "package": "gulp package",
     "pack": "gulp pack",
     "lint": "eslint .",
-    "format": "prettier --cache --write --end-of-line auto \"./src/**/*.ts\" \"./test/**/*.ts\" \"./sample/**/*.ts\"",
-    "format:ci": "prettier --check --end-of-line auto \"./src/**/*.ts\" \"./test/**/*.ts\" \"./sample/**/*.ts\"",
+    "format": "prettier --cache --write \"./**/*.ts\"",
+    "format:ci": "prettier --check \"./**/*.ts\"",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1"
   },
   "bin": {
