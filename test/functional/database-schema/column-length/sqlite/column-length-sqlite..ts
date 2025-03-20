@@ -50,7 +50,7 @@ describe("database schema > column length > sqlite", () => {
     it("all types should update their size", () =>
         Promise.all(
             connections.map(async (connection) => {
-                let metadata = connection.getMetadata(Post)
+                const metadata = connection.getMetadata(Post)
                 metadata.findColumnWithPropertyName("character")!.length = "100"
                 metadata.findColumnWithPropertyName("varchar")!.length = "100"
                 metadata.findColumnWithPropertyName("nchar")!.length = "100"

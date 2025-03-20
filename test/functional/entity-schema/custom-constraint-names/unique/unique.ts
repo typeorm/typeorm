@@ -24,7 +24,7 @@ describe("database schema > custom constraint names > unique", () => {
     it("should set custom constraint names", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                let metadata = dataSource.getMetadata(PostSchema)
+                const metadata = dataSource.getMetadata(PostSchema)
 
                 // This drivers stores unique constraints as unique indices.
                 if (
