@@ -25,12 +25,7 @@ jobs:
 
       - run: npm i
       - run: npm run lint
-
-      # run formatting and fail if any changes are detected
-      - run: npm run format
-      - run: git add --all
-      - run: git status --porcelain
-      - run: git diff --cached --exit-code || (echo "::error::Formatting changes are required. Please run 'npm run format' and commit the changes." && exit 1)
+      - run: npm run format:ci
 
   # These tests run in standard node containers with their db attached as a service
   database-tests:
