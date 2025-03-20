@@ -1,12 +1,11 @@
-import { Gulpclass, Task, SequenceTask, MergedTask } from "gulpclass";
-
 import fs from "fs/promises";
 import gulp from "gulp";
-import shell from "gulp-shell";
-import replace from "gulp-replace";
 import rename from "gulp-rename";
+import replace from "gulp-replace";
+import shell from "gulp-shell";
 import sourcemaps from "gulp-sourcemaps";
 import ts from "gulp-typescript";
+import { Gulpclass, MergedTask, SequenceTask, Task } from "gulpclass";
 import { rimraf } from "rimraf";
 
 @Gulpclass()

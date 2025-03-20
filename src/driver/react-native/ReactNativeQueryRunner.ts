@@ -139,6 +139,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                             undefined,
                             err,
                         )
+                        await broadcasterResult.wait()
 
                         fail(new QueryFailedError(query, parameters, err))
                     },

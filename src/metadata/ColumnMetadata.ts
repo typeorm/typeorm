@@ -916,7 +916,7 @@ export class ColumnMetadata {
      */
     compareEntityValue(entity: any, valueToCompareWith: any) {
         const columnValue = this.getEntityValue(entity)
-        if (ObjectUtils.isObject(columnValue)) {
+        if (typeof columnValue?.equals === "function") {
             return columnValue.equals(valueToCompareWith)
         }
         return columnValue === valueToCompareWith

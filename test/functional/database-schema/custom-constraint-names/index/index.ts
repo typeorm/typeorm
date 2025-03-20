@@ -23,7 +23,7 @@ describe("database schema > custom constraint names > index", () => {
     it("should set custom constraint names", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                let metadata = dataSource.getMetadata(Post)
+                const metadata = dataSource.getMetadata(Post)
 
                 const nameIndex = metadata.indices.find(
                     (it) => it.name === "IDX_NAME",
