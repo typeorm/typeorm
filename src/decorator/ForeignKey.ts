@@ -6,6 +6,8 @@ import { ObjectUtils } from "../util/ObjectUtils"
 
 /**
  * Creates a database foreign key. Can be used on entity property or on entity.
+ * Can create foreign key with composite columns when used on entity.
+ * Warning! Don't use this with relations; relation decorators create foreign keys automatically.
  */
 export function ForeignKey<T>(
     typeFunctionOrTarget: string | ((type?: any) => ObjectType<T>),
