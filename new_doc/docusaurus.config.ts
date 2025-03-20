@@ -57,6 +57,14 @@ const config: Config = {
             disableSwitch: false,
             respectPrefersColorScheme: true,
         },
+        announcementBar: {
+            id: "future_of_typeorm",
+            content:
+                '📣 <b>Announcement: The Future of TypeORM</b> &mdash; We\'re excited to share our vision for a revitalized TypeORM! <a rel="noopener noreferrer" href="/docs/future-of-typeorm">Read the full announcement</a>',
+            backgroundColor: "#1A0029",
+            textColor: "#FFFFFF",
+            isCloseable: true,
+        },
         navbar: {
             title: "TypeORM",
             logo: {
