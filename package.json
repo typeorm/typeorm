@@ -1,16 +1,21 @@
 {
   "name": "typeorm",
-  "private": true,
   "version": "0.3.21",
+  "private": true,
   "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
+  "homepage": "https://typeorm.io",
+  "bugs": {
+    "url": "https://github.com/typeorm/typeorm/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/typeorm/typeorm.git"
+  },
+  "funding": "https://opencollective.com/typeorm",
   "license": "MIT",
-  "readmeFilename": "README.md",
   "author": {
     "name": "Umed Khudoiberdiev",
     "email": "pleerock.me@gmail.com"
-  },
-  "engines": {
-    "node": ">=16.13.0"
   },
   "exports": {
     ".": {
@@ -38,7 +43,6 @@
   },
   "main": "./index.js",
   "module": "./index.mjs",
-  "types": "./index.d.ts",
   "browser": {
     "./browser/connection/ConnectionOptionsReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",
     "./browser/connection/options-reader/ConnectionOptionsXmlReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",
@@ -64,34 +68,39 @@
     "./index.js": "./browser/index.js",
     "./index.mjs": "./browser/index.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/typeorm/typeorm.git"
+  "types": "./index.d.ts",
+  "bin": {
+    "typeorm": "./cli.js",
+    "typeorm-ts-node-commonjs": "./cli-ts-node-commonjs.js",
+    "typeorm-ts-node-esm": "./cli-ts-node-esm.js"
   },
-  "bugs": {
-    "url": "https://github.com/typeorm/typeorm/issues"
+  "scripts": {
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1",
+    "compile": "rimraf ./build && tsc",
+    "format": "prettier --cache --write \"./**/*.ts\"",
+    "format:ci": "prettier --check \"./**/*.ts\"",
+    "lint": "eslint .",
+    "pack": "gulp pack",
+    "package": "gulp package",
+    "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
+    "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
+    "watch": "./node_modules/.bin/tsc -w"
   },
-  "homepage": "https://typeorm.io",
-  "tags": [
-    "orm",
-    "typescript",
-    "typescript-orm",
-    "mysql",
-    "mysql-orm",
-    "postgresql",
-    "postgresql-orm",
-    "mariadb",
-    "mariadb-orm",
-    "spanner",
-    "sqlite",
-    "sqlite-orm",
-    "sql-server",
-    "sql-server-orm",
-    "oracle",
-    "oracle-orm",
-    "cloud-spanner",
-    "cloud-spanner-orm"
-  ],
+  "dependencies": {
+    "@sqltools/formatter": "^1.2.5",
+    "ansis": "^3.9.0",
+    "app-root-path": "^3.1.0",
+    "buffer": "^6.0.3",
+    "dayjs": "^1.11.9",
+    "debug": "^4.3.4",
+    "dotenv": "^16.0.3",
+    "glob": "^10.4.5",
+    "sha.js": "^2.4.11",
+    "sql-highlight": "^6.0.0",
+    "tslib": "^2.5.0",
+    "uuid": "^11.0.5",
+    "yargs": "^17.6.2"
+  },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
     "@tsconfig/node16": "^16.1.1",
@@ -220,42 +229,33 @@
       "optional": true
     }
   },
-  "dependencies": {
-    "@sqltools/formatter": "^1.2.5",
-    "ansis": "^3.9.0",
-    "app-root-path": "^3.1.0",
-    "buffer": "^6.0.3",
-    "dayjs": "^1.11.9",
-    "debug": "^4.3.4",
-    "dotenv": "^16.0.3",
-    "glob": "^10.4.5",
-    "sha.js": "^2.4.11",
-    "sql-highlight": "^6.0.0",
-    "tslib": "^2.5.0",
-    "uuid": "^11.0.5",
-    "yargs": "^17.6.2"
+  "engines": {
+    "node": ">=16.13.0"
   },
-  "scripts": {
-    "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
-    "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
-    "compile": "rimraf ./build && tsc",
-    "watch": "./node_modules/.bin/tsc -w",
-    "package": "gulp package",
-    "pack": "gulp pack",
-    "lint": "eslint .",
-    "format": "prettier --cache --write \"./**/*.ts\"",
-    "format:ci": "prettier --check \"./**/*.ts\"",
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1"
-  },
-  "bin": {
-    "typeorm": "./cli.js",
-    "typeorm-ts-node-commonjs": "./cli-ts-node-commonjs.js",
-    "typeorm-ts-node-esm": "./cli-ts-node-esm.js"
-  },
-  "funding": "https://opencollective.com/typeorm",
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/typeorm",
     "logo": "https://opencollective.com/opencollective/logo.txt"
-  }
+  },
+  "readmeFilename": "README.md",
+  "tags": [
+    "orm",
+    "typescript",
+    "typescript-orm",
+    "mysql",
+    "mysql-orm",
+    "postgresql",
+    "postgresql-orm",
+    "mariadb",
+    "mariadb-orm",
+    "spanner",
+    "sqlite",
+    "sqlite-orm",
+    "sql-server",
+    "sql-server-orm",
+    "oracle",
+    "oracle-orm",
+    "cloud-spanner",
+    "cloud-spanner-orm"
+  ]
 }
