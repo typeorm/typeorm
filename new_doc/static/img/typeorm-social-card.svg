@@ -1,0 +1,14 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#2E004B"/>
+  <g transform="translate(150, 200)">
+    <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <g fill="none" fill-rule="evenodd">
+        <path d="M100,150 L50,100 L100,50 L150,100 L100,150 Z" fill="#FFFFFF"/>
+        <path d="M0,100 C0,44.771 44.771,0 100,0 C155.228,0 200,44.771 200,100 C200,155.228 155.228,200 100,200 C44.771,200 0,155.228 0,100 Z M20,100 C20,144.183 55.817,180 100,180 C144.183,180 180,144.183 180,100 C180,55.817 144.183,20 100,20 C55.817,20 20,55.817 20,100 Z" fill="#FF5000"/>
+        <path d="M100,180 C55.817,180 20,144.183 20,100 L100,100 L100,180 Z" fill="#FF5000"/>
+      </g>
+    </svg>
+  </g>
+  <text x="380" y="250" font-family="Arial, sans-serif" font-size="120" font-weight="bold" fill="#FFFFFF">TypeORM</text>
+  <text x="380" y="330" font-family="Arial, sans-serif" font-size="48" font-weight="normal" fill="#FF5000">Code with Confidence. Query with Power.</text>
+</svg>

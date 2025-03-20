@@ -2,9 +2,8 @@
 sidebar_position: 1
 ---
 <div align="center">
-  <a href="http://typeorm.io/">
-    <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228" />
-  </a>
+  <img className="dark-mode-only" src="/img/typeorm-logo-colored-light.png" width="400" alt="TypeORM Logo Light" />
+  <img className="light-mode-only" src="/img/typeorm-logo-colored-dark.png" width="400" alt="TypeORM Logo Dark" />
   <br></br>
   <br></br>
   <a href="https://app.circleci.com/pipelines/github/typeorm/typeorm">
@@ -38,7 +37,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
 > **📣 Announcement: The Future of TypeORM**
 >
-> We’re excited to share our vision for a revitalized TypeORM—a strategy focused on building a stable, robust, and sustainable foundation for the long term. Learn how we’re structuring maintenance
+> We're excited to share our vision for a revitalized TypeORM—a strategy focused on building a stable, robust, and sustainable foundation for the long term. Learn how we're structuring maintenance
 > and bringing together dedicated resources to ensure TypeORM thrives for years to come.
 >
 > [Read the full announcement](./docs/future-of-typeorm.md)

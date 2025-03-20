@@ -6,25 +6,213 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
+  --ifm-color-primary: #FF5000;
+  --ifm-color-primary-dark: #E64800;
+  --ifm-color-primary-darker: #D64400;
+  --ifm-color-primary-darkest: #B33800;
+  --ifm-color-primary-light: #FF651A;
+  --ifm-color-primary-lighter: #FF7A33;
+  --ifm-color-primary-lightest: #FF9966;
+
+  /* Secondary color (purple) */
+  --ifm-color-secondary: #2E004B;
+  --ifm-color-secondary-dark: #290043;
+  --ifm-color-secondary-darker: #25003C;
+  --ifm-color-secondary-darkest: #1F0032;
+  --ifm-color-secondary-light: #370059;
+  --ifm-color-secondary-lighter: #410068;
+  --ifm-color-secondary-lightest: #4B0077;
+
   --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --docusaurus-highlighted-code-line-bg: rgba(255, 80, 0, 0.1);
+
+  /* Additional UI colors */
+  --ifm-navbar-background-color: rgba(255, 255, 255, 0.8);
+  --ifm-background-color: #FFFFFF;
+  --ifm-footer-background-color: #4B2D63;
+  --ifm-footer-color: #FFFFFF;
+  --ifm-footer-link-color: #FFF0E6; /* Almost white with a hint of orange */
+  --ifm-footer-title-color: #FFFFFF;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-color-primary: #FF6B1A;
+  --ifm-color-primary-dark: #FF5800;
+  --ifm-color-primary-darker: #F55000;
+  --ifm-color-primary-darkest: #E64800;
+  --ifm-color-primary-light: #FF7E33;
+  --ifm-color-primary-lighter: #FF9149;
+  --ifm-color-primary-lightest: #FFAD75;
+
+  /* Secondary colors for dark mode */
+  --ifm-color-secondary: #8A47A8;
+  --ifm-color-secondary-dark: #7C3E97;
+  --ifm-color-secondary-darker: #73398C;
+  --ifm-color-secondary-darkest: #5F2F74;
+  --ifm-color-secondary-light: #9852B3;
+  --ifm-color-secondary-lighter: #A15FBA;
+  --ifm-color-secondary-lightest: #B179CA;
+
+  --docusaurus-highlighted-code-line-bg: rgba(255, 80, 0, 0.3);
+
+  /* Additional UI colors for dark mode */
+  --ifm-navbar-background-color: rgba(46, 0, 75, 0.8);
+  --ifm-background-color: #1A0029;
+  --ifm-footer-background-color: #240039;
+  --ifm-footer-color: #FFFFFF;
+  --ifm-footer-link-color: #FFF0E6; /* Almost white with a hint of orange */
+  --ifm-footer-title-color: #FFFFFF;
+}
+
+/* Add custom styles for better contrast and readability */
+html[data-theme='dark'] .navbar__title,
+html[data-theme='dark'] .navbar__link {
+  color: #FFFFFF;
+}
+
+html[data-theme='dark'] .navbar__link:hover {
+  color: var(--ifm-color-primary);
+}
+
+/* Logo visibility based on theme */
+html[data-theme='light'] .dark-mode-only {
+  display: none;
+}
+
+html[data-theme='dark'] .light-mode-only {
+  display: none;
+}
+
+/* Navbar blur effect */
+.navbar {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+[data-theme='dark'] .navbar {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Custom hero section and buttons */
+.hero--primary {
+  background: linear-gradient(135deg, var(--ifm-color-secondary) 0%, var(--ifm-color-secondary-lightest) 100%);
+}
+
+[data-theme='dark'] .hero--primary {
+  background: linear-gradient(135deg, var(--ifm-color-secondary-darkest) 0%, var(--ifm-color-secondary) 100%);
+}
+
+.button.button--secondary {
+  background-color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.button.button--secondary:hover {
+  background-color: var(--ifm-color-primary-dark);
+  border-color: var(--ifm-color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 80, 0, 0.3);
+}
+
+.button.button--outline {
+  color: white;
+  border-color: white;
+  transition: all 0.3s ease;
+}
+
+.button.button--outline:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: white;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+}
+
+/* Footer styling */
+[data-theme='light'] .footer {
+  background: linear-gradient(160deg, #4B2D63 0%, #5D3777 100%) !important;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] .footer {
+  background: linear-gradient(160deg, #1e0030 0%, #2E004B 100%) !important;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.footer {
+  --ifm-footer-background-color: var(--ifm-footer-background-color);
+  --ifm-footer-color: var(--ifm-footer-color);
+  --ifm-footer-link-color: var(--ifm-footer-link-color);
+  --ifm-footer-title-color: var(--ifm-footer-title-color);
+  position: relative;
+  padding-top: 3rem;
+  padding-bottom: 2rem;
+}
+
+/* Direct override for footer link colors with high specificity */
+.footer .col .footer__title {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  font-size: 1.2rem !important;
+  letter-spacing: 0.5px !important;
+  margin-bottom: 1.2rem !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.footer .col .footer__item a.footer__link-item,
+footer a.footer__link-item,
+.footer__link-item {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  opacity: 0.95 !important;
+  transition: all 0.2s ease !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2) !important;
+  position: relative !important;
+  padding: 3px 0 !important;
+}
+
+.footer .col .footer__item a.footer__link-item:hover,
+footer a.footer__link-item:hover,
+.footer__link-item:hover {
+  color: #FF7733 !important;
+  opacity: 1 !important;
+  text-decoration: none !important;
+  transform: translateX(3px) !important;
+  text-shadow: 0 0 8px rgba(255, 80, 0, 0.4) !important;
+}
+
+/* Add more spacing between footer items */
+.footer .footer__item {
+  margin-top: 0.7rem !important;
+  margin-bottom: 0.7rem !important;
+}
+
+/* Make copyright text more visible */
+.footer .footer__copyright {
+  color: #FFFFFF !important;
+  font-weight: 500 !important;
+  opacity: 0.9 !important;
+  margin-top: 2.5rem !important;
+  padding-top: 1.5rem !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Add a subtle orange accent line at the top of the footer */
+.footer:before {
+  content: '';
+  display: block;
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(90deg, #FF5000, #FF7733, #FF5000);
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-shadow: 0 1px 5px rgba(255, 80, 0, 0.3);
 }
