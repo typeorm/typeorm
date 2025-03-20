@@ -85,19 +85,14 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         const command = query.trim().split(" ", 1)[0]
 
         const databaseConnection = this.driver.databaseConnection
-        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-        await broadcasterResult.wait()
-
+        const broadcasterResult = new BroadcasterResult()
         const queryStartTime = +new Date()
         let statement: any
+
         try {
             statement = databaseConnection.prepare(query)
             if (parameters) {

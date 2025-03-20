@@ -58,6 +58,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
         const connection = this.driver.connection
         const options = connection.options as SqliteConnectionOptions
         const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime
+        const broadcaster = this.broadcaster
 
         if (!connection.isInitialized) {
             throw new ConnectionIsNotSetError("sqlite")
@@ -65,20 +66,13 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
 
         const databaseConnection = await this.connect()
 
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        await broadcaster.broadcast("BeforeQuery", query, parameters)
+
         const broadcasterResult = new BroadcasterResult()
-        const broadcaster = this.broadcaster
-
-        broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
-
-        await broadcasterResult.wait()
 
         return new Promise(async (ok, fail) => {
             try {
-                this.driver.connection.logger.logQuery(query, parameters, this)
                 const queryStartTime = +new Date()
                 const isInsertQuery = query.startsWith("INSERT ")
                 const isDeleteQuery = query.startsWith("DELETE ")

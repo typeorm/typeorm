@@ -165,19 +165,14 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
         return new Promise<any>(async (ok, fail) => {
             const databaseConnection = await this.connect()
-            const broadcasterResult = new BroadcasterResult()
 
             this.driver.connection.logger.logQuery(query, parameters, this)
-            this.broadcaster.broadcastBeforeQueryEvent(
-                broadcasterResult,
-                query,
-                parameters,
-            )
+            await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-            await broadcasterResult.wait()
+            const broadcasterResult = new BroadcasterResult()
+            const queryStartTime = +new Date()
 
             try {
-                const queryStartTime = +new Date()
                 // All Expo SQL queries are executed in a transaction context
                 databaseConnection.transaction(
                     async (transaction: ITransaction) => {

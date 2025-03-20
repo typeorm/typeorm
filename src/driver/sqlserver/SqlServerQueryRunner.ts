@@ -209,16 +209,10 @@ export class SqlServerQueryRunner
 
         const release = await this.lock.acquire()
 
-        const broadcasterResult = new BroadcasterResult()
-
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-        await broadcasterResult.wait()
+        const broadcasterResult = new BroadcasterResult()
 
         try {
             const pool = await (this.mode === "slave"

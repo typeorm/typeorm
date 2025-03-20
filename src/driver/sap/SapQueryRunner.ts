@@ -197,16 +197,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         let statement: any
         const result = new QueryResult()
-        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-        await broadcasterResult.wait()
+        const broadcasterResult = new BroadcasterResult()
 
         try {
             const queryStartTime = +new Date()
