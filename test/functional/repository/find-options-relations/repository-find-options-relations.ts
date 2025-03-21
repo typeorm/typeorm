@@ -476,7 +476,6 @@ describe("repository > find options > relations", () => {
                         },
                         relations: {
                             photos: true,
-                            // @ts-expect-error
                             counters2: {
                                 author: true,
                             },
