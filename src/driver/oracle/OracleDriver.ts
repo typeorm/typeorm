@@ -135,7 +135,7 @@ export class OracleDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    supportedUpsertTypes: UpsertType[] = []
+    supportedUpsertTypes: UpsertType[] = ["merge-into"]
 
     /**
      * Returns list of supported onDelete types by driver.
