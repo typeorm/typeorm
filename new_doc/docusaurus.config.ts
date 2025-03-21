@@ -7,7 +7,7 @@ import type * as Preset from "@docusaurus/preset-classic"
 const config: Config = {
     title: "TypeORM",
     tagline: "Code with Confidence. Query with Power.",
-    favicon: "img/favicon.svg",
+    favicon: "img/favicon.ico",
 
     // Set the production url of your site here
     url: "https://typeorm.io",
@@ -71,7 +71,7 @@ const config: Config = {
                 alt: "TypeORM Logo",
                 src: "img/typeorm-icon-colored.png",
                 srcDark: "img/typeorm-icon-white.png",
-                width: 50,
+                width: 46,
                 height: 64,
             },
             items: [
