@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Post } from "./entity/Post.js"
+import { Post } from "./entity/Post"
 import { expect } from "chai"
 
 describe("github issues > #9984 TransactionRetryWithProtoRefreshError should be handled by TypeORM", () => {
