@@ -1,13 +1,14 @@
-import "reflect-metadata"
 import { expect } from "chai"
+import "reflect-metadata"
+
+import { DataSource } from "../../../../src"
 import {
-    createTestingConnections,
     closeTestingConnections,
+    createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Foo } from "./entity/foo"
 import { filterByCteCapabilities } from "./helpers"
-import { DataSource } from "../../../../src/index.js"
 
 describe("query builder > cte > simple", () => {
     let dataSources: DataSource[]
@@ -33,15 +34,12 @@ describe("query builder > cte > simple", () => {
                             [1, 2, 3].map((i) => ({ id: i, bar: String(i) })),
                         )
 
-                    let cteSelection =
-                        dataSource.driver.options.type === "oracle"
-                            ? `"foo"."bar"`
-                            : `foo.bar`
-
+                    const cteSelection = `${dataSource.driver.escape(
+                        "foo",
+                    )}.${dataSource.driver.escape("bar")}`
                     const cteQuery = dataSource
                         .createQueryBuilder()
-                        .select()
-                        .addSelect(cteSelection, "bar")
+                        .select(cteSelection, "bar")
                         .from(Foo, "foo")
                         .where(`${cteSelection} = :value`, { value: "2" })
 
@@ -53,19 +51,18 @@ describe("query builder > cte > simple", () => {
                                   columnNames: ["raz"],
                               }
 
-                    cteSelection =
+                    const selection =
                         dataSource.driver.options.type === "spanner"
-                            ? "qaz.bar"
-                            : dataSource.driver.options.type === "oracle"
-                            ? `"qaz"."raz"`
-                            : "qaz.raz"
+                            ? '"qaz"."bar"'
+                            : `${dataSource.driver.escape(
+                                  "qaz",
+                              )}.${dataSource.driver.escape("raz")}`
 
                     const qb = dataSource
                         .createQueryBuilder()
                         .addCommonTableExpression(cteQuery, "qaz", cteOptions)
+                        .select(selection, "raz")
                         .from("qaz", "qaz")
-                        .select([])
-                        .addSelect(cteSelection, "raz")
 
                     expect(await qb.getRawMany()).to.deep.equal([{ raz: "2" }])
                 }),
@@ -82,20 +79,13 @@ describe("query builder > cte > simple", () => {
                             [1, 2, 3].map((i) => ({ id: i, bar: String(i) })),
                         )
 
-                    let cteSelection =
-                        dataSource.driver.options.type === "oracle"
-                            ? `"foo"."bar"`
-                            : `foo.bar`
+                    const cteSelection = `${dataSource.driver.escape(
+                        "foo",
+                    )}.${dataSource.driver.escape("bar")}`
 
                     const cteQuery = dataSource
                         .createQueryBuilder()
-                        .select()
-                        .addSelect(
-                            dataSource.driver.options.type === "oracle"
-                                ? `"bar"`
-                                : "bar",
-                            "bar",
-                        )
+                        .select(cteSelection, "bar")
                         .from(Foo, "foo")
                         .where(`${cteSelection} = '2'`)
 
@@ -107,12 +97,12 @@ describe("query builder > cte > simple", () => {
                                   columnNames: ["raz"],
                               }
 
-                    cteSelection =
+                    const selection =
                         dataSource.driver.options.type === "spanner"
-                            ? "qaz.bar"
-                            : dataSource.driver.options.type === "oracle"
-                            ? `"qaz"."raz"`
-                            : "qaz.raz"
+                            ? '"qaz"."bar"'
+                            : `${dataSource.driver.escape(
+                                  "qaz",
+                              )}.${dataSource.driver.escape("raz")}`
 
                     const results = await dataSource
                         .createQueryBuilder(Foo, "foo")
@@ -120,11 +110,7 @@ describe("query builder > cte > simple", () => {
                         .innerJoin(
                             "qaz",
                             "qaz",
-                            `${cteSelection} = ${
-                                dataSource.driver.options.type === "oracle"
-                                    ? `"foo"."bar"`
-                                    : `foo.bar`
-                            }`,
+                            `${selection} = ${cteSelection}`,
                         )
                         .getMany()
 
@@ -172,56 +158,53 @@ describe("query builder > cte > simple", () => {
             dataSources
                 .filter(filterByCteCapabilities("enabled"))
                 .map(async (dataSource) => {
-                    // Spanner does not support column names in CTE
+                    let results: { row: number }[]
+                    if (dataSource.options.type === "spanner") {
+                        // Spanner does not support column names in CTE
+                        const query1 = dataSource
+                            .createQueryBuilder()
+                            .select("1", "foo")
+                            .fromDummy()
+                            .getSql()
+                        const query2 = dataSource
+                            .createQueryBuilder()
+                            .select("2", "foo")
+                            .fromDummy()
+                            .getSql()
 
-                    let results: { row: any }[]
-                    if (dataSource.driver.options.type === "spanner") {
                         results = await dataSource
                             .createQueryBuilder()
-                            .select()
                             .addCommonTableExpression(
-                                `
-                                SELECT 1 AS foo
-                                UNION ALL
-                                SELECT 2 AS foo
-                                `,
+                                `${query1} UNION ALL ${query2}`,
                                 "cte",
                             )
+                            .select('"foo"', "row")
                             .from("cte", "cte")
-                            .addSelect("foo", "row")
-                            .getRawMany<{ row: any }>()
-                    } else if (dataSource.driver.options.type === "oracle") {
-                        results = await dataSource
-                            .createQueryBuilder()
-                            .select()
-                            .addCommonTableExpression(
-                                `
-                                SELECT 1 FROM DUAL
-                                UNION
-                                SELECT 2 FROM DUAL
-                                `,
-                                "cte",
-                                { columnNames: ["foo"] },
-                            )
-                            .from("cte", "cte")
-                            .addSelect(`"foo"`, "row")
-                            .getRawMany<{ row: any }>()
+                            .getRawMany<{ row: number }>()
                     } else {
+                        const query1 = dataSource
+                            .createQueryBuilder()
+                            .select("1")
+                            .fromDummy()
+                            .getSql()
+                        const query2 = dataSource
+                            .createQueryBuilder()
+                            .select("2")
+                            .fromDummy()
+                            .getSql()
+
+                        const columnName = dataSource.driver.escape("foo")
                         results = await dataSource
                             .createQueryBuilder()
-                            .select()
                             .addCommonTableExpression(
-                                `
-                                SELECT 1
-                                UNION
-                                SELECT 2
-                                `,
+                                `${query1} UNION ${query2}`,
                                 "cte",
                                 { columnNames: ["foo"] },
                             )
+                            .select(columnName, "row")
                             .from("cte", "cte")
-                            .addSelect("foo", "row")
-                            .getRawMany<{ row: any }>()
+                            .orderBy(columnName)
+                            .getRawMany<{ row: number }>()
                     }
 
                     const [rowWithOne, rowWithTwo] = results
