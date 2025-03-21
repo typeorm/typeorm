@@ -262,8 +262,6 @@ function SupportedDatabases() {
             icon: "/img/databases/mssql.png",
             category: "core",
         },
-
-        // Additional databases
         { name: "Oracle", icon: "/img/databases/oracle.png", category: "core" },
         {
             name: "MongoDB",
@@ -276,58 +274,13 @@ function SupportedDatabases() {
             category: "core",
         },
         { name: "SAP HANA", icon: "/img/databases/sap.png", category: "core" },
-        { name: "SQL.js", icon: "/img/databases/sqljs.png", category: "core" },
-
-        // Cloud and variants
+        // Cloud and variants (combined into a single category for better grid layout)
         {
             name: "Google Spanner",
-            icon: "/img/databases/spanner.png",
-            category: "cloud",
+            icon: "/img/databases/spanner.svg",
+            category: "core",
         },
-        {
-            name: "Aurora MySQL",
-            icon: "/img/databases/aurora-mysql.png",
-            category: "cloud",
-        },
-        {
-            name: "Aurora PostgreSQL",
-            icon: "/img/databases/aurora-postgres.png",
-            category: "cloud",
-        },
-        {
-            name: "Better SQLite3",
-            icon: "/img/databases/better-sqlite3.png",
-            category: "cloud",
-        },
-
-        // Mobile and desktop platforms
-        {
-            name: "Capacitor",
-            icon: "/img/databases/capacitor.png",
-            category: "platform",
-        },
-        {
-            name: "Cordova",
-            icon: "/img/databases/cordova.png",
-            category: "platform",
-        },
-        {
-            name: "NativeScript",
-            icon: "/img/databases/nativescript.png",
-            category: "platform",
-        },
-        {
-            name: "React Native",
-            icon: "/img/databases/react-native.png",
-            category: "platform",
-        },
-        { name: "Expo", icon: "/img/databases/expo.png", category: "platform" },
     ]
-
-    // Group databases by category to match the screenshot layout
-    const coreDBs = databases.filter((db) => db.category === "core")
-    const cloudDBs = databases.filter((db) => db.category === "cloud")
-    const platformDBs = databases.filter((db) => db.category === "platform")
 
     return (
         <section className={styles.databasesSection}>
@@ -336,33 +289,7 @@ function SupportedDatabases() {
                     Supported Databases
                 </Heading>
                 <div className={styles.databasesGrid}>
-                    {coreDBs.map((db, index) => (
-                        <div key={index} className={styles.databaseItem}>
-                            <div className={styles.databaseLogo}>
-                                <img src={db.icon} alt={`${db.name} logo`} />
-                            </div>
-                            <span className={styles.databaseName}>
-                                {db.name}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-
-                <div className={styles.databasesGrid}>
-                    {cloudDBs.map((db, index) => (
-                        <div key={index} className={styles.databaseItem}>
-                            <div className={styles.databaseLogo}>
-                                <img src={db.icon} alt={`${db.name} logo`} />
-                            </div>
-                            <span className={styles.databaseName}>
-                                {db.name}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-
-                <div className={styles.databasesGrid}>
-                    {platformDBs.map((db, index) => (
+                    {databases.map((db, index) => (
                         <div key={index} className={styles.databaseItem}>
                             <div className={styles.databaseLogo}>
                                 <img src={db.icon} alt={`${db.name} logo`} />

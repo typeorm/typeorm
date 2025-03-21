@@ -169,8 +169,8 @@
 
 /* Supported databases section */
 .databasesSection {
-  padding: 4rem 0;
-  background-color: var(--ifm-color-white);
+  padding: 5rem 0;
+  background-color: var(--ifm-color-emphasis-0);
 }
 
 [data-theme='dark'] .databasesSection {
@@ -180,70 +180,114 @@
 .sectionTitle {
   text-align: center;
   margin-bottom: 3rem;
-  font-size: 2rem;
+}
+
+.platformTitle {
+  text-align: center;
+  margin-top: 4rem;
+  margin-bottom: 1rem;
+}
+
+.platformDescription {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 2rem;
+  color: var(--ifm-color-emphasis-700);
 }
 
 .databasesGrid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
-  margin: 0 auto 2rem;
+  display: grid;
+  grid-template-columns: repeat(5, 160px);
+  gap: 2rem;
   max-width: 1200px;
+  margin: 0 auto 2rem;
+  justify-content: center;
 }
 
 .databaseItem {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   padding: 1.5rem;
   border-radius: 8px;
-  background: var(--ifm-background-surface-color);
-  transition: all 0.3s ease;
-  width: 190px;
-  height: 160px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  margin: 0.5rem;
-  position: relative;
-  overflow: hidden;
-}
-
-[data-theme='dark'] .databaseItem {
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  background-color: var(--ifm-color-emphasis-100);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  width: 160px;
+  height: 200px;
 }
 
 .databaseItem:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .databaseLogo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 80px;
   width: 80px;
+  height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin-bottom: 1rem;
-  position: relative;
 }
 
 .databaseLogo img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  transition: transform 0.3s ease;
+  transition: transform 0.2s ease;
 }
 
-.databaseItem:hover .databaseLogo img {
+.databaseLogo:hover img {
   transform: scale(1.1);
 }
 
 .databaseName {
-  font-weight: 600;
-  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.databaseDescription {
+  font-size: 0.85rem;
+  color: var(--ifm-color-emphasis-600);
   text-align: center;
+}
+
+@media (max-width: 996px) {
+  .databasesGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .databasesGrid {
+    gap: 0.5rem;
+  }
+
+  .databaseItem {
+    width: 150px;
+    height: 140px;
+    padding: 1rem;
+  }
+
+  .databaseLogo {
+    height: 60px;
+    width: 60px;
+  }
+}
+
+@media (max-width: 576px) {
+  .databasesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Ensure items are of equal size for grid alignment */
+@media (min-width: 768px) {
+  .databaseItem {
+    min-height: 180px;
+  }
 }
 
 /* Platforms section */
@@ -270,6 +314,7 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 1.5rem;
+
 }
 
 .platformsIcons span {
@@ -353,23 +398,5 @@
   .ctaButtons .button {
     width: 80%;
     margin: 0.5rem 0;
-  }
-}
-
-/* Media queries for responsive layout */
-@media screen and (max-width: 768px) {
-  .databasesGrid {
-    gap: 0.5rem;
-  }
-
-  .databaseItem {
-    width: 150px;
-    height: 140px;
-    padding: 1rem;
-  }
-
-  .databaseLogo {
-    height: 60px;
-    width: 60px;
   }
 }
