@@ -1,4 +1,4 @@
-name: Pull Request Checks
+name: Style Checks
 
 on:
   pull_request:
