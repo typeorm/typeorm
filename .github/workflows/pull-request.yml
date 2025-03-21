@@ -1,0 +1,45 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+        with:
+          files: |
+            **/*.ts
+            **/*.tsx
+            **/*.js
+            **/*.jsx
+            **/*.json
+            **/*.md
+            **/*.yml
+            **/*.yaml
+
+      - name: Check formatting
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          npx prettier --check ${{ steps.changed-files.outputs.all_changed_files }}
+
+      - name: Check linting
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          npx eslint ${{ steps.changed-files.outputs.all_changed_files }}
