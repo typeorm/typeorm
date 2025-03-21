@@ -65,13 +65,8 @@
   --ifm-footer-title-color: #FFFFFF;
 }
 
-/* Add custom styles for better contrast and readability */
-html[data-theme='dark'] .navbar__title,
-html[data-theme='dark'] .navbar__link {
-  color: #FFFFFF;
-}
 
-html[data-theme='dark'] .navbar__link:hover {
+html .navbar__link:hover {
   color: var(--ifm-color-primary);
 }
 
