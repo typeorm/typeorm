@@ -26,9 +26,7 @@ jobs:
         with:
           files: |
             **/*.ts
-            **/*.tsx
             **/*.js
-            **/*.jsx
             **/*.json
             **/*.md
             **/*.yml
