@@ -21,6 +21,117 @@ describe("decorators > foreign-key", () => {
     after(() => closeTestingConnections(dataSources))
 
     describe("basic functionality", function () {
+        it.only("should create a foreign keys", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
+                    const citiesTable = await queryRunner.getTable("cities")
+                    const ordersTable = await queryRunner.getTable("orders")
+                    await queryRunner.release()
+
+                    const narrowForeignKeys = (foreignKeys: Object[]) =>
+                        foreignKeys.map((foreignKey) =>
+                            Object.fromEntries(
+                                Object.entries(foreignKey).filter(([key]) =>
+                                    [
+                                        "columnNames",
+                                        "referencedColumnNames",
+                                        "referencedTableName",
+                                        "onDelete",
+                                        "onUpdate",
+                                    ].includes(key),
+                                ),
+                            ),
+                        )
+
+                    const citiesForeignKeys = narrowForeignKeys(
+                        citiesTable!.foreignKeys,
+                    )
+
+                    citiesForeignKeys.length.should.be.equal(1)
+                    citiesForeignKeys.should.include.deep.members([
+                        {
+                            columnNames: ["countryCode"],
+                            referencedColumnNames: ["code"],
+                            referencedTableName: "countries",
+                            onDelete: "CASCADE",
+                            onUpdate:
+                                dataSource.driver.options.type === "oracle"
+                                    ? "NO ACTION"
+                                    : "CASCADE",
+                        },
+                    ])
+
+                    const ordersForeignKeys = narrowForeignKeys(
+                        ordersTable!.foreignKeys,
+                    )
+
+                    ordersForeignKeys.length.should.be.equal(6)
+                    ordersForeignKeys.should.include.deep.members([
+                        {
+                            columnNames: ["user_uuid"],
+                            referencedColumnNames: ["uuid"],
+                            referencedTableName: "users",
+                            onDelete: "NO ACTION",
+                            onUpdate: "NO ACTION",
+                        },
+                        ...(dataSource.driver.options.type === "cockroachdb"
+                            ? [
+                                  {
+                                      columnNames: ["countryCode", "cityId"],
+                                      referencedColumnNames: [
+                                          "countryCode",
+                                          "id",
+                                      ],
+                                      referencedTableName: "cities",
+                                      onDelete: "NO ACTION",
+                                      onUpdate: "NO ACTION",
+                                  },
+                              ]
+                            : [
+                                  {
+                                      columnNames: ["cityId", "countryCode"],
+                                      referencedColumnNames: [
+                                          "id",
+                                          "countryCode",
+                                      ],
+                                      referencedTableName: "cities",
+                                      onDelete: "NO ACTION",
+                                      onUpdate: "NO ACTION",
+                                  },
+                              ]),
+                        {
+                            columnNames: ["countryCode"],
+                            referencedColumnNames: ["code"],
+                            referencedTableName: "countries",
+                            onDelete: "NO ACTION",
+                            onUpdate: "NO ACTION",
+                        },
+                        {
+                            columnNames: ["cityId"],
+                            referencedColumnNames: ["id"],
+                            referencedTableName: "cities",
+                            onDelete: "NO ACTION",
+                            onUpdate: "NO ACTION",
+                        },
+                        {
+                            columnNames: ["dispatchCountryCode"],
+                            referencedColumnNames: ["code"],
+                            referencedTableName: "countries",
+                            onDelete: "NO ACTION",
+                            onUpdate: "NO ACTION",
+                        },
+                        {
+                            columnNames: ["dispatchCityId"],
+                            referencedColumnNames: ["id"],
+                            referencedTableName: "cities",
+                            onDelete: "NO ACTION",
+                            onUpdate: "NO ACTION",
+                        },
+                    ])
+                }),
+            ))
+
         it("should persist and load entities", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
