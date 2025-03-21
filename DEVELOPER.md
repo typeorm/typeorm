@@ -145,7 +145,7 @@ To do this, you can temporarily modify your test definitions by adding [`.only` 
 describe.only('your describe test', ....)
 ```
 
-Alternatively, you can use the `--grep` flag to pass a regex to `gulp-mocha`. Only the tests that have `describe`/`it` statements that match the regex will be run. For example:
+Alternatively, you can use the `--grep` flag to pass a regex to `mocha`. Only the tests that have `describe`/`it` statements that match the regex will be run. For example:
 
 ```shell
 npm test -- --grep="github issues > #363"
