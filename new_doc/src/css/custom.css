@@ -64,7 +64,6 @@
   --ifm-footer-link-color: #FFF0E6; /* Almost white with a hint of orange */
   --ifm-footer-title-color: #FFFFFF;
   --ifm-heading-color: #FFFFFF;
-  --ifm-hero-text-color: #FFFFFF;
 }
 
 
@@ -150,16 +149,28 @@ div[class*="announcementBarClose_"]:hover {
 }
 
 .button.button--outline {
-  color: white;
-  border-color: white;
+  color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
   transition: all 0.3s ease;
 }
 
+.hero--primary .button.button--outline {
+  color: white;
+  border-color: white;
+}
+
 .button.button--outline:hover {
+  background-color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 80, 0, 0.3);
+}
+
+.hero--primary .button.button--outline:hover {
   background-color: rgba(255, 255, 255, 0.1);
   border-color: white;
   color: white;
-  transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
 }
 
