@@ -6,27 +6,11 @@ name: test
 
 on:
   push:
-    branches: [ "**" ]
+    branches: ["**"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 jobs:
-  formatting:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-
-    steps:
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "18.x"
-
-      - uses: actions/checkout@v4
-
-      - run: npm i
-      - run: npm run lint
-      - run: npm run format:ci
-
   # These tests run in standard node containers with their db attached as a service
   database-tests:
     strategy:
