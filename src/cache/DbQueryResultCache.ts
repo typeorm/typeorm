@@ -301,7 +301,7 @@ export class DbQueryResultCache implements QueryResultCache {
         identifiers: string[],
         queryRunner?: QueryRunner,
     ): Promise<void> {
-        let _queryRunner: QueryRunner = queryRunner || this.getQueryRunner()
+        const _queryRunner: QueryRunner = queryRunner || this.getQueryRunner()
         await Promise.all(
             identifiers.map((identifier) => {
                 const qb = _queryRunner.manager.createQueryBuilder()

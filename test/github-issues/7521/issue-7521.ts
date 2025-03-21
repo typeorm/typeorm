@@ -47,7 +47,7 @@ describe("github issues > #7521 Only first \0 is removed in comments, only first
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
-                let table = await queryRunner.getTable("post")
+                const table = await queryRunner.getTable("post")
                 const col1 = table!.findColumnByName("col1")!
                 const col2 = table!.findColumnByName("col2")!
                 const col3 = table!.findColumnByName("col3")!

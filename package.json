@@ -150,7 +150,7 @@
   "peerDependencies": {
     "@google-cloud/spanner": "^5.18.0",
     "@sap/hana-client": "^2.12.25",
-    "better-sqlite3": "^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0" ,
+    "better-sqlite3": "^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0",
     "hdb-pool": "^0.1.6",
     "ioredis": "^5.0.4",
     "mongodb": "^5.8.0",
@@ -243,7 +243,8 @@
     "package": "gulp package",
     "pack": "gulp pack",
     "lint": "eslint .",
-    "format": "prettier --cache --write --end-of-line auto \"./src/**/*.ts\" \"./test/**/*.ts\" \"./sample/**/*.ts\"",
+    "format": "prettier --cache --write \"./**/*.ts\"",
+    "format:ci": "prettier --check \"./**/*.ts\"",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1"
   },
   "bin": {
