@@ -34,10 +34,7 @@ export class DriverUtils {
     }
 
     static isReleaseVersionOrGreater(driver: Driver, version: string): boolean {
-        return (
-            driver.version != null &&
-            VersionUtils.isGreaterOrEqual(driver.version, version)
-        )
+        return VersionUtils.isGreaterOrEqual(driver.version, version)
     }
 
     static isPostgresFamily(driver: Driver): boolean {

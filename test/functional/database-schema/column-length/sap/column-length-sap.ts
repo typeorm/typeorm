@@ -1,12 +1,13 @@
-import "reflect-metadata"
 import { expect } from "chai"
-import { Post } from "./entity/Post"
+import "reflect-metadata"
+
 import { DataSource } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
+import { Post } from "./entity/Post"
 
 describe("database schema > column length > sap", () => {
     let connections: DataSource[]

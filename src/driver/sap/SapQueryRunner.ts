@@ -387,9 +387,19 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async getCurrentDatabase(): Promise<string> {
         const currentDBQuery = await this.query(
-            `SELECT "VALUE" AS "db_name" FROM "SYS"."M_SYSTEM_OVERVIEW" WHERE "SECTION" = 'System' and "NAME" = 'Instance ID'`,
+            `SELECT "DATABASE_NAME" AS "db_name" FROM "SYS"."M_DATABASE"`,
         )
         return currentDBQuery[0]["db_name"]
+    }
+
+    /**
+     * Returns the database server version.
+     */
+    async getVersion(): Promise<string> {
+        const currentDBQuery = await this.query(
+            `SELECT "VERSION" AS "version" FROM "SYS"."M_DATABASE"`,
+        )
+        return currentDBQuery[0]["version"]
     }
 
     /**

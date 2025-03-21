@@ -13,6 +13,7 @@
     - [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
     - [Column types for `mssql`](#column-types-for-mssql)
     - [Column types for `oracle`](#column-types-for-oracle)
+    - [Column types for `sap`](#column-types-for-sap)
     - [Column types for `spanner`](#column-types-for-spanner)
     - [`enum` column type](#enum-column-type)
     - [`set` column type](#set-column-type)
@@ -380,7 +381,6 @@ or
 
 > Note: UUID, INET4, and INET6 are only available for mariadb and for respective versions that made them available.
 
-
 ### Column types for `postgres`
 
 `int`, `int2`, `int4`, `int8`, `smallint`, `integer`, `bigint`, `decimal`, `numeric`, `real`,
@@ -424,6 +424,12 @@ or
 `decimal`, `integer`, `int`, `smallint`, `real`, `double precision`, `date`, `timestamp`, `timestamp with time zone`,
 `timestamp with local time zone`, `interval year to month`, `interval day to second`, `bfile`, `blob`, `clob`,
 `nclob`, `rowid`, `urowid`
+
+### Column types for `sap`
+
+`tinyint`, `smallint`, `integer`, `bigint`, `smalldecimal`, `decimal`, `real`, `double`, `date`, `time`, `seconddate`, `timestamp`, `boolean`, `char`, `nchar`, `varchar`, `nvarchar`, `text`, `alphanum`, `shorttext`, `array`, `varbinary`, `blob`, `clob`, `nclob`, `st_geometry`, `st_point`.
+
+> Note: SAP HANA Cloud deprecated or removed some of these data types. TypeORM will convert them to the closest available alternative when connected to a Cloud version.
 
 ### Column types for `spanner`
 

@@ -300,7 +300,7 @@ export class SqlServerDriver implements Driver {
         }
 
         if (!this.database || !this.searchSchema) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
             if (!this.database) {
                 this.database = await queryRunner.getCurrentDatabase()

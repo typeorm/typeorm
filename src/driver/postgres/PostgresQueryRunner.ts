@@ -4155,9 +4155,11 @@ export class PostgresQueryRunner
     /**
      * Loads Postgres version.
      */
-    protected async getVersion(): Promise<string> {
-        const result = await this.query(`SELECT version()`)
-        return result[0]["version"].replace(/^PostgreSQL ([\d.]+) .*$/, "$1")
+    async getVersion(): Promise<string> {
+        const result: [{ version: string }] = await this.query(
+            `SELECT version()`,
+        )
+        return result[0].version.replace(/^PostgreSQL ([\d.]+) .*$/, "$1")
     }
 
     /**
