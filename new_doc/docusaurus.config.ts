@@ -7,7 +7,7 @@ import type * as Preset from "@docusaurus/preset-classic"
 const config: Config = {
     title: "TypeORM",
     tagline: "Code with Confidence. Query with Power.",
-    favicon: "img/favicon.svg",
+    favicon: "img/favicon.ico",
 
     // Set the production url of your site here
     url: "https://typeorm.io",
@@ -57,13 +57,21 @@ const config: Config = {
             disableSwitch: false,
             respectPrefersColorScheme: true,
         },
+        announcementBar: {
+            id: "future_of_typeorm",
+            content:
+                '📣 <b>Announcement: The Future of TypeORM</b> &mdash; We\'re excited to share our vision for a revitalized TypeORM! <a rel="noopener noreferrer" href="/docs/future-of-typeorm">Read the full announcement</a>',
+            backgroundColor: "#1A0029",
+            textColor: "#FFFFFF",
+            isCloseable: true,
+        },
         navbar: {
             title: "TypeORM",
             logo: {
                 alt: "TypeORM Logo",
                 src: "img/typeorm-icon-colored.png",
                 srcDark: "img/typeorm-icon-white.png",
-                width: 50,
+                width: 46,
                 height: 64,
             },
             items: [
