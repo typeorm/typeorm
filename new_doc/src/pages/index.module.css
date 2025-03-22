@@ -39,23 +39,8 @@
 .heroImage img {
   width: 80%;
   max-width: 350px;
-  transition: transform 0.3s ease;
-  animation: float 6s ease-in-out infinite;
 }
 
-@keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
-}
-
-/* Features section */
 .features {
   padding: 4rem 0;
   background-color: var(--ifm-color-white);
@@ -101,7 +86,6 @@
   opacity: 0.8;
 }
 
-/* Code examples section */
 .codeExampleSection {
   padding: 5rem 0;
   background: linear-gradient(165deg, var(--ifm-color-secondary-lightest) 0%, var(--ifm-color-secondary) 100%);
@@ -166,7 +150,6 @@
   padding: 1rem;
 }
 
-/* Supported databases section */
 .databasesSection {
   padding: 5rem 0;
   background-color: var(--ifm-color-emphasis-0);
@@ -277,14 +260,12 @@
   }
 }
 
-/* Ensure items are of equa size for grid alignment */
 @media (min-width: 768px) {
   .databaseItem {
     min-height: 180px;
   }
 }
 
-/* Platforms section */
 .platformsSection {
   padding: 4rem 0;
   background: linear-gradient(165deg, var(--ifm-color-primary-lightest) 0%, var(--ifm-color-primary) 100%);
@@ -325,7 +306,6 @@
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* Call to action section */
 .ctaSection {
   padding: 5rem 0;
   background-color: var(--ifm-color-white);
@@ -354,7 +334,6 @@
   gap: 1rem;
 }
 
-/* Responsive adjustments */
 @media screen and (max-width: 996px) {
   .heroContent {
     flex-direction: column;
