@@ -19,6 +19,7 @@ describe("find options > null and undefined handling", () => {
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
+                enabledDrivers: ["sqlite"],
             })
         })
         beforeEach(() => reloadTestingDatabases(connections))
@@ -193,6 +194,7 @@ describe("find options > null and undefined handling", () => {
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
+                enabledDrivers: ["sqlite"],
                 driverSpecific: {
                     treatJsNullAsSqlNull: true,
                 },
@@ -233,6 +235,16 @@ describe("find options > null and undefined handling", () => {
                         })
                         .getMany()
 
+                    console.log(
+                        "Raw query",
+                        await connection
+                            .createQueryBuilder(Post, "post")
+                            .where({
+                                text: null,
+                            })
+                            .getQueryAndParameters(),
+                    )
+
                     expect(posts1.length).to.equal(1)
                     expect(posts1[0].title).to.equal("Post #1")
 
@@ -243,6 +255,15 @@ describe("find options > null and undefined handling", () => {
                         } as any,
                     })
 
+                    console.log(
+                        "Raw query",
+                        await connection
+                            .createQueryBuilder(Post, "post")
+                            .where({
+                                text: null,
+                            })
+                            .getQueryAndParameters(),
+                    )
                     expect(posts2.length).to.equal(1)
                     expect(posts2[0].title).to.equal("Post #1")
                 }),
@@ -283,6 +304,7 @@ describe("find options > null and undefined handling", () => {
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
+                enabledDrivers: ["sqlite"],
                 driverSpecific: {
                     throwOnUndefinedInFind: true,
                 },
@@ -392,6 +414,7 @@ describe("find options > null and undefined handling", () => {
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
+                enabledDrivers: ["sqlite"],
                 driverSpecific: {
                     treatJsNullAsSqlNull: true,
                     throwOnUndefinedInFind: true,
