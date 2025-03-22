@@ -157,7 +157,8 @@
   transition: all 0.2s ease;
 }
 
-.codeTabActive {
+.codeTabActive,
+.codeTabHeader div:hover {
   background: var(--ifm-color-primary);
   color: white;
   font-weight: 600;

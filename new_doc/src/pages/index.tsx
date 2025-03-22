@@ -242,9 +242,7 @@ function CodeExampleSection() {
 }
 
 function SupportedDatabases() {
-    // The database logos have been downloaded to /static/img/databases/
     const databases = [
-        // Core databases
         { name: "MySQL", icon: "/img/databases/mysql.png", category: "core" },
         {
             name: "PostgreSQL",
@@ -274,7 +272,6 @@ function SupportedDatabases() {
             category: "core",
         },
         { name: "SAP HANA", icon: "/img/databases/sap.png", category: "core" },
-        // Cloud and variants (combined into a single category for better grid layout)
         {
             name: "Google Spanner",
             icon: "/img/databases/spanner.svg",
