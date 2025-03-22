@@ -219,7 +219,7 @@
 
 .databaseItem:hover {
   transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 0.5px rgba(0, 0, 0, 0.1);
 }
 
 .databaseLogo {
@@ -255,18 +255,19 @@
 
 @media (max-width: 996px) {
   .databasesGrid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, 140px);
   }
 }
 
 @media (max-width: 768px) {
   .databasesGrid {
     gap: 0.5rem;
+    grid-template-columns: repeat(2, 150px);
   }
 
   .databaseItem {
     width: 150px;
-    height: 140px;
+    height: 150px;
     padding: 1rem;
   }
 
@@ -276,13 +277,7 @@
   }
 }
 
-@media (max-width: 576px) {
-  .databasesGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Ensure items are of equal size for grid alignment */
+/* Ensure items are of equa size for grid alignment */
 @media (min-width: 768px) {
   .databaseItem {
     min-height: 180px;
