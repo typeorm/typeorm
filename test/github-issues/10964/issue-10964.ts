@@ -100,16 +100,16 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
 describe("github issues > Add support of 'hash' indexes for postgres", async () => {
     it("Should throw an error if index type is set and driver does not support index types", async () => {
-        const isSqlite =
-            (
-                await createTestingConnections({
-                    entities: [User3],
-                    enabledDrivers: ["sqlite"],
-                    schemaCreate: true,
-                })
-            ).length > 0
+        const connections = await createTestingConnections({
+            entities: [User3],
+            enabledDrivers: ["sqlite"],
+            schemaCreate: true,
+        })
+
+        const isSqlite = connections.length > 0
 
         if (isSqlite) {
+            closeTestingConnections(connections)
             expect(
                 createTestingConnections({
                     entities: [User2],
