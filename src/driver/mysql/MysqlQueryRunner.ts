@@ -2555,7 +2555,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         ])
 
         const isMariaDb = this.driver.options.type === "mariadb"
-        const dbVersion = await this.getVersion()
+        const dbVersion = this.driver.version
 
         // create tables for loaded tables
         return Promise.all(
@@ -3366,9 +3366,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         return c
     }
 
-    protected async getVersion(): Promise<string> {
+    async getVersion(): Promise<string> {
         const result = await this.query(`SELECT VERSION() AS \`version\``)
-        return result[0]["version"]
+        const dbVersion = result[0]["version"]
+
+        return this.driver.options.type === "mariadb"
+            ? dbVersion.replace(/^([\d.]+).*$/, "$1")
+            : dbVersion
     }
 
     /**
