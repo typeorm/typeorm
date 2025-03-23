@@ -9,6 +9,7 @@ import {
 import { User } from "../10964/entity/User"
 import { User2 } from "./entity/User2"
 import { TypeORMError } from "../../../src"
+import { User3 } from "./entity/User3"
 
 describe("github issues > Add support of 'hash' indexes for postgres", () => {
     let connections: DataSource[]
@@ -99,12 +100,21 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
 describe("github issues > Add support of 'hash' indexes for postgres", async () => {
     it("Should throw an error if index type is set and driver does not support index types", async () => {
-        await expect(
-            createTestingConnections({
+
+        const isSqlite = (await createTestingConnections({
+            entities: [User3],
+            enabledDrivers: ["sqlite"],
+            schemaCreate: true,
+        })).length > 0
+
+        if (isSqlite) {
+            let connections = createTestingConnections({
                 entities: [User2],
                 enabledDrivers: ["sqlite"],
                 schemaCreate: true,
-            }),
-        ).rejectedWith(TypeORMError)
+            })
+
+            await expect(connections).rejectedWith(TypeORMError)
+        }
     })
 })
