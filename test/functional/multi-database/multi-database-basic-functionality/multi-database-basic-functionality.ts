@@ -1,6 +1,12 @@
-import "../../../utils/test-setup"
+import appRoot from "app-root-path"
 import { expect } from "chai"
+import fs from "fs/promises"
+import path from "path"
+import { rimraf } from "rimraf"
+
 import { DataSource } from "../../../../src/data-source/DataSource"
+import { filepathToName } from "../../../../src/util/PathUtils"
+import "../../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,11 +17,6 @@ import { Answer } from "./entity/Answer"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { User } from "./entity/User"
-import { filepathToName } from "../../../../src/util/PathUtils"
-import { rimraf } from "rimraf"
-import path from "path"
-import fs from "fs/promises"
-import appRoot from "app-root-path"
 
 const VALID_NAME_REGEX = /^(?!sqlite_).{1,63}$/
 
@@ -25,11 +26,21 @@ describe("multi-database > basic-functionality", () => {
             it(`[${platform}] produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged`, () => {
                 const testMap = [
                     ["FILENAME.db", "filename.db"],
-                    ["..\\FILENAME.db", platform === 'win32' ? "../filename.db" : "..\\filename.db"],
-                    [".\\FILENAME.db", platform === 'win32' ? "./filename.db" : ".\\filename.db"],
+                    [
+                        "..\\FILENAME.db",
+                        platform === "win32"
+                            ? "../filename.db"
+                            : "..\\filename.db",
+                    ],
+                    [
+                        ".\\FILENAME.db",
+                        platform === "win32"
+                            ? "./filename.db"
+                            : ".\\filename.db",
+                    ],
                     [
                         "..\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\FILENAME.db",
-                        platform === 'win32'
+                        platform === "win32"
                             ? "../longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/filename.db"
                             : "..\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\filename.db",
                     ],

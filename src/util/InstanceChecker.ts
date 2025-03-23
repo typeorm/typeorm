@@ -132,7 +132,7 @@ export class InstanceChecker {
         return (
             typeof obj === "object" &&
             obj !== null &&
-            (obj as { "@instanceof": Symbol })["@instanceof"] ===
+            (obj as { "@instanceof": symbol })["@instanceof"] ===
                 Symbol.for(name)
         )
     }
