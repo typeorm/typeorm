@@ -24,7 +24,7 @@ export class Post {
     @ManyToOne((type) => Category)
     category: Category
 
-    @Column("json", { nullable: true })
+    @Column("simple-json", { nullable: true })
     meta?: PostMeta
 
     @ManyToMany(() => Tag, (tag) => tag.posts, {

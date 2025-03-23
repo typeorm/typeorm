@@ -20,7 +20,7 @@ export class Category {
     @VersionColumn()
     version: string
 
-    @Column("json", { nullable: true })
+    @Column("simple-json", { nullable: true })
     meta?: CategoryMeta
 
     @OneToMany(() => Post, (post) => post.category, {
