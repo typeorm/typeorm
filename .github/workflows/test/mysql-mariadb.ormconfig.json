@@ -20,17 +20,5 @@
     "password": "admin",
     "database": "test",
     "logging": false
-  },
-
-  {
-    "skip": true,
-    "name": "postgres",
-    "type": "postgres",
-    "host": "postgres",
-    "port": 5432,
-    "username": "postgres",
-    "password": "postgres",
-    "database": "postgres",
-    "logging": false
   }
 ]

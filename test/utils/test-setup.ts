@@ -1,6 +1,6 @@
 import "source-map-support/register"
 import "reflect-metadata"
-import * as chai from "chai"
+import chai from "chai"
 
 // Tests assume UTC time zone when formatting/parsing dates.
 process.env.TZ = "UTC"
