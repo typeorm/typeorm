@@ -127,7 +127,7 @@ join column / junction table settings, like join column name or junction table n
 It's not possible to add extra columns into a table created by a many-to-many relation.
 You'll need to create a separate entity and bind it using two many-to-one relations with the target entities
 (the effect will be same as creating a many-to-many table),
-and add extra columns in there. You can read more about this in [Many-to-Many relations](./many-to-many-relations.md#many-to-many-relations-with-custom-properties).
+and add extra columns in there. You can read more about this in [Many-to-Many relations](../Relations/4-many-to-many-relations.md#many-to-many-relations-with-custom-properties).
 
 ## How to handle outDir TypeScript compiler option?
 

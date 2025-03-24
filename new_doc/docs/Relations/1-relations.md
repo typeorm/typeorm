@@ -12,10 +12,10 @@
 Relations helps you to work with related entities easily.
 There are several types of relations:
 
--   [one-to-one](./one-to-one-relations.md) using `@OneToOne`
--   [many-to-one](./many-to-one-one-to-many-relations.md) using `@ManyToOne`
--   [one-to-many](./many-to-one-one-to-many-relations.md) using `@OneToMany`
--   [many-to-many](./many-to-many-relations.md) using `@ManyToMany`
+-   [one-to-one](../Relations/2-one-to-one-relations.md) using `@OneToOne`
+-   [many-to-one](../Relations/3-many-to-one-one-to-many-relations.md) using `@ManyToOne`
+-   [one-to-many](../Relations/3-many-to-one-one-to-many-relations.md) using `@OneToMany`
+-   [many-to-many](../Relations/4-many-to-many-relations.md) using `@ManyToMany`
 
 ## Relation options
 

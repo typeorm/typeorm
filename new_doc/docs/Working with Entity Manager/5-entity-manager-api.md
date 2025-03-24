@@ -14,7 +14,7 @@ const queryRunner = manager.queryRunner
 ```
 
 -   `transaction` - Provides a transaction where multiple database requests will be executed in a single database transaction.
-    Learn more [Transactions](./transactions.md).
+    Learn more [Transactions](../Advanced%20Topics/2-transactions.md).
 
 ```typescript
 await manager.transaction(async (manager) => {
@@ -66,7 +66,7 @@ const rawData = await manager.query(
 ```
 
 -   `createQueryBuilder` - Creates a query builder use to build SQL queries.
-    Learn more about [QueryBuilder](select-query-builder.md).
+    Learn more about [QueryBuilder](../Query%20Builder/1-select-query-builder.md).
 
 ```typescript
 const users = await manager
@@ -331,28 +331,28 @@ await manager.clear(User)
 ```
 
 -   `getRepository` - Gets `Repository` to perform operations on a specific entity.
-    Learn more about [Repositories](working-with-repository.md).
+    Learn more about [Repositories](../Working%20with%20Entity%20Manager/2-working-with-repository.md).
 
 ```typescript
 const userRepository = manager.getRepository(User)
 ```
 
 -   `getTreeRepository` - Gets `TreeRepository` to perform operations on a specific entity.
-    Learn more about [Repositories](working-with-repository.md).
+    Learn more about [Repositories](../Working%20with%20Entity%20Manager/2-working-with-repository.md).
 
 ```typescript
 const categoryRepository = manager.getTreeRepository(Category)
 ```
 
 -   `getMongoRepository` - Gets `MongoRepository` to perform operations on a specific entity.
-    Learn more about [MongoDB](./mongodb.md).
+    Learn more about [MongoDB](../Guides/2-mongodb.md).
 
 ```typescript
 const userRepository = manager.getMongoRepository(User)
 ```
 
 -   `withRepository` - Gets custom repository instance used in a transaction.
-    Learn more about [Custom repositories](custom-repository.md).
+    Learn more about [Custom repositories](../Working%20with%20Entity%20Manager/4-custom-repository.md).
 
 ```typescript
 const myUserRepository = manager.withRepository(UserRepository)

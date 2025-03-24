@@ -167,7 +167,7 @@ export const myDataSource = new DataSource({
 ```
 
 Configure each option as you need.
-Learn more about options [here](./data-source-options.md).
+Learn more about options [here](../Data%20Source/2-data-source-options.md).
 
 Let's create a `user.entity.ts` entity inside `src/entity`:
 

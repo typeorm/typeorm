@@ -1,6 +1,6 @@
 # Entities
 
-- [Entities](#entities)
+- [Entities](./1-entities.md)
   - [What is Entity?](#what-is-entity)
   - [Entity columns](#entity-columns)
     - [Primary columns](#primary-columns)
@@ -103,7 +103,7 @@ If you want to set a base prefix for all database tables in your application you
 
 When using an entity constructor its arguments **must be optional**. Since ORM creates instances of entity classes when loading from the database, therefore it is not aware of your constructor arguments.
 
-Learn more about parameters `@Entity` in [Decorators reference](decorator-reference.md).
+Learn more about parameters `@Entity` in [Decorators reference](../Help/3-decorator-reference.md).
 
 ## Entity columns
 
@@ -241,7 +241,7 @@ thing.linestring = "LINESTRING(0 0,1 1,2 2)"
 TypeORM's PostgreSQL and CockroachDB support uses [GeoJSON](http://geojson.org/) as an
 interchange format, so geometry columns should be tagged either as `object` or
 `Geometry` (or subclasses, e.g. `Point`) after importing [`geojson`
-types](https://www.npmjs.com/package/@types/geojson) or using TypeORM built in [GeoJSON types](../src/driver/types/GeoJsonTypes.ts).
+types](https://www.npmjs.com/package/@types/geojson) or using TypeORM built in [GeoJSON types](../../../src/driver/types/GeoJsonTypes.ts).
 
 ```typescript
 import {

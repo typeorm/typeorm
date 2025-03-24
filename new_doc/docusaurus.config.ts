@@ -96,7 +96,7 @@ const config: Config = {
                     items: [
                         {
                             label: "Getting started",
-                            to: "/docs/Getting%20started",
+                            href: "https://typeorm.pages.com/docs/Getting%20started",
                         },
                     ],
                 },

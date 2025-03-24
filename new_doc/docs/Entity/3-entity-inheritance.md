@@ -158,4 +158,4 @@ will be saved into this table.
 ## Using embeddeds
 
 There is an amazing way to reduce duplication in your app (using composition over inheritance) by using `embedded columns`.
-Read more about embedded entities [here](./embedded-entities.md).
+Read more about embedded entities [here](../Entity/2-embedded-entities.md).

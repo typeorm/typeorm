@@ -135,7 +135,7 @@ export const CategoryEntity = new EntitySchema<Category>({
 
 When using the `Decorator` approach it is easy to `extend` basic columns to an abstract class and simply extend this.
 For example, your `id`, `createdAt` and `updatedAt` columns may be defined in such a `BaseEntity`. For more details, see
-the documentation on [concrete table inheritance](entity-inheritance.md#concrete-table-inheritance).
+the documentation on [concrete table inheritance](../Entity/3-entity-inheritance.md#concrete-table-inheritance).
 
 When using the `EntitySchema` approach, this is not possible. However, you can use the `Spread Operator` (`...`) to your
 advantage.
@@ -232,7 +232,7 @@ Be sure to add the `extended` columns also to the `Category` interface (e.g., vi
 
 ### Single Table Inheritance
 
-In order to use [Single Table Inheritance](entity-inheritance.md#single-table-inheritance):
+In order to use [Single Table Inheritance](../Entity/3-entity-inheritance.md#single-table-inheritance):
 
 1. Add the `inheritance` option to the **parent** class schema, specifying the inheritance pattern ("STI") and the
    **discriminator** column, which will store the name of the *child* class on each row

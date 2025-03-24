@@ -84,7 +84,7 @@ This example will produce following tables:
 
 ## Saving many-to-many relations
 
-With [cascades](./relations.md#cascades) enabled, you can save this relation with only one `save` call.
+With [cascades](../Relations/1-relations.md#cascades) enabled, you can save this relation with only one `save` call.
 
 ```typescript
 const category1 = new Category()
@@ -104,7 +104,7 @@ await dataSource.manager.save(question)
 
 ## Deleting many-to-many relations
 
-With [cascades](./relations.md#cascades) enabled, you can delete this relation with only one `save` call.
+With [cascades](../Relations/1-relations.md#cascades) enabled, you can delete this relation with only one `save` call.
 
 To delete a many-to-many relationship between two records, remove it from the corresponding field and save the record.
 

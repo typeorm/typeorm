@@ -1,6 +1,6 @@
 # Migrations
 
-- [Migrations](#migrations)
+- [Migrations](./1-migrations.md)
     - [How migrations work](#how-migrations-work)
     - [Creating a new migration](#creating-a-new-migration)
     - [Running and reverting migrations](#running-and-reverting-migrations)
@@ -56,7 +56,7 @@ This place is called "migrations".
 
 ## Creating a new migration
 
-**Pre-requisites**: [Installing CLI](./using-cli.md#installing-cli)
+**Pre-requisites**: [Installing CLI](../Advanced%20Topics/6-using-cli.md#installing-cli)
 
 Before creating a new migration you need to setup your data source options properly:
 
@@ -116,7 +116,7 @@ There are two methods you must fill with your migration code: `up` and `down`.
 
 Inside both `up` and `down` you have a `QueryRunner` object.
 All database operations are executed using this object.
-Learn more about [query runner](./query-runner.md).
+Learn more about [query runner](../Not%20in%20the%20current%20Doc/query-runner.md).
 
 Let's see what the migration looks like with our `Post` changes:
 
