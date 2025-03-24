@@ -140,7 +140,7 @@ function HomepageHeader() {
                     </div>
                     <div className={styles.heroImage}>
                         <img
-                            src="/img/typeorm-logo-colored-light.png"
+                            src="/img/typeorm-logo-white.svg"
                             alt="TypeORM Logo"
                         />
                     </div>
