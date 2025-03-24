@@ -56,7 +56,7 @@ This place is called "migrations".
 
 ## Creating a new migration
 
-**Pre-requisites**: [Installing CLI](../Advanced%20Topics/6-using-cli.md#installing-cli)
+**Pre-requisites**: [Installing CLI](./6-using-cli.md#installing-cli)
 
 Before creating a new migration you need to setup your data source options properly:
 

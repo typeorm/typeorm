@@ -1,7 +1,7 @@
 # DataSource API
 
 -   `options` - Options used to create this dataSource.
-    Learn more about [DataSourceOptions](../Data%20Source/2-data-source-options.md).
+    Learn more about [DataSourceOptions](./2-data-source-options.md).
 
 ```typescript
 const dataSourceOptions: DataSourceOptions = dataSource.options

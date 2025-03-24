@@ -84,7 +84,7 @@ user.profile = profile
 await dataSource.manager.save(user)
 ```
 
-With [cascades](../Relations/1-relations.md#cascades) enabled you can save this relation with only one `save` call.
+With [cascades](./1-relations.md#cascades) enabled you can save this relation with only one `save` call.
 
 To load user with profile inside you must specify relation in `FindOptions`:
 
