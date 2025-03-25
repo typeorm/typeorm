@@ -1,15 +1,15 @@
 # Migrations
 
 - [Migrations](#migrations)
-  - [How migrations work](#how-migrations-work)
-  - [Creating a new migration](#creating-a-new-migration)
-  - [Running and reverting migrations](#running-and-reverting-migrations)
-    - [Faking Migrations and Rollbacks](#faking-migrations-and-rollbacks)
-    - [Transaction modes](#transaction-modes)
-  - [Generating migrations](#generating-migrations)
-  - [DataSource option](#datasource-option)
-  - [Timestamp option](#timestamp-option)
-  - [Using migration API to write migrations](#using-migration-api-to-write-migrations)
+    - [How migrations work](#how-migrations-work)
+    - [Creating a new migration](#creating-a-new-migration)
+    - [Running and reverting migrations](#running-and-reverting-migrations)
+        - [Faking Migrations and Rollbacks](#faking-migrations-and-rollbacks)
+        - [Transaction modes](#transaction-modes)
+    - [Generating migrations](#generating-migrations)
+    - [DataSource option](#datasource-option)
+    - [Timestamp option](#timestamp-option)
+    - [Using migration API to write migrations](#using-migration-api-to-write-migrations)
 
 ## How migrations work
 
@@ -61,7 +61,7 @@ This place is called "migrations".
 Before creating a new migration you need to setup your data source options properly:
 
 ```ts
-import { DataSource } from "typeorm";
+import { DataSource } from "typeorm"
 
 export default new DataSource({
     type: "mysql",
@@ -70,16 +70,20 @@ export default new DataSource({
     username: "test",
     password: "test",
     database: "test",
-    entities: [/*...*/],
-    migrations: [/*...*/],
+    entities: [
+        /*...*/
+    ],
+    migrations: [
+        /*...*/
+    ],
     migrationsTableName: "custom_migration_table",
 })
 ```
 
 Here we setup two options:
 
--   `"migrationsTableName": "migrations"` - Specify this option only if you need the migration table name to be different from `"migrations"`.
--   `"migrations": [/*...*/]` - list of migrations that need to be loaded by TypeORM
+- `"migrationsTableName": "migrations"` - Specify this option only if you need the migration table name to be different from `"migrations"`.
+- `"migrations": [/*...*/]` - list of migrations that need to be loaded by TypeORM
 
 Once you setup the connection options you can create a new migration using CLI:
 
@@ -87,8 +91,6 @@ Once you setup the connection options you can create a new migration using CLI:
 typeorm migration:create ./path-to-migrations-dir/PostRefactoring
 
 ```
-
-
 
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
 After you run the command you can see a new file generated in the "migration" directory
@@ -208,14 +210,12 @@ export class AddIndexTIMESTAMP implements MigrationInterface {
 
     async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(
-            `CREATE INDEX CONCURRENTLY post_names_idx ON post(name)`
+            `CREATE INDEX CONCURRENTLY post_names_idx ON post(name)`,
         )
     }
 
     async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(
-            `DROP INDEX CONCURRENTLY post_names_idx`,
-        )
+        await queryRunner.query(`DROP INDEX CONCURRENTLY post_names_idx`)
     }
 }
 ```
@@ -260,8 +260,6 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 Alternatively you can also output your migrations as Javascript files using the `o` (alias for `--outputJs`) flag. This is useful for Javascript only projects in which TypeScript additional packages are not installed. This command, will generate a new migration file `{TIMESTAMP}-PostRefactoring.js` with the following content:
 
 ```javascript
-const { MigrationInterface, QueryRunner } = require("typeorm")
-
 module.exports = class PostRefactoringTIMESTAMP {
     async up(queryRunner) {
         await queryRunner.query(
@@ -417,7 +415,7 @@ Returns all available database names including system databases.
 getSchemas(database?: string): Promise<string[]>
 ```
 
--   `database` - If database parameter specified, returns schemas of that database
+- `database` - If database parameter specified, returns schemas of that database
 
 Returns all available schema names including system schemas. Useful for SQLServer and Postgres only.
 
@@ -427,7 +425,7 @@ Returns all available schema names including system schemas. Useful for SQLServe
 getTable(tableName: string): Promise<Table|undefined>
 ```
 
--   `tableName` - name of a table to be loaded
+- `tableName` - name of a table to be loaded
 
 Loads a table by a given name from the database.
 
@@ -437,7 +435,7 @@ Loads a table by a given name from the database.
 getTables(tableNames: string[]): Promise<Table[]>
 ```
 
--   `tableNames` - name of a tables to be loaded
+- `tableNames` - name of a tables to be loaded
 
 Loads a tables by a given names from the database.
 
@@ -447,7 +445,7 @@ Loads a tables by a given names from the database.
 hasDatabase(database: string): Promise<boolean>
 ```
 
--   `database` - name of a database to be checked
+- `database` - name of a database to be checked
 
 Checks if database with the given name exist.
 
@@ -457,7 +455,7 @@ Checks if database with the given name exist.
 hasSchema(schema: string): Promise<boolean>
 ```
 
--   `schema` - name of a schema to be checked
+- `schema` - name of a schema to be checked
 
 Checks if schema with the given name exist. Used only for SqlServer and Postgres.
 
@@ -467,7 +465,7 @@ Checks if schema with the given name exist. Used only for SqlServer and Postgres
 hasTable(table: Table|string): Promise<boolean>
 ```
 
--   `table` - Table object or name
+- `table` - Table object or name
 
 Checks if table exist.
 
@@ -477,8 +475,8 @@ Checks if table exist.
 hasColumn(table: Table|string, columnName: string): Promise<boolean>
 ```
 
--   `table` - Table object or name
--   `columnName` - name of a column to be checked
+- `table` - Table object or name
+- `columnName` - name of a column to be checked
 
 Checks if column exist in the table.
 
@@ -488,8 +486,8 @@ Checks if column exist in the table.
 createDatabase(database: string, ifNotExist?: boolean): Promise<void>
 ```
 
--   `database` - database name
--   `ifNotExist` - skips creation if `true`, otherwise throws error if database already exist
+- `database` - database name
+- `ifNotExist` - skips creation if `true`, otherwise throws error if database already exist
 
 Creates a new database.
 
@@ -499,8 +497,8 @@ Creates a new database.
 dropDatabase(database: string, ifExist?: boolean): Promise<void>
 ```
 
--   `database` - database name
--   `ifExist` - skips deletion if `true`, otherwise throws error if database was not found
+- `database` - database name
+- `ifExist` - skips deletion if `true`, otherwise throws error if database was not found
 
 Drops database.
 
@@ -510,9 +508,9 @@ Drops database.
 createSchema(schemaPath: string, ifNotExist?: boolean): Promise<void>
 ```
 
--   `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
-    If schema path passed, it will create schema in specified database
--   `ifNotExist` - skips creation if `true`, otherwise throws error if schema already exist
+- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
+  If schema path passed, it will create schema in specified database
+- `ifNotExist` - skips creation if `true`, otherwise throws error if schema already exist
 
 Creates a new table schema.
 
@@ -522,11 +520,11 @@ Creates a new table schema.
 dropSchema(schemaPath: string, ifExist?: boolean, isCascade?: boolean): Promise<void>
 ```
 
--   `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
-    If schema path passed, it will drop schema in specified database
--   `ifExist` - skips deletion if `true`, otherwise throws error if schema was not found
--   `isCascade` - If `true`, automatically drop objects (tables, functions, etc.) that are contained in the schema.
-    Used only in Postgres.
+- `schemaPath` - schema name. For SqlServer can accept schema path (e.g. 'dbName.schemaName') as parameter.
+  If schema path passed, it will drop schema in specified database
+- `ifExist` - skips deletion if `true`, otherwise throws error if schema was not found
+- `isCascade` - If `true`, automatically drop objects (tables, functions, etc.) that are contained in the schema.
+  Used only in Postgres.
 
 Drops a table schema.
 
@@ -536,10 +534,10 @@ Drops a table schema.
 createTable(table: Table, ifNotExist?: boolean, createForeignKeys?: boolean, createIndices?: boolean): Promise<void>
 ```
 
--   `table` - Table object.
--   `ifNotExist` - skips creation if `true`, otherwise throws error if table already exist. Default `false`
--   `createForeignKeys` - indicates whether foreign keys will be created on table creation. Default `true`
--   `createIndices` - indicates whether indices will be created on table creation. Default `true`
+- `table` - Table object.
+- `ifNotExist` - skips creation if `true`, otherwise throws error if table already exist. Default `false`
+- `createForeignKeys` - indicates whether foreign keys will be created on table creation. Default `true`
+- `createIndices` - indicates whether indices will be created on table creation. Default `true`
 
 Creates a new table.
 
@@ -549,10 +547,10 @@ Creates a new table.
 dropTable(table: Table|string, ifExist?: boolean, dropForeignKeys?: boolean, dropIndices?: boolean): Promise<void>
 ```
 
--   `table` - Table object or table name to be dropped
--   `ifExist` - skips dropping if `true`, otherwise throws error if table does not exist
--   `dropForeignKeys` - indicates whether foreign keys will be dropped on table deletion. Default `true`
--   `dropIndices` - indicates whether indices will be dropped on table deletion. Default `true`
+- `table` - Table object or table name to be dropped
+- `ifExist` - skips dropping if `true`, otherwise throws error if table does not exist
+- `dropForeignKeys` - indicates whether foreign keys will be dropped on table deletion. Default `true`
+- `dropIndices` - indicates whether indices will be dropped on table deletion. Default `true`
 
 Drops a table.
 
@@ -562,8 +560,8 @@ Drops a table.
 renameTable(oldTableOrName: Table|string, newTableName: string): Promise<void>
 ```
 
--   `oldTableOrName` - old Table object or name to be renamed
--   `newTableName` - new table name
+- `oldTableOrName` - old Table object or name to be renamed
+- `newTableName` - new table name
 
 Renames a table.
 
@@ -573,8 +571,8 @@ Renames a table.
 addColumn(table: Table|string, column: TableColumn): Promise<void>
 ```
 
--   `table` - Table object or name
--   `column` - new column
+- `table` - Table object or name
+- `column` - new column
 
 Adds a new column.
 
@@ -584,8 +582,8 @@ Adds a new column.
 addColumns(table: Table|string, columns: TableColumn[]): Promise<void>
 ```
 
--   `table` - Table object or name
--   `columns` - new columns
+- `table` - Table object or name
+- `columns` - new columns
 
 Adds a new column.
 
@@ -595,9 +593,9 @@ Adds a new column.
 renameColumn(table: Table|string, oldColumnOrName: TableColumn|string, newColumnOrName: TableColumn|string): Promise<void>
 ```
 
--   `table` - Table object or name
--   `oldColumnOrName` - old column. Accepts TableColumn object or column name
--   `newColumnOrName` - new column. Accepts TableColumn object or column name
+- `table` - Table object or name
+- `oldColumnOrName` - old column. Accepts TableColumn object or column name
+- `newColumnOrName` - new column. Accepts TableColumn object or column name
 
 Renames a column.
 
@@ -607,9 +605,9 @@ Renames a column.
 changeColumn(table: Table|string, oldColumn: TableColumn|string, newColumn: TableColumn): Promise<void>
 ```
 
--   `table` - Table object or name
--   `oldColumn` - old column. Accepts TableColumn object or column name
--   `newColumn` - new column. Accepts TableColumn object
+- `table` - Table object or name
+- `oldColumn` - old column. Accepts TableColumn object or column name
+- `newColumn` - new column. Accepts TableColumn object
 
 Changes a column in the table.
 
@@ -619,10 +617,10 @@ Changes a column in the table.
 changeColumns(table: Table|string, changedColumns: { oldColumn: TableColumn, newColumn: TableColumn }[]): Promise<void>
 ```
 
--   `table` - Table object or name
--   `changedColumns` - array of changed columns.
-    -   `oldColumn` - old TableColumn object
-    -   `newColumn` - new TableColumn object
+- `table` - Table object or name
+- `changedColumns` - array of changed columns.
+    - `oldColumn` - old TableColumn object
+    - `newColumn` - new TableColumn object
 
 Changes a columns in the table.
 
@@ -632,8 +630,8 @@ Changes a columns in the table.
 dropColumn(table: Table|string, column: TableColumn|string): Promise<void>
 ```
 
--   `table` - Table object or name
--   `column` - TableColumn object or column name to be dropped
+- `table` - Table object or name
+- `column` - TableColumn object or column name to be dropped
 
 Drops a column in the table.
 
@@ -643,8 +641,8 @@ Drops a column in the table.
 dropColumns(table: Table|string, columns: TableColumn[]|string[]): Promise<void>
 ```
 
--   `table` - Table object or name
--   `columns` - array of TableColumn objects or column names to be dropped
+- `table` - Table object or name
+- `columns` - array of TableColumn objects or column names to be dropped
 
 Drops a columns in the table.
 
@@ -654,8 +652,8 @@ Drops a columns in the table.
 createPrimaryKey(table: Table|string, columnNames: string[]): Promise<void>
 ```
 
--   `table` - Table object or name
--   `columnNames` - array of column names which will be primary
+- `table` - Table object or name
+- `columnNames` - array of column names which will be primary
 
 Creates a new primary key.
 
@@ -665,8 +663,8 @@ Creates a new primary key.
 updatePrimaryKeys(table: Table|string, columns: TableColumn[]): Promise<void>
 ```
 
--   `table` - Table object or name
--   `columns` - array of TableColumn objects which will be updated
+- `table` - Table object or name
+- `columns` - array of TableColumn objects which will be updated
 
 Updates composite primary keys.
 
@@ -676,7 +674,7 @@ Updates composite primary keys.
 dropPrimaryKey(table: Table|string): Promise<void>
 ```
 
--   `table` - Table object or name
+- `table` - Table object or name
 
 Drops a primary key.
 
@@ -686,8 +684,8 @@ Drops a primary key.
 createUniqueConstraint(table: Table|string, uniqueConstraint: TableUnique): Promise<void>
 ```
 
--   `table` - Table object or name
--   `uniqueConstraint` - TableUnique object to be created
+- `table` - Table object or name
+- `uniqueConstraint` - TableUnique object to be created
 
 Creates new unique constraint.
 
@@ -699,8 +697,8 @@ Creates new unique constraint.
 createUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>
 ```
 
--   `table` - Table object or name
--   `uniqueConstraints` - array of TableUnique objects to be created
+- `table` - Table object or name
+- `uniqueConstraints` - array of TableUnique objects to be created
 
 Creates new unique constraints.
 
@@ -712,8 +710,8 @@ Creates new unique constraints.
 dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string): Promise<void>
 ```
 
--   `table` - Table object or name
--   `uniqueOrName` - TableUnique object or unique constraint name to be dropped
+- `table` - Table object or name
+- `uniqueOrName` - TableUnique object or unique constraint name to be dropped
 
 Drops an unique constraint.
 
@@ -725,8 +723,8 @@ Drops an unique constraint.
 dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>
 ```
 
--   `table` - Table object or name
--   `uniqueConstraints` - array of TableUnique objects to be dropped
+- `table` - Table object or name
+- `uniqueConstraints` - array of TableUnique objects to be dropped
 
 Drops an unique constraints.
 
@@ -738,8 +736,8 @@ Drops an unique constraints.
 createCheckConstraint(table: Table|string, checkConstraint: TableCheck): Promise<void>
 ```
 
--   `table` - Table object or name
--   `checkConstraint` - TableCheck object
+- `table` - Table object or name
+- `checkConstraint` - TableCheck object
 
 Creates new check constraint.
 
@@ -751,8 +749,8 @@ Creates new check constraint.
 createCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>
 ```
 
--   `table` - Table object or name
--   `checkConstraints` - array of TableCheck objects
+- `table` - Table object or name
+- `checkConstraints` - array of TableCheck objects
 
 Creates new check constraint.
 
@@ -764,8 +762,8 @@ Creates new check constraint.
 dropCheckConstraint(table: Table|string, checkOrName: TableCheck|string): Promise<void>
 ```
 
--   `table` - Table object or name
--   `checkOrName` - TableCheck object or check constraint name
+- `table` - Table object or name
+- `checkOrName` - TableCheck object or check constraint name
 
 Drops check constraint.
 
@@ -777,8 +775,8 @@ Drops check constraint.
 dropCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promise<void>
 ```
 
--   `table` - Table object or name
--   `checkConstraints` - array of TableCheck objects
+- `table` - Table object or name
+- `checkConstraints` - array of TableCheck objects
 
 Drops check constraints.
 
@@ -790,8 +788,8 @@ Drops check constraints.
 createForeignKey(table: Table|string, foreignKey: TableForeignKey): Promise<void>
 ```
 
--   `table` - Table object or name
--   `foreignKey` - TableForeignKey object
+- `table` - Table object or name
+- `foreignKey` - TableForeignKey object
 
 Creates a new foreign key.
 
@@ -801,8 +799,8 @@ Creates a new foreign key.
 createForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>
 ```
 
--   `table` - Table object or name
--   `foreignKeys` - array of TableForeignKey objects
+- `table` - Table object or name
+- `foreignKeys` - array of TableForeignKey objects
 
 Creates a new foreign keys.
 
@@ -812,8 +810,8 @@ Creates a new foreign keys.
 dropForeignKey(table: Table|string, foreignKeyOrName: TableForeignKey|string): Promise<void>
 ```
 
--   `table` - Table object or name
--   `foreignKeyOrName` - TableForeignKey object or foreign key name
+- `table` - Table object or name
+- `foreignKeyOrName` - TableForeignKey object or foreign key name
 
 Drops a foreign key.
 
@@ -823,8 +821,8 @@ Drops a foreign key.
 dropForeignKeys(table: Table|string, foreignKeys: TableForeignKey[]): Promise<void>
 ```
 
--   `table` - Table object or name
--   `foreignKeys` - array of TableForeignKey objects
+- `table` - Table object or name
+- `foreignKeys` - array of TableForeignKey objects
 
 Drops a foreign keys.
 
@@ -834,8 +832,8 @@ Drops a foreign keys.
 createIndex(table: Table|string, index: TableIndex): Promise<void>
 ```
 
--   `table` - Table object or name
--   `index` - TableIndex object
+- `table` - Table object or name
+- `index` - TableIndex object
 
 Creates a new index.
 
@@ -845,8 +843,8 @@ Creates a new index.
 createIndices(table: Table|string, indices: TableIndex[]): Promise<void>
 ```
 
--   `table` - Table object or name
--   `indices` - array of TableIndex objects
+- `table` - Table object or name
+- `indices` - array of TableIndex objects
 
 Creates a new indices.
 
@@ -856,8 +854,8 @@ Creates a new indices.
 dropIndex(table: Table|string, index: TableIndex|string): Promise<void>
 ```
 
--   `table` - Table object or name
--   `index` - TableIndex object or index name
+- `table` - Table object or name
+- `index` - TableIndex object or index name
 
 Drops an index.
 
@@ -867,8 +865,8 @@ Drops an index.
 dropIndices(table: Table|string, indices: TableIndex[]): Promise<void>
 ```
 
--   `table` - Table object or name
--   `indices` - array of TableIndex objects
+- `table` - Table object or name
+- `indices` - array of TableIndex objects
 
 Drops an indices.
 
@@ -878,7 +876,7 @@ Drops an indices.
 clearTable(tableName: string): Promise<void>
 ```
 
--   `tableName` - table name
+- `tableName` - table name
 
 Clears all table contents.
 
@@ -915,7 +913,7 @@ Flushes all memorized sql statements.
 getMemorySql(): SqlInMemory
 ```
 
--   returns `SqlInMemory` object with array of `upQueries` and `downQueries` sql statements
+- returns `SqlInMemory` object with array of `upQueries` and `downQueries` sql statements
 
 Gets sql stored in the memory. Parameters in the sql are already replaced.
 

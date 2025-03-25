@@ -1,0 +1,49 @@
+name: database-tests
+
+on: workflow_call
+
+jobs:
+
+  better-sqlite3:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: better-sqlite3-windows
+          parallel: true
+
+
+  sqlite:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: sqlite-windows
+          parallel: true
+
+
+  sqljs:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i
+      - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: sqljs-windows
+          parallel: true

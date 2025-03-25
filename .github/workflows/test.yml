@@ -20,10 +20,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "18.x"
+
       - uses: actions/checkout@v4
+
       - run: npm i
       - run: npm run lint
-
+      - run: npm run format:ci
 
   # These tests run in standard node containers with their db attached as a service
   database-tests:
@@ -36,7 +38,6 @@ jobs:
     with:
       node-container: ${{matrix.node-container}}
 
-
   # These tests run with custom docker image attributes that can't be specified in a GHA service
   database-compose-tests:
     strategy:
@@ -48,8 +49,11 @@ jobs:
     with:
       node-version: ${{matrix.node-version}}
 
+  windows-database-tests:
+    uses: ./.github/workflows/windows-database-tests.yml
+
   # Run with most databases possible to provide the coverage of the tests
   coverage:
     if: ${{ always() }}
-    needs: [database-tests, database-compose-tests]
+    needs: [database-tests, database-compose-tests, windows-database-tests]
     uses: ./.github/workflows/coverage.yml

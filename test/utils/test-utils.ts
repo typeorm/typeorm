@@ -146,7 +146,7 @@ export interface TestingOptions {
      * Options that may be specific to a driver.
      * They are passed down to the enabled drivers.
      */
-    driverSpecific?: Object
+    driverSpecific?: object
 
     /**
      * Factory to create a logger for each test connection.
@@ -389,7 +389,7 @@ export async function createTestingConnections(
 ): Promise<DataSource[]> {
     const dataSourceOptions = setupTestingConnections(options)
     const dataSources: DataSource[] = []
-    for (let options of dataSourceOptions) {
+    for (const options of dataSourceOptions) {
         const dataSource = createDataSource(options)
         await dataSource.initialize()
         dataSources.push(dataSource)
@@ -590,4 +590,22 @@ export async function createTypeormMetadataTable(
         }),
         true,
     )
+}
+
+export function withPlatform<R>(platform: string, fn: () => R): R {
+    const realPlatform = process.platform
+
+    Object.defineProperty(process, `platform`, {
+        configurable: true,
+        value: platform,
+    })
+
+    const result = fn()
+
+    Object.defineProperty(process, `platform`, {
+        configurable: true,
+        value: realPlatform,
+    })
+
+    return result
 }

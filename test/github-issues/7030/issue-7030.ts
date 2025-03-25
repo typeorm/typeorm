@@ -31,7 +31,7 @@ describe("github issues > #7030", () => {
                 const post = new Post()
                 post.id = id
 
-                let postRepository = connection.getRepository(Post)
+                const postRepository = connection.getRepository(Post)
 
                 await postRepository.save(post)
 

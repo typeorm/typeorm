@@ -41,7 +41,7 @@ describe("database schema > column width", () => {
     it("should update data type display width", () =>
         Promise.all(
             connections.map(async (connection) => {
-                let metadata = connection.getMetadata(Post)
+                const metadata = connection.getMetadata(Post)
                 metadata.findColumnWithPropertyName("int")!.width = 5
                 metadata.findColumnWithPropertyName("tinyint")!.width = 3
                 metadata.findColumnWithPropertyName("smallint")!.width = 4
