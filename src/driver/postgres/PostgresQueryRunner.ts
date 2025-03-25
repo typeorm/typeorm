@@ -17,16 +17,16 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
-import { VersionUtils } from "../../util/VersionUtils"
+import { DriverUtils } from "../DriverUtils"
 import { Query } from "../Query"
 import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { PostgresDriver } from "./PostgresDriver"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -3108,7 +3108,6 @@ export class PostgresQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            const version = await this.getVersion()
             // drop views
             const selectViewDropsQuery =
                 `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
@@ -3122,7 +3121,7 @@ export class PostgresQueryRunner
 
             // drop materialized views
             // Note: materialized views introduced in Postgres 9.3
-            if (VersionUtils.isGreaterOrEqual(version, "9.3")) {
+            if (DriverUtils.isReleaseVersionOrGreater(this.driver, "9.3")) {
                 const selectMatViewDropsQuery =
                     `SELECT 'DROP MATERIALIZED VIEW IF EXISTS "' || schemaname || '"."' || matviewname || '" CASCADE;' as "query" ` +
                     `FROM "pg_matviews" WHERE "schemaname" IN (${schemaNamesString})`
@@ -3158,7 +3157,9 @@ export class PostgresQueryRunner
                 if (!isAnotherTransactionActive) {
                     await this.rollbackTransaction()
                 }
-            } catch (rollbackError) {}
+            } catch {
+                // no-op
+            }
             throw error
         }
     }

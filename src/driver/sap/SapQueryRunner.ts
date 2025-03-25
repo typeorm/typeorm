@@ -386,20 +386,22 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Returns current database.
      */
     async getCurrentDatabase(): Promise<string> {
-        const currentDBQuery = await this.query(
-            `SELECT "DATABASE_NAME" AS "db_name" FROM "SYS"."M_DATABASE"`,
+        const currentDBQuery: [{ dbName: string }] = await this.query(
+            `SELECT "DATABASE_NAME" AS "dbName" FROM "SYS"."M_DATABASE"`,
         )
-        return currentDBQuery[0]["db_name"]
+
+        return currentDBQuery[0].dbName
     }
 
     /**
      * Returns the database server version.
      */
     async getVersion(): Promise<string> {
-        const currentDBQuery = await this.query(
+        const currentDBQuery: [{ version: string }] = await this.query(
             `SELECT "VERSION" AS "version" FROM "SYS"."M_DATABASE"`,
         )
-        return currentDBQuery[0]["version"]
+
+        return currentDBQuery[0].version
     }
 
     /**
@@ -414,10 +416,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Returns current schema.
      */
     async getCurrentSchema(): Promise<string> {
-        const currentSchemaQuery = await this.query(
-            `SELECT CURRENT_SCHEMA AS "schema_name" FROM "SYS"."DUMMY"`,
+        const currentSchemaQuery: [{ schemaName: string }] = await this.query(
+            `SELECT CURRENT_SCHEMA AS "schemaName" FROM "SYS"."DUMMY"`,
         )
-        return currentSchemaQuery[0]["schema_name"]
+
+        return currentSchemaQuery[0].schemaName
     }
 
     /**
@@ -430,9 +433,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT * FROM "SYS"."TABLES" WHERE "SCHEMA_NAME" = '${parsedTableName.schema}' AND "TABLE_NAME" = '${parsedTableName.tableName}'`
-        const result = await this.query(sql)
-        return result.length ? true : false
+        const sql = `SELECT COUNT(*) as "hasTable" FROM "SYS"."TABLES" WHERE "SCHEMA_NAME" = '${parsedTableName.schema}' AND "TABLE_NAME" = '${parsedTableName.tableName}'`
+        const result: [{ hasTable: number }] = await this.query(sql)
+
+        return result[0].hasTable > 0
     }
 
     /**
@@ -448,9 +452,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT * FROM "SYS"."TABLE_COLUMNS" WHERE "SCHEMA_NAME" = '${parsedTableName.schema}' AND "TABLE_NAME" = '${parsedTableName.tableName}' AND "COLUMN_NAME" = '${columnName}'`
-        const result = await this.query(sql)
-        return result.length ? true : false
+        const sql = `SELECT COUNT(*) as "hasColumn" FROM "SYS"."TABLE_COLUMNS" WHERE "SCHEMA_NAME" = '${parsedTableName.schema}' AND "TABLE_NAME" = '${parsedTableName.tableName}' AND "COLUMN_NAME" = '${columnName}'`
+        const result: [{ hasColumn: number }] = await this.query(sql)
+
+        return result[0].hasColumn > 0
     }
 
     /**
