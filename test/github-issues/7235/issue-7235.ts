@@ -10,18 +10,20 @@ import { expect } from "chai"
 import { VersionUtils } from "../../../src/util/VersionUtils"
 
 describe('github issues > #7235 Use "INSERT...RETURNING" in MariaDB.', () => {
-    const runOnSpecificVersion = (version: string, fn: Function) => async () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const result = await connection.query(
-                    `SELECT VERSION() AS \`version\``,
-                )
-                const dbVersion = result[0]["version"]
-                if (VersionUtils.isGreaterOrEqual(dbVersion, version)) {
-                    await fn(connection)
-                }
-            }),
-        )
+    const runOnSpecificVersion =
+        (version: string, fn: (dataSource: DataSource) => Promise<void>) =>
+        async () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const result = await connection.query(
+                        `SELECT VERSION() AS \`version\``,
+                    )
+                    const dbVersion = result[0]["version"]
+                    if (VersionUtils.isGreaterOrEqual(dbVersion, version)) {
+                        await fn(connection)
+                    }
+                }),
+            )
 
     let connections: DataSource[]
 
