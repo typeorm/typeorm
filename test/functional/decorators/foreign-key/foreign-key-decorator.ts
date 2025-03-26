@@ -1,8 +1,10 @@
+import { fail } from "assert"
 import { DataSource, TableForeignKey, TypeORMError } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
+    setupSingleTestingConnection,
 } from "../../../utils/test-utils"
 import { City } from "./entity/city"
 import { Country } from "./entity/country"
@@ -328,16 +330,12 @@ describe("decorators > foreign-key", () => {
             ))
 
         it("should throw an error if referenced entity metadata is not found", async () => {
-            const dataSource = new DataSource({
-                type: "mysql",
-                host: "localhost",
-                username: "test",
-                password: "test",
-                database: "test",
+            const options = setupSingleTestingConnection("mysql", {
                 entities: [City],
             })
+            if (!options) fail()
 
-            await dataSource
+            await new DataSource(options)
                 .initialize()
                 .should.be.rejectedWith(
                     TypeORMError,
@@ -346,16 +344,12 @@ describe("decorators > foreign-key", () => {
         })
 
         it("should throw an error if a column in the foreign key is missing", async () => {
-            const dataSource = new DataSource({
-                type: "mysql",
-                host: "localhost",
-                username: "test",
-                password: "test",
-                database: "test",
+            const options = setupSingleTestingConnection("mysql", {
                 entities: [WrongCity, Country],
             })
+            if (!options) fail()
 
-            await dataSource
+            await new DataSource(options)
                 .initialize()
                 .should.be.rejectedWith(
                     TypeORMError,
