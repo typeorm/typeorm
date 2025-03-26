@@ -29,6 +29,11 @@ export class IndexMetadata {
     isUnique: boolean = false
 
     /**
+     * Indicates if column handle nulls values as distinct.
+     */
+    isNullsNotDistinct: boolean = false
+
+    /**
      * The SPATIAL modifier indexes the entire column and does not allow indexed columns to contain NULL values.
      * Works only in MySQL.
      */
@@ -147,6 +152,7 @@ export class IndexMetadata {
             )
                 this.synchronize = options.args.synchronize
             this.isUnique = !!options.args.unique
+            this.isNullsNotDistinct = !!options.args.nullsNotDistinct
             this.isSpatial = !!options.args.spatial
             this.isFulltext = !!options.args.fulltext
             this.isNullFiltered = !!options.args.nullFiltered
