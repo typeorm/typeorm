@@ -1,4 +1,3 @@
-import { fail } from "assert"
 import { DataSource, TableForeignKey, TypeORMError } from "../../../../src"
 import {
     closeTestingConnections,
@@ -333,7 +332,7 @@ describe("decorators > foreign-key", () => {
             const options = setupSingleTestingConnection("mysql", {
                 entities: [City],
             })
-            if (!options) fail()
+            if (!options) return
 
             await new DataSource(options)
                 .initialize()
@@ -347,7 +346,7 @@ describe("decorators > foreign-key", () => {
             const options = setupSingleTestingConnection("mysql", {
                 entities: [WrongCity, Country],
             })
-            if (!options) fail()
+            if (!options) return
 
             await new DataSource(options)
                 .initialize()
