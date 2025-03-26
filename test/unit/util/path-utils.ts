@@ -1,6 +1,6 @@
-import { isAbsolute, toPortablePath } from "../../src/util/PathUtils"
+import { isAbsolute, toPortablePath } from "../../../src/util/PathUtils"
 import { expect } from "chai"
-import { withPlatform } from "../utils/test-utils"
+import { withPlatform } from "../../utils/test-utils"
 
 describe(`path-utils`, () => {
     describe("isAbsolute", () => {

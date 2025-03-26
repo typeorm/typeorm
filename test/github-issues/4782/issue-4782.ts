@@ -13,7 +13,6 @@ describe("github issues > #4782 mariadb driver wants to recreate create/update d
     before(
         async () =>
             (connections = await createTestingConnections({
-                // logging: true,
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql", "mariadb"],
             })),

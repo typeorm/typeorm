@@ -1,6 +1,6 @@
 import { expect } from "chai"
 
-import { VersionUtils } from "../../src/util/VersionUtils"
+import { VersionUtils } from "../../../src/util/VersionUtils"
 
 describe("VersionUtils", () => {
     describe("isGreaterOrEqual", () => {

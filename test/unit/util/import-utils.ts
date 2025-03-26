@@ -1,6 +1,7 @@
 import { expect } from "chai"
 import fs from "fs/promises"
 import path from "path"
+
 import { importOrRequireFile } from "../../../src/util/ImportUtils"
 
 describe("ImportUtils.importOrRequireFile", () => {
@@ -20,7 +21,9 @@ describe("ImportUtils.importOrRequireFile", () => {
 
         try {
             await fs.rmdir(testDir, { recursive: true })
-        } catch {}
+        } catch {
+            // no-op
+        }
 
         await fs.mkdir(srcDir, { recursive: true })
 
@@ -59,7 +62,9 @@ describe("ImportUtils.importOrRequireFile", () => {
 
         try {
             await fs.rmdir(testDir, { recursive: true })
-        } catch {}
+        } catch {
+            // no-op
+        }
 
         await fs.mkdir(srcDir, { recursive: true })
 
@@ -93,7 +98,9 @@ describe("ImportUtils.importOrRequireFile", () => {
 
         try {
             await fs.rmdir(testDir, { recursive: true })
-        } catch {}
+        } catch {
+            // no-op
+        }
 
         await fs.mkdir(srcDir, { recursive: true })
 
@@ -124,7 +131,9 @@ describe("ImportUtils.importOrRequireFile", () => {
 
         try {
             await fs.rmdir(testDir, { recursive: true })
-        } catch {}
+        } catch {
+            // no-op
+        }
 
         await fs.mkdir(srcDir, { recursive: true })
 
@@ -148,7 +157,9 @@ describe("ImportUtils.importOrRequireFile", () => {
 
         try {
             await fs.rmdir(testDir, { recursive: true })
-        } catch {}
+        } catch {
+            // no-op
+        }
 
         await fs.mkdir(testDir, { recursive: true })
 

@@ -1,28 +1,24 @@
-import fs from "fs/promises"
 import { expect } from "chai"
-import { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
-import { ConnectionOptionsReader } from "../../../src/connection/ConnectionOptionsReader"
-import path from "path"
+import fs from "fs/promises"
 
-async function createDotenvFiles() {
-    // These files may not always exist
-    await fs.writeFile(
-        path.join(__dirname, "configs/.env"),
-        "TYPEORM_CONNECTION = mysql\nTYPEORM_DATABASE = test-env",
-    )
-    await fs.writeFile(
-        path.join(__dirname, "configs/ormconfig.env"),
-        "TYPEORM_CONNECTION = mysql\nTYPEORM_DATABASE = test-ormconfig-env",
-    )
-}
+import { ConnectionOptionsReader } from "../../../src/connection/ConnectionOptionsReader"
+import { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
 
 describe("ConnectionOptionsReader", () => {
-    beforeEach(() => {
-        delete process.env["TYPEORM_CONNECTION"]
-        delete process.env["TYPEORM_DATABASE"]
+    before(async () => {
+        // These files may not always exist
+        await fs.mkdir("./temp/configs", { recursive: true })
+        await fs.writeFile(
+            "./temp/configs/.env",
+            "TYPEORM_CONNECTION = mysql\nTYPEORM_DATABASE = test-env",
+        )
+        await fs.writeFile(
+            "./temp/configs/ormconfig.env",
+            "TYPEORM_CONNECTION = mysql\nTYPEORM_DATABASE = test-ormconfig-env",
+        )
     })
 
-    after(() => {
+    afterEach(() => {
         delete process.env.TYPEORM_CONNECTION
         delete process.env.TYPEORM_DATABASE
     })
@@ -85,10 +81,8 @@ describe("ConnectionOptionsReader", () => {
     })
 
     it("properly loads config from .env file", async () => {
-        await createDotenvFiles()
-
         const connectionOptionsReader = new ConnectionOptionsReader({
-            root: __dirname,
+            root: "./temp",
             configName: "configs/.env",
         })
         const [fileOptions]: DataSourceOptions[] =
@@ -98,10 +92,8 @@ describe("ConnectionOptionsReader", () => {
     })
 
     it("properly loads config from ormconfig.env file", async () => {
-        await createDotenvFiles()
-
         const connectionOptionsReader = new ConnectionOptionsReader({
-            root: __dirname,
+            root: "./temp",
             configName: "configs/ormconfig.env",
         })
         const [fileOptions]: DataSourceOptions[] =
@@ -111,10 +103,8 @@ describe("ConnectionOptionsReader", () => {
     })
 
     it("properly loads config ormconfig.env when given multiple choices", async () => {
-        await createDotenvFiles()
-
         const connectionOptionsReader = new ConnectionOptionsReader({
-            root: path.join(__dirname, "configs"),
+            root: "./temp/configs",
         })
         const [fileOptions]: DataSourceOptions[] =
             await connectionOptionsReader.all()
