@@ -110,12 +110,13 @@ div[class*="announcementBarContent_"] a:hover {
 }
 
 /* Close button styling */
-div[class*="announcementBarClose_"] {
+div[class*="announcementBar"] .close {
+  color: #FFFFFF;
   opacity: 0.7;
   transition: opacity 0.2s ease;
 }
 
-div[class*="announcementBarClose_"]:hover {
+div[class*="announcementBar"] .close:hover {
   opacity: 1;
 }
 
