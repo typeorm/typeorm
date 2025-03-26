@@ -21,7 +21,7 @@ export class Order {
     userUuid: string
 
     @Column({ length: 2 })
-    @ForeignKey(() => Country, "code")
+    @ForeignKey(() => Country, (x) => x.code)
     countryCode: string
 
     @Column()

@@ -1,4 +1,4 @@
-import { DataSource } from "../../../../src"
+import { DataSource, TableForeignKey, TypeORMError } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,6 +8,7 @@ import { City } from "./entity/city"
 import { Country } from "./entity/country"
 import { Order } from "./entity/order"
 import { User } from "./entity/user"
+import { WrongCity } from "./wrong city"
 
 describe("decorators > foreign-key", () => {
     let dataSources: DataSource[]
@@ -20,8 +21,8 @@ describe("decorators > foreign-key", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    describe("basic functionality", function () {
-        it.only("should create a foreign keys", () =>
+    describe("basic functionality", () => {
+        it("should create a foreign keys", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     const queryRunner = dataSource.createQueryRunner()
@@ -29,20 +30,27 @@ describe("decorators > foreign-key", () => {
                     const ordersTable = await queryRunner.getTable("orders")
                     await queryRunner.release()
 
-                    const narrowForeignKeys = (foreignKeys: Object[]) =>
-                        foreignKeys.map((foreignKey) =>
-                            Object.fromEntries(
-                                Object.entries(foreignKey).filter(([key]) =>
-                                    [
-                                        "columnNames",
-                                        "referencedColumnNames",
-                                        "referencedTableName",
-                                        "onDelete",
-                                        "onUpdate",
-                                    ].includes(key),
-                                ),
-                            ),
-                        )
+                    const narrowForeignKeys = (
+                        foreignKeys: TableForeignKey[],
+                    ) =>
+                        foreignKeys.map((foreignKey) => {
+                            const {
+                                columnNames,
+                                referencedColumnNames,
+                                referencedTableName,
+                                onDelete,
+                                onUpdate,
+                            } = foreignKey
+
+                            return {
+                                columnNames: columnNames.sort(),
+                                referencedColumnNames:
+                                    referencedColumnNames.sort(),
+                                referencedTableName,
+                                onDelete,
+                                onUpdate,
+                            }
+                        })
 
                     const citiesForeignKeys = narrowForeignKeys(
                         citiesTable!.foreignKeys,
@@ -75,31 +83,6 @@ describe("decorators > foreign-key", () => {
                             onDelete: "NO ACTION",
                             onUpdate: "NO ACTION",
                         },
-                        ...(dataSource.driver.options.type === "cockroachdb"
-                            ? [
-                                  {
-                                      columnNames: ["countryCode", "cityId"],
-                                      referencedColumnNames: [
-                                          "countryCode",
-                                          "id",
-                                      ],
-                                      referencedTableName: "cities",
-                                      onDelete: "NO ACTION",
-                                      onUpdate: "NO ACTION",
-                                  },
-                              ]
-                            : [
-                                  {
-                                      columnNames: ["cityId", "countryCode"],
-                                      referencedColumnNames: [
-                                          "id",
-                                          "countryCode",
-                                      ],
-                                      referencedTableName: "cities",
-                                      onDelete: "NO ACTION",
-                                      onUpdate: "NO ACTION",
-                                  },
-                              ]),
                         {
                             columnNames: ["countryCode"],
                             referencedColumnNames: ["code"],
@@ -108,16 +91,23 @@ describe("decorators > foreign-key", () => {
                             onUpdate: "NO ACTION",
                         },
                         {
-                            columnNames: ["cityId"],
-                            referencedColumnNames: ["id"],
+                            columnNames: ["dispatchCountryCode"],
+                            referencedColumnNames: ["code"],
+                            referencedTableName: "countries",
+                            onDelete: "NO ACTION",
+                            onUpdate: "NO ACTION",
+                        },
+                        {
+                            columnNames: ["cityId", "countryCode"],
+                            referencedColumnNames: ["countryCode", "id"],
                             referencedTableName: "cities",
                             onDelete: "NO ACTION",
                             onUpdate: "NO ACTION",
                         },
                         {
-                            columnNames: ["dispatchCountryCode"],
-                            referencedColumnNames: ["code"],
-                            referencedTableName: "countries",
+                            columnNames: ["cityId"],
+                            referencedColumnNames: ["id"],
+                            referencedTableName: "cities",
                             onDelete: "NO ACTION",
                             onUpdate: "NO ACTION",
                         },
@@ -336,5 +326,41 @@ describe("decorators > foreign-key", () => {
                     ])
                 }),
             ))
+
+        it("should throw an error if referenced entity metadata is not found", async () => {
+            const dataSource = new DataSource({
+                type: "mysql",
+                host: "localhost",
+                username: "test",
+                password: "test",
+                database: "test",
+                entities: [City],
+            })
+
+            await dataSource
+                .initialize()
+                .should.be.rejectedWith(
+                    TypeORMError,
+                    "Entity metadata for City#countryCode was not found. Check if you specified a correct entity object and if it's connected in the connection options.",
+                )
+        })
+
+        it("should throw an error if a column in the foreign key is missing", async () => {
+            const dataSource = new DataSource({
+                type: "mysql",
+                host: "localhost",
+                username: "test",
+                password: "test",
+                database: "test",
+                entities: [WrongCity, Country],
+            })
+
+            await dataSource
+                .initialize()
+                .should.be.rejectedWith(
+                    TypeORMError,
+                    "Foreign key constraint contains column that is missing in the entity (Country): id",
+                )
+        })
     })
 })
