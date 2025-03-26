@@ -6,13 +6,13 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #FF5000;
-  --ifm-color-primary-dark: #E64800;
-  --ifm-color-primary-darker: #D64400;
-  --ifm-color-primary-darkest: #B33800;
-  --ifm-color-primary-light: #FF651A;
-  --ifm-color-primary-lighter: #FF7A33;
-  --ifm-color-primary-lightest: #FF9966;
+  --ifm-color-primary: #D94400;
+  --ifm-color-primary-dark: #C33D00;
+  --ifm-color-primary-darker: #B33800;
+  --ifm-color-primary-darkest: #992F00;
+  --ifm-color-primary-light: #E64B00;
+  --ifm-color-primary-lighter: #F25200;
+  --ifm-color-primary-lightest: #FF5E0D;
 
   /* Secondary color (purple) */
   --ifm-color-secondary: #2E004B;
@@ -24,46 +24,54 @@
   --ifm-color-secondary-lightest: #4B0077;
 
   --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(255, 80, 0, 0.1);
+  --docusaurus-highlighted-code-line-bg: rgba(217, 68, 0, 0.1);
 
   /* Additional UI colors */
   --ifm-navbar-background-color: rgba(255, 255, 255, 0.8);
   --ifm-background-color: #FFFFFF;
-  --ifm-footer-background-color: #4B2D63;
+  --ifm-footer-background-color: #3D1B54;
   --ifm-footer-color: #FFFFFF;
-  --ifm-footer-link-color: #FFF0E6; /* Almost white with a hint of orange */
+  --ifm-footer-link-color: #FFE6D9; /* Slightly warmer white for better contrast */
   --ifm-footer-title-color: #FFFFFF;
+
+  /* Enhanced link colors for better contrast */
+  --ifm-link-color: #B33800;
+  --ifm-link-hover-color: #992F00;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #FF6B1A;
-  --ifm-color-primary-dark: #FF5800;
-  --ifm-color-primary-darker: #F55000;
-  --ifm-color-primary-darkest: #E64800;
-  --ifm-color-primary-light: #FF7E33;
-  --ifm-color-primary-lighter: #FF9149;
-  --ifm-color-primary-lightest: #FFAD75;
+  --ifm-color-primary: #FF7733;
+  --ifm-color-primary-dark: #FF6619;
+  --ifm-color-primary-darker: #FF5C0D;
+  --ifm-color-primary-darkest: #E64B00;
+  --ifm-color-primary-light: #FF884D;
+  --ifm-color-primary-lighter: #FF9259;
+  --ifm-color-primary-lightest: #FFAD85;
 
   /* Secondary colors for dark mode */
-  --ifm-color-secondary: #8A47A8;
-  --ifm-color-secondary-dark: #7C3E97;
-  --ifm-color-secondary-darker: #73398C;
-  --ifm-color-secondary-darkest: #5F2F74;
-  --ifm-color-secondary-light: #9852B3;
-  --ifm-color-secondary-lighter: #A15FBA;
-  --ifm-color-secondary-lightest: #B179CA;
+  --ifm-color-secondary: #B366CC;
+  --ifm-color-secondary-dark: #A952C4;
+  --ifm-color-secondary-darker: #9F47BA;
+  --ifm-color-secondary-darkest: #8A3AA3;
+  --ifm-color-secondary-light: #BD7AD3;
+  --ifm-color-secondary-lighter: #C78EDA;
+  --ifm-color-secondary-lightest: #DAB3E6;
 
-  --docusaurus-highlighted-code-line-bg: rgba(255, 80, 0, 0.3);
+  --docusaurus-highlighted-code-line-bg: rgba(255, 119, 51, 0.3);
 
   /* Additional UI colors for dark mode */
-  --ifm-navbar-background-color: rgba(46, 0, 75, 0.8);
-  --ifm-background-color: #1A0029;
-  --ifm-footer-background-color: #240039;
+  --ifm-navbar-background-color: rgba(24, 0, 40, 0.8);
+  --ifm-background-color: #180028;
+  --ifm-footer-background-color: #180028;
   --ifm-footer-color: #FFFFFF;
-  --ifm-footer-link-color: #FFF0E6; /* Almost white with a hint of orange */
+  --ifm-footer-link-color: #FFE6D9; /* Warmer white for better contrast */
   --ifm-footer-title-color: #FFFFFF;
   --ifm-heading-color: #FFFFFF;
+
+  /* Enhanced link colors for dark mode */
+  --ifm-link-color: #FF884D;
+  --ifm-link-hover-color: #FF9259;
 }
 
 
@@ -138,6 +146,7 @@ div[class*="announcementBarClose_"]:hover {
   background-color: var(--ifm-color-primary);
   border-color: var(--ifm-color-primary);
   color: white;
+  font-weight: 600; /* Enhanced weight for better readability */
   transition: all 0.3s ease;
 }
 
@@ -176,12 +185,12 @@ div[class*="announcementBarClose_"]:hover {
 
 /* Footer styling */
 [data-theme='light'] .footer {
-  background: linear-gradient(160deg, #4B2D63 0%, #5D3777 100%) !important;
+  background: linear-gradient(160deg, #3D1B54 0%, #4E2868 100%) !important;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme='dark'] .footer {
-  background: linear-gradient(160deg, #1e0030 0%, #2E004B 100%) !important;
+  background: linear-gradient(160deg, #180028 0%, #2A0045 100%) !important;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
 }
 
@@ -254,4 +263,14 @@ footer a.footer__link-item:hover,
   top: 0;
   left: 0;
   box-shadow: 0 1px 5px rgba(255, 80, 0, 0.3);
+}
+
+/* Ensure announcement bar meets contrast requirements */
+div[class*="announcementBarContent_"] {
+  color: #FFFFFF;
+}
+
+div[class*="announcementBarContent_"] a {
+  color: #FFE6D9 !important;
+  text-decoration: underline;
 }
