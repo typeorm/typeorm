@@ -361,7 +361,7 @@ export class AuroraMysqlDriver implements Driver {
      */
     async connect(): Promise<void> {
         if (!this.database) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
             this.database = await queryRunner.getCurrentDatabase()
 
