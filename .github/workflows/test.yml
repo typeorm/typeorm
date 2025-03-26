@@ -6,29 +6,48 @@ name: test
 
 on:
   push:
-    branches: [ "**" ]
+    branches: ["**"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 jobs:
   formatting:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
 
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "18.x"
+          node-version: "20.x"
+          cache: "npm"
 
-      - uses: actions/checkout@v4
-
-      - run: npm i
+      - run: npm ci
       - run: npm run lint
       - run: npm run format:ci
 
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm run compile
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: build/
+          retention-days: 1
+
   # These tests run in standard node containers with their db attached as a service
   database-tests:
+    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -40,6 +59,7 @@ jobs:
 
   # These tests run with custom docker image attributes that can't be specified in a GHA service
   database-compose-tests:
+    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -50,6 +70,7 @@ jobs:
       node-version: ${{matrix.node-version}}
 
   windows-database-tests:
+    needs: build
     uses: ./.github/workflows/windows-database-tests.yml
 
   # Run with most databases possible to provide the coverage of the tests

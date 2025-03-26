@@ -49,24 +49,26 @@ services:
 
   # cockroachdb
   cockroachdb:
-    image: "cockroachdb/cockroach:v23.1.9"
+    image: "cockroachdb/cockroach:v24.3.8"
     container_name: "typeorm-cockroachdb"
     command: start-single-node --insecure --cache=.25 --store=type=mem,size=.25
     ports:
       - "26257:26257"
+    # volumes:
+    #   - cockroach-data:/cockroach/cockroach-data
 
   # oracle
   oracle:
-    build:
-      context: docker/oracle
+    image: "container-registry.oracle.com/database/free:23.5.0.0-lite"
     container_name: "typeorm-oracle"
     ports:
       - "1521:1521"
-    #volumes:
-    # - oracle-data:/opt/oracle/oradata
-    healthcheck:
-      test: ["CMD", "/opt/oracle/checkDBStatus.sh"]
-      interval: 2s
+    environment:
+      ORACLE_PWD: "oracle"
+      ORACLE_SID: "FREE"
+    volumes:
+      # - oracle-data:/opt/oracle/oradata
+      - ./docker/oracle/startup:/opt/oracle/scripts/startup:ro
 
   # google cloud spanner
   spanner:
@@ -110,12 +112,15 @@ services:
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
+
   # redis
   # redis:
   #   image: "redis:3.0.3"
   #   container_name: "typeorm-redis"
   #   ports:
   #     - "6379:6379"
-#volumes:
-#  volume-hana-xe:
-#  mysql8_volume:
+
+# volumes:
+#   cockroach-data:
+#   oracle-data:
+#   volume-hana-xe:

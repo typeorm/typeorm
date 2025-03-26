@@ -49,6 +49,7 @@ cd typeorm
 # Add the main TypeORM repository as an upstream remote to your repository:
 git remote add upstream https://github.com/typeorm/typeorm.git
 ```
+
 ## Installing NPM Modules
 
 Install all TypeORM dependencies by running this command:
@@ -139,7 +140,7 @@ You should make sure the test suites pass before submitting a PR to GitHub. Test
 
 **Executing only some tests**: When you are creating tests to some specific code, you may want to only execute the tests that you're creating.
 
-To do this, you can temporarily modify your test definitions by adding [`.only` *mocha* commands](https://mochajs.org/#exclusive-tests) to `describe` and `it`. For example:
+To do this, you can temporarily modify your test definitions by adding [`.only` _mocha_ commands](https://mochajs.org/#exclusive-tests) to `describe` and `it`. For example:
 
 ```
 describe.only('your describe test', ....)
@@ -157,7 +158,7 @@ The `npm test` script works by deleting built TypeScript code, rebuilding the co
 
 Instead, for a quicker feedback cycle, you can run `npm run compile -- --watch` to make a fresh build and instruct TypeScript to watch for changes and only compile what code you've changed.
 
-Once TypeScript finishes compiling your changes, you can run `npm run test-fast` (instead of `test`), to trigger a test without causing a full recompile, which allows you to edit and check your changes much faster.
+Once TypeScript finishes compiling your changes, you can run `npm run test:fast` (instead of `test`), to trigger a test without causing a full recompile, which allows you to edit and check your changes much faster.
 
 ## Using Docker
 

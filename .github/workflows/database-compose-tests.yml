@@ -9,22 +9,29 @@ on:
 
 jobs:
   oracle:
-    # For some reason nyc is stuck at the end of the test execution even if all tests pass
-    # Probably that's why the job failed on CircleCI
+    # nyc is stuck at the end of the test execution even if all tests pass on Node.js 16.x
     if: ${{inputs.node-version != '16.x'}}
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
 
     steps:
+      - uses: actions/checkout@v4
+
+      - run: docker compose -f .github/workflows/test/oracle.docker-compose.yml up oracle --detach
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{inputs.node-version}}
-      - uses: actions/checkout@v4
-      - run: docker compose -f .github/workflows/test/oracle.docker-compose up -d
+          cache: "npm"
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: build/
+
       - run: npm i
       - run: cp .github/workflows/test/oracle.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test
+      - run: docker compose -f .github/workflows/test/oracle.docker-compose.yml up oracle --wait
+      - run: npx nyc npm run test:ci
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:

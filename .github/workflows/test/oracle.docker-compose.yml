@@ -1,0 +1,12 @@
+services:
+  oracle:
+    image: "container-registry.oracle.com/database/free:23.5.0.0-lite"
+    container_name: "typeorm-oracle"
+    ports:
+      - "1521:1521"
+    environment:
+      ORACLE_PWD: "oracle"
+      ORACLE_SID: "FREE"
+    volumes:
+      # - oracle-data:/opt/oracle/oradata
+      - ../../../docker/oracle/startup:/opt/oracle/scripts/startup:ro

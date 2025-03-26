@@ -5,12 +5,9 @@
     "type": "oracle",
     "host": "localhost",
     "port": 1521,
-    "serviceName": "XEPDB1",
+    "serviceName": "FREEPDB1",
     "username": "typeorm",
     "password": "oracle",
-    "logging": false,
-    "extra": {
-      "connectString": "localhost:1521/XEPDB1"
-    }
+    "logging": false
   }
 ]
