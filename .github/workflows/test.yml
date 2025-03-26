@@ -51,11 +51,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: [16, 18, 20] #, 22]
     uses: ./.github/workflows/database-tests.yml
     with:
-      node-container: ${{matrix.node-container}}
+      node-version: ${{matrix.node-version}}
 
   # These tests run with custom docker image attributes that can't be specified in a GHA service
   database-compose-tests:
@@ -63,8 +63,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [16.x, 18.x, 20.x] #, 22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: [16, 18, 20] #, 22]
     uses: ./.github/workflows/database-compose-tests.yml
     with:
       node-version: ${{matrix.node-version}}

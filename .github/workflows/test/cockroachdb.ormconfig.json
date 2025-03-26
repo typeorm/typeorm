@@ -3,7 +3,7 @@
     "skip": false,
     "name": "cockroachdb",
     "type": "cockroachdb",
-    "host": "crdb",
+    "host": "localhost",
     "port": 26257,
     "username": "root",
     "password": "",

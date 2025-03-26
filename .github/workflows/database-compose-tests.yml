@@ -10,7 +10,7 @@ on:
 jobs:
   oracle:
     # nyc is stuck at the end of the test execution even if all tests pass on Node.js 16.x
-    if: ${{inputs.node-version != '16.x'}}
+    if: ${{ inputs.node-version != 16 }}
     runs-on: ubuntu-latest
 
     steps:
@@ -20,7 +20,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{inputs.node-version}}
+          node-version: ${{ inputs.node-version }}
           cache: "npm"
       - uses: actions/download-artifact@v4
         with:
@@ -35,5 +35,5 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: oracle-${{ inputs.node-version }}
+          flag-name: oracle-node:${{ inputs.node-version }}
           parallel: true
