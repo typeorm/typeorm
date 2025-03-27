@@ -1,0 +1,26 @@
+name: database-tests-manual
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 2 * *"
+
+jobs:
+  yugabyte:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: docker compose up yugabyte --detach
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - run: npm ci
+      - run: cat ormconfig.sample.json | jq -c 'map(select(.name == "yugabyte"))' > ormconfig.json
+      - run: npm run compile
+      - run: docker compose up yugabyte --no-recreate --wait
+      - run: npm run test:fast
