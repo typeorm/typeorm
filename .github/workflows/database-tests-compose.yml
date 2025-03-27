@@ -29,7 +29,7 @@ jobs:
 
       - run: npm i
       - run: cp .github/workflows/test/oracle.ormconfig.json ormconfig.json
-      - run: docker compose -f .github/workflows/test/oracle.docker-compose.yml up oracle --wait
+      - run: docker compose -f .github/workflows/test/oracle.docker-compose.yml up oracle --no-recreate --wait
       - run: npx nyc npm run test:ci
 
       - name: Coveralls Parallel
