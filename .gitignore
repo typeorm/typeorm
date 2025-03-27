@@ -15,3 +15,7 @@ npm-debug.log
 .yarn/
 .yarn*
 *.iml
+
+# stryker temp files
+.stryker-tmp
+/reports
