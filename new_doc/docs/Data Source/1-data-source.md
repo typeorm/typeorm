@@ -98,4 +98,4 @@ export class UserController {
 
 Using the `DataSource` instance you can execute database operations with your entities,
 particularly using `.manager` and `.getRepository()` properties.
-For more information about them see [Entity Manager and Repository](working-with-entity-manager.md) documentation.
+For more information about them see [Entity Manager and Repository](../Working%20with%20Entity%20Manager/1-working-with-entity-manager.md) documentation.

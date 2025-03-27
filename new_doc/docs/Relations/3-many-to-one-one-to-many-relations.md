@@ -98,7 +98,7 @@ photo2.user = user
 await dataSource.manager.save(photo2)
 ```
 
-With [cascades](./relations.md#cascades) enabled you can save this relation with only one `save` call.
+With [cascades](./1-relations.md#cascades) enabled you can save this relation with only one `save` call.
 
 To load a user with photos inside you must specify the relation in `FindOptions`:
 

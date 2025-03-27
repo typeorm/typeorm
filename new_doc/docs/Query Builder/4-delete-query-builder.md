@@ -1,6 +1,6 @@
 # Delete using Query Builder
 
--   [Delete using Query Builder](#delete-using-query-builder)
+-   [Delete using Query Builder](./4-delete-query-builder.md)
     -   [`Delete`](#delete)
     -   [`Soft-Delete`](#soft-delete)
     -   [`Restore-Soft-Delete`](#restore-soft-delete)

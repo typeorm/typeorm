@@ -1,6 +1,6 @@
 # Repository APIs
 
--   [Repository APIs](#repository-apis)
+-   [Repository APIs](./6-repository-api.md)
     -   [`Repository` API](#repository-api)
         -   [Additional Options](#additional-options)
     -   [`TreeRepository` API](#treerepository-api)
@@ -15,7 +15,7 @@ const manager = repository.manager
 ```
 
 -   `metadata` - The `EntityMetadata` of the entity managed by this repository.
-    Learn more about [transactions in Entity Metadata](./entity-metadata.md).
+    Learn more about [transactions in Entity Metadata](../Not%20in%20the%20current%20Doc/entity-metadata.md).
 
 ```typescript
 const metadata = repository.metadata
@@ -36,7 +36,7 @@ const target = repository.target
 ```
 
 -   `createQueryBuilder` - Creates a query builder use to build SQL queries.
-    Learn more about [QueryBuilder](select-query-builder.md).
+    Learn more about [QueryBuilder](../Query%20Builder/1-select-query-builder.md).
 
 ```typescript
 const users = await repository
@@ -471,8 +471,8 @@ userRepository.remove(users, { chunk: entities.length / 1000 })
 
 ## `TreeRepository` API
 
-For `TreeRepository` API refer to [the Tree Entities documentation](./tree-entities.md#working-with-tree-entities).
+For `TreeRepository` API refer to [the Tree Entities documentation](../Entity/4-tree-entities.md#working-with-tree-entities).
 
 ## `MongoRepository` API
 
-For `MongoRepository` API refer to [the MongoDB documentation](./mongodb.md).
+For `MongoRepository` API refer to [the MongoDB documentation](../Guides/2-mongodb.md).

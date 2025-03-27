@@ -36,29 +36,29 @@ Different RDBMS-es have their own specific options.
     It accepts entity classes, entity schema classes, and directory paths from which to load.
     Directories support glob patterns.
     Example: `entities: [Post, Category, "entity/*.js", "modules/**/entity/*.js"]`.
-    Learn more about [Entities](entities.md).
-    Learn more about [Entity Schemas](separating-entity-definition.md).
+    Learn more about [Entities](../Entity/1-entities.md).
+    Learn more about [Entity Schemas](../Entity/6-separating-entity-definition.md).
 
 -   `subscribers` - Subscribers to be loaded and used for this data source.
     It accepts both entity classes and directories from which to load.
     Directories support glob patterns.
     Example: `subscribers: [PostSubscriber, AppSubscriber, "subscriber/*.js", "modules/**/subscriber/*.js"]`.
-    Learn more about [Subscribers](listeners-and-subscribers.md).
+    Learn more about [Subscribers](../Advanced%20Topics/4-listeners-and-subscribers.md).
 
 -   `migrations` - Migrations to be loaded and used for this data source.
     It accepts both migration classes and directories from which to load.
     Directories support glob patterns.
     Example: `migrations: [FirstMigration, SecondMigration, "migration/*.js", "modules/**/migration/*.js"]`.
-    Learn more about [Migrations](migrations.md).
+    Learn more about [Migrations](../Advanced%20Topics/1-migrations.md).
 
 -   `logging` - Indicates if logging is enabled or not.
     If set to `true` then query and error logging will be enabled.
     You can also specify different types of logging to be enabled, for example `["query", "error", "schema"]`.
-    Learn more about [Logging](logging.md).
+    Learn more about [Logging](../Advanced%20Topics/5-logging.md).
 
 -   `logger` - Logger to be used for logging purposes. Possible values are "advanced-console", "simple-console" and "file".
     Default is "advanced-console". You can also specify a logger class that implements `Logger` interface.
-    Learn more about [Logging](logging.md).
+    Learn more about [Logging](../Advanced%20Topics/5-logging.md).
 
 -   `maxQueryExecutionTime` - If query execution time exceed this given max execution time (in milliseconds)
     then logger will log this query.
@@ -96,7 +96,7 @@ Different RDBMS-es have their own specific options.
     By default, this table is called "typeorm_metadata".
 
 -   `cache` - Enables entity result caching. You can also configure cache type and other cache options here.
-    Read more about caching [here](caching.md).
+    Read more about caching [here](../Query%20Builder/6-caching.md).
 
 -   `isolateWhereStatements` - Enables where statement isolation, wrapping each where clause in brackets automatically.
     eg. `.where("user.firstName = :search OR user.lastName = :search")` becomes `WHERE (user.firstName = ? OR user.lastName = ?)` instead of `WHERE user.firstName = ? OR user.lastName = ?`
@@ -242,7 +242,7 @@ Different RDBMS-es have their own specific options.
 -   `database` - Database name
 
 ## `mssql` data source options
-Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation. See [SqlServerConnectionOptions.ts](..\src\driver\sqlserver\SqlServerConnectionOptions.ts) for details on exposed attributes.
+Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation. See [SqlServerConnectionOptions.ts](../../../src/driver/sqlserver/SqlServerConnectionOptions.ts) for details on exposed attributes.
 
 -   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 

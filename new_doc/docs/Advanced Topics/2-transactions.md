@@ -107,4 +107,4 @@ There are 3 methods to control transactions in `QueryRunner`:
 -   `commitTransaction` - commits all changes made using the query runner instance.
 -   `rollbackTransaction` - rolls all changes made using the query runner instance back.
 
-Learn more about [Query Runner](./query-runner.md).
+Learn more about [Query Runner](../Not%20in%20the%20current%20Doc/query-runner.md).

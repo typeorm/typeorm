@@ -135,7 +135,7 @@ export class PostCategory {
 
 ## View Column options
 
-View Column options define additional options for your view entity columns, similar to [column options](entities.md#column-options) for regular entities.
+View Column options define additional options for your view entity columns, similar to [column options](./1-entities.md#column-options) for regular entities.
 
 You can specify view column options in `@ViewColumn`:
 

@@ -50,7 +50,7 @@ dataSource
 
 Then you can use `dataSource` instance from anywhere in your app.
 
-Learn more about [Data Source](data-source.md)
+Learn more about [Data Source](../Data%20Source/1-data-source.md)
 
 ## Schema synchronization
 
@@ -143,7 +143,7 @@ and provides a declarative way to define what part of your model
 will become part of your database table.
 The power of TypeScript gives you type hinting and other useful features that you can use in classes.
 
-Learn more about [Entities and columns](entities.md)
+Learn more about [Entities and columns](../Entity/1-entities.md)
 
 ## Other model settings
 
@@ -269,7 +269,7 @@ if you want to load an existing entity from the database and replace some of its
 const employee = await Employee.preload({ id: 1, name: "John Doe" })
 ```
 
-Learn more about [Active Record vs Data Mapper](active-record-data-mapper.md) and [Repository API](repository-api.md).
+Learn more about [Active Record vs Data Mapper](./1-active-record-data-mapper.md) and [Repository API](../Working%20with%20Entity%20Manager/6-repository-api.md).
 
 To access properties in sequelize you do the following:
 
@@ -308,4 +308,4 @@ In TypeORM you do:
 export class User {}
 ```
 
-Learn more about [Indices](indices.md)
+Learn more about [Indices](../Advanced%20Topics/3-indices.md)

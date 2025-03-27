@@ -128,7 +128,7 @@ You can create a new entity using CLI:
 typeorm entity:create path-to-entity-dir/entity
 ```
 
-Learn more about [entities](./entities.md).
+Learn more about [entities](../Entity/1-entities.md).
 
 ## Create a new subscriber
 
@@ -138,7 +138,7 @@ You can create a new subscriber using CLI:
 typeorm subscriber:create path-to-subscriber-dir/subscriber
 ```
 
-Learn more about [Subscribers](./listeners-and-subscribers.md).
+Learn more about [Subscribers](./4-listeners-and-subscribers.md).
 
 ## Create a new migration
 
@@ -147,7 +147,7 @@ You can create a new migration using CLI:
 ```
 typeorm migration:create path-to-migrations-dir/migrationName
 ```
-Learn more about [Migrations](./migrations.md).
+Learn more about [Migrations](./1-migrations.md).
 
 ## Generate a migration from existing table schema
 
@@ -164,7 +164,7 @@ The rule of thumb is to generate a migration after each entity change.
 the -d argument value should specify the path where your DataSource instance is defined.
 You can specify the path and name of the migration with the first argument.
 
-Learn more about [Migrations](./migrations.md).
+Learn more about [Migrations](./1-migrations.md).
 
 ## Run migrations
 
@@ -174,7 +174,7 @@ To execute all pending migrations use following command:
 typeorm migration:run -- -d path-to-datasource-config
 ```
 
-Learn more about [Migrations](./migrations.md).
+Learn more about [Migrations](./1-migrations.md).
 
 ## Revert migrations
 
@@ -186,7 +186,7 @@ typeorm migration:revert -- -d path-to-datasource-config
 
 This command will undo only the last executed migration.
 You can execute this command multiple times to revert multiple migrations.
-Learn more about [Migrations](./migrations.md).
+Learn more about [Migrations](./1-migrations.md).
 
 ## Show migrations
 
