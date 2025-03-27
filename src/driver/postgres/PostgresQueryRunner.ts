@@ -4160,7 +4160,11 @@ export class PostgresQueryRunner
         const result: [{ version: string }] = await this.query(
             `SELECT version()`,
         )
-        return result[0].version.replace(/^PostgreSQL ([\d.]+) .*$/, "$1")
+
+        // Examples:
+        // Postgres: "PostgreSQL 14.10 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 8.5.0 20210514 (Red Hat 8.5.0-20), 64-bit"
+        // Yugabyte: "PostgreSQL 11.2-YB-2.18.1.0-b0 on x86_64-pc-linux-gnu, compiled by clang version 15.0.3 (https://github.com/yugabyte/llvm-project.git 0b8d1183745fd3998d8beffeec8cbe99c1b20529), 64-bit"
+        return result[0].version.replace(/^PostgreSQL ([\d.]+).*$/, "$1")
     }
 
     /**
