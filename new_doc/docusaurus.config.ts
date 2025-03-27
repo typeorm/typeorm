@@ -48,7 +48,7 @@ const config: Config = {
             } satisfies Preset.Options,
         ],
     ],
-
+    themes: ['docusaurus-theme-search-typesense'],
     themeConfig: {
         // Replace with your project's social card
         image: "img/typeorm-social-card.jpg",
@@ -133,6 +133,38 @@ const config: Config = {
             theme: prismThemes.github,
             darkTheme: prismThemes.dracula,
             additionalLanguages: ["typescript", "javascript", "bash", "json"],
+        },
+        typesense: {
+            // Replace this with the name of your index/collection.
+            // It should match the "index_name" entry in the scraper's "config.json" file.
+            typesenseCollectionName: 'typeorm-docs',
+
+            typesenseServerConfig: {
+                nodes: [
+                    {
+                        host: 'a46qefxi7yzt3hlbp-1.a1.typesense.net',
+                        port: 443,
+                        protocol: 'https',
+                    },
+                    {
+                        host: 'a46qefxi7yzt3hlbp-2.a1.typesense.net',
+                        port: 443,
+                        protocol: 'https',
+                    },
+                    {
+                        host: 'a46qefxi7yzt3hlbp-3.a1.typesense.net',
+                        port: 443,
+                        protocol: 'https',
+                    },
+                ],
+                apiKey: '92eYxk4qbUKgDwS4dHFn1eMWd9qUYfd7', // SEARCH_ONLY_KEY
+            },
+
+            // Optional: Typesense search parameters: https://typesense.org/docs/0.24.0/api/search.html#search-parameters
+            typesenseSearchParameters: {},
+
+            // Optional
+            contextualSearch: true,
         },
     } satisfies Preset.ThemeConfig,
 }
