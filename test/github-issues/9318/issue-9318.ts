@@ -29,9 +29,11 @@ describe("github issues > #9318 Change version query from SHOW server_version to
             connections.map(async (connection) => {
                 const { isGeneratedColumnsSupported } =
                     connection.driver as PostgresDriver
-                const result = await connection.query("SELECT VERSION()")
-                const dbVersion = result[0]["version"].replace(
-                    /^PostgreSQL ([\d.]+) .*$/,
+                const result: [{ version: string }] = await connection.query(
+                    "SELECT VERSION()",
+                )
+                const dbVersion = result[0].version.replace(
+                    /^PostgreSQL ([\d.]+).*$/,
                     "$1",
                 )
                 const versionGreaterOfEqualTo12 = VersionUtils.isGreaterOrEqual(

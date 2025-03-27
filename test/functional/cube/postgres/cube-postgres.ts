@@ -7,6 +7,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("cube-postgres", () => {
     let connections: DataSource[]
@@ -109,12 +110,12 @@ describe("cube-postgres", () => {
                 // Get Postgres version because zero-length cubes are not legal
                 // on all Postgres versions. Zero-length cubes are only tested
                 // to be working on Postgres version >=10.6.
-                const [{ version }] = await connection.query("SELECT version()")
-                const semverArray = version
-                    .replace(/^PostgreSQL ([\d.]+) .*$/, "$1")
-                    .split(".")
-                    .map(Number)
-                if (!(semverArray[0] >= 10 && semverArray[1] >= 6)) {
+                if (
+                    !DriverUtils.isReleaseVersionOrGreater(
+                        connection.driver,
+                        "10.6",
+                    )
+                ) {
                     return
                 }
 

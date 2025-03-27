@@ -4160,7 +4160,7 @@ export class PostgresQueryRunner
         const result: [{ version: string }] = await this.query(
             `SELECT version()`,
         )
-        return result[0].version.replace(/^PostgreSQL ([\d.]+) .*$/, "$1")
+        return result[0].version.replace(/^PostgreSQL ([\d.]+).*$/, "$1")
     }
 
     /**
