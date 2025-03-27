@@ -1,4 +1,4 @@
-name: database-tests
+name: database-tests-compose
 
 on:
   workflow_call:
