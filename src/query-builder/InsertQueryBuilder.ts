@@ -874,7 +874,8 @@ export class InsertQueryBuilder<
                         }
                     } else if (
                         value === null &&
-                        this.connection.driver.options.type === "spanner"
+                        (this.connection.driver.options.type === "spanner" ||
+                            this.connection.driver.options.type === "oracle")
                     ) {
                         expression += "NULL"
 
