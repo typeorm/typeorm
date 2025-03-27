@@ -1,11 +1,11 @@
 import "reflect-metadata"
-import { Category } from "./entity/Category"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
+import { Category } from "./entity/Category"
 import { Product } from "./entity/Product"
 
 describe("tree tables > materialized-path", () => {
@@ -14,7 +14,6 @@ describe("tree tables > materialized-path", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [Product, Category],
-                // logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

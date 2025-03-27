@@ -76,7 +76,7 @@
     "username": "typeorm",
     "password": "oracle",
     "port": 1521,
-    "serviceName": "XEPDB1",
+    "serviceName": "FREEPDB1",
     "logging": false
   },
   {

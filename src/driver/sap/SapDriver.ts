@@ -72,6 +72,11 @@ export class SapDriver implements Driver {
     options: SapConnectionOptions
 
     /**
+     * Version of SAP HANA. Requires a SQL query to the DB, so it is not always set
+     */
+    version?: string
+
+    /**
      * Database name used to perform all write queries.
      */
     database?: string
@@ -295,19 +300,19 @@ export class SapDriver implements Driver {
         // create the pool
         this.master = this.client.createPool(dbParams, options)
 
-        if (!this.database || !this.schema) {
-            const queryRunner = await this.createQueryRunner("master")
+        const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+        this.version = await queryRunner.getVersion()
 
-            if (!this.schema) {
-                this.schema = await queryRunner.getCurrentSchema()
-            }
-
-            await queryRunner.release()
+        if (!this.database) {
+            this.database = await queryRunner.getCurrentDatabase()
         }
+
+        if (!this.schema) {
+            this.schema = await queryRunner.getCurrentSchema()
+        }
+
+        await queryRunner.release()
     }
 
     /**

@@ -1,11 +1,11 @@
+import { assert } from "chai"
 import "reflect-metadata"
+import { DataSource } from "../../../src"
 import {
-    createTestingConnections,
     closeTestingConnections,
+    createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
-import { assert } from "chai"
 import { Dog } from "./entity/family"
 
 describe("github issues > #10653 Default value in child table/entity column decorator for multiple table inheritance is ignored for inherited columns", () => {
@@ -16,7 +16,6 @@ describe("github issues > #10653 Default value in child table/entity column deco
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
-                logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))

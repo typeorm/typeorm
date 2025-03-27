@@ -9,9 +9,19 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - run: npm i
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: build/
+
+      - run: npm ci
       - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test
+      - run: npx nyc npm run test:ci
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -24,9 +34,19 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - run: npm i
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: build/
+
+      - run: npm ci
       - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test
+      - run: npx nyc npm run test:ci
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -39,9 +59,19 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - run: npm i
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: build/
+
+      - run: npm ci
       - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test
+      - run: npx nyc npm run test:ci
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
