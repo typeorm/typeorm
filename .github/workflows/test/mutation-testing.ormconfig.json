@@ -6,25 +6,23 @@
     "database": "./temp/better-sqlite3db.db",
     "logging": false
   },
-
   {
     "skip": false,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
-    "host": "mongodb",
+    "host": "localhost",
     "port": 27017,
     "database": "test",
     "logging": false,
     "useNewUrlParser": true,
     "useUnifiedTopology": true
   },
-
   {
     "skip": false,
     "name": "mssql",
     "type": "mssql",
-    "host": "mssql",
+    "host": "localhost",
     "port": 1433,
     "username": "sa",
     "password": "Admin12345",
@@ -34,12 +32,11 @@
       "trustServerCertificate": true
     }
   },
-
   {
     "skip": false,
     "name": "mysql",
     "type": "mysql",
-    "host": "mysql",
+    "host": "localhost",
     "port": 3306,
     "username": "root",
     "password": "admin",
@@ -50,26 +47,24 @@
     "skip": false,
     "name": "mariadb",
     "type": "mariadb",
-    "host": "mariadb",
-    "port": 3306,
+    "host": "localhost",
+    "port": 3307,
     "username": "root",
     "password": "admin",
     "database": "test",
     "logging": false
   },
-
   {
     "skip": false,
     "name": "postgres",
     "type": "postgres",
-    "host": "postgres",
+    "host": "localhost",
     "port": 5432,
     "username": "postgres",
     "password": "postgres",
     "database": "postgres",
     "logging": false
   },
-  
   {
     "skip": false,
     "name": "sqlite",
@@ -78,7 +73,6 @@
     "logging": false,
     "relationLoadStrategy": "join"
   },
-
   {
     "skip": false,
     "name": "sqljs",

@@ -8,11 +8,12 @@ on:
 jobs:
   mutation-testing:
     runs-on: ubuntu-latest
-    container: "node:18"
     
     services:
       mongodb:
         image: mongo:5.0.12
+        ports:
+          - "27017:27017"
       mssql:
         image: "mcr.microsoft.com/mssql/server:2022-latest"
         env:
@@ -20,6 +21,8 @@ jobs:
           ACCEPT_EULA: "Y"
       mysql:
         image: mysql:5.7.37
+        ports:
+          - "3306:3306"
         env:
           MYSQL_ROOT_PASSWORD: "admin"
           MYSQL_USER: "test"
@@ -27,6 +30,8 @@ jobs:
           MYSQL_DATABASE: "test"
       mariadb:
         image: mariadb:10.10.3
+        ports:
+          - "3307:3306"
         env:
           MYSQL_ROOT_PASSWORD: "admin"
           MYSQL_USER: "test"
@@ -34,6 +39,8 @@ jobs:
           MYSQL_DATABASE: "test"
       postgres:
         image: postgis/postgis:14-3.3
+        ports:
+          - "5432:5432"
         env:
           POSTGRES_USERNAME: postgres
           POSTGRES_PASSWORD: postgres
@@ -46,13 +53,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - run: npm i
-      - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
-      - run: cp .github/workflows/test/for-mutation-testing.ormconfig.json ormconfig.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
 
+      - run: npm ci
+      - run: cp .github/workflows/test/mutation-testing.ormconfig.json ormconfig.json
       - run: npx stryker run
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+
       - uses: actions/upload-artifact@v4
         with:
           name: mutation-testing
