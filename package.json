@@ -82,8 +82,9 @@
     "lint": "eslint .",
     "pack": "gulp pack",
     "package": "gulp package",
-    "test": "rimraf ./build && tsc && mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
-    "test-fast": "mocha --file ./build/compiled/test/utils/test-setup.js --bail --recursive --timeout 90000 ./build/compiled/test",
+    "test": "npm run compile && npm run test:fast",
+    "test:ci": "mocha --bail",
+    "test:fast": "mocha",
     "watch": "./node_modules/.bin/tsc -w"
   },
   "dependencies": {
@@ -113,6 +114,7 @@
     "@types/node": "^16.18.126",
     "@types/sha.js": "^2.4.4",
     "@types/sinon": "^10.0.20",
+    "@types/sinon-chai": "^4.0.0",
     "@types/source-map-support": "^0.5.10",
     "@types/yargs": "^17.0.33",
     "better-sqlite3": "^8.7.0",
