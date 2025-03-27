@@ -275,3 +275,9 @@ div[class*="announcementBarContent_"] a {
   color: #FFE6D9 !important;
   text-decoration: underline;
 }
+
+/* TypeSense */
+
+.DocSearch-Container {
+  z-index: 1001 !important;
+}
