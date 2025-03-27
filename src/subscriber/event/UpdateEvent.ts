@@ -29,6 +29,8 @@ export interface UpdateEvent<Entity> {
 
     /**
      * Updating entity.
+     *
+     * Contains the same data that was passed to the updating method, be it the instance of an entity or the partial entity.
      */
     entity: ObjectLiteral | undefined
 
@@ -39,6 +41,8 @@ export interface UpdateEvent<Entity> {
 
     /**
      * Updating entity in the database.
+     *
+     * Is set only when one of the following methods are used: .save(), .remove(), .softRemove(), and .recover()
      */
     databaseEntity: Entity
 
