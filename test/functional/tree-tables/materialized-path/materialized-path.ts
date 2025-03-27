@@ -107,46 +107,6 @@ describe("tree tables > materialized-path", () => {
             }),
         ))
 
-    it("categories should be attached via children and saved properly", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const categoryRepository =
-                    connection.getTreeRepository(Category)
-
-                const a1 = new Category()
-                a1.name = "a1"
-                await categoryRepository.save(a1)
-
-                const a11 = new Category()
-                a11.name = "a11"
-
-                const a12 = new Category()
-                a12.name = "a12"
-
-                a1.childCategories = [a11, a12]
-                await categoryRepository.save(a1)
-
-                const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
-                    {
-                        id: 1,
-                        name: "a1",
-                    },
-                ])
-
-                const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
-
-                const a1Children = await categoryRepository.findDescendants(a1)
-                a1Children.length.should.be.equal(3)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a12" })
-            }),
-        ))
-
     it("categories should be attached via children and saved properly and everything must be saved in cascades", () =>
         Promise.all(
             connections.map(async (connection) => {
