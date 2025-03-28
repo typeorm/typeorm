@@ -78,33 +78,33 @@ services:
       - "9010:9010"
       - "9020:9020"
 
-  # sap hana (works only on linux)
-  # hanaexpress:
-  #   image: "store/saplabs/hanaexpress:2.00.040.00.20190729.1"
-  #   container_name: "typeorm-hanaexpress"
-  #   hostname: hxe
-  #   command:
-  #     [
-  #       "--passwords-url",
-  #       "file:////hana/hxe-config.json",
-  #       "--agree-to-sap-license",
-  #     ]
-  #   ulimits:
-  #     nofile: 1048576
-  #   sysctls:
-  #     - kernel.shmmax=1073741824
-  #     - net.ipv4.ip_local_port_range=40000 60999
-  #     - kernel.shmmni=524288
-  #     - kernel.shmall=8388608
-  #   volumes:
-  #     - volume-hana-xe:/hana/mounts
-  #     - ./docker/hana/hxe-config.json:/hana/hxe-config.json
-  #   ports:
-  #     - 39013:39013
-  #     - 39017:39017
-  #     - 39041-39045:39041-39045
-  #     - 1128-1129:1128-1129
-  #     - 59013-59014:59013-59014
+  # sap hana
+  # works only on linux, minimum 10GB RAM for docker required
+  hanaexpress:
+    image: "saplabs/hanaexpress:2.00.076.00.20240701.1"
+    container_name: "typeorm-hanaexpress"
+    hostname: hxe
+    command:
+      [
+        "--passwords-url",
+        "file:////hana/hxe-config.json",
+        "--agree-to-sap-license",
+      ]
+    ulimits:
+      nofile: 1048576
+    sysctls:
+      - kernel.shmall=3145728 # System-wide limit of total shared memory, in 4k pages
+      - kernel.shmmax=1073741824 # Maximum shared memory segment sizes
+      - kernel.shmmni=4096 # Maximum number of shared memory segments
+      - net.ipv4.ip_local_port_range=40000 60999
+    volumes:
+      - volume-hana-xe:/hana/mounts
+      - ./docker/hana/hxe-config.json:/hana/hxe-config.json:ro
+    ports:
+      - "39041:39041"
+    healthcheck:
+      test: "/hana/shared/HXE/exe/linuxx86_64/hdb/hdbsql -n localhost:39041 -u SYSTEM -p HXEHana1 \"\\s\""
+      interval: 5s
 
   # mongodb
   mongodb:
@@ -120,7 +120,7 @@ services:
   #   ports:
   #     - "6379:6379"
 
-# volumes:
-#   cockroach-data:
-#   oracle-data:
-#   volume-hana-xe:
+volumes:
+  # cockroach-data:
+  # oracle-data:
+  volume-hana-xe:

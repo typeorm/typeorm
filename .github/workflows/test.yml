@@ -58,23 +58,23 @@ jobs:
       node-version: ${{matrix.node-version}}
 
   # These tests run with custom docker image attributes that can't be specified in a GHA service
-  database-compose-tests:
+  database-tests-compose:
     needs: build
     strategy:
       fail-fast: false
       matrix:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-        node-version: [16, 18, 20] #, 22]
-    uses: ./.github/workflows/database-compose-tests.yml
+        node-version: [18, 20] #, 22]
+    uses: ./.github/workflows/database-tests-compose.yml
     with:
       node-version: ${{matrix.node-version}}
 
-  windows-database-tests:
+  database-tests-windows:
     needs: build
-    uses: ./.github/workflows/windows-database-tests.yml
+    uses: ./.github/workflows/database-tests-windows.yml
 
   # Run with most databases possible to provide the coverage of the tests
   coverage:
     if: ${{ always() }}
-    needs: [database-tests, database-compose-tests, windows-database-tests]
+    needs: [database-tests, database-tests-compose, database-tests-windows]
     uses: ./.github/workflows/coverage.yml

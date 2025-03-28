@@ -64,7 +64,7 @@ describe("github issues > #6815 RelationId() on nullable relation returns 'null'
                     },
                 })
 
-                if (connection.name === "cockroachdb") {
+                if (connection.driver.options.type === "cockroachdb") {
                     // CockroachDB returns id as a number.
                     expect(loaded.childId).to.equal(child.id.toString())
                 } else {

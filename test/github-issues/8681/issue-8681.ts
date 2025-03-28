@@ -11,6 +11,7 @@ import { Thing } from "./entity/thing.entity"
 
 describe("github issues > #8681 DeepPartial simplification breaks the .create() and .save() method in certain cases.", () => {
     let connections: DataSource[]
+
     before(
         async () =>
             (connections = await createTestingConnections({
@@ -26,6 +27,7 @@ describe("github issues > #8681 DeepPartial simplification breaks the .create() 
         Promise.all(
             connections.map(async (connection) => {
                 const myThing: DeepPartial<Thing> = {
+                    name: "myThing",
                     items: [{ id: 1 }, { id: 2 }],
                 }
 
@@ -42,6 +44,7 @@ describe("github issues > #8681 DeepPartial simplification breaks the .create() 
                 return { thing, items }
             }),
         ))
+
     it("should .save() and .create() complex deep partial entities using a generic repository", () =>
         Promise.all(
             connections.map(async (connection) => {
@@ -61,14 +64,14 @@ describe("github issues > #8681 DeepPartial simplification breaks the .create() 
 
                 const thingService = new AbstractService<Thing>(Thing)
 
-                const myThing: DeepPartial<Thing> = { id: 1 }
+                const myThing: DeepPartial<Thing> = { id: 1, name: "myThing" }
                 const thing = await thingService.create(myThing)
 
                 const thingRepository = connection.getRepository(Thing)
                 const dbItems = await thingRepository.find()
-                expect(dbItems).to.have.length(1)
 
-                return { thing }
+                expect(dbItems).to.have.length(1)
+                expect(dbItems[0]).to.deep.equal(thing)
             }),
         ))
 })

@@ -1,12 +1,14 @@
+import { expect } from "chai"
 import "reflect-metadata"
+
 import { DataSource } from "../../../src/data-source/DataSource"
+import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { Table } from "../../../src/schema-builder/table/Table"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Table } from "../../../src/schema-builder/table/Table"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > rename table", () => {
     let connections: DataSource[]
@@ -27,8 +29,9 @@ describe("query runner > rename table", () => {
                 if (
                     connection.driver.options.type === "cockroachdb" ||
                     connection.driver.options.type === "spanner"
-                )
+                ) {
                     return
+                }
 
                 const queryRunner = connection.createQueryRunner()
 
@@ -41,14 +44,14 @@ describe("query runner > rename table", () => {
                     const facultySeq = await queryRunner.query(
                         sequenceQuery("faculty_id_seq"),
                     )
-                    facultySeq[0].count.should.be.equal("1")
+                    expect(facultySeq[0].count).to.equal("1")
                 }
 
                 let table = await queryRunner.getTable("faculty")
 
                 await queryRunner.renameTable(table!, "question")
                 table = await queryRunner.getTable("question")
-                table!.should.be.exist
+                expect(table).to.exist
 
                 // check if sequence "faculty_id_seq" was renamed to "question_id_seq"
                 if (connection.driver.options.type === "postgres") {
@@ -58,13 +61,13 @@ describe("query runner > rename table", () => {
                     const questionSeq = await queryRunner.query(
                         sequenceQuery("question_id_seq"),
                     )
-                    facultySeq[0].count.should.be.equal("0")
-                    questionSeq[0].count.should.be.equal("1")
+                    expect(facultySeq[0].count).to.equal("0")
+                    expect(questionSeq[0].count).to.equal("1")
                 }
 
                 await queryRunner.renameTable("question", "answer")
                 table = await queryRunner.getTable("answer")
-                table!.should.be.exist
+                expect(table).to.exist
 
                 // check if sequence "question_id_seq" was renamed to "answer_id_seq"
                 if (connection.driver.options.type === "postgres") {
@@ -74,14 +77,14 @@ describe("query runner > rename table", () => {
                     const answerSeq = await queryRunner.query(
                         sequenceQuery("answer_id_seq"),
                     )
-                    questionSeq[0].count.should.be.equal("0")
-                    answerSeq[0].count.should.be.equal("1")
+                    expect(questionSeq[0].count).to.equal("0")
+                    expect(answerSeq[0].count).to.equal("1")
                 }
 
                 await queryRunner.executeMemoryDownSql()
 
                 table = await queryRunner.getTable("faculty")
-                table!.should.be.exist
+                expect(table).to.exist
 
                 // check if sequence "answer_id_seq" was renamed to "faculty_id_seq"
                 if (connection.driver.options.type === "postgres") {
@@ -91,8 +94,8 @@ describe("query runner > rename table", () => {
                     const facultySeq = await queryRunner.query(
                         sequenceQuery("faculty_id_seq"),
                     )
-                    answerSeq[0].count.should.be.equal("0")
-                    facultySeq[0].count.should.be.equal("1")
+                    expect(answerSeq[0].count).to.equal("0")
+                    expect(facultySeq[0].count).to.equal("1")
                 }
 
                 await queryRunner.release()
@@ -106,8 +109,9 @@ describe("query runner > rename table", () => {
                 if (
                     connection.driver.options.type === "cockroachdb" ||
                     connection.driver.options.type === "spanner"
-                )
+                ) {
                     return
+                }
 
                 const queryRunner = connection.createQueryRunner()
 
@@ -115,7 +119,7 @@ describe("query runner > rename table", () => {
 
                 await queryRunner.renameTable(table!, "renamedPost")
                 table = await queryRunner.getTable("renamedPost")
-                table!.should.be.exist
+                expect(table).to.exist
 
                 // should successfully drop pk if pk constraint was correctly renamed.
                 await queryRunner.dropPrimaryKey(table!)
@@ -135,13 +139,13 @@ describe("query runner > rename table", () => {
                             (columnName) => columnName === "tag",
                         )
                     })
-                    tableUnique!.name!.should.be.equal(newUniqueConstraintName)
+                    expect(tableUnique!.name).to.equal(newUniqueConstraintName)
                 }
 
                 await queryRunner.executeMemoryDownSql()
 
                 table = await queryRunner.getTable("post")
-                table!.should.be.exist
+                expect(table).to.exist
 
                 await queryRunner.release()
             }),
@@ -154,8 +158,9 @@ describe("query runner > rename table", () => {
                 if (
                     connection.driver.options.type === "cockroachdb" ||
                     connection.driver.options.type === "spanner"
-                )
+                ) {
                     return
+                }
 
                 const queryRunner = connection.createQueryRunner()
                 let table: Table | undefined
@@ -261,7 +266,7 @@ describe("query runner > rename table", () => {
                     table!,
                     ["name"],
                 )
-                table!.indices[0].name!.should.be.equal(newIndexName)
+                expect(table!.indices[0].name).to.equal(newIndexName)
 
                 await queryRunner.renameTable(
                     categoryTableName,
@@ -275,15 +280,15 @@ describe("query runner > rename table", () => {
                         "question",
                         ["id"],
                     )
-                table!.foreignKeys[0].name!.should.be.equal(newForeignKeyName)
+                expect(table!.foreignKeys[0].name).to.equal(newForeignKeyName)
 
                 await queryRunner.executeMemoryDownSql()
 
                 table = await queryRunner.getTable(questionTableName)
-                table!.should.be.exist
+                expect(table).to.exist
 
                 table = await queryRunner.getTable(categoryTableName)
-                table!.should.be.exist
+                expect(table).to.exist
 
                 await queryRunner.release()
             }),

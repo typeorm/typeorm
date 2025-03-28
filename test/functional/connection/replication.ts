@@ -25,7 +25,7 @@ const expectCurrentApplicationName = async (
 describe("Connection replication", () => {
     const ormConfigConnectionOptionsArray = getTypeOrmConfig()
     const postgresOptions = ormConfigConnectionOptionsArray.find(
-        (options) => options.type == "postgres",
+        (options) => options.type == "postgres" && !options.skip,
     )
     if (!postgresOptions) {
         return

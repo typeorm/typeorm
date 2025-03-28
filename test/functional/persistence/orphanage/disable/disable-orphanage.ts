@@ -1,13 +1,14 @@
-import "reflect-metadata"
-import { Connection, Repository } from "../../../../../src/index"
-import {
-    reloadTestingDatabases,
-    createTestingConnections,
-    closeTestingConnections,
-} from "../../../../utils/test-utils"
 import { expect } from "chai"
-import { User } from "./entity/User"
+import "reflect-metadata"
+
+import { DataSource, Repository } from "../../../../../src/index"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../../utils/test-utils"
 import { Setting } from "./entity/Setting"
+import { User } from "./entity/User"
 
 describe("persistence > orphanage > disable", () => {
     // -------------------------------------------------------------------------
@@ -15,7 +16,7 @@ describe("persistence > orphanage > disable", () => {
     // -------------------------------------------------------------------------
 
     // connect to db
-    let connections: Connection[] = []
+    let connections: DataSource[] = []
 
     before(
         async () =>
@@ -47,7 +48,7 @@ describe("persistence > orphanage > disable", () => {
                 }),
             )
 
-            const user = await userRepo.save(new User())
+            const user = await userRepo.save(new User("test-user"))
             user.settings = [
                 new Setting("foo"),
                 new Setting("bar"),

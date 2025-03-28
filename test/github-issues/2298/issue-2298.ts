@@ -24,9 +24,9 @@ describe("github issues > #2298 - Repository filtering not considering related c
     it("should work perfectly", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const product1 = new Product()
+                const product1 = new Product("product1")
                 await connection.manager.save(product1)
-                const product2 = new Product()
+                const product2 = new Product("product2")
                 await connection.manager.save(product2)
 
                 const ticket1 = new Ticket()
@@ -91,12 +91,14 @@ describe("github issues > #2298 - Repository filtering not considering related c
                                 id: 3,
                                 product: {
                                     id: 2,
+                                    name: "product2",
                                 },
                             },
                             {
                                 id: 4,
                                 product: {
                                     id: 2,
+                                    name: "product2",
                                 },
                             },
                         ],

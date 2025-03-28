@@ -396,12 +396,16 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Returns the database server version.
      */
-    async getVersion(): Promise<string> {
-        const currentDBQuery: [{ version: string }] = await this.query(
-            `SELECT "VERSION" AS "version" FROM "SYS"."M_DATABASE"`,
-        )
+    async getDatabaseAndVersion(): Promise<{
+        database: string
+        version: string
+    }> {
+        const currentDBQuery: [{ database: string; version: string }] =
+            await this.query(
+                `SELECT  "DATABASE_NAME" AS "database", "VERSION" AS "version" FROM "SYS"."M_DATABASE"`,
+            )
 
-        return currentDBQuery[0].version
+        return currentDBQuery[0]
     }
 
     /**
@@ -674,14 +678,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries.push(
             new Query(
                 `RENAME TABLE ${this.escapePath(oldTable)} TO ${this.escapePath(
-                    newTableName,
+                    newTable,
                 )}`,
             ),
         )
         downQueries.push(
             new Query(
                 `RENAME TABLE ${this.escapePath(newTable)} TO ${this.escapePath(
-                    oldTableName,
+                    oldTable,
                 )}`,
             ),
         )
