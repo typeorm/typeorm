@@ -302,11 +302,9 @@ export class SapDriver implements Driver {
 
         const queryRunner = this.createQueryRunner("master")
 
-        this.version = await queryRunner.getVersion()
-
-        if (!this.database) {
-            this.database = await queryRunner.getCurrentDatabase()
-        }
+        const { version, database } = await queryRunner.getDatabaseAndVersion()
+        this.version = version
+        this.database = database
 
         if (!this.schema) {
             this.schema = await queryRunner.getCurrentSchema()
