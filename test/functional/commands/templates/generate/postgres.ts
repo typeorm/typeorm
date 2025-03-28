@@ -13,7 +13,15 @@ export class TestMigration1610975184784 implements MigrationInterface {
     }
 
 }`,
-    javascript: `module.exports = class TestMigration1610975184784 {
+    javascript: `/**
+ * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ */
+
+/**
+ * @class
+ * @implements {MigrationInterface}
+ */
+module.exports = class TestMigration1610975184784 {
     name = 'TestMigration1610975184784'
 
     async up(queryRunner) {
