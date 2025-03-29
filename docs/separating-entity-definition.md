@@ -256,8 +256,8 @@ Be sure to add the `extended` columns also to the `Category` interface (e.g., vi
 In order to use [Single Table Inheritance](entity-inheritance.md#single-table-inheritance):
 
 1. Add the `inheritance` option to the **parent** class schema, specifying the inheritance pattern ("STI") and the
-   **discriminator** column, which will store the name of the _child_ class on each row
-2. Set the `type: "entity-child"` option for all **children** classes' schemas, while extending the _parent_ class
+   **discriminator** column, which will store the name of the *child* class on each row
+2. Set the `type: "entity-child"` option for all **children** classes' schemas, while extending the *parent* class
    columns using the spread operator syntax described above
 
 ```ts
