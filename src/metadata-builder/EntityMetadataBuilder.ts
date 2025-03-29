@@ -21,6 +21,7 @@ import { ExclusionMetadata } from "../metadata/ExclusionMetadata"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
+import { InstanceChecker } from "../util/InstanceChecker"
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -1186,11 +1187,19 @@ export class EntityMetadataBuilder {
         this.metadataArgsStorage
             .filterForeignKeys(entityMetadata.inheritanceTree)
             .forEach((foreignKeyArgs) => {
+                const foreignKeyType =
+                    typeof foreignKeyArgs.type === "function"
+                        ? (foreignKeyArgs.type as () => any)()
+                        : foreignKeyArgs.type
+
                 const referencedEntityMetadata = entityMetadatas.find((m) =>
-                    typeof foreignKeyArgs.type === "string"
-                        ? m.targetName === foreignKeyArgs.type ||
-                          m.givenTableName === foreignKeyArgs.type
-                        : m.target === (foreignKeyArgs.type as () => any)(),
+                    typeof foreignKeyType === "string"
+                        ? m.targetName === foreignKeyType ||
+                          m.givenTableName === foreignKeyType
+                        : InstanceChecker.isEntitySchema(foreignKeyType)
+                        ? m.target === foreignKeyType.options.name ||
+                          m.target === foreignKeyType.options.target
+                        : m.target === foreignKeyType,
                 )
 
                 if (!referencedEntityMetadata) {
@@ -1226,11 +1235,13 @@ export class EntityMetadataBuilder {
                                 foreignKeyArgs.inverseSide,
                             )
                         }
-                    } else {
-                        referencedColumns.push(
-                            ...referencedEntityMetadata.primaryColumns,
-                        )
                     }
+                }
+
+                if (!referencedColumnNames.length) {
+                    referencedColumns.push(
+                        ...referencedEntityMetadata.primaryColumns,
+                    )
                 }
 
                 const columnNameToColumn = (

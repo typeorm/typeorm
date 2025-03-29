@@ -85,6 +85,20 @@ export const PersonSchema = new EntitySchema({
             type: Number,
             nullable: false,
         },
+        countryCode: {
+            type: String,
+            length: 2,
+            foreignKey: {
+                target: "countries", // CountryEntity
+                inverseSide: "code",
+            },
+        },
+        cityId: {
+            type: Number,
+            foreignKey: {
+                target: "cities", // CityEntity
+            },
+        },
     },
     checks: [
         { expression: `"firstName" <> 'John' AND "lastName" <> 'Doe'` },
@@ -101,6 +115,13 @@ export const PersonSchema = new EntitySchema({
         {
             name: "UNIQUE_TEST",
             columns: ["firstName", "lastName"],
+        },
+    ],
+    foreignKeys: [
+        {
+            target: "cities", // CityEntity
+            columnNames: ["cityId", "countryCode"],
+            referencedColumnNames: ["id", "countryCode"],
         },
     ],
 })
@@ -235,8 +256,8 @@ Be sure to add the `extended` columns also to the `Category` interface (e.g., vi
 In order to use [Single Table Inheritance](entity-inheritance.md#single-table-inheritance):
 
 1. Add the `inheritance` option to the **parent** class schema, specifying the inheritance pattern ("STI") and the
-   **discriminator** column, which will store the name of the *child* class on each row
-2. Set the `type: "entity-child"` option for all **children** classes' schemas, while extending the *parent* class
+   **discriminator** column, which will store the name of the _child_ class on each row
+2. Set the `type: "entity-child"` option for all **children** classes' schemas, while extending the _parent_ class
    columns using the spread operator syntax described above
 
 ```ts

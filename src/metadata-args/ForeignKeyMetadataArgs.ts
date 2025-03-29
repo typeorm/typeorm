@@ -16,7 +16,7 @@ export interface ForeignKeyMetadataArgs {
     /**
      * Class's property name to which this foreign key is applied.
      */
-    readonly propertyName: string
+    readonly propertyName?: string
 
     /**
      * Type of the relation. This type is in function because of language specifics and problems with recursive

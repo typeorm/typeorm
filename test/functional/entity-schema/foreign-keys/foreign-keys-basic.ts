@@ -1,17 +1,15 @@
-import { DataSource, TableForeignKey, TypeORMError } from "../../../../src"
+import { DataSource, TableForeignKey } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    setupSingleTestingConnection,
 } from "../../../utils/test-utils"
-import { City } from "./entity/city"
-import { Country } from "./entity/country"
-import { Order } from "./entity/order"
-import { User } from "./entity/user"
-import { WrongCity } from "./wrong city"
+import { CityEntity } from "./entity/city"
+import { CountryEntity } from "./entity/country"
+import { OrderEntity } from "./entity/order"
+import { UserEntity } from "./entity/user"
 
-describe("decorators > foreign-key", () => {
+describe("entity-schema > foreign-keys", () => {
     let dataSources: DataSource[]
 
     before(async () => {
@@ -132,17 +130,17 @@ describe("decorators > foreign-key", () => {
         it("should persist and load entities", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    await dataSource.getRepository(Country).save([
+                    await dataSource.getRepository(CountryEntity).save([
                         { code: "US", name: "United States" },
                         { code: "UA", name: "Ukraine" },
                     ])
 
-                    await dataSource.getRepository(City).save([
+                    await dataSource.getRepository(CityEntity).save([
                         { id: 1, name: "New York", countryCode: "US" },
                         { id: 2, name: "Kiev", countryCode: "UA" },
                     ])
 
-                    await dataSource.getRepository(User).save([
+                    await dataSource.getRepository(UserEntity).save([
                         {
                             id: 1,
                             name: "Alice",
@@ -155,7 +153,7 @@ describe("decorators > foreign-key", () => {
                         },
                     ])
 
-                    await dataSource.getRepository(Order).save([
+                    await dataSource.getRepository(OrderEntity).save([
                         {
                             id: 1,
                             userUuid: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
@@ -175,14 +173,14 @@ describe("decorators > foreign-key", () => {
                     ])
 
                     const ordersViaQueryBuilder = await dataSource
-                        .createQueryBuilder(Order, "orders")
+                        .createQueryBuilder(OrderEntity, "orders")
                         .leftJoinAndSelect(
-                            User,
+                            "User",
                             "users",
                             "users.uuid = orders.userUuid",
                         )
                         .leftJoinAndSelect(
-                            Country,
+                            "Country",
                             "country",
                             "country.code = orders.countryCode",
                         )
@@ -278,7 +276,7 @@ describe("decorators > foreign-key", () => {
                     ])
 
                     const ordersViaFind = await dataSource
-                        .getRepository(Order)
+                        .getRepository(OrderEntity)
                         .find({
                             relations: {
                                 dispatchCountry: true,
@@ -333,33 +331,5 @@ describe("decorators > foreign-key", () => {
                     ])
                 }),
             ))
-
-        it("should throw an error if referenced entity metadata is not found", async () => {
-            const options = setupSingleTestingConnection("mysql", {
-                entities: [City],
-            })
-            if (!options) return
-
-            await new DataSource(options)
-                .initialize()
-                .should.be.rejectedWith(
-                    TypeORMError,
-                    "Entity metadata for City#countryCode was not found. Check if you specified a correct entity object and if it's connected in the connection options.",
-                )
-        })
-
-        it("should throw an error if a column in the foreign key is missing", async () => {
-            const options = setupSingleTestingConnection("mysql", {
-                entities: [WrongCity, Country],
-            })
-            if (!options) return
-
-            await new DataSource(options)
-                .initialize()
-                .should.be.rejectedWith(
-                    TypeORMError,
-                    "Foreign key constraint contains column that is missing in the entity (Country): id",
-                )
-        })
     })
 })
