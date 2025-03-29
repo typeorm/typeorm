@@ -1,6 +1,7 @@
 import { ColumnType } from "../driver/types/ColumnTypes"
 import { ValueTransformer } from "../decorator/options/ValueTransformer"
 import { SpatialColumnOptions } from "../decorator/options/SpatialColumnOptions"
+import { EntitySchemaColumnForeignKeyOptions } from "./EntitySchemaColumnForeignKeyOptions"
 
 export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     /**
@@ -208,4 +209,9 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
      * Name of the primary key constraint.
      */
     primaryKeyConstraintName?: string
+
+    /**
+     * Foreign key options of this column.
+     */
+    foreignKey?: EntitySchemaColumnForeignKeyOptions
 }
