@@ -9,7 +9,7 @@ import { City } from "./entity/city"
 import { Country } from "./entity/country"
 import { Order } from "./entity/order"
 import { User } from "./entity/user"
-import { WrongCity } from "./wrong city"
+import { WrongCity } from "./wrong-city"
 
 describe("decorators > foreign-key", () => {
     let dataSources: DataSource[]
