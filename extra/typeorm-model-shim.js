@@ -292,4 +292,7 @@ exports.Generated = Generated;
 }
 exports.EntityRepository = EntityRepository;
 
-
+/* export */ function VirtualColumn() {
+    return noop
+}
+exports.VirtualColumn = VirtualColumn;

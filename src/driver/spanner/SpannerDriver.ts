@@ -268,7 +268,7 @@ export class SpannerDriver implements Driver {
                     return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
 
                 if (value === null) {
                     return full
@@ -309,7 +309,7 @@ export class SpannerDriver implements Driver {
                     return full
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
                 if (value === null) {
                     return " IS NULL"
                 }
@@ -336,7 +336,7 @@ export class SpannerDriver implements Driver {
         schema?: string,
         database?: string,
     ): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (database) {
             tablePath.unshift(database)

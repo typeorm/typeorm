@@ -12,7 +12,7 @@ import { ColumnMetadata } from "../../../src/metadata/ColumnMetadata"
 
 describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumnName if it is called from the owning or owned (inverse) context ", () => {
     let connections: DataSource[]
-    let namingStrategy = new NamingStrategyUnderTest()
+    const namingStrategy = new NamingStrategyUnderTest()
 
     before(
         async () =>
@@ -31,7 +31,7 @@ describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumn
             connections.map(async (connection) => {
                 await connection.getRepository(Animal).find()
 
-                let metadata = connection.getManyToManyMetadata(
+                const metadata = connection.getManyToManyMetadata(
                     Animal,
                     "categories",
                 )

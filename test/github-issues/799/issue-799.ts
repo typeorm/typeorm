@@ -1,8 +1,9 @@
 import { expect } from "chai"
 import { dirname } from "path"
+import { rimraf } from "rimraf"
+
 import { DataSource } from "../../../src/data-source/DataSource"
 import { getTypeOrmConfig } from "../../utils/test-utils"
-import { rimraf } from "rimraf"
 
 describe("github issues > #799 sqlite: 'database' path should be created", () => {
     let dataSource: DataSource

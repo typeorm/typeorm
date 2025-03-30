@@ -238,10 +238,8 @@ export class RawSqlResultsToEntityTransformer {
             const value = result[key]
 
             if (value === undefined) continue
-
-            if (value !== null && !column.isVirtualProperty)
-                // we don't mark it as has data if we will have only nulls or virtual properties in our object- we don't need such object
-                hasData = true
+            // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
+            else if (value !== null && !column.isVirtualProperty) hasData = true
 
             column.setEntityValue(
                 entity,

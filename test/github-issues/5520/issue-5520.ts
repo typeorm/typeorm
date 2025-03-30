@@ -27,12 +27,12 @@ describe("github issues > #5520 save does not return generated id if object to s
     it("should generate parents and childs uuid and return them", () =>
         Promise.all(
             connections.map(async (connection) => {
-                let entity = new TestParent()
-                let entityChild = new TestChild()
+                const entity = new TestParent()
+                const entityChild = new TestChild()
                 entityChild.value = "test"
                 entity.child = entityChild
 
-                let response = await connection
+                const response = await connection
                     .getRepository(TestParent)
                     .save(entity)
 
