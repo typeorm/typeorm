@@ -835,7 +835,7 @@ export class SapDriver implements Driver {
      * Returns true if driver supports fulltext indices.
      */
     isFullTextColumnTypeSupported(): boolean {
-        return true
+        return !DriverUtils.isReleaseVersionOrGreater(this, "4.0")
     }
 
     /**

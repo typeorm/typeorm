@@ -3153,7 +3153,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (index.isUnique) {
             indexType += "UNIQUE "
         }
-        if (index.isFulltext) {
+        if (index.isFulltext && this.driver.isFullTextColumnTypeSupported()) {
             indexType += "FULLTEXT "
         }
 
