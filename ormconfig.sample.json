@@ -91,13 +91,12 @@
   },
   {
     "skip": false,
-    "name": "sap",
+    "name": "hanaexpress",
     "type": "sap",
-    "host": "192.168.56.102",
-    "port": 39015,
+    "host": "localhost",
+    "port": 39041,
     "username": "SYSTEM",
-    "password": "MySuperHanaPwd123!",
-    "database": "HXE",
+    "password": "HXEHana1",
     "logging": false
   },
   {
