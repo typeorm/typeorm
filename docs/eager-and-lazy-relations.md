@@ -141,7 +141,7 @@ const categories = await question.categories
 // you'll have all question's categories inside "categories" variable now
 ```
 
-Note: if you came from other languages (Java, PHP, etc.) and are used to use lazy relations everywhere - be careful.
-Those languages aren't asynchronous and lazy loading is achieved different way, that's why you don't work with promises there.
-In JavaScript and Node.JS you have to use promises if you want to have lazy-loaded relations.
-This is non-standard technique and considered experimental in TypeORM.
+Note: if you come from other languages (Java, PHP, etc.) and are used to using lazy relations everywhere - be careful.
+Those languages aren't asynchronous, and lazy loading is achieved in a different way, without the use of promises.
+In JavaScript and Node.JS, you have to use promises if you want to have lazy-loaded relations.
+This is a non-standard technique and considered experimental in TypeORM.

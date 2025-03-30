@@ -8,14 +8,14 @@
 
 Your interaction with the database is only possible once you setup a `DataSource`.
 TypeORM's `DataSource` holds your database connection settings and
-establishes initial database connection or connection pool depending on the RDBMS you use.
+establishes the initial database connection or connection pool depending on the RDBMS you use.
 
-In order to establish initial connection / connection pool you must call `initialize` method of your `DataSource` instance.
+To establish the initial connection/connection pool, you must call the `initialize` method of your `DataSource` instance.
 
-Disconnection (closing all connections in the pool) is made when `destroy` method is called.
+Disconnection (closing all connections in the pool) occurs when the `destroy` method is called.
 
-Generally, you call `initialize` method of the `DataSource` instance on application bootstrap,
-and `destroy` it after you completely finished working with the database.
+Generally, you call the `initialize` method of the `DataSource` instance on the application bootstrap,
+and `destroy` it after you finished working with the database.
 In practice, if you are building a backend for your site and your backend server always stays running -
 you never `destroy` a DataSource.
 
@@ -45,11 +45,10 @@ AppDataSource.initialize()
     })
 ```
 
-It's a good idea to make `AppDataSource` globally available by `export`-ing it, since you'll
-use this instance across your application.
+It's a good idea to make `AppDataSource` globally available by `export`-ing it since you'll use this instance across your application.
 
-`DataSource` accepts `DataSourceOptions` and those options vary depend on database `type` you use.
-For different database types there are different options you can specify.
+`DataSource` accepts `DataSourceOptions` and those options vary depending on the database `type` you use.
+For different database types, there are different options you can specify.
 
 You can define as many data sources as you need in your application, for example:
 
@@ -97,6 +96,6 @@ export class UserController {
 }
 ```
 
-Using `DataSource` instance you can execute database operations with your entities,
+Using the `DataSource` instance you can execute database operations with your entities,
 particularly using `.manager` and `.getRepository()` properties.
 For more information about them see [Entity Manager and Repository](working-with-entity-manager.md) documentation.

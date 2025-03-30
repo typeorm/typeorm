@@ -14,7 +14,7 @@ export class Category {
 
     @VirtualColumn({
         query: (alias) =>
-            `SELECT COUNT(*) FROM category WHERE id = ${alias}.id`,
+            `SELECT COUNT(*) FROM "category" WHERE "id" = ${alias}."id"`,
     })
     randomVirtualColumn: number
 
