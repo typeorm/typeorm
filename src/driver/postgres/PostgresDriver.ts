@@ -360,7 +360,9 @@ export class PostgresDriver implements Driver {
 
         const queryRunner = this.createQueryRunner("master")
 
-        this.version = await queryRunner.getVersion()
+        if (!this.version) {
+            this.version = await queryRunner.getVersion()
+        }
 
         if (!this.database) {
             this.database = await queryRunner.getCurrentDatabase()
