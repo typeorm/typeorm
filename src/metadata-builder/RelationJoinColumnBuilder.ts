@@ -175,12 +175,14 @@ export class RelationJoinColumnBuilder {
                     !!joinColumn.name
                 )
             })
-            const joinColumnName = joinColumnMetadataArg
-                ? joinColumnMetadataArg.name
-                : this.connection.namingStrategy.joinColumnName(
-                      relation.propertyName,
-                      referencedColumn.propertyName,
-                  )
+
+            const joinColumnName =
+                this.connection.namingStrategy.joinTableColumnName(
+                    joinColumnMetadataArg && joinColumnMetadataArg.name
+                        ? joinColumnMetadataArg.name
+                        : relation.propertyName,
+                    referencedColumn.propertyName,
+                )
 
             const relationalColumns = relation.embeddedMetadata
                 ? relation.embeddedMetadata.columns
