@@ -12,45 +12,39 @@ import { JoinTable } from "../../../src/decorator/relations/JoinTable"
 
 @Entity("sample8_category")
 export class Category {
-    @PrimaryGeneratedColumn()
-    id: number
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
-    name: string
+  @Column()
+  name: string;
 
-    @OneToOne((type) => Category, (category) => category.oneInverseCategory, {
-        cascade: true,
-    })
-    @JoinColumn()
-    oneCategory: Category
+  @OneToOne((type) => Category, (category) => category.oneInverseCategory, {
+    cascade: true,
+  })
+  @JoinColumn()
+  oneCategory: Category;
 
-    @OneToOne((type) => Category, (category) => category.oneCategory, {
-        cascade: true,
-    })
-    oneInverseCategory: Category
+  @OneToOne((type) => Category, (category) => category.oneCategory)
+  oneInverseCategory: Category;
 
-    @ManyToOne((type) => Category, (category) => category.oneManyCategories, {
-        cascade: true,
-    })
-    oneManyCategory: Category
+  @ManyToOne((type) => Category, (category) => category.oneManyCategories)
+  oneManyCategory: Category;
 
-    @OneToMany((type) => Category, (category) => category.oneManyCategory, {
-        cascade: true,
-    })
-    oneManyCategories: Category[]
+  @OneToMany((type) => Category, (category) => category.oneManyCategory, {
+    cascade: ["insert", "update"], // Removed "remove" cascade
+  })
+  oneManyCategories: Category[];
 
-    @ManyToMany(
-        (type) => Category,
-        (category) => category.manyInverseCategories,
-        {
-            cascade: true,
-        },
-    )
-    @JoinTable()
-    manyCategories: Category[]
+  @ManyToMany(
+    (type) => Category,
+    (category) => category.manyInverseCategories,
+    {
+      cascade: ["insert", "update"], // Removed "remove" cascade
+    }
+  )
+  @JoinTable()
+  manyCategories: Category[];
 
-    @ManyToMany((type) => Category, (category) => category.manyCategories, {
-        cascade: true,
-    })
-    manyInverseCategories: Category[]
+  @ManyToMany((type) => Category, (category) => category.manyCategories)
+  manyInverseCategories: Category[];
 }
