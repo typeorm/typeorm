@@ -1,17 +1,21 @@
 <div align="center">
   <a href="http://typeorm.io/">
-    <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-light.png">
+        <source  media="(prefers-color-scheme: light)" srcset="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-dark.png">
+        <img height="80" width="auto" alt="TypeORM Logo" src="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-dark.png">
+    </picture>
   </a>
   <br>
   <br>
-	<a href="https://app.circleci.com/pipelines/github/typeorm/typeorm">
-		<img src="https://circleci.com/gh/typeorm/typeorm/tree/master.svg?style=shield">
+	<a href="https://github.com/typeorm/typeorm/actions/workflows/test.yml">
+		<img src="https://github.com/typeorm/typeorm/actions/workflows/test.yml/badge.svg?branch=master">
 	</a>
 	<a href="https://badge.fury.io/js/typeorm">
 		<img src="https://badge.fury.io/js/typeorm.svg">
 	</a>
-    <a href="https://codecov.io/gh/typeorm/typeorm">
-        <img alt="Codecov" src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg">
+    <a href='https://coveralls.io/github/typeorm/typeorm?branch=master'>
+        <img src='https://coveralls.io/repos/github/typeorm/typeorm/badge.svg?branch=master' alt='Coverage Status' />
     </a>
   <br>
   <br>
@@ -32,13 +36,6 @@ maintainable applications in the most productive way.
 
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
 [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
-
-> **📣 Announcement: The Future of TypeORM**
->
-> We’re excited to share our vision for a revitalized TypeORM—a strategy focused on building a stable, robust, and sustainable foundation for the long term. Learn how we’re structuring maintenance
-> and bringing together dedicated resources to ensure TypeORM thrives for years to come.
->
-> [Read the full announcement](./docs/future-of-typeorm.md)
 
 ## Features
 
@@ -790,13 +787,7 @@ export class PhotoMetadata {
 }
 ```
 
-Here, we are using a new decorator called `@OneToOne`. It allows us to create a one-to-one relationship between two entities.
-`type => Photo` is a function that returns the class of the entity with which we want to make our relationship.
-We are forced to use a function that returns a class, instead of using the class directly, because of the language specifics.
-We can also write it as `() => Photo`, but we use `type => Photo` as a convention to increase code readability.
-The type variable itself does not contain anything.
-
-We also add a `@JoinColumn` decorator, which indicates that this side of the relationship will own the relationship.
+Here, we are using a new decorator called `@OneToOne`. It allows us to create a one-to-one relationship between two entities. We also add a `@JoinColumn` decorator, which indicates that this side of the relationship will own the relationship.
 Relations can be unidirectional or bidirectional.
 Only one side of relational can be owning.
 Using `@JoinColumn` decorator is required on the owner side of the relationship.

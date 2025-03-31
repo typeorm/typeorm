@@ -6,44 +6,75 @@ name: test
 
 on:
   push:
-    branches: [ "**" ]
+    branches: ["**"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 jobs:
   formatting:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
 
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "18.x"
-      - uses: actions/checkout@v4
-      - run: npm i
-      - run: npm run lint
+          node-version: "20.x"
+          cache: "npm"
 
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:ci
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm run compile
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: build/
+          retention-days: 1
 
   # These tests run in standard node containers with their db attached as a service
   database-tests:
+    needs: build
     strategy:
       fail-fast: false
       matrix:
-        node-container: ["node:16", "node:18", "node:20"] #, "node:22"]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: [16, 18, 20] #, 22]
     uses: ./.github/workflows/database-tests.yml
     with:
-      node-container: ${{matrix.node-container}}
-
+      node-version: ${{matrix.node-version}}
 
   # These tests run with custom docker image attributes that can't be specified in a GHA service
-  database-compose-tests:
+  database-tests-compose:
+    needs: build
     strategy:
       fail-fast: false
       matrix:
-        node-version: [16.x, 18.x, 20.x] #, 22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-    uses: ./.github/workflows/database-compose-tests.yml
+        node-version: [18, 20] #, 22]
+    uses: ./.github/workflows/database-tests-compose.yml
     with:
       node-version: ${{matrix.node-version}}
+
+  database-tests-windows:
+    needs: build
+    uses: ./.github/workflows/database-tests-windows.yml
+
+  # Run with most databases possible to provide the coverage of the tests
+  coverage:
+    if: ${{ always() }}
+    needs: [database-tests, database-tests-compose, database-tests-windows]
+    uses: ./.github/workflows/coverage.yml

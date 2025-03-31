@@ -3,7 +3,7 @@
     "skip": false,
     "name": "postgres",
     "type": "postgres",
-    "host": "postgres",
+    "host": "localhost",
     "port": 5432,
     "username": "postgres",
     "password": "postgres",

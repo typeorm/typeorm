@@ -109,21 +109,14 @@ export class PlatformTools {
     }
 
     /**
-     * Highlights sql string to be print in the console.
+     * Highlights sql string to be printed in the console.
      */
     static highlightSql(sql: string) {
         return sql;
     }
 
     /**
-     * Highlights json string to be print in the console.
-     */
-    static highlightJson(json: string) {
-        return json;
-    }
-
-    /**
-     * Logging functions needed by AdvancedConsoleLogger (but here without chalk)
+     * Logging functions needed by AdvancedConsoleLogger (but here without ANSI colors)
      */
     static logInfo(prefix: string, info: any) {
         console.info(prefix + " ", info);

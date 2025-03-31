@@ -22,7 +22,7 @@ describe("indices > conditional index", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                let table = await queryRunner.getTable("post")
+                const table = await queryRunner.getTable("post")
 
                 table!.indices.length.should.be.equal(2)
                 expect(table!.indices[0].where).to.be.not.empty

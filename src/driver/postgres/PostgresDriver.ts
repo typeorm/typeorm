@@ -168,6 +168,7 @@ export class PostgresDriver implements Driver {
         "cidr",
         "inet",
         "macaddr",
+        "macaddr8",
         "tsvector",
         "tsquery",
         "uuid",
@@ -357,19 +358,19 @@ export class PostgresDriver implements Driver {
             this.master = await this.createPool(this.options, this.options)
         }
 
-        if (!this.database || !this.searchSchema) {
-            const queryRunner = await this.createQueryRunner("master")
+        const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+        this.version = await queryRunner.getVersion()
 
-            if (!this.searchSchema) {
-                this.searchSchema = await queryRunner.getCurrentSchema()
-            }
-
-            await queryRunner.release()
+        if (!this.database) {
+            this.database = await queryRunner.getCurrentDatabase()
         }
+
+        if (!this.searchSchema) {
+            this.searchSchema = await queryRunner.getCurrentSchema()
+        }
+
+        await queryRunner.release()
 
         if (!this.schema) {
             this.schema = this.searchSchema
@@ -390,21 +391,8 @@ export class PostgresDriver implements Driver {
             await this.enableExtensions(extensionsMetadata, connection)
         }
 
-        const results = (await this.executeQuery(
-            connection,
-            "SELECT version();",
-        )) as {
-            rows: {
-                version: string
-            }[]
-        }
-        const versionString = results.rows[0].version.replace(
-            /^PostgreSQL ([\d.]+) .*$/,
-            "$1",
-        )
-        this.version = versionString
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
-            versionString,
+            this.version,
             "12.0",
         )
 
@@ -616,7 +604,7 @@ export class PostgresDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: ReplicationMode): QueryRunner {
+    createQueryRunner(mode: ReplicationMode): PostgresQueryRunner {
         return new PostgresQueryRunner(this, mode)
     }
 
@@ -853,7 +841,7 @@ export class PostgresDriver implements Driver {
                     return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -891,7 +879,7 @@ export class PostgresDriver implements Driver {
      * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)
