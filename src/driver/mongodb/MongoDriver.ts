@@ -554,8 +554,7 @@ export class MongoDriver implements Driver {
         }
 
         mongoOptions.driverInfo = {
-            name: "TypeORM",
-            version: require("../../../package.json").version
+            name: "TypeORM"
         }
 
         if ("poolSize" in options) {
