@@ -554,7 +554,7 @@ export class MongoDriver implements Driver {
         }
 
         mongoOptions.driverInfo = {
-            name: "TypeORM"
+            name: "TypeORM",
         }
 
         if ("poolSize" in options) {
