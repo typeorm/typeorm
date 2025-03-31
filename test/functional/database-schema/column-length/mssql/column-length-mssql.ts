@@ -50,7 +50,7 @@ describe("database schema > column length > mssql", () => {
     it("all types should update their size", () =>
         Promise.all(
             connections.map(async (connection) => {
-                let metadata = connection.getMetadata(Post)
+                const metadata = connection.getMetadata(Post)
                 metadata.findColumnWithPropertyName("char")!.length = "100"
                 metadata.findColumnWithPropertyName("varchar")!.length = "100"
                 metadata.findColumnWithPropertyName("nchar")!.length = "100"
@@ -88,7 +88,7 @@ describe("database schema > column length > mssql", () => {
     it("all relevant types should update their size to max", () =>
         Promise.all(
             connections.map(async (connection) => {
-                let metadata = connection.getMetadata(Post)
+                const metadata = connection.getMetadata(Post)
                 metadata.findColumnWithPropertyName("varchar")!.length = "MAX"
                 metadata.findColumnWithPropertyName("nvarchar")!.length = "MAX"
                 metadata.findColumnWithPropertyName("varbinary")!.length = "MAX"

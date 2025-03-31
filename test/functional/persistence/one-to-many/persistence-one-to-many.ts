@@ -142,17 +142,17 @@ describe("persistence > one-to-many", function () {
                 const postRepository = connection.getRepository(Post)
                 const categoryRepository = connection.getRepository(Category)
 
-                let firstNewCategory = categoryRepository.create()
+                const firstNewCategory = categoryRepository.create()
                 firstNewCategory.id = 1
                 firstNewCategory.name = "Animals"
                 await categoryRepository.save(firstNewCategory)
 
-                let secondNewCategory = categoryRepository.create()
+                const secondNewCategory = categoryRepository.create()
                 secondNewCategory.id = 2
                 secondNewCategory.name = "Insects"
                 await categoryRepository.save(secondNewCategory)
 
-                let newPost = postRepository.create()
+                const newPost = postRepository.create()
                 newPost.id = 1
                 newPost.title = "All about animals"
                 await postRepository.save(newPost)
@@ -185,17 +185,17 @@ describe("persistence > one-to-many", function () {
                 const postRepository = connection.getRepository(Post)
                 const categoryRepository = connection.getRepository(Category)
 
-                let firstNewCategory = categoryRepository.create()
+                const firstNewCategory = categoryRepository.create()
                 firstNewCategory.id = 1
                 firstNewCategory.name = "Animals"
                 await categoryRepository.save(firstNewCategory)
 
-                let secondNewCategory = categoryRepository.create()
+                const secondNewCategory = categoryRepository.create()
                 secondNewCategory.id = 2
                 secondNewCategory.name = "Insects"
                 await categoryRepository.save(secondNewCategory)
 
-                let newPost = postRepository.create()
+                const newPost = postRepository.create()
                 newPost.id = 1
                 newPost.title = "All about animals"
                 await postRepository.save(newPost)
