@@ -2788,12 +2788,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                             if (dbColumn["COMMENTS"]) {
                                 tableColumn.comment = dbColumn["COMMENTS"]
                             }
-                            if (dbColumn["character_set_name"])
-                                tableColumn.charset =
-                                    dbColumn["character_set_name"]
-                            if (dbColumn["collation_name"])
-                                tableColumn.collation =
-                                    dbColumn["collation_name"]
                             return tableColumn
                         }),
                 )
@@ -3349,8 +3343,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     ) {
         let c =
             `"${column.name}" ` + this.connection.driver.createFullType(column)
-        if (column.charset) c += " CHARACTER SET " + column.charset
-        if (column.collation) c += " COLLATE " + column.collation
         if (column.default !== undefined && column.default !== null) {
             c += " DEFAULT " + column.default
         } else if (explicitDefault) {

@@ -774,26 +774,12 @@ export class SapDriver implements Driver {
             const tableColumn = tableColumns.find(
                 (c) => c.name === columnMetadata.databaseName,
             )
-            if (!tableColumn) return false // we don't need new columns, we only need exist and changed
+            if (!tableColumn) {
+                // we don't need new columns, we only need exist and changed
+                return false
+            }
 
-            // console.log("table:", columnMetadata.entityMetadata.tableName);
-            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            // console.log("type:", tableColumn.type, _this.normalizeType(columnMetadata));
-            // console.log("length:", tableColumn.length, _this.getColumnLength(columnMetadata));
-            // console.log("width:", tableColumn.width, columnMetadata.width);
-            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
-            // console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            // console.log("default:", tableColumn.default, columnMetadata.default);
-            // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-            // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            // console.log("isUnique:", tableColumn.isUnique, _this.normalizeIsUnique(columnMetadata));
-            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-            // console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
-            // console.log("==========================================");
-
-            const normalizeDefault = this.normalizeDefault(columnMetadata)
-            const hanaNullComapatibleDefault =
-                normalizeDefault == null ? undefined : normalizeDefault
+            const normalizedDefault = this.normalizeDefault(columnMetadata)
 
             return (
                 tableColumn.name !== columnMetadata.databaseName ||
@@ -806,7 +792,7 @@ export class SapDriver implements Driver {
                 tableColumn.comment !==
                     this.escapeComment(columnMetadata.comment) ||
                 (!tableColumn.isGenerated &&
-                    hanaNullComapatibleDefault !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
+                    normalizedDefault !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.isUnique !==
