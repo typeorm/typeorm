@@ -8,8 +8,15 @@ import { RelationMetadata } from "../metadata/RelationMetadata"
 import { ObjectUtils } from "../util/ObjectUtils"
 
 interface BroadcasterEvents {
-    BeforeQuery: () => void
-    AfterQuery: () => void
+    BeforeQuery: (query: string, parameters: undefined | any[]) => void
+    AfterQuery: (
+        query: string,
+        parameters: undefined | any[],
+        success: boolean,
+        executionTime: undefined | number,
+        rawResults: undefined | any,
+        error: undefined | any,
+    ) => void
 
     BeforeTransactionCommit: () => void
     AfterTransactionCommit: () => void
