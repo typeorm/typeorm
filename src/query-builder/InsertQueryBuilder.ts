@@ -579,7 +579,6 @@ export class InsertQueryBuilder<
                         )
 
                         query += updatePart.join(", ")
-                        query += " "
                     }
 
                     if (
