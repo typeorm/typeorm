@@ -4157,6 +4157,12 @@ export class PostgresQueryRunner
      * Loads Postgres version.
      */
     async getVersion(): Promise<string> {
+        // we use `SELECT version()` instead of `SHOW server_version` or `SHOW server_version_num`
+        // to maintain compatability with Amazon Redshift.
+        //
+        // see:
+        //  - https://github.com/typeorm/typeorm/pull/9319
+        //  - https://docs.aws.amazon.com/redshift/latest/dg/c_unsupported-postgresql-functions.html
         const result: [{ version: string }] = await this.query(
             `SELECT version()`,
         )
