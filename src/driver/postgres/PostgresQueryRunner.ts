@@ -4158,7 +4158,7 @@ export class PostgresQueryRunner
      */
     async getVersion(): Promise<string> {
         const result: [{ version: string }] = await this.query(
-            `SELECT version()`,
+            `SELECT version() as "version"`,
         )
 
         // Examples:

@@ -113,6 +113,14 @@ services:
     ports:
       - "27017:27017"
 
+  crate:
+    image: "crate:latest"
+    container_name: "typeorm-crate"
+    ports:
+      - "5434:5432"
+    environment:
+      CRATE_HEAP_SIZE: "1G"
+
   # yugabyte
   yugabyte:
     image: "yugabytedb/yugabyte:latest"

@@ -6,6 +6,29 @@ on:
     - cron: "0 0 2 * *"
 
 jobs:
+  crate:
+    runs-on: ubuntu-latest
+
+    services:
+      crate:
+        image: crate:latest
+        ports:
+          - "5434:5432"
+        env:
+          CRATE_HEAP_SIZE: "1G"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - run: npm ci
+      - run: cat ormconfig.sample.json | jq -c 'map(select(.name == "crate"))' > ormconfig.json
+      - run: npm run compile
+      - run: npm run test:fast
+
   yugabyte:
     runs-on: ubuntu-latest
 
