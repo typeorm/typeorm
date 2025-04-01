@@ -1,11 +1,11 @@
 import "reflect-metadata"
-import { Category } from "./entity/Category"
 import { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
+import { Category } from "./entity/Category"
 
 describe("github issues > #9534 materialized-path", () => {
     let connections: DataSource[]
@@ -13,7 +13,6 @@ describe("github issues > #9534 materialized-path", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [Category],
-                // logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

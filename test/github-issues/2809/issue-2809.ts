@@ -23,7 +23,7 @@ describe("github issues > #2809 afterUpdate subscriber entity argument is undefi
     it("if entity has been updated via repository update(), subscriber should get passed entity to change", () =>
         Promise.all(
             connections.map(async function (connection) {
-                let repo = connection.getRepository(Post)
+                const repo = connection.getRepository(Post)
 
                 const insertPost = new Post()
 

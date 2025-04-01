@@ -31,7 +31,7 @@ describe("github issues > #8430 sqlite temporary tables do not honor withoutRowi
 
                 expect(table!.withoutRowid).to.be.true
 
-                let nameColumn = table!.findColumnByName("name")!
+                const nameColumn = table!.findColumnByName("name")!
                 const changedColumn = nameColumn.clone()
                 changedColumn.name = "changedName"
 

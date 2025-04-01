@@ -10,7 +10,7 @@ import { ReadStream } from "fs"
 import { expect } from "chai"
 
 function ingestStream(stream: ReadStream): Promise<any[]> {
-    let chunks: any[] = []
+    const chunks: any[] = []
     return new Promise((ok, fail) => {
         stream.on("data", (chunk) => chunks.push(chunk))
         stream.on("error", fail)

@@ -169,7 +169,7 @@ export class EntityManager {
 
     /**
      * Executes raw SQL query and returns raw database results.
-     * 
+     *
      * @see [Official docs](https://typeorm.io/entity-manager-api) for examples.
      */
     async query<T = any>(query: string, parameters?: any[]): Promise<T> {

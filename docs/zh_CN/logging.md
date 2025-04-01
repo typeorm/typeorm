@@ -84,7 +84,7 @@
 
 TypeORM 附带 4 种不同类型的记录器：
 
-- `advanced-console` - 默认记录器，它将使用颜色和 sql 语法高亮显示所有记录到控制台中的消息（使用[chalk](https://github.com/chalk/chalk)）。
+- `advanced-console` - 默认记录器，它将使用颜色和 sql 语法高亮显示所有记录到控制台中的消息。
 - `simple-console` - 简单的控制台记录器，与高级记录器完全相同，但它不使用任何颜色突出显示。
   如果你不喜欢/或者使用彩色日志有问题，可以使用此记录器。
 - `file` - 这个记录器将所有日志写入项目根文件夹中的`ormlogs.log`（靠近`package.json`和`ormconfig.json`）。
