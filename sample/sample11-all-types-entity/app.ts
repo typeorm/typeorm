@@ -17,7 +17,7 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        let entity = new EverythingEntity()
+        const entity = new EverythingEntity()
         entity.date = new Date(1980, 11, 1)
         entity.name = "max 255 chars name"
         entity.text = "this is pretty long text"
@@ -39,7 +39,7 @@ dataSource.initialize().then(
         entity.alsoJson = { hello: "olleh", world: "dlrow" }
         entity.enum = SampleEnum.ONE
 
-        let postRepository = dataSource.getRepository(EverythingEntity)
+        const postRepository = dataSource.getRepository(EverythingEntity)
 
         postRepository
             .save(entity)

@@ -39,7 +39,7 @@ describe("github issues > #5898 Postgres primary key of type uuid: default value
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                let table = await queryRunner.getTable("photo")
+                const table = await queryRunner.getTable("photo")
                 const column = table!.findColumnByName("id")!
                 const newColumn = column.clone()
                 newColumn.isGenerated = true
@@ -73,7 +73,7 @@ describe("github issues > #5898 Postgres primary key of type uuid: default value
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                let table = await queryRunner.getTable("album")
+                const table = await queryRunner.getTable("album")
                 const column = table!.findColumnByName("id")!
                 const newColumn = column.clone()
                 newColumn.isGenerated = false
@@ -107,7 +107,7 @@ describe("github issues > #5898 Postgres primary key of type uuid: default value
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                let table = await queryRunner.getTable("document")
+                const table = await queryRunner.getTable("document")
                 const column = table!.findColumnByName("id")!
                 const newColumn = column.clone()
                 newColumn.isGenerated = true
@@ -139,7 +139,7 @@ describe("github issues > #5898 Postgres primary key of type uuid: default value
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                let table = await queryRunner.getTable("user")
+                const table = await queryRunner.getTable("user")
                 const column = table!.findColumnByName("id")!
                 const newColumn = column.clone()
                 newColumn.isGenerated = false

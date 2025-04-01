@@ -136,14 +136,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         if (this.transactionDepth === 0) {
-            this.transactionDepth += 1
             await this.query(
                 "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
             )
         } else {
-            this.transactionDepth += 1
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
         }
+        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -176,15 +175,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
-            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.isTransactionActive = false
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -669,7 +667,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const oldTable = InstanceChecker.isTable(oldTableOrName)
             ? oldTableOrName
             : await this.getCachedTable(oldTableOrName)
-        let newTable = oldTable.clone()
+        const newTable = oldTable.clone()
 
         const { database: dbName, tableName: oldTableName } =
             this.driver.parseTableName(oldTable)
@@ -2982,7 +2980,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds drop index sql.
      */
     protected dropIndexSql(indexOrName: TableIndex | string): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(`DROP INDEX "${indexName}"`)

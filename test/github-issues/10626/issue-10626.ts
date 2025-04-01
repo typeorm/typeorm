@@ -1,10 +1,10 @@
-import "reflect-metadata"
-import {
-    createTestingConnections,
-    closeTestingConnections,
-} from "../../utils/test-utils"
-import { DataSource } from "../../../src/index.js"
 import { expect } from "chai"
+import "reflect-metadata"
+import { DataSource } from "../../../src/index.js"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../utils/test-utils"
 
 describe("github issues > #10626 Postgres CREATE INDEX CONCURRENTLY bug", () => {
     let dataSources: DataSource[]
@@ -16,7 +16,6 @@ describe("github issues > #10626 Postgres CREATE INDEX CONCURRENTLY bug", () => 
                 schemaCreate: false,
                 dropSchema: true,
                 enabledDrivers: ["postgres"],
-                logging: true,
             })),
     )
 
@@ -47,7 +46,7 @@ describe("github issues > #10626 Postgres CREATE INDEX CONCURRENTLY bug", () => 
                 await dataSource.synchronize()
 
                 const queryRunner = dataSource.createQueryRunner()
-                let table = await queryRunner.getTable("user")
+                const table = await queryRunner.getTable("user")
                 if (table) {
                     await queryRunner.dropIndex(table, table?.indices[0])
                 }
