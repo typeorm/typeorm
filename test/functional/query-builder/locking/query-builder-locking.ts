@@ -37,18 +37,18 @@ describe("query builder > locking", () => {
                     DriverUtils.isSQLiteFamily(connection.driver) ||
                     connection.driver.options.type === "sap" ||
                     connection.driver.options.type === "spanner"
-                )
+                ) {
                     return
+                }
 
                 const sql = connection
                     .createQueryBuilder(PostWithVersion, "post")
                     .where("post.id = :id", { id: 1 })
                     .getSql()
 
-                expect(sql.indexOf("LOCK IN SHARE MODE") === -1).to.be.true
-                expect(sql.indexOf("FOR SHARE") === -1).to.be.true
-                expect(sql.indexOf("WITH (HOLDLOCK, ROWLOCK)") === -1).to.be
-                    .true
+                expect(sql).not.to.contain("LOCK IN SHARE MODE")
+                expect(sql).not.to.contain("FOR SHARE")
+                expect(sql).not.to.contain("WITH (HOLDLOCK, ROWLOCK)")
             }),
         ))
 
@@ -59,8 +59,9 @@ describe("query builder > locking", () => {
                     DriverUtils.isSQLiteFamily(connection.driver) ||
                     connection.driver.options.type === "sap" ||
                     connection.driver.options.type === "spanner"
-                )
+                ) {
                     return
+                }
 
                 return Promise.all([
                     connection
@@ -91,36 +92,37 @@ describe("query builder > locking", () => {
                     DriverUtils.isSQLiteFamily(connection.driver) ||
                     connection.driver.options.type === "sap" ||
                     connection.driver.options.type === "spanner"
-                )
+                ) {
                     return
-
-                if (connection.driver.options.type === "cockroachdb") {
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .createQueryBuilder(PostWithVersion, "post")
-                                .setLock("pessimistic_write")
-                                .where("post.id = :id", { id: 1 })
-                                .getOne().should.not.be.rejected,
-                        ])
-                    })
                 }
 
-                return connection.manager.transaction((entityManager) => {
-                    return Promise.all([
+                if (connection.driver.options.type === "cockroachdb") {
+                    await connection.manager.transaction((entityManager) =>
+                        entityManager
+                            .createQueryBuilder(PostWithVersion, "post")
+                            .setLock("pessimistic_write")
+                            .where("post.id = :id", { id: 1 })
+                            .getOne(),
+                    ).should.not.be.rejected
+
+                    return
+                }
+
+                await connection.manager.transaction((entityManager) =>
+                    Promise.all([
                         entityManager
                             .createQueryBuilder(PostWithVersion, "post")
                             .setLock("pessimistic_read")
                             .where("post.id = :id", { id: 1 })
-                            .getOne().should.not.be.rejected,
+                            .getOne(),
 
                         entityManager
                             .createQueryBuilder(PostWithVersion, "post")
                             .setLock("pessimistic_write")
                             .where("post.id = :id", { id: 1 })
-                            .getOne().should.not.be.rejected,
-                    ])
-                })
+                            .getOne(),
+                    ]),
+                ).should.not.be.rejected
             }),
         ))
 
@@ -128,19 +130,20 @@ describe("query builder > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    connection.driver.options.type === "postgres" ||
-                    connection.driver.options.type === "cockroachdb"
+                    connection.driver.options.type !== "postgres" &&
+                    connection.driver.options.type !== "cockroachdb"
                 ) {
-                    return connection
-                        .createQueryBuilder(PostWithVersion, "post")
-                        .setLock("for_no_key_update")
-                        .where("post.id = :id", { id: 1 })
-                        .getOne()
-                        .should.be.rejectedWith(
-                            PessimisticLockTransactionRequiredError,
-                        )
+                    return
                 }
-                return
+
+                await connection
+                    .createQueryBuilder(PostWithVersion, "post")
+                    .setLock("for_no_key_update")
+                    .where("post.id = :id", { id: 1 })
+                    .getOne()
+                    .should.be.rejectedWith(
+                        PessimisticLockTransactionRequiredError,
+                    )
             }),
         ))
 
@@ -148,55 +151,54 @@ describe("query builder > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    connection.driver.options.type === "postgres" ||
-                    connection.driver.options.type === "cockroachdb"
+                    connection.driver.options.type !== "postgres" &&
+                    connection.driver.options.type !== "cockroachdb"
                 ) {
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .createQueryBuilder(PostWithVersion, "post")
-                                .setLock("for_no_key_update")
-                                .where("post.id = :id", { id: 1 })
-                                .getOne().should.not.be.rejected,
-                        ])
-                    })
+                    return
                 }
-                return
+
+                await connection.manager.transaction((entityManager) =>
+                    entityManager
+                        .createQueryBuilder(PostWithVersion, "post")
+                        .setLock("for_no_key_update")
+                        .where("post.id = :id", { id: 1 })
+                        .getOne(),
+                ).should.not.be.rejected
             }),
         ))
 
     it("should throw error if for key share lock used without transaction", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.driver.options.type === "postgres") {
-                    return connection
-                        .createQueryBuilder(PostWithVersion, "post")
-                        .setLock("for_key_share")
-                        .where("post.id = :id", { id: 1 })
-                        .getOne()
-                        .should.be.rejectedWith(
-                            PessimisticLockTransactionRequiredError,
-                        )
+                if (connection.driver.options.type !== "postgres") {
+                    return
                 }
-                return
+
+                await connection
+                    .createQueryBuilder(PostWithVersion, "post")
+                    .setLock("for_key_share")
+                    .where("post.id = :id", { id: 1 })
+                    .getOne()
+                    .should.be.rejectedWith(
+                        PessimisticLockTransactionRequiredError,
+                    )
             }),
         ))
 
     it("should not throw error if for key share lock used with transaction", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.driver.options.type === "postgres") {
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .createQueryBuilder(PostWithVersion, "post")
-                                .setLock("for_key_share")
-                                .where("post.id = :id", { id: 1 })
-                                .getOne().should.not.be.rejected,
-                        ])
-                    })
+                if (connection.driver.options.type !== "postgres") {
+                    return
                 }
-                return
+
+                await connection.manager.transaction((entityManager) =>
+                    entityManager
+                        .createQueryBuilder(PostWithVersion, "post")
+                        .setLock("for_key_share")
+                        .where("post.id = :id", { id: 1 })
+                        .getOne(),
+                ).should.not.be.rejected
             }),
         ))
 
@@ -239,15 +241,15 @@ describe("query builder > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (connection.driver.options.type === "postgres") {
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .createQueryBuilder(PostWithVersion, "post")
-                                .setLock("pessimistic_partial_write")
-                                .where("post.id = :id", { id: 1 })
-                                .getOne().should.not.be.rejected,
-                        ])
-                    })
+                    await connection.manager.transaction((entityManager) =>
+                        entityManager
+                            .createQueryBuilder(PostWithVersion, "post")
+                            .setLock("pessimistic_partial_write")
+                            .where("post.id = :id", { id: 1 })
+                            .getOne(),
+                    ).should.not.be.rejected
+
+                    return
                 }
 
                 if (DriverUtils.isMySQLFamily(connection.driver)) {
@@ -257,23 +259,17 @@ describe("query builder > locking", () => {
                     version = version.toLowerCase()
                     if (version.includes("maria")) return // not supported in mariadb
                     if (VersionUtils.isGreaterOrEqual(version, "8.0.0")) {
-                        return connection.manager.transaction(
-                            (entityManager) => {
-                                return Promise.all([
-                                    entityManager
-                                        .createQueryBuilder(
-                                            PostWithVersion,
-                                            "post",
-                                        )
-                                        .setLock("pessimistic_partial_write")
-                                        .where("post.id = :id", { id: 1 })
-                                        .getOne().should.not.be.rejected,
-                                ])
-                            },
-                        )
+                        await connection.manager.transaction((entityManager) =>
+                            entityManager
+                                .createQueryBuilder(PostWithVersion, "post")
+                                .setLock("pessimistic_partial_write")
+                                .where("post.id = :id", { id: 1 })
+                                .getOne(),
+                        ).should.not.be.rejected
+
+                        return
                     }
                 }
-                return
             }),
         ))
 
@@ -284,7 +280,7 @@ describe("query builder > locking", () => {
                     connection.driver.options.type === "postgres" ||
                     connection.driver.options.type === "cockroachdb"
                 ) {
-                    return connection
+                    await connection
                         .createQueryBuilder(PostWithVersion, "post")
                         .setLock("pessimistic_write_or_fail")
                         .where("post.id = :id", { id: 1 })
@@ -292,6 +288,8 @@ describe("query builder > locking", () => {
                         .should.be.rejectedWith(
                             PessimisticLockTransactionRequiredError,
                         )
+
+                    return
                 }
 
                 if (DriverUtils.isMySQLFamily(connection.driver)) {
@@ -305,7 +303,7 @@ describe("query builder > locking", () => {
                         (!version.includes("maria") &&
                             VersionUtils.isGreaterOrEqual(version, "8.0.0"))
                     ) {
-                        return connection
+                        await connection
                             .createQueryBuilder(PostWithVersion, "post")
                             .setLock("pessimistic_write_or_fail")
                             .where("post.id = :id", { id: 1 })
@@ -313,9 +311,10 @@ describe("query builder > locking", () => {
                             .should.be.rejectedWith(
                                 PessimisticLockTransactionRequiredError,
                             )
+
+                        return
                     }
                 }
-                return
             }),
         ))
 
@@ -326,15 +325,15 @@ describe("query builder > locking", () => {
                     connection.driver.options.type === "postgres" ||
                     connection.driver.options.type === "cockroachdb"
                 ) {
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .createQueryBuilder(PostWithVersion, "post")
-                                .setLock("pessimistic_write_or_fail")
-                                .where("post.id = :id", { id: 1 })
-                                .getOne().should.not.be.rejected,
-                        ])
-                    })
+                    await connection.manager.transaction((entityManager) =>
+                        entityManager
+                            .createQueryBuilder(PostWithVersion, "post")
+                            .setLock("pessimistic_write_or_fail")
+                            .where("post.id = :id", { id: 1 })
+                            .getOne(),
+                    ).should.not.be.rejected
+
+                    return
                 }
 
                 if (DriverUtils.isMySQLFamily(connection.driver)) {
@@ -348,23 +347,17 @@ describe("query builder > locking", () => {
                         (!version.includes("maria") &&
                             VersionUtils.isGreaterOrEqual(version, "8.0.0"))
                     ) {
-                        return connection.manager.transaction(
-                            (entityManager) => {
-                                return Promise.all([
-                                    entityManager
-                                        .createQueryBuilder(
-                                            PostWithVersion,
-                                            "post",
-                                        )
-                                        .setLock("pessimistic_write_or_fail")
-                                        .where("post.id = :id", { id: 1 })
-                                        .getOne().should.not.be.rejected,
-                                ])
-                            },
-                        )
+                        await connection.manager.transaction((entityManager) =>
+                            entityManager
+                                .createQueryBuilder(PostWithVersion, "post")
+                                .setLock("pessimistic_write_or_fail")
+                                .where("post.id = :id", { id: 1 })
+                                .getOne(),
+                        ).should.not.be.rejected
+
+                        return
                     }
                 }
-                return
             }),
         ))
 
@@ -386,14 +379,13 @@ describe("query builder > locking", () => {
                     .getSql()
 
                 if (DriverUtils.isMySQLFamily(connection.driver)) {
-                    expect(sql.indexOf("LOCK IN SHARE MODE") !== -1).to.be.true
+                    expect(sql).to.contain("LOCK IN SHARE MODE")
                 } else if (connection.driver.options.type === "postgres") {
-                    expect(sql.indexOf("FOR SHARE") !== -1).to.be.true
+                    expect(sql).to.contain("FOR SHARE")
                 } else if (connection.driver.options.type === "oracle") {
-                    expect(sql.indexOf("FOR UPDATE") !== -1).to.be.true
+                    expect(sql).to.contain("FOR UPDATE")
                 } else if (connection.driver.options.type === "mssql") {
-                    expect(sql.indexOf("WITH (HOLDLOCK, ROWLOCK)") !== -1).to.be
-                        .true
+                    expect(sql).to.contain("WITH (HOLDLOCK, ROWLOCK)")
                 }
             }),
         ))
@@ -409,7 +401,7 @@ describe("query builder > locking", () => {
                     .where("post.id = :id", { id: 1 })
                     .getSql()
 
-                expect(sql.indexOf("WITH (NOLOCK)") !== -1).to.be.true
+                expect(sql).to.contain("WITH (NOLOCK)")
             }),
         ))
 
@@ -428,8 +420,8 @@ describe("query builder > locking", () => {
                     .where("post.id = :id", { id: 1 })
                     .getSql()
 
-                expect(sql.indexOf("FOR UPDATE") === -1).to.be.true
-                expect(sql.indexOf("WITH (UPDLOCK, ROWLOCK)") === -1).to.be.true
+                expect(sql).not.to.contain("FOR UPDATE")
+                expect(sql).not.to.contain("WITH (UPDLOCK, ROWLOCK)")
             }),
         ))
 
@@ -455,10 +447,9 @@ describe("query builder > locking", () => {
                     connection.driver.options.type === "cockroachdb" ||
                     connection.driver.options.type === "oracle"
                 ) {
-                    expect(sql.indexOf("FOR UPDATE") !== -1).to.be.true
+                    expect(sql).to.contain("FOR UPDATE")
                 } else if (connection.driver.options.type === "mssql") {
-                    expect(sql.indexOf("WITH (UPDLOCK, ROWLOCK)") !== -1).to.be
-                        .true
+                    expect(sql).to.contain("WITH (UPDLOCK, ROWLOCK)")
                 }
             }),
         ))
@@ -467,17 +458,18 @@ describe("query builder > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    connection.driver.options.type === "postgres" ||
-                    connection.driver.options.type === "cockroachdb"
+                    connection.driver.options.type !== "postgres" &&
+                    connection.driver.options.type !== "cockroachdb"
                 ) {
-                    const sql = connection
-                        .createQueryBuilder(PostWithVersion, "post")
-                        .where("post.id = :id", { id: 1 })
-                        .getSql()
-
-                    expect(sql.indexOf("FOR NO KEY UPDATE") === -1).to.be.true
+                    return
                 }
-                return
+
+                const sql = connection
+                    .createQueryBuilder(PostWithVersion, "post")
+                    .where("post.id = :id", { id: 1 })
+                    .getSql()
+
+                expect(sql).not.to.contain("FOR NO KEY UPDATE")
             }),
         ))
 
@@ -485,49 +477,52 @@ describe("query builder > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    connection.driver.options.type === "postgres" ||
-                    connection.driver.options.type === "cockroachdb"
+                    connection.driver.options.type !== "postgres" &&
+                    connection.driver.options.type !== "cockroachdb"
                 ) {
-                    const sql = connection
-                        .createQueryBuilder(PostWithVersion, "post")
-                        .setLock("for_no_key_update")
-                        .where("post.id = :id", { id: 1 })
-                        .getSql()
-
-                    expect(sql.indexOf("FOR NO KEY UPDATE") !== -1).to.be.true
+                    return
                 }
-                return
+
+                const sql = connection
+                    .createQueryBuilder(PostWithVersion, "post")
+                    .setLock("for_no_key_update")
+                    .where("post.id = :id", { id: 1 })
+                    .getSql()
+
+                expect(sql).to.contain("FOR NO KEY UPDATE")
             }),
         ))
 
     it("should not attach for key share lock statement on query if locking is not used", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.driver.options.type === "postgres") {
-                    const sql = connection
-                        .createQueryBuilder(PostWithVersion, "post")
-                        .where("post.id = :id", { id: 1 })
-                        .getSql()
-
-                    expect(sql.indexOf("FOR KEY SHARE") === -1).to.be.true
+                if (connection.driver.options.type !== "postgres") {
+                    return
                 }
-                return
+
+                const sql = connection
+                    .createQueryBuilder(PostWithVersion, "post")
+                    .where("post.id = :id", { id: 1 })
+                    .getSql()
+
+                expect(sql).not.to.contain("FOR KEY SHARE")
             }),
         ))
 
     it("should attach for key share lock statement on query if locking enabled", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.driver.options.type === "postgres") {
-                    const sql = connection
-                        .createQueryBuilder(PostWithVersion, "post")
-                        .setLock("for_key_share")
-                        .where("post.id = :id", { id: 1 })
-                        .getSql()
-
-                    expect(sql.indexOf("FOR KEY SHARE") !== -1).to.be.true
+                if (connection.driver.options.type !== "postgres") {
+                    return
                 }
-                return
+
+                const sql = connection
+                    .createQueryBuilder(PostWithVersion, "post")
+                    .setLock("for_key_share")
+                    .where("post.id = :id", { id: 1 })
+                    .getSql()
+
+                expect(sql).to.contain("FOR KEY SHARE")
             }),
         ))
 
@@ -543,10 +538,8 @@ describe("query builder > locking", () => {
                         .where("post.id = :id", { id: 1 })
                         .getSql()
 
-                    expect(sql.indexOf("FOR UPDATE SKIP LOCKED") === -1).to.be
-                        .true
+                    expect(sql).not.to.contain("FOR UPDATE SKIP LOCKED")
                 }
-                return
             }),
         ))
 
@@ -563,10 +556,8 @@ describe("query builder > locking", () => {
                         .where("post.id = :id", { id: 1 })
                         .getSql()
 
-                    expect(sql.indexOf("FOR UPDATE SKIP LOCKED") !== -1).to.be
-                        .true
+                    expect(sql).to.contain("FOR UPDATE SKIP LOCKED")
                 }
-                return
             }),
         ))
 
@@ -583,9 +574,8 @@ describe("query builder > locking", () => {
                         .where("post.id = :id", { id: 1 })
                         .getSql()
 
-                    expect(sql.indexOf("FOR UPDATE NOWAIT") === -1).to.be.true
+                    expect(sql).not.to.contain("FOR UPDATE NOWAIT")
                 }
-                return
             }),
         ))
 
@@ -603,16 +593,15 @@ describe("query builder > locking", () => {
                         .where("post.id = :id", { id: 1 })
                         .getSql()
 
-                    expect(sql.indexOf("FOR UPDATE NOWAIT") !== -1).to.be.true
+                    expect(sql).to.contain("FOR UPDATE NOWAIT")
                 }
-                return
             }),
         ))
 
     it("should throw error if optimistic lock used with getMany method", () =>
         Promise.all(
             connections.map(async (connection) => {
-                return connection
+                await connection
                     .createQueryBuilder(PostWithVersion, "post")
                     .setLock("optimistic", 1)
                     .getMany()
@@ -623,7 +612,7 @@ describe("query builder > locking", () => {
     it("should throw error if optimistic lock used with getCount method", () =>
         Promise.all(
             connections.map(async (connection) => {
-                return connection
+                await connection
                     .createQueryBuilder(PostWithVersion, "post")
                     .setLock("optimistic", 1)
                     .getCount()
@@ -634,7 +623,7 @@ describe("query builder > locking", () => {
     it("should throw error if optimistic lock used with getManyAndCount method", () =>
         Promise.all(
             connections.map(async (connection) => {
-                return connection
+                await connection
                     .createQueryBuilder(PostWithVersion, "post")
                     .setLock("optimistic", 1)
                     .getManyAndCount()
@@ -645,7 +634,7 @@ describe("query builder > locking", () => {
     it("should throw error if optimistic lock used with getRawMany method", () =>
         Promise.all(
             connections.map(async (connection) => {
-                return connection
+                await connection
                     .createQueryBuilder(PostWithVersion, "post")
                     .setLock("optimistic", 1)
                     .getRawMany()
@@ -656,7 +645,7 @@ describe("query builder > locking", () => {
     it("should throw error if optimistic lock used with getRawOne method", () =>
         Promise.all(
             connections.map(async (connection) => {
-                return connection
+                await connection
                     .createQueryBuilder(PostWithVersion, "post")
                     .setLock("optimistic", 1)
                     .where("post.id = :id", { id: 1 })
@@ -668,7 +657,7 @@ describe("query builder > locking", () => {
     it("should not throw error if optimistic lock used with getOne method", () =>
         Promise.all(
             connections.map(async (connection) => {
-                return connection
+                await connection
                     .createQueryBuilder(PostWithVersion, "post")
                     .setLock("optimistic", 1)
                     .where("post.id = :id", { id: 1 })
@@ -683,7 +672,7 @@ describe("query builder > locking", () => {
                 post.title = "New post"
                 await connection.manager.save(post)
 
-                return connection
+                await connection
                     .createQueryBuilder(PostWithoutVersionAndUpdateDate, "post")
                     .setLock("optimistic", 1)
                     .where("post.id = :id", { id: 1 })
@@ -700,7 +689,7 @@ describe("query builder > locking", () => {
                 post.title = "New post"
                 await connection.manager.save(post)
 
-                return connection
+                await connection
                     .createQueryBuilder(PostWithVersion, "post")
                     .setLock("optimistic", 2)
                     .where("post.id = :id", { id: 1 })
@@ -717,7 +706,7 @@ describe("query builder > locking", () => {
                 post.title = "New post"
                 await connection.manager.save(post)
 
-                return connection
+                await connection
                     .createQueryBuilder(PostWithVersion, "post")
                     .setLock("optimistic", 1)
                     .where("post.id = :id", { id: 1 })
@@ -733,7 +722,7 @@ describe("query builder > locking", () => {
                 post.title = "New post"
                 await connection.manager.save(post)
 
-                return connection
+                await connection
                     .createQueryBuilder(PostWithUpdateDate, "post")
                     .setLock("optimistic", new Date(2017, 1, 1))
                     .where("post.id = :id", { id: 1 })
@@ -746,13 +735,15 @@ describe("query builder > locking", () => {
     it.skip("should not throw error if actual updated date and expected updated date are equal", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.driver.options.type === "mssql") return
+                if (connection.driver.options.type === "mssql") {
+                    return
+                }
 
                 const post = new PostWithUpdateDate()
                 post.title = "New post"
                 await connection.manager.save(post)
 
-                return connection
+                await connection
                     .createQueryBuilder(PostWithUpdateDate, "post")
                     .setLock("optimistic", post.updateDate)
                     .where("post.id = :id", { id: 1 })
@@ -768,7 +759,7 @@ describe("query builder > locking", () => {
                 post.title = "New post"
                 await connection.manager.save(post)
 
-                return Promise.all([
+                await Promise.all([
                     connection
                         .createQueryBuilder(
                             PostWithVersionAndUpdatedDate,
@@ -776,7 +767,7 @@ describe("query builder > locking", () => {
                         )
                         .setLock("optimistic", post.updateDate)
                         .where("post.id = :id", { id: 1 })
-                        .getOne().should.not.be.rejected,
+                        .getOne(),
 
                     connection
                         .createQueryBuilder(
@@ -785,8 +776,8 @@ describe("query builder > locking", () => {
                         )
                         .setLock("optimistic", 1)
                         .where("post.id = :id", { id: 1 })
-                        .getOne().should.not.be.rejected,
-                ])
+                        .getOne(),
+                ]).should.not.be.rejected
             }),
         ))
 
@@ -797,30 +788,27 @@ describe("query builder > locking", () => {
                     DriverUtils.isSQLiteFamily(connection.driver) ||
                     connection.driver.options.type === "sap" ||
                     connection.driver.options.type === "spanner"
-                )
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .createQueryBuilder(PostWithVersion, "post")
-                                .setLock("pessimistic_read")
-                                .where("post.id = :id", { id: 1 })
-                                .getOne()
-                                .should.be.rejectedWith(
-                                    LockNotSupportedOnGivenDriverError,
-                                ),
+                ) {
+                    await connection.manager
+                        .transaction((entityManager) =>
+                            Promise.all([
+                                entityManager
+                                    .createQueryBuilder(PostWithVersion, "post")
+                                    .setLock("pessimistic_read")
+                                    .where("post.id = :id", { id: 1 })
+                                    .getOne(),
 
-                            entityManager
-                                .createQueryBuilder(PostWithVersion, "post")
-                                .setLock("pessimistic_write")
-                                .where("post.id = :id", { id: 1 })
-                                .getOne()
-                                .should.be.rejectedWith(
-                                    LockNotSupportedOnGivenDriverError,
-                                ),
-                        ])
-                    })
-
-                return
+                                entityManager
+                                    .createQueryBuilder(PostWithVersion, "post")
+                                    .setLock("pessimistic_write")
+                                    .where("post.id = :id", { id: 1 })
+                                    .getOne(),
+                            ]),
+                        )
+                        .should.be.rejectedWith(
+                            LockNotSupportedOnGivenDriverError,
+                        )
+                }
             }),
         ))
 
@@ -828,26 +816,21 @@ describe("query builder > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    !(
-                        connection.driver.options.type === "postgres" ||
-                        connection.driver.options.type === "cockroachdb"
-                    )
+                    connection.driver.options.type === "postgres" ||
+                    connection.driver.options.type === "cockroachdb"
                 ) {
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .createQueryBuilder(PostWithVersion, "post")
-                                .setLock("for_no_key_update")
-                                .where("post.id = :id", { id: 1 })
-                                .getOne()
-                                .should.be.rejectedWith(
-                                    LockNotSupportedOnGivenDriverError,
-                                ),
-                        ])
-                    })
+                    return
                 }
 
-                return
+                await connection.manager
+                    .transaction((entityManager) =>
+                        entityManager
+                            .createQueryBuilder(PostWithVersion, "post")
+                            .setLock("for_no_key_update")
+                            .where("post.id = :id", { id: 1 })
+                            .getOne(),
+                    )
+                    .should.be.rejectedWith(LockNotSupportedOnGivenDriverError)
             }),
         ))
 
@@ -877,12 +860,11 @@ describe("query builder > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    !(
-                        connection.driver.options.type === "postgres" ||
-                        connection.driver.options.type === "cockroachdb"
-                    )
-                )
+                    connection.driver.options.type !== "postgres" &&
+                    connection.driver.options.type !== "cockroachdb"
+                ) {
                     return
+                }
 
                 const sql = connection
                     .createQueryBuilder(Post, "post")
@@ -906,25 +888,23 @@ describe("query builder > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    !(
-                        connection.driver.options.type === "postgres" ||
-                        connection.driver.options.type === "cockroachdb"
-                    )
-                )
+                    connection.driver.options.type !== "postgres" &&
+                    connection.driver.options.type !== "cockroachdb"
+                ) {
                     return
+                }
 
-                return connection.manager.transaction((entityManager) => {
-                    return Promise.all([
+                await connection.manager
+                    .transaction((entityManager) =>
                         entityManager
                             .createQueryBuilder(Post, "post")
                             .innerJoin("post.author", "user")
                             .setLock("pessimistic_write", undefined, [])
-                            .getOne()
-                            .should.be.rejectedWith(
-                                "lockTables cannot be an empty array",
-                            ),
-                    ])
-                })
+                            .getOne(),
+                    )
+                    .should.be.rejectedWith(
+                        "lockTables cannot be an empty array",
+                    )
             }),
         ))
 
@@ -932,26 +912,21 @@ describe("query builder > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    !(
-                        connection.driver.options.type === "postgres" ||
-                        connection.driver.options.type === "cockroachdb"
-                    )
-                )
+                    connection.driver.options.type !== "postgres" &&
+                    connection.driver.options.type !== "cockroachdb"
+                ) {
                     return
+                }
 
-                return connection.manager
-                    .transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .createQueryBuilder(Post, "post")
-                                .innerJoin("post.author", "user")
-                                .setLock("pessimistic_write", undefined, [
-                                    "img",
-                                ])
-                                .getOne(),
-                        ])
-                        // With the exception being thrown the transaction is not closed. if ".should.be.rejectedWith" is added to the inner promise
-                    })
+                await connection.manager
+                    .transaction((entityManager) =>
+                        entityManager
+                            .createQueryBuilder(Post, "post")
+                            .innerJoin("post.author", "user")
+                            .setLock("pessimistic_write", undefined, ["img"])
+                            .getOne(),
+                    )
+                    // With the exception being thrown the transaction is not closed. if ".should.be.rejectedWith" is added to the inner promise
                     .should.be.rejectedWith(
                         'relation "img" in FOR UPDATE clause not found in FROM clause',
                     )
@@ -961,9 +936,16 @@ describe("query builder > locking", () => {
     it("should allow on a left join", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.driver.options.type === "cockroachdb") {
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
+                if (
+                    connection.driver.options.type !== "postgres" &&
+                    connection.driver.options.type !== "cockroachdb"
+                ) {
+                    return
+                }
+
+                await connection.manager
+                    .transaction((entityManager) =>
+                        Promise.all([
                             entityManager
                                 .createQueryBuilder(Post, "post")
                                 .leftJoin("post.author", "user")
@@ -976,42 +958,23 @@ describe("query builder > locking", () => {
                                 .leftJoin("post.author", "user")
                                 .setLock("pessimistic_write")
                                 .getOne(),
-                        ])
-                    })
-                }
-
-                if (connection.driver.options.type === "postgres") {
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .createQueryBuilder(Post, "post")
-                                .leftJoin("post.author", "user")
-                                .setLock("pessimistic_write", undefined, [
-                                    "post",
-                                ])
-                                .getOne(),
-                            entityManager
-                                .createQueryBuilder(Post, "post")
-                                .leftJoin("post.author", "user")
-                                .setLock("pessimistic_write")
-                                .getOne()
-                                .should.be.rejectedWith(
-                                    "FOR UPDATE cannot be applied to the nullable side of an outer join",
-                                ),
-                        ])
-                    })
-                }
-
-                return
+                        ]),
+                    )
+                    // With the exception being thrown the transaction is not closed. if ".should.be.rejectedWith" is added to the inner promise
+                    .should.be.rejectedWith(
+                        "FOR UPDATE cannot be applied to the nullable side of an outer join",
+                    )
             }),
         ))
 
     it("should allow using lockTables on all types of locking", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (!(connection.driver.options.type === "postgres")) return
+                if (connection.driver.options.type !== "postgres") {
+                    return
+                }
 
-                return connection.manager.transaction((entityManager) => {
+                await connection.manager.transaction((entityManager) => {
                     return Promise.all([
                         entityManager
                             .createQueryBuilder(Post, "post")
@@ -1043,7 +1006,7 @@ describe("query builder > locking", () => {
                             .setLock("for_no_key_update", undefined, ["post"])
                             .getOne(),
                     ])
-                })
+                }).should.not.be.rejected
             }),
         ))
 
@@ -1051,23 +1014,20 @@ describe("query builder > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    !(
-                        connection.driver.options.type === "postgres" ||
-                        connection.driver.options.type === "cockroachdb"
-                    )
-                )
+                    connection.driver.options.type !== "postgres" &&
+                    connection.driver.options.type !== "cockroachdb"
+                ) {
                     return
+                }
 
-                return connection.manager.transaction((entityManager) => {
-                    return Promise.all([
-                        entityManager
-                            .createQueryBuilder(Post, "post")
-                            .innerJoin("post.categories", "cat")
-                            .innerJoin("cat.images", "img")
-                            .setLock("pessimistic_write", undefined, ["img"])
-                            .getOne(),
-                    ])
-                })
+                await connection.manager.transaction((entityManager) =>
+                    entityManager
+                        .createQueryBuilder(Post, "post")
+                        .innerJoin("post.categories", "cat")
+                        .innerJoin("cat.images", "img")
+                        .setLock("pessimistic_write", undefined, ["img"])
+                        .getOne(),
+                ).should.not.be.rejected
             }),
         ))
 
@@ -1166,16 +1126,14 @@ describe("query builder > locking", () => {
                             "8.0.0",
                         ))
                 ) {
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.resolve(
-                            entityManager
-                                .createQueryBuilder(PostWithVersion, "post")
-                                .setLock("pessimistic_read")
-                                .setOnLocked("skip_locked")
-                                .where("post.id = :id", { id: 1 })
-                                .getOne().should.not.be.rejected,
-                        )
-                    })
+                    await connection.manager.transaction((entityManager) =>
+                        entityManager
+                            .createQueryBuilder(PostWithVersion, "post")
+                            .setLock("pessimistic_read")
+                            .setOnLocked("skip_locked")
+                            .where("post.id = :id", { id: 1 })
+                            .getOne(),
+                    ).should.not.be.rejected
                 }
             }),
         ))
@@ -1183,18 +1141,17 @@ describe("query builder > locking", () => {
     it('skip_locked with "for_key_share" check getOne', () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.driver.options.type === "postgres") {
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.resolve(
-                            entityManager
-                                .createQueryBuilder(PostWithVersion, "post")
-                                .setLock("for_key_share")
-                                .setOnLocked("skip_locked")
-                                .where("post.id = :id", { id: 1 })
-                                .getOne().should.not.be.rejected,
-                        )
-                    })
+                if (connection.driver.options.type !== "postgres") {
+                    return
                 }
+                await connection.manager.transaction((entityManager) =>
+                    entityManager
+                        .createQueryBuilder(PostWithVersion, "post")
+                        .setLock("for_key_share")
+                        .setOnLocked("skip_locked")
+                        .where("post.id = :id", { id: 1 })
+                        .getOne(),
+                ).should.not.be.rejected
             }),
         ))
 

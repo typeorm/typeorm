@@ -22,7 +22,7 @@ describe("github issues > #9684 Incorrect enum default value when table name con
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                let table = await queryRunner.getTable("module-foo_table_x")
+                const table = await queryRunner.getTable("module-foo_table_x")
 
                 const nameColumn = table!.findColumnByName("enumStatus")!
                 nameColumn!.default!.should.be.equal("'draft'")

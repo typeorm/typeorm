@@ -3,7 +3,7 @@
  */
 export interface SpannerConnectionCredentialsOptions {
     /**
-     * Connection url where perform connection to.
+     * Connection url where the connection is performed.
      */
     readonly instanceId?: string
 

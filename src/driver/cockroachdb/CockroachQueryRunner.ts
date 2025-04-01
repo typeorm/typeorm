@@ -190,7 +190,6 @@ export class CockroachQueryRunner
         }
 
         if (this.transactionDepth === 0) {
-            this.transactionDepth += 1
             await this.query("START TRANSACTION")
             await this.query("SAVEPOINT cockroach_restart")
             if (isolationLevel) {
@@ -199,10 +198,10 @@ export class CockroachQueryRunner
                 )
             }
         } else {
-            this.transactionDepth += 1
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
         }
 
+        this.transactionDepth += 1
         this.storeQueries = true
 
         await this.broadcaster.broadcast("AfterTransactionStart")
@@ -218,18 +217,18 @@ export class CockroachQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
+            this.transactionDepth -= 1
         } else {
             this.storeQueries = false
-            this.transactionDepth -= 1
             await this.query("RELEASE SAVEPOINT cockroach_restart")
             await this.query("COMMIT")
             this.queries = []
             this.isTransactionActive = false
             this.transactionRetries = 0
+            this.transactionDepth -= 1
         }
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
@@ -245,18 +244,17 @@ export class CockroachQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
             this.storeQueries = false
-            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.queries = []
             this.isTransactionActive = false
             this.transactionRetries = 0
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -1019,7 +1017,7 @@ export class CockroachQueryRunner
         const enumColumns = newTable.columns.filter(
             (column) => column.type === "enum" || column.type === "simple-enum",
         )
-        for (let column of enumColumns) {
+        for (const column of enumColumns) {
             // skip renaming for user-defined enum name
             if (column.enumName) continue
 
@@ -2875,7 +2873,9 @@ export class CockroachQueryRunner
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {}
+            } catch {
+                // no-op
+            }
             throw error
         }
     }
@@ -3741,12 +3741,13 @@ export class CockroachQueryRunner
     /**
      * Loads Cockroachdb version.
      */
-    protected async getVersion(): Promise<string> {
-        const result = await this.query(`SELECT version()`)
-        return result[0]["version"].replace(
-            /^CockroachDB CCL v([\d.]+) .*$/,
-            "$1",
+    async getVersion(): Promise<string> {
+        const result: [{ version: string }] = await this.query(
+            `SELECT version() AS "version"`,
         )
+        const versionString = result[0].version
+
+        return versionString.replace(/^CockroachDB CCL v([\d.]+) .*$/, "$1")
     }
 
     /**
@@ -3862,7 +3863,7 @@ export class CockroachQueryRunner
     ): Query {
         if (!enumName) enumName = this.buildEnumName(table, column)
         const enumValues = column
-            .enum!.map((value) => `'${value.replace("'", "''")}'`)
+            .enum!.map((value) => `'${value.replaceAll("'", "''")}'`)
             .join(", ")
         return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`)
     }
@@ -3903,7 +3904,7 @@ export class CockroachQueryRunner
         table: Table,
         indexOrName: TableIndex | TableUnique | string,
     ): Query {
-        let indexName =
+        const indexName =
             InstanceChecker.isTableIndex(indexOrName) ||
             InstanceChecker.isTableUnique(indexOrName)
                 ? indexOrName.name
