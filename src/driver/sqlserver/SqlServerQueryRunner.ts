@@ -107,7 +107,6 @@ export class SqlServerQueryRunner
             }
 
             if (this.transactionDepth === 0) {
-                this.transactionDepth += 1
                 const pool = await (this.mode === "slave"
                     ? this.driver.obtainSlaveConnection()
                     : this.driver.obtainMasterConnection())
@@ -125,12 +124,12 @@ export class SqlServerQueryRunner
                     this.databaseConnection.begin(transactionCallback)
                 }
             } else {
-                this.transactionDepth += 1
                 await this.query(
-                    `SAVE TRANSACTION typeorm_${this.transactionDepth - 1}`,
+                    `SAVE TRANSACTION typeorm_${this.transactionDepth}`,
                 )
                 ok()
             }
+            this.transactionDepth += 1
         })
 
         await this.broadcaster.broadcast("AfterTransactionStart")
@@ -149,7 +148,6 @@ export class SqlServerQueryRunner
 
         if (this.transactionDepth === 1) {
             return new Promise<void>((ok, fail) => {
-                this.transactionDepth -= 1
                 this.databaseConnection.commit(async (err: any) => {
                     if (err) return fail(err)
                     this.isTransactionActive = false
@@ -159,6 +157,7 @@ export class SqlServerQueryRunner
 
                     ok()
                     this.connection.logger.logQuery("COMMIT")
+                    this.transactionDepth -= 1
                 })
             })
         }
@@ -177,13 +176,12 @@ export class SqlServerQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TRANSACTION typeorm_${this.transactionDepth}`,
+                `ROLLBACK TRANSACTION typeorm_${this.transactionDepth - 1}`,
             )
+            this.transactionDepth -= 1
         } else {
             return new Promise<void>((ok, fail) => {
-                this.transactionDepth -= 1
                 this.databaseConnection.rollback(async (err: any) => {
                     if (err) return fail(err)
                     this.isTransactionActive = false
@@ -193,6 +191,7 @@ export class SqlServerQueryRunner
 
                     ok()
                     this.connection.logger.logQuery("ROLLBACK")
+                    this.transactionDepth -= 1
                 })
             })
         }
@@ -797,7 +796,7 @@ export class SqlServerQueryRunner
         const oldTable = InstanceChecker.isTable(oldTableOrName)
             ? oldTableOrName
             : await this.getCachedTable(oldTableOrName)
-        let newTable = oldTable.clone()
+        const newTable = oldTable.clone()
 
         // we need database name and schema name to rename FK constraints
         let dbName: string | undefined = undefined
@@ -2635,7 +2634,7 @@ export class SqlServerQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            let allViewsSql = database
+            const allViewsSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."VIEWS"`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."VIEWS"`
             const allViewsResults: ObjectLiteral[] = await this.query(
@@ -2650,7 +2649,7 @@ export class SqlServerQueryRunner
                 }),
             )
 
-            let allTablesSql = database
+            const allTablesSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
             const allTablesResults: ObjectLiteral[] = await this.query(
@@ -3748,7 +3747,7 @@ export class SqlServerQueryRunner
         table: Table,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(

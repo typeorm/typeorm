@@ -24,7 +24,7 @@ export type FindOptionsSelectProperty<Property> = Property extends Promise<
     : Property extends ObjectId
     ? boolean
     : Property extends object
-    ? FindOptionsSelect<Property>
+    ? FindOptionsSelect<Property> | boolean
     : boolean
 
 /**

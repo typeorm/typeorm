@@ -520,7 +520,7 @@ export class DataSource {
 
     /**
      * Executes raw SQL query and returns raw database results.
-     * 
+     *
      * @see [Official docs](https://typeorm.io/data-source-api) for examples.
      */
     async query<T = any>(
@@ -645,7 +645,7 @@ export class DataSource {
         const metadataFromMap = this.entityMetadatasMap.get(target)
         if (metadataFromMap) return metadataFromMap
 
-        for (let [_, metadata] of this.entityMetadatasMap) {
+        for (const [_, metadata] of this.entityMetadatasMap) {
             if (
                 InstanceChecker.isEntitySchema(target) &&
                 metadata.name === target.options.name
@@ -737,7 +737,7 @@ export class DataSource {
         )
 
         // set current data source to the entities
-        for (let entityMetadata of entityMetadatas) {
+        for (const entityMetadata of entityMetadatas) {
             if (
                 InstanceChecker.isBaseEntityConstructor(entityMetadata.target)
             ) {

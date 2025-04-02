@@ -37,17 +37,17 @@ const dataSource = new DataSource(options)
 dataSource
     .initialize()
     .then((dataSource) => {
-        let details = new PostDetails()
+        const details = new PostDetails()
         details.authorName = "Umed"
         details.comment = "about post"
         details.metadata = "post,details,one-to-one"
 
-        let post = new Post()
+        const post = new Post()
         post.text = "Hello how are you?"
         post.title = "hello"
         post.details = details
 
-        let postRepository = dataSource.getRepository(Post)
+        const postRepository = dataSource.getRepository(Post)
 
         postRepository
             .save(post)

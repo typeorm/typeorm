@@ -22,7 +22,7 @@ describe("github issues > #320 Bug in getManyAndCount", () => {
     it("should correctly parse type from PrimaryGeneratedColumn options", () =>
         Promise.all(
             connections.map(async (connection) => {
-                let tiles = [2, 3]
+                const tiles = [2, 3]
 
                 let query = connection
                     .createQueryBuilder(ActivityEntity, "activity")
