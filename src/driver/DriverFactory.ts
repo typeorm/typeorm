@@ -10,7 +10,7 @@ import { NativescriptDriver } from "./nativescript/NativescriptDriver"
 import { SqljsDriver } from "./sqljs/SqljsDriver"
 import { MysqlDriver } from "./mysql/MysqlDriver"
 import { PostgresDriver } from "./postgres/PostgresDriver"
-import { ExpoDriver } from "./expo/ExpoDriver"
+import { ExpoDriverFactory } from "./expo/ExpoDriverFactory"
 import { AuroraMysqlDriver } from "./aurora-mysql/AuroraMysqlDriver"
 import { AuroraPostgresDriver } from "./aurora-postgres/AuroraPostgresDriver"
 import { Driver } from "./Driver"
@@ -59,7 +59,7 @@ export class DriverFactory {
             case "mongodb":
                 return new MongoDriver(connection)
             case "expo":
-                return new ExpoDriver(connection)
+                return new ExpoDriverFactory(connection).create()
             case "aurora-mysql":
                 return new AuroraMysqlDriver(connection)
             case "aurora-postgres":
