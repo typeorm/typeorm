@@ -2,6 +2,7 @@ name: Publish Package to npmjs
 on:
   release:
     types: [published]
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,7 +18,8 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
       - run: npm run package
-      - run: cd build/package
-      - run: npm publish --provenance --access public
+      - run: |
+          cd build/package
+          npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
