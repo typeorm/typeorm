@@ -1,6 +1,5 @@
 ## [0.3.22](https://github.com/typeorm/typeorm/compare/v0.3.21...v0.3.22)
 
--   fix: Add support for better-sqlite3 v10 and 11 (#11096) ([6c0c2ba](https://github.com/typeorm/typeorm/commit/6c0c2ba)), closes [#11096](https://github.com/typeorm/typeorm/issues/11096)
 -   fix: bulk insert NULL values in Oracle (#11363) ([bcaa0bf](https://github.com/typeorm/typeorm/commit/bcaa0bf)), closes [#11363](https://github.com/typeorm/typeorm/issues/11363)
 -   fix: ensure correct MSSQL parameter conversion in where conditions ([ecae9f5](https://github.com/typeorm/typeorm/commit/ecae9f5)), closes [#11285](https://github.com/typeorm/typeorm/issues/11285)
 -   fix: export QueryEvent before/after types (#10688) ([03dbc7a](https://github.com/typeorm/typeorm/commit/03dbc7a)), closes [#10688](https://github.com/typeorm/typeorm/issues/10688)
