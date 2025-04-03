@@ -778,7 +778,9 @@ export class EntityManager {
             typeof criteria === "string" ||
             typeof criteria === "number" ||
             criteria instanceof Date ||
-            Array.isArray(criteria)
+            (Array.isArray(criteria) &&
+                typeof criteria[0] !== "object" &&
+                criteria[0] !== null)
         ) {
             return this.createQueryBuilder()
                 .update(target)
@@ -832,7 +834,9 @@ export class EntityManager {
             typeof criteria === "string" ||
             typeof criteria === "number" ||
             criteria instanceof Date ||
-            Array.isArray(criteria)
+            (Array.isArray(criteria) &&
+                typeof criteria[0] !== "object" &&
+                criteria[0] !== null)
         ) {
             return this.createQueryBuilder()
                 .delete()
@@ -886,7 +890,9 @@ export class EntityManager {
             typeof criteria === "string" ||
             typeof criteria === "number" ||
             criteria instanceof Date ||
-            Array.isArray(criteria)
+            (Array.isArray(criteria) &&
+                typeof criteria[0] !== "object" &&
+                criteria[0] !== null)
         ) {
             return this.createQueryBuilder()
                 .softDelete()
@@ -940,7 +946,9 @@ export class EntityManager {
             typeof criteria === "string" ||
             typeof criteria === "number" ||
             criteria instanceof Date ||
-            Array.isArray(criteria)
+            (Array.isArray(criteria) &&
+                typeof criteria[0] !== "object" &&
+                criteria[0] !== null)
         ) {
             return this.createQueryBuilder()
                 .restore()
