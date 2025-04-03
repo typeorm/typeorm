@@ -1,3 +1,32 @@
+## [0.3.22](https://github.com/typeorm/typeorm/compare/v0.3.21...v0.3.22)
+
+-   fix: Add support for better-sqlite3 v10 and 11 (#11096) ([6c0c2ba](https://github.com/typeorm/typeorm/commit/6c0c2ba)), closes [#11096](https://github.com/typeorm/typeorm/issues/11096)
+-   fix: bulk insert NULL values in Oracle (#11363) ([bcaa0bf](https://github.com/typeorm/typeorm/commit/bcaa0bf)), closes [#11363](https://github.com/typeorm/typeorm/issues/11363)
+-   fix: ensure correct MSSQL parameter conversion in where conditions ([ecae9f5](https://github.com/typeorm/typeorm/commit/ecae9f5)), closes [#11285](https://github.com/typeorm/typeorm/issues/11285)
+-   fix: export QueryEvent before/after types (#10688) ([03dbc7a](https://github.com/typeorm/typeorm/commit/03dbc7a)), closes [#10688](https://github.com/typeorm/typeorm/issues/10688)
+-   fix: FindOptionsSelect to use correct type when property is an object (#11355) ([834e856](https://github.com/typeorm/typeorm/commit/834e856)), closes [#11355](https://github.com/typeorm/typeorm/issues/11355)
+-   fix: incorrect table alias in insert orUpdate with Postgres driver (#11082) ([72c6991](https://github.com/typeorm/typeorm/commit/72c6991)), closes [#11082](https://github.com/typeorm/typeorm/issues/11082) [#11077](https://github.com/typeorm/typeorm/issues/11077)
+-   fix: inverse relation metadata not cyclic ([50a660a](https://github.com/typeorm/typeorm/commit/50a660a))
+-   fix: remove unnecessary import from JS migration (#11327) ([72145b8](https://github.com/typeorm/typeorm/commit/72145b8)), closes [#11327](https://github.com/typeorm/typeorm/issues/11327)
+-   fix: remove unnecessary spaces in message when running non-fake migrations (#10809) ([c3bebdc](https://github.com/typeorm/typeorm/commit/c3bebdc)), closes [#10809](https://github.com/typeorm/typeorm/issues/10809)
+-   fix: sql escape issues identified by CodeQL (#11338) ([863caf1](https://github.com/typeorm/typeorm/commit/863caf1)), closes [#11338](https://github.com/typeorm/typeorm/issues/11338)
+-   fix: update mongodb connection options (#11310) ([81bb9d5](https://github.com/typeorm/typeorm/commit/81bb9d5)), closes [#11310](https://github.com/typeorm/typeorm/issues/11310)
+-   fix: version detection for Postgres derived variants (#11375) ([3d79786](https://github.com/typeorm/typeorm/commit/3d79786)), closes [#11375](https://github.com/typeorm/typeorm/issues/11375)
+-   fix(sap): incorrect handling of simple array/json data type (#11322) ([27b4207](https://github.com/typeorm/typeorm/commit/27b4207)), closes [#11322](https://github.com/typeorm/typeorm/issues/11322)
+-   fix(sap): normalize deprecated/removed data types in SAP HANA Cloud (#11356) ([460ef02](https://github.com/typeorm/typeorm/commit/460ef02)), closes [#11356](https://github.com/typeorm/typeorm/issues/11356)
+-   fix(sap): pass the configured schema to the db client (#11321) ([04ca83a](https://github.com/typeorm/typeorm/commit/04ca83a)), closes [#11321](https://github.com/typeorm/typeorm/issues/11321)
+-   feat: Send DriverInfo to MongoDB client (#11214) ([a29e047](https://github.com/typeorm/typeorm/commit/a29e047)), closes [#11214](https://github.com/typeorm/typeorm/issues/11214)
+-   feat: Support Expo SQLite Next  ([7b242e1](https://github.com/typeorm/typeorm/commit/7b242e1))
+-   feat(postgres): support macaddr8 column type ([b0ea913](https://github.com/typeorm/typeorm/commit/b0ea913))
+-   refactor: database server version fetching & comparison (#11357) ([4e31a86](https://github.com/typeorm/typeorm/commit/4e31a86)), closes [#11357](https://github.com/typeorm/typeorm/issues/11357)
+-   refactor: Rename SubjectTopoligicalSorter as SubjectTopologicalSorter (#11074) ([340f933](https://github.com/typeorm/typeorm/commit/340f933)), closes [#11074](https://github.com/typeorm/typeorm/issues/11074)
+-   refactor: use ansis instead of chalk (#11263) ([988673c](https://github.com/typeorm/typeorm/commit/988673c)), closes [#11263](https://github.com/typeorm/typeorm/issues/11263)
+-   refactor: use node:fs/promises (#11206) ([71addb2](https://github.com/typeorm/typeorm/commit/71addb2)), closes [#11206](https://github.com/typeorm/typeorm/issues/11206)
+-   Add VirtualColumn to model shim (#11331) ([5a276a4](https://github.com/typeorm/typeorm/commit/5a276a4)), closes [#11331](https://github.com/typeorm/typeorm/issues/11331)
+-   Revert "fix: nested transactions issues (#10210)" ([7aa4f3c](https://github.com/typeorm/typeorm/commit/7aa4f3c)), closes [#10210](https://github.com/typeorm/typeorm/issues/10210)
+
+
+
 ## [0.3.21](https://github.com/typeorm/typeorm/compare/v0.3.20...v0.3.21) (2025-03-03)
 
 
