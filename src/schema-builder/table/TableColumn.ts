@@ -57,6 +57,11 @@ export class TableColumn {
     isUnique: boolean = false
 
     /**
+     * Indicates if column handle nulls values as distinct.
+     */
+    isNullsNotDistinct: boolean = false
+
+    /**
      * Indicates if column stores array.
      */
     isArray: boolean = false
@@ -175,6 +180,7 @@ export class TableColumn {
             this.generatedIdentity = options.generatedIdentity
             this.isPrimary = options.isPrimary || false
             this.isUnique = options.isUnique || false
+            this.isNullsNotDistinct = options.isNullsNotDistinct || false
             this.isArray = options.isArray || false
             this.comment = options.comment
             this.enum = options.enum
