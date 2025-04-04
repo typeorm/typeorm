@@ -17,6 +17,7 @@
     "strictFunctionTypes": false,
     "strictPropertyInitialization": false,
     "stripInternal": true,
+    "useDefineForClassFields": false,
     "useUnknownInCatchVariables": false
   },
   "exclude": ["build", "node_modules", "temp", "tmp", "sample/playground"],
