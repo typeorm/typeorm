@@ -3,12 +3,14 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
+
     steps:
       - uses: actions/checkout@v4
       # Setup .npmrc file to publish to npm

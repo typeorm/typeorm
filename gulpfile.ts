@@ -64,8 +64,7 @@ export class Gulpfile {
     @MergedTask()
     browserCompile() {
         const tsProject = ts.createProject("tsconfig.json", {
-            module: "es2020",
-            lib: ["es2021", "dom"],
+            lib: ["es2023", "dom"],
             typescript: require("typescript")
         });
         const tsResult = gulp.src([
