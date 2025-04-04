@@ -18,6 +18,7 @@
     "strictFunctionTypes": false,
     "strictPropertyInitialization": false,
     "stripInternal": true,
+    "useDefineForClassFields": false,
     "useUnknownInCatchVariables": false
   },
   "include": ["sample", "src", "test", "*.ts"],
