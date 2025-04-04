@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "version": "0.3.27",
-  "description": "Data-Mapper ORM for TypeScript and ES2021+. Supports MySQL/MariaDB, PostgreSQL, MS SQL Server, Oracle, SAP HANA, SQLite, MongoDB databases.",
+  "description": "Data-Mapper ORM for TypeScript and ES2023+. Supports MySQL/MariaDB, PostgreSQL, MS SQL Server, Oracle, SAP HANA, SQLite, MongoDB databases.",
   "homepage": "https://typeorm.io",
   "bugs": {
     "url": "https://github.com/typeorm/typeorm/issues"
@@ -113,21 +113,22 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@google-cloud/spanner": "^8.2.1",
     "@sap/hana-client": "^2.26.18",
-    "@tsconfig/node16": "^16.1.5",
+    "@tsconfig/node20": "^20.1.6",
     "@types/chai": "^4.3.20",
     "@types/chai-as-promised": "^7.1.8",
     "@types/debug": "^4.1.12",
     "@types/gulp-rename": "^2.0.6",
     "@types/gulp-sourcemaps": "^0.0.38",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^16.18.126",
+    "@types/node": "^20.19.18",
     "@types/sha.js": "^2.4.4",
     "@types/sinon": "^10.0.20",
     "@types/sinon-chai": "^3.2.12",
     "@types/source-map-support": "^0.5.10",
     "@types/yargs": "^17.0.33",
-    "better-sqlite3": "^8.7.0",
+    "better-sqlite3": "^12.4.1",
     "chai": "^4.5.0",
     "chai-as-promised": "^7.1.2",
     "class-transformer": "^0.5.1",
@@ -148,7 +149,7 @@
     "mongodb": "^6.20.0",
     "mssql": "^11.0.1",
     "mysql": "^2.18.1",
-    "mysql2": "^3.15.0",
+    "mysql2": "^3.15.1",
     "nyc": "^17.1.0",
     "oracledb": "^6.9.0",
     "pg": "^8.16.3",
@@ -170,22 +171,22 @@
     "typescript-eslint": "^8.44.0"
   },
   "peerDependencies": {
-    "@google-cloud/spanner": "^5.18.0 || ^6.0.0 || ^7.0.0",
+    "@google-cloud/spanner": "^8.0.0",
     "@sap/hana-client": "^2.14.22",
-    "better-sqlite3": "^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0",
+    "better-sqlite3": "^12.0.0",
     "ioredis": "^5.0.4",
-    "mongodb": "^5.8.0 || ^6.0.0",
-    "mssql": "^9.1.1 || ^10.0.1 || ^11.0.1",
-    "mysql2": "^2.2.5 || ^3.0.1",
+    "mongodb": "^6.0.0",
+    "mssql": "^11.0.1",
+    "mysql2": "^3.0.1",
     "oracledb": "^6.3.0",
     "pg": "^8.5.1",
     "pg-native": "^3.0.0",
     "pg-query-stream": "^4.0.0",
-    "redis": "^3.1.1 || ^4.0.0 || ^5.0.14",
+    "redis": "^5.0.14",
     "sql.js": "^1.4.0",
     "sqlite3": "^5.0.3",
-    "ts-node": "^10.7.0",
-    "typeorm-aurora-data-api-driver": "^2.0.0 || ^3.0.0"
+    "ts-node": "^10.9.2",
+    "typeorm-aurora-data-api-driver": "^3.0.0"
   },
   "peerDependenciesMeta": {
     "@google-cloud/spanner": {
@@ -238,7 +239,7 @@
     }
   },
   "engines": {
-    "node": ">=16.13.0"
+    "node": "^20.9.0 || >=22.11.0"
   },
   "collective": {
     "type": "opencollective",

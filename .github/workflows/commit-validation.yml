@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18, 20]
+        node-version: [20, 22]
     uses: ./.github/workflows/tests-linux.yml
     with:
       node-version: ${{matrix.node-version}}
