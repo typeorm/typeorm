@@ -1581,11 +1581,13 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     parameters: [aliasPath, ...parameters],
                 }
             }
-        } else if (parameterValue === null) {
-            return {
-                operator: "isNull",
-                parameters: [aliasPath],
-            }
+            // } else if (parameterValue === null) {
+            //     return {
+            //         operator: "isNull",
+            //         parameters: [
+            //             aliasPath,
+            //         ]
+            //     };
         } else {
             return {
                 operator: "equal",
