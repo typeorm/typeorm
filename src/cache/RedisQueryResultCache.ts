@@ -152,7 +152,7 @@ export class RedisQueryResultCache implements QueryResultCache {
      * Checks if cache is expired or not.
      */
     isExpired(savedCache: QueryResultCacheOptions): boolean {
-        return savedCache.time! + savedCache.duration < new Date().getTime()
+        return savedCache.time! + savedCache.duration < Date.now()
     }
 
     /**
