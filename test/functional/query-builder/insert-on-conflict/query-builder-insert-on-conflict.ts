@@ -1,34 +1,41 @@
+import { expect } from "chai"
 import "reflect-metadata"
+
+import { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
-import { expect } from "chai"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
-describe("query builder > insertion > on conflict", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres", "sqlite", "better-sqlite3"], // since on conflict statement is only supported in postgres and sqlite >= 3.24.0
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+describe("query builder > insert > on conflict", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Category, Post],
+            enabledDrivers: [
+                "cockroachdb",
+                "postgres",
+                "sqlite",
+                "better-sqlite3",
+            ], // since on conflict statement is only supported in postgres and sqlite >= 3.24.0
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should perform insertion correctly using onConflict", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.id = "post#1"
                 post1.title = "About post"
                 post1.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -40,7 +47,7 @@ describe("query builder > insertion > on conflict", () => {
                 post2.title = "Again post"
                 post2.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -48,7 +55,7 @@ describe("query builder > insertion > on conflict", () => {
                     .onConflict(`("id") DO NOTHING`)
                     .execute()
 
-                await connection.manager
+                await dataSource.manager
                     .findOne(Post, {
                         where: {
                             id: "post#1",
@@ -60,7 +67,7 @@ describe("query builder > insertion > on conflict", () => {
                         date: new Date("06 Aug 2020 00:12:00 GMT"),
                     })
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -69,7 +76,7 @@ describe("query builder > insertion > on conflict", () => {
                     .setParameter("title", post2.title)
                     .execute()
 
-                await connection.manager
+                await dataSource.manager
                     .findOne(Post, {
                         where: {
                             id: "post#1",
@@ -83,10 +90,12 @@ describe("query builder > insertion > on conflict", () => {
             }),
         ))
 
-    it("should support alias in insert", () =>
+    it("should support alias in insert using onConflict", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                if (connection.driver.options.type !== "postgres") return
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
+                    return
+                }
 
                 const post1 = new Post()
                 post1.id = "post#1"
@@ -98,7 +107,7 @@ describe("query builder > insertion > on conflict", () => {
                 post2.title = "Again post"
                 post2.date = new Date("06 Aug 2020 00:12:02 GMT")
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -106,7 +115,7 @@ describe("query builder > insertion > on conflict", () => {
                     .orIgnore()
                     .execute()
 
-                await connection.manager
+                await dataSource.manager
                     .find(Post, {
                         order: {
                             id: "ASC",
@@ -130,7 +139,7 @@ describe("query builder > insertion > on conflict", () => {
                 post2.title = "Edited post"
                 post2.date = new Date("07 Aug 2020 00:12:04 GMT")
 
-                await connection
+                await dataSource
                     .createQueryBuilder(Post, "p")
                     .insert()
                     .values([post1, post2])
@@ -140,7 +149,7 @@ describe("query builder > insertion > on conflict", () => {
                     .setParameter("title", post2.title)
                     .execute()
 
-                await connection.manager
+                await dataSource.manager
                     .find(Post, {
                         order: {
                             id: "ASC",
@@ -163,13 +172,13 @@ describe("query builder > insertion > on conflict", () => {
 
     it("should perform insertion correctly using orIgnore", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.id = "post#1"
                 post1.title = "About post"
                 post1.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -181,7 +190,7 @@ describe("query builder > insertion > on conflict", () => {
                 post2.title = "Again post"
                 post2.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -189,7 +198,7 @@ describe("query builder > insertion > on conflict", () => {
                     .orIgnore("date")
                     .execute()
 
-                await connection.manager
+                await dataSource.manager
                     .findOne(Post, {
                         where: {
                             id: "post#1",
@@ -205,13 +214,13 @@ describe("query builder > insertion > on conflict", () => {
 
     it("should perform insertion correctly using orUpdate", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const post1 = new Post()
                 post1.id = "post#1"
                 post1.title = "About post"
                 post1.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -223,7 +232,7 @@ describe("query builder > insertion > on conflict", () => {
                 post2.title = "Again post"
                 post2.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                await connection
+                await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -232,7 +241,7 @@ describe("query builder > insertion > on conflict", () => {
                     .setParameter("title", post2.title)
                     .execute()
 
-                await connection.manager
+                await dataSource.manager
                     .findOne(Post, {
                         where: {
                             id: "post#1",
@@ -245,16 +254,20 @@ describe("query builder > insertion > on conflict", () => {
                     })
             }),
         ))
+
     it("should perform insertion on partial index using orUpdate", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                if (connection.driver.options.type !== "postgres") return
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
+                    return
+                }
+
                 const post1 = new Post()
                 post1.id = "post#1"
                 post1.title = "About post"
                 post1.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                const sql = connection.manager
+                const sql = dataSource.manager
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -275,14 +288,17 @@ describe("query builder > insertion > on conflict", () => {
         ))
     it("should perform insertion using partial index and skipping update on no change", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                if (connection.driver.options.type !== "postgres") return
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") {
+                    return
+                }
+
                 const post1 = new Post()
                 post1.id = "post#1"
                 post1.title = "About post"
                 post1.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                const sql = connection.manager
+                const sql = dataSource.manager
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -298,26 +314,75 @@ describe("query builder > insertion > on conflict", () => {
                 expect(sql).to.equal(
                     `INSERT INTO post(id, title, date) ` +
                         `VALUES ($1, $2, $3) ON CONFLICT ( date ) ` +
-                        `WHERE ( date > 2020-01-01 ) DO UPDATE SET title = EXCLUDED.title  ` +
+                        `WHERE ( date > 2020-01-01 ) DO UPDATE SET title = EXCLUDED.title ` +
                         `WHERE (post.title IS DISTINCT FROM EXCLUDED.title)`,
                 )
             }),
         ))
-    it("should throw error if using indexPredicate amd an unsupported driver", () =>
+
+    it("should support alias in insert using orUpdate", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
+                    return
+                }
+
+                const categoryRepo = dataSource.getRepository(Category)
+
+                const initialCategories = ["Documents", "Applications"].map(
+                    (name, id) => ({ id, name }),
+                )
+                await categoryRepo.save(initialCategories)
+
+                const mockCategories = ["Video", "Photo", "Audio"].map(
+                    (name, index) => ({ id: index + 1, name }),
+                )
+                const query = categoryRepo
+                    .createQueryBuilder()
+                    .insert()
+                    .values(mockCategories)
+                    .orUpdate(["name"], ["id"], {
+                        skipUpdateIfNoValuesChanged: true,
+                    })
+
+                expect(query.getSql()).to.equal(
+                    `INSERT INTO "category" AS "Category"("id", "name") ` +
+                        `VALUES ($1, $2), ($3, $4), ($5, $6) ` +
+                        `ON CONFLICT ( "id" ) DO UPDATE ` +
+                        `SET "name" = EXCLUDED."name" ` +
+                        `WHERE ("Category"."name" IS DISTINCT FROM EXCLUDED."name")`,
+                )
+                expect(await query.execute()).not.to.throw
+
+                const categories = await categoryRepo.find({
+                    order: { id: "ASC" },
+                })
+                expect(categories).to.deep.equal([
+                    { id: 0, name: "Documents" },
+                    { id: 1, name: "Video" },
+                    { id: 2, name: "Photo" },
+                    { id: 3, name: "Audio" },
+                ])
+            }),
+        ))
+
+    it("should throw error if using indexPredicate and an unsupported driver", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
                 if (
-                    !connection.driver.supportedUpsertTypes.includes(
+                    !dataSource.driver.supportedUpsertTypes.includes(
                         "on-duplicate-key-update",
                     )
-                )
+                ) {
                     return
+                }
+
                 const post1 = new Post()
                 post1.id = "post#1"
                 post1.title = "About post"
                 post1.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                const sql = connection.manager
+                const sql = dataSource.manager
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
