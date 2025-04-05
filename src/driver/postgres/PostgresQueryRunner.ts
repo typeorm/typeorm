@@ -4164,7 +4164,7 @@ export class PostgresQueryRunner
         //  - https://github.com/typeorm/typeorm/pull/9319
         //  - https://docs.aws.amazon.com/redshift/latest/dg/c_unsupported-postgresql-functions.html
         const result: [{ version: string }] = await this.query(
-            `SELECT version()`,
+            `SELECT version() as "version"`,
         )
 
         // Examples:

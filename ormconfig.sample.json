@@ -134,5 +134,27 @@
       "maxRetries": 3
     },
     "logging": false
+  },
+  {
+    "skip": false,
+    "name": "crate",
+    "type": "postgres",
+    "host": "localhost",
+    "port": 5434,
+    "username": "crate",
+    "password": "",
+    "database": "crate",
+    "logging": false
+  },
+  {
+    "skip": false,
+    "name": "yugabyte",
+    "type": "postgres",
+    "host": "localhost",
+    "port": 5433,
+    "username": "yugabyte",
+    "password": "yugabyte",
+    "database": "yugabyte",
+    "logging": false
   }
 ]
