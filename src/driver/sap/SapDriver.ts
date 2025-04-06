@@ -72,6 +72,11 @@ export class SapDriver implements Driver {
     options: SapConnectionOptions
 
     /**
+     * Version of SAP HANA. Requires a SQL query to the DB, so it is not always set
+     */
+    version?: string
+
+    /**
      * Database name used to perform all write queries.
      */
     database?: string
@@ -105,31 +110,31 @@ export class SapDriver implements Driver {
     supportedDataTypes: ColumnType[] = [
         "tinyint",
         "smallint",
-        "int", // alias for "integer"
+        "int", // typeorm alias for "integer"
         "integer",
         "bigint",
         "smalldecimal",
         "decimal",
-        "dec", // alias for "decimal"
+        "dec", // typeorm alias for "decimal"
         "real",
         "double",
-        "float",
+        "float", // database alias for "real" / "double"
         "date",
         "time",
         "seconddate",
         "timestamp",
         "boolean",
-        "char", // not officially supported
+        "char", // not officially supported, in SAP HANA Cloud: alias for "nchar"
         "nchar", // not officially supported
-        "varchar", // deprecated
+        "varchar", // in SAP HANA Cloud: alias for "nvarchar"
         "nvarchar",
-        "text", // deprecated
-        "alphanum", // deprecated
-        "shorttext", // deprecated
+        "text", // removed in SAP HANA Cloud
+        "alphanum", // removed in SAP HANA Cloud
+        "shorttext", // removed in SAP HANA Cloud
         "array",
         "varbinary",
         "blob",
-        "clob", // deprecated
+        "clob", // in SAP HANA Cloud: alias for "nclob"
         "nclob",
         "st_geometry",
         "st_point",
@@ -295,19 +300,17 @@ export class SapDriver implements Driver {
         // create the pool
         this.master = this.client.createPool(dbParams, options)
 
-        if (!this.database || !this.schema) {
-            const queryRunner = await this.createQueryRunner("master")
+        const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+        const { version, database } = await queryRunner.getDatabaseAndVersion()
+        this.version = version
+        this.database = database
 
-            if (!this.schema) {
-                this.schema = await queryRunner.getCurrentSchema()
-            }
-
-            await queryRunner.release()
+        if (!this.schema) {
+            this.schema = await queryRunner.getCurrentSchema()
         }
+
+        await queryRunner.release()
     }
 
     /**
@@ -371,7 +374,7 @@ export class SapDriver implements Driver {
                     return full
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -412,7 +415,7 @@ export class SapDriver implements Driver {
      * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)
@@ -568,6 +571,18 @@ export class SapDriver implements Driver {
             return "integer"
         } else if (column.type === "dec") {
             return "decimal"
+        } else if (column.type === "float") {
+            const length =
+                typeof column.length === "string"
+                    ? parseInt(column.length)
+                    : column.length
+
+            // https://help.sap.com/docs/SAP_HANA_PLATFORM/4fe29514fd584807ac9f2a04f6754767/4ee2f261e9c44003807d08ccc2e249ac.html
+            if (length && length < 25) {
+                return "real"
+            }
+
+            return "double"
         } else if (column.type === String) {
             return "nvarchar"
         } else if (column.type === Date) {
@@ -585,9 +600,24 @@ export class SapDriver implements Driver {
             return "nclob"
         } else if (column.type === "simple-enum") {
             return "nvarchar"
-        } else {
-            return (column.type as string) || ""
         }
+
+        if (DriverUtils.isReleaseVersionOrGreater(this, "4.0")) {
+            // SAP HANA Cloud deprecated / removed these data types
+            if (
+                column.type === "varchar" ||
+                column.type === "alphanum" ||
+                column.type === "shorttext"
+            ) {
+                return "nvarchar"
+            } else if (column.type === "text" || column.type === "clob") {
+                return "nclob"
+            } else if (column.type === "char") {
+                return "nchar"
+            }
+        }
+
+        return (column.type as string) || ""
     }
 
     /**
@@ -744,26 +774,12 @@ export class SapDriver implements Driver {
             const tableColumn = tableColumns.find(
                 (c) => c.name === columnMetadata.databaseName,
             )
-            if (!tableColumn) return false // we don't need new columns, we only need exist and changed
+            if (!tableColumn) {
+                // we don't need new columns, we only need exist and changed
+                return false
+            }
 
-            // console.log("table:", columnMetadata.entityMetadata.tableName);
-            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            // console.log("type:", tableColumn.type, _this.normalizeType(columnMetadata));
-            // console.log("length:", tableColumn.length, _this.getColumnLength(columnMetadata));
-            // console.log("width:", tableColumn.width, columnMetadata.width);
-            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
-            // console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            // console.log("default:", tableColumn.default, columnMetadata.default);
-            // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-            // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            // console.log("isUnique:", tableColumn.isUnique, _this.normalizeIsUnique(columnMetadata));
-            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-            // console.log((columnMetadata.generationStrategy !== "uuid" && tableColumn.isGenerated !== columnMetadata.isGenerated));
-            // console.log("==========================================");
-
-            const normalizeDefault = this.normalizeDefault(columnMetadata)
-            const hanaNullComapatibleDefault =
-                normalizeDefault == null ? undefined : normalizeDefault
+            const normalizedDefault = this.normalizeDefault(columnMetadata)
 
             return (
                 tableColumn.name !== columnMetadata.databaseName ||
@@ -776,7 +792,7 @@ export class SapDriver implements Driver {
                 tableColumn.comment !==
                     this.escapeComment(columnMetadata.comment) ||
                 (!tableColumn.isGenerated &&
-                    hanaNullComapatibleDefault !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
+                    normalizedDefault !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.isUnique !==
@@ -805,7 +821,7 @@ export class SapDriver implements Driver {
      * Returns true if driver supports fulltext indices.
      */
     isFullTextColumnTypeSupported(): boolean {
-        return true
+        return !DriverUtils.isReleaseVersionOrGreater(this, "4.0")
     }
 
     /**

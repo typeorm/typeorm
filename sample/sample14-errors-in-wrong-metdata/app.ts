@@ -17,15 +17,15 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        let author = new PostAuthor()
+        const author = new PostAuthor()
         author.name = "Umed"
 
-        let post = new Post()
+        const post = new Post()
         post.text = "Hello how are you?"
         post.title = "hello"
         post.author = author
 
-        let postRepository = dataSource.getRepository(Post)
+        const postRepository = dataSource.getRepository(Post)
 
         postRepository
             .save(post)
