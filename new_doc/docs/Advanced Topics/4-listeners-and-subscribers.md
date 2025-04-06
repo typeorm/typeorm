@@ -1,6 +1,6 @@
 # Entity Listeners and Subscribers
 
-## What is an Entity Listener
+## What is an Entity Listener?
 
 Any of your entities can have methods with custom logic that listen to specific entity events.
 You must mark those methods with special decorators depending on what event you want to listen to.
@@ -184,7 +184,7 @@ export class Post {
 }
 ```
 
-## What is a Subscriber
+## What is a Subscriber?
 
 Marks a class as an event subscriber which can listen to specific entity events or any entity events.
 Events are firing using `QueryBuilder` and repository/manager methods.

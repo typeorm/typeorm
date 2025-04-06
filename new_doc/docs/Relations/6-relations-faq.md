@@ -1,6 +1,6 @@
 # Relations FAQ
 
-## How to create self referencing relation
+## How to create self referencing relation?
 
 Self-referencing relations are relations which have a relation to themselves.
 This is useful when you are storing entities in a tree-like structures.
@@ -39,7 +39,7 @@ export class Category {
 }
 ```
 
-## How to use relation id without joining relation
+## How to use relation id without joining relation?
 
 Sometimes you want to have, in your object, the id of the related object without loading it.
 For example:
@@ -135,7 +135,7 @@ User {
 }
 ```
 
-## How to load relations in entities
+## How to load relations in entities?
 
 The easiest way to load your entity relations is to use `relations` option in `FindOptions`:
 

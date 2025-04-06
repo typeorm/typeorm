@@ -120,14 +120,29 @@ div[class*="announcementBar"] .close:hover {
   opacity: 1;
 }
 
-/* Navbar blur effect */
 .navbar {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 9996 !important;
+}
+
+.navbar-sidebar {
+  height: 100vh !important;
+  background: var(--ifm-background-color) !important;
+  z-index: 10000 !important;
+}
+
+.navbar-sidebar__backdrop {
+  z-index: 9999 !important;
+  height: 100vh !important;
+}
+
+/* TypeSense search positioning */
+.DocSearch-Container {
+  z-index: 9999 !important;
 }
 
 [data-theme='dark'] .navbar {
@@ -160,13 +175,13 @@ div[class*="announcementBar"] .close:hover {
 
 .button.button--outline {
   color: var(--ifm-color-primary);
-  border-color: var(--ifm-color-primary);
+  border: 1px solid var(--ifm-color-primary);
   transition: all 0.3s ease;
 }
 
 .hero--primary .button.button--outline {
   color: white;
-  border-color: white;
+  border: 1px solid white;
 }
 
 .button.button--outline:hover {
@@ -274,10 +289,4 @@ div[class*="announcementBarContent_"] {
 div[class*="announcementBarContent_"] a {
   color: #FFE6D9 !important;
   text-decoration: underline;
-}
-
-/* TypeSense */
-
-.DocSearch-Container {
-  z-index: 1001 !important;
 }

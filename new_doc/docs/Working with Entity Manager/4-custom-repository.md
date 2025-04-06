@@ -12,7 +12,7 @@ There are several ways how custom repositories can be created.
 -   [How to create custom repository](#how-to-create-custom-repository)
 -   [Using custom repositories in transactions](#using-custom-repositories-in-transactions)
 
-## How to create custom repository
+## How to create custom repository?
 
 It's common practice assigning a repository instance to a globally exported variable,
 and use this variable across your app, for example:

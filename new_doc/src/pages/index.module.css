@@ -41,6 +41,20 @@
   max-width: 350px;
 }
 
+.buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+@media screen and (max-width: 996px) {
+  .buttons {
+    margin: 0 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    text-align: center;
+  }
+}
+
 .features {
   padding: 4rem 0;
   background-color: var(--ifm-color-white);

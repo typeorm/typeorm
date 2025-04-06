@@ -1,6 +1,6 @@
 # Entities
 
-## What is Entity?
+## What is an Entity?
 
 Entity is a class that maps to a database table (or collection when using MongoDB).
 You can create an entity by defining a new class and mark it with `@Entity()`:
