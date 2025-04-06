@@ -1,16 +1,5 @@
 # Migrations
 
--   [Migrations](#migrations)
-    -   [How migrations work](#how-migrations-work)
-    -   [Creating a new migration](#creating-a-new-migration)
-    -   [Running and reverting migrations](#running-and-reverting-migrations)
-        -   [Faking Migrations and Rollbacks](#faking-migrations-and-rollbacks)
-        -   [Transaction modes](#transaction-modes)
-    -   [Generating migrations](#generating-migrations)
-    -   [DataSource option](#datasource-option)
-    -   [Timestamp option](#timestamp-option)
-    -   [Using migration API to write migrations](#using-migration-api-to-write-migrations)
-
 ## How migrations work
 
 Once you get into production you'll need to synchronize model changes into the database.
