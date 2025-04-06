@@ -1,16 +1,5 @@
 # FAQ
 
--   [How do I change a column name in the database?](#how-do-i-change-a-column-name-in-the-database)
--   [How can I set value of default some function, for example `NOW()`?](#how-can-i-set-the-default-value-to-some-function-for-example-now)
--   [How to do validation?](#how-to-do-validation)
--   [What does "owner side" in relations mean or why we need to put `@JoinColumn` and `@JoinTable` decorators?](#what-does-owner-side-in-a-relations-mean-or-why-we-need-to-use-joincolumn-and-jointable)
--   [How do I add extra columns into many-to-many (junction) table?](#how-do-i-add-extra-columns-into-many-to-many-junction-table)
--   [How to handle outDir TypeScript compiler option?](#how-to-handle-outdir-typescript-compiler-option)
--   [How to use TypeORM with ts-node?](#how-to-use-typeorm-with-ts-node)
--   [How to use Webpack for the backend](#how-to-use-webpack-for-the-backend)
--   [How to use Vite for the backend](#how-to-use-vite-for-the-backend)
--   [How to use TypeORM in ESM projects?](#how-to-use-typeorm-in-esm-projects)
-
 ## How do I update a database schema?
 
 One of the main responsibilities of TypeORM is to keep your database tables in sync with your entities.
@@ -276,23 +265,23 @@ On production builds, files are [optimized by default](https://vite.dev/config/b
 You have 3 options to mitigate this. The 3 options are shown belown as diff to this basic "vite.config.ts"
 
 ```ts
-import legacy from '@vitejs/plugin-legacy';
-import vue from '@vitejs/plugin-vue';
-import path from 'path';
-import { defineConfig } from 'vite';
+import legacy from "@vitejs/plugin-legacy"
+import vue from "@vitejs/plugin-vue"
+import path from "path"
+import { defineConfig } from "vite"
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  build: {
-    sourcemap: true,
-  },
-  plugins: [vue(), legacy()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+    build: {
+        sourcemap: true,
     },
-  },
-});
+    plugins: [vue(), legacy()],
+    resolve: {
+        alias: {
+            "@": path.resolve(__dirname, "./src"),
+        },
+    },
+})
 ```
 
 ### Option 1: Disable minify

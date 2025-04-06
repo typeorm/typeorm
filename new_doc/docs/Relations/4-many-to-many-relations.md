@@ -1,12 +1,5 @@
 # Many-to-many relations
 
--   [What are many-to-many relations](#what-are-many-to-many-relations)
--   [Saving many-to-many relations](#saving-many-to-many-relations)
--   [Deleting many-to-many relations](#deleting-many-to-many-relations)
--   [Loading many-to-many relations](#loading-many-to-many-relations)
--   [Bi-directional relations](#bi-directional-relations)
--   [Many-to-many relations with custom properties](#many-to-many-relations-with-custom-properties)
-
 ## What are many-to-many relations
 
 Many-to-many is a relation where A contains multiple instances of B, and B contains multiple instances of A.
@@ -113,7 +106,7 @@ const question = await dataSource.getRepository(Question).findOne({
     relations: {
         categories: true,
     },
-    where: { id: 1 }
+    where: { id: 1 },
 })
 question.categories = question.categories.filter((category) => {
     return category.id !== categoryToRemove.id

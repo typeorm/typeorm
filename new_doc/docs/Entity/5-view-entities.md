@@ -1,10 +1,5 @@
 # View Entities
 
--   [What is View Entity?](#what-is-view-entity)
--   [View Entity columns](#view-entity-columns)
--   [View Column options](#view-column-options)
--   [Complete example](#complete-example)
-
 ## What is View Entity?
 
 View entity is a class that maps to a database view.
@@ -181,13 +176,14 @@ export class PostCategory {
     categoryName: string
 }
 ```
+
 However, `unique` is currently the only supported option for indices in materialized views. The rest of the indices options will be ignored.
 
-````typescript
+```typescript
 @Index("name-idx", { unique: true })
 @ViewColumn()
 name: string
-````
+```
 
 ## Complete example
 

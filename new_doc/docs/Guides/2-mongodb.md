@@ -1,10 +1,5 @@
 # MongoDB
 
--   [MongoDB support](#mongodb-support)
--   [Defining entities and columns](#defining-entities-and-columns)
--   [Defining subdocuments (embed documents)](#defining-subdocuments-embed-documents)
--   [Using `MongoEntityManager` and `MongoRepository`](#using-mongoentitymanager-and-mongorepository)
-
 ## MongoDB support
 
 TypeORM has basic MongoDB support.

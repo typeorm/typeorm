@@ -1,7 +1,3 @@
----
-sidebar_position: 1
----
-
 <div align="center">
   <img className="dark-mode-only" src="/img/typeorm-logo-white.svg" width="400" alt="TypeORM Logo Light" />
   <img className="light-mode-only" src="/img/typeorm-logo-colored-dark.svg" width="400" alt="TypeORM Logo Dark" />

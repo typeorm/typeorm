@@ -1,11 +1,5 @@
 # Repository APIs
 
--   [Repository APIs](./6-repository-api.md)
-    -   [`Repository` API](#repository-api)
-        -   [Additional Options](#additional-options)
-    -   [`TreeRepository` API](#treerepository-api)
-    -   [`MongoRepository` API](#mongorepository-api)
-
 ## `Repository` API
 
 -   `manager` - The `EntityManager` used by this repository.
@@ -399,36 +393,36 @@ const rawData = await repository.query(`SELECT * FROM USERS`)
 // You can also use parameters to avoid SQL injection
 // The syntax differs between the drivers
 
-// aurora-mysql, better-sqlite3, capacitor, cordova, 
-// expo, mariadb, mysql, nativescript, react-native, 
+// aurora-mysql, better-sqlite3, capacitor, cordova,
+// expo, mariadb, mysql, nativescript, react-native,
 // sap, sqlite, sqljs
 const rawData = await repository.query(
-    'SELECT * FROM USERS WHERE name = ? and age = ?',
-    [ 'John', 24 ]
+    "SELECT * FROM USERS WHERE name = ? and age = ?",
+    ["John", 24],
 )
 
 // aurora-postgres, cockroachdb, postgres
 const rawData = await repository.query(
-    'SELECT * FROM USERS WHERE name = $1 and age = $2',
-    ['John', 24]
+    "SELECT * FROM USERS WHERE name = $1 and age = $2",
+    ["John", 24],
 )
 
 // oracle
 const rawData = await repository.query(
-    'SELECT * FROM USERS WHERE name = :1 and age = :2',
-    ['John', 24]
+    "SELECT * FROM USERS WHERE name = :1 and age = :2",
+    ["John", 24],
 )
 
 // spanner
 const rawData = await repository.query(
-    'SELECT * FROM USERS WHERE name = @param0 and age = @param1',
-    [ 'John', 24 ]
+    "SELECT * FROM USERS WHERE name = @param0 and age = @param1",
+    ["John", 24],
 )
 
 // mssql
 const rawData = await repository.query(
-    'SELECT * FROM USERS WHERE name = @0 and age = @1',
-    [ 'John', 24 ]
+    "SELECT * FROM USERS WHERE name = @0 and age = @1",
+    ["John", 24],
 )
 ```
 

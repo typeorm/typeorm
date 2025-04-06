@@ -1,12 +1,5 @@
 # Relations
 
-* [What are relations](#what-are-relations)
-* [Relation options](#relation-options)
-* [Cascades](#cascades)
-	* [Cascade Options](#cascade-options)
-* [`@JoinColumn` options](#joincolumn-options)
-* [`@JoinTable` options](#jointable-options)
-
 ## What are relations
 
 Relations helps you to work with related entities easily.
@@ -26,10 +19,10 @@ There are several options you can specify for relations:
 -   `onDelete: "RESTRICT"|"CASCADE"|"SET NULL"` (default: `RESTRICT`) - specifies how foreign key should behave when referenced object is deleted
 -   `nullable: boolean` (default: `true`) - Indicates whether this relation's column is nullable or not. By default it is nullable.
 -   `orphanedRowAction: "nullify" | "delete" | "soft-delete" | "disable"` (default: `disable`) - When a parent is saved (cascading enabled) without a child/children that still exists in database, this will control what shall happen to them.
-    - _delete_ will remove these children from database.
-    - _soft-delete_ will mark children as soft-deleted.
-    - _nullify_ will remove the relation key.
-    - _disable_ will keep the relation intact. To delete, one has to use their own repository.
+    -   _delete_ will remove these children from database.
+    -   _soft-delete_ will mark children as soft-deleted.
+    -   _nullify_ will remove the relation key.
+    -   _disable_ will keep the relation intact. To delete, one has to use their own repository.
 
 ## Cascades
 

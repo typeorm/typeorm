@@ -1,11 +1,5 @@
 # Migration from Sequelize to TypeORM
 
--   [Setting up a data source](#setting-up-a-data-source)
--   [Schema synchronization](#schema-synchronization)
--   [Creating a models](#creating-a-models)
--   [Other model settings](#other-model-settings)
--   [Working with models](#working-with-models)
-
 ## Setting up a data source
 
 In sequelize you create a data source this way:

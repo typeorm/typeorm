@@ -1,11 +1,5 @@
 # Logging
 
--   [Enabling logging](#enabling-logging)
--   [Logging options](#logging-options)
--   [Log long-running queries](#log-long-running-queries)
--   [Changing default logger](#changing-default-logger)
--   [Using custom logger](#using-custom-logger)
-
 ## Enabling logging
 
 You can enable logging of all queries and errors by simply setting `logging: true` in data source options:

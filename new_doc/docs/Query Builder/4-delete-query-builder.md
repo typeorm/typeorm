@@ -1,10 +1,5 @@
 # Delete using Query Builder
 
--   [Delete using Query Builder](./4-delete-query-builder.md)
-    -   [`Delete`](#delete)
-    -   [`Soft-Delete`](#soft-delete)
-    -   [`Restore-Soft-Delete`](#restore-soft-delete)
-
 ### `Delete`
 
 You can create `DELETE` queries using `QueryBuilder`.
@@ -33,11 +28,11 @@ Examples:
 
 ```typescript
 await myDataSource
-  .getRepository(User)
-  .createQueryBuilder()
-  .softDelete()
-  .where("id = :id", { id: 1 })
-  .execute();
+    .getRepository(User)
+    .createQueryBuilder()
+    .softDelete()
+    .where("id = :id", { id: 1 })
+    .execute()
 ```
 
 ### `Restore-Soft-Delete`
@@ -52,9 +47,9 @@ Examples:
 
 ```typescript
 await myDataSource
-  .getRepository(User)
-  .createQueryBuilder()
-  .restore()
-  .where("id = :id", { id: 1 })
-  .execute();
+    .getRepository(User)
+    .createQueryBuilder()
+    .restore()
+    .where("id = :id", { id: 1 })
+    .execute()
 ```

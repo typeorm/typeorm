@@ -1,11 +1,5 @@
 # Indices
 
--   [Column indices](#column-indices)
--   [Unique indices](#unique-indices)
--   [Indices with multiple columns](#indices-with-multiple-columns)
--   [Spatial Indices](#spatial-indices)
--   [Disabling synchronization](#disabling-synchronization)
-
 ## Column indices
 
 You can create a database index for a specific column by using `@Index` on a column you want to make an index.

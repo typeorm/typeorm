@@ -1,12 +1,5 @@
 # Supported platforms
 
--   [NodeJS](#nodejs)
--   [Browser](#browser)
--   [Cordova / PhoneGap / Ionic apps](#cordova--phonegap--ionic-apps)
--   [React Native](#react-native)
--   [Expo](#expo)
--   [NativeScript](#nativescript)
-
 ## NodeJS
 
 TypeORM was tested on Node.js version 14 and above.

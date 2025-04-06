@@ -1,22 +1,5 @@
 # Data Source Options
 
--   [What is `DataSourceOptions`](#what-is-datasourceoptions)
--   [Common data source options](#common-data-source-options)
--   [`mysql` / `mariadb` data source options](#mysql--mariadb-data-source-options)
--   [`postgres` / `cockroachdb` data source options](#postgres--cockroachdb-data-source-options)
--   [`sqlite` data source options](#sqlite-data-source-options)
--   [`better-sqlite3` data source options](#better-sqlite3-data-source-options)
--   [`capacitor` data source options](#capacitor-data-source-options)
--   [`cordova` data source options](#cordova-data-source-options)
--   [`react-native` data source options](#react-native-data-source-options)
--   [`nativescript` data source options](#nativescript-data-source-options)
--   [`mssql` data source options](#mssql-data-source-options)
--   [`mongodb` data source options](#mongodb-data-source-options)
--   [`sql.js` data source options](#sqljs-data-source-options)
--   [`expo` data source options](#expo-data-source-options)
--   [`oracle` data source options](#oracle-data-source-options)
--   [DataSource options example](#data-source-options-example)
-
 ## What is `DataSourceOptions`
 
 `DataSourceOptions` is a data source configuration you pass when you create a new `DataSource` instance.
@@ -242,6 +225,7 @@ Different RDBMS-es have their own specific options.
 -   `database` - Database name
 
 ## `mssql` data source options
+
 Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation. See [SqlServerConnectionOptions.ts](../../../src/driver/sqlserver/SqlServerConnectionOptions.ts) for details on exposed attributes.
 
 -   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
@@ -547,9 +531,9 @@ The following TNS connection string will be used in the next explanations:
      (SERVER=shared)))
 )
 ```
+
 -   `sid` - The System Identifier (SID) identifies a specific database instance. For example, "sales".
 -   `serviceName` - The Service Name is an identifier of a database service. For example, `sales.us.example.com`.
-
 
 ## Data Source Options example
 
