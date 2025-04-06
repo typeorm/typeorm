@@ -9,7 +9,6 @@ const manager = repository.manager
 ```
 
 -   `metadata` - The `EntityMetadata` of the entity managed by this repository.
-    Learn more about [transactions in Entity Metadata](../Not%20in%20the%20current%20Doc/entity-metadata.md).
 
 ```typescript
 const metadata = repository.metadata

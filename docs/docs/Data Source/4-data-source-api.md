@@ -78,7 +78,6 @@ await dataSource.undoLastMigration()
 ```
 
 -   `hasMetadata` - Checks if metadata for a given entity is registered.
-    Learn more about [Entity Metadata](../Not%20in%20the%20current%20Doc/entity-metadata.md).
 
 ```typescript
 if (dataSource.hasMetadata(User))
@@ -87,7 +86,6 @@ if (dataSource.hasMetadata(User))
 
 -   `getMetadata` - Gets `EntityMetadata` of the given entity.
     You can also specify a table name and if entity metadata with such table name is found it will be returned.
-    Learn more about [Entity Metadata](../Not%20in%20the%20current%20Doc/entity-metadata.md).
 
 ```typescript
 const userMetadata = dataSource.getMetadata(User)
@@ -191,7 +189,7 @@ const users = await dataSource
 ```
 
 -   `createQueryRunner` - Creates a query runner used to manage and work with a single real database dataSource.
-    Learn more about [QueryRunner](../Not%20in%20the%20current%20Doc/query-runner.md).
+    Learn more about [QueryRunner](../query-runner.md).
 
 ```typescript
 const queryRunner = dataSource.createQueryRunner()
