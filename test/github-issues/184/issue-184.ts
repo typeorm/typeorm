@@ -24,7 +24,7 @@ describe("github issues > #184 [Postgres] Single-Inheritance not working with in
         Promise.all(
             connections.map(async (connection) => {
                 // Saving via subtype repository works
-                let employeeRepository = connection.getRepository(Employee)
+                const employeeRepository = connection.getRepository(Employee)
                 const employee = new Employee()
                 employee.id = "1"
                 employee.firstName = "umed"
@@ -45,7 +45,7 @@ describe("github issues > #184 [Postgres] Single-Inheritance not working with in
                 // await homesitterRepository.persist(homesitter);
 
                 // Saving via base type repository fails
-                let personRepository = connection.getRepository(Person)
+                const personRepository = connection.getRepository(Person)
                 const employee2 = new Employee()
                 employee2.id = "1"
                 employee2.firstName = "umed"

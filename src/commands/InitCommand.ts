@@ -280,8 +280,8 @@ export const AppDataSource = new DataSource({
             return JSON.stringify(
                 {
                     compilerOptions: {
-                        lib: ["es5", "es6"],
-                        target: "es5",
+                        lib: ["es2021"],
+                        target: "es2021",
                         module: "commonjs",
                         moduleResolution: "node",
                         outDir: "./build",
@@ -551,7 +551,7 @@ AppDataSource.initialize().then(async () => {
                 return `services:
 
   mysql:
-    image: "mysql:8.0.30"
+    image: "mysql:9.2.0"
     ports:
       - "3306:3306"
     environment:
@@ -565,7 +565,7 @@ AppDataSource.initialize().then(async () => {
                 return `services:
 
   mariadb:
-    image: "mariadb:10.8.4"
+    image: "mariadb:11.7.2"
     ports:
       - "3306:3306"
     environment:
@@ -579,7 +579,7 @@ AppDataSource.initialize().then(async () => {
                 return `services:
 
   postgres:
-    image: "postgres:14.5"
+    image: "postgres:17.2"
     ports:
       - "5432:5432"
     environment:
@@ -592,7 +592,7 @@ AppDataSource.initialize().then(async () => {
                 return `services:
 
   cockroachdb:
-    image: "cockroachdb/cockroach:v22.1.6"
+    image: "cockroachdb/cockroach:v25.1.2"
     command: start --insecure
     ports:
       - "26257:26257"
@@ -611,7 +611,7 @@ AppDataSource.initialize().then(async () => {
                 return `services:
 
   mssql:
-    image: "microsoft/mssql-server-linux:rc2"
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
     ports:
       - "1433:1433"
     environment:
@@ -623,7 +623,7 @@ AppDataSource.initialize().then(async () => {
                 return `services:
 
   mongodb:
-    image: "mongo:5.0.12"
+    image: "mongo:8.0.5"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
@@ -633,7 +633,7 @@ AppDataSource.initialize().then(async () => {
                 return `services:
 
   spanner:
-    image: gcr.io/cloud-spanner-emulator/emulator:1.4.1
+    image: gcr.io/cloud-spanner-emulator/emulator:1.5.30
     ports:
       - "9010:9010"
       - "9020:9020"
@@ -679,53 +679,55 @@ Steps to run this project:
         const packageJson = JSON.parse(packageJsonContents)
 
         if (!packageJson.devDependencies) packageJson.devDependencies = {}
-        Object.assign(packageJson.devDependencies, {
-            "ts-node": "10.9.1",
-            "@types/node": "^16.11.10",
-            typescript: "4.5.2",
-        })
+        packageJson.devDependencies = {
+            "@types/node": "^22.13.10",
+            "ts-node": "^10.9.2",
+            typescript: "^5.8.2",
+            ...packageJson.devDependencies,
+        }
 
         if (!packageJson.dependencies) packageJson.dependencies = {}
-        Object.assign(packageJson.dependencies, {
+        packageJson.dependencies = {
+            ...packageJson.dependencies,
+            "reflect-metadata": "^0.2.2",
             typeorm:
                 require("../package.json").version !== "0.0.0"
                     ? require("../package.json").version // install version from package.json if present
                     : require("../package.json").installFrom, // else use custom source
-            "reflect-metadata": "^0.1.13",
-        })
+        }
 
         switch (database) {
             case "mysql":
             case "mariadb":
-                packageJson.dependencies["mysql"] = "^2.14.1"
+                packageJson.dependencies["mysql2"] = "^3.14.0"
                 break
             case "postgres":
             case "cockroachdb":
-                packageJson.dependencies["pg"] = "^8.4.0"
+                packageJson.dependencies["pg"] = "^8.14.1"
                 break
             case "sqlite":
-                packageJson.dependencies["sqlite3"] = "^5.0.2"
+                packageJson.dependencies["sqlite3"] = "^5.1.7"
                 break
             case "better-sqlite3":
-                packageJson.dependencies["better-sqlite3"] = "^8.0.0"
+                packageJson.dependencies["better-sqlite3"] = "^8.7.0"
                 break
             case "oracle":
-                packageJson.dependencies["oracledb"] = "^5.1.0"
+                packageJson.dependencies["oracledb"] = "^6.8.0"
                 break
             case "mssql":
-                packageJson.dependencies["mssql"] = "^9.1.1"
+                packageJson.dependencies["mssql"] = "^10.0.4"
                 break
             case "mongodb":
-                packageJson.dependencies["mongodb"] = "^5.2.0"
+                packageJson.dependencies["mongodb"] = "^6.15.0"
                 break
             case "spanner":
-                packageJson.dependencies["@google-cloud/spanner"] = "^5.18.0"
+                packageJson.dependencies["@google-cloud/spanner"] = "^7.19.1 "
                 break
         }
 
         if (express) {
-            packageJson.dependencies["express"] = "^4.17.2"
-            packageJson.dependencies["body-parser"] = "^1.19.1"
+            packageJson.dependencies["express"] = "^4.21.2"
+            packageJson.dependencies["body-parser"] = "^1.20.3"
         }
 
         if (!packageJson.scripts) packageJson.scripts = {}

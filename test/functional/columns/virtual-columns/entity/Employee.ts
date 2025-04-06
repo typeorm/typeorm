@@ -1,9 +1,4 @@
-import {
-    Entity,
-    ManyToOne,
-    OneToMany,
-    PrimaryColumn
-} from "../../../../../src"
+import { Entity, ManyToOne, OneToMany, PrimaryColumn } from "../../../../../src"
 import { Company } from "./Company"
 import { TimeSheet } from "./TimeSheet"
 

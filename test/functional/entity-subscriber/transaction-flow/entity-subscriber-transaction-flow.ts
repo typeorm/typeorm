@@ -12,13 +12,13 @@ import sinon from "sinon"
 import { expect } from "chai"
 
 describe("entity subscriber > transaction flow", () => {
-    let beforeTransactionStart = sinon.spy()
-    let afterTransactionStart = sinon.spy()
-    let afterInsert = sinon.spy()
-    let beforeTransactionCommit = sinon.spy()
-    let afterTransactionCommit = sinon.spy()
-    let beforeTransactionRollback = sinon.spy()
-    let afterTransactionRollback = sinon.spy()
+    const beforeTransactionStart = sinon.spy()
+    const afterTransactionStart = sinon.spy()
+    const afterInsert = sinon.spy()
+    const beforeTransactionCommit = sinon.spy()
+    const afterTransactionCommit = sinon.spy()
+    const beforeTransactionRollback = sinon.spy()
+    const afterTransactionRollback = sinon.spy()
     let afterInsertQueryRunnerData: any = undefined
 
     @EventSubscriber()
@@ -66,7 +66,7 @@ describe("entity subscriber > transaction flow", () => {
     after(() => closeTestingConnections(connections))
 
     it("transactionStart", async () => {
-        for (let connection of connections) {
+        for (const connection of connections) {
             if (
                 connection.driver.options.type === "mssql" ||
                 connection.driver.options.type === "spanner"
@@ -153,7 +153,7 @@ describe("entity subscriber > transaction flow", () => {
     })
 
     it("transactionCommit", async () => {
-        for (let connection of connections) {
+        for (const connection of connections) {
             if (
                 connection.driver.options.type === "mssql" ||
                 connection.driver.options.type === "spanner"
@@ -222,7 +222,7 @@ describe("entity subscriber > transaction flow", () => {
     })
 
     it("transactionRollback", async () => {
-        for (let connection of connections) {
+        for (const connection of connections) {
             if (
                 connection.driver.options.type === "mssql" ||
                 connection.driver.options.type === "spanner"
@@ -297,7 +297,7 @@ describe("entity subscriber > transaction flow", () => {
         const example = new Example()
         const data = { hello: ["world"] }
 
-        for (let connection of connections) {
+        for (const connection of connections) {
             beforeTransactionCommit.resetHistory()
             afterTransactionCommit.resetHistory()
             afterInsert.resetHistory()

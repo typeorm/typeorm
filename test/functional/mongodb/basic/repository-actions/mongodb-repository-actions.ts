@@ -255,7 +255,7 @@ describe("mongodb > basic repository actions", () => {
                 await postRepository.save(posts)
 
                 // ASCENDANT SORTING
-                let queryPostsAsc = await postRepository.find({
+                const queryPostsAsc = await postRepository.find({
                     order: { index: "ASC" },
                 })
 
@@ -265,7 +265,7 @@ describe("mongodb > basic repository actions", () => {
                 }
 
                 // DESCENDANT SORTING
-                let queryPostsDesc = await postRepository.find({
+                const queryPostsDesc = await postRepository.find({
                     order: { index: "DESC" },
                 })
 

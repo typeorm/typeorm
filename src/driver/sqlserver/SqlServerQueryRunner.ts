@@ -796,7 +796,7 @@ export class SqlServerQueryRunner
         const oldTable = InstanceChecker.isTable(oldTableOrName)
             ? oldTableOrName
             : await this.getCachedTable(oldTableOrName)
-        let newTable = oldTable.clone()
+        const newTable = oldTable.clone()
 
         // we need database name and schema name to rename FK constraints
         let dbName: string | undefined = undefined
@@ -2634,7 +2634,7 @@ export class SqlServerQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            let allViewsSql = database
+            const allViewsSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."VIEWS"`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."VIEWS"`
             const allViewsResults: ObjectLiteral[] = await this.query(
@@ -2649,7 +2649,7 @@ export class SqlServerQueryRunner
                 }),
             )
 
-            let allTablesSql = database
+            const allTablesSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
             const allTablesResults: ObjectLiteral[] = await this.query(
@@ -3747,7 +3747,7 @@ export class SqlServerQueryRunner
         table: Table,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(
