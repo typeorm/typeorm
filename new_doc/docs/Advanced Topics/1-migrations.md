@@ -1,6 +1,6 @@
 # Migrations
 
-## How migrations work
+## How migrations work?
 
 Once you get into production you'll need to synchronize model changes into the database.
 Typically, it is unsafe to use `synchronize: true` for schema synchronization on production once

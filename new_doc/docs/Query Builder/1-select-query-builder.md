@@ -65,7 +65,7 @@ const result = await dataSource
 
 Note that we uniquely named `:sheepId` and `:cowId` instead of using `:id` twice for different parameters.
 
-## How to create and use a `QueryBuilder`
+## How to create and use a QueryBuilder?
 
 There are several ways how you can create a `Query Builder`:
 

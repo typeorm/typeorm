@@ -76,7 +76,7 @@ const PostgresDataSource = new DataSource({
 })
 ```
 
-## How to use DataSource
+## How to use DataSource?
 
 Once you set your `DataSource`, you can use it anywhere in your app, for example:
 
