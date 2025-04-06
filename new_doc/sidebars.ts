@@ -16,7 +16,6 @@ const sidebars: SidebarsConfig = {
     // Manually defined sidebar with items in a logical order
     tutorialSidebar: [
         "Getting Started",
-        "future-of-typeorm",
         {
             type: "category",
             label: "Data Source",
