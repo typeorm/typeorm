@@ -120,6 +120,10 @@ const config: Config = {
                             label: "GitHub",
                             href: "https://github.com/typeorm/typeorm",
                         },
+                        {
+                            label: "LinkedIn",
+                            href: "https://www.linkedin.com/company/typeorm",
+                        },
                     ],
                 },
             ],
