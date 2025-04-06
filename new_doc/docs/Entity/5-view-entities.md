@@ -1,6 +1,6 @@
 # View Entities
 
-## What is View Entity?
+## What is a ViewEntity?
 
 View entity is a class that maps to a database view.
 You can create a view entity by defining a new class and mark it with `@ViewEntity()`:

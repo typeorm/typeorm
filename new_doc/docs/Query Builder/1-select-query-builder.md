@@ -1,6 +1,6 @@
 # Select using Query Builder
 
-## What is `QueryBuilder`
+## What is a QueryBuilder?
 
 `QueryBuilder` is one of the most powerful features of TypeORM -
 it allows you to build SQL queries using elegant and convenient syntax,

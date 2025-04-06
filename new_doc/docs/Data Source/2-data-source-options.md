@@ -1,6 +1,6 @@
 # Data Source Options
 
-## What is `DataSourceOptions`
+## What is DataSourceOptions?
 
 `DataSourceOptions` is a data source configuration you pass when you create a new `DataSource` instance.
 Different RDBMS-es have their own specific options.

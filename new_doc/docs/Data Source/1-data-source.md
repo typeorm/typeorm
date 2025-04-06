@@ -1,6 +1,6 @@
-# Working with DataSource
+# DataSource
 
-## What is `DataSource`
+## What is a DataSource?
 
 Your interaction with the database is only possible once you setup a `DataSource`.
 TypeORM's `DataSource` holds your database connection settings and

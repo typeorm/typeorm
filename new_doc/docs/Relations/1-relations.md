@@ -1,6 +1,6 @@
 # Relations
 
-## What are relations
+## What are relations?
 
 Relations helps you to work with related entities easily.
 There are several types of relations:

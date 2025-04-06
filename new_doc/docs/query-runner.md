@@ -1,6 +1,6 @@
 # Query Runner
 
-## What is `QueryRunner`
+## What is a QueryRunner?
 
 Each new `QueryRunner` instance takes a single connection from connection pool, if RDBMS supports connection pooling.
 For databases not supporting connection pools, it uses the same connection across data source.
