@@ -104,16 +104,12 @@ const config: Config = {
                     title: "Community",
                     items: [
                         {
+                            label: "Discord",
+                            href: "https://discord.gg/cC9hkmUgNa",
+                        },
+                        {
                             label: "Stack Overflow",
                             href: "https://stackoverflow.com/questions/tagged/typeorm",
-                        },
-                        {
-                            label: "Discord",
-                            href: "https://discord.gg/query-runners",
-                        },
-                        {
-                            label: "Twitter",
-                            href: "https://twitter.com/typeorm",
                         },
                     ],
                 },
@@ -123,6 +119,10 @@ const config: Config = {
                         {
                             label: "GitHub",
                             href: "https://github.com/typeorm/typeorm",
+                        },
+                        {
+                            label: "LinkedIn",
+                            href: "https://www.linkedin.com/company/typeorm",
                         },
                     ],
                 },
