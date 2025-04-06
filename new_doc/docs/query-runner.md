@@ -1,9 +1,5 @@
 # Working with Query Runner
 
--   [What is `QueryRunner`](#what-is-queryrunner)
--   [Creating a new `QueryRunner` instance](#creating-a-new-queryrunner-instance)
--   [Using `QueryRunner`](#using-queryrunner)
-
 ## What is `QueryRunner`
 
 Each new `QueryRunner` instance takes a single connection from connection pool, if RDBMS supports connection pooling.

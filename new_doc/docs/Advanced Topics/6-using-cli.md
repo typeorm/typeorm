@@ -1,21 +1,5 @@
 # Using CLI
 
--   [Installing CLI](#installing-cli)
--   [Initialize a new TypeORM project](#initialize-a-new-typeorm-project)
--   [Create a new entity](#create-a-new-entity)
--   [Create a new subscriber](#create-a-new-subscriber)
--   [Create a new migration](#create-a-new-migration)
--   [Generate a migration from existing table schema](#generate-a-migration-from-existing-table-schema)
--   [Run migrations](#run-migrations)
--   [Revert migrations](#revert-migrations)
--   [Show migrations](#show-migrations)
--   [Sync database schema](#sync-database-schema)
--   [Log sync database schema queries without actual running them](#log-sync-database-schema-queries-without-actual-running-them)
--   [Drop database schema](#drop-database-schema)
--   [Run any SQL query](#run-any-sql-query)
--   [Clear cache](#clear-cache)
--   [Check version](#check-version)
-
 ## Installing CLI
 
 ### If entities files are in javascript
@@ -147,6 +131,7 @@ You can create a new migration using CLI:
 ```
 typeorm migration:create path-to-migrations-dir/migrationName
 ```
+
 Learn more about [Migrations](./1-migrations.md).
 
 ## Generate a migration from existing table schema

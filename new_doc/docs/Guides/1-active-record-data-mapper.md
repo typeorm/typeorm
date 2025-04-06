@@ -1,9 +1,5 @@
 # Active Record vs Data Mapper
 
--   [What is the Active Record pattern?](#what-is-the-active-record-pattern)
--   [What is the Data Mapper pattern?](#what-is-the-data-mapper-pattern)
--   [Which one should I choose?](#which-one-should-i-choose)
-
 ## What is the Active Record pattern?
 
 In TypeORM you can use both the Active Record and the Data Mapper patterns.

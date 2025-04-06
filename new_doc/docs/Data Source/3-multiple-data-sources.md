@@ -1,10 +1,5 @@
 # Multiple data sources, databases, schemas and replication setup
 
-- [Using multiple data sources](#using-multiple-data-sources)
-- [Using multiple databases in a single data source](#using-multiple-databases-within-a-single-data-source)
-- [Using multiple schemas in a single data source](#using-multiple-schemas-within-a-single-data-source)
-- [Replication](#replication)
-
 ## Using multiple data sources
 
 To use multiple data sources connected to different databases, simply create multiple DataSource instances:
@@ -198,45 +193,46 @@ Example of replication options:
 
 ```typescript
 const datasource = new DataSource({
-  type: "mysql",
-  logging: true,
-  replication: {
-    master: {
-      host: "server1",
-      port: 3306,
-      username: "test",
-      password: "test",
-      database: "test"
+    type: "mysql",
+    logging: true,
+    replication: {
+        master: {
+            host: "server1",
+            port: 3306,
+            username: "test",
+            password: "test",
+            database: "test",
+        },
+        slaves: [
+            {
+                host: "server2",
+                port: 3306,
+                username: "test",
+                password: "test",
+                database: "test",
+            },
+            {
+                host: "server3",
+                port: 3306,
+                username: "test",
+                password: "test",
+                database: "test",
+            },
+        ],
     },
-    slaves: [
-      {
-        host: "server2",
-        port: 3306,
-        username: "test",
-        password: "test",
-        database: "test"
-      }, {
-        host: "server3",
-        port: 3306,
-        username: "test",
-        password: "test",
-        database: "test"
-      }
-    ]
-  }
-});
+})
 ```
 
 With replication slaves defined, TypeORM will start sending all possible queries to slaves by default.
 
-- all queries performed by the `find` methods or `SelectQueryBuilder` will use a random `slave` instance
-- all write queries performed by `update`, `create`, `InsertQueryBuilder`, `UpdateQueryBuilder`, etc will use the `master` instance
-- all raw queries performed by calling `.query()` will use the `master` instance
-- all schema update operations are performed using the `master` instance
+-   all queries performed by the `find` methods or `SelectQueryBuilder` will use a random `slave` instance
+-   all write queries performed by `update`, `create`, `InsertQueryBuilder`, `UpdateQueryBuilder`, etc will use the `master` instance
+-   all raw queries performed by calling `.query()` will use the `master` instance
+-   all schema update operations are performed using the `master` instance
 
 ### Explicitly selecting query destinations
 
-By default, TypeORM will send all read queries to a random read slave, and all writes to the master. This means when you first add the `replication` settings to your configuration, any existing read query runners that don't explicitly specify a replication mode will start going to a slave. This is good for scalability, but if some of those queries *must* return up to date data, then you need to explicitly pass a replication mode when you create a query runner.
+By default, TypeORM will send all read queries to a random read slave, and all writes to the master. This means when you first add the `replication` settings to your configuration, any existing read query runners that don't explicitly specify a replication mode will start going to a slave. This is good for scalability, but if some of those queries _must_ return up to date data, then you need to explicitly pass a replication mode when you create a query runner.
 
 If you want to explicitly use the `master` for read queries, pass an explicit `ReplicationMode` when creating your `QueryRunner`;
 
@@ -275,29 +271,29 @@ If you don't want all reads to go to a `slave` instance by default, you can chan
 
 ```typescript
 const datasource = new DataSource({
-  type: "mysql",
-  logging: true,
-  replication: {
-    // set the default destination for read queries as the master instance
-    defaultMode: "master",
-    master: {
-      host: "server1",
-      port: 3306,
-      username: "test",
-      password: "test",
-      database: "test"
+    type: "mysql",
+    logging: true,
+    replication: {
+        // set the default destination for read queries as the master instance
+        defaultMode: "master",
+        master: {
+            host: "server1",
+            port: 3306,
+            username: "test",
+            password: "test",
+            database: "test",
+        },
+        slaves: [
+            {
+                host: "server2",
+                port: 3306,
+                username: "test",
+                password: "test",
+                database: "test",
+            },
+        ],
     },
-    slaves: [
-      {
-        host: "server2",
-        port: 3306,
-        username: "test",
-        password: "test",
-        database: "test"
-      }
-    ]
-  }
-});
+})
 ```
 
 With this mode, no queries will go to the read slaves by default, and you'll have to opt-in to sending queries to read slaves with explicit `.createQueryRunner("slave")` calls.

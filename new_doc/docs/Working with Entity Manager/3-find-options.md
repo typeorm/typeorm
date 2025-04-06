@@ -1,8 +1,5 @@
 # Find Options
 
--   [Basic options](#basic-options)
--   [Advanced options](#advanced-options)
-
 ## Basic options
 
 All repository and manager ` .find*` methods accept special options you can use to query data you need without using `QueryBuilder`:

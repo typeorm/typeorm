@@ -1,38 +1,5 @@
 # Select using Query Builder
 
--   [What is `QueryBuilder`](#what-is-querybuilder)
--   [Important note when using the `QueryBuilder`](#important-note-when-using-the-querybuilder)
--   [How to create and use a `QueryBuilder`](#how-to-create-and-use-a-querybuilder)
--   [Getting values using QueryBuilder](#getting-values-using-querybuilder)
--   [Getting a count](#getting-a-count)
--   [What are aliases for?](#what-are-aliases-for)
--   [Using parameters to escape data](#using-parameters-to-escape-data)
--   [Adding `WHERE` expression](#adding-where-expression)
--   [Adding `HAVING` expression](#adding-having-expression)
--   [Adding `ORDER BY` expression](#adding-order-by-expression)
--   [Adding `GROUP BY` expression](#adding-group-by-expression)
--   [Adding `LIMIT` expression](#adding-limit-expression)
--   [Adding `OFFSET` expression](#adding-offset-expression)
--   [Joining relations](#joining-relations)
--   [Inner and left joins](#inner-and-left-joins)
--   [Join without selection](#join-without-selection)
--   [Joining any entity or table](#joining-any-entity-or-table)
--   [Joining and mapping functionality](#joining-and-mapping-functionality)
--   [Getting the generated query](#getting-the-generated-query)
--   [Getting raw results](#getting-raw-results)
--   [Streaming result data](#streaming-result-data)
--   [Using pagination](#using-pagination)
--   [Set locking](#set-locking)
--   [Use custom index](#use-custom-index)
--   [Max execution time](#max-execution-time)
--   [Partial selection](#partial-selection)
--   [Using subqueries](#using-subqueries)
--   [Hidden Columns](#hidden-columns)
--   [Querying Deleted rows](#querying-deleted-rows)
--   [Common table expressions](#common-table-expressions)
--   [Time Travel Queries](#time-travel-queries)
--   [Debugging](#debugging)
-
 ## What is `QueryBuilder`
 
 `QueryBuilder` is one of the most powerful features of TypeORM -
@@ -187,9 +154,9 @@ There are 5 different `QueryBuilder` types available:
     ```typescript
     await dataSource
         .createQueryBuilder()
-        .relation(User,"photos")
+        .relation(User, "photos")
         .of(id)
-        .loadMany();
+        .loadMany()
     ```
 
 You can switch between different types of query builder within any of them,
@@ -927,6 +894,7 @@ Using `take` and `skip` will prevent those issues.
 QueryBuilder supports both optimistic and pessimistic locking.
 
 #### Lock modes
+
 Support of lock modes, and SQL statements they translate to, are listed in the table below (blank cell denotes unsupported). When specified lock mode is not supported, a `LockNotSupportedOnGivenDriverError` error will be thrown.
 
 ```text
@@ -984,6 +952,7 @@ const users = await dataSource
 Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` decorators.
 
 #### Lock tables
+
 You can also lock tables using the following method:
 
 ```typescript
@@ -998,9 +967,9 @@ const users = await dataSource
 If the Lock Tables argument is provided, only the table that is locked in the FOR UPDATE OF clause is specified.
 
 ### setOnLocked
+
 Allows you to control what happens when a row is locked. By default, the database will wait for the lock.
 You can control that behavior by using `setOnLocked`
-
 
 To not wait:
 
@@ -1025,10 +994,11 @@ const users = await dataSource
 ```
 
 Database support for `setOnLocked` based on [lock mode](#lock-modes):
-- Postgres: `pessimistic_read`, `pessimistic_write`, `for_no_key_update`, `for_key_share`
-- MySQL 8+: `pessimistic_read`, `pessimistic_write`
-- MySQL < 8, Maria DB: `pessimistic_write`
-- Cockroach: `pessimistic_write` (`nowait` only)
+
+-   Postgres: `pessimistic_read`, `pessimistic_write`, `for_no_key_update`, `for_key_share`
+-   MySQL 8+: `pessimistic_read`, `pessimistic_write`
+-   MySQL < 8, Maria DB: `pessimistic_write`
+-   Cockroach: `pessimistic_write` (`nowait` only)
 
 ## Use custom index
 
@@ -1215,7 +1185,12 @@ If the model you are querying has a column with the attribute `@DeleteDateColumn
 Let's say you have the following entity:
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn } from "typeorm"
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    DeleteDateColumn,
+} from "typeorm"
 
 @Entity()
 export class User {
@@ -1250,31 +1225,37 @@ support [common table expressions](https://en.wikipedia.org/wiki/Hierarchical_an
 , if minimal supported version of your database supports them. Common table expressions aren't supported for Oracle yet.
 
 ```typescript
-const users = await connection.getRepository(User)
-    .createQueryBuilder('user')
-    .select("user.id", 'id')
-    .addCommonTableExpression(`
+const users = await connection
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .select("user.id", "id")
+    .addCommonTableExpression(
+        `
       SELECT "userId" FROM "post"
-    `, 'post_users_ids')
+    `,
+        "post_users_ids",
+    )
     .where(`user.id IN (SELECT "userId" FROM 'post_users_ids')`)
-    .getMany();
+    .getMany()
 ```
 
 Result values of `InsertQueryBuilder` or `UpdateQueryBuilder` can be used in Postgres:
 
 ```typescript
-const insertQueryBuilder = connection.getRepository(User)
+const insertQueryBuilder = connection
+    .getRepository(User)
     .createQueryBuilder()
     .insert({
-        name: 'John Smith'
+        name: "John Smith",
     })
-    .returning(['id']);
+    .returning(["id"])
 
-const users = await connection.getRepository(User)
-    .createQueryBuilder('user')
-    .addCommonTableExpression(insertQueryBuilder, 'insert_results')
+const users = await connection
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .addCommonTableExpression(insertQueryBuilder, "insert_results")
     .where(`user.id IN (SELECT "id" FROM 'insert_results')`)
-    .getMany();
+    .getMany()
 ```
 
 ## Time Travel Queries
@@ -1345,9 +1326,8 @@ const queryAndParams = await dataSource
 Which results in:
 
 ```typescript
-[
- "SELECT `user`.`id` as `userId`, `user`.`firstName` as `userFirstName`, `user`.`lastName` as `userLastName` FROM `users` `user` WHERE `user`.`id` = ?",
- [ 1 ]
+;[
+    "SELECT `user`.`id` as `userId`, `user`.`firstName` as `userFirstName`, `user`.`lastName` as `userLastName` FROM `users` `user` WHERE `user`.`id` = ?",
+    [1],
 ]
 ```
-

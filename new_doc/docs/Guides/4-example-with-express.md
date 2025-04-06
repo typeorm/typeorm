@@ -1,9 +1,5 @@
 # Example using TypeORM with Express
 
--   [Initial setup](#initial-setup)
--   [Adding Express to the application](#adding-express-to-the-application)
--   [Adding TypeORM to the application](#adding-typeorm-to-the-application)
-
 ## Initial setup
 
 Let's create a simple application called "user" which stores users in the database

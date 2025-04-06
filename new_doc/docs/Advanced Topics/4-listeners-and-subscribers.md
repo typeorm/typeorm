@@ -1,21 +1,5 @@
 # Entity Listeners and Subscribers
 
--   [Entity Listeners and Subscribers](./4-listeners-and-subscribers.md)
-    -   [What is an Entity Listener](#what-is-an-entity-listener)
-        -   [`@AfterLoad`](#afterload)
-        -   [`@BeforeInsert`](#beforeinsert)
-        -   [`@AfterInsert`](#afterinsert)
-        -   [`@BeforeUpdate`](#beforeupdate)
-        -   [`@AfterUpdate`](#afterupdate)
-        -   [`@BeforeRemove`](#beforeremove)
-        -   [`@AfterRemove`](#afterremove)
-        -   [`@BeforeSoftRemove`](#beforesoftremove)
-        -   [`@AfterSoftRemove`](#aftersoftremove)
-        -   [`@BeforeRecover`](#beforerecover)
-        -   [`@AfterRecover`](#afterrecover)
-    -   [What is a Subscriber](#what-is-a-subscriber)
-        -   [`Event Object`](#event-object)
-
 ## What is an Entity Listener
 
 Any of your entities can have methods with custom logic that listen to specific entity events.

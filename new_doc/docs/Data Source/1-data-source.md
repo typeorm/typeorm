@@ -1,9 +1,5 @@
 # Working with DataSource
 
--   [What is `DataSource`](#what-is-datasource)
--   [Creating a new DataSource](#creating-a-new-datasource)
--   [How to use DataSource](#how-to-use-datasource)
-
 ## What is `DataSource`
 
 Your interaction with the database is only possible once you setup a `DataSource`.

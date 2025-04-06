@@ -1,9 +1,5 @@
 # Transactions
 
--   [Creating and using transactions](#creating-and-using-transactions)
-    -   [Specifying Isolation Levels](#specifying-isolation-levels)
--   [Using `QueryRunner` to create and control state of single database connection](#using-queryrunner-to-create-and-control-state-of-single-database-connection)
-
 ## Creating and using transactions
 
 Transactions are created using `DataSource` or `EntityManager`.

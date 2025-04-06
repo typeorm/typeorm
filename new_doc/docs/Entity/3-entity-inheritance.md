@@ -1,9 +1,5 @@
 # Entity Inheritance
 
--   [Concrete Table Inheritance](#concrete-table-inheritance)
--   [Single Table Inheritance](#single-table-inheritance)
--   [Using embeddeds](#using-embeddeds)
-
 ## Concrete Table Inheritance
 
 You can reduce duplication in your code by using entity inheritance patterns.

@@ -1,12 +1,5 @@
 # Relations FAQ
 
--   [How to create self referencing relation](#how-to-create-self-referencing-relation)
--   [How to use relation id without joining relation](#how-to-use-relation-id-without-joining-relation)
--   [How to load relations in entities](#how-to-load-relations-in-entities)
--   [Avoid relation property initializers](#avoid-relation-property-initializers)
--   [Avoid foreign key constraint creation](#avoid-foreign-key-constraint-creation)
--   [Avoid circular import errors](#avoid-circular-import-errors)
-
 ## How to create self referencing relation
 
 Self-referencing relations are relations which have a relation to themselves.

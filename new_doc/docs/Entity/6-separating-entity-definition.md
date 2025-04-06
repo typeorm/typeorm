@@ -1,9 +1,5 @@
 # Separating Entity Definition
 
--   [Defining Schemas](#defining-schemas)
--   [Extending Schemas](#extending-schemas)
--   [Using Schemas](#using-schemas-to-query--insert-data)
-
 ## Defining Schemas
 
 You can define an entity and its columns right in the model, using decorators.
