@@ -1,29 +1,29 @@
 # Entities
 
-- [Entities](./1-entities.md)
-  - [What is Entity?](#what-is-entity)
-  - [Entity columns](#entity-columns)
-    - [Primary columns](#primary-columns)
-    - [Special columns](#special-columns)
-    - [Spatial columns](#spatial-columns)
-  - [Column types](#column-types)
-    - [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
-    - [Column types for `postgres`](#column-types-for-postgres)
-    - [Column types for `cockroachdb`](#column-types-for-cockroachdb)
-    - [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
-    - [Column types for `mssql`](#column-types-for-mssql)
-    - [Column types for `oracle`](#column-types-for-oracle)
-    - [Column types for `spanner`](#column-types-for-spanner)
-    - [`enum` column type](#enum-column-type)
-    - [`set` column type](#set-column-type)
-    - [`simple-array` column type](#simple-array-column-type)
-    - [`simple-json` column type](#simple-json-column-type)
-    - [Columns with generated values](#columns-with-generated-values)
-  - [Column options](#column-options)
-  - [Entity inheritance](#entity-inheritance)
-  - [Tree entities](#tree-entities)
-    - [Adjacency list](#adjacency-list)
-    - [Closure table](#closure-table)
+-   [Entities](./1-entities.md)
+    -   [What is Entity?](#what-is-entity)
+    -   [Entity columns](#entity-columns)
+        -   [Primary columns](#primary-columns)
+        -   [Special columns](#special-columns)
+        -   [Spatial columns](#spatial-columns)
+    -   [Column types](#column-types)
+        -   [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
+        -   [Column types for `postgres`](#column-types-for-postgres)
+        -   [Column types for `cockroachdb`](#column-types-for-cockroachdb)
+        -   [Column types for `sqlite` / `cordova` / `react-native` / `expo`](#column-types-for-sqlite--cordova--react-native--expo)
+        -   [Column types for `mssql`](#column-types-for-mssql)
+        -   [Column types for `oracle`](#column-types-for-oracle)
+        -   [Column types for `spanner`](#column-types-for-spanner)
+        -   [`enum` column type](#enum-column-type)
+        -   [`set` column type](#set-column-type)
+        -   [`simple-array` column type](#simple-array-column-type)
+        -   [`simple-json` column type](#simple-json-column-type)
+        -   [Columns with generated values](#columns-with-generated-values)
+    -   [Column options](#column-options)
+    -   [Entity inheritance](#entity-inheritance)
+    -   [Tree entities](#tree-entities)
+        -   [Adjacency list](#adjacency-list)
+        -   [Closure table](#closure-table)
 
 ## What is Entity?
 
@@ -379,7 +379,6 @@ or
 `multipolygon`, `geometrycollection`, `uuid`, `inet4`, `inet6`
 
 > Note: UUID, INET4, and INET6 are only available for mariadb and for respective versions that made them available.
-
 
 ### Column types for `postgres`
 
