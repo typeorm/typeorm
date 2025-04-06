@@ -1,4 +1,4 @@
-# Working with Query Runner
+# Query Runner
 
 ## What is `QueryRunner`
 
