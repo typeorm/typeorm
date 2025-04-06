@@ -175,7 +175,7 @@ div[class*="announcementBar"] .close:hover {
 
 .button.button--outline {
   color: var(--ifm-color-primary);
-  border-color: var(--ifm-color-primary);
+  border: 1px solid var(--ifm-color-primary);
   transition: all 0.3s ease;
 }
 
