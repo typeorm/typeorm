@@ -86,7 +86,7 @@
     "test:ci": "mocha --bail",
     "test:fast": "mocha",
     "watch": "tsc --watch",
-    "docs:dev": "cd new_doc && npm run start"
+    "docs:dev": "cd docs && npm run start"
   },
   "dependencies": {
     "@sqltools/formatter": "^1.2.5",
