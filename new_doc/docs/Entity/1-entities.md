@@ -405,12 +405,6 @@ or
 
 > Note: SAP HANA Cloud deprecated or removed some of these data types. TypeORM will convert them to the closest available alternative when connected to a Cloud version.
 
-### Column types for `sap`
-
-`tinyint`, `smallint`, `integer`, `bigint`, `smalldecimal`, `decimal`, `real`, `double`, `date`, `time`, `seconddate`, `timestamp`, `boolean`, `char`, `nchar`, `varchar`, `nvarchar`, `text`, `alphanum`, `shorttext`, `array`, `varbinary`, `blob`, `clob`, `nclob`, `st_geometry`, `st_point`.
-
-> Note: SAP HANA Cloud deprecated or removed some of these data types. TypeORM will convert them to the closest available alternative when connected to a Cloud version.
-
 ### Column types for `spanner`
 
 `bool`, `int64`, `float64`, `numeric`, `string`, `json`, `bytes`, `date`, `timestamp`, `array`
