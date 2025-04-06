@@ -363,6 +363,7 @@ or
 `timetz`, `timestamptz`, `timestamp`, `timestamp without time zone`, `timestamp with time zone`,
 `date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`,
 `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`, `macaddr8`,
+`enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`, `macaddr8`,
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
 `tsrange`, `tstzrange`, `daterange`, `int4multirange`, `int8multirange`, `nummultirange`,
 `tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `cube`, `ltree`
@@ -398,6 +399,12 @@ or
 `decimal`, `integer`, `int`, `smallint`, `real`, `double precision`, `date`, `timestamp`, `timestamp with time zone`,
 `timestamp with local time zone`, `interval year to month`, `interval day to second`, `bfile`, `blob`, `clob`,
 `nclob`, `rowid`, `urowid`
+
+### Column types for `sap`
+
+`tinyint`, `smallint`, `integer`, `bigint`, `smalldecimal`, `decimal`, `real`, `double`, `date`, `time`, `seconddate`, `timestamp`, `boolean`, `char`, `nchar`, `varchar`, `nvarchar`, `text`, `alphanum`, `shorttext`, `array`, `varbinary`, `blob`, `clob`, `nclob`, `st_geometry`, `st_point`.
+
+> Note: SAP HANA Cloud deprecated or removed some of these data types. TypeORM will convert them to the closest available alternative when connected to a Cloud version.
 
 ### Column types for `sap`
 
