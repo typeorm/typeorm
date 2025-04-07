@@ -246,7 +246,18 @@ export class ReturningResultsEntityUpdator {
                 .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties might be overridden by merge process
                 .getMany()
 
+            const defaultColumns = metadata.columns.filter(
+                (column) => column.default !== undefined,
+            )
+
             entities.forEach((entity, entityIndex) => {
+                // If a value is specified for the default column in the entity, remove that value from the returningResult
+                defaultColumns.forEach((column) => {
+                    if (column.getEntityValue(entity) !== undefined) {
+                        delete returningResult[entityIndex][column.propertyPath]
+                    }
+                })
+
                 this.queryRunner.manager.merge(
                     metadata.target as any,
                     generatedMaps[entityIndex],
