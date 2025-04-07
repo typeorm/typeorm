@@ -52,4 +52,4 @@ Thank you for your support, and we're excited to embark on this journey with the
 
 ## Join the Conversation
 
-Have questions or want to get involved? Join our [Discord community](https://discord.gg/query-runners) or check out our [GitHub repository](https://github.com/typeorm/typeorm).
+Have questions or want to get involved? Join our [Discord community](https://discord.gg/cC9hkmUgNa) or check out our [GitHub repository](https://github.com/typeorm/typeorm).
