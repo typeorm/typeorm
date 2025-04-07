@@ -52,7 +52,10 @@ describe("query runner > stream", () => {
 
                 readStream.on("data", (row) => data.push(row))
 
-                await new Promise((ok) => readStream.once("end", ok))
+                await new Promise((ok, fail) => {
+                    readStream.once("end", ok)
+                    readStream.once("error", fail)
+                })
 
                 expect(data).to.have.length(4)
 
