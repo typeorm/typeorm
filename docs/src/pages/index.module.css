@@ -53,6 +53,10 @@
     flex-wrap: wrap;
     text-align: center;
   }
+
+  .noHorizontalMarginTablet {
+    margin-inline: 0 !important;
+  }
 }
 
 .features {

@@ -337,7 +337,7 @@ function CallToAction() {
                 </p>
                 <div className={styles.ctaButtons}>
                     <Link
-                        className="button button--secondary button--lg margin-right--md"
+                        className={clsx("button button--secondary button--lg margin-right--md", styles.noHorizontalMarginTablet)}
                         to="/docs/Getting%20Started"
                     >
                         Read the Docs
