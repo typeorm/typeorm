@@ -532,14 +532,17 @@ export class EntityMetadataBuilder {
             return embedded
         })
 
-        entityMetadata.ownColumns = this.metadataArgsStorage
-            .filterColumns(entityMetadata.inheritanceTree)
-            .map((args) => {
+        entityMetadata.ownColumns = []
+
+        this.metadataArgsStorage
+            .filterColumnsForEach(entityMetadata.inheritanceTree, (args) => {
                 // for single table children we reuse columns created for their parents
-                if (entityMetadata.tableType === "entity-child")
-                    return entityMetadata.parentEntityMetadata.ownColumns.find(
+                if (entityMetadata.tableType === "entity-child") {
+                    entityMetadata.ownColumns.push(entityMetadata.parentEntityMetadata.ownColumns.find(
                         (column) => column.propertyName === args.propertyName,
-                    )!
+                    )!)
+                    return
+                }
 
                 // for multiple table inheritance we can override default column values
                 if (
@@ -570,7 +573,7 @@ export class EntityMetadataBuilder {
                             otherEntityMetadata.target === args.target,
                     )
                 if (columnInSingleTableInheritedChild) column.isNullable = true
-                return column
+                entityMetadata.ownColumns.push(column)
             })
 
         // for table inheritance we need to add a discriminator column
@@ -702,9 +705,10 @@ export class EntityMetadataBuilder {
             )
         }
 
-        entityMetadata.ownRelations = this.metadataArgsStorage
-            .filterRelations(entityMetadata.inheritanceTree)
-            .map((args) => {
+        entityMetadata.ownRelations = []
+
+        this.metadataArgsStorage
+            .filterRelationsForEach(entityMetadata.inheritanceTree, (args) => {
                 // for single table children we reuse relations created for their parents
                 if (entityMetadata.tableType === "entity-child") {
                     const parentRelation =
@@ -719,13 +723,15 @@ export class EntityMetadataBuilder {
                     if (parentRelation.type !== type) {
                         const clone = Object.create(parentRelation)
                         clone.type = type
-                        return clone
+                        entityMetadata.ownRelations.push(clone)
+                        return
                     }
 
-                    return parentRelation
+                    entityMetadata.ownRelations.push(parentRelation)
+                    return
                 }
 
-                return new RelationMetadata({ entityMetadata, args })
+                entityMetadata.ownRelations.push(new RelationMetadata({ entityMetadata, args }))
             })
         entityMetadata.relationIds = this.metadataArgsStorage
             .filterRelationIds(entityMetadata.inheritanceTree)
