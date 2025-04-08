@@ -553,6 +553,10 @@ export class MongoDriver implements Driver {
             }
         }
 
+        mongoOptions.driverInfo = {
+            name: "TypeORM",
+        }
+
         if ("poolSize" in options) {
             mongoOptions["maxPoolSize"] = options["poolSize"]
         }
