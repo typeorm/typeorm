@@ -94,9 +94,27 @@ export class EntityMetadataBuilder {
             this.computeParentEntityMetadata(entityMetadatas, entityMetadata),
         )
 
+        const nonEntityChildMetadatas: EntityMetadata[] = [];
+        const entityChildMetadatas: EntityMetadata[] = [];
+        const functionEntityMetadatas: EntityMetadata[] = [];
+
+        for (const entityMetadata of entityMetadatas) {
+            if (entityMetadata.tableType !== "entity-child") {
+                nonEntityChildMetadatas.push(entityMetadata);
+            } else {
+                entityChildMetadatas.push(entityMetadata);
+            }
+
+            if (entityMetadata.target === "function") {
+                functionEntityMetadatas.push(entityMetadata);
+            } else {
+                entityMetadata.childEntityMetadatas = [];
+            }
+        }
+
         // after all metadatas created we set child entity metadatas for table inheritance
-        entityMetadatas.forEach((metadata) => {
-            metadata.childEntityMetadatas = entityMetadatas.filter(
+        functionEntityMetadatas.forEach((metadata) => {
+            metadata.childEntityMetadatas = functionEntityMetadatas.filter(
                 (childMetadata) => {
                     return (
                         typeof metadata.target === "function" &&
@@ -109,17 +127,6 @@ export class EntityMetadataBuilder {
                 },
             )
         })
-
-        const nonEntityChildMetadatas: EntityMetadata[] = [];
-        const entityChildMetadatas: EntityMetadata[] = [];
-
-        for (const entityMetadata of entityMetadatas) {
-            if (entityMetadata.tableType !== "entity-child") {
-                nonEntityChildMetadatas.push(entityMetadata);
-            } else {
-                entityChildMetadatas.push(entityMetadata);
-            }
-        }
 
         // build entity metadata (step0), first for non-single-table-inherited entity metadatas (dependant)
         nonEntityChildMetadatas
@@ -162,11 +169,11 @@ export class EntityMetadataBuilder {
             .forEach((entityMetadata) => {
                 // create entity's relations join columns (for many-to-one and one-to-one owner)
                 entityMetadata.relations
-                    .filter(
-                        (relation) =>
-                            relation.isOneToOne || relation.isManyToOne,
-                    )
                     .forEach((relation) => {
+                        if (!(relation.isOneToOne || relation.isManyToOne)) {
+                            return
+                        }
+
                         const joinColumns =
                             this.metadataArgsStorage.filterJoinColumns(
                                 relation.target,
@@ -277,8 +284,11 @@ export class EntityMetadataBuilder {
 
                 // create junction entity metadatas for entity many-to-many relations
                 entityMetadata.relations
-                    .filter((relation) => relation.isManyToMany)
                     .forEach((relation) => {
+                        if (!relation.isManyToMany) {
+                            return
+                        }
+
                         const joinTable =
                             this.metadataArgsStorage.findJoinTable(
                                 relation.target,
