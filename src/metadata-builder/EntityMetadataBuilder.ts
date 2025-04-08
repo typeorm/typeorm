@@ -110,20 +110,6 @@ export class EntityMetadataBuilder {
             )
         })
 
-        // build entity metadata (step0), first for non-single-table-inherited entity metadatas (dependant)
-        entityMetadatas
-            .filter(
-                (entityMetadata) => entityMetadata.tableType !== "entity-child",
-            )
-            .forEach((entityMetadata) => entityMetadata.build())
-
-        // build entity metadata (step0), now for single-table-inherited entity metadatas (dependant)
-        entityMetadatas
-            .filter(
-                (entityMetadata) => entityMetadata.tableType === "entity-child",
-            )
-            .forEach((entityMetadata) => entityMetadata.build())
-
         const nonEntityChildMetadatas: EntityMetadata[] = [];
         const entityChildMetadatas: EntityMetadata[] = [];
 
@@ -134,6 +120,14 @@ export class EntityMetadataBuilder {
                 entityChildMetadatas.push(entityMetadata);
             }
         }
+
+        // build entity metadata (step0), first for non-single-table-inherited entity metadatas (dependant)
+        nonEntityChildMetadatas
+            .forEach((entityMetadata) => entityMetadata.build())
+
+        // build entity metadata (step0), now for single-table-inherited entity metadatas (dependant)
+        entityChildMetadatas
+            .forEach((entityMetadata) => entityMetadata.build())
 
         // compute entity metadata columns, relations, etc. first for the regular, non-single-table-inherited entity metadatas
         nonEntityChildMetadatas
@@ -164,10 +158,7 @@ export class EntityMetadataBuilder {
         )
 
         // go through all entity metadatas and create foreign keys / junction entity metadatas for their relations
-        entityMetadatas
-            .filter(
-                (entityMetadata) => entityMetadata.tableType !== "entity-child",
-            )
+        nonEntityChildMetadatas
             .forEach((entityMetadata) => {
                 // create entity's relations join columns (for many-to-one and one-to-one owner)
                 entityMetadata.relations
@@ -336,8 +327,11 @@ export class EntityMetadataBuilder {
 
         // generate closure junction tables for all closure tables
         entityMetadatas
-            .filter((metadata) => metadata.treeType === "closure-table")
             .forEach((entityMetadata) => {
+                if (entityMetadata.treeType !== "closure-table") {
+                    return
+                }
+
                 const closureJunctionEntityMetadata =
                     this.closureJunctionEntityMetadataBuilder.build(
                         entityMetadata,
@@ -353,15 +347,12 @@ export class EntityMetadataBuilder {
             })
 
         // generate keys for tables with single-table inheritance
-        entityMetadatas
-            .filter(
-                (metadata) =>
-                    metadata.inheritancePattern === "STI" &&
-                    metadata.discriminatorColumn,
-            )
-            .forEach((entityMetadata) =>
-                this.createKeysForTableInheritance(entityMetadata),
-            )
+        entityChildMetadatas
+            .forEach((entityMetadata) => {
+                if (entityMetadata.inheritancePattern === "STI" && entityMetadata.discriminatorColumn) {
+                    this.createKeysForTableInheritance(entityMetadata)
+                }
+            })
 
         // build all indices (need to do it after relations and their join columns are built)
         entityMetadatas.forEach((entityMetadata) => {
@@ -393,8 +384,11 @@ export class EntityMetadataBuilder {
 
         // add lazy initializer for entity relations
         entityMetadatas
-            .filter((metadata) => typeof metadata.target === "function")
             .forEach((entityMetadata) => {
+                if (typeof entityMetadata.target !== "function") {
+                    return
+                }
+
                 entityMetadata.relations
                     .filter((relation) => relation.isLazy)
                     .forEach((relation) => {
