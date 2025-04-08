@@ -1,14 +1,16 @@
 import "reflect-metadata"
-import { Post } from "./entity/Post"
+
 import { DataSource } from "../../../../../src"
+import { DriverUtils } from "../../../../../src/driver/DriverUtils"
+import { DateUtils } from "../../../../../src/util/DateUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
+import { Post } from "./entity/Post"
 import { PostWithOptions } from "./entity/PostWithOptions"
 import { PostWithoutTypes } from "./entity/PostWithoutTypes"
-import { DateUtils } from "../../../../../src/util/DateUtils"
 
 describe("database schema > column types > sap", () => {
     let connections: DataSource[]
@@ -144,21 +146,10 @@ describe("database schema > column types > sap", () => {
                     .findColumnByName("double")!
                     .type.should.be.equal("double")
                 table!.findColumnByName("float")!.type.should.be.equal("double")
-                table!.findColumnByName("char")!.type.should.be.equal("char")
                 table!.findColumnByName("nchar")!.type.should.be.equal("nchar")
-                table!
-                    .findColumnByName("varchar")!
-                    .type.should.be.equal("varchar")
                 table!
                     .findColumnByName("nvarchar")!
                     .type.should.be.equal("nvarchar")
-                table!
-                    .findColumnByName("alphanum")!
-                    .type.should.be.equal("alphanum")
-                table!.findColumnByName("text")!.type.should.be.equal("text")
-                table!
-                    .findColumnByName("shorttext")!
-                    .type.should.be.equal("shorttext")
                 table!.findColumnByName("dateObj")!.type.should.be.equal("date")
                 table!.findColumnByName("date")!.type.should.be.equal("date")
                 table!.findColumnByName("timeObj")!.type.should.be.equal("time")
@@ -170,7 +161,6 @@ describe("database schema > column types > sap", () => {
                     .findColumnByName("seconddate")!
                     .type.should.be.equal("seconddate")
                 table!.findColumnByName("blob")!.type.should.be.equal("blob")
-                table!.findColumnByName("clob")!.type.should.be.equal("clob")
                 table!.findColumnByName("nclob")!.type.should.be.equal("nclob")
                 table!
                     .findColumnByName("boolean")!
@@ -181,6 +171,52 @@ describe("database schema > column types > sap", () => {
                 table!
                     .findColumnByName("simpleArray")!
                     .type.should.be.equal("nclob")
+
+                // Deprecated column types that have a different behavior in SAP HANA Cloud
+                if (
+                    DriverUtils.isReleaseVersionOrGreater(
+                        connection.driver,
+                        "4.0",
+                    )
+                ) {
+                    table!
+                        .findColumnByName("char")!
+                        .type.should.be.equal("nchar")
+                    table!
+                        .findColumnByName("varchar")!
+                        .type.should.be.equal("nvarchar")
+                    table!
+                        .findColumnByName("alphanum")!
+                        .type.should.be.equal("nvarchar")
+                    table!
+                        .findColumnByName("shorttext")!
+                        .type.should.be.equal("nvarchar")
+                    table!
+                        .findColumnByName("text")!
+                        .type.should.be.equal("nclob")
+                    table!
+                        .findColumnByName("clob")!
+                        .type.should.be.equal("nclob")
+                } else {
+                    table!
+                        .findColumnByName("char")!
+                        .type.should.be.equal("char")
+                    table!
+                        .findColumnByName("varchar")!
+                        .type.should.be.equal("varchar")
+                    table!
+                        .findColumnByName("alphanum")!
+                        .type.should.be.equal("alphanum")
+                    table!
+                        .findColumnByName("shorttext")!
+                        .type.should.be.equal("shorttext")
+                    table!
+                        .findColumnByName("text")!
+                        .type.should.be.equal("text")
+                    table!
+                        .findColumnByName("clob")!
+                        .type.should.be.equal("clob")
+                }
             }),
         ))
 
@@ -225,29 +261,57 @@ describe("database schema > column types > sap", () => {
                     .precision!.should.be.equal(10)
                 table!.findColumnByName("decimal")!.scale!.should.be.equal(3)
                 table!
-                    .findColumnByName("varchar")!
-                    .type.should.be.equal("varchar")
-                table!
-                    .findColumnByName("varchar")!
-                    .length!.should.be.equal("50")
-                table!
                     .findColumnByName("nvarchar")!
                     .type.should.be.equal("nvarchar")
                 table!
                     .findColumnByName("nvarchar")!
                     .length!.should.be.equal("50")
-                table!
-                    .findColumnByName("alphanum")!
-                    .type.should.be.equal("alphanum")
-                table!
-                    .findColumnByName("alphanum")!
-                    .length!.should.be.equal("50")
-                table!
-                    .findColumnByName("shorttext")!
-                    .type.should.be.equal("shorttext")
-                table!
-                    .findColumnByName("shorttext")!
-                    .length!.should.be.equal("50")
+
+                // Deprecated column types that have a different behavior in SAP HANA Cloud
+                if (
+                    DriverUtils.isReleaseVersionOrGreater(
+                        connection.driver,
+                        "4.0",
+                    )
+                ) {
+                    table!
+                        .findColumnByName("varchar")!
+                        .type.should.be.equal("nvarchar")
+                    table!
+                        .findColumnByName("varchar")!
+                        .length!.should.be.equal("50")
+                    table!
+                        .findColumnByName("alphanum")!
+                        .type.should.be.equal("nvarchar")
+                    table!
+                        .findColumnByName("alphanum")!
+                        .length!.should.be.equal("50")
+                    table!
+                        .findColumnByName("shorttext")!
+                        .type.should.be.equal("nvarchar")
+                    table!
+                        .findColumnByName("shorttext")!
+                        .length!.should.be.equal("50")
+                } else {
+                    table!
+                        .findColumnByName("varchar")!
+                        .type.should.be.equal("varchar")
+                    table!
+                        .findColumnByName("varchar")!
+                        .length!.should.be.equal("50")
+                    table!
+                        .findColumnByName("alphanum")!
+                        .type.should.be.equal("alphanum")
+                    table!
+                        .findColumnByName("alphanum")!
+                        .length!.should.be.equal("50")
+                    table!
+                        .findColumnByName("shorttext")!
+                        .type.should.be.equal("shorttext")
+                    table!
+                        .findColumnByName("shorttext")!
+                        .length!.should.be.equal("50")
+                }
             }),
         ))
 

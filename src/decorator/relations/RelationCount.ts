@@ -5,7 +5,8 @@ import { SelectQueryBuilder } from "../../query-builder/SelectQueryBuilder"
 /**
  * Holds a number of children in the closure table of the column.
  *
- * @deprecated Do not use this decorator, it may be removed in the future versions
+ * @deprecated This decorator will removed in the future versions.
+ * Use {@link VirtualColumn} to calculate the count instead.
  */
 export function RelationCount<T>(
     relation: string | ((object: T) => any),

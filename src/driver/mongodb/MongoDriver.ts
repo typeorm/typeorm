@@ -145,84 +145,73 @@ export class MongoDriver implements Driver {
      */
     maxAliasLength?: number
 
+    cteCapabilities: CteCapabilities = {
+        enabled: false,
+    }
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
 
     /**
      * Valid mongo connection options
-     * NOTE: Keep sync with MongoConnectionOptions
-     * Sync with http://mongodb.github.io/node-mongodb-native/3.5/api/MongoClient.html
+     * NOTE: Keep in sync with MongoConnectionOptions
      */
     protected validOptionNames: string[] = [
-        "poolSize",
+        "appName",
+        "authMechanism",
+        "authSource",
+        "autoEncryption",
+        "checkServerIdentity",
+        "compressors",
+        "connectTimeoutMS",
+        "directConnection",
+        "family",
+        "forceServerObjectId",
+        "ignoreUndefined",
+        "keepAlive",
+        "keepAliveInitialDelay",
+        "localThresholdMS",
+        "maxStalenessSeconds",
+        "minPoolSize",
+        "monitorCommands",
+        "noDelay",
+        "pkFactory",
+        "promoteBuffers",
+        "promoteLongs",
+        "promoteValues",
+        "raw",
+        "readConcern",
+        "readPreference",
+        "readPreferenceTags",
+        "replicaSet",
+        "retryWrites",
+        "serializeFunctions",
+        "socketTimeoutMS",
         "ssl",
-        "sslValidate",
         "sslCA",
+        "sslCRL",
         "sslCert",
         "sslKey",
         "sslPass",
-        "sslCRL",
-        "autoReconnect",
-        "noDelay",
-        "keepAlive",
-        "keepAliveInitialDelay",
-        "connectTimeoutMS",
-        "family",
-        "socketTimeoutMS",
-        "reconnectTries",
-        "reconnectInterval",
-        "ha",
-        "haInterval",
-        "replicaSet",
-        "secondaryAcceptableLatencyMS",
-        "acceptableLatencyMS",
-        "connectWithNoPrimary",
-        "authSource",
+        "sslValidate",
+        "tls",
+        "tlsAllowInvalidCertificates",
+        "tlsCAFile",
+        "tlsCertificateKeyFile",
+        "tlsCertificateKeyFilePassword",
         "w",
-        "wtimeout",
-        "j",
         "writeConcern",
-        "forceServerObjectId",
-        "serializeFunctions",
-        "ignoreUndefined",
-        "raw",
-        "bufferMaxEntries",
-        "readPreference",
-        "pkFactory",
-        "promiseLibrary",
-        "readConcern",
-        "maxStalenessSeconds",
-        "loggerLevel",
-        // Do not overwrite BaseDataSourceOptions.logger
-        // "logger",
-        "promoteValues",
-        "promoteBuffers",
-        "promoteLongs",
-        "domainsEnabled",
-        "checkServerIdentity",
-        "validateOptions",
+        "wtimeoutMS",
+        // Undocumented deprecated options
+        // todo: remove next major version
         "appname",
-        // omit auth - we are building url from username and password
-        // "auth"
-        "authMechanism",
-        "compression",
         "fsync",
-        "readPreferenceTags",
-        "numberOfRetries",
-        "auto_reconnect",
-        "minSize",
-        "monitorCommands",
+        "j",
         "useNewUrlParser",
         "useUnifiedTopology",
-        "autoEncryption",
-        "retryWrites",
-        "directConnection",
+        "wtimeout",
     ]
-
-    cteCapabilities: CteCapabilities = {
-        enabled: false,
-    }
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -542,15 +531,11 @@ export class MongoDriver implements Driver {
                 options.hostReplicaSet ||
                 options.host + portUrlPart ||
                 "127.0.0.1" + portUrlPart
-            }/${options.database || ""}?replicaSet=${options.replicaSet}${
-                options.tls ? "&tls=true" : ""
-            }`
+            }/${options.database || ""}`
         } else {
             connectionString = `${schemaUrlPart}://${credentialsUrlPart}${
                 options.host || "127.0.0.1"
-            }${portUrlPart}/${options.database || ""}${
-                options.tls ? "?tls=true" : ""
-            }`
+            }${portUrlPart}/${options.database || ""}`
         }
 
         return connectionString
@@ -562,15 +547,21 @@ export class MongoDriver implements Driver {
     protected buildConnectionOptions(options: { [key: string]: any }): any {
         const mongoOptions: any = {}
 
-        for (let index = 0; index < this.validOptionNames.length; index++) {
-            const optionName = this.validOptionNames[index]
-
-            if (options.extra && optionName in options.extra) {
-                mongoOptions[optionName] = options.extra[optionName]
-            } else if (optionName in options) {
+        for (const optionName of this.validOptionNames) {
+            if (optionName in options) {
                 mongoOptions[optionName] = options[optionName]
             }
         }
+
+        mongoOptions.driverInfo = {
+            name: "TypeORM",
+        }
+
+        if ("poolSize" in options) {
+            mongoOptions["maxPoolSize"] = options["poolSize"]
+        }
+
+        Object.assign(mongoOptions, options.extra)
 
         return mongoOptions
     }

@@ -9,7 +9,7 @@ import {
 import { Post } from "./entity/Post"
 import { Question } from "./entity/Question"
 
-describe("uuid-mysql", () => {
+describe("uuid-sap", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
