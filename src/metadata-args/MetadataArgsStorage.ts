@@ -78,6 +78,19 @@ export class MetadataArgsStorage {
         )
     }
 
+    filterColumnsForEach(target: Function | string, func: (elem: ColumnMetadataArgs) => void): void
+    filterColumnsForEach(target: (Function | string)[], func: (elem: ColumnMetadataArgs) => void): void
+    filterColumnsForEach(
+        target: (Function | string) | (Function | string)[],
+        func: (elem: ColumnMetadataArgs) => void,
+    ): void {
+        this.filterByTargetAndWithoutDuplicatePropertiesForEach(
+            this.columns,
+            target,
+            func,
+        )
+    }
+
     findGenerated(
         target: Function | string,
         propertyName: string,
@@ -118,6 +131,19 @@ export class MetadataArgsStorage {
         return this.filterByTargetAndWithoutDuplicateRelationProperties(
             this.relations,
             target,
+        )
+    }
+
+    filterRelationsForEach(target: Function | string, func: (elem: RelationMetadataArgs) => void): void
+    filterRelationsForEach(target: (Function | string)[], func: (elem: RelationMetadataArgs) => void): void
+    filterRelationsForEach(
+        target: (Function | string) | (Function | string)[],
+        func: (elem: RelationMetadataArgs) => void,
+    ): void {
+        this.filterByTargetAndWithoutDuplicateRelationPropertiesForEach(
+            this.relations,
+            target,
+            func,
         )
     }
 
@@ -357,6 +383,30 @@ export class MetadataArgsStorage {
     }
 
     /**
+     * Filters given array by a given target or targets and prevents duplicate property names.
+     * Then it runs a function over the results.
+     */
+    protected filterByTargetAndWithoutDuplicatePropertiesForEach<
+        T extends { target: Function | string; propertyName: string },
+    >(array: T[], target: (Function | string) | (Function | string)[], func: (elem: T) => void): void {
+        const newArray: T[] = []
+        array.forEach((item) => {
+            const sameTarget = Array.isArray(target)
+                ? target.indexOf(item.target) !== -1
+                : item.target === target
+            if (sameTarget) {
+                if (
+                    !newArray.find(
+                        (newItem) => newItem.propertyName === item.propertyName,
+                    )
+                )
+                    newArray.push(item)
+                    func(item)
+            }
+        })
+    }
+
+    /**
      * Filters given array by a given target or targets and prevents duplicate relation property names.
      */
     protected filterByTargetAndWithoutDuplicateRelationProperties<
@@ -386,6 +436,39 @@ export class MetadataArgsStorage {
             }
         })
         return newArray
+    }
+
+    /**
+     * Filters given array by a given target or targets and prevents duplicate relation property names.
+     * Then it runs a function over the results.
+     */
+    protected filterByTargetAndWithoutDuplicateRelationPropertiesForEach<
+        T extends RelationMetadataArgs,
+    >(array: T[], target: (Function | string) | (Function | string)[], func: (elem: T) => void): void {
+        const newArray: T[] = []
+        array.forEach((item) => {
+            const sameTarget = Array.isArray(target)
+                ? target.indexOf(item.target) !== -1
+                : item.target === target
+            if (sameTarget) {
+                const existingIndex = newArray.findIndex(
+                    (newItem) => newItem.propertyName === item.propertyName,
+                )
+                if (
+                    Array.isArray(target) &&
+                    existingIndex !== -1 &&
+                    target.indexOf(item.target) <
+                        target.indexOf(newArray[existingIndex].target)
+                ) {
+                    const clone = Object.create(newArray[existingIndex])
+                    clone.type = item.type
+                    newArray[existingIndex] = clone
+                } else if (existingIndex === -1) {
+                    newArray.push(item)
+                    func(item)
+                }
+            }
+        })
     }
 
     /**
