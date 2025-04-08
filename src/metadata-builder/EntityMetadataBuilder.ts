@@ -124,13 +124,16 @@ export class EntityMetadataBuilder {
             )
             .forEach((entityMetadata) => entityMetadata.build())
 
-        const nonEntityChildMetadatas = entityMetadatas.filter(
-            (entityMetadata) => entityMetadata.tableType !== "entity-child",
-        )
+        const nonEntityChildMetadatas: EntityMetadata[] = [];
+        const entityChildMetadatas: EntityMetadata[] = [];
 
-        const entityChildMetadatas = entityMetadatas.filter(
-            (entityMetadata) => entityMetadata.tableType === "entity-child",
-        )
+        for (const entityMetadata of entityMetadatas) {
+            if (entityMetadata.tableType !== "entity-child") {
+                nonEntityChildMetadatas.push(entityMetadata);
+            } else {
+                entityChildMetadatas.push(entityMetadata);
+            }
+        }
 
         // compute entity metadata columns, relations, etc. first for the regular, non-single-table-inherited entity metadatas
         nonEntityChildMetadatas
