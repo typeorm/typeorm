@@ -124,26 +124,28 @@ export class EntityMetadataBuilder {
             )
             .forEach((entityMetadata) => entityMetadata.build())
 
+        const nonEntityChildMetadatas = entityMetadatas.filter(
+            (entityMetadata) => entityMetadata.tableType !== "entity-child",
+        )
+
+        const entityChildMetadatas = entityMetadatas.filter(
+            (entityMetadata) => entityMetadata.tableType === "entity-child",
+        )
+
         // compute entity metadata columns, relations, etc. first for the regular, non-single-table-inherited entity metadatas
-        entityMetadatas
-            .filter(
-                (entityMetadata) => entityMetadata.tableType !== "entity-child",
-            )
+        nonEntityChildMetadatas
             .forEach((entityMetadata) =>
                 this.computeEntityMetadataStep1(
-                    entityMetadatas,
+                    entityChildMetadatas,
                     entityMetadata,
                 ),
             )
 
         // then do it for single table inheritance children (since they are depend on their parents to be built)
-        entityMetadatas
-            .filter(
-                (entityMetadata) => entityMetadata.tableType === "entity-child",
-            )
+        entityChildMetadatas
             .forEach((entityMetadata) =>
                 this.computeEntityMetadataStep1(
-                    entityMetadatas,
+                    entityChildMetadatas,
                     entityMetadata,
                 ),
             )
