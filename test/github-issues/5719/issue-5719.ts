@@ -17,8 +17,8 @@ describe("github issues > #5719 default value on entity trigger transformer twic
                 entities: [TestEntity],
                 schemaCreate: true,
                 dropSchema: true,
-                // MySQL and MariaDB were mentioned in the issue, but the problem occurs in SQLite as well
-                enabledDrivers: ["mariadb"],
+                // The problem occurs in databases which support returning statement
+                enabledDrivers: ["mysql"],
             })),
     )
 
