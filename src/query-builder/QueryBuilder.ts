@@ -1581,18 +1581,25 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     parameters: [aliasPath, ...parameters],
                 }
             }
-            // } else if (parameterValue === null) {
-            //     return {
-            //         operator: "isNull",
-            //         parameters: [
-            //             aliasPath,
-            //         ]
-            //     };
-        } else {
-            return {
-                operator: "equal",
-                parameters: [aliasPath, this.createParameter(parameterValue)],
+        } else if (parameterValue === null) {
+            if (this.expressionMap.treatJsNullAsSqlNull) {
+                return {
+                    operator: "isNull",
+                    parameters: [aliasPath],
+                }
             }
+        } else if (parameterValue === undefined) {
+            if (this.expressionMap.throwOnUndefinedInFind) {
+                throw new TypeORMError(
+                    `Undefined value encountered in property '${aliasPath}' of the find operation. ` +
+                        `Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.`,
+                )
+            }
+        }
+
+        return {
+            operator: "equal",
+            parameters: [aliasPath, this.createParameter(parameterValue)],
         }
     }
 

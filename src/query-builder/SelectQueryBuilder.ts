@@ -4382,7 +4382,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     )
                     if (condition) andConditions.push(condition)
                 } else if (relation) {
-                    console.log("relation", relation, key, where[key])
+                    if (where[key] === null) {
+                        andConditions.push(`${alias}.${propertyPath} IS NULL`)
+                        continue
+                    }
+
                     // if all properties of where are undefined we don't need to join anything
                     // this can happen when user defines map with conditional queries inside
                     if (typeof where[key] === "object") {
@@ -4392,11 +4396,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         if (allAllUndefined) {
                             continue
                         }
-                    }
-
-                    if (where[key] === null) {
-                        andConditions.push(`${alias}.${propertyPath} IS NULL`)
-                        continue
                     }
 
                     if (InstanceChecker.isFindOperator(where[key])) {
