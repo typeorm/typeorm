@@ -233,6 +233,11 @@ export class RelationJoinColumnBuilder {
                     },
                 })
                 relation.entityMetadata.registerColumn(relationalColumn)
+            } else if (relationalColumn.referencedColumn) {
+                relationalColumn = Object.assign(
+                    Object.create(ColumnMetadata.prototype) as ColumnMetadata,
+                    relationalColumn,
+                )
             }
             relationalColumn.referencedColumn = referencedColumn // its important to set it here because we need to set referenced column for user defined join column
             relationalColumn.type = referencedColumn.type // also since types of relational column and join column must be equal we override user defined column type
