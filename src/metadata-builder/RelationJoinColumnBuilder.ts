@@ -235,9 +235,7 @@ export class RelationJoinColumnBuilder {
                 relation.entityMetadata.registerColumn(relationalColumn)
             } else if (relationalColumn.referencedColumn) {
                 relationalColumn = Object.assign(
-                    Object.create(
-                        Object.getPrototypeOf(relationalColumn),
-                    ) as ColumnMetadata,
+                    Object.create(ColumnMetadata.prototype) as ColumnMetadata,
                     relationalColumn,
                 )
             }
