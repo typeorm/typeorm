@@ -21,6 +21,6 @@
     "stripInternal": true,
     "useUnknownInCatchVariables": false
   },
-  "include": ["sample", "src", "test", "*.ts"],
+  "include": ["sample", "src", "test", "*.ts", "docs/**/*.ts"],
   "exclude": ["build", "node_modules", "temp", "tmp"]
 }
