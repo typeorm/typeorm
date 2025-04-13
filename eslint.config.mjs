@@ -8,6 +8,7 @@ export default tseslint.config([
     },
     {
         files: ["**/*.ts"],
+        ignores: ["docs/**"],
         languageOptions: {
             parser: tseslint.parser,
             parserOptions: {
