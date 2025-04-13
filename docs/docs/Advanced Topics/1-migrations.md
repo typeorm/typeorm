@@ -45,7 +45,7 @@ This place is called "migrations".
 
 ## Creating a new migration
 
-**Pre-requisites**: [Installing CLI](./using-cli.md#installing-cli)
+**Pre-requisites**: [Installing CLI](./6-using-cli.md#installing-cli)
 
 Before creating a new migration you need to setup your data source options properly:
 
@@ -105,7 +105,7 @@ There are two methods you must fill with your migration code: `up` and `down`.
 
 Inside both `up` and `down` you have a `QueryRunner` object.
 All database operations are executed using this object.
-Learn more about [query runner](./query-runner.md).
+Learn more about [query runner](../query-runner.md).
 
 Let's see what the migration looks like with our `Post` changes:
 
