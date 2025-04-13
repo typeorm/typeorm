@@ -137,7 +137,7 @@ export class User {
     -   Fetching all related data at once may result in large queries, even if not all data is needed.
     -   Not suitable for scenarios where only a subset of related data is required, as it can lead to inefficient data usage.
 
--   To explore more details and examples of how to configure and use lazy and eager relations, visit the official TypeORM documentation: https://typeorm.io/eager-and-lazy-relations
+-   To explore more details and examples of how to configure and use lazy and eager relations, visit the official TypeORM documentation: [Eager and Lazy Relations](../Relations/5-eager-and-lazy-relations.md)
 
 ## 5. Advanced optimization
 

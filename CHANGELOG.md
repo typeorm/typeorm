@@ -1798,7 +1798,7 @@ export const MyDataSources = {
 ### Features
 
 -   added deferrable options for foreign keys (postgres) ([#2191](https://github.com/typeorm/typeorm/issues/2191))
--   added View entity implementation ([#1024](https://github.com/typeorm/typeorm/issues/1024)). Read more at [View entities](https://typeorm.io/#/view-entities)
+-   added View entity implementation ([#1024](https://github.com/typeorm/typeorm/issues/1024)). Read more at [View entities](https://typeorm.io/docs/Entity/view-entities/)
 -   added multiple value transformer support ([#4007](https://github.com/typeorm/typeorm/issues/4007))
 
 ## 0.2.16 (2019-03-26)
