@@ -49,6 +49,7 @@ cd typeorm
 # Add the main TypeORM repository as an upstream remote to your repository:
 git remote add upstream https://github.com/typeorm/typeorm.git
 ```
+
 ## Installing NPM Modules
 
 Install all TypeORM dependencies by running this command:
@@ -62,7 +63,7 @@ npm install
 To create an initial `ormconfig.json` file, run the following command:
 
 ```shell
-cp ormconfig.json.dist ormconfig.json
+cp ormconfig.sample.json ormconfig.json
 ```
 
 ## Building
@@ -127,7 +128,7 @@ describe("github issues > #<issue number> <issue title>", () => {
 If you place entities in `./entity/<entity-name>.ts` relative to your `issue-<num>.ts` file,
 they will automatically be loaded.
 
-To run the tests, setup your environment configuration by copying `ormconfig.json.dist` into `ormconfig.json` and replacing parameters with your own. The tests will be run for each database that is defined in that file. If you're working on something that's not database specific and you want to speed things up, you can pick which objects in the file make sense for you to keep.
+To run the tests, setup your environment configuration by copying `ormconfig.sample.json` into `ormconfig.json` and replacing parameters with your own. The tests will be run for each database that is defined in that file. If you're working on something that's not database specific and you want to speed things up, you can pick which objects in the file make sense for you to keep.
 
 Run the tests as follows:
 
@@ -139,25 +140,25 @@ You should make sure the test suites pass before submitting a PR to GitHub. Test
 
 **Executing only some tests**: When you are creating tests to some specific code, you may want to only execute the tests that you're creating.
 
-To do this, you can temporarily modify your test definitions by adding [`.only` *mocha* commands](https://mochajs.org/#exclusive-tests) to `describe` and `it`. For example:
+To do this, you can temporarily modify your test definitions by adding [`.only` _mocha_ commands](https://mochajs.org/#exclusive-tests) to `describe` and `it`. For example:
 
 ```
 describe.only('your describe test', ....)
 ```
 
-Alternatively, you can use the `--grep` flag to pass a regex to `gulp-mocha`. Only the tests that have `describe`/`it` statements that match the regex will be run. For example:
+Alternatively, you can use the `--grep` flag to pass a regex to `mocha`. Only the tests that have `describe`/`it` statements that match the regex will be run. For example:
 
 ```shell
-npm test -- --grep="github issues > #363"
+npm run test -- --grep "github issues > #363"
 ```
 
 ### Faster developer cycle for editing code and running tests
 
-The `npm test` script works by deleting built TypeScript code, rebuilding the codebase, and then running tests. This can take a long time.
+The `npm run test` script works by deleting built TypeScript code, rebuilding the codebase, and then running tests. This can take a long time.
 
 Instead, for a quicker feedback cycle, you can run `npm run compile -- --watch` to make a fresh build and instruct TypeScript to watch for changes and only compile what code you've changed.
 
-Once TypeScript finishes compiling your changes, you can run `npm run test-fast` (instead of `test`), to trigger a test without causing a full recompile, which allows you to edit and check your changes much faster.
+Once TypeScript finishes compiling your changes, you can run `npm run test:fast` (instead of `test`), to trigger a test without causing a full recompile, which allows you to edit and check your changes much faster.
 
 ## Using Docker
 

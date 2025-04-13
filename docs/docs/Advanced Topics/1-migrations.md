@@ -270,6 +270,33 @@ module.exports = class PostRefactoringTIMESTAMP {
         )
     }
 }
+
+```
+By default, it generates CommonJS JavaScript code with the `o` (alias for `--outputJs`) flag, but you can also generate ESM code with the `esm` flag. This is useful for Javascript projects that use ESM:
+
+```javascript
+/**
+ * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ */
+
+
+/**
+ * @class
+ * @implements {MigrationInterface}
+ */
+export class PostRefactoringTIMESTAMP {
+    async up(queryRunner) {
+        await queryRunner.query(
+            `ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`,
+        )
+    }
+
+    async down(queryRunner) {
+        await queryRunner.query(
+            `ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`,
+        )
+    }
+}
 ```
 
 By default, it generates CommonJS JavaScript code with the `o` (alias for `--outputJs`) flag, but you can also generate ESM code with the `esm` flag. This is useful for Javascript projects that use ESM:

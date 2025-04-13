@@ -40,7 +40,7 @@ export class FileLogger extends AbstractLogger {
 
         const strings: string[] = []
 
-        for (let message of messages) {
+        for (const message of messages) {
             switch (message.type ?? level) {
                 case "log":
                     strings.push(`[LOG]: ${message.message}`)
