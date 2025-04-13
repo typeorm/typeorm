@@ -1,6 +1,7 @@
 import { themes as prismThemes } from "prism-react-renderer"
 import type { Config } from "@docusaurus/types"
 import type * as Preset from "@docusaurus/preset-classic"
+import { redirects } from "./redirects"
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -167,6 +168,14 @@ const config: Config = {
             contextualSearch: true,
         },
     } satisfies Preset.ThemeConfig,
+    plugins: [
+        [
+            "@docusaurus/plugin-client-redirects",
+            {
+                redirects,
+            },
+        ],
+    ],
 }
 
 export default config
