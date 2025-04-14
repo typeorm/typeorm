@@ -464,8 +464,8 @@ userRepository.remove(users, { chunk: entities.length / 1000 })
 
 ## `TreeRepository` API
 
-For `TreeRepository` API refer to [the Tree Entities documentation](../Entity/4-tree-entities.md#working-with-tree-entities).
+For `TreeRepository` API refer to [the Tree Entities documentation](../entity/4-tree-entities.md#working-with-tree-entities).
 
 ## `MongoRepository` API
 
-For `MongoRepository` API refer to [the MongoDB documentation](../Guides/2-mongodb.md).
+For `MongoRepository` API refer to [the MongoDB documentation](../guides/2-mongodb.md).

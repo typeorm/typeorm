@@ -345,7 +345,7 @@ const categoryRepository = manager.getTreeRepository(Category)
 ```
 
 -   `getMongoRepository` - Gets `MongoRepository` to perform operations on a specific entity.
-    Learn more about [MongoDB](../Guides/2-mongodb.md).
+    Learn more about [MongoDB](../guides/2-mongodb.md).
 
 ```typescript
 const userRepository = manager.getMongoRepository(User)

@@ -44,7 +44,7 @@ dataSource
 
 Then you can use `dataSource` instance from anywhere in your app.
 
-Learn more about [Data Source](../Data%20Source/1-data-source.md)
+Learn more about [Data Source](../data-source/1-data-source.md)
 
 ## Schema synchronization
 
@@ -137,7 +137,7 @@ and provides a declarative way to define what part of your model
 will become part of your database table.
 The power of TypeScript gives you type hinting and other useful features that you can use in classes.
 
-Learn more about [Entities and columns](../Entity/1-entities.md)
+Learn more about [Entities and columns](../entity/1-entities.md)
 
 ## Other model settings
 
