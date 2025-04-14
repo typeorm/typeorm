@@ -19,11 +19,11 @@ export class Post {
     @Column()
     isRemoved: boolean = false
 
-    @OneToOne((type) => Category, (category) => category.post)
+    @OneToOne(() => Category, (category) => category.post)
     @JoinColumn()
     category: Category
 
-    @OneToOne((type) => Category)
+    @OneToOne(() => Category)
     @JoinColumn()
     subcategory: Category
 

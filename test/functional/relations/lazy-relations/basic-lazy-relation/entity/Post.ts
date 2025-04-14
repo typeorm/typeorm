@@ -30,13 +30,13 @@ export class Post {
     @Column()
     viewCount: number = 0
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     category: Promise<Category>
 
-    @OneToOne((type) => Category, (category) => category.onePost)
+    @OneToOne(() => Category, (category) => category.onePost)
     @JoinColumn()
     oneCategory: Promise<Category>
 
-    @ManyToOne((type) => Category, (category) => category.twoSidePosts2)
+    @ManyToOne(() => Category, (category) => category.twoSidePosts2)
     twoSideCategory: Promise<Category>
 }

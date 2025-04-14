@@ -14,9 +14,9 @@ export class Event {
     @Column()
     name: string
 
-    @ManyToOne((type) => Person)
+    @ManyToOne(() => Person)
     author: Person
 
-    @OneToMany((type) => EventMember, (member) => member.event)
+    @OneToMany(() => EventMember, (member) => member.event)
     members: EventMember[]
 }

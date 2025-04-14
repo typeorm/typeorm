@@ -15,7 +15,7 @@ export class Post {
     @Column()
     title: string
 
-    @ManyToOne((type) => Tag)
+    @ManyToOne(() => Tag)
     tag: Tag
 
     tagId: number
