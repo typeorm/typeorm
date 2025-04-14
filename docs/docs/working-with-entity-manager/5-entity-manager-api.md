@@ -14,7 +14,7 @@ const queryRunner = manager.queryRunner
 ```
 
 -   `transaction` - Provides a transaction where multiple database requests will be executed in a single database transaction.
-    Learn more [Transactions](../Advanced%20Topics/2-transactions.md).
+    Learn more [Transactions](../advanced-topics/2-transactions.md).
 
 ```typescript
 await manager.transaction(async (manager) => {
@@ -32,41 +32,41 @@ const rawData = await manager.query(`SELECT * FROM USERS`)
 // You can also use parameters to avoid SQL injection
 // The syntax differs between the drivers
 
-// aurora-mysql, better-sqlite3, capacitor, cordova, 
-// expo, mariadb, mysql, nativescript, react-native, 
+// aurora-mysql, better-sqlite3, capacitor, cordova,
+// expo, mariadb, mysql, nativescript, react-native,
 // sap, sqlite, sqljs
 const rawData = await manager.query(
-    'SELECT * FROM USERS WHERE name = ? and age = ?',
-    [ 'John', 24 ]
+    "SELECT * FROM USERS WHERE name = ? and age = ?",
+    ["John", 24],
 )
 
 // aurora-postgres, cockroachdb, postgres
 const rawData = await manager.query(
-    'SELECT * FROM USERS WHERE name = $1 and age = $2',
-    ['John', 24]
+    "SELECT * FROM USERS WHERE name = $1 and age = $2",
+    ["John", 24],
 )
 
 // oracle
 const rawData = await manager.query(
-    'SELECT * FROM USERS WHERE name = :1 and age = :2',
-    ['John', 24]
+    "SELECT * FROM USERS WHERE name = :1 and age = :2",
+    ["John", 24],
 )
 
 // spanner
 const rawData = await manager.query(
-    'SELECT * FROM USERS WHERE name = @param0 and age = @param1',
-    [ 'John', 24 ]
+    "SELECT * FROM USERS WHERE name = @param0 and age = @param1",
+    ["John", 24],
 )
 
 // mssql
 const rawData = await manager.query(
-    'SELECT * FROM USERS WHERE name = @0 and age = @1',
-    [ 'John', 24 ]
+    "SELECT * FROM USERS WHERE name = @0 and age = @1",
+    ["John", 24],
 )
 ```
 
 -   `createQueryBuilder` - Creates a query builder use to build SQL queries.
-    Learn more about [QueryBuilder](../Query%20Builder/1-select-query-builder.md).
+    Learn more about [QueryBuilder](../query-builder/1-select-query-builder.md).
 
 ```typescript
 const users = await manager

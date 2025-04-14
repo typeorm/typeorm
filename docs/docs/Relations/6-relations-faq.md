@@ -165,7 +165,7 @@ Using `QueryBuilder` you can do `innerJoinAndSelect` instead of `leftJoinAndSele
 (to learn the difference between `LEFT JOIN` and `INNER JOIN` refer to your SQL documentation),
 you can join relation data by a condition, make ordering, etc.
 
-Learn more about [`QueryBuilder`](../Query%20Builder/1-select-query-builder.md).
+Learn more about [`QueryBuilder`](../query-builder/1-select-query-builder.md).
 
 ## Avoid relation property initializers
 

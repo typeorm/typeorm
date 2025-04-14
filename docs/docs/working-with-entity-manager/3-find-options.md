@@ -194,7 +194,7 @@ ORDER BY "columnName" ASC
 LIMIT 10 OFFSET 0
 ```
 
--   `cache` - Enables or disables query result caching. See [caching](../Query%20Builder/6-caching.md) for more information and options.
+-   `cache` - Enables or disables query result caching. See [caching](../query-builder/6-caching.md) for more information and options.
 
 ```typescript
 userRepository.find({
@@ -243,7 +243,7 @@ userRepository.findOne({
 })
 ```
 
-See [lock modes](../Query%20Builder/1-select-query-builder.md#lock-modes) for more information
+See [lock modes](../query-builder/1-select-query-builder.md#lock-modes) for more information
 
 Complete example of find options:
 

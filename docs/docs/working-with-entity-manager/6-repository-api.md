@@ -29,7 +29,7 @@ const target = repository.target
 ```
 
 -   `createQueryBuilder` - Creates a query builder use to build SQL queries.
-    Learn more about [QueryBuilder](../Query%20Builder/1-select-query-builder.md).
+    Learn more about [QueryBuilder](../query-builder/1-select-query-builder.md).
 
 ```typescript
 const users = await repository

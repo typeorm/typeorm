@@ -144,7 +144,7 @@ const timber = await userRepository.findOneBy({
 })
 ```
 
-In order to extend standard repository with custom methods, use [custom repository pattern](../Working%20with%20Entity%20Manager/4-custom-repository.md).
+In order to extend standard repository with custom methods, use [custom repository pattern](../working-with-entity-manager/4-custom-repository.md).
 
 ## Which one should I choose?
 
