@@ -368,7 +368,7 @@ export class PostSubscriber implements EntitySubscriberInterface {
 }
 ```
 
-Make sure your `subscribers` property is set in your [DataSourceOptions](../Data%20Source/2-data-source-options.md#common-data-source-options) so TypeORM loads your subscriber.
+Make sure your `subscribers` property is set in your [DataSourceOptions](../data-source/2-data-source-options.md#common-data-source-options) so TypeORM loads your subscriber.
 
 ### `Event Object`
 

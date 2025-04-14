@@ -582,7 +582,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../Advanced%20Topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 
 #### `@BeforeInsert`
 
@@ -600,7 +600,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../Advanced%20Topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 
 #### `@AfterInsert`
 
@@ -618,7 +618,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../Advanced%20Topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 
 #### `@BeforeUpdate`
 
@@ -636,7 +636,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../Advanced%20Topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 
 #### `@AfterUpdate`
 
@@ -654,7 +654,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../Advanced%20Topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 
 #### `@BeforeRemove`
 
@@ -672,7 +672,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../Advanced%20Topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 
 #### `@AfterRemove`
 
@@ -690,7 +690,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../Advanced%20Topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 
 #### `@BeforeSoftRemove`
 
@@ -708,7 +708,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../Advanced%20Topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 
 #### `@AfterSoftRemove`
 
@@ -726,7 +726,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../Advanced%20Topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 
 #### `@BeforeRecover`
 
@@ -744,7 +744,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../Advanced%20Topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 
 #### `@AfterRecover`
 
@@ -762,7 +762,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../Advanced%20Topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 
 #### `@EventSubscriber`
 
@@ -804,7 +804,7 @@ export class PostSubscriber implements EntitySubscriberInterface {
 }
 ```
 
-Learn more about [subscribers](../Advanced%20Topics/4-listeners-and-subscribers.md).
+Learn more about [subscribers](../advanced-topics/4-listeners-and-subscribers.md).
 
 ## Other decorators
 
@@ -847,7 +847,7 @@ export class User {
 }
 ```
 
-Learn more about [indices](../Advanced%20Topics/3-indices.md).
+Learn more about [indices](../advanced-topics/3-indices.md).
 
 #### `@Unique`
 

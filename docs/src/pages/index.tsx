@@ -124,7 +124,7 @@ function HomepageHeader() {
                         <div className={styles.buttons}>
                             <Link
                                 className="button button--secondary button--lg"
-                                to="/docs/Getting%20Started"
+                                to="/docs/getting-started"
                             >
                                 Get Started
                             </Link>
@@ -338,7 +338,7 @@ function CallToAction() {
                 <div className={styles.ctaButtons}>
                     <Link
                         className={clsx("button button--secondary button--lg margin-right--md", styles.noHorizontalMarginTablet)}
-                        to="/docs/Getting%20Started"
+                        to="/docs/getting-started"
                     >
                         Read the Docs
                     </Link>

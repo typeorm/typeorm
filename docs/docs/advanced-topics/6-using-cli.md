@@ -112,7 +112,7 @@ You can create a new entity using CLI:
 typeorm entity:create path-to-entity-dir/entity
 ```
 
-Learn more about [entities](../Entity/1-entities.md).
+Learn more about [entities](../entity/1-entities.md).
 
 ## Create a new subscriber
 

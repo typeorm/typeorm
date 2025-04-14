@@ -20,7 +20,7 @@ const driver: Driver = dataSource.driver
 ```
 
 -   `manager` - `EntityManager` used to work with entities.
-    Learn more about [Entity Manager and Repository](../Working%20with%20Entity%20Manager/1-working-with-entity-manager.md).
+    Learn more about [Entity Manager](../working-with-entity-manager/1-working-with-entity-manager.md) and [Repository](../working-with-entity-manager/2-working-with-repository.md).
 
 ```typescript
 const manager: EntityManager = dataSource.manager
@@ -29,7 +29,7 @@ const users = await manager.find()
 ```
 
 -   `mongoManager` - `MongoEntityManager` used to work with entities for mongodb data source.
-    For more information about MongoEntityManager see [MongoDB](../Guides/2-mongodb.md) documentation.
+    For more information about MongoEntityManager see [MongoDB](../guides/2-mongodb.md) documentation.
 
 ```typescript
 const manager: MongoEntityManager = dataSource.mongoManager
@@ -94,7 +94,7 @@ const userMetadata = dataSource.getMetadata(User)
 
 -   `getRepository` - Gets `Repository` of the given entity.
     You can also specify a table name and if repository for given table is found it will be returned.
-    Learn more about [Repositories](../Working%20with%20Entity%20Manager/2-working-with-repository.md).
+    Learn more about [Repositories](../working-with-entity-manager/2-working-with-repository.md).
 
 ```typescript
 const repository = dataSource.getRepository(User)
@@ -104,7 +104,7 @@ const users = await repository.find()
 
 -   `getTreeRepository` - Gets `TreeRepository` of the given entity.
     You can also specify a table name and if repository for given table is found it will be returned.
-    Learn more about [Repositories](../Working%20with%20Entity%20Manager/2-working-with-repository.md).
+    Learn more about [Repositories](../working-with-entity-manager/2-working-with-repository.md).
 
 ```typescript
 const repository = dataSource.getTreeRepository(Category)
@@ -114,7 +114,7 @@ const categories = await repository.findTrees()
 
 -   `getMongoRepository` - Gets `MongoRepository` of the given entity.
     This repository is used for entities in MongoDB dataSource.
-    Learn more about [MongoDB support](../Guides/2-mongodb.md).
+    Learn more about [MongoDB support](../guides/2-mongodb.md).
 
 ```typescript
 const repository = dataSource.getMongoRepository(User)
@@ -125,7 +125,7 @@ const category2 = await categoryCursor.next()
 ```
 
 -   `transaction` - Provides a single transaction where multiple database requests will be executed in a single database transaction.
-    Learn more about [Transactions](../Advanced%20Topics/2-transactions.md).
+    Learn more about [Transactions](../advanced-topics/2-transactions.md).
 
 ```typescript
 await dataSource.transaction(async (manager) => {
@@ -177,7 +177,7 @@ const rawData = await dataSource.query(
 ```
 
 -   `createQueryBuilder` - Creates a query builder, which can be used to build queries.
-    Learn more about [QueryBuilder](../Query%20Builder/1-select-query-builder.md).
+    Learn more about [QueryBuilder](../query-builder/1-select-query-builder.md).
 
 ```typescript
 const users = await dataSource
