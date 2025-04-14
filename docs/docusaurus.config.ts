@@ -41,7 +41,7 @@ const config: Config = {
                     // Please change this to your repo.
                     // Remove this to remove the "edit this page" links.
                     editUrl:
-                        "https://github.com/typeorm/typeorm/tree/master/docs/docs/",
+                        "https://github.com/typeorm/typeorm/tree/master/docs/",
                 },
                 theme: {
                     customCss: "./src/css/custom.css",

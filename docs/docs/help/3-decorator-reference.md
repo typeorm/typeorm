@@ -40,7 +40,7 @@ Example:
 export class User {}
 ```
 
-Learn more about [Entities](../Entity/1-entities.md).
+Learn more about [Entities](../entity/1-entities.md).
 
 #### `@ViewEntity`
 
@@ -128,7 +128,7 @@ export class User {
 
 `@Column` accept several options you can use:
 
--   `type: ColumnType` - Column type. One of the [supported column types](../Entity/1-entities.md#column-types).
+-   `type: ColumnType` - Column type. One of the [supported column types](../entity/1-entities.md#column-types).
 -   `name: string` - Column name in the database table.
     By default, the column name is generated from the name of the property.
     You can change it by specifying your own name.
@@ -167,7 +167,7 @@ export class User {
 -   `spatialFeatureType: string` - Optional feature type (`Point`, `Polygon`, `LineString`, `Geometry`) used as a constraint on a spatial column. If not specified, it will behave as though `Geometry` was provided. Used only in PostgreSQL and CockroachDB.
 -   `srid: number` - Optional [Spatial Reference ID](https://postgis.net/docs/using_postgis_dbmanagement.html#spatial_ref_sys) used as a constraint on a spatial column. If not specified, it will default to `0`. Standard geographic coordinates (latitude/longitude in the WGS84 datum) correspond to [EPSG 4326](http://spatialreference.org/ref/epsg/wgs-84/). Used only in PostgreSQL and CockroachDB.
 
-Learn more about [entity columns](../Entity/1-entities.md#entity-columns).
+Learn more about [entity columns](../entity/1-entities.md#entity-columns).
 
 #### `@PrimaryColumn`
 
@@ -196,7 +196,7 @@ export class User {
 
 > Note: when using `primaryKeyConstraintName` with multiple primary keys, the constraint name must be the same for all primary columns.
 
-Learn more about [entity columns](../Entity/1-entities.md#entity-columns).
+Learn more about [entity columns](../entity/1-entities.md#entity-columns).
 
 #### `@PrimaryGeneratedColumn`
 
@@ -241,7 +241,7 @@ export class User {
 }
 ```
 
-Learn more about [entity columns](../Entity/1-entities.md#entity-columns).
+Learn more about [entity columns](../entity/1-entities.md#entity-columns).
 
 #### `@ObjectIdColumn`
 
@@ -258,7 +258,7 @@ export class User {
 }
 ```
 
-Learn more about [MongoDB](../Guides/2-mongodb.md).
+Learn more about [MongoDB](../guides/2-mongodb.md).
 
 #### `@CreateDateColumn`
 
@@ -385,7 +385,7 @@ export class User {
 }
 ```
 
-Learn more about [one-to-one relations](../Relations/2-one-to-one-relations.md).
+Learn more about [one-to-one relations](../relations/2-one-to-one-relations.md).
 
 #### `@ManyToOne`
 
@@ -411,7 +411,7 @@ export class Photo {
 }
 ```
 
-Learn more about [many-to-one / one-to-many relations](../Relations/3-many-to-one-one-to-many-relations.md).
+Learn more about [many-to-one / one-to-many relations](../relations/3-many-to-one-one-to-many-relations.md).
 
 #### `@OneToMany`
 
@@ -437,7 +437,7 @@ export class User {
 }
 ```
 
-Learn more about [many-to-one / one-to-many relations](../Relations/3-many-to-one-one-to-many-relations.md).
+Learn more about [many-to-one / one-to-many relations](../relations/3-many-to-one-one-to-many-relations.md).
 
 #### `@ManyToMany`
 
@@ -473,7 +473,7 @@ export class Question {
 }
 ```
 
-Learn more about [many-to-many relations](../Relations/4-many-to-many-relations.md).
+Learn more about [many-to-many relations](../relations/4-many-to-many-relations.md).
 
 #### `@JoinColumn`
 
