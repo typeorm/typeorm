@@ -20,7 +20,7 @@ export class PostAuthor {
     @Column()
     name: string
 
-    @OneToMany((type) => Post, (post) => post.author)
+    @OneToMany(() => Post, (post) => post.author)
     posts: Post[]
 
     @BeforeInsert()

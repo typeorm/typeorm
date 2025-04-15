@@ -25,8 +25,13 @@ describe("query builder > cte > recursive", () => {
             dataSources
                 .filter(filterByCteCapabilities("enabled"))
                 .map(async (dataSource) => {
-                    // CTE cannot reference itself in Spanner
-                    if (dataSource.options.type === "spanner") return
+                    if (
+                        dataSource.options.type === "sap" ||
+                        dataSource.options.type === "spanner"
+                    ) {
+                        // CTE cannot reference itself in SAP HANA / Spanner
+                        return
+                    }
 
                     let qb: { foo: number }[]
                     if (dataSource.options.type === "oracle") {

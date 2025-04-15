@@ -41,6 +41,7 @@
         -   [`@Unique`](#unique)
         -   [`@Check`](#check)
         -   [`@Exclusion`](#exclusion)
+        -   [`@ForeignKey`](#foreignkey)
 
 ## Entity decorators
 
@@ -963,3 +964,88 @@ export class RoomBooking {
 ```
 
 > Note: Only PostgreSQL supports exclusion constraints.
+
+#### `@ForeignKey`
+
+This decorator allows you to create a database foreign key for a specific column or columns.
+This decorator can be applied to columns or an entity itself.
+Use it on a column when an foreign key on a single column is needed
+and use it on the entity when a single foreign key on multiple columns is required.
+
+> Note: **Do not use this decorator with relations.** Foreign keys are created automatically for relations
+> which you define using [Relation decorators](#relation-decorators) (`@ManyToOne`, `@OneToOne`, etc).
+> The `@ForeignKey` decorator should only be used to create foreign keys in the database when you
+> don't want to define an equivalent entity relationship.
+
+Examples:
+
+```typescript
+@Entity("orders")
+@ForeignKey(() => City, ["cityId", "countryCode"], ["id", "countryCode"])
+export class Order {
+    @PrimaryColumn()
+    id: number
+
+    @Column("uuid", { name: "user_uuid" })
+    @ForeignKey<User>("User", "uuid", { name: "FK_user_uuid" })
+    userUuid: string
+
+    @Column({ length: 2 })
+    @ForeignKey(() => Country, "code")
+    countryCode: string
+
+    @Column()
+    @ForeignKey("cities")
+    cityId: number
+
+    @Column()
+    dispatchCountryCode: string
+
+    @ManyToOne(() => Country)
+    dispatchCountry: Country
+
+    @Column()
+    dispatchCityId: number
+
+    @ManyToOne(() => City)
+    dispatchCity: City
+}
+```
+
+```typescript
+@Entity("cities")
+@Unique(["id", "countryCode"])
+export class City {
+    @PrimaryColumn()
+    id: number
+
+    @Column({ length: 2 })
+    @ForeignKey("countries", { onDelete: "CASCADE", onUpdate: "CASCADE" })
+    countryCode: string
+
+    @Column()
+    name: string
+}
+```
+
+```typescript
+@Entity("countries")
+export class Country {
+    @PrimaryColumn({ length: 2 })
+    code: string
+
+    @Column()
+    name: string
+}
+```
+
+```typescript
+@Entity("users")
+export class User {
+    @PrimaryColumn({ name: "ref" })
+    id: number
+
+    @Column("uuid", { unique: true })
+    uuid: string
+}
+```

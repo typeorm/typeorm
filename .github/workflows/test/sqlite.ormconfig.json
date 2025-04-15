@@ -6,17 +6,5 @@
     "database": "./temp/sqlitedb-1.db",
     "logging": false,
     "relationLoadStrategy": "join"
-  },
-
-  {
-    "skip": true,
-    "name": "postgres",
-    "type": "postgres",
-    "host": "postgres",
-    "port": 5432,
-    "username": "postgres",
-    "password": "postgres",
-    "database": "postgres",
-    "logging": false
   }
 ]

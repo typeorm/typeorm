@@ -46,6 +46,6 @@ export class PlanOfRecord {
     @Column({ nullable: true })
     public comment: string
 
-    @ManyToOne((type) => Block, (block) => block.plan_of_records)
+    @ManyToOne(() => Block, (block) => block.plan_of_records)
     public block: Block
 }

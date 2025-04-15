@@ -76,12 +76,12 @@ export class User {
     @ManyToMany((type) => Message, (message) => message.holders)
     holderMessages: Message[]
 
-    @OneToMany((type) => Chat, (chat) => chat.owner)
+    @OneToMany(() => Chat, (chat) => chat.owner)
     ownerChats: Chat[]
 
-    @OneToMany((type) => Message, (message) => message.sender)
+    @OneToMany(() => Message, (message) => message.sender)
     senderMessages: Message[]
 
-    @OneToMany((type) => Recipient, (recipient) => recipient.user)
+    @OneToMany(() => Recipient, (recipient) => recipient.user)
     recipients: Recipient[]
 }

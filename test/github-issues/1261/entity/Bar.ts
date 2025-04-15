@@ -10,7 +10,7 @@ export class Bar extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number
 
-    @OneToOne((type) => Foo, {
+    @OneToOne(() => Foo, {
         onDelete: "SET NULL",
     })
     @JoinColumn()
