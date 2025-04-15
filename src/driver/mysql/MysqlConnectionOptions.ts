@@ -126,7 +126,7 @@ export interface MysqlConnectionOptions
         readonly master: MysqlConnectionCredentialsOptions
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from servers (slaves).
          */
         readonly slaves: MysqlConnectionCredentialsOptions[]
 

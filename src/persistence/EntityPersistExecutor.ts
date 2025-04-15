@@ -53,7 +53,7 @@ export class EntityPersistExecutor {
 
         // save data in the query runner - this is useful functionality to share data from outside of the world
         // with third classes - like subscribers and listener methods
-        let oldQueryRunnerData = queryRunner.data
+        const oldQueryRunnerData = queryRunner.data
         if (this.options && this.options.data) {
             queryRunner.data = this.options.data
         }
@@ -81,7 +81,7 @@ export class EntityPersistExecutor {
                         if (entityTarget === Object)
                             throw new CannotDetermineEntityError(this.mode)
 
-                        let metadata = this.connection
+                        const metadata = this.connection
                             .getMetadata(entityTarget)
                             .findInheritanceMetadata(entity)
 

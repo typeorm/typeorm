@@ -14,7 +14,7 @@ export class Event {
     @Column()
     title: string
 
-    @OneToMany((type) => EventRole, (role) => role.event, {
+    @OneToMany(() => EventRole, (role) => role.event, {
         // eager: true,
         // persistence: true,
         cascade: true,

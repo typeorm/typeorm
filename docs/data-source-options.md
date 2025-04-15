@@ -30,23 +30,23 @@ Different RDBMS-es have their own specific options.
     This option is **required**.
 
 -   `extra` - Extra options to be passed to the underlying driver.
-    Use it if you want to pass extra settings to underlying database driver.
+    Use it if you want to pass extra settings to the underlying database driver.
 
 -   `entities` - Entities, or Entity Schemas, to be loaded and used for this data source.
-    Accepts both entity classes, entity schema classes, and directories paths to load from.
+    It accepts entity classes, entity schema classes, and directory paths from which to load.
     Directories support glob patterns.
     Example: `entities: [Post, Category, "entity/*.js", "modules/**/entity/*.js"]`.
     Learn more about [Entities](entities.md).
     Learn more about [Entity Schemas](separating-entity-definition.md).
 
 -   `subscribers` - Subscribers to be loaded and used for this data source.
-    Accepts both entity classes and directories to load from.
+    It accepts both entity classes and directories from which to load.
     Directories support glob patterns.
     Example: `subscribers: [PostSubscriber, AppSubscriber, "subscriber/*.js", "modules/**/subscriber/*.js"]`.
     Learn more about [Subscribers](listeners-and-subscribers.md).
 
 -   `migrations` - Migrations to be loaded and used for this data source.
-    Accepts both migration classes and directories to load from.
+    It accepts both migration classes and directories from which to load.
     Directories support glob patterns.
     Example: `migrations: [FirstMigration, SecondMigration, "migration/*.js", "modules/**/migration/*.js"]`.
     Learn more about [Migrations](migrations.md).
@@ -103,7 +103,7 @@ Different RDBMS-es have their own specific options.
 
 ## `mysql` / `mariadb` data source options
 
--   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
+-   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
 -   `host` - Database host.
 
@@ -159,7 +159,7 @@ Different RDBMS-es have their own specific options.
 -   `flags` - List of connection flags to use other than the default ones. It is also possible to blacklist default ones.
     For more information, check [Connection Flags](https://github.com/mysqljs/mysql#connection-flags).
 
--   `ssl` - object with ssl parameters or a string containing the name of ssl profile.
+-   `ssl` - object with SSL parameters or a string containing the name of the SSL profile.
     See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
 -   `enableQueryTimeout` - If a value is specified for maxQueryExecutionTime, in addition to generating a warning log when a
@@ -169,11 +169,11 @@ Different RDBMS-es have their own specific options.
 
 ## `postgres` / `cockroachdb` data source options
 
--   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
+-   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
 -   `host` - Database host.
 
--   `port` - Database host port. Default postgres port is `5432`.
+-   `port` - Database host port. The default Postgres port is `5432`.
 
 -   `username` - Database username.
 
@@ -189,7 +189,7 @@ Different RDBMS-es have their own specific options.
 
 -   `uuidExtension` - The Postgres extension to use when generating UUIDs. Defaults to `uuid-ossp`. Can be changed to `pgcrypto` if the `uuid-ossp` extension is unavailable.
 
--   `poolErrorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes single parameter (error instance) and defaults to logging with `warn` level.
+-   `poolErrorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes a single parameter (error instance) and defaults to logging with `warn` level.
 
 -   `maxTransactionRetries` - A maximum number of transaction retries in case of 40001 error. Defaults to 5.
 
@@ -250,7 +250,7 @@ Different RDBMS-es have their own specific options.
 
 Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation. See [SqlServerConnectionOptions.ts](..\src\driver\sqlserver\SqlServerConnectionOptions.ts) for details on exposed attributes.
 
--   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
+-   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
 -   `host` - Database host.
 
@@ -303,7 +303,7 @@ Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation
 -   `pool.idleTimeoutMillis` - the minimum amount of time that an object may sit idle in the pool before it is eligible for
     eviction due to idle time. Supersedes `softIdleTimeoutMillis`. Default: `30000`.
 
--   `pool.errorHandler` - A function that get's called when underlying pool emits `'error'` event. Takes single parameter (error instance) and defaults to logging with `warn` level.
+-   `pool.errorHandler` - A function that gets called when the underlying pool emits `'error'` event. Takes a single parameter (error instance) and defaults to logging with `warn` level.
 
 -   `options.fallbackToDefaultDb` - By default, if the database requestion by `options.database` cannot be accessed, the connection
     will fail with an error. However, if `options.fallbackToDefaultDb` is set to `true`, then the user's default database will
@@ -404,7 +404,7 @@ Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation
 
 ## `mongodb` data source options
 
--   `url` - Connection url where perform connection to. Please note that other data source options will override parameters set from url.
+-   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
 -   `host` - Database host.
 
@@ -514,7 +514,7 @@ Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation
 
 -   `loggerLevel` - Specify the log level used by the driver logger (`error/warn/info/debug`).
 
--   `logger` - Specify a customer logger mechanism, can be used to log using your app level logger.
+-   `logger` - Specify a customer logger mechanism, that can be used to log using your app-level logger.
 
 -   `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
 

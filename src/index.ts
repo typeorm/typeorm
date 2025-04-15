@@ -61,6 +61,7 @@ export * from "./decorator/tree/TreeParent"
 export * from "./decorator/tree/TreeChildren"
 export * from "./decorator/tree/Tree"
 export * from "./decorator/Index"
+export * from "./decorator/ForeignKey"
 export * from "./decorator/Unique"
 export * from "./decorator/Check"
 export * from "./decorator/Exclusion"
@@ -134,6 +135,7 @@ export * from "./driver/types/DatabaseType"
 export * from "./driver/types/GeoJsonTypes"
 export * from "./driver/types/ReplicationMode"
 export * from "./driver/sqlserver/MssqlParameter"
+export * from "./subscriber/event/QueryEvent"
 
 // export * from "./data-source";
 
