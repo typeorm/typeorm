@@ -94,7 +94,7 @@ export class EntityListenerMetadata {
                     }" must be a function but got "${typeof entityMethod}".`,
                 )
 
-            // Return the Entity Method
+            // Call and return the Entity Method
             return entityMethod.call(entity)
         }
 
