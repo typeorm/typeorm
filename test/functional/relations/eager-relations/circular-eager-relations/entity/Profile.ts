@@ -12,6 +12,6 @@ export class Profile {
     @Column()
     about: string
 
-    @OneToOne((type) => User, (user) => user.profile, { eager: true })
+    @OneToOne(() => User, (user) => user.profile, { eager: true })
     user: User
 }
