@@ -21,7 +21,7 @@ export class ActionLog {
     @Column()
     action: string
 
-    @ManyToOne((type) => Person, {
+    @ManyToOne(() => Person, {
         createForeignKeyConstraints: false,
     })
     person: Person
@@ -32,7 +32,7 @@ export class ActionLog {
     @JoinTable()
     addresses: Address[]
 
-    @OneToOne((type) => ActionDetails, {
+    @OneToOne(() => ActionDetails, {
         createForeignKeyConstraints: false,
     })
     @JoinColumn()

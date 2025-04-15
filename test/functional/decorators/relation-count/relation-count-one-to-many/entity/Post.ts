@@ -13,7 +13,7 @@ export class Post {
     @Column()
     title: string
 
-    @OneToMany((type) => Category, (category) => category.post)
+    @OneToMany(() => Category, (category) => category.post)
     categories: Category[]
 
     @RelationCount((post: Post) => post.categories)

@@ -459,10 +459,8 @@ export class InsertQueryBuilder<
         // add VALUES expression
         if (valuesExpression) {
             if (
-                (
-                    this.connection.driver.options.type === "oracle" ||
-                    this.connection.driver.options.type === "sap"
-                ) &&
+                (this.connection.driver.options.type === "oracle" ||
+                    this.connection.driver.options.type === "sap") &&
                 this.getValueSets().length > 1
             ) {
                 query += ` ${valuesExpression}`
@@ -581,7 +579,6 @@ export class InsertQueryBuilder<
                         )
 
                         query += updatePart.join(", ")
-                        query += " "
                     }
 
                     if (
@@ -593,7 +590,7 @@ export class InsertQueryBuilder<
                         query += overwrite
                             .map(
                                 (column) =>
-                                    `${tableName}.${this.escape(
+                                    `${this.escape(this.alias)}.${this.escape(
                                         column,
                                     )} IS DISTINCT FROM EXCLUDED.${this.escape(
                                         column,
@@ -876,7 +873,8 @@ export class InsertQueryBuilder<
                         }
                     } else if (
                         value === null &&
-                        this.connection.driver.options.type === "spanner"
+                        (this.connection.driver.options.type === "spanner" ||
+                            this.connection.driver.options.type === "oracle")
                     ) {
                         expression += "NULL"
 
