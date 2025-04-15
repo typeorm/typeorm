@@ -52,7 +52,7 @@ jobs:
       fail-fast: false
       matrix:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-        node-version: [16, 18, 20] #, 22]
+        node-version: [18.x, 20.x, 22.14.0, 23.x]
     uses: ./.github/workflows/database-tests.yml
     with:
       node-version: ${{matrix.node-version}}
@@ -64,7 +64,7 @@ jobs:
       fail-fast: false
       matrix:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-        node-version: [18, 20] #, 22]
+        node-version: [18.x, 20.x, 22.14.0, 23.x]
     uses: ./.github/workflows/database-tests-compose.yml
     with:
       node-version: ${{matrix.node-version}}
