@@ -77,6 +77,7 @@
   "scripts": {
     "changelog": "standard-changelog",
     "compile": "rimraf ./build && tsc",
+    "docs:dev": "cd docs && npm run start",
     "format": "prettier --cache --write \"./**/*.ts\"",
     "format:ci": "prettier --check \"./**/*.ts\"",
     "lint": "eslint .",
@@ -85,8 +86,7 @@
     "test": "npm run compile && npm run test:fast --",
     "test:ci": "mocha --bail",
     "test:fast": "mocha",
-    "watch": "tsc --watch",
-    "docs:dev": "cd docs && npm run start"
+    "watch": "tsc --watch"
   },
   "dependencies": {
     "@sqltools/formatter": "^1.2.5",

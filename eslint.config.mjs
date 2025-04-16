@@ -4,11 +4,10 @@ import globals from "globals"
 
 export default tseslint.config([
     {
-        ignores: ["build/**", "node_modules/**"],
+        ignores: ["build/**", "node_modules/**", "docs/**"],
     },
     {
         files: ["**/*.ts"],
-        ignores: ["docs/**"],
         languageOptions: {
             parser: tseslint.parser,
             parserOptions: {
