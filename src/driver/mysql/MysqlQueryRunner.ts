@@ -194,17 +194,25 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
             const broadcasterResult = new BroadcasterResult()
-            const queryStartTime = +new Date()
+            const queryStartTime = Date.now()
 
             try {
+                const enableQueryTimeout =
+                    this.driver.options.enableQueryTimeout
+                const maxQueryExecutionTime =
+                    this.driver.options.maxQueryExecutionTime
+                const queryPayload =
+                    enableQueryTimeout && maxQueryExecutionTime
+                        ? { sql: query, timeout: maxQueryExecutionTime }
+                        : query
                 databaseConnection.query(
-                    query,
+                    queryPayload,
                     parameters,
                     async (err: any, raw: any) => {
                         // log slow queries if maxQueryExecution time is set
                         const maxQueryExecutionTime =
                             this.driver.options.maxQueryExecutionTime
-                        const queryEndTime = +new Date()
+                        const queryEndTime = Date.now()
                         const queryExecutionTime = queryEndTime - queryStartTime
 
                         if (

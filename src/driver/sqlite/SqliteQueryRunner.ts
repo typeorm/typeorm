@@ -73,7 +73,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
 
         return new Promise(async (ok, fail) => {
             try {
-                const queryStartTime = +new Date()
+                const queryStartTime = Date.now()
                 const isInsertQuery = query.startsWith("INSERT ")
                 const isDeleteQuery = query.startsWith("DELETE ")
                 const isUpdateQuery = query.startsWith("UPDATE ")
@@ -99,7 +99,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                     }
 
                     // log slow queries if maxQueryExecution time is set
-                    const queryEndTime = +new Date()
+                    const queryEndTime = Date.now()
                     const queryExecutionTime = queryEndTime - queryStartTime
                     if (
                         maxQueryExecutionTime &&

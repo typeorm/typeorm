@@ -110,6 +110,13 @@ export interface MysqlConnectionOptions
     readonly connectorPackage?: "mysql" | "mysql2"
 
     /**
+     * If a value is specified for maxQueryExecutionTime, in addition to generating a warning log when a query exceeds this time limit,
+     * the specified maxQueryExecutionTime value is also used as the timeout for the query.
+     * For more information, check https://github.com/mysqljs/mysql?tab=readme-ov-file#timeouts
+     */
+    readonly enableQueryTimeout?: boolean
+
+    /**
      * Replication setup.
      */
     readonly replication?: {
