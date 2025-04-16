@@ -20,13 +20,13 @@ export class Category {
     @Column()
     name: string
 
-    @OneToOne((type) => Post, (post) => post.oneCategory)
+    @OneToOne(() => Post, (post) => post.oneCategory)
     onePost: Promise<Post>
 
     @ManyToMany((type) => Post, (post) => post.twoSideCategories)
     twoSidePosts: Promise<Post[]>
 
-    @OneToMany((type) => Post, (post) => post.twoSideCategory)
+    @OneToMany(() => Post, (post) => post.twoSideCategory)
     twoSidePosts2: Promise<Post[]>
 
     // ManyToMany with named properties
@@ -34,10 +34,10 @@ export class Category {
     postsNamedAll: Promise<Post[]>
 
     // OneToMany with named properties
-    @OneToMany((type) => Post, (post) => post.categoryNamedAll)
+    @OneToMany(() => Post, (post) => post.categoryNamedAll)
     onePostsNamedAll: Promise<Post[]>
 
     // OneToOne with named properties
-    @OneToOne((type) => Post, (post) => post.oneCategoryNamedAll)
+    @OneToOne(() => Post, (post) => post.oneCategoryNamedAll)
     onePostNamedAll: Promise<Post>
 }

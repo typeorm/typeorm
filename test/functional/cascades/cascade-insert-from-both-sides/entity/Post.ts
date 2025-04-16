@@ -10,7 +10,7 @@ export class Post {
     @PrimaryGeneratedColumn()
     key: number
 
-    @OneToOne((type) => PostDetails, (details) => details.post, {
+    @OneToOne(() => PostDetails, (details) => details.post, {
         cascade: ["insert"],
     })
     @JoinColumn()

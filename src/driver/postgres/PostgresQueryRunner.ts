@@ -253,12 +253,12 @@ export class PostgresQueryRunner
         )
 
         try {
-            const queryStartTime = +new Date()
+            const queryStartTime = Date.now()
             const raw = await databaseConnection.query(query, parameters)
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(

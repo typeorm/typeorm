@@ -3,6 +3,9 @@ import dotenv from "dotenv"
 import fs from "fs"
 import path from "path"
 import { highlight } from "sql-highlight"
+import { format as sqlFormat } from "@sqltools/formatter"
+import { type Config as SqlFormatterConfig } from "@sqltools/formatter/lib/core/types"
+import { type DatabaseType } from "../driver/types/DatabaseType"
 
 export { EventEmitter } from "events"
 export { ReadStream } from "fs"
@@ -217,6 +220,27 @@ export class PlatformTools {
                 comment: ansi.gray.open,
                 clear: ansi.reset.open,
             },
+        })
+    }
+
+    /**
+     * Pretty-print sql string to be print in the console.
+     */
+    static formatSql(sql: string, dataSourceType?: DatabaseType): string {
+        const databaseLanguageMap: Record<
+            string,
+            SqlFormatterConfig["language"]
+        > = {
+            oracle: "pl/sql",
+        }
+
+        const databaseLanguage = dataSourceType
+            ? databaseLanguageMap[dataSourceType] || "sql"
+            : "sql"
+
+        return sqlFormat(sql, {
+            language: databaseLanguage,
+            indent: "    ",
         })
     }
 
