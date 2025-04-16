@@ -100,7 +100,7 @@ export class PostCategory {}
 export class PostCategory {}
 ```
 
-Learn more about [View Entities](../Entity/5-view-entities.md).
+Learn more about [View Entities](../entity/5-view-entities.md).
 
 ## Column decorators
 
