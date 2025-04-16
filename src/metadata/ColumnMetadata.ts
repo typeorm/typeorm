@@ -815,8 +815,10 @@ export class ColumnMetadata {
         } else {
             // no embeds - no problems. Simply return column name by property name of the entity
             if (this.relationMetadata && this.referencedColumn) {
-                const relatedEntity =
-                    this.relationMetadata.getEntityValue(entity, this.relationMetadata.isLazy)
+                const relatedEntity = this.relationMetadata.getEntityValue(
+                    entity,
+                    this.relationMetadata.isLazy,
+                )
                 if (
                     relatedEntity &&
                     ObjectUtils.isObject(relatedEntity) &&
