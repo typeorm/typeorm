@@ -1,4 +1,5 @@
 export const redirects = [
+    { from: "/docs", to: "/docs/getting-started" },
     { from: "/entities", to: "/docs/entity/entities" },
     { from: "/embedded-entities", to: "/docs/entity/embedded-entities" },
     { from: "/entity-inheritance", to: "/docs/entity/entity-inheritance" },
