@@ -64,13 +64,13 @@ export class SubjectChangedColumnsComputer {
             // if there is no database entity then all columns are treated as new, e.g. changed
             if (subject.databaseEntity) {
                 // skip transform database value for json / jsonb for comparison later on
-                const shouldTransformDatabaseEntity =
+                const shouldTransform =
                     column.type !== "json" && column.type !== "jsonb"
 
                 // get database value of the column
                 let databaseValue = column.getEntityValue(
                     subject.databaseEntity,
-                    shouldTransformDatabaseEntity,
+                    shouldTransform,
                 )
 
                 // filter out "relational columns" only in the case if there is a relation object in entity
@@ -83,10 +83,17 @@ export class SubjectChangedColumnsComputer {
                 let normalizedValue = entityValue
                 // normalize special values to make proper comparision
                 if (entityValue !== null) {
+                    if (shouldTransform && column.transformer) {
+                        normalizedValue = ApplyValueTransformers.transformTo(
+                            column.transformer,
+                            entityValue,
+                        )
+                    }
+
                     switch (column.type) {
                         case "date":
                             normalizedValue =
-                                DateUtils.mixedDateToDateString(entityValue)
+                                DateUtils.mixedDateToDateString(normalizedValue)
                             break
 
                         case "time":
@@ -94,7 +101,7 @@ export class SubjectChangedColumnsComputer {
                         case "time without time zone":
                         case "timetz":
                             normalizedValue =
-                                DateUtils.mixedDateToTimeString(entityValue)
+                                DateUtils.mixedDateToTimeString(normalizedValue)
                             break
 
                         case "datetime":
@@ -107,7 +114,7 @@ export class SubjectChangedColumnsComputer {
                         case "timestamptz":
                             normalizedValue =
                                 DateUtils.mixedDateToUtcDatetimeString(
-                                    entityValue,
+                                    normalizedValue,
                                 )
                             databaseValue =
                                 DateUtils.mixedDateToUtcDatetimeString(
@@ -121,36 +128,32 @@ export class SubjectChangedColumnsComputer {
                             // If you try to save json '[{"messages": "", "attribute Key": "", "level":""}] ' as jsonb,
                             // then postgresql will save it as '[{"level": "", "message":"", "attributeKey": ""}]'
                             if (
-                                OrmUtils.deepCompare(entityValue, databaseValue)
+                                OrmUtils.deepCompare(
+                                    normalizedValue,
+                                    databaseValue,
+                                )
                             )
                                 return
                             break
 
                         case "simple-array":
                             normalizedValue =
-                                DateUtils.simpleArrayToString(entityValue)
+                                DateUtils.simpleArrayToString(normalizedValue)
                             databaseValue =
                                 DateUtils.simpleArrayToString(databaseValue)
                             break
                         case "simple-enum":
                             normalizedValue =
-                                DateUtils.simpleEnumToString(entityValue)
+                                DateUtils.simpleEnumToString(normalizedValue)
                             databaseValue =
                                 DateUtils.simpleEnumToString(databaseValue)
                             break
                         case "simple-json":
                             normalizedValue =
-                                DateUtils.simpleJsonToString(entityValue)
+                                DateUtils.simpleJsonToString(normalizedValue)
                             databaseValue =
                                 DateUtils.simpleJsonToString(databaseValue)
                             break
-                    }
-
-                    if (column.transformer) {
-                        normalizedValue = ApplyValueTransformers.transformTo(
-                            column.transformer,
-                            entityValue,
-                        )
                     }
                 }
 
