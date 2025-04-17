@@ -750,7 +750,7 @@ export class DataSource {
      * Get the replication mode SELECT queries should use for this datasource by default
      */
     defaultReplicationModeForReads(): ReplicationMode {
-        if ("replication" in this.driver.options) {
+        if ("replication" in this.driver.options && this.driver.options.replication) {
             const value = (
                 this.driver.options.replication as {
                     defaultMode?: ReplicationMode
