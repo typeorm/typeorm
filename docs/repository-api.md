@@ -465,7 +465,6 @@ Optional `RemoveOptions` can be passed as parameter for `remove` and `delete`.
 Example:
 
 ```typescript
-// users contains array of User Entities
 userRepository.remove(users, { chunk: 1000 })
 ```
 
