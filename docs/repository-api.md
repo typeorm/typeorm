@@ -451,7 +451,6 @@ Optional `SaveOptions` can be passed as parameter for `save`.
 Example:
 
 ```typescript
-// users contains array of User Entities
 userRepository.save(users, { chunk: 1000 })
 ```
 
