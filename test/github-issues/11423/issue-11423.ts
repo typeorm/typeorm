@@ -1,37 +1,36 @@
 import { DataSource } from "../../../src"
+import { PostgresConnectionOptions } from "../../../src/driver/postgres/PostgresConnectionOptions"
 import {
     closeTestingConnections,
     reloadTestingDatabases,
+    setupSingleTestingConnection,
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
 
-describe("github issues > #9895", () => {
-    let dataSources: DataSource[]
+describe("github issues > #11423", () => {
+    let dataSource: DataSource
 
     before(async () => {
-        const dataSource = new DataSource({
-            type: "postgres",
-            replication: undefined,
+        const options = setupSingleTestingConnection("postgres", {
             entities: [Post],
+        }) as PostgresConnectionOptions
+        if (!options) return
+
+        dataSource = new DataSource({
+            ...options,
+            replication: undefined,
         })
         await dataSource.initialize()
-        dataSources = [
-            dataSource,
-        ]
     })
 
-    beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    beforeEach(() => reloadTestingDatabases([dataSource]))
+    after(() => closeTestingConnections([dataSource]))
 
     it("allow replication to be undefined", async () => {
-        await Promise.all(
-            dataSources.map(async (dataSource) => {
-                await dataSource.manager.find(Post, {
-                    order: {
-                        title: "DESC",
-                    },
-                })
-            }),
-        )
+        await dataSource.manager.find(Post, {
+            order: {
+                title: "DESC",
+            },
+        })
     })
 })
