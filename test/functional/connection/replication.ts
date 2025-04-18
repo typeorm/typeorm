@@ -195,4 +195,54 @@ describe("Connection replication", () => {
             expect(result[0].current_setting).to.equal("master")
         })
     })
+
+    describe("with undefined replication", function () {
+        let connection: DataSource
+
+        beforeEach(async () => {
+            connection = (
+                await createTestingConnections({
+                    entities: [Post, Category],
+                    enabledDrivers: ["postgres"],
+                    schemaCreate: true,
+                    dropSchema: true,
+                    driverSpecific: {
+                        replication: undefined,
+                    },
+                })
+            )[0]
+
+            const post = new Post()
+            post.title = "TypeORM Intro"
+
+            await connection
+                .createQueryBuilder()
+                .insert()
+                .into(Post)
+                .values(post)
+                .execute()
+        })
+
+        afterEach(() => closeTestingConnections([connection]))
+
+        it("query runners should go to the master", async () => {
+            const queryRunner = connection.createQueryRunner()
+            expect(queryRunner.getReplicationMode()).to.equal("master")
+
+            await expectCurrentApplicationName(queryRunner, "master")
+            await queryRunner.release()
+        })
+
+        it("read queries should go to the master by default", async () => {
+            const result = await connection.manager
+                .createQueryBuilder(Post, "post")
+                .select("id")
+                .addSelect(
+                    "current_setting('application_name')",
+                    "current_setting",
+                )
+                .execute()
+            expect(result[0].current_setting).to.equal("master")
+        })
+    })
 })

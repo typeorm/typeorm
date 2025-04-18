@@ -39,6 +39,6 @@ describe("github issues > #11423", () => {
                 title: "DESC",
             },
         })
-        expect(posts).to.be.true
+        expect(posts).to.be.an("array")
     })
 })
