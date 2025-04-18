@@ -60,8 +60,8 @@ describe("OrmUtils.mergeDeep", () => {
     })
 
     it("should merge recursively deep objects correctly", () => {
-        let a: Record<string, any> = {}
-        let b: Record<string, any> = {}
+        const a: Record<string, any> = {}
+        const b: Record<string, any> = {}
 
         a["b"] = b
         a["a"] = a

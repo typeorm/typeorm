@@ -25,7 +25,12 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
-      - run: npm test
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: crdb-${{ inputs.node-container }}
+          parallel: true
 
   mongodb:
     runs-on: ubuntu-latest
@@ -42,13 +47,20 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
-      - run: npm test
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: mongodb-${{ inputs.node-container }}
+          parallel: true
 
 
   mssql:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
+        mssql-version: ['^9.1.1', '^10.0.1', '^11.0.1']
 
     container: ${{inputs.node-container}}
     services:
@@ -61,9 +73,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm i
+      - run: npm install mssql@${{ matrix.mssql-version }}
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
       - run: npm test
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: mssql-${{ inputs.node-container }}
+          parallel: true
 
 
   mysql_mariadb:
@@ -93,7 +112,12 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
-      - run: npm test
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: mysql+mariadb-${{ inputs.node-container }}
+          parallel: true
 
 
   better-sqlite3:
@@ -109,7 +133,12 @@ jobs:
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
       - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
-      - run: npm test
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: better-sqlite3-${{ inputs.node-container }}
+          parallel: true
 
 
   sqlite:
@@ -125,7 +154,12 @@ jobs:
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: chown -R 1001:127 ./temp #This fix is needed for fixing permission error on Node 16
       - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
-      - run: npm test
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: sqlite-${{ inputs.node-container }}
+          parallel: true
 
 
   sqljs:
@@ -140,7 +174,12 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
-      - run: npm test
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: sqljs-${{ inputs.node-container }}
+          parallel: true
 
 
   postgres:
@@ -167,4 +206,9 @@ jobs:
       - run: npm i
       - run: chown -R 1001:127 /github/home/.npm #This fix is needed for running CLI tests
       - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
-      - run: npm test
+      - run: npx nyc npm run test
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: postgres-${{ inputs.node-container }}
+          parallel: true

@@ -12,7 +12,7 @@ function isMySql(v: TestingConnectionOptions): v is MysqlConnectionOptions {
 }
 
 describe("github issues > #4753 MySQL Replication Config broken", () => {
-    let dataSources: DataSource[] = []
+    const dataSources: DataSource[] = []
     after(() => closeTestingConnections(dataSources))
 
     it("should connect without error when using replication", async () => {
