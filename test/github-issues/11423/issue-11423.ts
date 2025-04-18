@@ -23,7 +23,7 @@ describe("github issues > #9895", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("allow undefined replication", async () => {
+    it("allow replication to be undefined", async () => {
         await Promise.all(
             dataSources.map(async (dataSource) => {
                 await dataSource.manager.find(Post, {
