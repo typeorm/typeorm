@@ -1,5 +1,4 @@
 name: coverage
-
 on:
   workflow_call
 

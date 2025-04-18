@@ -1,5 +1,4 @@
 name: database-tests-compose
-
 on:
   workflow_call:
     inputs:
@@ -53,7 +52,7 @@ jobs:
           name: build
           path: build/
 
-      - run: npm i
+      - run: npm ci
       - run: cat ormconfig.sample.json | jq 'map(select(.name == "hanaexpress"))' > ormconfig.json
       - run: docker compose up hanaexpress --no-recreate --wait
       - run: npx nyc npm run test:ci
