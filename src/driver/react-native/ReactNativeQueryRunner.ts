@@ -52,103 +52,94 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        return new Promise(async (ok, fail) => {
-            const databaseConnection = await this.connect()
+        const databaseConnection = await this.connect()
 
-            this.driver.connection.logger.logQuery(query, parameters, this)
-            await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-            const broadcasterResult = new BroadcasterResult()
+        const broadcasterResult = new BroadcasterResult()
 
-            const queryStartTime = Date.now()
+        const queryStartTime = Date.now()
 
-            try {
-                databaseConnection.executeSql(
+        try {
+            const raw = databaseConnection.executeSql(query, parameters)
+
+            // log slow queries if maxQueryExecution time is set
+            const maxQueryExecutionTime =
+                this.driver.options.maxQueryExecutionTime
+            const queryEndTime = Date.now()
+            const queryExecutionTime = queryEndTime - queryStartTime
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
+
+            if (
+                maxQueryExecutionTime &&
+                queryExecutionTime > maxQueryExecutionTime
+            )
+                this.driver.connection.logger.logQuerySlow(
+                    queryExecutionTime,
                     query,
                     parameters,
-                    async (raw: any) => {
-                        // log slow queries if maxQueryExecution time is set
-                        const maxQueryExecutionTime =
-                            this.driver.options.maxQueryExecutionTime
-                        const queryEndTime = Date.now()
-                        const queryExecutionTime = queryEndTime - queryStartTime
-                        this.broadcaster.broadcastAfterQueryEvent(
-                            broadcasterResult,
-                            query,
-                            parameters,
-                            true,
-                            queryExecutionTime,
-                            raw,
-                            undefined,
-                        )
-
-                        if (
-                            maxQueryExecutionTime &&
-                            queryExecutionTime > maxQueryExecutionTime
-                        )
-                            this.driver.connection.logger.logQuerySlow(
-                                queryExecutionTime,
-                                query,
-                                parameters,
-                                this,
-                            )
-
-                        if (broadcasterResult.promises.length > 0)
-                            await Promise.all(broadcasterResult.promises)
-
-                        const result = new QueryResult()
-
-                        if (raw?.hasOwnProperty("rowsAffected")) {
-                            result.affected = raw.rowsAffected
-                        }
-
-                        if (raw?.hasOwnProperty("rows")) {
-                            const records = []
-                            for (let i = 0; i < raw.rows.length; i++) {
-                                records.push(raw.rows.item(i))
-                            }
-
-                            result.raw = records
-                            result.records = records
-                        }
-
-                        // return id of inserted row, if query was insert statement.
-                        if (query.substr(0, 11) === "INSERT INTO") {
-                            result.raw = raw.insertId
-                        }
-
-                        if (useStructuredResult) {
-                            ok(result)
-                        } else {
-                            ok(result.raw)
-                        }
-                    },
-                    async (err: any) => {
-                        this.driver.connection.logger.logQueryError(
-                            err,
-                            query,
-                            parameters,
-                            this,
-                        )
-                        this.broadcaster.broadcastAfterQueryEvent(
-                            broadcasterResult,
-                            query,
-                            parameters,
-                            false,
-                            undefined,
-                            undefined,
-                            err,
-                        )
-
-                        fail(new QueryFailedError(query, parameters, err))
-                    },
+                    this,
                 )
-            } catch (err) {
-                fail(err)
-            } finally {
-                await broadcasterResult.wait()
+
+            if (broadcasterResult.promises.length > 0)
+                await Promise.all(broadcasterResult.promises)
+
+            const result = new QueryResult()
+
+            if (raw?.hasOwnProperty("rowsAffected")) {
+                result.affected = raw.rowsAffected
             }
-        })
+
+            if (raw?.hasOwnProperty("rows")) {
+                const records = []
+                for (let i = 0; i < raw.rows.length; i++) {
+                    records.push(raw.rows.item(i))
+                }
+
+                result.raw = records
+                result.records = records
+            }
+
+            // return id of inserted row, if query was insert statement.
+            if (query.substr(0, 11) === "INSERT INTO") {
+                result.raw = raw.insertId
+            }
+
+            if (useStructuredResult) {
+                return result
+            } else {
+                return result.raw
+            }
+        } catch (err) {
+            this.driver.connection.logger.logQueryError(
+                err,
+                query,
+                parameters,
+                this,
+            )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
+            throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
+        }
     }
 
     // -------------------------------------------------------------------------

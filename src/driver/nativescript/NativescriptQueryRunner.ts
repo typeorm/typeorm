@@ -1,10 +1,10 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { QueryResult } from "../../query-runner/QueryResult"
+import { Broadcaster } from "../../subscriber/Broadcaster"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import { NativescriptDriver } from "./NativescriptDriver"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import { QueryResult } from "../../query-runner/QueryResult"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -54,61 +54,54 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
 
         const connection = this.driver.connection
 
-        return new Promise(async (ok, fail) => {
-            const databaseConnection = await this.connect()
-            const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
-            connection.logger.logQuery(query, parameters, this)
+        const databaseConnection = await this.connect()
+        const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
+        connection.logger.logQuery(query, parameters, this)
 
-            const handler = (err: any, raw: any) => {
-                // log slow queries if maxQueryExecution time is set
-                const maxQueryExecutionTime =
-                    this.driver.options.maxQueryExecutionTime
-                const queryEndTime = Date.now()
-                const queryExecutionTime = queryEndTime - queryStartTime
+        const handler = (err: any, raw: any) => {
+            // log slow queries if maxQueryExecution time is set
+            const maxQueryExecutionTime =
+                this.driver.options.maxQueryExecutionTime
+            const queryEndTime = Date.now()
+            const queryExecutionTime = queryEndTime - queryStartTime
 
-                if (
-                    maxQueryExecutionTime &&
-                    queryExecutionTime > maxQueryExecutionTime
-                ) {
-                    connection.logger.logQuerySlow(
-                        queryExecutionTime,
-                        query,
-                        parameters,
-                        this,
-                    )
-                }
-
-                if (err) {
-                    connection.logger.logQueryError(
-                        err,
-                        query,
-                        parameters,
-                        this,
-                    )
-                    fail(new QueryFailedError(query, parameters, err))
-                }
-
-                const result = new QueryResult()
-                result.raw = raw
-
-                if (!isInsertQuery && Array.isArray(raw)) {
-                    result.records = raw
-                }
-
-                if (useStructuredResult) {
-                    ok(result)
-                } else {
-                    ok(result.raw)
-                }
+            if (
+                maxQueryExecutionTime &&
+                queryExecutionTime > maxQueryExecutionTime
+            ) {
+                connection.logger.logQuerySlow(
+                    queryExecutionTime,
+                    query,
+                    parameters,
+                    this,
+                )
             }
-            const queryStartTime = Date.now()
 
-            if (isInsertQuery) {
-                databaseConnection.execSQL(query, parameters, handler)
+            if (err) {
+                connection.logger.logQueryError(err, query, parameters, this)
+                throw new QueryFailedError(query, parameters, err)
+            }
+
+            const result = new QueryResult()
+            result.raw = raw
+
+            if (!isInsertQuery && Array.isArray(raw)) {
+                result.records = raw
+            }
+
+            if (useStructuredResult) {
+                return result
             } else {
-                databaseConnection.all(query, parameters, handler)
+                return result.raw
             }
-        })
+        }
+        const queryStartTime = Date.now()
+
+        if (isInsertQuery) {
+            databaseConnection.execSQL(query, parameters, handler)
+        } else {
+            databaseConnection.all(query, parameters, handler)
+        }
     }
 
     // -------------------------------------------------------------------------

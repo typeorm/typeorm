@@ -187,110 +187,95 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        return new Promise(async (ok, fail) => {
-            const databaseConnection = await this.connect()
+        const databaseConnection = await this.connect()
 
-            this.driver.connection.logger.logQuery(query, parameters, this)
-            await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-            const broadcasterResult = new BroadcasterResult()
-            const queryStartTime = Date.now()
+        const broadcasterResult = new BroadcasterResult()
+        const queryStartTime = Date.now()
+
+        try {
+            const enableQueryTimeout = this.driver.options.enableQueryTimeout
+            // log slow queries if maxQueryExecution time is set
+            const maxQueryExecutionTime =
+                this.driver.options.maxQueryExecutionTime
+            const queryPayload =
+                enableQueryTimeout && maxQueryExecutionTime
+                    ? { sql: query, timeout: maxQueryExecutionTime }
+                    : query
+            const raw = databaseConnection.query(queryPayload, parameters)
+
+            const queryEndTime = Date.now()
+            const queryExecutionTime = queryEndTime - queryStartTime
+
+            if (
+                maxQueryExecutionTime &&
+                queryExecutionTime > maxQueryExecutionTime
+            )
+                this.driver.connection.logger.logQuerySlow(
+                    queryExecutionTime,
+                    query,
+                    parameters,
+                    this,
+                )
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
+
+            const result = new QueryResult()
+
+            result.raw = raw
 
             try {
-                const enableQueryTimeout =
-                    this.driver.options.enableQueryTimeout
-                const maxQueryExecutionTime =
-                    this.driver.options.maxQueryExecutionTime
-                const queryPayload =
-                    enableQueryTimeout && maxQueryExecutionTime
-                        ? { sql: query, timeout: maxQueryExecutionTime }
-                        : query
-                databaseConnection.query(
-                    queryPayload,
-                    parameters,
-                    async (err: any, raw: any) => {
-                        // log slow queries if maxQueryExecution time is set
-                        const maxQueryExecutionTime =
-                            this.driver.options.maxQueryExecutionTime
-                        const queryEndTime = Date.now()
-                        const queryExecutionTime = queryEndTime - queryStartTime
-
-                        if (
-                            maxQueryExecutionTime &&
-                            queryExecutionTime > maxQueryExecutionTime
-                        )
-                            this.driver.connection.logger.logQuerySlow(
-                                queryExecutionTime,
-                                query,
-                                parameters,
-                                this,
-                            )
-
-                        if (err) {
-                            this.driver.connection.logger.logQueryError(
-                                err,
-                                query,
-                                parameters,
-                                this,
-                            )
-                            this.broadcaster.broadcastAfterQueryEvent(
-                                broadcasterResult,
-                                query,
-                                parameters,
-                                false,
-                                undefined,
-                                undefined,
-                                err,
-                            )
-
-                            return fail(
-                                new QueryFailedError(query, parameters, err),
-                            )
-                        }
-
-                        this.broadcaster.broadcastAfterQueryEvent(
-                            broadcasterResult,
-                            query,
-                            parameters,
-                            true,
-                            queryExecutionTime,
-                            raw,
-                            undefined,
-                        )
-
-                        const result = new QueryResult()
-
-                        result.raw = raw
-
-                        try {
-                            result.records = Array.from(raw)
-                        } catch {
-                            // Do nothing.
-                        }
-
-                        if (raw?.hasOwnProperty("affectedRows")) {
-                            result.affected = raw.affectedRows
-                        }
-
-                        if (useStructuredResult) {
-                            ok(result)
-                        } else {
-                            ok(result.raw)
-                        }
-                    },
-                )
-            } catch (err) {
-                fail(err)
-            } finally {
-                await broadcasterResult.wait()
+                result.records = Array.from(raw)
+            } catch {
+                // Do nothing.
             }
-        })
+
+            if (raw?.hasOwnProperty("affectedRows")) {
+                result.affected = raw.affectedRows
+            }
+
+            if (useStructuredResult) {
+                return result
+            } else {
+                return result.raw
+            }
+        } catch (err) {
+            this.driver.connection.logger.logQueryError(
+                err,
+                query,
+                parameters,
+                this,
+            )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
+            throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
+        }
     }
 
     /**
      * Returns raw data stream.
      */
-    stream(
+    async stream(
         query: string,
         parameters?: any[],
         onEnd?: Function,
@@ -298,21 +283,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     ): Promise<ReadStream> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        return new Promise(async (ok, fail) => {
-            try {
-                const databaseConnection = await this.connect()
-                this.driver.connection.logger.logQuery(query, parameters, this)
-                const databaseQuery = databaseConnection.query(
-                    query,
-                    parameters,
-                )
-                if (onEnd) databaseQuery.on("end", onEnd)
-                if (onError) databaseQuery.on("error", onError)
-                ok(databaseQuery.stream())
-            } catch (err) {
-                fail(err)
-            }
-        })
+        const databaseConnection = await this.connect()
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        const databaseQuery = databaseConnection.query(query, parameters)
+        if (onEnd) databaseQuery.on("end", onEnd)
+        if (onError) databaseQuery.on("error", onError)
+        return databaseQuery.stream()
     }
 
     /**
