@@ -1,0 +1,24 @@
+name: Index docs to Typesense
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  index_docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Index docs to Typesense
+        run: |
+          docker run \
+            -e TYPESENSE_API_KEY=${{ vars.TYPESENSE_API_KEY }} \
+            -e TYPESENSE_HOST="${{ vars.TYPESENSE_HOST }}" \
+            -e TYPESENSE_PORT="443" \
+            -e TYPESENSE_PROTOCOL="https" \
+            -e CONFIG="$(cat docs/docsearch-scraper-config.json | jq -r tostring)" \
+            typesense/docsearch-scraper

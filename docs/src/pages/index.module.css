@@ -1,0 +1,393 @@
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.heroBanner {
+  padding: 4rem 0;
+  text-align: center;
+  color: #FFFFFF;
+  position: relative;
+  overflow: hidden;
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2rem;
+  }
+}
+
+.heroContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.heroText {
+  flex: 1;
+  padding-right: 2rem;
+}
+
+.heroImage {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.heroImage img {
+  width: 80%;
+  max-width: 350px;
+}
+
+.buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+@media screen and (max-width: 996px) {
+  .buttons {
+    margin: 0 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    text-align: center;
+  }
+
+  .noHorizontalMarginTablet {
+    margin-inline: 0 !important;
+  }
+}
+
+.features {
+  padding: 4rem 0;
+  background-color: var(--ifm-color-white);
+}
+
+[data-theme='dark'] .features {
+  background-color: var(--ifm-background-color);
+}
+
+.featureItem {
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.featureItem:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] .featureItem:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.featureIcon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.featureContent h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.featureContent p {
+  font-size: 0.95rem;
+  opacity: 0.8;
+}
+
+.codeExampleSection {
+  padding: 5rem 0;
+  background: linear-gradient(165deg, var(--ifm-color-secondary-lightest) 0%, var(--ifm-color-secondary) 100%);
+  color: #fff;
+}
+
+[data-theme='dark'] .codeExampleSection {
+  background: linear-gradient(165deg, var(--ifm-color-secondary-darkest) 0%, var(--ifm-color-secondary-dark) 100%);
+}
+
+.codeExampleContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.codeExampleText {
+  max-width: 90%;
+  margin: 0 auto;
+}
+
+.codeExampleText h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.codeExampleText p {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  opacity: 0.9;
+}
+
+.codeTabs {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.codeTabHeader {
+  display: flex;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.codeTabHeader div {
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.codeTabActive,
+.codeTabHeader div:hover {
+  background: var(--ifm-color-primary);
+  color: white;
+  font-weight: 600;
+}
+
+.codeTabContent {
+  padding: 1rem;
+}
+
+.databasesSection {
+  padding: 5rem 0;
+  background-color: var(--ifm-color-emphasis-0);
+}
+
+[data-theme='dark'] .databasesSection {
+  background-color: var(--ifm-background-color);
+}
+
+.sectionTitle {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.platformTitle {
+  text-align: center;
+  margin-top: 4rem;
+  margin-bottom: 1rem;
+}
+
+.platformDescription {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 2rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.databasesGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 160px);
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto 2rem;
+  justify-content: center;
+}
+
+.databaseItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem;
+  border-radius: 8px;
+  background-color: var(--ifm-color-emphasis-100);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  width: 160px;
+  height: 200px;
+}
+
+.databaseItem:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 0.5px rgba(0, 0, 0, 0.1);
+}
+
+.databaseLogo {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.databaseLogo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.databaseLogo:hover img {
+  transform: scale(1.1);
+}
+
+.databaseName {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.databaseDescription {
+  font-size: 0.85rem;
+  color: var(--ifm-color-emphasis-600);
+  text-align: center;
+}
+
+@media (max-width: 996px) {
+  .databasesGrid {
+    grid-template-columns: repeat(4, 140px);
+  }
+}
+
+@media (max-width: 768px) {
+  .databasesGrid {
+    gap: 0.5rem;
+    grid-template-columns: repeat(2, 150px);
+  }
+
+  .databaseItem {
+    width: 150px;
+    height: 150px;
+    padding: 1rem;
+  }
+
+  .databaseLogo {
+    height: 60px;
+    width: 60px;
+  }
+}
+
+@media (min-width: 768px) {
+  .databaseItem {
+    min-height: 180px;
+  }
+}
+
+.platformsSection {
+  padding: 4rem 0;
+  background: linear-gradient(165deg, var(--ifm-color-primary-lightest) 0%, var(--ifm-color-primary) 100%);
+  color: white;
+  text-align: center;
+}
+
+[data-theme='dark'] .platformsSection {
+  background: linear-gradient(165deg, var(--ifm-color-primary-darker) 0%, var(--ifm-color-primary) 100%);
+}
+
+.platformsDescription {
+  max-width: 800px;
+  margin: 0 auto 2rem;
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.platformsIcons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+
+}
+
+.platformsIcons span {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.75rem 1.25rem;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.platformsIcons span:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.ctaSection {
+  padding: 5rem 0;
+  background-color: var(--ifm-color-white);
+  text-align: center;
+}
+
+[data-theme='dark'] .ctaSection {
+  background-color: var(--ifm-background-color);
+}
+
+.ctaSection h2 {
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+.ctaSection p {
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  font-size: 1.1rem;
+  opacity: 0.8;
+}
+
+.ctaButtons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+@media screen and (max-width: 996px) {
+  .heroContent {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .heroText {
+    padding-right: 0;
+    margin-bottom: 2rem;
+  }
+
+  .heroImage img {
+    max-width: 250px;
+  }
+
+  .codeExampleContent {
+    flex-direction: column;
+  }
+
+  .codeExampleText {
+    max-width: 100%;
+    margin-bottom: 2rem;
+  }
+
+  .platformsIcons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .ctaButtons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .ctaButtons .button {
+    width: 80%;
+    margin: 0.5rem 0;
+  }
+}
