@@ -1,4 +1,5 @@
-import { DataSource } from "../../../src"
+import { expect } from "chai"
+import { DataSource, Repository } from "../../../src"
 import { PostgresConnectionOptions } from "../../../src/driver/postgres/PostgresConnectionOptions"
 import {
     closeTestingConnections,
@@ -9,6 +10,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #11423", () => {
     let dataSource: DataSource
+    let repository: Repository<Post>
 
     before(async () => {
         const options = setupSingleTestingConnection("postgres", {
@@ -30,10 +32,13 @@ describe("github issues > #11423", () => {
     after(() => closeTestingConnections([dataSource]))
 
     it("allow replication to be undefined", async () => {
-        await dataSource.manager.find(Post, {
+        if (!dataSource) return
+        repository = dataSource.getRepository(Post)
+        const posts = await repository.find({
             order: {
                 title: "DESC",
             },
         })
+        expect(posts).to.be.true
     })
 })
