@@ -520,6 +520,8 @@ export class RelationMetadata {
                 entity,
             )
         } else {
+            if (ObjectUtils.isObject(entity[propertyName]))
+                ObjectUtils.assign(value, entity[propertyName])
             entity[propertyName] = value
         }
     }
