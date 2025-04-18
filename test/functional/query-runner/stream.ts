@@ -21,6 +21,7 @@ describe("query runner > stream", () => {
                 "postgres",
                 "sap",
                 "spanner",
+                "sqlite",
             ],
         })
     })
