@@ -23,7 +23,10 @@ describe("github issues > #11423", () => {
         await dataSource.initialize()
     })
 
-    beforeEach(() => reloadTestingDatabases([dataSource]))
+    beforeEach(async () => {
+        if (!dataSource) return
+        await reloadTestingDatabases([dataSource])
+    })
     after(() => closeTestingConnections([dataSource]))
 
     it("allow replication to be undefined", async () => {
