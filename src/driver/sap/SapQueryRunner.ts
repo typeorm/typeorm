@@ -1,10 +1,13 @@
+import { promisify } from "util"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { QueryFailedError, TypeORMError } from "../../error"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionAlreadyStartedError } from "../../error/TransactionAlreadyStartedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ColumnType } from "../types/ColumnTypes"
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryLock } from "../../query-runner/QueryLock"
+import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
@@ -16,18 +19,15 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
+import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
-import { SapDriver } from "./SapDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { QueryFailedError, TypeORMError } from "../../error"
-import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryLock } from "../../query-runner/QueryLock"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { InstanceChecker } from "../../util/InstanceChecker"
-import { promisify } from "util"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { SapDriver } from "./SapDriver"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -211,20 +211,25 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
 
             if (parameters?.some(Array.isArray)) {
-                statement = await promisify(
-                    databaseConnection.prepare.bind(databaseConnection),
-                )(query)
+                statement = await promisify(databaseConnection.prepare).call(
+                    databaseConnection,
+                    query,
+                )
             }
 
             let raw: any
             try {
                 raw = statement
-                    ? await promisify(statement.exec.bind(statement))(
+                    ? await promisify(statement.exec).call(
+                          statement,
                           parameters,
                       )
-                    : await promisify(
-                          databaseConnection.exec.bind(databaseConnection),
-                      )(query, parameters, {})
+                    : await promisify(databaseConnection.exec).call(
+                          databaseConnection,
+                          query,
+                          parameters,
+                          {},
+                      )
             } catch (err) {
                 throw new QueryFailedError(query, parameters, err)
             }
@@ -336,20 +341,54 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     ): Promise<ReadStream> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        const databaseConnection = await this.connect()
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        const release = await this.lock.acquire()
+        let dropStatement = () => Promise.resolve()
 
-        const prepareAsync = promisify(databaseConnection.prepare).bind(
-            databaseConnection,
-        )
-        const statement = await prepareAsync(query)
-        const resultSet = statement.executeQuery(parameters)
-        const stream = this.driver.streamClient.createObjectStream(resultSet)
+        try {
+            const databaseConnection = await this.connect()
+            this.driver.connection.logger.logQuery(query, parameters, this)
 
-        if (onEnd) stream.on("end", onEnd)
-        if (onError) stream.on("error", onError)
+            const statement = await promisify(databaseConnection.prepare).call(
+                databaseConnection,
+                query,
+            )
+            dropStatement = promisify(statement.drop).bind(statement)
+            const resultSet = await promisify(statement.executeQuery).call(
+                statement,
+                parameters,
+            )
 
-        return stream
+            const stream =
+                this.driver.streamClient.createObjectStream(resultSet)
+            stream.on("end", async () => {
+                await dropStatement()
+                release()
+                onEnd?.()
+            })
+            stream.on("error", async (error: Error) => {
+                this.driver.connection.logger.logQueryError(
+                    error,
+                    query,
+                    parameters,
+                    this,
+                )
+                await dropStatement()
+                release()
+                onError?.(error)
+            })
+
+            return stream
+        } catch (error) {
+            this.driver.connection.logger.logQueryError(
+                error,
+                query,
+                parameters,
+                this,
+            )
+            await dropStatement?.()
+            release()
+            throw new QueryFailedError(query, parameters, error)
+        }
     }
 
     /**
