@@ -229,11 +229,11 @@ describe("Connection replication", () => {
             const queryRunner = connection.createQueryRunner()
             expect(queryRunner.getReplicationMode()).to.equal("master")
 
-            await expectCurrentApplicationName(queryRunner, "master")
+            await expectCurrentApplicationName(queryRunner, "")
             await queryRunner.release()
         })
 
-        it("read queries should go to the master by default", async () => {
+        it("read queries should go to the master", async () => {
             const result = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .select("id")
