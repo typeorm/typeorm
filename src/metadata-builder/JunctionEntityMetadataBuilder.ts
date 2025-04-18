@@ -294,7 +294,7 @@ export class JunctionEntityMetadataBuilder {
     /**
      * Collects referenced columns from the given join column args.
      */
-    protected collectReferencedColumns(
+    public collectReferencedColumns(
         relation: RelationMetadata,
         joinTable: JoinTableMetadataArgs,
     ): ColumnMetadata[] {
@@ -326,10 +326,7 @@ export class JunctionEntityMetadataBuilder {
         }
     }
 
-    /**
-     * Collects inverse referenced columns from the given join column args.
-     */
-    protected collectInverseReferencedColumns(
+    public collectInverseReferencedColumns(
         relation: RelationMetadata,
         joinTable: JoinTableMetadataArgs,
     ): ColumnMetadata[] {
@@ -362,6 +359,9 @@ export class JunctionEntityMetadataBuilder {
         }
     }
 
+    /**
+     * Collects inverse referenced columns from the given join column args.
+     */
     protected changeDuplicatedColumnNames(
         junctionColumns: ColumnMetadata[],
         inverseJunctionColumns: ColumnMetadata[],
