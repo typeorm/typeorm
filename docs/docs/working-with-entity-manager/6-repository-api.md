@@ -444,8 +444,7 @@ Optional `SaveOptions` can be passed as parameter for `save`.
 Example:
 
 ```typescript
-// users contains array of User Entities
-userRepository.save(users, { chunk: users.length / 1000 })
+userRepository.save(users, { chunk: 1000 })
 ```
 
 Optional `RemoveOptions` can be passed as parameter for `remove` and `delete`.
@@ -458,8 +457,7 @@ Optional `RemoveOptions` can be passed as parameter for `remove` and `delete`.
 Example:
 
 ```typescript
-// users contains array of User Entities
-userRepository.remove(users, { chunk: entities.length / 1000 })
+userRepository.remove(users, { chunk: 1000 })
 ```
 
 ## `TreeRepository` API
