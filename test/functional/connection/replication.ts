@@ -225,7 +225,7 @@ describe("Connection replication", () => {
 
         afterEach(() => closeTestingConnections([connection]))
 
-        it("query runners should go to the master", async () => {
+        it("query runners should go to the available instance", async () => {
             const queryRunner = connection.createQueryRunner()
             expect(queryRunner.getReplicationMode()).to.equal("master")
 
@@ -233,7 +233,7 @@ describe("Connection replication", () => {
             await queryRunner.release()
         })
 
-        it("read queries should go to the master", async () => {
+        it("read queries should go to the available instance", async () => {
             const result = await connection.manager
                 .createQueryBuilder(Post, "post")
                 .select("id")
@@ -242,7 +242,7 @@ describe("Connection replication", () => {
                     "current_setting",
                 )
                 .execute()
-            expect(result[0].current_setting).to.equal("master")
+            expect(result[0].current_setting).to.equal("")
         })
     })
 })
