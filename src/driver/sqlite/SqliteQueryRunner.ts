@@ -79,70 +79,71 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
 
             const execute = async () => {
                 if (isInsertQuery || isDeleteQuery || isUpdateQuery) {
-                    await databaseConnection.run(query, parameters, handler)
+                    return await databaseConnection.run(query, parameters)
                 } else {
-                    await databaseConnection.all(query, parameters, handler)
+                    return await databaseConnection.all(query, parameters)
                 }
             }
 
-            const self = this
-            const handler = function (this: any, err: any, rows: any) {
+            let raw
+
+            try {
+                raw = await execute()
+            } catch (err) {
                 if (err && err.toString().indexOf("SQLITE_BUSY:") !== -1) {
                     if (
                         typeof options.busyErrorRetry === "number" &&
                         options.busyErrorRetry > 0
                     ) {
-                        setTimeout(execute, options.busyErrorRetry)
-                        return
+                        return setTimeout(execute, options.busyErrorRetry)
                     }
                 }
-
-                // log slow queries if maxQueryExecution time is set
-                const queryEndTime = Date.now()
-                const queryExecutionTime = queryEndTime - queryStartTime
-                if (
-                    maxQueryExecutionTime &&
-                    queryExecutionTime > maxQueryExecutionTime
-                )
-                    connection.logger.logQuerySlow(
-                        queryExecutionTime,
-                        query,
-                        parameters,
-                        self,
-                    )
-
-                const result = new QueryResult()
-
-                if (isInsertQuery) {
-                    result.raw = this["lastID"]
-                } else {
-                    result.raw = rows
-                }
-
-                broadcaster.broadcastAfterQueryEvent(
-                    broadcasterResult,
-                    query,
-                    parameters,
-                    true,
-                    queryExecutionTime,
-                    result.raw,
-                    undefined,
-                )
-
-                if (Array.isArray(rows)) {
-                    result.records = rows
-                }
-
-                result.affected = this["changes"]
-
-                if (useStructuredResult) {
-                    return result
-                } else {
-                    return result.raw
-                }
+                throw err
             }
 
-            await execute()
+            // log slow queries if maxQueryExecution time is set
+            const queryEndTime = Date.now()
+            const queryExecutionTime = queryEndTime - queryStartTime
+            if (
+                maxQueryExecutionTime &&
+                queryExecutionTime > maxQueryExecutionTime
+            )
+                connection.logger.logQuerySlow(
+                    queryExecutionTime,
+                    query,
+                    parameters,
+                    this,
+                )
+
+            const result = new QueryResult()
+
+            if (isInsertQuery) {
+                result.raw = raw.lastID
+            } else {
+                result.raw = raw
+            }
+
+            broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                result.raw,
+                undefined,
+            )
+
+            if (Array.isArray(raw)) {
+                result.records = raw
+            }
+
+            result.affected = raw.changes
+
+            if (useStructuredResult) {
+                return result
+            } else {
+                return result.raw
+            }
         } catch (err) {
             connection.logger.logQueryError(err, query, parameters, this)
             broadcaster.broadcastAfterQueryEvent(
