@@ -1,15 +1,22 @@
-import { EntitySubscriberInterface } from "./EntitySubscriberInterface"
 import { ObjectLiteral } from "../common/ObjectLiteral"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { BroadcasterResult } from "./BroadcasterResult"
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import { EntityMetadata } from "../metadata/EntityMetadata"
 import { RelationMetadata } from "../metadata/RelationMetadata"
+import { QueryRunner } from "../query-runner/QueryRunner"
 import { ObjectUtils } from "../util/ObjectUtils"
+import { BroadcasterResult } from "./BroadcasterResult"
+import { EntitySubscriberInterface } from "./EntitySubscriberInterface"
 
 interface BroadcasterEvents {
-    BeforeQuery: () => void
-    AfterQuery: () => void
+    BeforeQuery: (query: string, parameters: any[] | undefined) => void
+    AfterQuery: (
+        query: string,
+        parameters: any[] | undefined,
+        success: boolean,
+        executionTime: number | undefined,
+        rawResults: any | undefined,
+        error: any | undefined,
+    ) => void
 
     BeforeTransactionCommit: () => void
     AfterTransactionCommit: () => void

@@ -1,32 +1,32 @@
+import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { TypeORMError } from "../../error"
+import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { ReadStream } from "../../platform/PlatformTools"
+import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
+import { TableCheck } from "../../schema-builder/table/TableCheck"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
-import { View } from "../../schema-builder/view/View"
-import { Query } from "../Query"
-import { MysqlDriver } from "./MysqlDriver"
-import { ReadStream } from "../../platform/PlatformTools"
-import { OrmUtils } from "../../util/OrmUtils"
-import { QueryFailedError } from "../../error/QueryFailedError"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
-import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
-import { ColumnType } from "../types/ColumnTypes"
-import { TableCheck } from "../../schema-builder/table/TableCheck"
-import { IsolationLevel } from "../types/IsolationLevel"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
-import { VersionUtils } from "../../util/VersionUtils"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { TypeORMError } from "../../error"
-import { MetadataTableType } from "../types/MetadataTableType"
-import { InstanceChecker } from "../../util/InstanceChecker"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import { VersionUtils } from "../../util/VersionUtils"
+import { Query } from "../Query"
+import { ColumnType } from "../types/ColumnTypes"
+import { IsolationLevel } from "../types/IsolationLevel"
+import { MetadataTableType } from "../types/MetadataTableType"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { MysqlDriver } from "./MysqlDriver"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -187,113 +187,95 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        return new Promise(async (ok, fail) => {
-            const broadcasterResult = new BroadcasterResult()
+        const databaseConnection = await this.connect()
 
-            try {
-                const databaseConnection = await this.connect()
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-                this.driver.connection.logger.logQuery(query, parameters, this)
-                this.broadcaster.broadcastBeforeQueryEvent(
-                    broadcasterResult,
+        const broadcasterResult = new BroadcasterResult()
+        const queryStartTime = Date.now()
+
+        try {
+            const enableQueryTimeout = this.driver.options.enableQueryTimeout
+            // log slow queries if maxQueryExecution time is set
+            const maxQueryExecutionTime =
+                this.driver.options.maxQueryExecutionTime
+            const queryPayload =
+                enableQueryTimeout && maxQueryExecutionTime
+                    ? { sql: query, timeout: maxQueryExecutionTime }
+                    : query
+            const raw = databaseConnection.query(queryPayload, parameters)
+
+            const queryEndTime = Date.now()
+            const queryExecutionTime = queryEndTime - queryStartTime
+
+            if (
+                maxQueryExecutionTime &&
+                queryExecutionTime > maxQueryExecutionTime
+            )
+                this.driver.connection.logger.logQuerySlow(
+                    queryExecutionTime,
                     query,
                     parameters,
+                    this,
                 )
-                const enableQueryTimeout =
-                    this.driver.options.enableQueryTimeout
-                const maxQueryExecutionTime =
-                    this.driver.options.maxQueryExecutionTime
-                const queryPayload =
-                    enableQueryTimeout && maxQueryExecutionTime
-                        ? { sql: query, timeout: maxQueryExecutionTime }
-                        : query
-                const queryStartTime = Date.now()
-                databaseConnection.query(
-                    queryPayload,
-                    parameters,
-                    async (err: any, raw: any) => {
-                        // log slow queries if maxQueryExecution time is set
-                        const maxQueryExecutionTime =
-                            this.driver.options.maxQueryExecutionTime
-                        const queryEndTime = Date.now()
-                        const queryExecutionTime = queryEndTime - queryStartTime
 
-                        if (
-                            maxQueryExecutionTime &&
-                            queryExecutionTime > maxQueryExecutionTime
-                        )
-                            this.driver.connection.logger.logQuerySlow(
-                                queryExecutionTime,
-                                query,
-                                parameters,
-                                this,
-                            )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
 
-                        if (err) {
-                            this.driver.connection.logger.logQueryError(
-                                err,
-                                query,
-                                parameters,
-                                this,
-                            )
-                            this.broadcaster.broadcastAfterQueryEvent(
-                                broadcasterResult,
-                                query,
-                                parameters,
-                                false,
-                                undefined,
-                                undefined,
-                                err,
-                            )
+            const result = new QueryResult()
 
-                            return fail(
-                                new QueryFailedError(query, parameters, err),
-                            )
-                        }
+            result.raw = raw
 
-                        this.broadcaster.broadcastAfterQueryEvent(
-                            broadcasterResult,
-                            query,
-                            parameters,
-                            true,
-                            queryExecutionTime,
-                            raw,
-                            undefined,
-                        )
-
-                        const result = new QueryResult()
-
-                        result.raw = raw
-
-                        try {
-                            result.records = Array.from(raw)
-                        } catch {
-                            // Do nothing.
-                        }
-
-                        if (raw?.hasOwnProperty("affectedRows")) {
-                            result.affected = raw.affectedRows
-                        }
-
-                        if (useStructuredResult) {
-                            ok(result)
-                        } else {
-                            ok(result.raw)
-                        }
-                    },
-                )
-            } catch (err) {
-                fail(err)
-            } finally {
-                await broadcasterResult.wait()
+            try {
+                result.records = Array.from(raw)
+            } catch {
+                // Do nothing.
             }
-        })
+
+            if (raw?.hasOwnProperty("affectedRows")) {
+                result.affected = raw.affectedRows
+            }
+
+            if (useStructuredResult) {
+                return result
+            } else {
+                return result.raw
+            }
+        } catch (err) {
+            this.driver.connection.logger.logQueryError(
+                err,
+                query,
+                parameters,
+                this,
+            )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
+            throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
+        }
     }
 
     /**
      * Returns raw data stream.
      */
-    stream(
+    async stream(
         query: string,
         parameters?: any[],
         onEnd?: Function,
@@ -301,21 +283,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     ): Promise<ReadStream> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        return new Promise(async (ok, fail) => {
-            try {
-                const databaseConnection = await this.connect()
-                this.driver.connection.logger.logQuery(query, parameters, this)
-                const databaseQuery = databaseConnection.query(
-                    query,
-                    parameters,
-                )
-                if (onEnd) databaseQuery.on("end", onEnd)
-                if (onError) databaseQuery.on("error", onError)
-                ok(databaseQuery.stream())
-            } catch (err) {
-                fail(err)
-            }
-        })
+        const databaseConnection = await this.connect()
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        const databaseQuery = databaseConnection.query(query, parameters)
+        if (onEnd) databaseQuery.on("end", onEnd)
+        if (onError) databaseQuery.on("error", onError)
+        return databaseQuery.stream()
     }
 
     /**
