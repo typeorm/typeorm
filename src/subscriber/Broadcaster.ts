@@ -1,21 +1,21 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { RelationMetadata } from "../metadata/RelationMetadata"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { ObjectUtils } from "../util/ObjectUtils"
-import { BroadcasterResult } from "./BroadcasterResult"
 import { EntitySubscriberInterface } from "./EntitySubscriberInterface"
+import { ObjectLiteral } from "../common/ObjectLiteral"
+import { QueryRunner } from "../query-runner/QueryRunner"
+import { EntityMetadata } from "../metadata/EntityMetadata"
+import { BroadcasterResult } from "./BroadcasterResult"
+import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import { RelationMetadata } from "../metadata/RelationMetadata"
+import { ObjectUtils } from "../util/ObjectUtils"
 
 interface BroadcasterEvents {
-    BeforeQuery: (query: string, parameters: any[] | undefined) => void
+    BeforeQuery: (query: string, parameters: undefined | any[]) => void
     AfterQuery: (
         query: string,
-        parameters: any[] | undefined,
+        parameters: undefined | any[],
         success: boolean,
-        executionTime: number | undefined,
-        rawResults: any | undefined,
-        error: any | undefined,
+        executionTime: undefined | number,
+        rawResults: undefined | any,
+        error: undefined | any,
     ) => void
 
     BeforeTransactionCommit: () => void

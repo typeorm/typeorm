@@ -1,28 +1,28 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { TypeORMError } from "../../error"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
-import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ReadStream } from "../../platform/PlatformTools"
-import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
-import { Table } from "../../schema-builder/table/Table"
-import { TableCheck } from "../../schema-builder/table/TableCheck"
+import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
+import { Table } from "../../schema-builder/table/Table"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { TableUnique } from "../../schema-builder/table/TableUnique"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { View } from "../../schema-builder/view/View"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import { InstanceChecker } from "../../util/InstanceChecker"
-import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
-import { ColumnType } from "../types/ColumnTypes"
-import { IsolationLevel } from "../types/IsolationLevel"
-import { MetadataTableType } from "../types/MetadataTableType"
 import { AuroraMysqlDriver } from "./AuroraMysqlDriver"
+import { ReadStream } from "../../platform/PlatformTools"
+import { OrmUtils } from "../../util/OrmUtils"
+import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
+import { TableUnique } from "../../schema-builder/table/TableUnique"
+import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import { ColumnType } from "../types/ColumnTypes"
+import { TableCheck } from "../../schema-builder/table/TableCheck"
+import { IsolationLevel } from "../types/IsolationLevel"
+import { TableExclusion } from "../../schema-builder/table/TableExclusion"
+import { TypeORMError } from "../../error"
+import { MetadataTableType } from "../types/MetadataTableType"
+import { InstanceChecker } from "../../util/InstanceChecker"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -186,7 +186,7 @@ export class AuroraMysqlQueryRunner
     /**
      * Returns raw data stream.
      */
-    async stream(
+    stream(
         query: string,
         parameters?: any[],
         onEnd?: Function,
@@ -194,11 +194,17 @@ export class AuroraMysqlQueryRunner
     ): Promise<ReadStream> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        const databaseConnection = await this.connect()
-        const stream = databaseConnection.query(query, parameters)
-        if (onEnd) stream.on("end", onEnd)
-        if (onError) stream.on("error", onError)
-        return stream
+        return new Promise(async (ok, fail) => {
+            try {
+                const databaseConnection = await this.connect()
+                const stream = databaseConnection.query(query, parameters)
+                if (onEnd) stream.on("end", onEnd)
+                if (onError) stream.on("error", onError)
+                ok(stream)
+            } catch (err) {
+                fail(err)
+            }
+        })
     }
 
     /**
