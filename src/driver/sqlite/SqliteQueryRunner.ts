@@ -79,71 +79,70 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
 
             const execute = async () => {
                 if (isInsertQuery || isDeleteQuery || isUpdateQuery) {
-                    return await databaseConnection.run(query, parameters)
+                    await databaseConnection.run(query, parameters, handler)
                 } else {
-                    return await databaseConnection.all(query, parameters)
+                    await databaseConnection.all(query, parameters, handler)
                 }
             }
 
-            let raw
-
-            try {
-                raw = await execute()
-            } catch (err) {
+            const self = this
+            const handler = function (this: any, err: any, rows: any) {
                 if (err && err.toString().indexOf("SQLITE_BUSY:") !== -1) {
                     if (
                         typeof options.busyErrorRetry === "number" &&
                         options.busyErrorRetry > 0
                     ) {
-                        return setTimeout(execute, options.busyErrorRetry)
+                        setTimeout(execute, options.busyErrorRetry)
+                        return
                     }
                 }
-                throw err
-            }
 
-            // log slow queries if maxQueryExecution time is set
-            const queryEndTime = Date.now()
-            const queryExecutionTime = queryEndTime - queryStartTime
-            if (
-                maxQueryExecutionTime &&
-                queryExecutionTime > maxQueryExecutionTime
-            )
-                connection.logger.logQuerySlow(
-                    queryExecutionTime,
+                // log slow queries if maxQueryExecution time is set
+                const queryEndTime = Date.now()
+                const queryExecutionTime = queryEndTime - queryStartTime
+                if (
+                    maxQueryExecutionTime &&
+                    queryExecutionTime > maxQueryExecutionTime
+                )
+                    connection.logger.logQuerySlow(
+                        queryExecutionTime,
+                        query,
+                        parameters,
+                        self,
+                    )
+
+                const result = new QueryResult()
+
+                if (isInsertQuery) {
+                    result.raw = this["lastID"]
+                } else {
+                    result.raw = rows
+                }
+
+                broadcaster.broadcastAfterQueryEvent(
+                    broadcasterResult,
                     query,
                     parameters,
-                    this,
+                    true,
+                    queryExecutionTime,
+                    result.raw,
+                    undefined,
                 )
 
-            const result = new QueryResult()
+                if (Array.isArray(rows)) {
+                    result.records = rows
+                }
 
-            if (isInsertQuery) {
-                result.raw = raw.lastID
-            } else {
-                result.raw = raw
+                result.affected = this["changes"]
+
+                if (useStructuredResult) {
+                    return result
+                } else {
+                    return result.raw
+                }
             }
 
-            broadcaster.broadcastAfterQueryEvent(
-                broadcasterResult,
-                query,
-                parameters,
-                true,
-                queryExecutionTime,
-                result.raw,
-                undefined,
-            )
-
-            if (Array.isArray(raw)) {
-                result.records = raw
-            }
-
-            result.affected = raw.changes
-
-            if (useStructuredResult) {
-                return result
-            } else {
-                return result.raw
-            }
+            await execute()
         } catch (err) {
             connection.logger.logQueryError(err, query, parameters, this)
             broadcaster.broadcastAfterQueryEvent(
