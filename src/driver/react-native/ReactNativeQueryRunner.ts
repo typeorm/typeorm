@@ -52,16 +52,16 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
+        const databaseConnection = await this.connect()
+
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const broadcasterResult = new BroadcasterResult()
+
+        const queryStartTime = Date.now()
+
         return new Promise(async (ok, fail) => {
-            const databaseConnection = await this.connect()
-
-            this.driver.connection.logger.logQuery(query, parameters, this)
-            await this.broadcaster.broadcast("BeforeQuery", query, parameters)
-
-            const broadcasterResult = new BroadcasterResult()
-
-            const queryStartTime = Date.now()
-
             try {
                 databaseConnection.executeSql(
                     query,

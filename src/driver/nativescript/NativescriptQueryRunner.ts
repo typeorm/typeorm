@@ -1,10 +1,10 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { QueryResult } from "../../query-runner/QueryResult"
+import { Broadcaster } from "../../subscriber/Broadcaster"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import { NativescriptDriver } from "./NativescriptDriver"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import { QueryResult } from "../../query-runner/QueryResult"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -54,8 +54,9 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
 
         const connection = this.driver.connection
 
+        const databaseConnection = await this.connect()
+
         return new Promise(async (ok, fail) => {
-            const databaseConnection = await this.connect()
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
             connection.logger.logQuery(query, parameters, this)
 
