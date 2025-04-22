@@ -17,6 +17,8 @@ export type FindOptionsSelectProperty<Property> = Property extends Promise<
     ? boolean
     : Property extends Function
     ? never
+    : Property extends ArrayBufferLike
+    ? boolean
     : Property extends Buffer
     ? boolean
     : Property extends Date
