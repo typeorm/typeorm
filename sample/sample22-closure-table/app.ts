@@ -17,23 +17,23 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        let categoryRepository = dataSource.getTreeRepository(Category)
+        const categoryRepository = dataSource.getTreeRepository(Category)
 
-        let childChildCategory1 = new Category()
+        const childChildCategory1 = new Category()
         childChildCategory1.name = "Child #1 of Child #1 of Category #1"
 
-        let childChildCategory2 = new Category()
+        const childChildCategory2 = new Category()
         childChildCategory2.name = "Child #1 of Child #2 of Category #1"
 
-        let childCategory1 = new Category()
+        const childCategory1 = new Category()
         childCategory1.name = "Child #1 of Category #1"
         childCategory1.childCategories = [childChildCategory1]
 
-        let childCategory2 = new Category()
+        const childCategory2 = new Category()
         childCategory2.name = "Child #2 of Category #1"
         childCategory2.childCategories = [childChildCategory2]
 
-        let category1 = new Category()
+        const category1 = new Category()
         category1.name = "Category #1"
         category1.childCategories = [childCategory1, childCategory2]
 

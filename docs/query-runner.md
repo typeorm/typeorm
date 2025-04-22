@@ -39,7 +39,7 @@ which you can use through `manager` property in order to run `EntityManager` met
 used by `QueryRunner` instance:
 
 ```typescript
-const queryRunner = connection.createQueryRunner()
+const queryRunner = dataSource.createQueryRunner()
 
 // take a connection from the connection pool
 await queryRunner.connect()

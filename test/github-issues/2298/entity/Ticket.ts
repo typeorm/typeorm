@@ -17,6 +17,6 @@ export class Ticket {
     @Column()
     chainId: string
 
-    @OneToMany((type) => TicketProduct, (ticketProduct) => ticketProduct.ticket)
+    @OneToMany(() => TicketProduct, (ticketProduct) => ticketProduct.ticket)
     ticketItems: TicketProduct[]
 }

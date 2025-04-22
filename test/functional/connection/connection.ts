@@ -293,7 +293,7 @@ describe("Connection", () => {
                 connections.map(async (connection) => {
                     await connection.synchronize(true)
                     const queryRunner = connection.createQueryRunner()
-                    let schema = await queryRunner.getTables(["view"])
+                    const schema = await queryRunner.getTables(["view"])
                     await queryRunner.release()
                     expect(schema.some((table) => table.name === "view")).to.be
                         .false

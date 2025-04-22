@@ -1,12 +1,12 @@
-import "../../../utils/test-setup"
 import { DataSource, EntityManager } from "../../../../src"
+import { ArrayOverlap } from "../../../../src/find-options/operator/ArrayOverlap"
+import "../../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Post, PostStatus } from "./entity/Post"
-import { ArrayOverlap } from "../../../../src/find-options/operator/ArrayOverlap"
 
 describe("find options > find operators > ArrayOverlap", () => {
     let connections: DataSource[]
@@ -15,7 +15,6 @@ describe("find options > find operators > ArrayOverlap", () => {
             (connections = await createTestingConnections({
                 __dirname,
                 enabledDrivers: ["postgres"],
-                // logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

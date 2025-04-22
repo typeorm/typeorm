@@ -14,12 +14,12 @@ export class Category {
     @Column()
     name: string
 
-    @OneToOne((type) => Post, (post) => post.oneCategory)
+    @OneToOne(() => Post, (post) => post.oneCategory)
     onePost: Promise<Post>
 
     @ManyToMany((type) => Post, (post) => post.twoSideCategories)
     twoSidePosts: Promise<Post[]>
 
-    @OneToMany((type) => Post, (post) => post.twoSideCategory)
+    @OneToMany(() => Post, (post) => post.twoSideCategory)
     twoSidePosts2: Promise<Post[]>
 }

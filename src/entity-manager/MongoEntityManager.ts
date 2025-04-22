@@ -275,7 +275,7 @@ export class MongoEntityManager extends EntityManager {
         if (Array.isArray(entity)) {
             result.raw = await this.insertMany(target, entity)
             Object.keys(result.raw.insertedIds).forEach((key: any) => {
-                let insertedId = result.raw.insertedIds[key]
+                const insertedId = result.raw.insertedIds[key]
                 result.generatedMaps.push(
                     this.connection.driver.createGeneratedMap(
                         this.connection.getMetadata(target),

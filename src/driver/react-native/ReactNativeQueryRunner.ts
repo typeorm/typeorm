@@ -63,7 +63,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                 parameters,
             )
 
-            const queryStartTime = +new Date()
+            const queryStartTime = Date.now()
             databaseConnection.executeSql(
                 query,
                 parameters,
@@ -71,7 +71,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime =
                         this.driver.options.maxQueryExecutionTime
-                    const queryEndTime = +new Date()
+                    const queryEndTime = Date.now()
                     const queryExecutionTime = queryEndTime - queryStartTime
 
                     this.broadcaster.broadcastAfterQueryEvent(
@@ -105,7 +105,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                     }
 
                     if (raw?.hasOwnProperty("rows")) {
-                        let records = []
+                        const records = []
                         for (let i = 0; i < raw.rows.length; i++) {
                             records.push(raw.rows.item(i))
                         }
