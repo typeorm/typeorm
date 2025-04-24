@@ -47,6 +47,10 @@ describe("github issues > #11425 Add support for TypedArray in FindOptionsSelect
                 expect(loadedWithSelect).to.exist
                 expect(loadedWithSelect!.BufferData).to.exist
                 expect(loadedWithSelect!.Uint8ArrayData).to.exist
+                expect(loadedWithSelect!.BufferData).to.be.instanceOf(Buffer)
+                expect(loadedWithSelect!.Uint8ArrayData).to.be.instanceOf(
+                    Uint8Array,
+                )
 
                 const loadedUint8Buffer = Buffer.from(
                     loadedWithSelect!.Uint8ArrayData.buffer,
