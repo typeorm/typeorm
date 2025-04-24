@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 // if bug persists, will throw error when creating testing connection, won't get to the test
 
-describe.only("github issues > #9600 if set closure-table primary key unsigned, it occurs FK error", () => {
+describe("github issues > #9600 if set closure-table primary key unsigned, it occurs FK error", () => {
     let dataSources: DataSource[]
     before(
         async () =>
