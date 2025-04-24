@@ -27,7 +27,11 @@ describe("github issues > #9600 if set closure-table primary key unsigned, it oc
     it("should create closure columns unsigned", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                expect(FooEntity).to.exist
+                const fooMetadata = dataSource.entityMetadatas.find(
+                    (el) => el.tableName === "foo",
+                )!
+
+                expect(fooMetadata).to.exist
 
                 const fooClosureMetadata = dataSource.entityMetadatas.find(
                     (el) => el.tableName === "foo_closure",
