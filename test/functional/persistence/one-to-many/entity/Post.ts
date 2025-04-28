@@ -9,7 +9,7 @@ export class Post {
     @PrimaryColumn()
     id: number
 
-    @OneToMany((type) => Category, (category) => category.post)
+    @OneToMany(() => Category, (category) => category.post)
     categories: Category[] | null
 
     @Column()

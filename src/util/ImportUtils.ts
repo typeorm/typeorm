@@ -1,4 +1,4 @@
-import fs from "fs"
+import fs from "fs/promises"
 import path from "path"
 import { pathToFileURL } from "url"
 
@@ -39,45 +39,31 @@ export async function importOrRequireFile(
     return tryToRequire()
 }
 
-function getNearestPackageJson(filePath: string): Promise<object | null> {
-    return new Promise((accept) => {
-        let currentPath = filePath
+async function getNearestPackageJson(filePath: string): Promise<object | null> {
+    let currentPath = filePath
 
-        function searchPackageJson() {
-            const nextPath = path.dirname(currentPath)
+    while (currentPath !== path.dirname(currentPath)) {
+        currentPath = path.dirname(currentPath)
+        const potentialPackageJson = path.join(currentPath, "package.json")
 
-            if (currentPath === nextPath)
-                // the top of the file tree is reached
-                accept(null)
-            else {
-                currentPath = nextPath
-                const potentialPackageJson = path.join(
-                    currentPath,
-                    "package.json",
-                )
-
-                fs.stat(potentialPackageJson, (err, stats) => {
-                    if (err != null) searchPackageJson()
-                    else if (stats.isFile()) {
-                        fs.readFile(
-                            potentialPackageJson,
-                            "utf8",
-                            (err, data) => {
-                                if (err != null) accept(null)
-                                else {
-                                    try {
-                                        accept(JSON.parse(data))
-                                    } catch (err) {
-                                        accept(null)
-                                    }
-                                }
-                            },
-                        )
-                    } else searchPackageJson()
-                })
+        try {
+            const stats = await fs.stat(potentialPackageJson)
+            if (!stats.isFile()) {
+                continue
             }
-        }
 
-        searchPackageJson()
-    })
+            try {
+                return JSON.parse(
+                    await fs.readFile(potentialPackageJson, "utf8"),
+                )
+            } catch {
+                return null
+            }
+        } catch {
+            continue
+        }
+    }
+
+    // the top of the file tree is reached
+    return null
 }

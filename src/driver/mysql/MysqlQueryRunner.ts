@@ -119,7 +119,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw err
         }
         if (this.transactionDepth === 0) {
-            this.transactionDepth += 1
             if (isolationLevel) {
                 await this.query(
                     "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
@@ -127,9 +126,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
             await this.query("START TRANSACTION")
         } else {
-            this.transactionDepth += 1
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
         }
+        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -144,15 +143,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
-            this.transactionDepth -= 1
             await this.query("COMMIT")
             this.isTransactionActive = false
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -167,15 +165,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
-            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.isTransactionActive = false
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -202,16 +199,23 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     query,
                     parameters,
                 )
-
-                const queryStartTime = +new Date()
+                const enableQueryTimeout =
+                    this.driver.options.enableQueryTimeout
+                const maxQueryExecutionTime =
+                    this.driver.options.maxQueryExecutionTime
+                const queryPayload =
+                    enableQueryTimeout && maxQueryExecutionTime
+                        ? { sql: query, timeout: maxQueryExecutionTime }
+                        : query
+                const queryStartTime = Date.now()
                 databaseConnection.query(
-                    query,
+                    queryPayload,
                     parameters,
                     async (err: any, raw: any) => {
                         // log slow queries if maxQueryExecution time is set
                         const maxQueryExecutionTime =
                             this.driver.options.maxQueryExecutionTime
-                        const queryEndTime = +new Date()
+                        const queryEndTime = Date.now()
                         const queryExecutionTime = queryEndTime - queryStartTime
 
                         if (
@@ -2558,7 +2562,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         ])
 
         const isMariaDb = this.driver.options.type === "mariadb"
-        const dbVersion = await this.getVersion()
+        const dbVersion = this.driver.version
 
         // create tables for loaded tables
         return Promise.all(
@@ -3203,7 +3207,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         table: Table,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(
@@ -3369,9 +3373,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         return c
     }
 
-    protected async getVersion(): Promise<string> {
-        const result = await this.query(`SELECT VERSION() AS \`version\``)
-        return result[0]["version"]
+    async getVersion(): Promise<string> {
+        const result: [{ version: string }] = await this.query(
+            `SELECT VERSION() AS \`version\``,
+        )
+
+        // MariaDB: https://mariadb.com/kb/en/version/
+        // - "10.2.27-MariaDB-10.2.27+maria~jessie-log"
+        // MySQL: https://dev.mysql.com/doc/refman/8.4/en/information-functions.html#function_version
+        // - "8.4.3"
+        // - "8.4.4-standard"
+        const versionString = result[0].version
+
+        return versionString.replace(/^([\d.]+).*$/, "$1")
     }
 
     /**

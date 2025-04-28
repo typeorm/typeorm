@@ -224,14 +224,18 @@ await repository.delete([1, 2, 3])
 await repository.delete({ firstName: "Timber" })
 ```
 
--   `softDelete` and `restore` - Soft deleting and restoring a row by id
+-   `softDelete` and `restore` - Soft deleting and restoring a row by id, ids, or given conditions:
 
 ```typescript
 const repository = dataSource.getRepository(Entity)
-// Delete a entity
+// Soft delete an entity
 await repository.softDelete(1)
-// And You can restore it using restore;
+// And you can restore it using restore;
 await repository.restore(1)
+// Soft delete multiple entities
+await repository.softDelete([1, 2, 3])
+// Or soft delete by other attribute
+await repository.softDelete({ firstName: "Jake" })
 ```
 
 -   `softRemove` and `recover` - This is alternative to `softDelete` and `restore`.
@@ -391,6 +395,41 @@ const timber = await repository.findOneByOrFail({ firstName: "Timber" })
 
 ```typescript
 const rawData = await repository.query(`SELECT * FROM USERS`)
+
+// You can also use parameters to avoid SQL injection
+// The syntax differs between the drivers
+
+// aurora-mysql, better-sqlite3, capacitor, cordova, 
+// expo, mariadb, mysql, nativescript, react-native, 
+// sap, sqlite, sqljs
+const rawData = await repository.query(
+    'SELECT * FROM USERS WHERE name = ? and age = ?',
+    [ 'John', 24 ]
+)
+
+// aurora-postgres, cockroachdb, postgres
+const rawData = await repository.query(
+    'SELECT * FROM USERS WHERE name = $1 and age = $2',
+    ['John', 24]
+)
+
+// oracle
+const rawData = await repository.query(
+    'SELECT * FROM USERS WHERE name = :1 and age = :2',
+    ['John', 24]
+)
+
+// spanner
+const rawData = await repository.query(
+    'SELECT * FROM USERS WHERE name = @param0 and age = @param1',
+    [ 'John', 24 ]
+)
+
+// mssql
+const rawData = await repository.query(
+    'SELECT * FROM USERS WHERE name = @0 and age = @1',
+    [ 'John', 24 ]
+)
 ```
 
 -   `clear` - Clears all the data from the given table (truncates/drops it).
@@ -412,8 +451,7 @@ Optional `SaveOptions` can be passed as parameter for `save`.
 Example:
 
 ```typescript
-// users contains array of User Entities
-userRepository.save(users, { chunk: users.length / 1000 })
+userRepository.save(users, { chunk: 1000 })
 ```
 
 Optional `RemoveOptions` can be passed as parameter for `remove` and `delete`.
@@ -426,8 +464,7 @@ Optional `RemoveOptions` can be passed as parameter for `remove` and `delete`.
 Example:
 
 ```typescript
-// users contains array of User Entities
-userRepository.remove(users, { chunk: entities.length / 1000 })
+userRepository.remove(users, { chunk: 1000 })
 ```
 
 ## `TreeRepository` API

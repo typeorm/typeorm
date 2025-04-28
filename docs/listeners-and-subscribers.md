@@ -396,4 +396,15 @@ Excluding `listenTo`, all `EntitySubscriberInterface` methods are passed an even
 
 See each [Event's interface](https://github.com/typeorm/typeorm/tree/master/src/subscriber/event) for additional properties.
 
+Note that `event.entity` may not necessarily contain primary key(s) when `Repository.update()` is used. Only the values provided as the entity partial will be available. In order to make primary keys available in the subscribers, you can explicitly pass primary key value(s) in the partial entity object literal or use `Repository.save()`, which performs re-fetching.
+
+```typescript
+await postRepository.update(post.id, { description: "Bacon ipsum dolor amet cow" })
+
+// post.subscriber.ts
+afterUpdate(event: UpdateEvent<Post>) {
+  console.log(event.entity) // outputs { description: 'Bacon ipsum dolor amet cow' }
+}
+```
+
 **Note:** All database operations in the subscribed event listeners should be performed using the event object's `queryRunner` or `manager` instance.

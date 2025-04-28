@@ -207,7 +207,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 parameters,
             )
 
-            const queryStartTime = +new Date()
+            const queryStartTime = Date.now()
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
 
             if (parameters?.some(Array.isArray)) {
@@ -232,7 +232,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.connection.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
@@ -386,10 +386,26 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Returns current database.
      */
     async getCurrentDatabase(): Promise<string> {
-        const currentDBQuery = await this.query(
-            `SELECT "VALUE" AS "db_name" FROM "SYS"."M_SYSTEM_OVERVIEW" WHERE "SECTION" = 'System' and "NAME" = 'Instance ID'`,
+        const currentDBQuery: [{ dbName: string }] = await this.query(
+            `SELECT "DATABASE_NAME" AS "dbName" FROM "SYS"."M_DATABASE"`,
         )
-        return currentDBQuery[0]["db_name"]
+
+        return currentDBQuery[0].dbName
+    }
+
+    /**
+     * Returns the database server version.
+     */
+    async getDatabaseAndVersion(): Promise<{
+        database: string
+        version: string
+    }> {
+        const currentDBQuery: [{ database: string; version: string }] =
+            await this.query(
+                `SELECT  "DATABASE_NAME" AS "database", "VERSION" AS "version" FROM "SYS"."M_DATABASE"`,
+            )
+
+        return currentDBQuery[0]
     }
 
     /**
@@ -404,10 +420,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Returns current schema.
      */
     async getCurrentSchema(): Promise<string> {
-        const currentSchemaQuery = await this.query(
-            `SELECT CURRENT_SCHEMA AS "schema_name" FROM "SYS"."DUMMY"`,
+        const currentSchemaQuery: [{ schemaName: string }] = await this.query(
+            `SELECT CURRENT_SCHEMA AS "schemaName" FROM "SYS"."DUMMY"`,
         )
-        return currentSchemaQuery[0]["schema_name"]
+
+        return currentSchemaQuery[0].schemaName
     }
 
     /**
@@ -420,9 +437,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT * FROM "SYS"."TABLES" WHERE "SCHEMA_NAME" = '${parsedTableName.schema}' AND "TABLE_NAME" = '${parsedTableName.tableName}'`
-        const result = await this.query(sql)
-        return result.length ? true : false
+        const sql = `SELECT COUNT(*) as "hasTable" FROM "SYS"."TABLES" WHERE "SCHEMA_NAME" = '${parsedTableName.schema}' AND "TABLE_NAME" = '${parsedTableName.tableName}'`
+        const result: [{ hasTable: number }] = await this.query(sql)
+
+        return result[0].hasTable > 0
     }
 
     /**
@@ -438,9 +456,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             parsedTableName.schema = await this.getCurrentSchema()
         }
 
-        const sql = `SELECT * FROM "SYS"."TABLE_COLUMNS" WHERE "SCHEMA_NAME" = '${parsedTableName.schema}' AND "TABLE_NAME" = '${parsedTableName.tableName}' AND "COLUMN_NAME" = '${columnName}'`
-        const result = await this.query(sql)
-        return result.length ? true : false
+        const sql = `SELECT COUNT(*) as "hasColumn" FROM "SYS"."TABLE_COLUMNS" WHERE "SCHEMA_NAME" = '${parsedTableName.schema}' AND "TABLE_NAME" = '${parsedTableName.tableName}' AND "COLUMN_NAME" = '${columnName}'`
+        const result: [{ hasColumn: number }] = await this.query(sql)
+
+        return result[0].hasColumn > 0
     }
 
     /**
@@ -659,14 +678,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         upQueries.push(
             new Query(
                 `RENAME TABLE ${this.escapePath(oldTable)} TO ${this.escapePath(
-                    newTableName,
+                    newTable,
                 )}`,
             ),
         )
         downQueries.push(
             new Query(
                 `RENAME TABLE ${this.escapePath(newTable)} TO ${this.escapePath(
-                    oldTableName,
+                    oldTable,
                 )}`,
             ),
         )
@@ -2769,12 +2788,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                             if (dbColumn["COMMENTS"]) {
                                 tableColumn.comment = dbColumn["COMMENTS"]
                             }
-                            if (dbColumn["character_set_name"])
-                                tableColumn.charset =
-                                    dbColumn["character_set_name"]
-                            if (dbColumn["collation_name"])
-                                tableColumn.collation =
-                                    dbColumn["collation_name"]
                             return tableColumn
                         }),
                 )
@@ -3134,7 +3147,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (index.isUnique) {
             indexType += "UNIQUE "
         }
-        if (index.isFulltext) {
+        if (index.isFulltext && this.driver.isFullTextColumnTypeSupported()) {
             indexType += "FULLTEXT "
         }
 
@@ -3152,7 +3165,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         table: Table,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         const parsedTableName = this.driver.parseTableName(table)
@@ -3330,8 +3343,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     ) {
         let c =
             `"${column.name}" ` + this.connection.driver.createFullType(column)
-        if (column.charset) c += " CHARACTER SET " + column.charset
-        if (column.collation) c += " COLLATE " + column.collation
         if (column.default !== undefined && column.default !== null) {
             c += " DEFAULT " + column.default
         } else if (explicitDefault) {

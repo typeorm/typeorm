@@ -19,7 +19,7 @@ export class Post extends BaseEntity {
     token: string
 
     @Column("simple-json", { default: "{}" })
-    values: Object
+    values: object
 
     @CreateDateColumn()
     createdAt: Date

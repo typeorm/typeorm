@@ -85,6 +85,20 @@ export const PersonSchema = new EntitySchema({
             type: Number,
             nullable: false,
         },
+        countryCode: {
+            type: String,
+            length: 2,
+            foreignKey: {
+                target: "countries", // CountryEntity
+                inverseSide: "code",
+            },
+        },
+        cityId: {
+            type: Number,
+            foreignKey: {
+                target: "cities", // CityEntity
+            },
+        },
     },
     checks: [
         { expression: `"firstName" <> 'John' AND "lastName" <> 'Doe'` },
@@ -101,6 +115,13 @@ export const PersonSchema = new EntitySchema({
         {
             name: "UNIQUE_TEST",
             columns: ["firstName", "lastName"],
+        },
+    ],
+    foreignKeys: [
+        {
+            target: "cities", // CityEntity
+            columnNames: ["cityId", "countryCode"],
+            referencedColumnNames: ["id", "countryCode"],
         },
     ],
 })

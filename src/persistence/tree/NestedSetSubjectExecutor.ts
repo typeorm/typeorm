@@ -251,7 +251,7 @@ export class NestedSetSubjectExecutor {
             metadata.nestedSetRightColumn!.databaseName,
         )
 
-        let entitiesIds: ObjectLiteral[] = []
+        const entitiesIds: ObjectLiteral[] = []
         for (const subject of subjects) {
             const entityId = metadata.getEntityIdMap(subject.entity)
 
@@ -260,7 +260,7 @@ export class NestedSetSubjectExecutor {
             }
         }
 
-        let entitiesNs = await this.getNestedSetIds(metadata, entitiesIds)
+        const entitiesNs = await this.getNestedSetIds(metadata, entitiesIds)
 
         for (const entity of entitiesNs) {
             const treeSize = entity.right - entity.left + 1

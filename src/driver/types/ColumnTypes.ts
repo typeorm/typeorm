@@ -188,6 +188,7 @@ export type SimpleColumnType =
     | "inet4" // mariadb
     | "inet6" // mariadb
     | "macaddr" // postgres
+    | "macaddr8" // postgres
     | "bit" // postgres, mssql
     | "bit varying" // postgres
     | "varbit" // postgres

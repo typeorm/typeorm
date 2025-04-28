@@ -13,8 +13,14 @@ export class TestMigration1610975184784 implements MigrationInterface {
     }
 
 }`,
-    javascript: `const { MigrationInterface, QueryRunner } = require("typeorm");
+    javascript: `/**
+ * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ */
 
+/**
+ * @class
+ * @implements {MigrationInterface}
+ */
 module.exports = class TestMigration1610975184784 {
     name = 'TestMigration1610975184784'
 
