@@ -3218,10 +3218,15 @@ export class PostgresQueryRunner
                       })
                       .join(" OR ")
 
+        // Postgres 15 introduced index nulls not distinct, previous versions do not support it.
+        const indNullsNotDistinctCondition = DriverUtils.isReleaseVersionOrGreater(this.driver, "15")
+            ? `CASE "ix"."indisnullsnotdistinct" WHEN 't' THEN 'TRUE' ELSE 'FALSE' END AS "is_nulls_not_distinct"`
+            : "'FALSE' AS is_nulls_not_distinct"
+
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", ` +
-            `CASE "ix"."indnullsnotdistinct" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_nulls_not_distinct", ` +
+            `${indNullsNotDistinctCondition}, ` +
             `pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
             `"types"."typname" AS "type_name" ` +
             `FROM "pg_class" "t" ` +
@@ -3374,10 +3379,15 @@ export class PostgresQueryRunner
             `LEFT JOIN "pg_attribute" "a" ON "a"."attrelid" = "cnst"."conrelid" AND "a"."attnum" = ANY ("cnst"."conkey") ` +
             `WHERE "t"."relkind" IN ('r', 'p') AND (${constraintsCondition})`
 
+        // Postgres 15 introduced index nulls not distinct, previous versions do not support it.
+        const indNullsNotDistinctCondition = DriverUtils.isReleaseVersionOrGreater(this.driver, "15")
+            ? `CASE "ix"."indisnullsnotdistinct" WHEN 't' THEN 'TRUE' ELSE 'FALSE' END AS "is_nulls_not_distinct"`
+            : "'FALSE' AS is_nulls_not_distinct"
+
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", ` +
-            `CASE "ix"."indnullsnotdistinct" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_nulls_not_distinct", ` +
+            `${indNullsNotDistinctCondition}, ` +
             `pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
             `"types"."typname" AS "type_name", "am"."amname" AS "index_type" ` +
             `FROM "pg_class" "t" ` +
