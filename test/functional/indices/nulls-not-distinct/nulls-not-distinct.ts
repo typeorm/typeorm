@@ -13,7 +13,7 @@ import {
     IndexEntityNullsDistinct,
 } from "./entity/IndexEntity"
 
-describe("github issues > #9827 Support PostgreSQL 15 UNIQUE NULLS NOT DISTINCT", () => {
+describe("indices > nulls not distinct", () => {
     let connections: DataSource[]
     before(
         async () =>
@@ -53,7 +53,7 @@ describe("github issues > #9827 Support PostgreSQL 15 UNIQUE NULLS NOT DISTINCT"
             ))
     })
 
-    describe("indexes", () => {
+    describe("indices", () => {
         it("should create a unique index with nulls not distinct", () =>
             Promise.all(
                 connections.map(async (connection) => {
