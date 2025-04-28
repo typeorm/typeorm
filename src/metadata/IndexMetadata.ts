@@ -29,7 +29,7 @@ export class IndexMetadata {
     isUnique: boolean = false
 
     /**
-     * Indicates if column handle nulls values as distinct.
+     * Indicates if column handle null values as distinct.
      */
     isNullsNotDistinct: boolean = false
 

@@ -52,7 +52,7 @@ export interface TableColumnOptions {
     isUnique?: boolean
 
     /**
-     * Indicates if column handle nulls values as distinct.
+     * Indicates if column handle null values as distinct.
      */
     isNullsNotDistinct?: boolean
 

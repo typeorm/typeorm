@@ -23,7 +23,7 @@ export interface TableUniqueOptions {
     deferrable?: string
 
     /**
-     * Indicates if column handle nulls values as distinct.
+     * Indicates if column handle null values as distinct.
      */
     nullsNotDistinct?: boolean
 }
