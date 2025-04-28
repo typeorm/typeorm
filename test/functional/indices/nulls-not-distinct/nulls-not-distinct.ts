@@ -56,11 +56,11 @@ describe("github issues > #9827 Support PostgreSQL 15 UNIQUE NULLS NOT DISTINCT"
     describe("indexes", () => {
         it("should create a unique index with nulls not distinct", () =>
             Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
-                const table = await queryRunner.getTable(
-                    "index_entity_nulls_not_distinct",
-                )
+                connections.map(async (connection) => {
+                    const queryRunner = connection.createQueryRunner()
+                    const table = await queryRunner.getTable(
+                        "index_entity_nulls_not_distinct",
+                    )
                     table?.indices[0].isNullsNotDistinct?.should.be.equal(true)
                 }),
             ))
