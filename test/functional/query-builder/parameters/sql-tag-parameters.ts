@@ -8,7 +8,7 @@ import {
 import { expect } from "chai"
 import { DataSource } from "../../../../src"
 
-describe.only("query builder > sql tag parameters", () => {
+describe("query builder > sql tag parameters", () => {
     let connections: DataSource[]
     before(
         async () =>
