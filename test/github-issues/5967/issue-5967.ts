@@ -91,6 +91,39 @@ describe("github issues > #5967 @afterUpdate always says array/json field update
             }),
         ))
 
+    it("should not update a date array column if the only change was a normalization one", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const valueBefore = [new Date("2023-01-01:00:00:00")]
+                const valueAfter = [new Date("2023-01-01:01:00:00")]
+
+                const repository = dataSource.getRepository(User)
+
+                const logger = dataSource.logger as MemoryLogger
+                logger.clear()
+
+                const user = await repository.save({
+                    dates: valueBefore,
+                })
+
+                const insertQueries = logger.queries.filter((q) =>
+                    q.startsWith("INSERT"),
+                )
+                expect(insertQueries).to.have.length(1)
+                logger.clear()
+
+                await repository.save({
+                    id: user.id,
+                    dates: valueAfter,
+                })
+
+                const updateQueries = logger.queries.filter((q) =>
+                    q.startsWith("UPDATE"),
+                )
+                expect(updateQueries).to.have.length(0)
+            }),
+        ))
+
     it("should update and array column if there was a change", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
