@@ -21,7 +21,7 @@ export class Counters {
     @Column(() => Subcounters, { prefix: "subcnt" })
     subcounters: Subcounters
 
-    @ManyToOne((type) => User)
+    @ManyToOne(() => User)
     @JoinColumn()
     likedUser: User
 }

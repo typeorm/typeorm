@@ -206,7 +206,7 @@ export class MongoRepository<
     aggregate<R = any>(
         pipeline: ObjectLiteral[],
         options?: AggregateOptions,
-    ): AggregationCursor<Entity> {
+    ): AggregationCursor<R> {
         return this.manager.aggregate<R>(
             this.metadata.target,
             pipeline,

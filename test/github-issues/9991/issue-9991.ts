@@ -36,7 +36,7 @@ describe("github issues > #9991", () => {
         await Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
-                let table = await queryRunner.getTable("example")
+                const table = await queryRunner.getTable("example")
 
                 await queryRunner.changeTableComment(
                     table!,

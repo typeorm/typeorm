@@ -1,11 +1,12 @@
+import { expect } from "chai"
 import "reflect-metadata"
+
 import { DataSource, Repository } from "../../../../../src/index"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { expect } from "chai"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 
@@ -48,7 +49,7 @@ describe("persistence > orphanage > delete", () => {
             )
 
             const categoryToInsert = await categoryRepository.save(
-                new Category(),
+                new Category("all-posts"),
             )
             categoryToInsert.posts = [new Post(), new Post()]
 

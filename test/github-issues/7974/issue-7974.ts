@@ -23,29 +23,29 @@ describe("github issues > #7974 Adding relations option to findTrees()", () => {
 
     beforeEach(async () => {
         await reloadTestingDatabases(connections)
-        for (let connection of connections) {
-            let categoryRepo = connection.getRepository(Category)
-            let siteRepo = connection.getRepository(Site)
+        for (const connection of connections) {
+            const categoryRepo = connection.getRepository(Category)
+            const siteRepo = connection.getRepository(Site)
 
-            let c1: Category = new Category()
+            const c1: Category = new Category()
             c1.title = "Category 1"
             c1.parentCategory = null
             c1.childCategories = []
             c1.sites = []
 
-            let c2: Category = new Category()
+            const c2: Category = new Category()
             c2.title = "Category 2"
             c2.parentCategory = null
             c2.childCategories = []
             c2.sites = []
 
-            let c3: Category = new Category()
+            const c3: Category = new Category()
             c3.title = "Category 1.1"
             c3.parentCategory = c1
             c3.childCategories = []
             c3.sites = []
 
-            let c4: Category = new Category()
+            const c4: Category = new Category()
             c4.title = "Category 1.1.1"
             c4.parentCategory = c3
             c4.childCategories = []
@@ -54,23 +54,23 @@ describe("github issues > #7974 Adding relations option to findTrees()", () => {
             c1.childCategories = [c3]
             c3.childCategories = [c4]
 
-            let s1: Site = new Site()
+            const s1: Site = new Site()
             s1.title = "Site of Category 1"
             s1.parentCategory = c1
 
-            let s2: Site = new Site()
+            const s2: Site = new Site()
             s2.title = "Site of Category 1"
             s2.parentCategory = c1
 
-            let s3: Site = new Site()
+            const s3: Site = new Site()
             s3.title = "Site of Category 1.1"
             s3.parentCategory = c3
 
-            let s4: Site = new Site()
+            const s4: Site = new Site()
             s4.title = "Site of Category 1.1"
             s4.parentCategory = c3
 
-            let s5: Site = new Site()
+            const s5: Site = new Site()
             s5.title = "Site of Category 1.1.1"
             s5.parentCategory = c4
 
@@ -101,7 +101,7 @@ describe("github issues > #7974 Adding relations option to findTrees()", () => {
     it("should return tree without sites relations", async () =>
         await Promise.all(
             connections.map(async (connection) => {
-                let result = await connection
+                const result = await connection
                     .getTreeRepository(Category)
                     .findTrees()
 
@@ -121,7 +121,7 @@ describe("github issues > #7974 Adding relations option to findTrees()", () => {
     it("should return tree with sites relations", async () =>
         await Promise.all(
             connections.map(async (connection) => {
-                let result = await connection
+                const result = await connection
                     .getTreeRepository(Category)
                     .findTrees({ relations: ["sites"] })
 

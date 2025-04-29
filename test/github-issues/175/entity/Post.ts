@@ -18,6 +18,6 @@ export class Post {
     @JoinTable()
     categories: Category[]
 
-    @OneToMany((type) => Category, (category) => category.post)
+    @OneToMany(() => Category, (category) => category.post)
     secondaryCategories: Category[]
 }
