@@ -1,6 +1,6 @@
 # SQL Tag
 
-TypeORM provides a convenient way to write SQL queries using template literals with automatic parameter handling based on your database type. This feature helps prevent SQL injection while making your queries more readable. Behind the scenes, the SQL tag is implemented as a wrapper around the `.query` method, providing a more developer-friendly interface while maintaining the same underlying functionality.
+TypeORM provides a way to write SQL queries using template literals with automatic parameter handling based on your database type. This feature helps prevent SQL injection while making queries more readable. The SQL tag is implemented as a wrapper around the `.query` method, providing an alternative interface while maintaining the same underlying functionality.
 
 ## Basic Usage
 
@@ -54,15 +54,15 @@ const users = await dataSource.sql`
 `
 ```
 
-## Benefits
+## Features
 
-- **SQL Injection Prevention**: All parameters are properly escaped.
-- **Database Agnostic**: Parameter formatting is handled automatically based on your database type.
-- **Readable Queries**: Template literals make queries more readable than traditional parameter arrays.
+- **SQL Injection Prevention**: Parameters are properly escaped
+- **Database Agnostic**: Parameter formatting is handled based on your database type
+- **Readable Queries**: Template literals can make queries more readable than parameter arrays
 
 ## Comparison with Query Method
 
-While the traditional `query` method requires you to handle parameter placeholders manually:
+The traditional `query` method requires manual parameter placeholder handling:
 
 ```typescript
 // Traditional query method
@@ -71,8 +71,8 @@ await dataSource.query(
     ["John", 30]
 )
 
-// SQL tag is more intuitive
+// SQL tag alternative
 await dataSource.sql`SELECT * FROM users WHERE name = ${"John"} AND age > ${30}`
 ```
 
-The SQL tag handles this automatically, making your code more maintainable and less error-prone.
+The SQL tag handles parameter formatting automatically, which can reduce potential errors.
