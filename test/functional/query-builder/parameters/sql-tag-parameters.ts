@@ -27,7 +27,8 @@ describe("query builder > sql tag parameters", () => {
 
                 await repo.save({ id: "basic" })
 
-                const [example] = await connection.sql`SELECT * FROM example WHERE id = ${"basic"}`
+                const [example] =
+                    await connection.sql`SELECT * FROM example WHERE id = ${"basic"}`
 
                 expect(example?.id).to.be.equal("basic")
             }),
@@ -67,7 +68,8 @@ describe("query builder > sql tag parameters", () => {
 
                 const parentId = "parent1"
                 const minValue = 150
-                const examples = await connection.sql`WITH RECURSIVE children AS (
+                const examples =
+                    await connection.sql`WITH RECURSIVE children AS (
                     SELECT * FROM example WHERE id = ${parentId}
                     UNION ALL
                     SELECT e.* FROM example e
@@ -117,7 +119,8 @@ describe("query builder > sql tag parameters", () => {
                     { id: "null2", value: 10 },
                 ])
 
-                const examples = await connection.sql`SELECT * FROM example WHERE value IS ${null}`
+                const examples =
+                    await connection.sql`SELECT * FROM example WHERE value IS ${null}`
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(1)
@@ -135,7 +138,8 @@ describe("query builder > sql tag parameters", () => {
                     { id: "false1", active: false },
                 ])
 
-                const examples = await connection.sql`SELECT * FROM example WHERE active = ${true}`
+                const examples =
+                    await connection.sql`SELECT * FROM example WHERE active = ${true}`
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(1)
@@ -156,7 +160,8 @@ describe("query builder > sql tag parameters", () => {
                     { id: "yesterday", createdAt: yesterday },
                 ])
 
-                const examples = await connection.sql`SELECT * FROM example WHERE createdAt > ${yesterday}`
+                const examples =
+                    await connection.sql`SELECT * FROM example WHERE createdAt > ${yesterday}`
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(1)

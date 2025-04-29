@@ -13,7 +13,9 @@ describe("SqlTagUtils", () => {
             ]
 
             for (const type of postgresTypes) {
-                expect(SqlTagUtils.getParameterStrategy(type)).to.equal("dollar")
+                expect(SqlTagUtils.getParameterStrategy(type)).to.equal(
+                    "dollar",
+                )
             }
         })
 
@@ -25,7 +27,9 @@ describe("SqlTagUtils", () => {
             ]
 
             for (const type of mysqlTypes) {
-                expect(SqlTagUtils.getParameterStrategy(type)).to.equal("question-mark")
+                expect(SqlTagUtils.getParameterStrategy(type)).to.equal(
+                    "question-mark",
+                )
             }
         })
 
@@ -38,13 +42,19 @@ describe("SqlTagUtils", () => {
         })
 
         it("should return 'unknown' for unsupported database types", () => {
-            expect(SqlTagUtils.getParameterStrategy("unsupported" as DatabaseType)).to.equal("unknown")
+            expect(
+                SqlTagUtils.getParameterStrategy("unsupported" as DatabaseType),
+            ).to.equal("unknown")
         })
     })
 
     describe("buildSqlTag", () => {
-        const createTemplateStrings = (strings: string[]): TemplateStringsArray => {
-            const result = Object.freeze([...strings]) as unknown as TemplateStringsArray
+        const createTemplateStrings = (
+            strings: string[],
+        ): TemplateStringsArray => {
+            const result = Object.freeze([
+                ...strings,
+            ]) as unknown as TemplateStringsArray
             Object.defineProperty(result, "raw", {
                 value: Object.freeze([...strings]),
                 writable: false,
@@ -57,15 +67,24 @@ describe("SqlTagUtils", () => {
             {
                 name: "PostgreSQL style parameters",
                 databaseType: "postgres" as DatabaseType,
-                strings: createTemplateStrings(["SELECT * FROM table WHERE id = ", " AND name = ", ""]),
+                strings: createTemplateStrings([
+                    "SELECT * FROM table WHERE id = ",
+                    " AND name = ",
+                    "",
+                ]),
                 expressions: [1, "test"],
-                expectedQuery: "SELECT * FROM table WHERE id = $1 AND name = $2",
+                expectedQuery:
+                    "SELECT * FROM table WHERE id = $1 AND name = $2",
                 expectedVariables: [1, "test"],
             },
             {
                 name: "MySQL style parameters",
                 databaseType: "mysql" as DatabaseType,
-                strings: createTemplateStrings(["SELECT * FROM table WHERE id = ", " AND name = ", ""]),
+                strings: createTemplateStrings([
+                    "SELECT * FROM table WHERE id = ",
+                    " AND name = ",
+                    "",
+                ]),
                 expressions: [1, "test"],
                 expectedQuery: "SELECT * FROM table WHERE id = ? AND name = ?",
                 expectedVariables: [1, "test"],
@@ -73,17 +92,27 @@ describe("SqlTagUtils", () => {
             {
                 name: "Oracle style parameters",
                 databaseType: "oracle" as DatabaseType,
-                strings: createTemplateStrings(["SELECT * FROM table WHERE id = ", " AND name = ", ""]),
+                strings: createTemplateStrings([
+                    "SELECT * FROM table WHERE id = ",
+                    " AND name = ",
+                    "",
+                ]),
                 expressions: [1, "test"],
-                expectedQuery: "SELECT * FROM table WHERE id = :1 AND name = :2",
+                expectedQuery:
+                    "SELECT * FROM table WHERE id = :1 AND name = :2",
                 expectedVariables: [1, "test"],
             },
             {
                 name: "MSSQL style parameters",
                 databaseType: "mssql" as DatabaseType,
-                strings: createTemplateStrings(["SELECT * FROM table WHERE id = ", " AND name = ", ""]),
+                strings: createTemplateStrings([
+                    "SELECT * FROM table WHERE id = ",
+                    " AND name = ",
+                    "",
+                ]),
                 expressions: [1, "test"],
-                expectedQuery: "SELECT * FROM table WHERE id = @1 AND name = @2",
+                expectedQuery:
+                    "SELECT * FROM table WHERE id = @1 AND name = @2",
                 expectedVariables: [1, "test"],
             },
             {
@@ -104,13 +133,17 @@ describe("SqlTagUtils", () => {
                     "",
                 ]),
                 expressions: [[1, 2, 3], "%test%", true],
-                expectedQuery: "SELECT * FROM table WHERE id IN ($1) AND name LIKE $2 AND active = $3",
+                expectedQuery:
+                    "SELECT * FROM table WHERE id IN ($1) AND name LIKE $2 AND active = $3",
                 expectedVariables: [[1, 2, 3], "%test%", true],
             },
             {
                 name: "Query with NULL values",
                 databaseType: "postgres" as DatabaseType,
-                strings: createTemplateStrings(["SELECT * FROM table WHERE value IS ", ""]),
+                strings: createTemplateStrings([
+                    "SELECT * FROM table WHERE value IS ",
+                    "",
+                ]),
                 expressions: [null],
                 expectedQuery: "SELECT * FROM table WHERE value IS $1",
                 expectedVariables: [null],
@@ -118,7 +151,10 @@ describe("SqlTagUtils", () => {
             {
                 name: "Query with date values",
                 databaseType: "postgres" as DatabaseType,
-                strings: createTemplateStrings(["SELECT * FROM table WHERE created_at > ", ""]),
+                strings: createTemplateStrings([
+                    "SELECT * FROM table WHERE created_at > ",
+                    "",
+                ]),
                 expressions: [new Date("2023-01-01")],
                 expectedQuery: "SELECT * FROM table WHERE created_at > $1",
                 expectedVariables: [new Date("2023-01-01")],
@@ -134,7 +170,9 @@ describe("SqlTagUtils", () => {
                 })
 
                 expect(result.query).to.equal(testCase.expectedQuery)
-                expect(result.variables).to.deep.equal(testCase.expectedVariables)
+                expect(result.variables).to.deep.equal(
+                    testCase.expectedVariables,
+                )
             })
         }
 
@@ -142,7 +180,10 @@ describe("SqlTagUtils", () => {
             expect(() =>
                 SqlTagUtils.buildSqlTag({
                     databaseType: "unsupported" as DatabaseType,
-                    strings: createTemplateStrings(["SELECT * FROM table WHERE id = ", ""]),
+                    strings: createTemplateStrings([
+                        "SELECT * FROM table WHERE id = ",
+                        "",
+                    ]),
                     expressions: [1],
                 }),
             ).to.throw("This database engine does not support parameters")
