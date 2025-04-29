@@ -14,7 +14,14 @@ describe("query builder > sql tag parameters", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [Example],
-                enabledDrivers: ["sqlite", "postgres", "mysql", "mariadb", "oracle", "mssql"],
+                enabledDrivers: [
+                    "sqlite",
+                    "postgres",
+                    "mysql",
+                    "mariadb",
+                    "oracle",
+                    "mssql",
+                ],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
