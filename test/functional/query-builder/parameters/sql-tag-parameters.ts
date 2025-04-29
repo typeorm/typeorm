@@ -8,13 +8,13 @@ import {
 import { expect } from "chai"
 import { DataSource } from "../../../../src"
 
-describe("query builder > sql tag parameters", () => {
+describe.only("query builder > sql tag parameters", () => {
     let connections: DataSource[]
     before(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Example],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["sqlite", "postgres", "mysql", "mariadb", "oracle", "mssql"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
