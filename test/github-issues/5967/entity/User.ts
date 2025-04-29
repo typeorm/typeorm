@@ -11,4 +11,10 @@ export class User {
         default: "{}",
     })
     roles: number[]
+
+    @Column("date", {
+        array: true,
+        default: "{}",
+    })
+    dates: Date[]
 }
