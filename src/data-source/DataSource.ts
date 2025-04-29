@@ -41,6 +41,7 @@ import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
+import { SqlTagUtils } from "../util/SqlTagUtils"
 
 registerQueryBuilders()
 
@@ -541,6 +542,22 @@ export class DataSource {
         } finally {
             if (!queryRunner) await usedQueryRunner.release()
         }
+    }
+
+    /**
+     * A tagged template that executes raw SQL query and returns raw database results
+     */
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
+        const { query, variables } = SqlTagUtils.buildSqlTag({
+            databaseType: this.driver.options.type,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, variables)
     }
 
     /**
