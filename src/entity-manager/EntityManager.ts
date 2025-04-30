@@ -38,7 +38,7 @@ import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
-import { SqlTagUtils } from "../util/SqlTagUtils"
+import { buildSqlTag } from "../util/SqlTagUtils"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -184,8 +184,8 @@ export class EntityManager {
         strings: TemplateStringsArray,
         ...values: unknown[]
     ): Promise<T> {
-        const { query, variables } = SqlTagUtils.buildSqlTag({
-            databaseType: this.connection.options.type,
+        const { query, variables } = buildSqlTag({
+            driver: this.connection.driver,
             strings: strings,
             expressions: values,
         })

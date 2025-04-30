@@ -41,7 +41,7 @@ import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
-import { SqlTagUtils } from "../util/SqlTagUtils"
+import { buildSqlTag } from "../util/SqlTagUtils"
 
 registerQueryBuilders()
 
@@ -551,8 +551,8 @@ export class DataSource {
         strings: TemplateStringsArray,
         ...values: unknown[]
     ): Promise<T> {
-        const { query, variables } = SqlTagUtils.buildSqlTag({
-            databaseType: this.driver.options.type,
+        const { query, variables } = buildSqlTag({
+            driver: this.driver,
             strings: strings,
             expressions: values,
         })

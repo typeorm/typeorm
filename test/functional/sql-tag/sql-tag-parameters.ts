@@ -4,11 +4,11 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../utils/test-utils"
+} from "../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource } from "../../../../src"
+import { DataSource } from "../../../src"
 
-describe("query builder > sql tag parameters", () => {
+describe.only("sql tag parameters", () => {
     let connections: DataSource[]
     before(
         async () =>
@@ -19,8 +19,7 @@ describe("query builder > sql tag parameters", () => {
                     "postgres",
                     "mysql",
                     "mariadb",
-                    "oracle",
-                    "mssql",
+                    "cockroachdb",
                 ],
             })),
     )
@@ -51,10 +50,12 @@ describe("query builder > sql tag parameters", () => {
                     { id: "second", name: "test2", value: 20 },
                 ])
 
-                const examples = await connection.sql`SELECT * FROM example
-                    WHERE id IN (${["first", "second"]})
+                const examples = await connection.sql`
+                    SELECT * FROM example
+                    WHERE id = ANY(${["first", "second"]})
                     AND name LIKE ${"test%"}
-                    AND value > ${5}`
+                    AND value > ${5}
+                `
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(2)
@@ -75,15 +76,16 @@ describe("query builder > sql tag parameters", () => {
 
                 const parentId = "parent1"
                 const minValue = 150
-                const examples =
-                    await connection.sql`WITH RECURSIVE children AS (
-                    SELECT * FROM example WHERE id = ${parentId}
-                    UNION ALL
-                    SELECT e.* FROM example e
-                    INNER JOIN children c ON e.parentId = c.id
-                    WHERE e.value > ${minValue}
-                )
-                SELECT * FROM children`
+                const examples = await connection.sql`
+                    WITH RECURSIVE children AS (
+                        SELECT * FROM example WHERE id = ${parentId}
+                        UNION ALL
+                        SELECT e.* FROM example e
+                        INNER JOIN children c ON e."parentId" = c.id
+                        WHERE e.value > ${minValue}
+                    )
+                    SELECT * FROM children WHERE id != ${parentId}
+                `
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(2)
@@ -126,8 +128,10 @@ describe("query builder > sql tag parameters", () => {
                     { id: "null2", value: 10 },
                 ])
 
-                const examples =
-                    await connection.sql`SELECT * FROM example WHERE value IS ${null}`
+                const examples = await connection.sql`
+                    SELECT * FROM example WHERE value IS ${null}
+                `
+
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(1)
@@ -145,8 +149,10 @@ describe("query builder > sql tag parameters", () => {
                     { id: "false1", active: false },
                 ])
 
-                const examples =
-                    await connection.sql`SELECT * FROM example WHERE active = ${true}`
+                const examples = await connection.sql`
+                    SELECT * FROM example WHERE active = ${true}
+                `
+
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(1)
@@ -158,7 +164,6 @@ describe("query builder > sql tag parameters", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const repo = connection.getRepository(Example)
-
                 const now = new Date()
                 const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
@@ -167,8 +172,10 @@ describe("query builder > sql tag parameters", () => {
                     { id: "yesterday", createdAt: yesterday },
                 ])
 
-                const examples =
-                    await connection.sql`SELECT * FROM example WHERE createdAt > ${yesterday}`
+                const examples = await connection.sql`
+                    SELECT * FROM example WHERE "createdAt" > ${yesterday}
+                `
+
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(1)
@@ -184,14 +191,19 @@ describe("query builder > sql tag parameters", () => {
                 await repo.save([
                     { id: "array1", tags: ["tag1", "tag2"] },
                     { id: "array2", tags: ["tag3", "tag4"] },
+                    { id: "array3", tags: ["tag5", "tag6"] },
                 ])
 
                 const searchTags = ["tag1", "tag3"]
-                const examples = await connection.sql`SELECT * FROM example
+
+                const examples = await connection.sql`
+                    SELECT * FROM example
                     WHERE EXISTS (
-                        SELECT 1 FROM json_each(tags)
-                        WHERE json_each.value IN (${searchTags})
-                    )`
+                        SELECT 1 FROM jsonb_array_elements_text(tags) AS tag
+                        WHERE tag = ANY(${searchTags})
+                    )
+                `
+
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(2)

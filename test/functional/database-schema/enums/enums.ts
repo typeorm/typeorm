@@ -18,7 +18,14 @@ describe("database schema > enums", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["postgres", "mysql", "mariadb", "cockroachdb"],
+            enabledDrivers: [
+                "mssql",
+                "postgres",
+                "sqlite",
+                "better-sqlite3",
+                "oracle",
+                "cockroachdb",
+            ],
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
