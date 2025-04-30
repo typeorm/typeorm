@@ -14,13 +14,7 @@ describe("sql tag parameters", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [Example],
-                enabledDrivers: [
-                    "sqlite",
-                    "postgres",
-                    "mysql",
-                    "mariadb",
-                    "cockroachdb",
-                ],
+                enabledDrivers: ["postgres"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
