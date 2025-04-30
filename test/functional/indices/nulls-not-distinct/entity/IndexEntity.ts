@@ -4,7 +4,7 @@ import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/Pri
 import { Index } from "../../../../../src"
 
 @Entity()
-@Index("unique_index", ["value", "other_value"], {
+@Index("unique_index_nulls_not_distinct", ["value", "other_value"], {
     unique: true,
     nullsNotDistinct: true,
 })
@@ -20,7 +20,7 @@ export class IndexEntityNullsNotDistinct {
 }
 
 @Entity()
-@Index("unique_index", ["value", "other_value"], {
+@Index("unique_index_nulls_distinct", ["value", "other_value"], {
     unique: true,
     nullsNotDistinct: false,
 })

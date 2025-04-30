@@ -25,7 +25,8 @@ export interface UniqueMetadataArgs {
     deferrable?: DeferrableType
 
     /**
-     * Indicates if column handle null values as distinct.
+     * Indicates if column handles null values as distinct.
+     * Works only in PostgreSQL 15 and above.
      */
     nullsNotDistinct?: boolean
 }

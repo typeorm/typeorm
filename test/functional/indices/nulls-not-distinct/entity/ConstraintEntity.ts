@@ -4,7 +4,9 @@ import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/Pri
 import { Unique } from "../../../../../src"
 
 @Entity()
-@Unique("unique_constraint", ["value"], { nullsNotDistinct: true })
+@Unique("unique_constraint_nulls_not_distinct", ["value"], {
+    nullsNotDistinct: true,
+})
 export class ConstraintEntityNullsNotDistinct {
     @PrimaryGeneratedColumn()
     id: number
@@ -14,7 +16,9 @@ export class ConstraintEntityNullsNotDistinct {
 }
 
 @Entity()
-@Unique("unique_constraint", ["value"], { nullsNotDistinct: false })
+@Unique("unique_constraint_nulls_distinct", ["value"], {
+    nullsNotDistinct: false,
+})
 export class ConstraintEntityNullsDistinct {
     @PrimaryGeneratedColumn()
     id: number

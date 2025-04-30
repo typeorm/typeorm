@@ -1388,6 +1388,27 @@ export class PostgresDriver implements Driver {
         return false
     }
 
+    /**
+     * Returns true if the current version of Postgres supports nulls not distinct.
+     *
+     * Since this feature is only implemented in PostgreSQL 15 and above, other
+     * versions of Postgres will throw an error when using nullsNotDistinct unless
+     * throwOnUnsupported is set to false.
+     */
+    isNullsNotDistinctSupported({
+        throwOnUnsupported = true,
+    }: { throwOnUnsupported?: boolean } = {}): boolean {
+        if (VersionUtils.isGreaterOrEqual(this.version, "15")) {
+            return true
+        }
+        if (throwOnUnsupported) {
+            throw new TypeORMError(
+                "nullsNotDistinct is only supported in PostgreSQL 15 and above.",
+            )
+        }
+        return false
+    }
+
     get uuidGenerator(): string {
         return this.options.uuidExtension === "pgcrypto"
             ? "gen_random_uuid()"

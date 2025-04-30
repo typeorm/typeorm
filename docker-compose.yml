@@ -25,10 +25,10 @@ services:
 
   # postgres
   postgres:
-    # postgres + PostGIS (only). if you need additional extensions, it's
-    # probably time to create a purpose-built image with all necessary extensions.
-    # sorry, and thanks for adding support for them!
-    image: "postgis/postgis:15-3.5"
+    # mdillon/postgis is postgres + PostGIS (only). if you need additional
+    # extensions, it's probably time to create a purpose-built image with all
+    # necessary extensions. sorry, and thanks for adding support for them!
+    image: "postgis/postgis:14-3.3"
     container_name: "typeorm-postgres"
     ports:
       - "5432:5432"
