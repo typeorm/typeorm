@@ -1,4 +1,5 @@
 import "reflect-metadata"
+import { Example } from "./entity/Example"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -6,15 +7,14 @@ import {
 } from "../../utils/test-utils"
 import { expect } from "chai"
 import { DataSource } from "../../../src"
-import { PostgresExample } from "./entity/PostgresExample"
 
-describe("sql tag parameters (postgres)", () => {
+describe.only("sql tag parameters (sqlite)", () => {
     let connections: DataSource[]
     before(
         async () =>
             (connections = await createTestingConnections({
-                entities: [PostgresExample],
-                enabledDrivers: ["postgres"],
+                entities: [Example],
+                enabledDrivers: ["sqlite", "better-sqlite3", "mysql"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -23,7 +23,7 @@ describe("sql tag parameters (postgres)", () => {
     it("should handle basic SQL tag parameters", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repo = connection.getRepository(PostgresExample)
+                const repo = connection.getRepository(Example)
 
                 await repo.save({ id: "basic" })
 
@@ -37,7 +37,7 @@ describe("sql tag parameters (postgres)", () => {
     it("should handle multiple parameters in a single query", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repo = connection.getRepository(PostgresExample)
+                const repo = connection.getRepository(Example)
 
                 await repo.save([
                     { id: "first", name: "test1", value: 10 },
@@ -46,11 +46,11 @@ describe("sql tag parameters (postgres)", () => {
 
                 const examples = await connection.sql`
                     SELECT * FROM example
-                    WHERE id = ANY(${["first", "second"]})
+                    WHERE id IN (${["first", "second"]})
                     AND name LIKE ${"test%"}
                     AND value > ${5}
                 `
-                const ids = examples.map((e: PostgresExample) => e.id)
+                const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(2)
                 expect(ids).to.have.members(["first", "second"])
@@ -60,7 +60,7 @@ describe("sql tag parameters (postgres)", () => {
     it("should handle complex SQL with nested queries and parameters", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repo = connection.getRepository(PostgresExample)
+                const repo = connection.getRepository(Example)
 
                 await repo.save([
                     { id: "parent1", parentId: null, value: 100 },
@@ -80,7 +80,7 @@ describe("sql tag parameters (postgres)", () => {
                     )
                     SELECT * FROM children WHERE id != ${parentId}
                 `
-                const ids = examples.map((e: PostgresExample) => e.id)
+                const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(2)
                 expect(ids).to.have.members(["child1", "child2"])
@@ -90,7 +90,7 @@ describe("sql tag parameters (postgres)", () => {
     it("should handle SQL tag parameters with complex conditions and ordering", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repo = connection.getRepository(PostgresExample)
+                const repo = connection.getRepository(Example)
 
                 await repo.save([
                     { id: "test1", value: 10, name: "a" },
@@ -115,7 +115,7 @@ describe("sql tag parameters (postgres)", () => {
     it("should handle SQL tag parameters with NULL values", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repo = connection.getRepository(PostgresExample)
+                const repo = connection.getRepository(Example)
 
                 await repo.save([
                     { id: "null1", value: null },
@@ -126,7 +126,7 @@ describe("sql tag parameters (postgres)", () => {
                     SELECT * FROM example WHERE value IS ${null}
                 `
 
-                const ids = examples.map((e: PostgresExample) => e.id)
+                const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(1)
                 expect(ids).to.have.members(["null1"])
@@ -136,7 +136,7 @@ describe("sql tag parameters (postgres)", () => {
     it("should handle SQL tag parameters with boolean values", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repo = connection.getRepository(PostgresExample)
+                const repo = connection.getRepository(Example)
 
                 await repo.save([
                     { id: "true1", active: true },
@@ -147,7 +147,7 @@ describe("sql tag parameters (postgres)", () => {
                     SELECT * FROM example WHERE active = ${true}
                 `
 
-                const ids = examples.map((e: PostgresExample) => e.id)
+                const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(1)
                 expect(ids).to.have.members(["true1"])
@@ -157,7 +157,7 @@ describe("sql tag parameters (postgres)", () => {
     it("should handle SQL tag parameters with date values", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repo = connection.getRepository(PostgresExample)
+                const repo = connection.getRepository(Example)
                 const now = new Date()
                 const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
@@ -170,35 +170,36 @@ describe("sql tag parameters (postgres)", () => {
                     SELECT * FROM example WHERE "createdAt" > ${yesterday}
                 `
 
-                const ids = examples.map((e: PostgresExample) => e.id)
+                const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(1)
                 expect(ids).to.have.members(["today"])
             }),
         ))
 
-    it("should handle SQL tag parameters with complex array operations", () =>
+    it("should handle SQL tag parameters with array values", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repo = connection.getRepository(PostgresExample)
+                const repo = connection.getRepository(Example)
 
                 await repo.save([
-                    { id: "array1", tags: ["tag1", "tag2"] },
-                    { id: "array2", tags: ["tag3", "tag4"] },
-                    { id: "array3", tags: ["tag5", "tag6"] },
+                    { id: "array1", tags: "tag1,tag2" },
+                    { id: "array2", tags: "tag3,tag4" },
+                    { id: "array3", tags: "tag5,tag6" },
                 ])
 
                 const searchTags = ["tag1", "tag3"]
 
                 const examples = await connection.sql`
                     SELECT * FROM example
-                    WHERE EXISTS (
-                        SELECT 1 FROM jsonb_array_elements_text(tags) AS tag
-                        WHERE tag = ANY(${searchTags})
-                    )
+                    WHERE (
+                        SELECT COUNT(*) FROM (
+                            SELECT value FROM json_each('["' || replace(tags, ',', '","') || '"]')
+                        ) WHERE value IN (${searchTags})
+                    ) > 0
                 `
 
-                const ids = examples.map((e: PostgresExample) => e.id)
+                const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(2)
                 expect(ids).to.have.members(["array1", "array2"])

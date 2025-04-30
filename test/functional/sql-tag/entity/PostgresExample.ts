@@ -1,7 +1,7 @@
 import { Entity, PrimaryColumn, Column } from "../../../../src"
 
-@Entity()
-export class Example {
+@Entity("example")
+export class PostgresExample {
     @PrimaryColumn()
     id: string
 
@@ -17,9 +17,9 @@ export class Example {
     @Column({ type: "boolean", nullable: true })
     active: boolean | null
 
-    @Column({ type: "datetime", nullable: true })
+    @Column({ type: "timestamptz", nullable: true })
     createdAt: Date | null
 
-    @Column({ type: "text", nullable: true })
-    tags: string | null
+    @Column({ type: "jsonb", nullable: true })
+    tags: any | null
 }

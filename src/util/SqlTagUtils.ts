@@ -16,6 +16,28 @@ export function buildSqlTag(params: {
             continue
         }
 
+        if (
+            ["sqlite", "better-sqlite3", "mysql"].includes(
+                params.driver.options.type,
+            ) &&
+            Array.isArray(expression)
+        ) {
+            if (expression.length === 0) {
+                query += "NULL"
+                continue
+            }
+
+            const arrayParams = expression.map((_, arrayIdx) => {
+                return params.driver.createParameter(
+                    `param_${idx}_${arrayIdx}`,
+                    arrayIdx,
+                )
+            })
+            query += arrayParams.join(", ")
+            variables.push(...expression)
+            continue
+        }
+
         query += params.driver.createParameter("param", idx)
 
         variables.push(expression)
