@@ -60,6 +60,11 @@ describe.only("sql tag parameters (sqlite)", () => {
     it("should handle complex SQL with nested queries and parameters", () =>
         Promise.all(
             connections.map(async (connection) => {
+                if (connection.options.type === "mysql") {
+                    // MySQL does not support WITH RECURSIVE in 5.x
+                    return
+                }
+
                 const repo = connection.getRepository(Example)
 
                 await repo.save([
@@ -143,8 +148,11 @@ describe.only("sql tag parameters (sqlite)", () => {
                     { id: "false1", active: false },
                 ])
 
+                const value =
+                    connection.options.type === "better-sqlite3" ? 1 : true
+
                 const examples = await connection.sql`
-                    SELECT * FROM example WHERE active = ${true}
+                    SELECT * FROM example WHERE active = ${value}
                 `
 
                 const ids = examples.map((e: Example) => e.id)
