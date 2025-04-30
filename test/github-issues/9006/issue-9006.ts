@@ -25,46 +25,51 @@ describe("github issues > #9006 Eager relations do not respect relationLoadStrat
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
+    const setupTestData = async (dataSource: DataSource) => {
+        const authorRepository = dataSource.getRepository(Author)
+        const bookRepository = dataSource.getRepository(Book)
+        const commentRepository = dataSource.getRepository(Comment)
+
+        const authorModel = await authorRepository.create({
+            name: "author",
+        })
+        const author = await authorRepository.save(authorModel)
+
+        const bookModels = await bookRepository.create([
+            {
+                title: "book1",
+                text: "text1",
+                author: [author],
+            },
+            {
+                title: "book2",
+                text: "text2",
+                author: [author],
+            },
+            {
+                title: "book3",
+                text: "text3",
+                author: [author],
+            },
+        ])
+        const books = await bookRepository.save(bookModels)
+
+        for (const book of books) {
+            for (let index = 0; index < 3; index++) {
+                const comment = await commentRepository.create({
+                    text: `${book.title}: comment${index}`,
+                    bookId: book.id,
+                    authorId: author.id,
+                })
+                await commentRepository.save(comment)
+            }
+        }
+        return { authorRepository, author }
+    }
+
     it("it should load eager relations using relationLoadStrategy as main strategy", async () => {
         for (const dataSource of dataSources) {
-            const authorRepository = dataSource.getRepository(Author)
-            const bookRepository = dataSource.getRepository(Book)
-            const commentRepository = dataSource.getRepository(Comment)
-
-            const authorModel = await authorRepository.create({
-                name: "author",
-            })
-            const author = await authorRepository.save(authorModel)
-
-            const bookModels = await bookRepository.create([
-                {
-                    title: "book1",
-                    text: "text1",
-                    author: [author],
-                },
-                {
-                    title: "book2",
-                    text: "text2",
-                    author: [author],
-                },
-                {
-                    title: "book3",
-                    text: "text3",
-                    author: [author],
-                },
-            ])
-            const books = await bookRepository.save(bookModels)
-
-            for (const book of books) {
-                for (let index = 0; index < 3; index++) {
-                    const comment = await commentRepository.create({
-                        text: `${book.title}: comment${index}`,
-                        bookId: book.id,
-                        authorId: author.id,
-                    })
-                    await commentRepository.save(comment)
-                }
-            }
+            const { authorRepository, author } = await setupTestData(dataSource)
 
             const getManySpy = await sinon.spy(
                 SelectQueryBuilder.prototype,
@@ -191,6 +196,31 @@ describe("github issues > #9006 Eager relations do not respect relationLoadStrat
             getManySpy.restore()
             getOneSpy.restore()
             getRawManySpy.restore()
+        }
+    })
+
+    it("it should respect loadEagerRelations option", async () => {
+        for (const dataSource of dataSources) {
+            const { authorRepository, author } = await setupTestData(dataSource)
+
+            const queriedAuthor = await authorRepository.findOne({
+                where: { id: author.id },
+                relations: {
+                    books: true,
+                },
+                loadEagerRelations: false,
+                relationLoadStrategy: "query",
+            })
+
+            expect(queriedAuthor).to.deep.equal({
+                id: 1,
+                name: "author",
+                books: [
+                    { id: 1, title: "book1", text: "text1" },
+                    { id: 2, title: "book2", text: "text2" },
+                    { id: 3, title: "book3", text: "text3" },
+                ],
+            })
         }
     })
 })

@@ -150,7 +150,10 @@ export class RelationLoader {
             qb.where(condition)
         }
 
-        if (qb.expressionMap.relationLoadStrategy === "query") {
+        if (
+            !queryBuilder &&
+            qb.expressionMap.relationLoadStrategy === "query"
+        ) {
             qb.concatRelationMetadata(
                 ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
             )
@@ -240,7 +243,10 @@ export class RelationLoader {
             qb.where(condition)
         }
 
-        if (qb.expressionMap.relationLoadStrategy === "query") {
+        if (
+            !queryBuilder &&
+            qb.expressionMap.relationLoadStrategy === "query"
+        ) {
             qb.concatRelationMetadata(
                 ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
             )
@@ -314,7 +320,10 @@ export class RelationLoader {
             ),
         ).setParameters(parameters)
 
-        if (qb.expressionMap.relationLoadStrategy === "query") {
+        if (
+            !queryBuilder &&
+            qb.expressionMap.relationLoadStrategy === "query"
+        ) {
             qb.concatRelationMetadata(
                 ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
             )
@@ -388,7 +397,10 @@ export class RelationLoader {
             ),
         ).setParameters(parameters)
 
-        if (qb.expressionMap.relationLoadStrategy === "query") {
+        if (
+            !queryBuilder &&
+            qb.expressionMap.relationLoadStrategy === "query"
+        ) {
             qb.concatRelationMetadata(
                 ...qb.expressionMap.mainAlias!.metadata.eagerRelations,
             )
