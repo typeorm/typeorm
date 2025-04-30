@@ -160,14 +160,16 @@ describe.only("sql tag parameters (sqlite)", () => {
                 const repo = connection.getRepository(Example)
                 const now = new Date()
                 const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+                const nowISO = now.toISOString()
+                const yesterdayISO = yesterday.toISOString()
 
                 await repo.save([
-                    { id: "today", createdAt: now },
-                    { id: "yesterday", createdAt: yesterday },
+                    { id: "today", createdAt: nowISO },
+                    { id: "yesterday", createdAt: yesterdayISO },
                 ])
 
                 const examples = await connection.sql`
-                    SELECT * FROM example WHERE "createdAt" > ${yesterday}
+                    SELECT * FROM example WHERE "createdAt" > ${yesterdayISO}
                 `
 
                 const ids = examples.map((e: Example) => e.id)
