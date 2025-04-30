@@ -10,7 +10,7 @@ import { DataSource } from "../../../src"
 
 // Helper to format date for MySQL
 function toMySQLDateString(date: Date) {
-    return date.toISOString().slice(0, 19).replace('T', ' ');
+    return date.toISOString().slice(0, 19).replace("T", " ")
 }
 
 describe("sql tag parameters (mysql)", () => {
