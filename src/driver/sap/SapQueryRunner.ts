@@ -1,10 +1,13 @@
+import { promisify } from "util"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { QueryFailedError, TypeORMError } from "../../error"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionAlreadyStartedError } from "../../error/TransactionAlreadyStartedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ColumnType } from "../types/ColumnTypes"
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryLock } from "../../query-runner/QueryLock"
+import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
@@ -16,18 +19,15 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
+import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
-import { SapDriver } from "./SapDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { QueryFailedError, TypeORMError } from "../../error"
-import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryLock } from "../../query-runner/QueryLock"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { InstanceChecker } from "../../util/InstanceChecker"
-import { promisify } from "util"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { SapDriver } from "./SapDriver"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -193,20 +193,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const release = await this.lock.acquire()
 
+        const databaseConnection = await this.connect()
+
         let statement: any
         const result = new QueryResult()
+
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
         const broadcasterResult = new BroadcasterResult()
 
         try {
-            const databaseConnection = await this.connect()
-
-            this.driver.connection.logger.logQuery(query, parameters, this)
-            this.broadcaster.broadcastBeforeQueryEvent(
-                broadcasterResult,
-                query,
-                parameters,
-            )
-
             const queryStartTime = Date.now()
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
 
