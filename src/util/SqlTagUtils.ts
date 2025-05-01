@@ -1,49 +1,61 @@
 import { Driver } from "../driver/Driver"
 
-export function buildSqlTag(params: {
+interface BuildSqlTagParams {
     driver: Driver
     strings: TemplateStringsArray
     expressions: unknown[]
-}): { query: string; variables: unknown[] } {
-    let query = ""
-    const variables: unknown[] = []
+}
 
-    for (const [idx, expression] of params.expressions.entries()) {
-        query += params.strings[idx]
+export function buildSqlTag({
+    driver,
+    strings,
+    expressions,
+}: BuildSqlTagParams): { query: string; parameters: unknown[] } {
+    let query = ""
+    const parameters: unknown[] = []
+    let idx = 0
+
+    const serializeParameter =
+        driver.serializeParameter ?? defaultSerializeParameter
+
+    for (const [expressionIdx, expression] of expressions.entries()) {
+        query += strings[expressionIdx]
 
         if (expression === null) {
             query += "NULL"
             continue
         }
 
-        if (
-            ["sqlite", "better-sqlite3", "mysql"].includes(
-                params.driver.options.type,
-            ) &&
-            Array.isArray(expression)
-        ) {
+        if (Array.isArray(expression)) {
             if (expression.length === 0) {
                 query += "NULL"
                 continue
             }
 
-            const arrayParams = expression.map((_, arrayIdx) => {
-                return params.driver.createParameter(
-                    `param_${idx}_${arrayIdx}`,
-                    arrayIdx,
-                )
+            const arrayParams = expression.map(() => {
+                return driver.createParameter(`param_${idx + 1}`, idx++)
             })
+
             query += arrayParams.join(", ")
-            variables.push(...expression)
+            parameters.push(...expression.map((e) => serializeParameter(e)))
+
             continue
         }
 
-        query += params.driver.createParameter("param", idx)
+        query += driver.createParameter(`param_${idx + 1}`, idx++)
 
-        variables.push(expression)
+        parameters.push(serializeParameter(expression))
     }
 
-    query += params.strings[params.strings.length - 1]
+    query += strings[strings.length - 1]
 
-    return { query, variables }
+    return { query, parameters }
+}
+
+function defaultSerializeParameter(expression: unknown) {
+    if (typeof expression === "function") {
+        return expression()
+    }
+
+    return expression
 }

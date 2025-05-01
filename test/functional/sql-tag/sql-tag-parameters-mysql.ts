@@ -8,11 +8,6 @@ import {
 import { expect } from "chai"
 import { DataSource } from "../../../src"
 
-// Helper to format date for MySQL
-function toMySQLDateString(date: Date) {
-    return date.toISOString().slice(0, 19).replace("T", " ")
-}
-
 describe("sql tag parameters (mysql)", () => {
     let connections: DataSource[]
     before(
@@ -139,16 +134,14 @@ describe("sql tag parameters (mysql)", () => {
                 const repo = connection.getRepository(MysqlExample)
                 const now = new Date()
                 const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-                const nowStr = toMySQLDateString(now)
-                const yesterdayStr = toMySQLDateString(yesterday)
 
                 await repo.save([
-                    { id: "today", createdAt: nowStr },
-                    { id: "yesterday", createdAt: yesterdayStr },
+                    { id: "today", createdAt: now },
+                    { id: "yesterday", createdAt: yesterday },
                 ])
 
                 const examples = await connection.sql`
-                    SELECT * FROM example WHERE createdAt > ${yesterdayStr}
+                    SELECT * FROM example WHERE createdAt > ${yesterday}
                 `
 
                 const ids = examples.map((e: MysqlExample) => e.id)
@@ -169,21 +162,16 @@ describe("sql tag parameters (mysql)", () => {
                     { id: "array3", tags: "tag5,tag6" },
                 ])
 
-                const searchTags = ["tag1", "tag3"]
-
-                // Use FIND_IN_SET for MySQL to check if any tag matches
                 const examples = await connection.sql`
-                    SELECT * FROM example
-                    WHERE (
-                        FIND_IN_SET(${searchTags[0]}, tags) > 0
-                        OR FIND_IN_SET(${searchTags[1]}, tags) > 0
-                    )
+                    SELECT tags FROM example
+                    WHERE id IN (${["array1", "array2"]})
                 `
 
-                const ids = examples.map((e: MysqlExample) => e.id)
+                const tags = examples.flatMap(
+                    (e: MysqlExample) => e.tags?.split(",") ?? [],
+                )
 
-                expect(examples).to.have.length(2)
-                expect(ids).to.have.members(["array1", "array2"])
+                expect(tags).to.have.members(["tag1", "tag2", "tag3", "tag4"])
             }),
         ))
 })

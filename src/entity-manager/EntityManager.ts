@@ -184,13 +184,13 @@ export class EntityManager {
         strings: TemplateStringsArray,
         ...values: unknown[]
     ): Promise<T> {
-        const { query, variables } = buildSqlTag({
+        const { query, parameters } = buildSqlTag({
             driver: this.connection.driver,
             strings: strings,
             expressions: values,
         })
 
-        return await this.query(query, variables)
+        return await this.query(query, parameters)
     }
 
     /**
