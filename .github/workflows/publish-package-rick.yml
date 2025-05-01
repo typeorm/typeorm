@@ -20,7 +20,16 @@ jobs:
       - run: |
           npm ci
           npm run package
+
+      - name: Set version using GitHub run number
+        run: |
           cd build/package
-          npm publish --access public
+          base_version="0.3.22"
+          build_number="${{ github.run_number }}"
+          npm version "${base_version}-build.${build_number}" --no-git-tag-version
+
+      - name: Publish to npm
+        run: npm publish --access public --tag latest
+        working-directory: build/package
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
