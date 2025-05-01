@@ -26,7 +26,7 @@ jobs:
           cd build/package
           base_version="0.3.22"
           build_number="${{ github.run_number }}"
-          npm version "${base_version}+build.${build_number}" --no-git-tag-version
+          npm version "${base_version}-post.${build_number}" --no-git-tag-version
 
       - name: Publish to npm
         run: npm publish --access public --tag latest
