@@ -1,0 +1,44 @@
+name: PR preview release
+
+on:
+  pull_request:
+    paths-ignore:
+      - ".github/workflows/test.yml"
+      - ".github/workflows/codeql.yml"
+      - ".github/workflows/coverage.yml"
+      - ".github/workflows/database-tests-compose.yml"
+      - ".github/workflows/database-tests-windows.yml"
+      - ".github/workflows/database-tests.yml"
+      - ".github/workflows/publish-package.yml"
+      - "docs/**"
+      - "test/**"
+      - "resources/**"
+      - ".gitignore"
+      - ".prettierignore"
+      - ".prettierrc.js"
+      - "eslint.config.mjs"
+      - "*.md"
+      - "LICENSE"
+
+jobs:
+  release:
+    name: Release preview build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: "npm"
+          node-version: 22.x
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Release preview version
+        run: npx pkg-pr-new publish
