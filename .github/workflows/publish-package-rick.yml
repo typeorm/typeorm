@@ -1,5 +1,9 @@
 name: Publish Package to npmjs rick
-on: workflow_dispatch
+on:
+  push:
+    branches:
+      - 0.3.22-optimistic-locking
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
