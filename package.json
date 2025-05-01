@@ -1,5 +1,5 @@
 {
-  "name": "@slartibartfast/typeorm",
+  "name": "@slartibartphast/typeorm",
   "version": "0.3.22",
   "private": false,
   "description": "Data-Mapper ORM for TypeScript and ES2021+. Supports MySQL/MariaDB, PostgreSQL, MS SQL Server, Oracle, SAP HANA, SQLite, MongoDB databases.",
