@@ -16,6 +16,7 @@ import { TableForeignKey } from "../schema-builder/table/TableForeignKey"
 import { OrmUtils } from "../util/OrmUtils"
 import { MetadataTableType } from "../driver/types/MetadataTableType"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { TableRowLevelSecurityPolicy } from "../schema-builder/table/TableRowLevelSecurityPolicy"
 
 export abstract class BaseQueryRunner {
     // -------------------------------------------------------------------------
@@ -673,6 +674,54 @@ export abstract class BaseQueryRunner {
             table,
             index.columnNames,
             index.where,
+        )
+    }
+
+    /**
+     * Creates new row level security policy.
+     */
+    async createRowLevelSecurityPolicy(
+        tableOrName: Table | string,
+        rowLevelSecurityPolicy: TableRowLevelSecurityPolicy,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `Row level security is not supported by this driver.`,
+        )
+    }
+
+    /**
+     * Creates new row level security policies.
+     */
+    async createRowLevelSecurityPolicies(
+        tableOrName: Table | string,
+        rowLevelSecurityPolicies: TableRowLevelSecurityPolicy[],
+    ): Promise<void> {
+        throw new TypeORMError(
+            `Row level security is not supported by this driver.`,
+        )
+    }
+
+    /**
+     * Drops row level security policy.
+     */
+    async dropRowLevelSecurityPolicy(
+        tableOrName: Table | string,
+        rowLevelSecurityPolicyOrName: TableRowLevelSecurityPolicy | string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `Row level security is not supported by this driver.`,
+        )
+    }
+
+    /**
+     * Drops row level security policies.
+     */
+    async dropRowLevelSecurityPolicies(
+        tableOrName: Table | string,
+        rowLevelSecurityPolicies: TableRowLevelSecurityPolicy[],
+    ): Promise<void> {
+        throw new TypeORMError(
+            `Row level security is not supported by this driver.`,
         )
     }
 }
