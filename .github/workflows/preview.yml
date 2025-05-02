@@ -40,8 +40,5 @@ jobs:
       - name: Build
         run: npm run package
 
-      - name: Change directory to dist
-        run: cd build/package
-
       - name: Release preview version
-        run: npx pkg-pr-new publish
+        run: npx pkg-pr-new publish './build/package'
