@@ -19,4 +19,7 @@ AppDataSource.initialize()
     const users = await AppDataSource.manager.find(User);
     console.log("All users:", users);
   })
-  .catch((error) => console.log("Error: ", error));
+  .catch((error) => {
+    console.error("Error during Data Source initialization:", error);
+    process.exit(1);
+  });

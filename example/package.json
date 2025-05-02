@@ -1,7 +1,7 @@
 {
-  "name": "typeorm-sqlite-example",
+  "name": "typeorm-sql-js-example",
   "version": "1.0.0",
-  "description": "A minimal example project for TypeORM",
+  "description": "A minimal TypeORM example using sql.js for in-memory database operations",
   "main": "index.js",
   "scripts": {
     "start": "ts-node src/index.ts",
@@ -12,14 +12,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "typeorm": "0.3.22",
-    "better-sqlite3": "^11.1.2",
+    "typeorm": "^0.3.20",
+    "sql.js": "^1.8.0",
     "reflect-metadata": "^0.2.2",
     "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
-    "@types/better-sqlite3": "^7.6.9",
+    "@types/sql.js": "^1.4.9",
     "typescript": "^5.3.3"
   }
 }
