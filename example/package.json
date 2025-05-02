@@ -1,0 +1,25 @@
+{
+  "name": "typeorm-example",
+  "version": "1.0.0",
+  "description": "A minimal example project for TypeORM",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "typeorm": "typeorm-ts-node-commonjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "typeorm": "0.3.22",
+    "better-sqlite3": "^11.1.2",
+    "reflect-metadata": "^0.2.2",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "@types/better-sqlite3": "^7.6.9",
+    "typescript": "^5.3.3"
+  }
+}
