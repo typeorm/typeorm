@@ -8,6 +8,6 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "ormconfig.ts"],
   "exclude": ["node_modules"]
 }

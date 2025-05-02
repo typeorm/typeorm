@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "ts-node src/index.ts",
-    "typeorm": "typeorm-ts-node-commonjs"
+    "typeorm": "typeorm-ts-node-commonjs --dataSource=ormconfig.ts"
   },
   "dependencies": {
     "reflect-metadata": "^0.2.2",

@@ -1,8 +1,8 @@
 import "reflect-metadata"
 import { DataSource } from "typeorm"
-import { User } from "./entity/User"
+import { User } from "./src/entity/User"
 
-export const AppDataSource = new DataSource({
+export default new DataSource({
     type: "sqljs",
     synchronize: true,
     logging: true,
