@@ -4,15 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node src/index.ts",
     "build": "tsc",
+    "start": "ts-node src/index.ts",
     "typeorm": "typeorm-ts-node-commonjs"
   },
   "dependencies": {
-    "typeorm": "0.3.22",
-    "sql.js": "^1.13.0",
     "reflect-metadata": "^0.2.2",
-    "ts-node": "^10.9.2"
+    "sql.js": "^1.13.0",
+    "ts-node": "^10.9.2",
+    "typeorm": "0.3.22"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
