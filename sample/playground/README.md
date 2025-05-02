@@ -29,9 +29,9 @@ When you run `npm start`, the application will:
 ```
 src/
   ├── entity/
-  │   └── User.ts         # User entity definition (~20 lines)
-  ├── data-source.ts      # Database configuration (~10 lines)
-  └── index.ts           # Main application code (~25 lines)
+  │   └── User.ts         # User entity definition
+  └── index.ts            # Main application code
+ormconfig.ts              # Database configuration
 ```
 
 ## Note
