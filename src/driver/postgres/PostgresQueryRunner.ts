@@ -27,6 +27,7 @@ import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { PostgresDriver } from "./PostgresDriver"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { TableRowLevelSecurityPolicy } from "../../schema-builder/table/TableRowLevelSecurityPolicy"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -601,10 +602,22 @@ export class PostgresQueryRunner
                 downQueries.push(this.dropIndexSql(table, index))
             })
         }
-        
+
         if (table.comment) {
-            upQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS '" + table.comment + "'"));
-            downQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS NULL"));
+            upQueries.push(
+                new Query(
+                    "COMMENT ON TABLE " +
+                        this.escapePath(table) +
+                        " IS '" +
+                        table.comment +
+                        "'",
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    "COMMENT ON TABLE " + this.escapePath(table) + " IS NULL",
+                ),
+            )
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -940,7 +953,7 @@ export class PostgresQueryRunner
         const enumColumns = newTable.columns.filter(
             (column) => column.type === "enum" || column.type === "simple-enum",
         )
-        for (let column of enumColumns) {
+        for (const column of enumColumns) {
             // skip renaming for user-defined enum name
             if (column.enumName) continue
 
@@ -2778,6 +2791,81 @@ export class PostgresQueryRunner
     }
 
     /**
+     * Creates new check constraint.
+     */
+    async createRowLevelSecurityPolicy(
+        tableOrName: Table | string,
+        rowLevelSecurityPolicy: TableRowLevelSecurityPolicy,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+
+        // new policy may be passed without name. In this case we generate unique name manually.
+        if (!rowLevelSecurityPolicy.name)
+            rowLevelSecurityPolicy.name =
+                this.connection.namingStrategy.rowLevelSecurityPolicyName(
+                    table,
+                    rowLevelSecurityPolicy.expression!,
+                )
+
+        const up = this.createCheckConstraintSql(table, checkConstraint)
+        const down = this.dropCheckConstraintSql(table, checkConstraint)
+        await this.executeQueries(up, down)
+        table.addCheckConstraint(checkConstraint)
+    }
+
+    /**
+     * Creates new check constraints.
+     */
+    async createRowLevelSecurityPolicies(
+        tableOrName: Table | string,
+        rowLevelSecurityPolicies: TableRowLevelSecurityPolicy[],
+    ): Promise<void> {
+        const promises = checkConstraints.map((checkConstraint) =>
+            this.createCheckConstraint(tableOrName, checkConstraint),
+        )
+        await Promise.all(promises)
+    }
+
+    /**
+     * Drops check constraint.
+     */
+    async dropRowLevelSecurityPolicy(
+        tableOrName: Table | string,
+        rowLevelSecurityPolicyOrName: TableRowLevelSecurityPolicy | string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const checkConstraint = InstanceChecker.isTableCheck(checkOrName)
+            ? checkOrName
+            : table.checks.find((c) => c.name === checkOrName)
+        if (!checkConstraint)
+            throw new TypeORMError(
+                `Supplied check constraint was not found in table ${table.name}`,
+            )
+
+        const up = this.dropCheckConstraintSql(table, checkConstraint)
+        const down = this.createCheckConstraintSql(table, checkConstraint)
+        await this.executeQueries(up, down)
+        table.removeCheckConstraint(checkConstraint)
+    }
+
+    /**
+     * Drops check constraints.
+     */
+    async dropRowLevelSecurityPolicies(
+        tableOrName: Table | string,
+        rowLevelSecurityPolicies: TableRowLevelSecurityPolicy[],
+    ): Promise<void> {
+        const promises = checkConstraints.map((checkConstraint) =>
+            this.dropCheckConstraint(tableOrName, checkConstraint),
+        )
+        await Promise.all(promises)
+    }
+
+    /**
      * Creates new exclusion constraint.
      */
     async createExclusionConstraint(
@@ -4458,6 +4546,52 @@ export class PostgresQueryRunner
     }
 
     /**
+     * Builds create row level security policy sql.
+     */
+    protected createRowLevelSecurityPolicySql(
+        table: Table,
+        rowLevelSecurityPolicy: TableRowLevelSecurityPolicy,
+    ): Query {
+        return new Query(
+            `CREATE POLICY "${
+                rowLevelSecurityPolicy.name
+            }" ON ${this.escapePath(table)} 
+            ${
+                rowLevelSecurityPolicy.type
+                    ? `AS ${rowLevelSecurityPolicy.type.toUpperCase()}`
+                    : ""
+            }
+            FOR ALL
+            ${
+                rowLevelSecurityPolicy.role
+                    ? `TO ${rowLevelSecurityPolicy.role.toUpperCase()}`
+                    : ""
+            }
+            USING (${rowLevelSecurityPolicy.expression})`,
+        )
+    }
+
+    /**
+     * Builds drop check constraint sql.
+     */
+    protected dropRowLevelSecurityPolicySql(
+        table: Table,
+        rowLevelSecurityPolicyOrName: TableRowLevelSecurityPolicy | string,
+    ): Query {
+        const rowLevelSecurityPolicyName =
+            InstanceChecker.isTableRowLevelSecurityPolicy(
+                rowLevelSecurityPolicyOrName,
+            )
+                ? rowLevelSecurityPolicyOrName.name
+                : rowLevelSecurityPolicyOrName
+        return new Query(
+            `DROP POLICY "${rowLevelSecurityPolicyName}" ON ${this.escapePath(
+                table,
+            )}`,
+        )
+    }
+
+    /**
      * Builds create exclusion constraint sql.
      */
     protected createExclusionConstraintSql(
@@ -4744,7 +4878,7 @@ export class PostgresQueryRunner
 
         newComment = this.escapeComment(newComment)
         const comment = this.escapeComment(table.comment)
-        
+
         if (newComment === comment) {
             return
         }
