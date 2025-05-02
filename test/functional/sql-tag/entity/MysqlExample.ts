@@ -17,7 +17,7 @@ export class MysqlExample {
     @Column({ type: "boolean", nullable: true })
     active: boolean | null
 
-    @Column({ type: "datetime", nullable: true })
+    @Column({ type: "datetime", precision: 3, nullable: true })
     createdAt: Date | null
 
     @Column({ type: "text", nullable: true })

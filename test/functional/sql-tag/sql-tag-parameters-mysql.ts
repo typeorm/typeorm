@@ -14,7 +14,7 @@ describe("sql tag parameters (mysql)", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [MysqlExample],
-                enabledDrivers: ["mysql"],
+                enabledDrivers: ["mysql", "mariadb"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
