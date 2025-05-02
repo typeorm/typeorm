@@ -2,23 +2,12 @@ name: PR preview release
 
 on:
   pull_request:
-    paths-ignore:
-      - ".github/workflows/test.yml"
-      - ".github/workflows/codeql.yml"
-      - ".github/workflows/coverage.yml"
-      - ".github/workflows/database-tests-compose.yml"
-      - ".github/workflows/database-tests-windows.yml"
-      - ".github/workflows/database-tests.yml"
-      - ".github/workflows/publish-package.yml"
-      - "docs/**"
-      - "test/**"
-      - "resources/**"
-      - ".gitignore"
-      - ".prettierignore"
-      - ".prettierrc.js"
-      - "eslint.config.mjs"
-      - "*.md"
-      - "LICENSE"
+    paths:
+      - ".github/workflows/preview.yml"
+      - "src/**"
+      - "gulpfile.ts"
+      - "package.json"
+      - "tsconfig.json"
 
 jobs:
   release:
