@@ -1,5 +1,5 @@
 {
-  "name": "typeorm-example",
+  "name": "typeorm-sqlite-example",
   "version": "1.0.0",
   "description": "A minimal example project for TypeORM",
   "main": "index.js",
