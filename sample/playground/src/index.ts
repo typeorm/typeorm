@@ -1,8 +1,9 @@
-import { AppDataSource } from "../ormconfig"
-import { User } from "./entity/User"
+import { AppDataSource } from "./ormconfig.js"
+import { User } from "./entity/User.js"
 
-AppDataSource.initialize()
-    .then(async () => {
+async function main() {
+    try {
+        await AppDataSource.initialize()
         console.log("Database initialized")
 
         // Create a new user
@@ -18,8 +19,12 @@ AppDataSource.initialize()
         // Find all users
         const users = await AppDataSource.manager.find(User)
         console.log("All users:", users)
-    })
-    .catch((error) => {
+
+        await AppDataSource.destroy()
+    } catch (error) {
         console.error("Error during Data Source initialization:", error)
         process.exit(1)
-    })
+    }
+}
+
+main()

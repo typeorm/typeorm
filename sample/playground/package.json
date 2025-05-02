@@ -2,11 +2,11 @@
   "name": "typeorm-sql-js-example",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "ts-node src/index.ts",
-    "typeorm": "typeorm-ts-node-commonjs --dataSource=ormconfig.ts"
+    "start": "node --loader ts-node/esm src/index.ts",
+    "typeorm": "typeorm-ts-node-esm -d ./src/ormconfig.ts"
   },
   "dependencies": {
     "reflect-metadata": "^0.2.2",

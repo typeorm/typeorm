@@ -1,6 +1,20 @@
-# TypeORM sql.js Example
+# TypeORM SQLite Example
 
-A minimal TypeORM project demonstrating how to use TypeORM with sql.js.
+Steps to run this project:
+
+1. Run `npm i` command
+2. Run `npm start` command
+
+## Notes
+
+This is an ESM (ECMAScript Modules) example using TypeORM with SQLite. It demonstrates:
+
+-   ESM module usage
+-   Modern async/await patterns
+-   Proper database connection handling with cleanup
+-   TypeScript decorators and entity definitions
+
+The example uses `sql.js` as the database driver, which creates an in-memory SQLite database.
 
 ## Available Commands
 
