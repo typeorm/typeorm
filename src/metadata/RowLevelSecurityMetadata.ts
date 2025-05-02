@@ -77,7 +77,7 @@ export class RowLevelSecurityMetadata {
     build(namingStrategy: NamingStrategyInterface): this {
         this.name = this.givenName
             ? this.givenName
-            : namingStrategy.rowLevelSecurityPolicyConstraintName(
+            : namingStrategy.rowLevelSecurityPolicyName(
                   this.entityMetadata.tableName,
                   this.expression,
               )

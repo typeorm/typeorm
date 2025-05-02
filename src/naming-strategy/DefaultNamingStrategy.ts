@@ -145,7 +145,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return isEnum ? `${name}_ENUM` : name
     }
 
-    rowLevelSecurityPolicyConstraintName(
+    rowLevelSecurityPolicyName(
         tableOrName: Table | string,
         expression: string,
     ): string {

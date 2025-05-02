@@ -98,16 +98,13 @@ export interface NamingStrategyInterface {
      * type out of the box. If "true", constraint is ignored during CHECK constraints
      * synchronization.
      */
-    checkConstraintName(
-        tableOrName: Table | string,
-        expression: string,
-        isEnum?: boolean,
-    ): string
+
+    (tableOrName: Table | string, expression: string, isEnum?: boolean): string
 
     /**
      * Gets the name of the row level security policy constraint.
      */
-    rowLevelSecurityPolicyConstraintName(
+    rowLevelSecurityPolicyName(
         tableOrName: Table | string,
         expression: string,
     ): string
