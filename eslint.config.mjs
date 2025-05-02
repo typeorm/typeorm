@@ -4,7 +4,7 @@ import globals from "globals"
 
 export default tseslint.config([
     {
-        ignores: ["build/**", "node_modules/**", "example/**"],
+        ignores: ["build/**", "node_modules/**", "example/playground/**"],
     },
     {
         files: ["**/*.ts"],

@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "typeorm": "0.3.22",
-    "sql.js": "^1.8.0",
+    "sql.js": "^1.13.0",
     "reflect-metadata": "^0.2.2",
     "ts-node": "^10.9.2"
   },
