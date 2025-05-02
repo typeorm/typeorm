@@ -604,7 +604,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             if (
                 DriverUtils.isMySQLFamily(this.connection.driver) ||
-                this.connection.driver.options.type === 'postgres'
+                this.connection.driver.options.type === "postgres"
             ) {
                 const newComment = metadata.comment
                 await this.queryRunner.changeTableComment(table, newComment)
@@ -1088,6 +1088,43 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     .join(", ")} in table "${table.name}"`,
             )
             await this.queryRunner.createCheckConstraints(table, newChecks)
+        }
+    }
+
+    protected async createNewRowLevelSecurityPolicies(): Promise<void> {
+        // Mysql does not support check constraints
+        if (this.connection.options.type !== "postgres") return
+
+        for (const metadata of this.entityToSyncMetadatas) {
+            const table = this.queryRunner.loadedTables.find(
+                (table) =>
+                    this.getTablePath(table) === this.getTablePath(metadata),
+            )
+            if (!table) continue
+
+            const newRlsPolicies = metadata.rowLevelSecurityPolicies
+                .filter(
+                    (rlsPolicyMetadata) =>
+                        !table.checks.find(
+                            (tableRlsPolicy) =>
+                                tableRlsPolicy.name === rlsPolicyMetadata.name,
+                        ),
+                )
+                .map((rlsPolicyMetadata) =>
+                    TableRlsPolicy.create(rlsPolicyMetadata),
+                )
+
+            if (newRlsPolicies.length === 0) continue
+
+            this.connection.logger.logSchemaBuild(
+                `adding new row level security policies: ${newRlsPolicies
+                    .map((index) => `"${index.name}"`)
+                    .join(", ")} in table "${table.name}"`,
+            )
+            await this.queryRunner.createRowLevelSecurityPolicies(
+                table,
+                newRlsPolicies,
+            )
         }
     }
 

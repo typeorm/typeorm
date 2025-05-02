@@ -42,6 +42,9 @@ export function Entity(
             synchronize: options.synchronize,
             withoutRowid: options.withoutRowid,
             comment: options.comment ? options.comment : undefined,
+            rowLevelSecurity: options.rowLevelSecurity
+                ? options.rowLevelSecurity
+                : undefined,
         } as TableMetadataArgs)
     }
 }

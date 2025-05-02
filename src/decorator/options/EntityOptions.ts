@@ -51,4 +51,10 @@ export interface EntityOptions {
      * Table comment. Not supported by all database types.
      */
     comment?: string
+
+    /**
+     * Enables row level security on this table. Supported only by postgres.
+     * Use this with the @RowLevelSecurityPolicy decorator.
+     */
+    rowLevelSecurity?: "enabled"
 }

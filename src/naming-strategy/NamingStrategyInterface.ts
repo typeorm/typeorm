@@ -105,6 +105,14 @@ export interface NamingStrategyInterface {
     ): string
 
     /**
+     * Gets the name of the row level security policy constraint.
+     */
+    rowLevelSecurityPolicyConstraintName(
+        tableOrName: Table | string,
+        expression: string,
+    ): string
+
+    /**
      * Gets the name of the exclusion constraint.
      */
     exclusionConstraintName(

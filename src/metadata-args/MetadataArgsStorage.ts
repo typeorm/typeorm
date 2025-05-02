@@ -54,6 +54,7 @@ export class MetadataArgsStorage {
     readonly embeddeds: EmbeddedMetadataArgs[] = []
     readonly inheritances: InheritanceMetadataArgs[] = []
     readonly discriminatorValues: DiscriminatorValueMetadataArgs[] = []
+    readonly rowLevelSecurityPolicies: CheckMetadataArgs[] = []
 
     // -------------------------------------------------------------------------
     // Public Methods

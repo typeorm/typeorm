@@ -15,6 +15,7 @@ import { IsolationLevel } from "../driver/types/IsolationLevel"
 import { TableExclusion } from "../schema-builder/table/TableExclusion"
 import { QueryResult } from "./QueryResult"
 import { ReplicationMode } from "../driver/types/ReplicationMode"
+import { TableRowLevelSecurityPolicy } from "../schema-builder/table/TableRowLevelSecurityPolicy"
 
 /**
  * Runs queries on a single database connection.
@@ -418,6 +419,38 @@ export interface QueryRunner {
     dropCheckConstraints(
         table: Table | string,
         checkConstraints: TableCheck[],
+    ): Promise<void>
+
+    /**
+     * Creates a new row level security policy.
+     */
+    createRowLevelSecurityPolicy(
+        table: Table | string,
+        rowLevelSecurityPolicy: TableRowLevelSecurityPolicy,
+    ): Promise<void>
+
+    /**
+     * Creates new row level security policies.
+     */
+    createRowLevelSecurityPolicies(
+        table: Table | string,
+        rowLevelSecurityPolicies: TableRowLevelSecurityPolicy[],
+    ): Promise<void>
+
+    /**
+     * Drops a row level security policy.
+     */
+    dropRowLevelSecurityPolicy(
+        table: Table | string,
+        rowLevelSecurityPolicyOrName: TableRowLevelSecurityPolicy | string,
+    ): Promise<void>
+
+    /**
+     * Drops row level security policies.
+     */
+    dropRowLevelSecurityPolicies(
+        table: Table | string,
+        rowLevelSecurityPolicies: TableRowLevelSecurityPolicy[],
     ): Promise<void>
 
     /**

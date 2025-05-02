@@ -438,6 +438,11 @@ export class EntityMetadata {
     checks: CheckMetadata[] = []
 
     /**
+     * Entity's row level security policy metadatas.
+     */
+    rowLevelSecurityPolicies: RowLevelSecurityMetadata[] = []
+
+    /**
      * Entity's exclusion metadatas.
      */
     exclusions: ExclusionMetadata[] = []
