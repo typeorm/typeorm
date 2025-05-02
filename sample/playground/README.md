@@ -44,8 +44,8 @@ When you run `npm start`, the application will:
 src/
   ├── entity/
   │   └── User.ts         # User entity definition
-  └── index.ts            # Main application code
-ormconfig.ts              # Database configuration
+  ├── index.ts            # Main application code
+  └── ormconfig.ts        # Database configuration
 ```
 
 ## Note
