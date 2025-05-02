@@ -27,6 +27,7 @@ import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import type { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
 import { DataSource } from "../data-source"
 import { BaseEntity } from "../repository/BaseEntity"
+import { TableRowLevelSecurityPolicy } from "../schema-builder/table/TableRowLevelSecurityPolicy"
 
 export class InstanceChecker {
     static isMssqlParameter(obj: unknown): obj is MssqlParameter {
@@ -106,6 +107,11 @@ export class InstanceChecker {
     static isTableCheck(obj: unknown): obj is TableCheck {
         return this.check(obj, "TableCheck")
     }
+    static isTableRowLevelSecurityPolicy(
+        obj: unknown,
+    ): obj is TableRowLevelSecurityPolicy {
+        return this.check(obj, "TableRowLevelSecurityPolicy")
+    }
     static isTableColumn(obj: unknown): obj is TableColumn {
         return this.check(obj, "TableColumn")
     }
@@ -132,7 +138,7 @@ export class InstanceChecker {
         return (
             typeof obj === "object" &&
             obj !== null &&
-            (obj as { "@instanceof": Symbol })["@instanceof"] ===
+            (obj as { "@instanceof": symbol })["@instanceof"] ===
                 Symbol.for(name)
         )
     }
