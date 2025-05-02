@@ -1,7 +1,7 @@
 {
   "name": "typeorm-sql-js-example",
   "version": "1.0.0",
-  "description": "A minimal TypeORM example using sql.js for in-memory database operations",
+  "description": "A minimal TypeORM example using sql.js",
   "main": "index.js",
   "scripts": {
     "start": "ts-node src/index.ts",
