@@ -102,6 +102,16 @@ export interface NamingStrategyInterface {
     (tableOrName: Table | string, expression: string, isEnum?: boolean): string
 
     /**
+     * Gets the name of the check constraint.
+     */
+
+    checkConstraintName(
+        tableOrName: Table | string,
+        expression: string,
+        isEnum?: boolean | undefined,
+    ): string
+
+    /**
      * Gets the name of the row level security policy constraint.
      */
     rowLevelSecurityPolicyName(

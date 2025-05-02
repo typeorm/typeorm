@@ -2859,8 +2859,12 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         rowLevelSecurityPolicies: TableRowLevelSecurityPolicy[],
     ): Promise<void> {
-        const promises = checkConstraints.map((checkConstraint) =>
-            this.dropCheckConstraint(tableOrName, checkConstraint),
+        const promises = rowLevelSecurityPolicies.map(
+            (rowLevelSecurityPolicy) =>
+                this.dropRowLevelSecurityPolicy(
+                    tableOrName,
+                    rowLevelSecurityPolicy,
+                ),
         )
         await Promise.all(promises)
     }

@@ -136,7 +136,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     checkConstraintName(
         tableOrName: Table | string,
         expression: string,
-        isEnum?: boolean,
+        isEnum?: boolean | undefined,
     ): string {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
