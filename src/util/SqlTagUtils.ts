@@ -1,4 +1,6 @@
 import { Driver } from "../driver/Driver"
+import dedent from "dedent";
+
 
 interface BuildSqlTagParams {
     driver: Driver
@@ -45,6 +47,8 @@ export function buildSqlTag({
     }
 
     query += strings[strings.length - 1]
+
+    query = dedent(query)
 
     return { query, parameters }
 }
