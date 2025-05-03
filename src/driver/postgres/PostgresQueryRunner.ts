@@ -243,22 +243,19 @@ export class PostgresQueryRunner
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
-        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const broadcasterResult = new BroadcasterResult()
 
         try {
-            const queryStartTime = +new Date()
+            const queryStartTime = Date.now()
             const raw = await databaseConnection.query(query, parameters)
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(

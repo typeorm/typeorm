@@ -1,10 +1,13 @@
+import { promisify } from "util"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { QueryFailedError, TypeORMError } from "../../error"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionAlreadyStartedError } from "../../error/TransactionAlreadyStartedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ColumnType } from "../types/ColumnTypes"
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryLock } from "../../query-runner/QueryLock"
+import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
@@ -16,18 +19,15 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
+import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
-import { SapDriver } from "./SapDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { QueryFailedError, TypeORMError } from "../../error"
-import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryLock } from "../../query-runner/QueryLock"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { InstanceChecker } from "../../util/InstanceChecker"
-import { promisify } from "util"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { SapDriver } from "./SapDriver"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -193,38 +193,40 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const release = await this.lock.acquire()
 
+        const databaseConnection = await this.connect()
+
         let statement: any
         const result = new QueryResult()
+
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
         const broadcasterResult = new BroadcasterResult()
 
         try {
-            const databaseConnection = await this.connect()
-
-            this.driver.connection.logger.logQuery(query, parameters, this)
-            this.broadcaster.broadcastBeforeQueryEvent(
-                broadcasterResult,
-                query,
-                parameters,
-            )
-
-            const queryStartTime = +new Date()
+            const queryStartTime = Date.now()
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
 
             if (parameters?.some(Array.isArray)) {
-                statement = await promisify(
-                    databaseConnection.prepare.bind(databaseConnection),
-                )(query)
+                statement = await promisify(databaseConnection.prepare).call(
+                    databaseConnection,
+                    query,
+                )
             }
 
             let raw: any
             try {
                 raw = statement
-                    ? await promisify(statement.exec.bind(statement))(
+                    ? await promisify(statement.exec).call(
+                          statement,
                           parameters,
                       )
-                    : await promisify(
-                          databaseConnection.exec.bind(databaseConnection),
-                      )(query, parameters, {})
+                    : await promisify(databaseConnection.exec).call(
+                          databaseConnection,
+                          query,
+                          parameters,
+                          {},
+                      )
             } catch (err) {
                 throw new QueryFailedError(query, parameters, err)
             }
@@ -232,7 +234,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.connection.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
@@ -336,20 +338,61 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     ): Promise<ReadStream> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        const databaseConnection = await this.connect()
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        const release = await this.lock.acquire()
+        let statement: any
+        let resultSet: any
 
-        const prepareAsync = promisify(databaseConnection.prepare).bind(
-            databaseConnection,
-        )
-        const statement = await prepareAsync(query)
-        const resultSet = statement.executeQuery(parameters)
-        const stream = this.driver.streamClient.createObjectStream(resultSet)
+        const cleanup = async () => {
+            if (resultSet) {
+                await promisify(resultSet.close).call(resultSet)
+            }
+            if (statement) {
+                await promisify(statement.drop).call(statement)
+            }
+            release()
+        }
 
-        if (onEnd) stream.on("end", onEnd)
-        if (onError) stream.on("error", onError)
+        try {
+            const databaseConnection = await this.connect()
+            this.driver.connection.logger.logQuery(query, parameters, this)
 
-        return stream
+            statement = await promisify(databaseConnection.prepare).call(
+                databaseConnection,
+                query,
+            )
+            resultSet = await promisify(statement.executeQuery).call(
+                statement,
+                parameters,
+            )
+
+            const stream =
+                this.driver.streamClient.createObjectStream(resultSet)
+            stream.on("end", async () => {
+                await cleanup()
+                onEnd?.()
+            })
+            stream.on("error", async (error: Error) => {
+                this.driver.connection.logger.logQueryError(
+                    error,
+                    query,
+                    parameters,
+                    this,
+                )
+                await cleanup()
+                onError?.(error)
+            })
+
+            return stream
+        } catch (error) {
+            this.driver.connection.logger.logQueryError(
+                error,
+                query,
+                parameters,
+                this,
+            )
+            await cleanup()
+            throw new QueryFailedError(query, parameters, error)
+        }
     }
 
     /**

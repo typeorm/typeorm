@@ -3811,7 +3811,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     {
                         identifier: this.expressionMap.cacheId,
                         query: queryId,
-                        time: new Date().getTime(),
+                        time: Date.now(),
                         duration:
                             this.expressionMap.cacheDuration ||
                             cacheOptions.duration ||
