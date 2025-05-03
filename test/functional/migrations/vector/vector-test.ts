@@ -15,7 +15,7 @@ describe("migrations > vector type", () => {
             enabledDrivers: ["postgres"],
             schemaCreate: false,
             dropSchema: true,
-            migrations: [__dirname + "/0000000000001-CreatePost.ts"],
+            migrations: [CreatePost0000000000001],
         })
 
         // Install pgvector extension
