@@ -22,7 +22,7 @@ export class Example {
     @Column({ type: "boolean", nullable: true })
     active: boolean | null
 
-    @CreateDateColumn({  precision: 3 })
+    @CreateDateColumn({ precision: 3, default: () => "CURRENT_TIMESTAMP" })
     createdAt: Date
 
     @Column({ type: "text", nullable: true })
