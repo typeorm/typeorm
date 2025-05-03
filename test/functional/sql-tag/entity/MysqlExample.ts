@@ -22,7 +22,7 @@ export class MysqlExample {
     @Column({ type: "boolean", nullable: true })
     active: boolean | null
 
-    @CreateDateColumn()
+    @CreateDateColumn({ precision: 3 })
     createdAt: Date
 
     @Column({ type: "text", nullable: true })
