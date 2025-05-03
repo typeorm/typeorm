@@ -282,9 +282,4 @@ export interface Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string
-
-    /**
-     * Serializes a parameter value before it is sent to the database.
-     */
-    serializeParameter?(expression: unknown): unknown
 }

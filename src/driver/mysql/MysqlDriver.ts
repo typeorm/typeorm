@@ -1142,18 +1142,6 @@ export class MysqlDriver implements Driver {
         return false
     }
 
-    serializeParameter(expression: unknown): unknown {
-        if (typeof expression === "function") {
-            return expression()
-        }
-
-        if (expression instanceof Date) {
-            return DateUtils.mixedDateToUtcDatetimeString(expression)
-        }
-
-        return expression
-    }
-
     /**
      * Returns true if driver supports fulltext indices.
      */

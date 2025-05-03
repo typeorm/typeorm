@@ -15,9 +15,6 @@ export function buildSqlTag({
     const parameters: unknown[] = []
     let idx = 0
 
-    const serializeParameter =
-        driver.serializeParameter ?? defaultSerializeParameter
-
     for (const [expressionIdx, expression] of expressions.entries()) {
         query += strings[expressionIdx]
 
@@ -37,14 +34,14 @@ export function buildSqlTag({
             })
 
             query += arrayParams.join(", ")
-            parameters.push(...expression.map((e) => serializeParameter(e)))
+            parameters.push(...expression.map((e) => toParameter(e)))
 
             continue
         }
 
         query += driver.createParameter(`param_${idx + 1}`, idx++)
 
-        parameters.push(serializeParameter(expression))
+        parameters.push(toParameter(expression))
     }
 
     query += strings[strings.length - 1]
@@ -52,7 +49,7 @@ export function buildSqlTag({
     return { query, parameters }
 }
 
-function defaultSerializeParameter(expression: unknown) {
+function toParameter(expression: unknown) {
     if (typeof expression === "function") {
         return expression()
     }
