@@ -191,6 +191,7 @@ export class PostgresDriver implements Driver {
         "geography",
         "cube",
         "ltree",
+        "vector",
     ]
 
     /**
@@ -612,82 +613,61 @@ export class PostgresDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (columnMetadata.transformer)
-            value = ApplyValueTransformers.transformTo(
-                columnMetadata.transformer,
-                value,
-            )
-
         if (value === null || value === undefined) return value
 
-        if (columnMetadata.type === Boolean) {
-            return value === true ? 1 : 0
-        } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value)
-        } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedDateToTimeString(value)
-        } else if (
-            columnMetadata.type === "datetime" ||
-            columnMetadata.type === Date ||
-            columnMetadata.type === "timestamp" ||
-            columnMetadata.type === "timestamp with time zone" ||
-            columnMetadata.type === "timestamp without time zone"
-        ) {
-            return DateUtils.mixedDateToDate(value)
-        } else if (
-            ["json", "jsonb", ...this.spatialTypes].indexOf(
-                columnMetadata.type,
-            ) >= 0
-        ) {
-            return JSON.stringify(value)
-        } else if (columnMetadata.type === "hstore") {
-            if (typeof value === "string") {
-                return value
-            } else {
-                // https://www.postgresql.org/docs/9.0/hstore.html
-                const quoteString = (value: unknown) => {
-                    // If a string to be quoted is `null` or `undefined`, we return a literal unquoted NULL.
-                    // This way, NULL values can be stored in the hstore object.
-                    if (value === null || typeof value === "undefined") {
-                        return "NULL"
-                    }
-                    // Convert non-null values to string since HStore only stores strings anyway.
-                    // To include a double quote or a backslash in a key or value, escape it with a backslash.
-                    return `"${`${value}`.replace(/(?=["\\])/g, "\\")}"`
+        switch (columnMetadata.type) {
+            case "vector":
+                if (Array.isArray(value)) {
+                    return `[${value.join(",")}]`
                 }
-                return Object.keys(value)
-                    .map(
-                        (key) =>
-                            quoteString(key) + "=>" + quoteString(value[key]),
-                    )
-                    .join(",")
-            }
-        } else if (columnMetadata.type === "simple-array") {
-            return DateUtils.simpleArrayToString(value)
-        } else if (columnMetadata.type === "simple-json") {
-            return DateUtils.simpleJsonToString(value)
-        } else if (columnMetadata.type === "cube") {
-            if (columnMetadata.isArray) {
-                return `{${value
-                    .map((cube: number[]) => `"(${cube.join(",")})"`)
-                    .join(",")}}`
-            }
-            return `(${value.join(",")})`
-        } else if (columnMetadata.type === "ltree") {
-            return value
-                .split(".")
-                .filter(Boolean)
-                .join(".")
-                .replace(/[\s]+/g, "_")
-        } else if (
-            (columnMetadata.type === "enum" ||
-                columnMetadata.type === "simple-enum") &&
-            !columnMetadata.isArray
-        ) {
-            return "" + value
+                return value
+            case Boolean:
+                return value === true ? 1 : 0
+            case "date":
+                return DateUtils.mixedDateToDateString(value)
+            case "time":
+                return DateUtils.mixedDateToTimeString(value)
+            case "datetime":
+            case Date:
+            case "timestamp":
+            case "timestamp with time zone":
+            case "timestamp without time zone":
+                return DateUtils.mixedDateToDate(value)
+            case "json":
+            case "jsonb":
+                return JSON.stringify(value)
+            case "hstore":
+                if (typeof value === "string") {
+                    return value
+                } else {
+                    // Convert to key-value pairs
+                    return Object.keys(value)
+                        .map((key) => `"${key}"=>"${value[key]}"`)
+                        .join(",")
+                }
+            case "simple-array":
+                return DateUtils.simpleArrayToString(value)
+            case "simple-json":
+                return DateUtils.simpleJsonToString(value)
+            case "cube":
+                if (columnMetadata.isArray) {
+                    return `{${value
+                        .map((v: number[]) => `"(${v.join(",")})"`)
+                        .join(",")}}`
+                }
+                return `(${value.join(",")})`
+            case "ltree":
+                return value
+                    .split(".")
+                    .filter(Boolean)
+                    .join(".")
+                    .replace(/[\s]+/g, "_")
+            case "enum":
+            case "simple-enum":
+                return "" + value
+            default:
+                return value
         }
-
-        return value
     }
 
     /**
@@ -702,114 +682,92 @@ export class PostgresDriver implements Driver {
                   )
                 : value
 
-        if (columnMetadata.type === Boolean) {
-            value = value ? true : false
-        } else if (
-            columnMetadata.type === "datetime" ||
-            columnMetadata.type === Date ||
-            columnMetadata.type === "timestamp" ||
-            columnMetadata.type === "timestamp with time zone" ||
-            columnMetadata.type === "timestamp without time zone"
-        ) {
-            value = DateUtils.normalizeHydratedDate(value)
-        } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
-        } else if (columnMetadata.type === "time") {
-            value = DateUtils.mixedTimeToString(value)
-        } else if (columnMetadata.type === "hstore") {
-            if (columnMetadata.hstoreType === "object") {
-                const unescapeString = (str: string) =>
-                    str.replace(/\\./g, (m) => m[1])
-                const regexp =
-                    /"([^"\\]*(?:\\.[^"\\]*)*)"=>(?:(NULL)|"([^"\\]*(?:\\.[^"\\]*)*)")(?:,|$)/g
-                const object: ObjectLiteral = {}
-                ;`${value}`.replace(
-                    regexp,
-                    (_, key, nullValue, stringValue) => {
-                        object[unescapeString(key)] = nullValue
-                            ? null
-                            : unescapeString(stringValue)
+        switch (columnMetadata.type) {
+            case "vector":
+                if (
+                    typeof value === "string" &&
+                    value.startsWith("[") &&
+                    value.endsWith("]")
+                ) {
+                    return value.slice(1, -1).split(",").map(Number)
+                }
+                return value
+            case Boolean:
+                return value ? true : false
+            case "datetime":
+            case Date:
+            case "timestamp":
+            case "timestamp with time zone":
+            case "timestamp without time zone":
+                return DateUtils.normalizeHydratedDate(value)
+            case "date":
+                return DateUtils.mixedDateToDateString(value)
+            case "time":
+                return DateUtils.mixedTimeToString(value)
+            case "json":
+            case "jsonb":
+                return typeof value === "string" ? JSON.parse(value) : value
+            case "hstore":
+                if (columnMetadata.hstoreType === "object") {
+                    const unescapeString = (str: string) =>
+                        str.replace(/\\./g, (m) => m[1])
+                    const regexp =
+                        /"([^"\\]*(?:\\.[^"\\]*)*)"=>"([^"\\]*(?:\\.[^"\\]*)*)"(?:,|$)/g
+                    const object: ObjectLiteral = {}
+                    ;(value as string).replace(regexp, (_, key, val) => {
+                        object[unescapeString(key)] = unescapeString(val)
                         return ""
-                    },
-                )
-                value = object
-            }
-        } else if (columnMetadata.type === "simple-array") {
-            value = DateUtils.stringToSimpleArray(value)
-        } else if (columnMetadata.type === "simple-json") {
-            value = DateUtils.stringToSimpleJson(value)
-        } else if (columnMetadata.type === "cube") {
-            value = value.replace(/[()\s]+/g, "") // remove whitespace
-            if (columnMetadata.isArray) {
-                /**
-                 * Strips these groups from `{"1,2,3","",NULL}`:
-                 * 1. ["1,2,3", undefined]  <- cube of arity 3
-                 * 2. ["", undefined]         <- cube of arity 0
-                 * 3. [undefined, "NULL"]     <- NULL
-                 */
-                const regexp = /(?:"((?:[\d\s.,])*)")|(?:(NULL))/g
-                const unparsedArrayString = value
+                    })
+                    return object
+                }
+                return value
+            case "simple-array":
+                return DateUtils.stringToSimpleArray(value)
+            case "simple-json":
+                return DateUtils.stringToSimpleJson(value)
+            case "cube":
+                if (columnMetadata.isArray) {
+                    return value
+                        .replace(/[()s]+/g, "")
+                        .slice(1, -1)
+                        .split("),(")
+                        .map((x: string) => x.split(",").map(Number))
+                }
+                return value
+                    .replace(/[()s]+/g, "")
+                    .split(",")
+                    .map(Number)
+            case "enum":
+            case "simple-enum":
+                if (columnMetadata.isArray) {
+                    if (!value || value === "{}") return []
 
-                value = []
-                let cube: RegExpExecArray | null = null
-                // Iterate through all regexp matches for cubes/null in array
-                while ((cube = regexp.exec(unparsedArrayString)) !== null) {
-                    if (cube[1] !== undefined) {
-                        value.push(
-                            cube[1].split(",").filter(Boolean).map(Number),
-                        )
-                    } else {
-                        value.push(undefined)
+                    if (Array.isArray(value)) return value
+
+                    if (typeof value === "string") {
+                        return value
+                            .slice(1, -1)
+                            .split(",")
+                            .map((v) => {
+                                if (v.startsWith('"') && v.endsWith('"')) {
+                                    v = v.slice(1, -1)
+                                }
+                                return v.replace(/\\(\\|")/g, "$1")
+                            })
                     }
                 }
-            } else {
-                value = value.split(",").filter(Boolean).map(Number)
-            }
-        } else if (
-            columnMetadata.type === "enum" ||
-            columnMetadata.type === "simple-enum"
-        ) {
-            if (columnMetadata.isArray) {
+
                 if (value === "{}") return []
 
-                // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
-                value = (value as string)
-                    .slice(1, -1)
-                    .split(",")
-                    .map((val) => {
-                        // replace double quotes from the beginning and from the end
-                        if (val.startsWith(`"`) && val.endsWith(`"`))
-                            val = val.slice(1, -1)
-                        // replace escaped backslash and double quotes
-                        return val.replace(/\\(\\|")/g, "$1")
-                    })
-
-                // convert to number if that exists in possible enum options
-                value = value.map((val: string) => {
-                    return !isNaN(+val) &&
-                        columnMetadata.enum!.indexOf(parseInt(val)) >= 0
-                        ? parseInt(val)
-                        : val
-                })
-            } else {
-                // convert to number if that exists in possible enum options
-                value =
-                    !isNaN(+value) &&
-                    columnMetadata.enum!.indexOf(parseInt(value)) >= 0
-                        ? parseInt(value)
-                        : value
-            }
-        } else if (columnMetadata.type === Number) {
-            // convert to number if number
-            value = !isNaN(+value) ? parseInt(value) : value
+                return value
+            default:
+                return columnMetadata.transformer
+                    ? ApplyValueTransformers.transformFrom(
+                          columnMetadata.transformer,
+                          value,
+                      )
+                    : value
         }
-
-        if (columnMetadata.transformer)
-            value = ApplyValueTransformers.transformFrom(
-                columnMetadata.transformer,
-                value,
-            )
-        return value
     }
 
     /**
@@ -948,37 +906,12 @@ export class PostgresDriver implements Driver {
         scale?: number
         isArray?: boolean
     }): string {
-        if (
-            column.type === Number ||
-            column.type === "int" ||
-            column.type === "int4"
-        ) {
+        if (column.type === "int" || column.type === "int4") {
             return "integer"
-        } else if (column.type === String || column.type === "varchar") {
-            return "character varying"
-        } else if (column.type === Date || column.type === "timestamp") {
-            return "timestamp without time zone"
-        } else if (column.type === "timestamptz") {
-            return "timestamp with time zone"
-        } else if (column.type === "time") {
-            return "time without time zone"
-        } else if (column.type === "timetz") {
-            return "time with time zone"
-        } else if (column.type === Boolean || column.type === "bool") {
-            return "boolean"
-        } else if (column.type === "simple-array") {
-            return "text"
-        } else if (column.type === "simple-json") {
-            return "text"
-        } else if (column.type === "simple-enum") {
-            return "enum"
-        } else if (column.type === "int2") {
-            return "smallint"
-        } else if (column.type === "int8") {
-            return "bigint"
-        } else if (column.type === "decimal") {
-            return "numeric"
-        } else if (column.type === "float8" || column.type === "float") {
+        } else if (
+            column.type === "double precision" ||
+            column.type === "float8"
+        ) {
             return "double precision"
         } else if (column.type === "float4") {
             return "real"
@@ -986,6 +919,8 @@ export class PostgresDriver implements Driver {
             return "character"
         } else if (column.type === "varbit") {
             return "bit varying"
+        } else if (column.type === "vector") {
+            return "vector"
         } else {
             return (column.type as string) || ""
         }
