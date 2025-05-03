@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column } from "../../../../src"
+import { Entity, PrimaryColumn, Column, CreateDateColumn } from "../../../../src"
 
 @Entity()
 export class Example {
@@ -17,8 +17,8 @@ export class Example {
     @Column({ type: "boolean", nullable: true })
     active: boolean | null
 
-    @Column({ type: "datetime", nullable: true })
-    createdAt: Date | null
+    @CreateDateColumn()
+    createdAt: Date
 
     @Column({ type: "text", nullable: true })
     tags: string | null

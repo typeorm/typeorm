@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column } from "../../../../src"
+import { Entity, PrimaryColumn, Column, CreateDateColumn } from "../../../../src"
 
 @Entity("example")
 export class PostgresExample {
@@ -17,8 +17,8 @@ export class PostgresExample {
     @Column({ type: "boolean", nullable: true })
     active: boolean | null
 
-    @Column({ type: "timestamptz", nullable: true })
-    createdAt: Date | null
+    @CreateDateColumn()
+    createdAt: Date
 
     @Column({ type: "jsonb", nullable: true })
     tags: any | null

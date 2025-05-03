@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column } from "../../../../src"
+import { Entity, PrimaryColumn, Column, CreateDateColumn } from "../../../../src"
 
 @Entity("example")
 export class MysqlExample {
@@ -17,8 +17,8 @@ export class MysqlExample {
     @Column({ type: "boolean", nullable: true })
     active: boolean | null
 
-    @Column({ type: "datetime", precision: 3, nullable: true })
-    createdAt: Date | null
+    @CreateDateColumn()
+    createdAt: Date
 
     @Column({ type: "text", nullable: true })
     tags: string | null
