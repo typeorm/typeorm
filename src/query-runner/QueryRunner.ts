@@ -115,16 +115,16 @@ export interface QueryRunner {
     /**
      * Executes a given SQL query and returns raw database results.
      */
-    query<T = any>(
+    query(
         query: string,
         parameters: any[] | undefined,
         useStructuredResult: true,
-    ): Promise<QueryResult<T>>
+    ): Promise<QueryResult>
 
     /**
      * Executes a given SQL query and returns raw database results.
      */
-    query<T = any>(query: string, parameters?: any[]): Promise<T>
+    query(query: string, parameters?: any[]): Promise<any>
 
     /**
      * A tagged template that executes raw SQL query and returns raw database results
