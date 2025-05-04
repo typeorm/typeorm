@@ -91,7 +91,7 @@ You can copy this tar into your project and run `npm install ./typeorm-x.x.x.tgz
 
 It is greatly appreciated if PRs that change code come with appropriate tests.
 
-Consider where to put tests based on what type of change your PR introduces:
+Consider where to put tests based on the type of change your PR introduces:
  - [functional](https://github.com/typeorm/typeorm/tree/master/test/functional/) adding core functionality.
  - [issue specific](https://github.com/typeorm/typeorm/tree/master/test/github-issues) fixing a specific regression or bug.
 
