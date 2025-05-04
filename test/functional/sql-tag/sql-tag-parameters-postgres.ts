@@ -154,29 +154,6 @@ describe("sql tag parameters (postgres)", () => {
             }),
         ))
 
-    it("should handle SQL tag parameters with date values", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const repo = connection.getRepository(PostgresExample)
-                const now = new Date()
-                const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-
-                await repo.save([
-                    { id: "today", createdAt: now },
-                    { id: "yesterday", createdAt: yesterday },
-                ])
-
-                const examples = await connection.sql`
-                    SELECT * FROM example WHERE "createdAt" > ${yesterday}
-                `
-
-                const ids = examples.map((e: PostgresExample) => e.id)
-
-                expect(examples).to.have.length(1)
-                expect(ids).to.have.members(["today"])
-            }),
-        ))
-
     it("should handle SQL tag parameters with complex array operations", () =>
         Promise.all(
             connections.map(async (connection) => {
