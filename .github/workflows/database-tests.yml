@@ -212,10 +212,14 @@ jobs:
 
   postgres:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        postgis-version: ["14-3.5", "17-3.5"]
 
     services:
       postgres:
-        image: postgis/postgis:14-3.3
+        image: postgis/postgis:${{ matrix.postgis-version }}
         ports:
           - "5432:5432"
         env:

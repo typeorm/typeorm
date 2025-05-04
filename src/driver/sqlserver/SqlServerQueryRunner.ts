@@ -1,11 +1,12 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { QueryResult } from "../../query-runner/QueryResult"
+import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ColumnType } from "../types/ColumnTypes"
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryLock } from "../../query-runner/QueryLock"
+import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
@@ -17,18 +18,17 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
+import { buildSqlTag } from "../../util/SqlTagUtils"
 import { Query } from "../Query"
+import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
+import { MetadataTableType } from "../types/MetadataTableType"
+import { ReplicationMode } from "../types/ReplicationMode"
 import { MssqlParameter } from "./MssqlParameter"
 import { SqlServerDriver } from "./SqlServerDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { TypeORMError } from "../../error"
-import { QueryLock } from "../../query-runner/QueryLock"
-import { MetadataTableType } from "../types/MetadataTableType"
-import { InstanceChecker } from "../../util/InstanceChecker"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
-import { buildSqlTag } from "../../util/SqlTagUtils"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -210,16 +210,12 @@ export class SqlServerQueryRunner
 
         const release = await this.lock.acquire()
 
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
         const broadcasterResult = new BroadcasterResult()
 
         try {
-            this.driver.connection.logger.logQuery(query, parameters, this)
-            this.broadcaster.broadcastBeforeQueryEvent(
-                broadcasterResult,
-                query,
-                parameters,
-            )
-
             const pool = await (this.mode === "slave"
                 ? this.driver.obtainSlaveConnection()
                 : this.driver.obtainMasterConnection())

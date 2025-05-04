@@ -1,11 +1,11 @@
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
-import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { ExpoDriver } from "./ExpoDriver"
-import { Broadcaster } from "../../subscriber/Broadcaster"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { buildSqlTag } from "../../util/SqlTagUtils"
+import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
+import { ExpoDriver } from "./ExpoDriver"
 
 export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     driver: ExpoDriver
@@ -36,11 +36,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const queryStartTime = Date.now()
 
@@ -104,6 +100,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
             throw new QueryFailedError(query, parameters, err)
         } finally {
+            await broadcasterResult.wait()
             await statement.finalizeAsync()
         }
     }
@@ -114,7 +111,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     async sql<T = any>(
         strings: TemplateStringsArray,
         ...parameters: any[]
-    ): Promise<QueryResult | any> {
+    ): Promise<QueryResult<T> | any> {
         const sqlQuery = buildSqlTag({
             driver: this.driver,
             strings,

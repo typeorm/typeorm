@@ -1,13 +1,13 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
-import { QueryFailedError } from "../../error/QueryFailedError"
-import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { CordovaDriver } from "./CordovaDriver"
-import { Broadcaster } from "../../subscriber/Broadcaster"
 import { TypeORMError } from "../../error"
+import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { buildSqlTag } from "../../util/SqlTagUtils"
+import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
+import { CordovaDriver } from "./CordovaDriver"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -54,15 +54,11 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
-        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
+        const broadcasterResult = new BroadcasterResult()
         const queryStartTime = Date.now()
 
         try {
@@ -151,7 +147,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
     async sql<T = any>(
         strings: TemplateStringsArray,
         ...parameters: any[]
-    ): Promise<QueryResult | any> {
+    ): Promise<QueryResult<T> | any> {
         const sqlQuery = buildSqlTag({
             driver: this.driver,
             strings,
