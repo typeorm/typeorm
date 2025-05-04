@@ -19,6 +19,7 @@ import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TransactionAlreadyStartedError, TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { buildSqlTag } from "../../util/SqlTagUtils"
 
 /**
  * Runs queries on a single sqlite database connection.

@@ -28,6 +28,7 @@ import { QueryLock } from "../../query-runner/QueryLock"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { buildSqlTag } from "../../util/SqlTagUtils"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -200,11 +201,11 @@ export class SqlServerQueryRunner
     /**
      * Executes a given SQL query.
      */
-    async query(
+    async query<T = any>(
         query: string,
         parameters?: any[],
         useStructuredResult = false,
-    ): Promise<any> {
+    ): Promise<T> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const release = await this.lock.acquire()
@@ -306,9 +307,9 @@ export class SqlServerQueryRunner
             }
 
             if (useStructuredResult) {
-                return result
+                return result as T
             } else {
-                return result.raw
+                return result.raw as T
             }
         } catch (err) {
             this.driver.connection.logger.logQueryError(
@@ -333,6 +334,19 @@ export class SqlServerQueryRunner
 
             release()
         }
+    }
+
+    /**
+     * A tagged template that executes raw SQL query and returns raw database results
+     */
+    async sql<T = any>(strings: TemplateStringsArray, ...values: unknown[]): Promise<T> {
+        const { query, parameters } = buildSqlTag({
+            driver: this.driver,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, parameters)
     }
 
     /**
@@ -2876,9 +2890,10 @@ export class SqlServerQueryRunner
             const tablesSql = Object.entries(tableNamesByCatalog)
                 .map(([database, tables]) => {
                     const tablesCondition = tables
-                        .map(({ schema, tableName }) => {
-                            return `("TABLE_SCHEMA" = '${schema}' AND "TABLE_NAME" = '${tableName}')`
-                        })
+                        .map(
+                            ({ schema, tableName }) =>
+                                `("TABLE_SCHEMA" = '${schema}' AND "TABLE_NAME" = '${tableName}')`,
+                        )
                         .join(" OR ")
 
                     return `

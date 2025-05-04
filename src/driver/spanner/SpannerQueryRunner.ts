@@ -25,6 +25,7 @@ import { QueryResult } from "../../query-runner/QueryResult"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { SpannerDriver } from "./SpannerDriver"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { buildSqlTag } from "../../util/SqlTagUtils"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -273,6 +274,19 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         } finally {
             await broadcasterResult.wait()
         }
+    }
+
+    /**
+     * A tagged template that executes raw SQL query and returns raw database results
+     */
+    async sql<T = any>(strings: TemplateStringsArray, ...values: unknown[]): Promise<T> {
+        const { query, parameters } = buildSqlTag({
+            driver: this.driver,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, parameters)
     }
 
     /**

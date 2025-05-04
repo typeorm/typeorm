@@ -27,6 +27,7 @@ import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { VersionUtils } from "../../util/VersionUtils"
+import { buildSqlTag } from "../../util/SqlTagUtils"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -396,6 +397,19 @@ export class CockroachQueryRunner
         } finally {
             await broadcasterResult.wait()
         }
+    }
+
+    /**
+     * A tagged template that executes raw SQL query and returns raw database results
+     */
+    async sql<T = any>(strings: TemplateStringsArray, ...values: unknown[]): Promise<T> {
+        const { query, parameters } = buildSqlTag({
+            driver: this.driver,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, parameters)
     }
 
     /**

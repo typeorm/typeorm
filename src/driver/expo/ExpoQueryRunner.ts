@@ -5,6 +5,7 @@ import { ExpoDriver } from "./ExpoDriver"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { buildSqlTag } from "../../util/SqlTagUtils"
 
 export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     driver: ExpoDriver
@@ -105,5 +106,20 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         } finally {
             await statement.finalizeAsync()
         }
+    }
+
+    /**
+     * Executes a given SQL query using the sql-tag syntax.
+     */
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...parameters: any[]
+    ): Promise<QueryResult | any> {
+        const sqlQuery = buildSqlTag({
+            driver: this.driver,
+            strings,
+            expressions: parameters,
+        })
+        return this.query(sqlQuery.query, sqlQuery.parameters, false)
     }
 }

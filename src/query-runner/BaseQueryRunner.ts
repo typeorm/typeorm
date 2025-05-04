@@ -111,6 +111,11 @@ export abstract class BaseQueryRunner {
         useStructuredResult?: boolean,
     ): Promise<any>
 
+    /**
+     * A tagged template that executes raw SQL query and returns raw database results
+     */
+    abstract sql<T = any>(strings: TemplateStringsArray, ...values: unknown[]): Promise<T>;
+
     // -------------------------------------------------------------------------
     // Protected Abstract Methods
     // -------------------------------------------------------------------------
