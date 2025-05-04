@@ -201,11 +201,11 @@ export class SqlServerQueryRunner
     /**
      * Executes a given SQL query.
      */
-    async query<T = any>(
+    async query(
         query: string,
         parameters?: any[],
         useStructuredResult = false,
-    ): Promise<T> {
+    ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const release = await this.lock.acquire()
@@ -303,9 +303,9 @@ export class SqlServerQueryRunner
             }
 
             if (useStructuredResult) {
-                return result as T
+                return result
             } else {
-                return result.raw as T
+                return result.raw
             }
         } catch (err) {
             this.driver.connection.logger.logQueryError(
@@ -335,7 +335,10 @@ export class SqlServerQueryRunner
     /**
      * A tagged template that executes raw SQL query and returns raw database results
      */
-    async sql<T = any>(strings: TemplateStringsArray, ...values: unknown[]): Promise<T> {
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
         const { query, parameters } = buildSqlTag({
             driver: this.driver,
             strings: strings,

@@ -530,7 +530,10 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * A tagged template that executes raw SQL query and returns raw database results
      */
-    async sql<T = any>(strings: TemplateStringsArray, ...values: unknown[]): Promise<T> {
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
         const { query, parameters } = buildSqlTag({
             driver: this.connection.driver,
             strings: strings,

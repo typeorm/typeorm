@@ -119,7 +119,7 @@ export interface QueryRunner {
         query: string,
         parameters: any[] | undefined,
         useStructuredResult: true,
-    ): Promise<QueryResult>
+    ): Promise<QueryResult<T>>
 
     /**
      * Executes a given SQL query and returns raw database results.

@@ -199,7 +199,10 @@ export class AuroraPostgresQueryRunner
     /**
      * A tagged template that executes raw SQL query and returns raw database results
      */
-    async sql<T = any>(strings: TemplateStringsArray, ...values: unknown[]): Promise<T> {
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
         const { query, parameters } = buildSqlTag({
             driver: this.driver,
             strings: strings,
@@ -218,7 +221,9 @@ export class AuroraPostgresQueryRunner
         onEnd?: Function,
         onError?: Function,
     ): Promise<ReadStream> {
-        throw new TypeORMError("Streaming is not directly supported by AuroraPostgresQueryRunner using Data API client.")
+        throw new TypeORMError(
+            "Streaming is not directly supported by AuroraPostgresQueryRunner using Data API client.",
+        )
     }
 
     /**
