@@ -89,7 +89,11 @@ You can copy this tar into your project and run `npm install ./typeorm-x.x.x.tgz
 
 ## Running Tests Locally
 
-It would be greatly appreciated if PRs that change code come with appropriate tests.
+It is greatly appreciated if PRs that change code come with appropriate tests.
+
+Consider where to put tests based on what type of change your PR introduces:
+ - [functional](https://github.com/typeorm/typeorm/tree/master/test/functional/) adding core functionality.
+ - [issue specific](https://github.com/typeorm/typeorm/tree/master/test/github-issues) fixing a specific regression or bug.
 
 To create a test for a specific issue opened on GitHub, create a file: `test/github-issues/<num>/issue-<num>.ts` where
 `<num>` is the corresponding GitHub issue. For example, if you were creating a PR to fix github issue #363, you'd
