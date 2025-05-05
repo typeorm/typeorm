@@ -66,6 +66,15 @@ describe.only("sql tag parameters", () => {
         expect(parameters).to.deep.equal([])
     })
 
+    it("should handle a single parameter that is a function", () => {
+        const { query, parameters } = sql`
+            SELECT * FROM example WHERE id = ${() => "test"}
+        `
+
+        expect(query).to.equal("SELECT * FROM example WHERE id = $1")
+        expect(parameters).to.deep.equal(["test"])
+    })
+
     it("should handle parameters at the start, middle, and end", () => {
         const { query, parameters } = sql`
             SELECT * FROM example WHERE id = ${"testId"} AND name = ${"testName"} ORDER BY ${"id"}
