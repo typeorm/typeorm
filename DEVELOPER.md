@@ -167,3 +167,14 @@ in the root of the project. Once all images are fetched and are running, you can
 
 - The docker image of mssql-server needs at least 3.25GB of RAM.
 - Make sure to assign enough memory to the Docker VM if you're running on Docker for Mac or Windows
+
+## Release Process
+
+To create a new release, follow these steps:
+
+1. Create a new branch from `master` with the format `release-x.x.x` (e.g. `release-0.3.23`).
+2. Update the version in `package.json` and run `npm install` to update the lock file.
+3. Run the `npm run changelog` command to generate the changelog for the new version.
+4. Commit the changes and create a pull request to merge the release branch into `master`.
+5. Once the pull request is approved and merged, create a new release on GitHub with the same version number.
+6. The `publish-package.yml` script will then run a GitHub Actions workflow that will publish the new version to npm.
