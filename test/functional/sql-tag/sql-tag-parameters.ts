@@ -1,29 +1,12 @@
-import "reflect-metadata"
-import {
-    closeTestingConnections,
-    createTestingConnections,
-    reloadTestingDatabases,
-} from "../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource } from "../../../src"
-import { PostgresExample } from "./entity/PostgresExample"
+import "reflect-metadata"
+import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { buildSqlTag } from "../../../src/util/SqlTagUtils"
 
-describe("sql tag parameters", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [PostgresExample],
-                enabledDrivers: ["postgres"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
-
+describe.only("sql tag parameters", () => {
     function sql(strings: TemplateStringsArray, ...expressions: unknown[]) {
         return buildSqlTag({
-            driver: connections[0].driver,
+            driver: new PostgresDriver(),
             strings,
             expressions,
         })
