@@ -46,7 +46,7 @@ describe("sql tag parameters (mysql)", () => {
 
                 const examples = await connection.sql`
                     SELECT * FROM example
-                    WHERE id IN (${["first", "second"]})
+                    WHERE id IN (${() => ["first", "second"]})
                     AND name LIKE ${"test%"}
                     AND value > ${5}
                 `
@@ -56,8 +56,6 @@ describe("sql tag parameters (mysql)", () => {
                 expect(ids).to.have.members(["first", "second"])
             }),
         ))
-
-    // MySQL does not support WITH RECURSIVE in 5.x, so skip that test
 
     it("should handle SQL tag parameters with complex conditions and ordering", () =>
         Promise.all(
@@ -141,7 +139,7 @@ describe("sql tag parameters (mysql)", () => {
 
                 const examples = await connection.sql`
                     SELECT tags FROM example
-                    WHERE id IN (${["array1", "array2"]})
+                    WHERE id IN (${() => ["array1", "array2"]})
                 `
 
                 const tags = examples.flatMap(

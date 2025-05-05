@@ -46,7 +46,7 @@ describe("sql tag parameters (sqlite)", () => {
 
                 const examples = await connection.sql`
                     SELECT * FROM example
-                    WHERE id IN (${["first", "second"]})
+                    WHERE id IN (${() => ["first", "second"]})
                     AND name LIKE ${"test%"}
                     AND value > ${5}
                 `
@@ -174,7 +174,7 @@ describe("sql tag parameters (sqlite)", () => {
                     WHERE (
                         SELECT COUNT(*) FROM (
                             SELECT value FROM json_each('["' || replace(tags, ',', '","') || '"]')
-                        ) WHERE value IN (${searchTags})
+                        ) WHERE value IN (${() => searchTags})
                     ) > 0
                 `
 

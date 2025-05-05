@@ -46,7 +46,7 @@ describe("sql tag parameters (postgres)", () => {
 
                 const examples = await connection.sql`
                     SELECT * FROM example
-                    WHERE id IN (${["first", "second"]})
+                    WHERE id = ANY(${["first", "second"]})
                     AND name LIKE ${"test%"}
                     AND value > ${5}
                 `
@@ -171,7 +171,7 @@ describe("sql tag parameters (postgres)", () => {
                     SELECT * FROM example
                     WHERE EXISTS (
                         SELECT 1 FROM jsonb_array_elements_text(tags) AS tag
-                        WHERE tag IN (${searchTags})
+                        WHERE tag = ANY(${searchTags})
                     )
                 `
 
@@ -190,7 +190,7 @@ describe("sql tag parameters (postgres)", () => {
                 try {
                     await connection.sql`
                         SELECT COUNT(*) AS param_count FROM (
-                            SELECT unnest(${parameters}) AS param
+                            SELECT unnest(${() => parameters}) AS param
                         ) AS params
                     `
 
@@ -211,7 +211,7 @@ describe("sql tag parameters (postgres)", () => {
 
                 const result = await connection.sql`
                     SELECT COUNT(*) AS param_count FROM (
-                        SELECT unnest(${() => parameters}::int4[]) AS param
+                        SELECT unnest(${parameters}::int4[]) AS param
                     ) AS params
                 `
 

@@ -24,20 +24,24 @@ export function buildSqlTag({
             continue
         }
 
-        if (Array.isArray(expression)) {
-            if (expression.length === 0) {
-                query += "NULL"
+        if (typeof expression === "function") {
+            const value = expression()
+
+            if (Array.isArray(value)) {
+                if (value.length === 0) {
+                    query += "NULL"
+                    continue
+                }
+
+                const arrayParams = value.map(() => {
+                    return driver.createParameter(`param_${idx + 1}`, idx++)
+                })
+
+                query += arrayParams.join(", ")
+                parameters.push(...value.map((e) => toParameter(e)))
+
                 continue
             }
-
-            const arrayParams = expression.map(() => {
-                return driver.createParameter(`param_${idx + 1}`, idx++)
-            })
-
-            query += arrayParams.join(", ")
-            parameters.push(...expression.map((e) => toParameter(e)))
-
-            continue
         }
 
         query += driver.createParameter(`param_${idx + 1}`, idx++)
