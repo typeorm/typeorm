@@ -978,7 +978,7 @@ export class EntityManager {
      */
     async existsBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<boolean> {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder(entityClass, metadata.name)
@@ -1010,7 +1010,7 @@ export class EntityManager {
      */
     countBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<number> {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder(entityClass, metadata.name)
@@ -1024,7 +1024,7 @@ export class EntityManager {
     sum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         columnName: PickKeysByType<Entity, number>,
-        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where?: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
         return this.callAggregateFun(entityClass, "SUM", columnName, where)
     }
@@ -1035,7 +1035,7 @@ export class EntityManager {
     average<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         columnName: PickKeysByType<Entity, number>,
-        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where?: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
         return this.callAggregateFun(entityClass, "AVG", columnName, where)
     }
@@ -1046,7 +1046,7 @@ export class EntityManager {
     minimum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         columnName: PickKeysByType<Entity, number>,
-        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where?: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
         return this.callAggregateFun(entityClass, "MIN", columnName, where)
     }
@@ -1057,7 +1057,7 @@ export class EntityManager {
     maximum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         columnName: PickKeysByType<Entity, number>,
-        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where?: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
         return this.callAggregateFun(entityClass, "MAX", columnName, where)
     }
@@ -1066,7 +1066,9 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         fnName: "SUM" | "AVG" | "MIN" | "MAX",
         columnName: PickKeysByType<Entity, number>,
-        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[] = {},
+        where:
+            | FindOptionsWhere<Entity>
+            | readonly FindOptionsWhere<Entity>[] = {},
     ): Promise<number | null> {
         const metadata = this.connection.getMetadata(entityClass)
         const column = metadata.columns.find(
@@ -1112,7 +1114,7 @@ export class EntityManager {
      */
     async findBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
@@ -1149,7 +1151,7 @@ export class EntityManager {
      */
     findAndCountBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
@@ -1223,7 +1225,7 @@ export class EntityManager {
      */
     async findOneBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<Entity | null> {
         const metadata = this.connection.getMetadata(entityClass)
 
@@ -1287,7 +1289,7 @@ export class EntityManager {
      */
     async findOneByOrFail<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<Entity> {
         return this.findOneBy<Entity>(entityClass as any, where).then(
             (value) => {

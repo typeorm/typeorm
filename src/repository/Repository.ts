@@ -474,7 +474,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Checks whether any entity exists that matches the given conditions.
      */
     existsBy(
-        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<boolean> {
         return this.manager.existsBy(this.metadata.target, where)
     }
@@ -492,7 +492,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Useful for pagination.
      */
     countBy(
-        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<number> {
         return this.manager.countBy(this.metadata.target, where)
     }
@@ -502,7 +502,7 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     sum(
         columnName: PickKeysByType<Entity, number>,
-        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where?: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
         return this.manager.sum(this.metadata.target, columnName, where)
     }
@@ -512,7 +512,7 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     average(
         columnName: PickKeysByType<Entity, number>,
-        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where?: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
         return this.manager.average(this.metadata.target, columnName, where)
     }
@@ -522,7 +522,7 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     minimum(
         columnName: PickKeysByType<Entity, number>,
-        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where?: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
         return this.manager.minimum(this.metadata.target, columnName, where)
     }
@@ -532,7 +532,7 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     maximum(
         columnName: PickKeysByType<Entity, number>,
-        where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where?: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
         return this.manager.maximum(this.metadata.target, columnName, where)
     }
@@ -548,7 +548,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entities that match given find options.
      */
     async findBy(
-        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<Entity[]> {
         return this.manager.findBy(this.metadata.target, where)
     }
@@ -570,7 +570,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * but ignores pagination settings (from and take options).
      */
     findAndCountBy(
-        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<[Entity[], number]> {
         return this.manager.findAndCountBy(this.metadata.target, where)
     }
@@ -602,7 +602,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * If entity was not found in the database - returns null.
      */
     async findOneBy(
-        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<Entity | null> {
         return this.manager.findOneBy(this.metadata.target, where)
     }
@@ -636,7 +636,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * If entity was not found in the database - rejects with error.
      */
     async findOneByOrFail(
-        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        where: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[],
     ): Promise<Entity> {
         return this.manager.findOneByOrFail(this.metadata.target, where)
     }

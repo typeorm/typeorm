@@ -29,7 +29,7 @@ export interface FindOneOptions<Entity = any> {
     /**
      * Simple condition that should be applied to match entities.
      */
-    where?: readonly FindOptionsWhere<Entity>[] | FindOptionsWhere<Entity>
+    where?: FindOptionsWhere<Entity> | readonly FindOptionsWhere<Entity>[]
 
     /**
      * Indicates what relations of entity should be loaded (simplified left join form).
