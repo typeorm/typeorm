@@ -84,7 +84,7 @@ export interface FindOneOptions<Entity = any> {
                   | "pessimistic_write_or_fail"
                   | "for_no_key_update"
                   | "for_key_share"
-              tables?: string[]
+              tables?: readonly string[]
               onLocked?: "nowait" | "skip_locked"
           }
 
@@ -99,7 +99,7 @@ export interface FindOneOptions<Entity = any> {
      */
     loadRelationIds?:
         | boolean
-        | { relations?: string[]; disableMixedMap?: boolean } // todo: extract options into separate interface, reuse
+        | { relations?: readonly string[]; disableMixedMap?: boolean } // todo: extract options into separate interface, reuse
 
     /**
      * Indicates if eager relations should be loaded or not.
