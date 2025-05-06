@@ -3,7 +3,7 @@ import "reflect-metadata"
 import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { buildSqlTag } from "../../../src/util/SqlTagUtils"
 
-describe.only("sql tag parameters", () => {
+describe("sql tag parameters", () => {
     function sql(strings: TemplateStringsArray, ...expressions: unknown[]) {
         return buildSqlTag({
             driver: new PostgresDriver(),
@@ -41,6 +41,13 @@ describe.only("sql tag parameters", () => {
 
         expect(query).to.equal("SELECT * FROM example WHERE id = ANY($1, $2)")
         expect(parameters).to.deep.equal(["first", "second"])
+    })
+
+    it("should interpolate a function expression which returns a string into the SQL verbatim", () => {
+        const { query, parameters } = sql`SELECT * FROM ${() => "public"}.example`
+
+        expect(query).to.equal("SELECT * FROM public.example")
+        expect(parameters).to.deep.equal([])
     })
 
     it("should keep incrementing the parameter index after an array is spread", () => {

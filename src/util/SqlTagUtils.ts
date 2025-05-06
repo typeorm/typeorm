@@ -27,6 +27,11 @@ export function buildSqlTag({
         if (typeof expression === "function") {
             const value = expression()
 
+            if (typeof value === "string") {
+                query += value
+                continue
+            }
+
             if (Array.isArray(value)) {
                 if (value.length === 0) {
                     query += "NULL"
