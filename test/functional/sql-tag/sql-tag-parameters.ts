@@ -44,7 +44,9 @@ describe("sql tag parameters", () => {
     })
 
     it("should interpolate a function expression which returns a string into the SQL verbatim", () => {
-        const { query, parameters } = sql`SELECT * FROM ${() => "public"}.example`
+        const { query, parameters } = sql`
+            SELECT * FROM ${() => "public"}.example
+        `
 
         expect(query).to.equal("SELECT * FROM public.example")
         expect(parameters).to.deep.equal([])
@@ -71,15 +73,6 @@ describe("sql tag parameters", () => {
 
         expect(query).to.equal("SELECT * FROM example WHERE id = ANY(NULL)")
         expect(parameters).to.deep.equal([])
-    })
-
-    it("should handle a single parameter that is a function", () => {
-        const { query, parameters } = sql`
-            SELECT * FROM example WHERE id = ${() => "test"}
-        `
-
-        expect(query).to.equal("SELECT * FROM example WHERE id = $1")
-        expect(parameters).to.deep.equal(["test"])
     })
 
     it("should handle parameters at the start, middle, and end", () => {
