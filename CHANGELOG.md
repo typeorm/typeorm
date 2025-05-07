@@ -8,7 +8,7 @@
 * cleanup after streaming in sap hana ([#11399](https://github.com/typeorm/typeorm/issues/11399)) ([fadad1a](https://github.com/typeorm/typeorm/commit/fadad1a74c7955995b9a1ec48ac8ef7a627fbd33))
 * **mongo:** propagate `aggregate` method's generic type to its returned cursor ([#10754](https://github.com/typeorm/typeorm/issues/10754)) ([56f1898](https://github.com/typeorm/typeorm/commit/56f1898c4eef2682f534acf3f828f99d21a9ca6b))
 * prevent error when replication is undefined ([#11423](https://github.com/typeorm/typeorm/issues/11423)) ([61a6f97](https://github.com/typeorm/typeorm/commit/61a6f971afa6c82fb6abbc57839dac25a81db775))
-
+* update/delete/softDelete by criteria of condition objects ([#10910](https://github.com/typeorm/typeorm/issues/10910))
 
 ### Features
 
