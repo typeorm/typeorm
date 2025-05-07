@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import "reflect-metadata";
+import "reflect-metadata"
 
 import { DataSource } from "../../../src"
 import {
@@ -12,7 +12,7 @@ import { Post } from "./entity/Post"
 describe("github issues > #11440", () => {
     let dataSource: DataSource
     before(async () => {
-        [dataSource] = await createTestingConnections({
+        ;[dataSource] = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["postgres"], // since the issue is for postgres only
         })
