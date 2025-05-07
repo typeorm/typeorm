@@ -184,7 +184,7 @@ export class SpannerDriver implements Driver {
     private readonly _isReturningSqlSupported: Record<ReturningType, boolean> =
         {
             delete: false,
-            insert: false,
+            insert: true,
             update: false,
         }
 
