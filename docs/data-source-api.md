@@ -176,12 +176,15 @@ const rawData = await dataSource.query(
     'SELECT * FROM USERS WHERE name = @0 and age = @1',
     [ 'John', 24 ]
 )
+```
 
 -   `sql` - Executes a raw SQL query using template literals.
 
 ```typescript
 const rawData = await dataSource.sql`SELECT * FROM USERS WHERE name = ${'John'} and age = ${24}`
 ```
+
+Learn more about using the [SQL Tag syntax](sql-tag.md).
 
 -   `createQueryBuilder` - Creates a query builder, which can be used to build queries.
     Learn more about [QueryBuilder](select-query-builder.md).
