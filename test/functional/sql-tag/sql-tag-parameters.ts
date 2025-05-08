@@ -3,7 +3,7 @@ import "reflect-metadata"
 import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { buildSqlTag } from "../../../src/util/SqlTagUtils"
 
-describe.only("sql tag parameters", () => {
+describe("sql tag parameters", () => {
     function sql(strings: TemplateStringsArray, ...expressions: unknown[]) {
         return buildSqlTag({
             driver: new PostgresDriver(),
