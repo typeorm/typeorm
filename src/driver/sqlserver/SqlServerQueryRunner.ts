@@ -2872,10 +2872,9 @@ export class SqlServerQueryRunner
             const tablesSql = Object.entries(tableNamesByCatalog)
                 .map(([database, tables]) => {
                     const tablesCondition = tables
-                        .map(
-                            ({ schema, tableName }) =>
-                                `("TABLE_SCHEMA" = '${schema}' AND "TABLE_NAME" = '${tableName}')`,
-                        )
+                        .map(({ schema, tableName }) => {
+                            return `("TABLE_SCHEMA" = '${schema}' AND "TABLE_NAME" = '${tableName}')`
+                        })
                         .join(" OR ")
 
                     return `
