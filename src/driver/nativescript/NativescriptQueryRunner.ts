@@ -3,7 +3,6 @@ import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { Broadcaster } from "../../subscriber/Broadcaster"
-import { buildSqlTag } from "../../util/SqlTagUtils"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import { NativescriptDriver } from "./NativescriptDriver"
 
@@ -111,21 +110,6 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
                 databaseConnection.all(query, parameters, handler)
             }
         })
-    }
-
-    /**
-     * Executes a given SQL query using the sql-tag syntax.
-     */
-    async sql<T = any>(
-        strings: TemplateStringsArray,
-        ...parameters: any[]
-    ): Promise<QueryResult<T> | any> {
-        const sqlQuery = buildSqlTag({
-            driver: this.driver,
-            strings,
-            expressions: parameters,
-        })
-        return this.query(sqlQuery.query, sqlQuery.parameters, false)
     }
 
     // -------------------------------------------------------------------------

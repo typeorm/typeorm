@@ -8,8 +8,6 @@ import { ReplicationMode } from "../types/ReplicationMode"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { Table } from "../../schema-builder/table/Table"
 import { TypeORMError } from "../../error"
-import { ReadStream } from "../../platform/PlatformTools"
-import { buildSqlTag } from "../../util/SqlTagUtils"
 
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
     driver: any
@@ -194,36 +192,6 @@ export class AuroraPostgresQueryRunner
         }
 
         return result
-    }
-
-    /**
-     * A tagged template that executes raw SQL query and returns raw database results
-     */
-    async sql<T = any>(
-        strings: TemplateStringsArray,
-        ...values: unknown[]
-    ): Promise<T> {
-        const { query, parameters } = buildSqlTag({
-            driver: this.driver,
-            strings: strings,
-            expressions: values,
-        })
-
-        return await this.query(query, parameters)
-    }
-
-    /**
-     * Returns raw data stream.
-     */
-    async stream(
-        query: string,
-        parameters?: any[],
-        onEnd?: Function,
-        onError?: Function,
-    ): Promise<ReadStream> {
-        throw new TypeORMError(
-            "Streaming is not directly supported by AuroraPostgresQueryRunner using Data API client.",
-        )
     }
 
     /**

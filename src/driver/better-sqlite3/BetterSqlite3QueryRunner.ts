@@ -5,7 +5,6 @@ import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BetterSqlite3Driver } from "./BetterSqlite3Driver"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
-import { buildSqlTag } from "../../util/SqlTagUtils"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -149,21 +148,6 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             connection.logger.logQueryError(err, query, parameters, this)
             throw new QueryFailedError(query, parameters, err)
         }
-    }
-
-    /**
-     * Executes a given SQL query using the sql-tag syntax.
-     */
-    async sql<T = any>(
-        strings: TemplateStringsArray,
-        ...parameters: any[]
-    ): Promise<QueryResult | any> {
-        const sqlQuery = buildSqlTag({
-            driver: this.driver,
-            strings,
-            expressions: parameters,
-        })
-        return this.query(sqlQuery.query, sqlQuery.parameters, false)
     }
 
     // -------------------------------------------------------------------------

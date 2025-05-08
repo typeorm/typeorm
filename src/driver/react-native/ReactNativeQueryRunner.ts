@@ -4,7 +4,6 @@ import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyR
 import { QueryResult } from "../../query-runner/QueryResult"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
-import { buildSqlTag } from "../../util/SqlTagUtils"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import { ReactNativeDriver } from "./ReactNativeDriver"
 
@@ -150,21 +149,6 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                 await broadcasterResult.wait()
             }
         })
-    }
-
-    /**
-     * Executes a given SQL query using the sql-tag syntax.
-     */
-    async sql<T = any>(
-        strings: TemplateStringsArray,
-        ...parameters: any[]
-    ): Promise<QueryResult<T> | any> {
-        const sqlQuery = buildSqlTag({
-            driver: this.driver,
-            strings,
-            expressions: parameters,
-        })
-        return this.query(sqlQuery.query, sqlQuery.parameters, false)
     }
 
     // -------------------------------------------------------------------------

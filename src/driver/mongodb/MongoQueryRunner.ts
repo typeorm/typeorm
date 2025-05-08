@@ -57,7 +57,6 @@ import {
 } from "../../driver/mongodb/typings"
 import { DataSource } from "../../data-source/DataSource"
 import { ReplicationMode } from "../types/ReplicationMode"
-import { buildSqlTag } from "../../util/SqlTagUtils"
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -528,19 +527,15 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
-     * A tagged template that executes raw SQL query and returns raw database results
+     * Unsupported - Executing SQL query is not supported by MongoDB driver.
      */
-    async sql<T = any>(
+    async sql(
         strings: TemplateStringsArray,
         ...values: unknown[]
-    ): Promise<T> {
-        const { query, parameters } = buildSqlTag({
-            driver: this.connection.driver,
-            strings: strings,
-            expressions: values,
-        })
-
-        return await this.query(query, parameters)
+    ): Promise<any> {
+        throw new TypeORMError(
+            `Executing SQL query is not supported by MongoDB driver.`,
+        )
     }
 
     /**

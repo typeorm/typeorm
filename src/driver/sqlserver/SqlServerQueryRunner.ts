@@ -21,7 +21,6 @@ import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
-import { buildSqlTag } from "../../util/SqlTagUtils"
 import { Query } from "../Query"
 import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
@@ -330,22 +329,6 @@ export class SqlServerQueryRunner
 
             release()
         }
-    }
-
-    /**
-     * A tagged template that executes raw SQL query and returns raw database results
-     */
-    async sql<T = any>(
-        strings: TemplateStringsArray,
-        ...values: unknown[]
-    ): Promise<T> {
-        const { query, parameters } = buildSqlTag({
-            driver: this.driver,
-            strings: strings,
-            expressions: values,
-        })
-
-        return await this.query(query, parameters)
     }
 
     /**

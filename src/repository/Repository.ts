@@ -656,7 +656,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Tagged template function that executes raw SQL query and returns raw database results.
      * Template expressions are automatically transformed into database parameters.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
-     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal. 
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
      * Example: repository.sql`SELECT * FROM table_name WHERE id = ${id}`
      */
     async sql<T = any>(

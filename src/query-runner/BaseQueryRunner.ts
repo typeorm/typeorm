@@ -16,6 +16,7 @@ import { TableForeignKey } from "../schema-builder/table/TableForeignKey"
 import { OrmUtils } from "../util/OrmUtils"
 import { MetadataTableType } from "../driver/types/MetadataTableType"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { buildSqlTag } from "../util/SqlTagUtils"
 
 export abstract class BaseQueryRunner {
     // -------------------------------------------------------------------------
@@ -112,12 +113,24 @@ export abstract class BaseQueryRunner {
     ): Promise<any>
 
     /**
-     * A tagged template that executes raw SQL query and returns raw database results
+     * Tagged template function that executes raw SQL query and returns raw database results.
+     * Template expressions are automatically transformed into database parameters.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
+     * Example: repository.sql`SELECT * FROM table_name WHERE id = ${id}`
      */
-    abstract sql<T = any>(
+    async sql<T = any>(
         strings: TemplateStringsArray,
         ...values: unknown[]
-    ): Promise<T>
+    ): Promise<T> {
+        const { query, parameters } = buildSqlTag({
+            driver: this.connection.driver,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, parameters)
+    }
 
     // -------------------------------------------------------------------------
     // Protected Abstract Methods

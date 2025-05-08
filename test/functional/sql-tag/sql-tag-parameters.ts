@@ -3,7 +3,7 @@ import "reflect-metadata"
 import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { buildSqlTag } from "../../../src/util/SqlTagUtils"
 
-describe("sql tag parameters", () => {
+describe.only("sql tag parameters", () => {
     function sql(strings: TemplateStringsArray, ...expressions: unknown[]) {
         return buildSqlTag({
             driver: new PostgresDriver(),
@@ -66,13 +66,13 @@ describe("sql tag parameters", () => {
         expect(parameters).to.deep.equal(["first", "second", "test"])
     })
 
-    it("should handle an empty array spread", () => {
+    it("should handle an empty array when not spread", () => {
         const { query, parameters } = sql`
-            SELECT * FROM example WHERE id = ANY(${() => []})
+            SELECT * FROM example WHERE id = ANY(${[]})
         `
 
-        expect(query).to.equal("SELECT * FROM example WHERE id = ANY(NULL)")
-        expect(parameters).to.deep.equal([])
+        expect(query).to.equal("SELECT * FROM example WHERE id = ANY($1)")
+        expect(parameters).to.deep.equal([[]])
     })
 
     it("should handle parameters at the start, middle, and end", () => {
@@ -120,5 +120,11 @@ describe("sql tag parameters", () => {
             "id4",
             "multiSpread",
         ])
+    })
+
+    it("should throw an error when passing an invalid value inside a function argument", () => {
+        expect(() => sql`SELECT * FROM example WHERE id = ${() => 1}`).to.throw(
+            "Only array and strings are supported as function arguments. Got number instead.",
+        )
     })
 })

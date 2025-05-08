@@ -180,7 +180,7 @@ export class EntityManager {
     /**
      * Tagged template function that executes raw SQL query and returns raw database results.
      * Template expressions are automatically transformed into database parameters.
-     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal. 
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
      * Example: entityManager.sql`SELECT * FROM table_name WHERE id = ${id}`
      */
     async sql<T = any>(

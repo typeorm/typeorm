@@ -28,7 +28,6 @@ import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { SapDriver } from "./SapDriver"
-import { buildSqlTag } from "../../util/SqlTagUtils"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -326,22 +325,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         } else {
             return result.raw
         }
-    }
-
-    /**
-     * A tagged template that executes raw SQL query and returns raw database results
-     */
-    async sql<T = any>(
-        strings: TemplateStringsArray,
-        ...values: unknown[]
-    ): Promise<T> {
-        const { query, parameters } = buildSqlTag({
-            driver: this.driver,
-            strings: strings,
-            expressions: values,
-        })
-
-        return await this.query(query, parameters)
     }
 
     /**

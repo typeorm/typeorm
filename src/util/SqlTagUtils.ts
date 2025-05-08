@@ -33,25 +33,24 @@ export function buildSqlTag({
             }
 
             if (Array.isArray(value)) {
-                if (value.length === 0) {
-                    query += "NULL"
-                    continue
-                }
-
                 const arrayParams = value.map(() => {
                     return driver.createParameter(`param_${idx + 1}`, idx++)
                 })
 
                 query += arrayParams.join(", ")
-                parameters.push(...value.map((e) => toParameter(e)))
+                parameters.push(...value)
 
                 continue
             }
+
+            throw new Error(
+                `Only array and strings are supported as function arguments. Got ${typeof value} instead.`,
+            )
         }
 
         query += driver.createParameter(`param_${idx + 1}`, idx++)
 
-        parameters.push(toParameter(expression))
+        parameters.push(expression)
     }
 
     query += strings[strings.length - 1]
@@ -59,12 +58,4 @@ export function buildSqlTag({
     query = dedent(query)
 
     return { query, parameters }
-}
-
-function toParameter(expression: unknown) {
-    if (typeof expression === "function") {
-        return expression()
-    }
-
-    return expression
 }

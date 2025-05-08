@@ -6,7 +6,6 @@ import { ExpoLegacyDriver } from "./ExpoLegacyDriver"
 import { Broadcaster } from "../../../subscriber/Broadcaster"
 import { QueryResult } from "../../../query-runner/QueryResult"
 import { BroadcasterResult } from "../../../subscriber/BroadcasterResult"
-import { buildSqlTag } from "../../../util/SqlTagUtils"
 
 // Needed to satisfy the Typescript compiler
 interface IResultSet {
@@ -276,20 +275,5 @@ export class ExpoLegacyQueryRunner extends AbstractSqliteQueryRunner {
                 },
             )
         })
-    }
-
-    /**
-     * Executes a given SQL query using the sql-tag syntax.
-     */
-    async sql<T = any>(
-        strings: TemplateStringsArray,
-        ...parameters: any[]
-    ): Promise<QueryResult | any> {
-        const sqlQuery = buildSqlTag({
-            driver: this.driver,
-            strings,
-            expressions: parameters,
-        })
-        return this.query(sqlQuery.query, sqlQuery.parameters, false)
     }
 }
