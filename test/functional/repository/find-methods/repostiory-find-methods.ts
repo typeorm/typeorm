@@ -762,8 +762,9 @@ describe("repository > find methods", () => {
                         assert.fail("Should have thrown an error.")
                     } catch (err) {
                         expect(err).to.be.an.instanceOf(EntityNotFoundError)
-                        expect(err).to.have.property("entityClass", "User")
+                        expect(err).to.have.property("entityClass", userRepository.target)
                         expect(err).to.have.property("criteria", options)
+                        expect(err).to.have.property("targetName", "User")
                     }
                 }),
             ))
