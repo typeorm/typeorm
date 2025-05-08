@@ -44,7 +44,7 @@ export function buildSqlTag({
             }
 
             throw new Error(
-                `Only array and strings are supported as function arguments. Got ${typeof value} instead.`,
+                `Expression ${expressionIdx} in sql tagged template returned a value of type "${value === null ? "null" : typeof value}". Only array and string types are supported as function return values in sql tagged template expressions.`,
             )
         }
 

@@ -124,7 +124,7 @@ describe("sql tag parameters", () => {
 
     it("should throw an error when passing an invalid value inside a function argument", () => {
         expect(() => sql`SELECT * FROM example WHERE id = ${() => 1}`).to.throw(
-            "Only array and strings are supported as function arguments. Got number instead.",
+            `Expression 0 in sql tagged template returned a value of type "number". Only array and string types are supported as function return values in sql tagged template expressions.`
         )
     })
 })
