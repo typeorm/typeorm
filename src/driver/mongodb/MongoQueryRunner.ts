@@ -5,6 +5,7 @@ import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { View } from "../../schema-builder/view/View"
 // import {Connection} from "../../connection/Connection";
+import { ReadStream } from "../../platform/PlatformTools"
 import { MongoEntityManager } from "../../entity-manager/MongoEntityManager"
 import { SqlInMemory } from "../SqlInMemory"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
@@ -516,18 +517,6 @@ export class MongoQueryRunner implements QueryRunner {
         )
     }
 
-    /**
-     * Unsupported - Executing SQL query is not supported by MongoDB driver.
-     */
-    async sql(
-        strings: TemplateStringsArray,
-        ...values: unknown[]
-    ): Promise<any> {
-        throw new TypeORMError(
-            `Executing SQL query is not supported by MongoDB driver.`,
-        )
-    }
-
     // -------------------------------------------------------------------------
     // Public Implemented Methods (from QueryRunner)
     // -------------------------------------------------------------------------
@@ -575,6 +564,73 @@ export class MongoQueryRunner implements QueryRunner {
     async rollbackTransaction(): Promise<void> {
         // transactions are not supported by mongodb driver, so simply don't do anything here
     }
+
+    /**
+     * Executes a given SQL query.
+     */
+    query(query: string, parameters?: any[]): Promise<any> {
+        throw new TypeORMError(
+            `Executing SQL query is not supported by MongoDB driver.`,
+        )
+    }
+
+    /**
+     * Unsupported - Executing SQL query is not supported by MongoDB driver.
+     */
+    async sql(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<any> {
+        throw new TypeORMError(
+            `Executing SQL query is not supported by MongoDB driver.`,
+        )
+    }
+
+    /**
+     * Returns raw data stream.
+     */
+    stream(
+        query: string,
+        parameters?: any[],
+        onEnd?: Function,
+        onError?: Function,
+    ): Promise<ReadStream> {
+        throw new TypeORMError(
+            `Stream is not supported by MongoDB driver. Use watch instead.`,
+        )
+    }
+
+    /**
+     * Insert a new row with given values into the given table.
+     * Returns value of inserted object id.
+    async insert(collectionName: string, keyValues: ObjectLiteral): Promise<any> { // todo: fix any
+        const results = await this.databaseConnection
+            .collection(collectionName)
+            .insertOne(keyValues);
+        const generatedMap = this.connection.getMetadata(collectionName).objectIdColumn!.createValueMap(results.insertedId);
+        return {
+            result: results,
+            generatedMap: generatedMap
+        };
+    }*/
+
+    /**
+     * Updates rows that match given conditions in the given table.
+    async update(collectionName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<any> { // todo: fix any
+        await this.databaseConnection
+            .collection(collectionName)
+            .updateOne(conditions, valuesMap);
+    }*/
+
+    /**
+     * Deletes from the given table by a given conditions.
+    async delete(collectionName: string, conditions: ObjectLiteral|ObjectLiteral[]|string, maybeParameters?: any[]): Promise<any> { // todo: fix any
+        if (typeof conditions === "string")
+            throw new TypeORMError(`String condition is not supported by MongoDB driver.`);
+        await this.databaseConnection
+            .collection(collectionName)
+            .deleteOne(conditions);
+    }*/
 
     /**
      * Returns all available database names including system databases.
