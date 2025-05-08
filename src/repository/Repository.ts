@@ -356,7 +356,8 @@ export class Repository<Entity extends ObjectLiteral> {
             | Date[]
             | ObjectId
             | ObjectId[]
-            | FindOptionsWhere<Entity>,
+            | FindOptionsWhere<Entity>
+            | FindOptionsWhere<Entity>[],
         partialEntity: QueryDeepPartialEntity<Entity>,
     ): Promise<UpdateResult> {
         return this.manager.update(
@@ -400,7 +401,8 @@ export class Repository<Entity extends ObjectLiteral> {
             | Date[]
             | ObjectId
             | ObjectId[]
-            | FindOptionsWhere<Entity>,
+            | FindOptionsWhere<Entity>
+            | FindOptionsWhere<Entity>[],
     ): Promise<DeleteResult> {
         return this.manager.delete(this.metadata.target as any, criteria as any)
     }
@@ -421,7 +423,8 @@ export class Repository<Entity extends ObjectLiteral> {
             | Date[]
             | ObjectId
             | ObjectId[]
-            | FindOptionsWhere<Entity>,
+            | FindOptionsWhere<Entity>
+            | FindOptionsWhere<Entity>[],
     ): Promise<UpdateResult> {
         return this.manager.softDelete(
             this.metadata.target as any,
@@ -445,7 +448,8 @@ export class Repository<Entity extends ObjectLiteral> {
             | Date[]
             | ObjectId
             | ObjectId[]
-            | FindOptionsWhere<Entity>,
+            | FindOptionsWhere<Entity>
+            | FindOptionsWhere<Entity>[],
     ): Promise<UpdateResult> {
         return this.manager.restore(
             this.metadata.target as any,

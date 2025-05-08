@@ -1,3 +1,30 @@
+## [0.3.23](https://github.com/typeorm/typeorm/compare/0.3.22...0.3.23) (2025-05-05)
+
+
+### Bug Fixes
+
+* beforeQuery promises not awaited before query execution ([#11086](https://github.com/typeorm/typeorm/issues/11086)) ([b9842e3](https://github.com/typeorm/typeorm/commit/b9842e3be918db69393325fb799b647480d56e9d)), closes [#11085](https://github.com/typeorm/typeorm/issues/11085) [#11085](https://github.com/typeorm/typeorm/issues/11085)
+* change how array columns are compared on column changed detection ([#11269](https://github.com/typeorm/typeorm/issues/11269)) ([a61654e](https://github.com/typeorm/typeorm/commit/a61654e07985692626e133fc38416fb574408c91)), closes [#5967](https://github.com/typeorm/typeorm/issues/5967)
+* cleanup after streaming in sap hana ([#11399](https://github.com/typeorm/typeorm/issues/11399)) ([fadad1a](https://github.com/typeorm/typeorm/commit/fadad1a74c7955995b9a1ec48ac8ef7a627fbd33))
+* **mongo:** propagate `aggregate` method's generic type to its returned cursor ([#10754](https://github.com/typeorm/typeorm/issues/10754)) ([56f1898](https://github.com/typeorm/typeorm/commit/56f1898c4eef2682f534acf3f828f99d21a9ca6b))
+* prevent error when replication is undefined ([#11423](https://github.com/typeorm/typeorm/issues/11423)) ([61a6f97](https://github.com/typeorm/typeorm/commit/61a6f971afa6c82fb6abbc57839dac25a81db775))
+* update/delete/softDelete by criteria of condition objects ([#10910](https://github.com/typeorm/typeorm/issues/10910))
+
+### Features
+
+* add FormattedConsoleLogger ([#11401](https://github.com/typeorm/typeorm/issues/11401)) ([4c8fc3a](https://github.com/typeorm/typeorm/commit/4c8fc3a7cbd2e2db90d2ade43b151bbf1c40814b)), closes [#10801](https://github.com/typeorm/typeorm/issues/10801)
+* add new foreign key decorator, and entity schemas options ([#11144](https://github.com/typeorm/typeorm/issues/11144)) ([6ebae3b](https://github.com/typeorm/typeorm/commit/6ebae3b7956cc6da4258358ba590cd8bb821c54f)), closes [#4569](https://github.com/typeorm/typeorm/issues/4569)
+* Add query timeout support for MySql ([#10846](https://github.com/typeorm/typeorm/issues/10846)) ([046aebe](https://github.com/typeorm/typeorm/commit/046aebe6960c44fbcdd195e378d3b60515b10f31))
+* generate ESM migrations via esm flag ([#10802](https://github.com/typeorm/typeorm/issues/10802)) ([7c5ea99](https://github.com/typeorm/typeorm/commit/7c5ea99b3164306cd8816c9d1b026d2cbc8969fa)), closes [#10801](https://github.com/typeorm/typeorm/issues/10801)
+* publish PR releases using pkg.pr.new  ([274bdf2](https://github.com/typeorm/typeorm/commit/274bdf2e1a5c2f9ece41d1cd1742612f2c2d925f))
+
+
+### Performance Improvements
+
+* **query-runner:** use Date.now() instead of +new Date() ([#10811](https://github.com/typeorm/typeorm/issues/10811)) ([fe71a0c](https://github.com/typeorm/typeorm/commit/fe71a0c3e441bc5fc68eec78c575d7ab5cc81bad))
+
+
+
 ## [0.3.22](https://github.com/typeorm/typeorm/compare/0.3.21...0.3.22) (2025-04-03)
 
 
