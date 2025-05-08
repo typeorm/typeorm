@@ -127,7 +127,10 @@ export interface QueryRunner {
     query(query: string, parameters?: any[]): Promise<any>
 
     /**
-     * A tagged template that executes raw SQL query and returns raw database results
+     * Tagged template function that executes raw SQL query and returns raw database results.
+     * Template expressions are automatically transformed into database parameters.
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal. 
+     * Example: queryRunner.sql`SELECT * FROM table_name WHERE id = ${id}`
      */
     sql<T = any>(
         strings: TemplateStringsArray,
