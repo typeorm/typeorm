@@ -1284,7 +1284,7 @@ export class EntityManager {
      */
     async increment<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        conditions: any,
+        conditions: FindOptionsWhere<Entity>,
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
@@ -1321,7 +1321,7 @@ export class EntityManager {
      */
     async decrement<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        conditions: any,
+        conditions: FindOptionsWhere<Entity>,
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
