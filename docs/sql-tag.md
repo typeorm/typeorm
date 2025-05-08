@@ -54,6 +54,31 @@ const users = await dataSource.sql`
 `
 ```
 
+### Expanding Parameter Lists
+
+To transform an array of values into a dynamic list of parameters in a template expression, wrap the array in a function. This is commonly used to write an `IN (...)` expression in SQL, where each value in the list must be supplied as a separate parameter:
+
+```typescript
+// Query becomes: SELECT * FROM users WHERE id IN (?, ?, ?)
+const users = await dataSource.sql`
+    SELECT * FROM users
+    WHERE id IN (${() => [1, 2, 3]})
+`
+```
+
+### Interpolating Unescaped Expressions
+
+When you want to insert a template expression which should _not_ be transformed into a database parameter, wrap the string in a function. This can be used to dynamically define column, table or schema names which can't be parameterized, or to conditionally set clauses in the SQL.
+
+**Caution!** No escaping is performed on raw SQL inserted in this way. It is not safe to use this with values sourced from user input.
+
+```typescript
+// Query becomes: SELECT * FROM dynamic_table_name
+const rawData = await dataSource.sql`
+    SELECT * FROM ${() => "dynamic_table_name"}
+`
+```
+
 ## Features
 
 - **SQL Injection Prevention**: Parameters are properly escaped
