@@ -4,7 +4,7 @@ TypeORM provides a way to write SQL queries using template literals with automat
 
 ## Basic Usage
 
-The SQL tag is available on your DataSource instance:
+The `sql` tag is available on DataSource, EntityManager, Repository and QueryRunner instances:
 
 ```typescript
 const users = await dataSource.sql`SELECT * FROM users WHERE name = ${"John"}`
