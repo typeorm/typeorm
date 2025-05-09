@@ -129,7 +129,9 @@ describe("sql tag parameters", () => {
     })
 
     it("should throw an error when passing an empty array inside a function argument", () => {
-        expect(() => sql`SELECT * FROM example WHERE id IN (${() => []})`).to.throw(
+        expect(
+            () => sql`SELECT * FROM example WHERE id IN (${() => []})`,
+        ).to.throw(
             `Expression 0 in this sql tagged template is a function which returned an empty array. Empty arrays cannot safely be expanded into parameter lists.`,
         )
     })
