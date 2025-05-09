@@ -988,6 +988,7 @@ export class MongoQueryRunner implements QueryRunner {
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExist?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,
@@ -1000,6 +1001,7 @@ export class MongoQueryRunner implements QueryRunner {
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExist?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `Schema update queries are not supported by MongoDB driver.`,

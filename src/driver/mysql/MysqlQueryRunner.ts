@@ -1998,6 +1998,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExist?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `MySql does not support unique constraints. Use unique index instead.`,
@@ -2010,6 +2011,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExist?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `MySql does not support unique constraints. Use unique index instead.`,
