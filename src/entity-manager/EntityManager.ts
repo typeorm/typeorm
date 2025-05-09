@@ -883,7 +883,7 @@ export class EntityManager {
     /**
      * Records the delete date of entities by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Executes fast and efficient DELETE query.
+     * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
@@ -904,7 +904,7 @@ export class EntityManager {
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
-                    `Empty criteria(s) are not allowed for the delete method.`,
+                    `Empty criteria(s) are not allowed for the softDelete method.`,
                 ),
             )
         }
@@ -948,7 +948,7 @@ export class EntityManager {
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
-                    `Empty criteria(s) are not allowed for the delete method.`,
+                    `Empty criteria(s) are not allowed for the restore method.`,
                 ),
             )
         }
