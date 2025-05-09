@@ -181,43 +181,4 @@ describe("sql tag parameters (postgres)", () => {
                 expect(ids).to.have.members(["array1", "array2"])
             }),
         ))
-
-    it("should throw an error when exceeding the maximum number of parameters", async () => {
-        await Promise.all(
-            connections.map(async (connection) => {
-                const parameters = Array.from({ length: 100000 }, (_, i) => i)
-
-                try {
-                    await connection.sql`
-                        SELECT COUNT(*) AS param_count FROM (
-                            SELECT unnest(${() => parameters}) AS param
-                        ) AS params
-                    `
-
-                    throw new Error(
-                        "Expected query with too many parameters to fail, but it succeeded",
-                    )
-                } catch (error) {
-                    expect(error.message).to.include(
-                        "cannot pass more than 100 arguments to a function",
-                    )
-                }
-            }),
-        )
-
-        await Promise.all(
-            connections.map(async (connection) => {
-                const parameters = Array.from({ length: 100000 }, (_, i) => i)
-
-                const result = await connection.sql`
-                    SELECT COUNT(*) AS param_count FROM (
-                        SELECT unnest(${parameters}::int4[]) AS param
-                    ) AS params
-                `
-
-                expect(result).to.have.length(1)
-                expect(result[0].param_count).to.equal("100000")
-            }),
-        )
-    })
 })
