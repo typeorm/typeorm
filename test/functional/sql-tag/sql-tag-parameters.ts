@@ -124,7 +124,13 @@ describe("sql tag parameters", () => {
 
     it("should throw an error when passing an invalid value inside a function argument", () => {
         expect(() => sql`SELECT * FROM example WHERE id = ${() => 1}`).to.throw(
-            `Expression 0 in sql tagged template returned a value of type "number". Only array and string types are supported as function return values in sql tagged template expressions.`,
+            `Expression 0 in this sql tagged template is a function which returned a value of type "number". Only array and string types are supported as function return values in sql tagged template expressions.`,
+        )
+    })
+
+    it("should throw an error when passing an empty array inside a function argument", () => {
+        expect(() => sql`SELECT * FROM example WHERE id IN (${() => []})`).to.throw(
+            `Expression 0 in this sql tagged template is a function which returned an empty array. Empty arrays cannot safely be expanded into parameter lists.`,
         )
     })
 })

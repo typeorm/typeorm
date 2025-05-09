@@ -33,6 +33,12 @@ export function buildSqlTag({
             }
 
             if (Array.isArray(value)) {
+                if (value.length === 0) {
+                    throw new Error(
+                        `Expression ${expressionIdx} in this sql tagged template is a function which returned an empty array. Empty arrays cannot safely be expanded into parameter lists.`,
+                    )
+                }
+
                 const arrayParams = value.map(() => {
                     return driver.createParameter(`param_${idx + 1}`, idx++)
                 })
@@ -44,7 +50,7 @@ export function buildSqlTag({
             }
 
             throw new Error(
-                `Expression ${expressionIdx} in sql tagged template returned a value of type "${
+                `Expression ${expressionIdx} in this sql tagged template is a function which returned a value of type "${
                     value === null ? "null" : typeof value
                 }". Only array and string types are supported as function return values in sql tagged template expressions.`,
             )
