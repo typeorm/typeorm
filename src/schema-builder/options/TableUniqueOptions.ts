@@ -21,4 +21,10 @@ export interface TableUniqueOptions {
      * or at the end of a transaction
      */
     deferrable?: string
+
+    /**
+     * Indicates if column handles null values as distinct.
+     * Works only in PostgreSQL 15 and above.
+     */
+    nullsNotDistinct?: boolean
 }
