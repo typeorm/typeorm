@@ -183,9 +183,9 @@ export class SpannerDriver implements Driver {
      */
     private readonly _isReturningSqlSupported: Record<ReturningType, boolean> =
         {
-            delete: false,
+            delete: true,
             insert: true,
-            update: false,
+            update: true,
         }
 
     // -------------------------------------------------------------------------
@@ -434,9 +434,9 @@ export class SpannerDriver implements Driver {
         if (value === null || value === undefined)
             return columnMetadata.transformer
                 ? ApplyValueTransformers.transformFrom(
-                      columnMetadata.transformer,
-                      value,
-                  )
+                    columnMetadata.transformer,
+                    value,
+                )
                 : value
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "bool") {
@@ -715,7 +715,7 @@ export class SpannerDriver implements Driver {
      * Returns true if driver supports uuid values generation on its own.
      */
     isUUIDGenerationSupported(): boolean {
-        return false
+        return true
     }
 
     /**

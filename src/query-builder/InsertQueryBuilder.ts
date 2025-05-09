@@ -366,10 +366,10 @@ export class InsertQueryBuilder<
     orUpdate(
         statementOrOverwrite?:
             | {
-                  columns?: string[]
-                  overwrite?: string[]
-                  conflict_target?: string | string[]
-              }
+                columns?: string[]
+                overwrite?: string[]
+                conflict_target?: string | string[]
+            }
             | string[],
         conflictTarget?: string | string[],
         orUpdateOptions?: InsertOrUpdateOptions,
@@ -409,7 +409,7 @@ export class InsertQueryBuilder<
         const valuesExpression = this.createValuesExpression() // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
         const returningExpression =
             this.connection.driver.options.type === "oracle" &&
-            this.getValueSets().length > 1
+                this.getValueSets().length > 1
                 ? null
                 : this.createReturningExpression("insert") // oracle doesnt support returning with multi-row insert
         const columnsExpression = this.createColumnNamesExpression()
@@ -560,7 +560,7 @@ export class InsertQueryBuilder<
                                             (this.connection.driver.options
                                                 .type === "oracle" &&
                                                 this.getValueSets().length >
-                                                    1) ||
+                                                1) ||
                                             DriverUtils.isSQLiteFamily(
                                                 this.connection.driver,
                                             ) ||
@@ -650,6 +650,13 @@ export class InsertQueryBuilder<
             query += ` RETURNING ${returningExpression}`
         }
 
+        if (
+            returningExpression &&
+            this.connection.driver.options.type === "spanner"
+        ) {
+            query += ` THEN RETURN ${returningExpression}`
+        }
+
         // Inserting a specific value for an auto-increment primary key in mssql requires enabling IDENTITY_INSERT
         // IDENTITY_INSERT can only be enabled for tables where there is an IDENTITY column and only if there is a value to be inserted (i.e. supplying DEFAULT is prohibited if IDENTITY_INSERT is enabled)
         if (
@@ -659,8 +666,8 @@ export class InsertQueryBuilder<
                 .mainAlias!.metadata.columns.filter((column) =>
                     this.expressionMap.insertColumns.length > 0
                         ? this.expressionMap.insertColumns.indexOf(
-                              column.propertyPath,
-                          ) !== -1
+                            column.propertyPath,
+                        ) !== -1
                         : column.isInsert,
                 )
                 .some((column) =>
@@ -865,9 +872,15 @@ export class InsertQueryBuilder<
                                     this.connection.driver.normalizeDefault(
                                         column,
                                     )
+                            } else if (this.connection.driver.options.type === "spanner" &&
+                                column.isGenerated &&
+                                column.generationStrategy === "uuid"
+                            ) {
+                                expression += "GENERATE_UUID()" // Produces a random universally unique identifier (UUID) as a STRING value.
                             } else {
                                 expression += "NULL" // otherwise simply use NULL and pray if column is nullable
                             }
+
                         } else {
                             expression += "DEFAULT"
                         }
@@ -900,15 +913,15 @@ export class InsertQueryBuilder<
                                 this.connection.driver,
                             ) ||
                                 this.connection.driver.options.type ===
-                                    "aurora-mysql") &&
+                                "aurora-mysql") &&
                             this.connection.driver.spatialTypes.indexOf(
                                 column.type,
                             ) !== -1
                         ) {
                             const useLegacy = (
                                 this.connection.driver as
-                                    | MysqlDriver
-                                    | AuroraMysqlDriver
+                                | MysqlDriver
+                                | AuroraMysqlDriver
                             ).options.legacySpatialSupport
                             const geomFromText = useLegacy
                                 ? "GeomFromText"
@@ -953,7 +966,7 @@ export class InsertQueryBuilder<
                         if (valueSetIndex === valueSets.length - 1) {
                             if (
                                 this.connection.driver.options.type ===
-                                    "oracle" &&
+                                "oracle" &&
                                 valueSets.length > 1
                             ) {
                                 expression += " FROM DUAL "
@@ -968,7 +981,7 @@ export class InsertQueryBuilder<
                         } else {
                             if (
                                 this.connection.driver.options.type ===
-                                    "oracle" &&
+                                "oracle" &&
                                 valueSets.length > 1
                             ) {
                                 expression += " FROM DUAL UNION ALL "
