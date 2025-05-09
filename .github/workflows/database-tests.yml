@@ -1,11 +1,10 @@
 name: database-tests
-
 on:
   workflow_call:
     inputs:
       node-version:
         required: true
-        type: string
+        type: number
 
 jobs:
   cockroachdb:
@@ -29,7 +28,7 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
@@ -57,7 +56,7 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
@@ -67,11 +66,8 @@ jobs:
           parallel: true
 
   mssql:
+    if: ${{ inputs.node-version <= 23 }} # mssql client works until Node.js 23
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        mssql-version: ["^9.1.1", "^10.0.1", "^11.0.1"]
 
     services:
       mssql:
@@ -92,8 +88,7 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
-      - run: npm install mssql@${{ matrix.mssql-version }}
+      - run: npm ci
       - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
@@ -135,7 +130,7 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
@@ -157,7 +152,7 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
@@ -179,7 +174,7 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
@@ -201,7 +196,7 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
@@ -215,7 +210,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        postgis-version: ["14-3.5", "17-3.5"]
+        postgis-version: ["14-3.3", "17-3.5"]
 
     services:
       postgres:
@@ -242,11 +237,11 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: postgres-node:${{ inputs.node-version }}
+          flag-name: postgres:${{ matrix.postgis-version }}-node:${{ inputs.node-version }}
           parallel: true

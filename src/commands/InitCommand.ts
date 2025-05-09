@@ -262,8 +262,8 @@ export const AppDataSource = new DataSource({
             return JSON.stringify(
                 {
                     compilerOptions: {
-                        lib: ["es2021"],
-                        target: "es2021",
+                        lib: ["es2023"],
+                        target: "es2022",
                         module: "es2022",
                         moduleResolution: "node",
                         allowSyntheticDefaultImports: true,
@@ -280,8 +280,8 @@ export const AppDataSource = new DataSource({
             return JSON.stringify(
                 {
                     compilerOptions: {
-                        lib: ["es2021"],
-                        target: "es2021",
+                        lib: ["es2023"],
+                        target: "es2022",
                         module: "commonjs",
                         moduleResolution: "node",
                         outDir: "./build",
@@ -709,13 +709,13 @@ Steps to run this project:
                 packageJson.dependencies["sqlite3"] = "^5.1.7"
                 break
             case "better-sqlite3":
-                packageJson.dependencies["better-sqlite3"] = "^8.7.0"
+                packageJson.dependencies["better-sqlite3"] = "^11.9.1"
                 break
             case "oracle":
                 packageJson.dependencies["oracledb"] = "^6.8.0"
                 break
             case "mssql":
-                packageJson.dependencies["mssql"] = "^10.0.4"
+                packageJson.dependencies["mssql"] = "^11.0.1"
                 break
             case "mongodb":
                 packageJson.dependencies["mongodb"] = "^6.15.0"

@@ -24,11 +24,6 @@ export class SqliteDriver extends AbstractSqliteDriver {
      */
     options: SqliteConnectionOptions
 
-    /**
-     * SQLite underlying library.
-     */
-    sqlite: any
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
