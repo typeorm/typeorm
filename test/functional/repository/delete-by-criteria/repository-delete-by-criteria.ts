@@ -32,7 +32,7 @@ describe("repository > delete methods", function () {
             connections.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
-                // save a new posts
+                // save some new posts
                 const newPost1 = postRepository.create()
                 newPost1.title = "Super post #1"
                 const newPost2 = postRepository.create()
@@ -67,7 +67,7 @@ describe("repository > delete methods", function () {
             connections.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
-                // save a new posts
+                // save some new posts
                 const newPost1 = postRepository.create()
                 newPost1.title = "Super post #1"
                 const newPost2 = postRepository.create()
@@ -102,7 +102,7 @@ describe("repository > delete methods", function () {
             connections.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
-                // save a new posts
+                // save some new posts
                 const newPost1 = postRepository.create()
                 newPost1.title = "Super post #1"
                 const newPost2 = postRepository.create()
@@ -141,7 +141,7 @@ describe("repository > delete methods", function () {
             connections.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
-                // save a new posts
+                // save some new posts
                 const newPost1 = postRepository.create()
                 newPost1.title = "Super post #1"
                 const newPost2 = postRepository.create()
