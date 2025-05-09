@@ -807,6 +807,23 @@ export class EntityManager {
     }
 
     /**
+     * Updates all entities of target type, setting fields from supplied partial entity.
+     * This is a primitive operation without cascades, relations or other operations included.
+     * Executes fast and efficient UPDATE query without WHERE clause.
+     *
+     * WARNING! This method updates ALL rows in the target table.
+     */
+    updateAll<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+        partialEntity: QueryDeepPartialEntity<Entity>,
+    ): Promise<UpdateResult> {
+        return this.createQueryBuilder()
+            .update(target)
+            .set(partialEntity)
+            .execute()
+    }
+
+    /**
      * Deletes entities by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient DELETE query.
