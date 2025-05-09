@@ -868,6 +868,19 @@ export class EntityManager {
     }
 
     /**
+     * Deletes all entities of target type.
+     * This is a primitive operation without cascades, relations or other operations included.
+     * Executes fast and efficient DELETE query without WHERE clause.
+     *
+     * WARNING! This method deletes ALL rows in the target table.
+     */
+    deleteAll<Entity extends ObjectLiteral>(
+        targetOrEntity: EntityTarget<Entity>,
+    ): Promise<DeleteResult> {
+        return this.createQueryBuilder().delete().from(targetOrEntity).execute()
+    }
+
+    /**
      * Records the delete date of entities by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient DELETE query.

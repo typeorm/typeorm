@@ -417,7 +417,18 @@ export class Repository<Entity extends ObjectLiteral> {
             | FindOptionsWhere<Entity>
             | FindOptionsWhere<Entity>[],
     ): Promise<DeleteResult> {
-        return this.manager.delete(this.metadata.target as any, criteria as any)
+        return this.manager.delete(this.metadata.target, criteria)
+    }
+
+    /**
+     * Deletes all entities of target type.
+     * This is a primitive operation without cascades, relations or other operations included.
+     * Executes fast and efficient DELETE query without WHERE clause.
+     *
+     * WARNING! This method deletes ALL rows in the target table.
+     */
+    deleteAll(): Promise<DeleteResult> {
+        return this.manager.deleteAll(this.metadata.target)
     }
 
     /**
