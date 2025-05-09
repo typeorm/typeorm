@@ -135,4 +135,43 @@ describe("repository > delete methods", function () {
                     .to.be.undefined
             }),
         ))
+
+    it("removes all rows using deleteAll method", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+
+                // save a new posts
+                const newPost1 = postRepository.create()
+                newPost1.title = "Super post #1"
+                const newPost2 = postRepository.create()
+                newPost2.title = "Super post #2"
+                const newPost3 = postRepository.create()
+                newPost3.title = "Super post #3"
+                const newPost4 = postRepository.create()
+                newPost4.title = "Super post #4"
+
+                await postRepository.save(newPost1)
+                await postRepository.save(newPost2)
+                await postRepository.save(newPost3)
+                await postRepository.save(newPost4)
+
+                // remove all
+                await postRepository.deleteAll()
+
+                // load to check
+                const loadedPosts = await postRepository.find()
+
+                // assert
+                loadedPosts.length.should.be.equal(0)
+                expect(loadedPosts.find((p) => p.title === "Super post #1")).to
+                    .be.undefined
+                expect(loadedPosts.find((p) => p.title === "Super post #2")).to
+                    .be.undefined
+                expect(loadedPosts.find((p) => p.title === "Super post #3")).to
+                    .be.undefined
+                expect(loadedPosts.find((p) => p.title === "Super post #4")).to
+                    .be.undefined
+            }),
+        ))
 })
