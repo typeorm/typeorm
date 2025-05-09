@@ -55,12 +55,11 @@ describe("repository > update methods", function () {
                 const loadedPosts = await postRepository.find()
 
                 // assert
-                loadedPosts.length.should.be.equal(4)
+                expect(loadedPosts.length).to.equal(4)
                 expect(
-                    loadedPosts.filter(
-                        (p) => p.title === "Super duper post #1",
-                    ),
-                ).length.should.be.equal(1)
+                    loadedPosts.filter((p) => p.title === "Super duper post #1")
+                        .length,
+                ).to.equal(1)
             }),
         ))
 
@@ -93,10 +92,11 @@ describe("repository > update methods", function () {
                 const loadedPosts = await postRepository.find()
 
                 // assert
-                loadedPosts.length.should.be.equal(4)
+                expect(loadedPosts.length).to.equal(4)
                 expect(
-                    loadedPosts.filter((p) => p.title === "Updated post title"),
-                ).length.should.be.equal(2)
+                    loadedPosts.filter((p) => p.title === "Updated post title")
+                        .length,
+                ).to.equal(2)
             }),
         ))
 
@@ -130,10 +130,11 @@ describe("repository > update methods", function () {
                 const loadedPosts = await postRepository.find()
 
                 // assert
-                loadedPosts.length.should.be.equal(4)
+                expect(loadedPosts.length).to.equal(4)
                 expect(
-                    loadedPosts.filter((p) => p.title === "Updated post title"),
-                ).length.should.be.equal(2)
+                    loadedPosts.filter((p) => p.title === "Updated post title")
+                        .length,
+                ).to.equal(2)
             }),
         ))
 
@@ -164,10 +165,11 @@ describe("repository > update methods", function () {
                 const loadedPosts = await postRepository.find()
 
                 // assert
-                loadedPosts.length.should.be.equal(4)
+                expect(loadedPosts.length).to.equal(4)
                 expect(
-                    loadedPosts.filter((p) => p.title === "Updated post title"),
-                ).length.should.be.equal(4)
+                    loadedPosts.filter((p) => p.title === "Updated post title")
+                        .length,
+                ).to.equal(4)
             }),
         ))
 })

@@ -54,7 +54,7 @@ describe("repository > delete methods", function () {
                 const loadedPosts = await postRepository.find()
 
                 // assert
-                loadedPosts.length.should.be.equal(3)
+                expect(loadedPosts.length).to.equal(3)
                 expect(loadedPosts.find((p) => p.id === 1)).to.be.undefined
                 expect(loadedPosts.find((p) => p.id === 2)).not.to.be.undefined
                 expect(loadedPosts.find((p) => p.id === 3)).not.to.be.undefined
@@ -89,7 +89,7 @@ describe("repository > delete methods", function () {
                 const loadedPosts = await postRepository.find()
 
                 // assert
-                loadedPosts.length.should.be.equal(2)
+                expect(loadedPosts.length).to.equal(2)
                 expect(loadedPosts.find((p) => p.id === 1)).not.to.be.undefined
                 expect(loadedPosts.find((p) => p.id === 2)).to.be.undefined
                 expect(loadedPosts.find((p) => p.id === 3)).to.be.undefined
@@ -124,7 +124,7 @@ describe("repository > delete methods", function () {
                 const loadedPosts = await postRepository.find()
 
                 // assert
-                loadedPosts.length.should.be.equal(3)
+                expect(loadedPosts.length).to.equal(3)
                 expect(loadedPosts.find((p) => p.title === "Super post #1")).not
                     .to.be.undefined
                 expect(loadedPosts.find((p) => p.title === "Super post #2")).not
@@ -163,7 +163,7 @@ describe("repository > delete methods", function () {
                 const loadedPosts = await postRepository.find()
 
                 // assert
-                loadedPosts.length.should.be.equal(0)
+                expect(loadedPosts.length).to.equal(0)
                 expect(loadedPosts.find((p) => p.title === "Super post #1")).to
                     .be.undefined
                 expect(loadedPosts.find((p) => p.title === "Super post #2")).to
