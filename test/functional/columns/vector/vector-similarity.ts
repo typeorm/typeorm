@@ -71,13 +71,13 @@ describe("columns > vector type > similarity operations", () => {
                 // [1,1,1] and [2,2,2] should have cosine distance 0 (same direction)
                 // [-1,-1,-1] should be last (opposite direction)
                 const embeddings = results.map(
-                    (r: { embedding: number[] }) => r.embedding,
+                    (r: { embedding: string }) => r.embedding, // Ensure type is string for raw results
                 )
                 expect(embeddings).to.deep.include.members([
-                    [1, 1, 1],
-                    [2, 2, 2],
+                    "[1,1,1]",
+                    "[2,2,2]",
                 ])
-                expect(embeddings).to.not.deep.include([-1, -1, -1])
+                expect(embeddings).to.not.deep.include("[-1,-1,-1]")
             }),
         ))
 
@@ -103,8 +103,8 @@ describe("columns > vector type > similarity operations", () => {
 
                 expect(results.length).to.equal(2)
                 // [3,3,3] should have highest inner product, then [1,2,3]
-                expect(results[0].embedding).to.deep.equal([3, 3, 3])
-                expect(results[1].embedding).to.deep.equal([1, 2, 3])
+                expect(results[0].embedding).to.deep.equal("[3,3,3]")
+                expect(results[1].embedding).to.deep.equal("[1,2,3]")
             }),
         ))
 
