@@ -99,7 +99,7 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: mssql-node:${{ inputs.node-version }}
+          flag-name: mssql-node:${{ inputs.node-version }}:${{ matrix.mssql-version }}
           parallel: true
 
   mysql_mariadb:
@@ -248,5 +248,5 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: postgres-node:${{ inputs.node-version }}
+          flag-name: postgres-node:${{ inputs.node-version }}:${{ matrix.postgis-version }}
           parallel: true
