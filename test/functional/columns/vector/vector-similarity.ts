@@ -29,6 +29,7 @@ describe("columns > vector type > similarity operations", () => {
                 } catch (error) {
                     console.warn(
                         "Could not create vector extension. Tests may fail if pgvector is not installed.",
+                        error,
                     )
                 } finally {
                     await queryRunner.release()
@@ -59,7 +60,7 @@ describe("columns > vector type > similarity operations", () => {
     it("should perform similarity search using L2 distance", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const posts = await setupTestData(connection)
+                await setupTestData(connection)
                 const queryVector = "[1,1,1.6]" // Search vector
 
                 const results = await connection.query(
@@ -77,7 +78,7 @@ describe("columns > vector type > similarity operations", () => {
     it("should perform similarity search using cosine distance", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const posts = await setupTestData(connection)
+                await setupTestData(connection)
                 const queryVector = "[1,1,1]" // Search vector
 
                 const results = await connection.query(
@@ -106,7 +107,7 @@ describe("columns > vector type > similarity operations", () => {
                 await postRepository.clear()
 
                 // Create vectors with known inner products
-                const posts = await postRepository.save([
+                await postRepository.save([
                     { embedding: [1, 2, 3] }, // IP with [1,1,1] = 6
                     { embedding: [3, 3, 3] }, // IP with [1,1,1] = 9
                     { embedding: [-1, 0, 1] }, // IP with [1,1,1] = 0
