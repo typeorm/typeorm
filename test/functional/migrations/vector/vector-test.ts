@@ -17,24 +17,6 @@ describe("migrations > vector type", () => {
             dropSchema: true,
             migrations: [CreatePost0000000000001],
         })
-
-        // Install pgvector extension
-        await Promise.all(
-            connections.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
-                try {
-                    await queryRunner.query(
-                        "CREATE EXTENSION IF NOT EXISTS vector",
-                    )
-                } catch (error) {
-                    console.warn(
-                        "Could not create vector extension. Tests may fail if pgvector is not installed.",
-                    )
-                } finally {
-                    await queryRunner.release()
-                }
-            }),
-        )
     })
 
     beforeEach(() => reloadTestingDatabases(connections))
