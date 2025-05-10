@@ -70,7 +70,7 @@ describe("columns > vector type", () => {
 
                 table!
                     .findColumnByName("embedding")!
-                    .type.should.be.equal("vector")
+                    .type.should.be.equal("vector(3)")
                 table!
                     .findColumnByName("embeddings")!
                     .type.should.be.equal("vector")

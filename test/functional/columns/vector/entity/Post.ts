@@ -7,7 +7,7 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column("vector", { nullable: true })
+    @Column("vector", { dimensions: 3, nullable: true })
     embedding: number[]
 
     @Column("vector", { array: true, nullable: true })

@@ -28,6 +28,11 @@ export type SpatialColumnType =
     | "st_point" // sap
 
 /**
+ * Column types where vector properties are used.
+ */
+export type VectorColumnType = "vector"
+
+/**
  * Column types where precision and scale properties are used.
  */
 export type WithPrecisionColumnType =
@@ -218,6 +223,7 @@ export type ColumnType =
     | WithLengthColumnType
     | WithWidthColumnType
     | SpatialColumnType
+    | VectorColumnType
     | SimpleColumnType
     | BooleanConstructor
     | DateConstructor
