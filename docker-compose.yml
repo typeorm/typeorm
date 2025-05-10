@@ -25,17 +25,17 @@ services:
 
   # postgres
   postgres:
-    # mdillon/postgis is postgres + PostGIS (only). if you need additional
-    # extensions, it's probably time to create a purpose-built image with all
-    # necessary extensions. sorry, and thanks for adding support for them!
-    image: "postgis/postgis:14-3.3"
-    container_name: "typeorm-postgres"
+    # mdillon/postgis is postgres + PostGIS (PostGIS adds support for geographic objects to PostgreSQL)
+    build:
+      context: ./docker/postgres
+      dockerfile: Dockerfile.pgvector
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: "test"
-      POSTGRES_PASSWORD: "test"
-      POSTGRES_DB: "test"
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test
+    container_name: typeorm-postgres
 
   # mssql
   mssql:

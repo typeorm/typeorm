@@ -191,6 +191,7 @@ export class PostgresDriver implements Driver {
         "geography",
         "cube",
         "ltree",
+        "vector",
     ]
 
     /**
@@ -640,6 +641,11 @@ export class PostgresDriver implements Driver {
             ) >= 0
         ) {
             return JSON.stringify(value)
+        } else if (columnMetadata.type === "vector") {
+            if (Array.isArray(value)) {
+                return `[${value.join(",")}]`
+            }
+            return value
         } else if (columnMetadata.type === "hstore") {
             if (typeof value === "string") {
                 return value
@@ -716,6 +722,15 @@ export class PostgresDriver implements Driver {
             value = DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
+        } else if (columnMetadata.type === "vector") {
+            if (
+                typeof value === "string" &&
+                value.startsWith("[") &&
+                value.endsWith("]")
+            ) {
+                return value.slice(1, -1).split(",").map(Number)
+            }
+            return value
         } else if (columnMetadata.type === "hstore") {
             if (columnMetadata.hstoreType === "object") {
                 const unescapeString = (str: string) =>
@@ -1140,6 +1155,10 @@ export class PostgresDriver implements Driver {
             } else {
                 type = column.type
             }
+        } else if (column.type === "vector") {
+            type =
+                "vector" +
+                (column.dimensions != null ? "(" + column.dimensions + ")" : "")
         }
 
         if (column.isArray) type += " array"
