@@ -16,6 +16,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -30,4 +32,4 @@ jobs:
         run: npm run package
 
       - name: Release preview version
-        run: npx pkg-pr-new publish './build/package' --template='./sample/playground'
+        run: npm run publish:preview
