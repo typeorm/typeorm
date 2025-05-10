@@ -183,9 +183,9 @@ export class SpannerDriver implements Driver {
      */
     private readonly _isReturningSqlSupported: Record<ReturningType, boolean> =
         {
-            delete: false,
-            insert: false,
-            update: false,
+            delete: true,
+            insert: true,
+            update: true,
         }
 
     // -------------------------------------------------------------------------
@@ -715,7 +715,7 @@ export class SpannerDriver implements Driver {
      * Returns true if driver supports uuid values generation on its own.
      */
     isUUIDGenerationSupported(): boolean {
-        return false
+        return true
     }
 
     /**

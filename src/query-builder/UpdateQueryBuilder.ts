@@ -697,6 +697,14 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 ", ",
             )} OUTPUT ${returningExpression}${whereExpression}`
         }
+        if (this.connection.driver.options.type === "spanner") {
+            return `UPDATE ${this.getTableName(
+                this.getMainTableName(),
+            )} SET ${updateColumnAndValues.join(
+                ", ",
+            )}${whereExpression} THEN RETURN ${returningExpression}`
+        }
+
         return `UPDATE ${this.getTableName(
             this.getMainTableName(),
         )} SET ${updateColumnAndValues.join(
