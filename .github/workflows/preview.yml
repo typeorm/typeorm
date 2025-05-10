@@ -32,4 +32,4 @@ jobs:
         run: npm run package
 
       - name: Release preview version
-        run: npx pkg-pr-new publish './build/package' --template='./sample/playground'
+        run: npx pkg-pr-new publish './build/package' # Temporarily removed --template to isolate the issue
