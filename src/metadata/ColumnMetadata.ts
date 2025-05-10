@@ -68,6 +68,12 @@ export class ColumnMetadata {
     width?: number
 
     /**
+     * Vector dimensions. Used only for vector type.
+     * For example type = "vector" and dimensions = 3 means that we will create a column with type vector(3).
+     */
+    dimensions?: number
+
+    /**
      * Defines column character set.
      */
     charset?: string
@@ -373,6 +379,8 @@ export class ColumnMetadata {
                 ? options.args.options.length.toString()
                 : ""
         if (options.args.options.width) this.width = options.args.options.width
+        if (options.args.options.dimensions)
+            this.dimensions = options.args.options.dimensions
         if (options.args.options.charset)
             this.charset = options.args.options.charset
         if (options.args.options.collation)
@@ -420,7 +428,7 @@ export class ColumnMetadata {
             ) {
                 this.enum = Object.keys(options.args.options.enum)
                     // remove numeric keys - typescript numeric enum types generate them
-                    // From the documentation: “declaration merging” means that the compiler merges two separate declarations
+                    // From the documentation: "declaration merging" means that the compiler merges two separate declarations
                     // declared with the same name into a single definition. This concept is often used to merge enum with namespace
                     // where in namespace we define e.g. utility methods for creating enum. This is well known in other languages
                     // like Java (enum methods). Here in case if enum have function, we need to remove it from metadata, otherwise
