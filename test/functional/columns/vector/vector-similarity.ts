@@ -51,8 +51,8 @@ describe("columns > vector type > similarity operations", () => {
 
                 expect(results.length).to.equal(2)
                 // [1,1,2] should be closest to [1,1,1.6], then [1,1,1]
-                expect(results[0].embedding).to.deep.equal("[1, 1, 2]")
-                expect(results[1].embedding).to.deep.equal("[1, 1, 1]")
+                expect(results[0].embedding).to.deep.equal("[1,1,2]")
+                expect(results[1].embedding).to.deep.equal("[1,1,1]")
             }),
         ))
 
