@@ -1158,9 +1158,7 @@ export class PostgresDriver implements Driver {
         } else if (column.type === "vector") {
             type =
                 "vector" +
-                (column.dimensions !== null && column.dimensions !== undefined
-                    ? "(" + column.dimensions + ")"
-                    : "")
+                (column.dimensions != null ? "(" + column.dimensions + ")" : "")
         }
 
         if (column.isArray) type += " array"
