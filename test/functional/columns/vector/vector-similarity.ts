@@ -115,11 +115,25 @@ describe("columns > vector type > similarity operations", () => {
                 const post = new Post()
                 post.embedding = [1, 1] // Wrong dimensions (2 instead of 3)
 
+                let caughtError: Error | null = null
                 try {
                     await postRepository.save(post)
-                    throw new Error("Should not reach this point")
                 } catch (error) {
-                    expect(error.message).to.contain("vector")
+                    caughtError = error
+                }
+
+                // Check if an error was thrown by save()
+                // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                expect(
+                    caughtError,
+                    "postRepository.save() should have thrown an error for vector dimension mismatch",
+                ).to.not.be.null
+
+                if (caughtError) {
+                    // Check if the error message is related to vector dimension or type issues
+                    expect(caughtError.message).to.match(
+                        /vector|dimension|value too long for type vector\(\d+\)|is of type vector\(\d+\) but expression is of type vector\(\d+\)|invalid input syntax for type vector/i,
+                    )
                 }
             }),
         ))
