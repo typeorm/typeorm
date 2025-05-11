@@ -37,4 +37,6 @@ jobs:
           corepack prepare pnpm@latest --activate
 
       - name: Release preview version
-        run: HUSKY=0 pnpm pkg-pr-new publish './build/package' --pnpm --template='./sample/playground'
+        run: pnpm pkg-pr-new publish './build/package' --pnpm --template='./sample/playground'
+        env:
+          HUSKY: false
