@@ -86,7 +86,8 @@
     "test": "npm run compile && npm run test:fast --",
     "test:ci": "mocha --bail",
     "test:fast": "mocha",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "publish:preview": "pkg-pr-new publish './build/package' --pnpm --template='./sample/playground'"
   },
   "dependencies": {
     "@sqltools/formatter": "^1.2.5",
@@ -145,6 +146,7 @@
     "oracledb": "^6.8.0",
     "pg": "^8.14.1",
     "pg-query-stream": "^4.8.1",
+    "pkg-pr-new": "^0.0.43",
     "prettier": "^2.8.8",
     "redis": "^4.7.0",
     "remap-istanbul": "^0.13.0",
