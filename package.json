@@ -86,7 +86,8 @@
     "test": "npm run compile && npm run test:fast --",
     "test:ci": "mocha --bail",
     "test:fast": "mocha",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "publish:preview": "pkg-pr-new publish './build/package' --pnpm --template='./sample/playground'"
   },
   "dependencies": {
     "@sqltools/formatter": "^1.2.5",
