@@ -38,6 +38,8 @@ import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
+import { buildSqlTag } from "../util/SqlTagUtils"
+import { OrmUtils } from "../util/OrmUtils"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -174,6 +176,26 @@ export class EntityManager {
      */
     async query<T = any>(query: string, parameters?: any[]): Promise<T> {
         return this.connection.query(query, parameters, this.queryRunner)
+    }
+
+    /**
+     * Tagged template function that executes raw SQL query and returns raw database results.
+     * Template expressions are automatically transformed into database parameters.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
+     * Example: entityManager.sql`SELECT * FROM table_name WHERE id = ${id}`
+     */
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
+        const { query, parameters } = buildSqlTag({
+            driver: this.connection.driver,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, parameters)
     }
 
     /**
@@ -761,12 +783,7 @@ export class EntityManager {
         partialEntity: QueryDeepPartialEntity<Entity>,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0)
-        ) {
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
                     `Empty criteria(s) are not allowed for the update method.`,
@@ -774,12 +791,7 @@ export class EntityManager {
             )
         }
 
-        if (
-            typeof criteria === "string" ||
-            typeof criteria === "number" ||
-            criteria instanceof Date ||
-            Array.isArray(criteria)
-        ) {
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
@@ -815,12 +827,7 @@ export class EntityManager {
             | any,
     ): Promise<DeleteResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0)
-        ) {
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
                     `Empty criteria(s) are not allowed for the delete method.`,
@@ -828,12 +835,7 @@ export class EntityManager {
             )
         }
 
-        if (
-            typeof criteria === "string" ||
-            typeof criteria === "number" ||
-            criteria instanceof Date ||
-            Array.isArray(criteria)
-        ) {
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
                 .delete()
                 .from(targetOrEntity)
@@ -869,12 +871,7 @@ export class EntityManager {
             | any,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0)
-        ) {
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
                     `Empty criteria(s) are not allowed for the delete method.`,
@@ -882,12 +879,7 @@ export class EntityManager {
             )
         }
 
-        if (
-            typeof criteria === "string" ||
-            typeof criteria === "number" ||
-            criteria instanceof Date ||
-            Array.isArray(criteria)
-        ) {
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
                 .softDelete()
                 .from(targetOrEntity)
@@ -923,12 +915,7 @@ export class EntityManager {
             | any,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0)
-        ) {
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
                     `Empty criteria(s) are not allowed for the delete method.`,
@@ -936,12 +923,7 @@ export class EntityManager {
             )
         }
 
-        if (
-            typeof criteria === "string" ||
-            typeof criteria === "number" ||
-            criteria instanceof Date ||
-            Array.isArray(criteria)
-        ) {
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
                 .restore()
                 .from(targetOrEntity)

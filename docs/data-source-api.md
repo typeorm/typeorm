@@ -145,8 +145,8 @@ const rawData = await dataSource.query(`SELECT * FROM USERS`)
 // You can also use parameters to avoid SQL injection
 // The syntax differs between the drivers
 
-// aurora-mysql, better-sqlite3, capacitor, cordova, 
-// expo, mariadb, mysql, nativescript, react-native, 
+// aurora-mysql, better-sqlite3, capacitor, cordova,
+// expo, mariadb, mysql, nativescript, react-native,
 // sap, sqlite, sqljs
 const rawData = await dataSource.query(
     'SELECT * FROM USERS WHERE name = ? and age = ?',
@@ -177,6 +177,14 @@ const rawData = await dataSource.query(
     [ 'John', 24 ]
 )
 ```
+
+-   `sql` - Executes a raw SQL query using template literals.
+
+```typescript
+const rawData = await dataSource.sql`SELECT * FROM USERS WHERE name = ${'John'} and age = ${24}`
+```
+
+Learn more about using the [SQL Tag syntax](sql-tag.md).
 
 -   `createQueryBuilder` - Creates a query builder, which can be used to build queries.
     Learn more about [QueryBuilder](select-query-builder.md).

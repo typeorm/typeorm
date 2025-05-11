@@ -1,6 +1,6 @@
 {
   "name": "typeorm",
-  "version": "0.3.22",
+  "version": "0.3.23",
   "description": "Data-Mapper ORM for TypeScript and ES2021+. Supports MySQL/MariaDB, PostgreSQL, MS SQL Server, Oracle, SAP HANA, SQLite, MongoDB databases.",
   "homepage": "https://typeorm.io",
   "bugs": {
@@ -81,10 +81,13 @@
     "lint": "eslint .",
     "pack": "gulp pack",
     "package": "gulp package",
+    "pre-commit": "lint-staged",
+    "prepare": "husky",
     "test": "npm run compile && npm run test:fast --",
     "test:ci": "mocha --bail",
     "test:fast": "mocha",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "publish:preview": "pkg-pr-new publish './build/package' --pnpm --template='./sample/playground'"
   },
   "dependencies": {
     "@sqltools/formatter": "^1.2.5",
@@ -93,6 +96,7 @@
     "buffer": "^6.0.3",
     "dayjs": "^1.11.13",
     "debug": "^4.4.0",
+    "dedent": "^1.6.0",
     "dotenv": "^16.4.7",
     "glob": "^10.4.5",
     "sha.js": "^2.4.11",
@@ -131,6 +135,8 @@
     "gulp-typescript": "^6.0.0-alpha.1",
     "gulpclass": "^0.2.0",
     "hdb-pool": "^0.1.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
     "mocha": "^10.8.2",
     "mongodb": "^6.15.0",
     "mssql": "^11.0.1",
