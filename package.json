@@ -145,7 +145,6 @@
     "oracledb": "^6.8.0",
     "pg": "^8.14.1",
     "pg-query-stream": "^4.8.1",
-    "pkg-pr-new": "^0.0.43",
     "prettier": "^2.8.8",
     "redis": "^4.7.0",
     "remap-istanbul": "^0.13.0",
