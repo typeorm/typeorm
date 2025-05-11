@@ -37,4 +37,4 @@ jobs:
           corepack prepare pnpm@latest --activate
 
       - name: Release preview version
-        run: npm run publish:preview
+        run: pnpx pkg-pr-new publish './build/package' --pnpm --template='./sample/playground'
