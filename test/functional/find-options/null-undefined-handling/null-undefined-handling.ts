@@ -1,10 +1,6 @@
 import "reflect-metadata"
 import "../../../utils/test-setup"
-<<<<<<< Updated upstream
-import { DataSource } from "../../../../src"
-=======
 import { DataSource, TypeORMError } from "../../../../src"
->>>>>>> Stashed changes
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -330,13 +326,9 @@ describe("find options > null and undefined handling", () => {
                             })
                             .getMany(),
                     ).to.be.rejectedWith(
-<<<<<<< Updated upstream
-                        "Undefined value encountered in property 'post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
-=======
                         new TypeORMError(
                             "Undefined value encountered in property 'post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
                         ),
->>>>>>> Stashed changes
                     )
 
                     // Test Repository
@@ -347,13 +339,9 @@ describe("find options > null and undefined handling", () => {
                             },
                         }),
                     ).to.be.rejectedWith(
-<<<<<<< Updated upstream
-                        "Undefined value encountered in property 'post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
-=======
                         new TypeORMError(
                             "Undefined value encountered in property 'post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
                         ),
->>>>>>> Stashed changes
                     )
                 }),
             ))
@@ -370,13 +358,9 @@ describe("find options > null and undefined handling", () => {
                             })
                             .getMany(),
                     ).to.be.rejectedWith(
-<<<<<<< Updated upstream
-                        "Undefined value encountered in property 'post.category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
-=======
                         new TypeORMError(
                             "Undefined value encountered in property 'post.category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
                         ),
->>>>>>> Stashed changes
                     )
 
                     // Test Repository
@@ -387,13 +371,9 @@ describe("find options > null and undefined handling", () => {
                             },
                         }),
                     ).to.be.rejectedWith(
-<<<<<<< Updated upstream
-                        "Undefined value encountered in property 'post.category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
-=======
                         new TypeORMError(
                             "Undefined value encountered in property 'post.category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
                         ),
->>>>>>> Stashed changes
                     )
                 }),
             ))
@@ -506,13 +486,9 @@ describe("find options > null and undefined handling", () => {
                             },
                         }),
                     ).to.be.rejectedWith(
-<<<<<<< Updated upstream
-                        "Undefined value encountered in property 'text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
-=======
                         new TypeORMError(
                             "Undefined value encountered in property 'post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
                         ),
->>>>>>> Stashed changes
                     )
 
                     // Test undefined handling for relations
@@ -523,13 +499,9 @@ describe("find options > null and undefined handling", () => {
                             },
                         }),
                     ).to.be.rejectedWith(
-<<<<<<< Updated upstream
-                        "Undefined value encountered in property 'category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
-=======
                         new TypeORMError(
                             "Undefined value encountered in property 'post.category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
                         ),
->>>>>>> Stashed changes
                     )
 
                     // Test omitted property
