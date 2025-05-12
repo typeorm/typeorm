@@ -1,5 +1,32 @@
 ## [0.3.23](https://github.com/typeorm/typeorm/compare/0.3.22...0.3.23) (2025-05-05)
 
+## Note on a breaking change
+
+This release includes a technically breaking change (from [this PR](https://github.com/typeorm/typeorm/pull/10910)) in the behaviour of this call:
+
+```ts
+await repository.delete({})
+```
+
+**Old behaviour** was to delete all rows from the table
+**New behaviour** is to throw an error: `Empty criteria(s) are not allowed for the delete method.`
+
+Why?
+
+The "truncation" behaviour was not documented and is considered dangerous as it can allow a badly-formed object (e.g. with an undefined id) to inadvertently delete the whole table.
+
+The docs on `delete()` state:
+
+> delete - Deletes entities by entity id, ids or given conditions:
+> await repository.delete(1)
+> await repository.delete([1, 2, 3])
+> await repository.delete({ firstName: "Timber" })
+
+The correct method for deleting all rows (truncating), use:
+```ts
+await repository.clear()
+```
+This also has the advantage of using TRUNCATE which is much faster than DELETE.
 
 ### Bug Fixes
 
