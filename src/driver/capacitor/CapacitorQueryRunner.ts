@@ -81,9 +81,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
                 ].indexOf(command) !== -1
             ) {
                 raw = await databaseConnection.execute(query, false)
-            } else if (
-                ["INSERT", "UPDATE", "DELETE"].indexOf(command) !== -1
-            ) {
+            } else if (["INSERT", "UPDATE", "DELETE"].indexOf(command) !== -1) {
                 raw = await databaseConnection.run(query, parameters, false)
             } else {
                 raw = await databaseConnection.query(query, parameters || [])
