@@ -1,0 +1,22 @@
+{
+  "name": "typeorm-sql-js-example",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node --loader ts-node/esm src/index.ts",
+    "typeorm": "typeorm-ts-node-esm -d ./src/ormconfig.ts"
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.2.2",
+    "sql.js": "^1.13.0",
+    "ts-node": "^10.9.2",
+    "typeorm": "0.3.22"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "@types/sql.js": "^1.4.9",
+    "typescript": "^5.3.3"
+  }
+}
