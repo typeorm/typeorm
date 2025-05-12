@@ -2,7 +2,7 @@
 
 ### :warning: Note on a breaking change
 
-This release includes a technically breaking change (from [this PR](https://github.com/typeorm/typeorm/pull/10910)) in the behaviour of these calls when an empty object is supplied as the criteria:
+This release includes a technically breaking change (from [this PR](https://github.com/typeorm/typeorm/pull/10910)) in the behaviour of the `delete` and `update` methods of the EntityManager and Repository APIs, when an empty object is supplied as the criteria:
 
 ```ts
 await repository.delete({})
