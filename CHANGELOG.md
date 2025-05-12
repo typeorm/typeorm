@@ -1,32 +1,35 @@
 ## [0.3.23](https://github.com/typeorm/typeorm/compare/0.3.22...0.3.23) (2025-05-05)
 
-## Note on a breaking change
+### :warning: Note on a breaking change
 
-This release includes a technically breaking change (from [this PR](https://github.com/typeorm/typeorm/pull/10910)) in the behaviour of this call:
+This release includes a technically breaking change (from [this PR](https://github.com/typeorm/typeorm/pull/10910)) in the behaviour of these calls when an empty object is supplied as the criteria:
 
 ```ts
 await repository.delete({})
+await repository.update({}, { foo: 'bar' })
 ```
 
-**Old behaviour** was to delete all rows from the table
-**New behaviour** is to throw an error: `Empty criteria(s) are not allowed for the delete method.`
+- **Old behaviour** was to delete or update all rows in the table
+- **New behaviour** is to throw an error: `Empty criteria(s) are not allowed for the delete/update method.`
 
 Why?
 
-The "truncation" behaviour was not documented and is considered dangerous as it can allow a badly-formed object (e.g. with an undefined id) to inadvertently delete the whole table.
+This behaviour was not documented and is considered dangerous as it can allow a badly-formed object (e.g. with an undefined id) to inadvertently delete or update the whole table.
 
-The docs on `delete()` state:
+When the intention actually was to delete or update all rows, such queries can be rewritten using the QueryBuilder API:
 
-> delete - Deletes entities by entity id, ids or given conditions:
-> await repository.delete(1)
-> await repository.delete([1, 2, 3])
-> await repository.delete({ firstName: "Timber" })
+```ts
+await repository.createQueryBuilder().delete().execute()
+// executes: DELETE FROM table_name
+await repository.createQueryBuilder().update().set({ foo: 'bar' }).execute()
+// executes: UPDATE table_name SET foo = 'bar'
+```
 
-The correct method for deleting all rows (truncating), use:
+An alternative method for deleting all rows is to use:
 ```ts
 await repository.clear()
+// executes: TRUNCATE TABLE table_name
 ```
-This also has the advantage of using TRUNCATE which is much faster than DELETE.
 
 ### Bug Fixes
 
