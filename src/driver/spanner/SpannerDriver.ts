@@ -412,7 +412,7 @@ export class SpannerDriver implements Driver {
 
         if (columnMetadata.type === "numeric") {
             const lib = this.options.driver || PlatformTools.load("spanner")
-            return lib.Spanner.numeric(value)
+            return lib.Spanner.numeric(value.toString())
         } else if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "json") {
