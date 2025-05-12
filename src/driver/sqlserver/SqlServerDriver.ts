@@ -27,6 +27,7 @@ import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TypeORMError } from "../../error"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { FindOperator } from "../../find-options/FindOperator"
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -971,6 +972,28 @@ export class SqlServerDriver implements Driver {
         }
 
         return new MssqlParameter(value, normalizedType as any)
+    }
+
+    parametrizeValues(column: ColumnMetadata, value: any) {
+        if (value instanceof FindOperator) {
+            if (Array.isArray(value.value)) {
+                for (let parameterValueChild of value.value) {
+                    parameterValueChild = this.parametrizeValues(
+                        column,
+                        parameterValueChild,
+                    )
+                }
+            } else if (value.type !== "raw") {
+                value.transformValue({
+                    to: (v) => this.parametrizeValue(column, v),
+                    from: (v) => v,
+                })
+            }
+        } else {
+            value = this.parametrizeValue(column, value)
+        }
+
+        return value
     }
 
     /**
