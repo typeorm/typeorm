@@ -10,6 +10,7 @@ import {
 import {
     And,
     DataSource,
+    In,
     MssqlParameter,
     Not,
     Raw,
@@ -168,7 +169,7 @@ describe("github issues > #11285 Missing MSSQL input type", () => {
 
                     const users = await dataSource.getRepository(User).find({
                         where: {
-                            memberId: And(Not(user2.memberId)),
+                            memberId: And(Not(In([user2.memberId]))),
                         },
                     })
 
