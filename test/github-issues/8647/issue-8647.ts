@@ -1,81 +1,72 @@
 import "reflect-metadata";
-import { createTestingConnections, closeTestingConnections, 
-    // reloadTestingDatabases
- } from "../../utils/test-utils";
+import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
 import { DataSource } from "../../../src/data-source/DataSource";
 import { expect } from "chai";
-import { Item, NEW_COLLATION, OLD_COLLATION } from "./entity/item.entity";
+import { Item, NEW_COLLATION } from "./entity/item.entity";
 
 describe("github issues > #8647 Collation changes are not synced to RDBMS", () => {
+  let connections: DataSource[]
 
-  let dataSources: DataSource[];
-
-  beforeEach(
-    async () => {
-        dataSources = await createTestingConnections({
-          entities: [Item],
-          schemaCreate: true,
-          dropSchema: true,
-        });
-    }
-  );
-  after(() => closeTestingConnections(dataSources));
+  before(
+    async () =>
+        (connections = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            driverSpecific: {
+                applicationName: "syoon test name",
+            },
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })),
+  )
+  beforeEach(() => reloadTestingDatabases(connections));
+  after(() => closeTestingConnections(connections));
 
   const COLUMN_NAME = "name";
 
-  it("ALTER ... COLATE query should be created", () =>
-    Promise.all(dataSources.map(async (dataSource) => {
-      // Change Entity's collation
-      const meta = dataSource.getMetadata(Item);
-      const col = meta.columns.find(c => c.propertyName === COLUMN_NAME)!;
-      col.collation = NEW_COLLATION;
+  it("ALTER ... COLATE query should be created", async () => {
+    await Promise.all(connections.map(async (connection) => {
+        // change metadata
+        const meta = connection.getMetadata(Item);
+        const col = meta.columns.find(c => c.propertyName === COLUMN_NAME)!;
+        const OLD_COLLATION = col.collation;
+        col.collation = NEW_COLLATION;
 
-      // Check Native Query Built by PostgresQueryRunner
-      const sqlInMemory = await dataSource.driver.createSchemaBuilder().log();
-      const tableName = meta.tableName;
-      const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${
-                            COLUMN_NAME
-                        }" TYPE character varying COLLATE "${NEW_COLLATION}"`; // PostgresDriver's normalizeType method will convert varchar to character varying
-      const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${
-                            COLUMN_NAME
-                        }" TYPE character varying COLLATE "${OLD_COLLATION}"`;
+        // capture generated up queries
+        const sqlInMemory = await connection.driver.createSchemaBuilder().log();
+        const tableName = meta.tableName;
+        const expectedUp = `ALTER TABLE \"${tableName}\" ALTER COLUMN \"${COLUMN_NAME}\" TYPE character varying COLLATE \"${NEW_COLLATION}\"`;
+        const expectedDown = `ALTER TABLE \"${tableName}\" ALTER COLUMN \"${COLUMN_NAME}\" TYPE character varying COLLATE \"${OLD_COLLATION}\"`;
 
-      // Assert that the generated up quries are correct
-      const upJoined = sqlInMemory.upQueries
-        .map(q => q.query.replace(/\s+/g, ' ').trim())
-        .join(' ');
-        // console.log(`Native Query Result => ${upJoined}`)
-        // console.log(`expected Query => ${expectedUp}`)
-      expect(upJoined).to.include(expectedUp);
+        // assert that the expected queries are in the generated SQL
+        const upJoined = sqlInMemory.upQueries
+          .map(q => q.query.replace(/\s+/g, ' ').trim())
+          .join(' ');
+        expect(upJoined).to.include(expectedUp);
+        const downJoined = sqlInMemory.downQueries
+          .map(q => q.query.replace(/\s+/g, ' ').trim())
+          .join(' ');
+        expect(downJoined).to.include(expectedDown);
 
-      // Assert that the generated down quries are correct
-      const downJoined = sqlInMemory.downQueries
-        .map(q => q.query.replace(/\s+/g, ' ').trim())
-        .join(' ');
-      expect(downJoined).to.include(expectedDown);
-    }))
+        // assert that collation changes are applied to the database
+        const queryRunner = connection.createQueryRunner();
+
+        try {
+          let table = await queryRunner.getTable(meta.tableName);
+          const originColumn = table!.columns.find(c => c.name === COLUMN_NAME)!;
+          // old collation should be appeared
+          expect(originColumn.collation).to.equal(OLD_COLLATION);
+
+          await connection.synchronize();
+
+          table = await queryRunner.getTable(meta.tableName);
+          const appliedColumn = table!.columns.find(c => c.name === COLUMN_NAME)!;
+          // new collation should be appeared
+          expect(appliedColumn.collation).to.equal(NEW_COLLATION);
+        } finally {
+            await queryRunner.release();
+        }
+      })
+    )}
   );
-
-  it("collation update should be applied after synchronize", () =>
-    Promise.all(dataSources.map(async (dataSource) => {
-      // Change Entity's collation
-      const meta = dataSource.getMetadata(Item);
-      const col = meta.columns.find(c => c.propertyName === COLUMN_NAME)!;
-      col.collation = NEW_COLLATION;
-      await dataSource.synchronize();
-      
-      // Assert that the collation is applied to the DB
-      const qr = dataSource.createQueryRunner();
-      try {
-        const table = await qr.getTable(meta.tableName);
-        const appliedCol = table!.columns.find(c => c.name === COLUMN_NAME)!;
-        // console.log(`Applied collation => ${appliedCol.collation}`)
-        // console.log(`expected collation => ${NEW_COLLATION}`)
-        expect(appliedCol.collation).to.equal(NEW_COLLATION);
-      } finally {
-        await qr.release();
-      }
-    }))
-  );
-
-});
+})

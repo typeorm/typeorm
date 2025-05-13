@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "../../../../src/index";
 
-export const OLD_COLLATION = "C";
-export const NEW_COLLATION = "C.utf8";
+export const OLD_COLLATION = "POSIX";
+export const NEW_COLLATION = "C";
 
 
 @Entity()
