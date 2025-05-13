@@ -3296,7 +3296,7 @@ export class SqlServerQueryRunner
                             tableColumn.isGenerated = isGenerated
                             if (isGenerated)
                                 tableColumn.generationStrategy = "increment"
-                            if (tableColumn.default === "newsequentialid()") {
+                            if (tableColumn.default === "newid()") {
                                 tableColumn.isGenerated = true
                                 tableColumn.generationStrategy = "uuid"
                                 tableColumn.default = undefined
@@ -4028,7 +4028,7 @@ export class SqlServerQueryRunner
                     table,
                     column.name,
                 )
-            c += ` CONSTRAINT "${defaultName}" DEFAULT NEWSEQUENTIALID()`
+            c += ` CONSTRAINT "${defaultName}" DEFAULT NEWID()`
         }
         return c
     }
