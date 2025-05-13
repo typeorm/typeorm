@@ -27,6 +27,7 @@ import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TypeORMError } from "../../error"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { FindOperator } from "../../find-options/FindOperator"
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -971,6 +972,39 @@ export class SqlServerDriver implements Driver {
         }
 
         return new MssqlParameter(value, normalizedType as any)
+    }
+
+    /**
+     * Recursively wraps values (including those inside FindOperators) into MssqlParameter instances,
+     * ensuring correct type metadata is passed to the SQL Server driver.
+     *
+     * - If the value is a FindOperator containing an array, all elements are individually parametrized.
+     * - If the value is a non-raw FindOperator, a transformation is applied to its internal value.
+     * - Otherwise, the value is passed directly to parametrizeValue for wrapping.
+     *
+     * This ensures SQL Server receives properly typed parameters for queries involving operators like
+     * In, MoreThan, Between, etc.
+     */
+    parametrizeValues(column: ColumnMetadata, value: any) {
+        if (value instanceof FindOperator) {
+            if (Array.isArray(value.value)) {
+                for (let i = 0; i < value.value.length; i++) {
+                    value.value[i] = this.parametrizeValues(
+                        column,
+                        value.value[i],
+                    )
+                }
+            } else if (value.type !== "raw") {
+                value.transformValue({
+                    to: (v) => this.parametrizeValue(column, v),
+                    from: (v) => v,
+                })
+            }
+        } else {
+            value = this.parametrizeValue(column, value)
+        }
+
+        return value
     }
 
     /**
