@@ -12,7 +12,7 @@ describe("github issues > #8647 Collation changes are not synced to RDBMS", () =
         (connections = await createTestingConnections({
             enabledDrivers: ["postgres"],
             driverSpecific: {
-                applicationName: "syoon test name",
+                applicationName: "collation-detection-test",
             },
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
