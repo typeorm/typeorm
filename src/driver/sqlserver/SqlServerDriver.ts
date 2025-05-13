@@ -987,24 +987,17 @@ export class SqlServerDriver implements Driver {
      */
     parametrizeValues(column: ColumnMetadata, value: any) {
         if (value instanceof FindOperator) {
-            if (Array.isArray(value.value)) {
-                for (let i = 0; i < value.value.length; i++) {
-                    value.value[i] = this.parametrizeValues(
-                        column,
-                        value.value[i],
-                    )
-                }
-            } else if (value.type !== "raw") {
+            if (value.type !== "raw") {
                 value.transformValue({
-                    to: (v) => this.parametrizeValue(column, v),
+                    to: (v) => this.parametrizeValues(column, v),
                     from: (v) => v,
                 })
             }
-        } else {
-            value = this.parametrizeValue(column, value)
+
+            return value
         }
 
-        return value
+        return this.parametrizeValue(column, value)
     }
 
     /**
