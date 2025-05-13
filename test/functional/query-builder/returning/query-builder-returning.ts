@@ -55,7 +55,9 @@ describe("query builder > insert/update/delete returning", () => {
                 }
 
                 const returning = await qb.execute()
-                expect(returning.raw).to.deep.equal([{ id: 1, name: user.name }])
+                expect(returning.raw).to.deep.equal([
+                    { id: 1, name: user.name },
+                ])
             }),
         ))
 
@@ -95,7 +97,9 @@ describe("query builder > insert/update/delete returning", () => {
                 }
 
                 const returning = await qb.execute()
-                expect(returning.raw).to.deep.equal([{ id: 1, name: "Joe Bloggs" }])
+                expect(returning.raw).to.deep.equal([
+                    { id: 1, name: "Joe Bloggs" },
+                ])
             }),
         ))
 
@@ -135,7 +139,9 @@ describe("query builder > insert/update/delete returning", () => {
                 }
 
                 const returning = await qb.execute()
-                expect(returning.raw).to.deep.equal([{ id: 1, name: user.name }])
+                expect(returning.raw).to.deep.equal([
+                    { id: 1, name: user.name },
+                ])
             }),
         ))
 })

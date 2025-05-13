@@ -1,4 +1,4 @@
-import { Driver, ReturningType } from "../Driver"
+import { Driver } from "../Driver"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { SpannerQueryRunner } from "./SpannerQueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
@@ -342,7 +342,7 @@ export class SpannerDriver implements Driver {
         target: EntityMetadata | Table | View | TableForeignKey | string,
     ): { database?: string; schema?: string; tableName: string } {
         const driverDatabase = this.database
-        const driverSchema = undefined
+        const driverSchema: any = undefined
 
         if (target instanceof Table || target instanceof View) {
             const parsed = this.parseTableName(target.name)
