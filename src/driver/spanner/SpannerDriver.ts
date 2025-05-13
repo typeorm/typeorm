@@ -178,16 +178,6 @@ export class SpannerDriver implements Driver {
         enabled: true,
     }
 
-    /**
-     * Supported returning types
-     */
-    private readonly _isReturningSqlSupported: Record<ReturningType, boolean> =
-        {
-            delete: true,
-            insert: true,
-            update: true,
-        }
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -707,8 +697,8 @@ export class SpannerDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(returningType: ReturningType): boolean {
-        return this._isReturningSqlSupported[returningType]
+    isReturningSqlSupported(): boolean {
+        return true
     }
 
     /**
