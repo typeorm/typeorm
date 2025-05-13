@@ -3296,7 +3296,7 @@ export class SqlServerQueryRunner
                             tableColumn.isGenerated = isGenerated
                             if (isGenerated)
                                 tableColumn.generationStrategy = "increment"
-                            if (tableColumn.default === "newid()") {
+                            if (tableColumn.default === "newid()" || tableColumn.default === "newsequentialid()") {
                                 tableColumn.isGenerated = true
                                 tableColumn.generationStrategy = "uuid"
                                 tableColumn.default = undefined
