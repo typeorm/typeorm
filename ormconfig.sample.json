@@ -134,5 +134,16 @@
       "maxRetries": 3
     },
     "logging": false
+  },
+  {
+    "skip": false,
+    "name": "spanner",
+    "type": "spanner",
+    "host": "localhost",
+    "projectId": "test-project",
+    "instanceId": "test-instance",
+    "databaseId": "test-db",
+    "port": 9010,
+    "logging": false
   }
 ]

@@ -50,7 +50,7 @@ describe("query builder > insert/update/delete returning", () => {
                     )
                 } else if (connection.driver.options.type === "spanner") {
                     expect(sql).to.equal(
-                        "INSERT INTO `user`(`name`) VALUES ($1) THEN RETURN *",
+                        "INSERT INTO `user`(`id`, `name`) VALUES (NULL, @param0) THEN RETURN *",
                     )
                 }
 
@@ -92,7 +92,7 @@ describe("query builder > insert/update/delete returning", () => {
                     )
                 } else if (connection.driver.options.type === "spanner") {
                     expect(sql).to.equal(
-                        "UPDATE `user` SET `name` = $1 WHERE `name` = $2 THEN RETURN *",
+                        "UPDATE `user` SET `name` = @param0 WHERE `name` = @param1 THEN RETURN *",
                     )
                 }
 
@@ -134,7 +134,7 @@ describe("query builder > insert/update/delete returning", () => {
                     )
                 } else if (connection.driver.options.type === "spanner") {
                     expect(sql).to.equal(
-                        "DELETE FROM `user` WHERE `name` = $1 THEN RETURN *",
+                        "DELETE FROM `user` WHERE `name` = @param0 THEN RETURN *",
                     )
                 }
 
