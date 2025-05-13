@@ -119,9 +119,20 @@ We will squash and merge commits into a single commit when merging a PR to follo
 
 If you're contributing to the project, we recommend following the same guidelines.
 
+```
+<type>: <subject>
+<BLANK LINE>
+<body>
+<BLANK LINE>
+<footer>
+```
+
+Any line of the commit message should not be longer than 100 characters. This allows the message
+to be easier to read on GitHub as well as in various git tools.
+
 ### Type
 
-Must be one of the following:
+One of the following:
 
 * **feat**: A new feature
 * **fix**: A bug fix
@@ -133,6 +144,26 @@ Must be one of the following:
 * **build**: Changes that affect the build system, CI configuration or external dependencies
 * **chore**: Other changes that don't modify `src` or `test` files
 * **revert**: Reverts a previous commit. Include the hash of the commit being reverted.
+
+### Subject
+
+The subject contains succinct description of the change:
+
+* use the imperative, present tense: "change" not "changed" nor "changes"
+* don't capitalize first letter
+* no dot (.) at the end
+
+### Body
+
+Just as in the **subject**, use the imperative, present tense: "change" not "changed" nor "changes".
+The body should include the motivation for the change and contrast this with previous behavior.
+
+### Footer
+
+The footer should contain any information about **Breaking Changes** and is also the place to
+reference GitHub issues that this commit **Closes**.
+**Breaking Changes** should start with the word `BREAKING CHANGE:` with a space or two newlines.
+The rest of the commit message is then used for this.
 
 ## Financial contributions
 
