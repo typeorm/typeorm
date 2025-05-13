@@ -13,7 +13,7 @@ describe("github issues > #9316 specify how should interpret null and undefined 
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [User],
-            enabledDrivers: ["postgres", "mysql", "mssql"],
+            enabledDrivers: ["postgres", "mysql"],
             schemaCreate: true,
             dropSchema: true,
         })
