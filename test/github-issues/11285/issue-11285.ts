@@ -178,6 +178,8 @@ describe("github issues > #11285 Missing MSSQL input type", () => {
                     expect(users).to.have.length(1)
                     expect(users[0].memberId).to.be.equal(user.memberId)
 
+                    // Ensure that the input array was not mutated into MssqlParameter instances
+                    // https://github.com/typeorm/typeorm/issues/11474
                     expect(excludedUserIds).to.eql([user2.memberId])
 
                     expect(selectSpy.calledOnce).to.be.true
