@@ -7,6 +7,7 @@
   If unsure about something.. just do as best as you're able,
   or reach out through our community support channels!
   https://github.com/typeorm/typeorm/blob/master/docs/support.md
+  https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md
 -->
 
 ### Description of change
