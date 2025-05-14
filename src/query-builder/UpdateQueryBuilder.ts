@@ -485,6 +485,11 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 valuesSetNormalized[key] = valuesSet[key]
             }
         }
+        
+        if (metadata?.updateDateColumn &&
+            valuesSetNormalized[metadata.updateDateColumn.databaseName] === undefined) {
+            valuesSetNormalized[metadata.updateDateColumn.databaseName] = metadata.updateDateColumn.default;
+        }
 
         // prepare columns and values to be updated
         const updateColumnAndValues: string[] = []
@@ -639,14 +644,6 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             this.escape(metadata.versionColumn.databaseName) +
                             " + 1",
                     )
-                if (
-                    metadata.updateDateColumn &&
-                    updatedColumns.indexOf(metadata.updateDateColumn) === -1
-                )
-                    updateColumnAndValues.push(
-                        this.escape(metadata.updateDateColumn.databaseName) +
-                            " = CURRENT_TIMESTAMP",
-                    ) // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
             }
         } else {
             Object.keys(valuesSetNormalized).map((key) => {
