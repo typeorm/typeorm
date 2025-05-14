@@ -1,5 +1,35 @@
 ## [0.3.23](https://github.com/typeorm/typeorm/compare/0.3.22...0.3.23) (2025-05-05)
 
+### :warning: Note on a breaking change
+
+This release includes a technically breaking change (from [this PR](https://github.com/typeorm/typeorm/pull/10910)) in the behaviour of the `delete` and `update` methods of the EntityManager and Repository APIs, when an empty object is supplied as the criteria:
+
+```ts
+await repository.delete({})
+await repository.update({}, { foo: 'bar' })
+```
+
+- **Old behaviour** was to delete or update all rows in the table
+- **New behaviour** is to throw an error: `Empty criteria(s) are not allowed for the delete/update method.`
+
+Why?
+
+This behaviour was not documented and is considered dangerous as it can allow a badly-formed object (e.g. with an undefined id) to inadvertently delete or update the whole table.
+
+When the intention actually was to delete or update all rows, such queries can be rewritten using the QueryBuilder API:
+
+```ts
+await repository.createQueryBuilder().delete().execute()
+// executes: DELETE FROM table_name
+await repository.createQueryBuilder().update().set({ foo: 'bar' }).execute()
+// executes: UPDATE table_name SET foo = 'bar'
+```
+
+An alternative method for deleting all rows is to use:
+```ts
+await repository.clear()
+// executes: TRUNCATE TABLE table_name
+```
 
 ### Bug Fixes
 

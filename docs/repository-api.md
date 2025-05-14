@@ -140,7 +140,7 @@ await repository.insert([
 ])
 ```
 
--   `update` - Partially updates entity by a given update options or entity id.
+-   `update` - Updates entities by entity id, ids or given conditions. Sets fields from supplied partial entity.
 
 ```typescript
 await repository.update({ age: 18 }, { category: "ADULT" })
@@ -148,6 +148,13 @@ await repository.update({ age: 18 }, { category: "ADULT" })
 
 await repository.update(1, { firstName: "Rizzrak" })
 // executes UPDATE user SET firstName = Rizzrak WHERE id = 1
+```
+
+-   `updateAll` - Updates *all* entities of target type (without WHERE clause). Sets fields from supplied partial entity.
+
+```typescript
+await repository.updateAll({ category: "ADULT" })
+// executes UPDATE user SET category = ADULT
 ```
 
 -   `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
@@ -223,6 +230,15 @@ await repository.delete(1)
 await repository.delete([1, 2, 3])
 await repository.delete({ firstName: "Timber" })
 ```
+
+-   `deleteAll` - Deletes *all* entities of target type (without WHERE clause).
+
+```typescript
+await repository.deleteAll()
+// executes DELETE FROM user
+```
+
+Refer also to the `clear` method, which performs database `TRUNCATE TABLE` operation instead.
 
 -   `softDelete` and `restore` - Soft deleting and restoring a row by id, ids, or given conditions:
 
@@ -399,8 +415,8 @@ const rawData = await repository.query(`SELECT * FROM USERS`)
 // You can also use parameters to avoid SQL injection
 // The syntax differs between the drivers
 
-// aurora-mysql, better-sqlite3, capacitor, cordova, 
-// expo, mariadb, mysql, nativescript, react-native, 
+// aurora-mysql, better-sqlite3, capacitor, cordova,
+// expo, mariadb, mysql, nativescript, react-native,
 // sap, sqlite, sqljs
 const rawData = await repository.query(
     'SELECT * FROM USERS WHERE name = ? and age = ?',

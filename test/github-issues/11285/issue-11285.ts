@@ -7,7 +7,14 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, MssqlParameter, Not, Raw } from "../../../src/index.js"
+import {
+    And,
+    DataSource,
+    In,
+    MssqlParameter,
+    Not,
+    Raw,
+} from "../../../src/index.js"
 import { SqlServerQueryRunner } from "../../../src/driver/sqlserver/SqlServerQueryRunner"
 import { User } from "./entity/user"
 import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryRunner"
@@ -139,6 +146,55 @@ describe("github issues > #11285 Missing MSSQL input type", () => {
                         sinon.match.any,
                         sinon.match((value) => {
                             return Array.isArray(value) && value.length === 0
+                        }),
+                    )
+                }),
+            ))
+
+        it("should convert input parameter with FindOperator with array to MssqlParameter", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const user = new User()
+                    user.memberId = "test-member-id"
+
+                    const user2 = new User()
+                    user2.memberId = "test-member-id-2"
+
+                    await dataSource.manager.save([user, user2])
+
+                    const selectSpy = sinon.spy(
+                        SqlServerQueryRunner.prototype,
+                        "query",
+                    )
+
+                    const excludedUserIds = [user2.memberId]
+
+                    const users = await dataSource.getRepository(User).find({
+                        where: {
+                            memberId: And(Not(In(excludedUserIds))),
+                        },
+                    })
+
+                    expect(users).to.have.length(1)
+                    expect(users[0].memberId).to.be.equal(user.memberId)
+
+                    // Ensure that the input array was not mutated into MssqlParameter instances
+                    // https://github.com/typeorm/typeorm/issues/11474
+                    expect(excludedUserIds).to.eql([user2.memberId])
+
+                    expect(selectSpy.calledOnce).to.be.true
+
+                    sinon.assert.calledWithMatch(
+                        selectSpy,
+                        sinon.match.any,
+                        sinon.match((value) => {
+                            return (
+                                Array.isArray(value) &&
+                                value.length === 1 &&
+                                value[0] instanceof MssqlParameter &&
+                                value[0].value === user2.memberId &&
+                                value[0].type === "varchar"
+                            )
                         }),
                     )
                 }),
