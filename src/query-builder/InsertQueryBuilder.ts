@@ -650,6 +650,13 @@ export class InsertQueryBuilder<
             query += ` RETURNING ${returningExpression}`
         }
 
+        if (
+            returningExpression &&
+            this.connection.driver.options.type === "spanner"
+        ) {
+            query += ` THEN RETURN ${returningExpression}`
+        }
+
         // Inserting a specific value for an auto-increment primary key in mssql requires enabling IDENTITY_INSERT
         // IDENTITY_INSERT can only be enabled for tables where there is an IDENTITY column and only if there is a value to be inserted (i.e. supplying DEFAULT is prohibited if IDENTITY_INSERT is enabled)
         if (
@@ -865,6 +872,13 @@ export class InsertQueryBuilder<
                                     this.connection.driver.normalizeDefault(
                                         column,
                                     )
+                            } else if (
+                                this.connection.driver.options.type ===
+                                    "spanner" &&
+                                column.isGenerated &&
+                                column.generationStrategy === "uuid"
+                            ) {
+                                expression += "GENERATE_UUID()" // Produces a random universally unique identifier (UUID) as a STRING value.
                             } else {
                                 expression += "NULL" // otherwise simply use NULL and pray if column is nullable
                             }

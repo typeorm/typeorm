@@ -3828,7 +3828,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     {
                         identifier: this.expressionMap.cacheId,
                         query: queryId,
-                        time: new Date().getTime(),
+                        time: Date.now(),
                         duration:
                             this.expressionMap.cacheDuration ||
                             cacheOptions.duration ||
@@ -4299,21 +4299,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                     // MSSQL requires parameters to carry extra type information
                     if (this.connection.driver.options.type === "mssql") {
-                        const driver = this.connection.driver as SqlServerDriver
-                        if (parameterValue instanceof FindOperator) {
-                            if (parameterValue.type !== "raw") {
-                                parameterValue.transformValue({
-                                    to: (v) =>
-                                        driver.parametrizeValue(column, v),
-                                    from: (v) => v,
-                                })
-                            }
-                        } else {
-                            parameterValue = driver.parametrizeValue(
-                                column,
-                                parameterValue,
-                            )
-                        }
+                        parameterValue = (
+                            this.connection.driver as SqlServerDriver
+                        ).parametrizeValues(column, parameterValue)
                     }
 
                     // if (parameterValue === null) {

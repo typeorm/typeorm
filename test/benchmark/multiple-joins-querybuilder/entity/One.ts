@@ -17,31 +17,31 @@ export class One {
     @PrimaryGeneratedColumn()
     id: number
 
-    @OneToOne((type) => Two, (two) => two.one)
+    @OneToOne(() => Two, (two) => two.one)
     two: Two
 
-    @OneToOne((type) => Three, (three) => three.one)
+    @OneToOne(() => Three, (three) => three.one)
     three: Three
 
-    @OneToOne((type) => Four, (four) => four.one)
+    @OneToOne(() => Four, (four) => four.one)
     four: Four
 
-    @OneToOne((type) => Five, (five) => five.one)
+    @OneToOne(() => Five, (five) => five.one)
     five: Five
 
-    @OneToOne((type) => Six, (six) => six.one)
+    @OneToOne(() => Six, (six) => six.one)
     six: Six
 
-    @OneToOne((type) => Seven, (seven) => seven.one)
+    @OneToOne(() => Seven, (seven) => seven.one)
     seven: Seven
 
-    @OneToOne((type) => Eight, (eight) => eight.one)
+    @OneToOne(() => Eight, (eight) => eight.one)
     eight: Eight
 
-    @OneToOne((type) => Nine, (nine) => nine.one)
+    @OneToOne(() => Nine, (nine) => nine.one)
     nine: Nine
 
-    @OneToOne((type) => Ten, (ten) => ten.one)
+    @OneToOne(() => Ten, (ten) => ten.one)
     ten: Ten
 
     @Column({ type: "text" })

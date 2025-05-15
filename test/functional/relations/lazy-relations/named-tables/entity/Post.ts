@@ -35,14 +35,14 @@ export class Post {
     @Column()
     viewCount: number = 0
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     category: Promise<Category>
 
-    @OneToOne((type) => Category, (category) => category.onePost)
+    @OneToOne(() => Category, (category) => category.onePost)
     @JoinColumn()
     oneCategory: Promise<Category>
 
-    @ManyToOne((type) => Category, (category) => category.twoSidePosts2)
+    @ManyToOne(() => Category, (category) => category.twoSidePosts2)
     twoSideCategory: Promise<Category>
 
     // ManyToMany with named properties
@@ -51,12 +51,12 @@ export class Post {
     categoriesNamedTable: Promise<Category[]>
 
     // ManyToOne with named properties
-    @ManyToOne((type) => Category, (category) => category.onePostsNamedTable)
+    @ManyToOne(() => Category, (category) => category.onePostsNamedTable)
     @JoinColumn()
     categoryNamedTable: Promise<Category>
 
     // OneToOne with named properties
-    @OneToOne((type) => Category, (category) => category.onePostNamedTable)
+    @OneToOne(() => Category, (category) => category.onePostNamedTable)
     @JoinColumn()
     oneCategoryNamedTable: Promise<Category>
 }
