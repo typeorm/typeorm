@@ -740,13 +740,91 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
         } else if (columnMetadata.type === "vector") {
-            if (
-                typeof value === "string" &&
-                value.startsWith("[") &&
-                value.endsWith("]")
-            ) {
-                return value.slice(1, -1).split(",").map(Number)
+            if (columnMetadata.isArray) {
+                if (typeof value === "string") {
+                    if (value === "{}") return [] // Handle empty PG array string "{}"
+
+                    // value is like '{"[1,2]","[3,4]",NULL,"[]"}'
+                    // We need to parse this carefully because vector strings themselves contain commas.
+                    const innerContent = value.slice(1, -1) // Remove outer {}
+                    const result = []
+                    let i = 0
+                    while (i < innerContent.length) {
+                        let elementStr: string
+                        if (innerContent[i] === '"') {
+                            // Quoted element, e.g., "[1,2,3]"
+                            let closingQuoteIdx = i + 1
+                            while (closingQuoteIdx < innerContent.length) {
+                                if (innerContent[closingQuoteIdx] === '"') {
+                                    // Check for escaped quote: ""
+                                    if (
+                                        closingQuoteIdx + 1 <
+                                            innerContent.length &&
+                                        innerContent[closingQuoteIdx + 1] ===
+                                            '"'
+                                    ) {
+                                        closingQuoteIdx++ // Skip next quote, part of the string
+                                    } else {
+                                        break // Found the actual closing quote
+                                    }
+                                }
+                                closingQuoteIdx++
+                            }
+                            elementStr = innerContent
+                                .slice(i + 1, closingQuoteIdx)
+                                .replace(/""/g, '"') // Unescape "" to " if any
+                            i = closingQuoteIdx + 1
+                        } else {
+                            // Unquoted element, e.g., NULL
+                            let commaIdx = innerContent.indexOf(",", i)
+                            if (commaIdx === -1) commaIdx = innerContent.length
+                            elementStr = innerContent.slice(i, commaIdx)
+                            i = commaIdx
+                        }
+
+                        if (elementStr === "NULL") {
+                            result.push(null)
+                        } else if (
+                            elementStr.startsWith("[") &&
+                            elementStr.endsWith("]")
+                        ) {
+                            if (elementStr === "[]") {
+                                result.push([]) // Handle empty vector "[]"
+                            } else {
+                                result.push(
+                                    elementStr
+                                        .slice(1, -1)
+                                        .split(",")
+                                        .map(Number),
+                                )
+                            }
+                        } else {
+                            // This fallback should ideally not be reached with well-formed pgvector array strings.
+                            result.push(elementStr)
+                        }
+
+                        if (
+                            i < innerContent.length &&
+                            innerContent[i] === ","
+                        ) {
+                            i++ // Move past the comma
+                        }
+                    }
+                    return result
+                }
+            } else {
+                // Single vector
+                if (
+                    typeof value === "string" &&
+                    value.startsWith("[") &&
+                    value.endsWith("]")
+                ) {
+                    if (value === "[]") return [] // Handle empty vector string "[]"
+                    return value.slice(1, -1).split(",").map(Number)
+                }
             }
+            // If value isn't a string in the expected format, or not an array string when expected,
+            // return as is. This covers cases where it might already be parsed or is of an unexpected type.
             return value
         } else if (columnMetadata.type === "hstore") {
             if (columnMetadata.hstoreType === "object") {
@@ -1286,105 +1364,6 @@ export class PostgresDriver implements Driver {
                 tableColumn.generatedType !== columnMetadata.generatedType ||
                 (tableColumn.asExpression || "").trim() !==
                     (columnMetadata.asExpression || "").trim()
-
-            // DEBUG SECTION
-            // if (isColumnChanged) {
-            //     console.log("table:", columnMetadata.entityMetadata.tableName)
-            //     console.log(
-            //         "name:",
-            //         tableColumn.name,
-            //         columnMetadata.databaseName,
-            //     )
-            //     console.log(
-            //         "type:",
-            //         tableColumn.type,
-            //         this.normalizeType(columnMetadata),
-            //     )
-            //     console.log(
-            //         "length:",
-            //         tableColumn.length,
-            //         columnMetadata.length,
-            //     )
-            //     console.log(
-            //         "isArray:",
-            //         tableColumn.isArray,
-            //         columnMetadata.isArray,
-            //     )
-            //     console.log(
-            //         "precision:",
-            //         tableColumn.precision,
-            //         columnMetadata.precision,
-            //     )
-            //     console.log("scale:", tableColumn.scale, columnMetadata.scale)
-            //     console.log(
-            //         "comment:",
-            //         tableColumn.comment,
-            //         this.escapeComment(columnMetadata.comment),
-            //     )
-            //     console.log(
-            //         "enumName:",
-            //         tableColumn.enumName,
-            //         columnMetadata.enumName,
-            //     )
-            //     console.log(
-            //         "enum:",
-            //         tableColumn.enum &&
-            //             columnMetadata.enum &&
-            //             !OrmUtils.isArraysEqual(
-            //                 tableColumn.enum,
-            //                 columnMetadata.enum.map((val) => val + ""),
-            //             ),
-            //     )
-            //     console.log(
-            //         "isPrimary:",
-            //         tableColumn.isPrimary,
-            //         columnMetadata.isPrimary,
-            //     )
-            //     console.log(
-            //         "isNullable:",
-            //         tableColumn.isNullable,
-            //         columnMetadata.isNullable,
-            //     )
-            //     console.log(
-            //         "isUnique:",
-            //         tableColumn.isUnique,
-            //         this.normalizeIsUnique(columnMetadata),
-            //     )
-            //     console.log(
-            //         "isGenerated:",
-            //         tableColumn.isGenerated,
-            //         columnMetadata.isGenerated,
-            //     )
-            //     console.log(
-            //         "generatedType:",
-            //         tableColumn.generatedType,
-            //         columnMetadata.generatedType,
-            //     )
-            //     console.log(
-            //         "asExpression:",
-            //         (tableColumn.asExpression || "").trim(),
-            //         (columnMetadata.asExpression || "").trim(),
-            //     )
-            //     console.log(
-            //         "collation:",
-            //         tableColumn.collation,
-            //         columnMetadata.collation,
-            //     )
-            //     console.log(
-            //         "isGenerated 2:",
-            //         !tableColumn.isGenerated &&
-            //             this.lowerDefaultValueIfNecessary(
-            //                 this.normalizeDefault(columnMetadata),
-            //             ) !== tableColumn.default,
-            //     )
-            //     console.log(
-            //         "spatialFeatureType:",
-            //         (tableColumn.spatialFeatureType || "").toLowerCase(),
-            //         (columnMetadata.spatialFeatureType || "").toLowerCase(),
-            //     )
-            //     console.log("srid", tableColumn.srid, columnMetadata.srid)
-            //     console.log("==========================================")
-            // }
 
             return isColumnChanged
         })
