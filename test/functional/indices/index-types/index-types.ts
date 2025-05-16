@@ -1,15 +1,12 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
-import {
-    closeTestingConnections,
-    createTestingConnections,
-    reloadTestingDatabases,
-} from "../../utils/test-utils"
-import { User } from "../10964/entity/User"
+
+
 import { User2 } from "./entity/User2"
-import { TypeORMError } from "../../../src"
 import { User3 } from "./entity/User3"
+import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils"
+import { User } from "./entity/User"
+import { DataSource, TypeORMError } from "../../../../src"
 
 describe("github issues > Add support of 'hash' indexes for postgres", () => {
     let connections: DataSource[]
