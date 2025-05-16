@@ -1,5 +1,58 @@
+## [0.3.24](https://github.com/typeorm/typeorm/compare/0.3.23...0.3.24) (2025-05-14)
+
+
+### Bug Fixes
+
+* **capacitor** use query to run PRAGMA statements ([#11467](https://github.com/typeorm/typeorm/issues/11467)) ([d325d9e](https://github.com/typeorm/typeorm/commit/d325d9e63d7936727987b8cc72d756d4e107be4b))
+* **ci:** resolve pkg.pr.new publish failure ([2168441](https://github.com/typeorm/typeorm/commit/2168441e6cdea98840f66ce8beea89be934046b8))
+* **mssql:** avoid mutating input parameter array values ([#11476](https://github.com/typeorm/typeorm/issues/11476)) ([b8dbca5](https://github.com/typeorm/typeorm/commit/b8dbca515e4f6db8c33a9059d59386af2c819a13))
+
+
+### Features
+
+* add tagged template for executing raw SQL queries ([#11432](https://github.com/typeorm/typeorm/issues/11432)) ([c464ff8](https://github.com/typeorm/typeorm/commit/c464ff87cb91a017c7e45eda6c7f951ed5645def))
+* add updateAll and deleteAll methods to EntityManager and Repository APIs ([#11459](https://github.com/typeorm/typeorm/issues/11459)) ([23bb1ee](https://github.com/typeorm/typeorm/commit/23bb1ee271b1b9d64999efff7c66b3f6a19650fe))
+* **spanner:** support insert returning ([#11460](https://github.com/typeorm/typeorm/issues/11460)) ([144634d](https://github.com/typeorm/typeorm/commit/144634d4c0e06b2a3eb108e8b9b36c69247e1820)), closes [#11453](https://github.com/typeorm/typeorm/issues/11453)
+
+
+### Performance Improvements
+
+* improve save performance during entities update  ([15de733](https://github.com/typeorm/typeorm/commit/15de733e28d6f6b131f73f82df38833df5fcf5be))
+
+
+
 ## [0.3.23](https://github.com/typeorm/typeorm/compare/0.3.22...0.3.23) (2025-05-05)
 
+### :warning: Note on a breaking change
+
+This release includes a technically breaking change (from [this PR](https://github.com/typeorm/typeorm/pull/10910)) in the behaviour of the `delete` and `update` methods of the EntityManager and Repository APIs, when an empty object is supplied as the criteria:
+
+```ts
+await repository.delete({})
+await repository.update({}, { foo: 'bar' })
+```
+
+- **Old behaviour** was to delete or update all rows in the table
+- **New behaviour** is to throw an error: `Empty criteria(s) are not allowed for the delete/update method.`
+
+Why?
+
+This behaviour was not documented and is considered dangerous as it can allow a badly-formed object (e.g. with an undefined id) to inadvertently delete or update the whole table.
+
+When the intention actually was to delete or update all rows, such queries can be rewritten using the QueryBuilder API:
+
+```ts
+await repository.createQueryBuilder().delete().execute()
+// executes: DELETE FROM table_name
+await repository.createQueryBuilder().update().set({ foo: 'bar' }).execute()
+// executes: UPDATE table_name SET foo = 'bar'
+```
+
+An alternative method for deleting all rows is to use:
+```ts
+await repository.clear()
+// executes: TRUNCATE TABLE table_name
+```
 
 ### Bug Fixes
 
