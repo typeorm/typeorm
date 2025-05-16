@@ -648,17 +648,22 @@ export class PostgresDriver implements Driver {
 
                 return value.map((vectorElement) => {
                     if (Array.isArray(vectorElement)) {
-                        return `[${vectorElement.join(",")}]` // Each element becomes a string like "[1,2,3]"
+                        if (vectorElement.length === 0) return null // Empty vector in array becomes NULL
+                        return `[${vectorElement.join(",")}]`
                     }
-                    // Handle cases where an element might not be an array, or is null/undefined
                     if (vectorElement === null || vectorElement === undefined)
                         return null
-                    return vectorElement // Or throw error for malformed element
+                    return vectorElement
                 })
-                // Resulting array of strings (e.g., ["[1,2]", "[3,4]"]) will be handled by pg driver's array serialization.
             } else {
-                // Single vector, value should be a number array, e.g., [1,2,3]
+                // Single vector
+                if (value === null || value === undefined) {
+                    return null // Explicitly pass through null/undefined as NULL
+                }
                 if (Array.isArray(value)) {
+                    if (value.length === 0) {
+                        return null // Convert empty array [] to NULL for the DB
+                    }
                     return `[${value.join(",")}]` // Becomes string "[1,2,3]"
                 }
             }
