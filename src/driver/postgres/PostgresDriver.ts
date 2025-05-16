@@ -819,6 +819,10 @@ export class PostgresDriver implements Driver {
                 }
             } else {
                 // Single vector
+                if (value === null) {
+                    // If DB returned NULL for a single vector
+                    return [] // Hydrate as an empty array []
+                }
                 if (
                     typeof value === "string" &&
                     value.startsWith("[") &&
