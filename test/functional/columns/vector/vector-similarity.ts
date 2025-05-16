@@ -118,40 +118,14 @@ describe("columns > vector type > similarity operations", () => {
                 let saveThrewError = false
                 try {
                     await postRepository.save(post)
-                    // TypeORM currently does not throw a JS error for this specific DB constraint violation,
-                    // and might even populate post.id if a sequence value was obtained before the constraint failure.
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 } catch (error) {
                     saveThrewError = true
                 }
 
-                // Assert TypeORM's current behavior: it doesn't throw a JS error here.
-                expect(
-                    saveThrewError,
-                    "postRepository.save() unexpectedly threw an error, check if TypeORM error handling for pgvector changed",
-                ).to.be.false
+                expect(saveThrewError).to.be.true
+                expect(post.id).to.be.undefined
 
-                // Check if TypeORM populated the ID in the entity object despite the presumed DB error.
-                // This is the part that was failing (post.id was 1, not undefined).
-                // We now expect it might be populated if a sequence generated it.
-                if (post.id !== undefined) {
-                    // If an ID was assigned to the object, the crucial check is whether the row actually exists in the DB.
-                    // The database should have rejected the insert due to the vector dimension mismatch.
-                    const foundPostInDb = await postRepository.findOne({
-                        where: { id: post.id },
-                    })
-                    expect(
-                        foundPostInDb,
-                        `Post with id ${post.id} should not exist in DB if vector constraint failed`,
-                    ).to.be.null
-                } else {
-                    // If post.id *is* undefined, that's also a valid outcome implying the save failed early enough
-                    // for TypeORM not to even get an ID. This path makes the original assertion (post.id === undefined) pass.
-                    // We include this branch to make the test robust to potential minor variations in TypeORM/driver behavior.
-                    // The core idea is that the data is not *actually* persisted correctly.
-                    expect(post.id).to.be.undefined
-                }
-
-                // As an additional explicit check: try to find any post with the malformed embedding. None should exist.
                 const foundPostWithMalformedEmbedding = await connection
                     .getRepository(Post)
                     .createQueryBuilder("p")
@@ -159,10 +133,7 @@ describe("columns > vector type > similarity operations", () => {
                         embeddingText: "[1,1]",
                     })
                     .getOne()
-                expect(
-                    foundPostWithMalformedEmbedding,
-                    "No post should be findable with the malformed embedding string '[1,1]'",
-                ).to.be.null
+                expect(foundPostWithMalformedEmbedding).to.be.null
             }),
         ))
 })
