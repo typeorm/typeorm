@@ -642,10 +642,27 @@ export class PostgresDriver implements Driver {
         ) {
             return JSON.stringify(value)
         } else if (columnMetadata.type === "vector") {
-            if (Array.isArray(value)) {
-                return `[${value.join(",")}]`
+            if (columnMetadata.isArray) {
+                // Value should be an array of number arrays, e.g., [[1,2], [3,4]]
+                if (!Array.isArray(value)) return value // Or handle error
+
+                return value.map((vectorElement) => {
+                    if (Array.isArray(vectorElement)) {
+                        return `[${vectorElement.join(",")}]` // Each element becomes a string like "[1,2,3]"
+                    }
+                    // Handle cases where an element might not be an array, or is null/undefined
+                    if (vectorElement === null || vectorElement === undefined)
+                        return null
+                    return vectorElement // Or throw error for malformed element
+                })
+                // Resulting array of strings (e.g., ["[1,2]", "[3,4]"]) will be handled by pg driver's array serialization.
+            } else {
+                // Single vector, value should be a number array, e.g., [1,2,3]
+                if (Array.isArray(value)) {
+                    return `[${value.join(",")}]` // Becomes string "[1,2,3]"
+                }
             }
-            return value
+            return value // Fallback for unexpected value types
         } else if (columnMetadata.type === "hstore") {
             if (typeof value === "string") {
                 return value
