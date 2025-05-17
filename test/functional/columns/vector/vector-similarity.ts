@@ -97,7 +97,7 @@ describe("columns > vector type > similarity operations", () => {
                 const queryVector = "[1,1,1]" // Search vector
 
                 const results = await connection.query(
-                    `SELECT id, embedding FROM "post" ORDER BY embedding <#> $1 ASC LIMIT 2`,
+                    `SELECT id, embedding FROM "post" ORDER BY embedding <#> $1 ASC LIMIT 2`, // The <#> operator returns negative inner product, so ASC ordering gives highest positive inner product first (most similar vectors)
                     [queryVector],
                 )
 
