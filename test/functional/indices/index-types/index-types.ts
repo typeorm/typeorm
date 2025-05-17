@@ -1,10 +1,13 @@
 import "reflect-metadata"
 import { expect } from "chai"
 
-
 import { User2 } from "./entity/User2"
 import { User3 } from "./entity/User3"
-import { closeTestingConnections, createTestingConnections, reloadTestingDatabases } from "../../../utils/test-utils"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
 import { User } from "./entity/User"
 import { DataSource, TypeORMError } from "../../../../src"
 
