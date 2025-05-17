@@ -1382,6 +1382,105 @@ export class PostgresDriver implements Driver {
                 (tableColumn.asExpression || "").trim() !==
                     (columnMetadata.asExpression || "").trim()
 
+            // DEBUG SECTION
+            // if (isColumnChanged) {
+            //     console.log("table:", columnMetadata.entityMetadata.tableName)
+            //     console.log(
+            //         "name:",
+            //         tableColumn.name,
+            //         columnMetadata.databaseName,
+            //     )
+            //     console.log(
+            //         "type:",
+            //         tableColumn.type,
+            //         this.normalizeType(columnMetadata),
+            //     )
+            //     console.log(
+            //         "length:",
+            //         tableColumn.length,
+            //         columnMetadata.length,
+            //     )
+            //     console.log(
+            //         "isArray:",
+            //         tableColumn.isArray,
+            //         columnMetadata.isArray,
+            //     )
+            //     console.log(
+            //         "precision:",
+            //         tableColumn.precision,
+            //         columnMetadata.precision,
+            //     )
+            //     console.log("scale:", tableColumn.scale, columnMetadata.scale)
+            //     console.log(
+            //         "comment:",
+            //         tableColumn.comment,
+            //         this.escapeComment(columnMetadata.comment),
+            //     )
+            //     console.log(
+            //         "enumName:",
+            //         tableColumn.enumName,
+            //         columnMetadata.enumName,
+            //     )
+            //     console.log(
+            //         "enum:",
+            //         tableColumn.enum &&
+            //             columnMetadata.enum &&
+            //             !OrmUtils.isArraysEqual(
+            //                 tableColumn.enum,
+            //                 columnMetadata.enum.map((val) => val + ""),
+            //             ),
+            //     )
+            //     console.log(
+            //         "isPrimary:",
+            //         tableColumn.isPrimary,
+            //         columnMetadata.isPrimary,
+            //     )
+            //     console.log(
+            //         "isNullable:",
+            //         tableColumn.isNullable,
+            //         columnMetadata.isNullable,
+            //     )
+            //     console.log(
+            //         "isUnique:",
+            //         tableColumn.isUnique,
+            //         this.normalizeIsUnique(columnMetadata),
+            //     )
+            //     console.log(
+            //         "isGenerated:",
+            //         tableColumn.isGenerated,
+            //         columnMetadata.isGenerated,
+            //     )
+            //     console.log(
+            //         "generatedType:",
+            //         tableColumn.generatedType,
+            //         columnMetadata.generatedType,
+            //     )
+            //     console.log(
+            //         "asExpression:",
+            //         (tableColumn.asExpression || "").trim(),
+            //         (columnMetadata.asExpression || "").trim(),
+            //     )
+            //     console.log(
+            //         "collation:",
+            //         tableColumn.collation,
+            //         columnMetadata.collation,
+            //     )
+            //     console.log(
+            //         "isGenerated 2:",
+            //         !tableColumn.isGenerated &&
+            //             this.lowerDefaultValueIfNecessary(
+            //                 this.normalizeDefault(columnMetadata),
+            //             ) !== tableColumn.default,
+            //     )
+            //     console.log(
+            //         "spatialFeatureType:",
+            //         (tableColumn.spatialFeatureType || "").toLowerCase(),
+            //         (columnMetadata.spatialFeatureType || "").toLowerCase(),
+            //     )
+            //     console.log("srid", tableColumn.srid, columnMetadata.srid)
+            //     console.log("==========================================")
+            // }
+
             return isColumnChanged
         })
     }
