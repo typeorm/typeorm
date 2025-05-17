@@ -31,14 +31,11 @@ describe("columns > vector type", () => {
                 await queryRunner.release()
 
                 const embedding = [1.0, 2.0, 3.0]
-                const embeddings = [
-                    [1.0, 2.0],
-                    [3.0, 4.0],
-                ]
+                const embedding_three_dimensions = [1.0, 2.0, 3.0]
 
                 const post = new Post()
                 post.embedding = embedding
-                post.embeddings = embeddings
+                post.embedding_three_dimensions = embedding_three_dimensions
 
                 await postRepository.save(post)
 
@@ -48,36 +45,16 @@ describe("columns > vector type", () => {
 
                 expect(loadedPost).to.exist
                 expect(loadedPost!.embedding).to.deep.equal(embedding)
-                expect(loadedPost!.embeddings).to.deep.equal(embeddings)
+                expect(loadedPost!.embedding_three_dimensions).to.deep.equal(
+                    embedding_three_dimensions,
+                )
 
                 table!
                     .findColumnByName("embedding")!
-                    .type.should.be.equal("vector(3)")
-                table!
-                    .findColumnByName("embeddings")!
                     .type.should.be.equal("vector")
-                table!.findColumnByName("embeddings")!.isArray.should.be.true
-            }),
-        ))
-
-    it("should handle null and empty vector values", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const postRepository = connection.getRepository(Post)
-
-                const post = new Post()
-                post.embedding = []
-                post.embeddings = []
-
-                await postRepository.save(post)
-
-                const loadedPost = await postRepository.findOne({
-                    where: { id: post.id },
-                })
-
-                expect(loadedPost).to.exist
-                expect(loadedPost!.embedding).to.deep.equal([])
-                expect(loadedPost!.embeddings).to.deep.equal([])
+                table!
+                    .findColumnByName("embedding_three_dimensions")!
+                    .type.should.be.equal("vector(3)")
             }),
         ))
 
@@ -88,15 +65,12 @@ describe("columns > vector type", () => {
 
                 const post = new Post()
                 post.embedding = [1.0, 2.0]
-                post.embeddings = [[3.0, 4.0]]
+                post.embedding_three_dimensions = [3.0, 4.0, 5.0]
 
                 await postRepository.save(post)
 
                 post.embedding = [5.0, 6.0]
-                post.embeddings = [
-                    [7.0, 8.0],
-                    [9.0, 10.0],
-                ]
+                post.embedding_three_dimensions = [7.0, 8.0, 9.0]
 
                 await postRepository.save(post)
 
@@ -106,9 +80,8 @@ describe("columns > vector type", () => {
 
                 expect(loadedPost).to.exist
                 expect(loadedPost!.embedding).to.deep.equal([5.0, 6.0])
-                expect(loadedPost!.embeddings).to.deep.equal([
-                    [7.0, 8.0],
-                    [9.0, 10.0],
+                expect(loadedPost!.embedding_three_dimensions).to.deep.equal([
+                    7.0, 8.0, 9.0,
                 ])
             }),
         ))

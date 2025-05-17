@@ -642,32 +642,13 @@ export class PostgresDriver implements Driver {
         ) {
             return JSON.stringify(value)
         } else if (columnMetadata.type === "vector") {
-            if (columnMetadata.isArray) {
-                // Value should be an array of number arrays, e.g., [[1,2], [3,4]]
-                if (!Array.isArray(value)) return value // Or handle error
-
-                return value.map((vectorElement) => {
-                    if (Array.isArray(vectorElement)) {
-                        if (vectorElement.length === 0) return null // Empty vector in array becomes NULL
-                        return `[${vectorElement.join(",")}]`
-                    }
-                    if (vectorElement === null || vectorElement === undefined)
-                        return null
-                    return vectorElement
-                })
-            } else {
-                // Single vector
-                if (value === null || value === undefined) {
-                    return null // Explicitly pass through null/undefined as NULL
-                }
-                if (Array.isArray(value)) {
-                    if (value.length === 0) {
-                        return null // Convert empty array [] to NULL for the DB
-                    }
-                    return `[${value.join(",")}]` // Becomes string "[1,2,3]"
-                }
+            if (value === null || typeof value === "undefined") {
+                return "NULL"
+            } else if (typeof value === "string") {
+                return value
+            } else if (Array.isArray(value)) {
+                return `[${value.join(",")}]`
             }
-            return value // Fallback for unexpected value types
         } else if (columnMetadata.type === "hstore") {
             if (typeof value === "string") {
                 return value
@@ -753,96 +734,14 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
         } else if (columnMetadata.type === "vector") {
-            if (columnMetadata.isArray) {
-                if (typeof value === "string") {
-                    if (value === "{}") return [] // Handle empty PG array string "{}"
-
-                    // value is like '{"[1,2]","[3,4]",NULL,"[]"}'
-                    // We need to parse this carefully because vector strings themselves contain commas.
-                    const innerContent = value.slice(1, -1) // Remove outer {}
-                    const result = []
-                    let i = 0
-                    while (i < innerContent.length) {
-                        let elementStr: string
-                        if (innerContent[i] === '"') {
-                            // Quoted element, e.g., "[1,2,3]"
-                            let closingQuoteIdx = i + 1
-                            while (closingQuoteIdx < innerContent.length) {
-                                if (innerContent[closingQuoteIdx] === '"') {
-                                    // Check for escaped quote: ""
-                                    if (
-                                        closingQuoteIdx + 1 <
-                                            innerContent.length &&
-                                        innerContent[closingQuoteIdx + 1] ===
-                                            '"'
-                                    ) {
-                                        closingQuoteIdx++ // Skip next quote, part of the string
-                                    } else {
-                                        break // Found the actual closing quote
-                                    }
-                                }
-                                closingQuoteIdx++
-                            }
-                            elementStr = innerContent
-                                .slice(i + 1, closingQuoteIdx)
-                                .replace(/""/g, '"') // Unescape "" to " if any
-                            i = closingQuoteIdx + 1
-                        } else {
-                            // Unquoted element, e.g., NULL
-                            let commaIdx = innerContent.indexOf(",", i)
-                            if (commaIdx === -1) commaIdx = innerContent.length
-                            elementStr = innerContent.slice(i, commaIdx)
-                            i = commaIdx
-                        }
-
-                        if (elementStr === "NULL") {
-                            result.push(null)
-                        } else if (
-                            elementStr.startsWith("[") &&
-                            elementStr.endsWith("]")
-                        ) {
-                            if (elementStr === "[]") {
-                                result.push([]) // Handle empty vector "[]"
-                            } else {
-                                result.push(
-                                    elementStr
-                                        .slice(1, -1)
-                                        .split(",")
-                                        .map(Number),
-                                )
-                            }
-                        } else {
-                            // This fallback should ideally not be reached with well-formed pgvector array strings.
-                            result.push(elementStr)
-                        }
-
-                        if (
-                            i < innerContent.length &&
-                            innerContent[i] === ","
-                        ) {
-                            i++ // Move past the comma
-                        }
-                    }
-                    return result
-                }
-            } else {
-                // Single vector
-                if (value === null) {
-                    // If DB returned NULL for a single vector
-                    return [] // Hydrate as an empty array []
-                }
-                if (
-                    typeof value === "string" &&
-                    value.startsWith("[") &&
-                    value.endsWith("]")
-                ) {
-                    if (value === "[]") return [] // Handle empty vector string "[]"
-                    return value.slice(1, -1).split(",").map(Number)
-                }
+            if (
+                typeof value === "string" &&
+                value.startsWith("[") &&
+                value.endsWith("]")
+            ) {
+                if (value === "[]") return []
+                return value.slice(1, -1).split(",").map(Number)
             }
-            // If value isn't a string in the expected format, or not an array string when expected,
-            // return as is. This covers cases where it might already be parsed or is of an unexpected type.
-            return value
         } else if (columnMetadata.type === "hstore") {
             if (columnMetadata.hstoreType === "object") {
                 const unescapeString = (str: string) =>
