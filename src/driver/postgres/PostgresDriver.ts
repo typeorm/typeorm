@@ -722,6 +722,14 @@ export class PostgresDriver implements Driver {
      * Prepares given value to a value to be persisted, based on its column type or metadata.
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
+        if (
+            columnMetadata.type === "vector" &&
+            !columnMetadata.isArray &&
+            value === null
+        ) {
+            value = []
+        }
+
         if (value === null || value === undefined)
             return columnMetadata.transformer
                 ? ApplyValueTransformers.transformFrom(
