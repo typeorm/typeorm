@@ -97,7 +97,10 @@ describe("columns > vector type > similarity operations", () => {
                 const queryVector = "[1,1,1]" // Search vector
 
                 const results = await connection.query(
-                    `SELECT id, embedding FROM "post" ORDER BY embedding <#> $1 ASC LIMIT 2`, // The <#> operator returns negative inner product, so ASC ordering gives highest positive inner product first (most similar vectors)
+                    // The <#> operator returns negative inner product, so ASC ordering gives highest positive inner product first.
+                    // This is counterintuitive but by design in pgvector - the operator returns -1 * (vector1 • vector2).
+                    // Lower values mean higher similarity when using this operator.
+                    `SELECT id, embedding FROM "post" ORDER BY embedding <#> $1 DESC LIMIT 2`,
                     [queryVector],
                 )
 

@@ -248,5 +248,5 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: postgres-postgis:${{ matrix.postgis-version }}-node:${{ inputs.node-version }}
+          flag-name: postgres-postgis:${{ matrix.postgres-version }}-node:${{ inputs.node-version }}
           parallel: true
