@@ -113,7 +113,7 @@ describe("columns > vector type > similarity operations", () => {
             connections.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = new Post()
-                post.embedding = [1, 1] // Wrong dimensions (2 instead of 3)
+                post.embedding_three_dimensions = [1, 1] // Wrong dimensions (2 instead of 3)
 
                 let saveThrewError = false
                 try {
