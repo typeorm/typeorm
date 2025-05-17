@@ -28,6 +28,11 @@ export type SpatialColumnType =
     | "st_point" // sap
 
 /**
+ * Column types where vector properties are used.
+ */
+export type VectorColumnType = "vector"
+
+/**
  * Column types where precision and scale properties are used.
  */
 export type WithPrecisionColumnType =
@@ -208,6 +213,7 @@ export type SimpleColumnType =
     | "array" // cockroachdb, sap, spanner
     | "cube" // postgres
     | "ltree" // postgres
+    | "vector" // postgres
 
 /**
  * Any column type column can be.
@@ -217,6 +223,7 @@ export type ColumnType =
     | WithLengthColumnType
     | WithWidthColumnType
     | SpatialColumnType
+    | VectorColumnType
     | SimpleColumnType
     | BooleanConstructor
     | DateConstructor

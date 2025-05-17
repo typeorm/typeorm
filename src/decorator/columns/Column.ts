@@ -20,6 +20,7 @@ import { ColumnHstoreOptions } from "../options/ColumnHstoreOptions"
 import { ColumnWithWidthOptions } from "../options/ColumnWithWidthOptions"
 import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs"
 import { ColumnOptions } from "../options/ColumnOptions"
+import { ColumnVectorOptions } from "../options/ColumnVectorOptions"
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
@@ -49,6 +50,15 @@ export function Column(
 export function Column(
     type: SpatialColumnType,
     options?: ColumnCommonOptions & SpatialColumnOptions,
+): PropertyDecorator
+
+/**
+ * Column decorator is used to mark a specific class property as a table column.
+ * Only properties decorated with this decorator will be persisted to the database when entity be saved.
+ */
+export function Column(
+    type: "vector",
+    options?: ColumnCommonOptions & ColumnVectorOptions,
 ): PropertyDecorator
 
 /**

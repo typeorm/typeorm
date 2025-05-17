@@ -28,21 +28,21 @@
 你可以通过定义一个新类来创建一个实体，并用`@Entity()`来标记：
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 
 @Entity()
 export class User {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    firstName: string;
+    firstName: string
 
     @Column()
-    lastName: string;
+    lastName: string
 
     @Column()
-    isActive: boolean;
+    isActive: boolean
 }
 ```
 
@@ -65,8 +65,8 @@ export class User {
 每个实体都必须在连接选项中注册：
 
 ```typescript
-import { createConnection, Connection } from "typeorm";
-import { User } from "./entity/User";
+import { createConnection, Connection } from "typeorm"
+import { User } from "./entity/User"
 
 const connection: Connection = await createConnection({
     type: "mysql",
@@ -75,14 +75,14 @@ const connection: Connection = await createConnection({
     username: "test",
     password: "test",
     database: "test",
-    entities: [User]
-});
+    entities: [User],
+})
 ```
 
 或者你可以指定包含所有实体的整个目录， 该目录下所有实体都将被加载：
 
 ```typescript
-import { createConnection, Connection } from "typeorm";
+import { createConnection, Connection } from "typeorm"
 
 const connection: Connection = await createConnection({
     type: "mysql",
@@ -91,8 +91,8 @@ const connection: Connection = await createConnection({
     username: "test",
     password: "test",
     database: "test",
-    entities: ["entity/*.js"]
-});
+    entities: ["entity/*.js"],
+})
 ```
 
 如果要为`User`实体使用替代表名，可以在`@ Entity`中指定：`@Entity（“my_users”）`。
@@ -117,51 +117,51 @@ const connection: Connection = await createConnection({
 下面的示例将使用`int`类型创建 id，你必须在保存之前手动分配。
 
 ```typescript
-import { Entity, PrimaryColumn } from "typeorm";
+import { Entity, PrimaryColumn } from "typeorm"
 
 @Entity()
 export class User {
     @PrimaryColumn()
-    id: number;
+    id: number
 }
 ```
 
 -   `@PrimaryGeneratedColumn()` 创建一个主列，该值将使用自动增量值自动生成。 它将使用`auto-increment` /`serial` /`sequence`创建`int`列（取决于数据库）。 你不必在保存之前手动分配其值，该值将会自动生成。
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 export class User {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 }
 ```
 
 -   `@PrimaryGeneratedColumn("uuid")` 创建一个主列，该值将使用`uuid`自动生成。 Uuid 是一个独特的字符串 id。 你不必在保存之前手动分配其值，该值将自动生成。
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 export class User {
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id: string
 }
 ```
 
 你也可以拥有复合主列：
 
 ```typescript
-import { Entity, PrimaryColumn } from "typeorm";
+import { Entity, PrimaryColumn } from "typeorm"
 
 @Entity()
 export class User {
     @PrimaryColumn()
-    firstName: string;
+    firstName: string
 
     @PrimaryColumn()
-    lastName: string;
+    lastName: string
 }
 ```
 
@@ -173,12 +173,17 @@ export class User {
 
 ```typescript
 // 使用单个主键查找一个id
-const person = await connection.manager.findOne(Person, 1);
-const person = await connection.getRepository(Person).findOne(1);
+const person = await connection.manager.findOne(Person, 1)
+const person = await connection.getRepository(Person).findOne(1)
 
 // 使用复合主键找到一个id
-const user = await connection.manager.findOne(User, { firstName: "Timber", lastName: "Saw" });
-const user = await connection.getRepository(User).findOne({ firstName: "Timber", lastName: "Saw" });
+const user = await connection.manager.findOne(User, {
+    firstName: "Timber",
+    lastName: "Saw",
+})
+const user = await connection
+    .getRepository(User)
+    .findOne({ firstName: "Timber", lastName: "Saw" })
 ```
 
 ### 特殊列
@@ -199,34 +204,36 @@ MS SQL 和 MySQL/MariaDB 的 TypeORM 支持[well-known text(WKT)](https://en.wik
 
 TypeORM 的 PostgreSQL 支持使用[GeoJSON](http://geojson.org/)作为交换格式，因此 geometry 列应在导入后标记为`object`或`Geometry`（或子类，例如`Point`）。
 
-TypeORM尝试做正确的事情，但并不总是能够确定何时插入的值或PostGIS函数的结果应被视为几何。 因此，你可能会发现自己编写的代码类似于以下代码，其中值从GeoJSON转换为PostGIS `geometry`,并作为`json`转换为GeoJSON：
+TypeORM 尝试做正确的事情，但并不总是能够确定何时插入的值或 PostGIS 函数的结果应被视为几何。 因此，你可能会发现自己编写的代码类似于以下代码，其中值从 GeoJSON 转换为 PostGIS `geometry`,并作为`json`转换为 GeoJSON：
 
 ```typescript
 const origin = {
     type: "Point",
-    coordinates: [0, 0]
-};
+    coordinates: [0, 0],
+}
 
 await getManager()
     .createQueryBuilder(Thing, "thing")
     // 将字符串化的GeoJSON转换为具有与表规范匹配的SRID的geometry
-    .where("ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom))) > 0")
+    .where(
+        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom))) > 0",
+    )
     .orderBy(
         "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))",
-        "ASC"
+        "ASC",
     )
     .setParameters({
         // 字符串化 GeoJSON
-        origin: JSON.stringify(origin)
+        origin: JSON.stringify(origin),
     })
-    .getMany();
+    .getMany()
 
 await getManager()
     .createQueryBuilder(Thing, "thing")
     // 将geometry结果转换为GeoJSON，以将此视为JSON（以便TypeORM知道反序列化它）
     .select("ST_AsGeoJSON(ST_Buffer(geom, 0.1))::json geom")
     .from("thing")
-    .getMany();
+    .getMany()
 ```
 
 ## 列类型
@@ -277,7 +284,7 @@ TypeORM 支持所有最常用的数据库支持的列类型。
 `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`, `macaddr8`,
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
 `tsrange`, `tstzrange`, `daterange`, `int4multirange`, `int8multirange`, `nummultirange`,
-`tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`
+`tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `vector`
 
 ### `sqlite`/`cordova`/`react-native`/`expo`的列类型
 
@@ -304,28 +311,26 @@ TypeORM 支持所有最常用的数据库支持的列类型。
 
 `postgres`和`mysql`都支持`enum`列类型。 并有多种列定义方式：
 
-使用typescript枚举：
+使用 typescript 枚举：
 
 ```typescript
 export enum UserRole {
     ADMIN = "admin",
     EDITOR = "editor",
-    GHOST = "ghost"
+    GHOST = "ghost",
 }
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({
         type: "enum",
         enum: UserRole,
-        default: UserRole.GHOST
+        default: UserRole.GHOST,
     })
     role: UserRole
-
 }
 ```
 
@@ -360,16 +365,16 @@ export class User {
 @Entity()
 export class User {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column("simple-array")
-    names: string[];
+    names: string[]
 }
 ```
 
 ```typescript
-const user = new User();
-user.names = ["Alexander", "Alex", "Sasha", "Shurik"];
+const user = new User()
+user.names = ["Alexander", "Alex", "Sasha", "Shurik"]
 ```
 
 存储在单个数据库列中的`Alexander，Alex，Sasha，Shurik`值。
@@ -387,16 +392,16 @@ user.names = ["Alexander", "Alex", "Sasha", "Shurik"];
 @Entity()
 export class User {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column("simple-json")
-    profile: { name: string; nickname: string };
+    profile: { name: string; nickname: string }
 }
 ```
 
 ```typescript
-const user = new User();
-user.profile = { name: "John", nickname: "Malkovich" };
+const user = new User()
+user.profile = { name: "John", nickname: "Malkovich" }
 ```
 
 存储在单个数据库列中的`{“name”：“John”，“nickname”：“Malkovich”}`值
@@ -410,11 +415,11 @@ user.profile = { name: "John", nickname: "Malkovich" };
 @Entity()
 export class User {
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
     @Generated("uuid")
-    uuid: string;
+    uuid: string
 }
 ```
 
@@ -449,7 +454,7 @@ name: string;
 -   `width: number` - 列类型的显示范围。 仅用于[MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
 -   `onUpdate: string` - `ON UPDATE`触发器。 仅用于 [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
 -   `nullable: boolean` - 在数据库中使列`NULL`或`NOT NULL`。 默认情况下，列是`nullable：false`。
--   `update: boolean` - 指示"save"操作是否更新列值。如果为false，则只能在第一次插入对象时编写该值。
+-   `update: boolean` - 指示"save"操作是否更新列值。如果为 false，则只能在第一次插入对象时编写该值。
     默认值为"true"。
 -   `select: boolean` - 定义在进行查询时是否默认隐藏此列。 设置为`false`时，列数据不会显示标准查询。 默认情况下，列是`select：true`
 -   `default: string` - 添加数据库级列的`DEFAULT`值。
@@ -481,46 +486,46 @@ name: string;
 @Entity()
 export class Photo {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    description: string;
+    description: string
 
     @Column()
-    size: string;
+    size: string
 }
 
 @Entity()
 export class Question {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    description: string;
+    description: string
 
     @Column()
-    answersCount: number;
+    answersCount: number
 }
 
 @Entity()
 export class Post {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    description: string;
+    description: string
 
     @Column()
-    viewCount: number;
+    viewCount: number
 }
 ```
 
@@ -529,30 +534,30 @@ export class Post {
 ```typescript
 export abstract class Content {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    title: string;
+    title: string
 
     @Column()
-    description: string;
+    description: string
 }
 @Entity()
 export class Photo extends Content {
     @Column()
-    size: string;
+    size: string
 }
 
 @Entity()
 export class Question extends Content {
     @Column()
-    answersCount: number;
+    answersCount: number
 }
 
 @Entity()
 export class Post extends Content {
     @Column()
-    viewCount: number;
+    viewCount: number
 }
 ```
 
@@ -570,24 +575,30 @@ TypeORM 支持存储树结构的 Adjacency 列表和 Closure 表模式。
 例如:
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany } from "typeorm";
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    ManyToOne,
+    OneToMany,
+} from "typeorm"
 
 @Entity()
 export class Category {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    description: string;
+    description: string
 
-    @OneToMany(type => Category, category => category.children)
-    parent: Category;
+    @OneToMany((type) => Category, (category) => category.children)
+    parent: Category
 
-    @ManyToOne(type => Category, category => category.parent)
-    children: Category;
+    @ManyToOne((type) => Category, (category) => category.parent)
+    children: Category
 }
 ```
 
@@ -601,27 +612,35 @@ closure 表以特殊方式在单独的表中存储父和子之间的关系。
 例如:
 
 ```typescript
-import { Entity, Tree, Column, PrimaryGeneratedColumn, TreeChildren, TreeParent, TreeLevelColumn } from "typeorm";
+import {
+    Entity,
+    Tree,
+    Column,
+    PrimaryGeneratedColumn,
+    TreeChildren,
+    TreeParent,
+    TreeLevelColumn,
+} from "typeorm"
 
 @Entity()
 @Tree("closure-table")
 export class Category {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    description: string;
+    description: string
 
     @TreeChildren()
-    children: Category;
+    children: Category
 
     @TreeParent()
-    parent: Category;
+    parent: Category
 
     @TreeLevelColumn()
-    level: number;
+    level: number
 }
 ```
