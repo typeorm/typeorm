@@ -64,7 +64,7 @@ describe("find options > null and undefined handling", () => {
                             where: {
                                 title: "Post #1",
                                 text: null,
-                            } as any,
+                            },
                         })
                         .getMany()
 
@@ -73,13 +73,13 @@ describe("find options > null and undefined handling", () => {
                         { id: 1, title: "Post #1", text: "About post #1" },
                     ])
 
-                    // Test with Repository
+                    // Test with Repository find
                     const postsWithRepo = await connection
                         .getRepository(Post)
                         .find({
                             where: {
                                 text: null,
-                            } as any,
+                            },
                         })
 
                     // This should return all posts since null properties are skipped by default
@@ -133,7 +133,7 @@ describe("find options > null and undefined handling", () => {
                         .setFindOptions({
                             where: {
                                 category: null,
-                            } as any,
+                            },
                         })
                         .getMany()
 
@@ -146,7 +146,7 @@ describe("find options > null and undefined handling", () => {
                         .find({
                             where: {
                                 category: null,
-                            } as any,
+                            },
                         })
 
                     // This should return all posts since null properties are skipped by default
@@ -193,7 +193,6 @@ describe("find options > null and undefined handling", () => {
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
-                enabledDrivers: ["sqlite"],
                 driverSpecific: {
                     treatJsNullAsSqlNull: true,
                 },
@@ -251,7 +250,7 @@ describe("find options > null and undefined handling", () => {
                     const posts2 = await connection.getRepository(Post).find({
                         where: {
                             text: null,
-                        } as any,
+                        },
                     })
 
                     console.log(
@@ -265,6 +264,17 @@ describe("find options > null and undefined handling", () => {
                     )
                     expect(posts2.length).to.equal(1)
                     expect(posts2[0].title).to.equal("Post #1")
+
+                    // Test with Repository with null text and findOne
+                    const postWithRepo = await connection
+                        .getRepository(Post)
+                        .findOne({
+                            where: {
+                                text: null,
+                            },
+                        })
+
+                    expect(postWithRepo?.title).to.equal("Post #1")
                 }),
             ))
 
@@ -288,11 +298,22 @@ describe("find options > null and undefined handling", () => {
                     const posts2 = await connection.getRepository(Post).find({
                         where: {
                             category: null,
-                        } as any,
+                        },
                     })
 
                     expect(posts2.length).to.equal(1)
                     expect(posts2[0].title).to.equal("Post #1")
+
+                    // Test with Repository with null relation and findOne
+                    const postWithRepo = await connection
+                        .getRepository(Post)
+                        .findOne({
+                            where: {
+                                category: null,
+                            },
+                        })
+
+                    expect(postWithRepo?.title).to.equal("Post #1")
                 }),
             ))
     })
@@ -303,7 +324,6 @@ describe("find options > null and undefined handling", () => {
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
-                enabledDrivers: ["sqlite"],
                 driverSpecific: {
                     throwOnUndefinedInFind: true,
                 },
@@ -332,6 +352,20 @@ describe("find options > null and undefined handling", () => {
 
                 try {
                     await connection.getRepository(Post).find({
+                        where: {
+                            text: undefined,
+                        },
+                    })
+                    expect.fail("Expected query to throw an error")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.equal(
+                        "Undefined value encountered in property 'Post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
+                    )
+                }
+
+                try {
+                    await connection.getRepository(Post).findOne({
                         where: {
                             text: undefined,
                         },
@@ -379,6 +413,20 @@ describe("find options > null and undefined handling", () => {
                             "Undefined value encountered in property 'Post.category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
                         )
                     }
+
+                    try {
+                        await connection.getRepository(Post).findOne({
+                            where: {
+                                category: undefined,
+                            },
+                        })
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.equal(
+                            "Undefined value encountered in property 'Post.category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
+                        )
+                    }
                 }),
             ))
 
@@ -416,6 +464,17 @@ describe("find options > null and undefined handling", () => {
 
                     expect(posts2.length).to.equal(1)
                     expect(posts2[0].title).to.equal("Post #1")
+
+                    // Test Repository with findOne
+                    const postWithRepo = await connection
+                        .getRepository(Post)
+                        .findOne({
+                            where: {
+                                title: "Post #1",
+                            },
+                        })
+
+                    expect(postWithRepo?.title).to.equal("Post #1")
                 }),
             ))
     })
@@ -463,7 +522,7 @@ describe("find options > null and undefined handling", () => {
                     const posts = await connection.getRepository(Post).find({
                         where: {
                             text: null,
-                        } as any,
+                        },
                     })
 
                     expect(posts.length).to.equal(1)
@@ -475,7 +534,7 @@ describe("find options > null and undefined handling", () => {
                         .find({
                             where: {
                                 category: null,
-                            } as any,
+                            },
                         })
 
                     expect(postsWithNullCategory.length).to.equal(1)
@@ -524,6 +583,17 @@ describe("find options > null and undefined handling", () => {
 
                     expect(posts2.length).to.equal(1)
                     expect(posts2[0].title).to.equal("Post #2")
+
+                    // Test Repository with findOne
+                    const postWithRepo = await connection
+                        .getRepository(Post)
+                        .findOne({
+                            where: {
+                                title: "Post #2",
+                            },
+                        })
+
+                    expect(postWithRepo?.title).to.equal("Post #2")
                 }),
             ))
     })
