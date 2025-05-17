@@ -4244,7 +4244,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (parameterValue === undefined) {
                     if (this.expressionMap.throwOnUndefinedInFind) {
                         throw new TypeORMError(
-                            `Undefined value encountered in property '${key}' of the find operation. ` +
+                            `Undefined value encountered in property '${alias}.${key}' of the find operation. ` +
                                 `Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.`,
                         )
                     }

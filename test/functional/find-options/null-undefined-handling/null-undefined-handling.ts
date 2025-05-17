@@ -314,67 +314,72 @@ describe("find options > null and undefined handling", () => {
         beforeEach(() => reloadTestingDatabases(connections))
         after(() => closeTestingConnections(connections))
 
-        it("should throw an error when undefined is encountered and throwOnUndefinedInFind is enabled", () =>
-            Promise.all(
-                connections.map(async (connection) => {
-                    // Test QueryBuilder
-                    await expect(
-                        connection
-                            .createQueryBuilder(Post, "post")
-                            .where({
-                                text: undefined,
-                            })
-                            .getMany(),
-                    ).to.be.rejectedWith(
-                        new TypeORMError(
-                            "Undefined value encountered in property 'post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
-                        ),
+        it("should throw an error when undefined is encountered and throwOnUndefinedInFind is enabled", async () => {
+            for (const connection of connections) {
+                try {
+                    await connection
+                        .createQueryBuilder(Post, "post")
+                        .where({
+                            text: undefined,
+                        })
+                        .getMany()
+                    expect.fail("Expected query to throw an error")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.equal(
+                        "Undefined value encountered in property 'post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
                     )
+                }
 
-                    // Test Repository
-                    await expect(
-                        connection.getRepository(Post).find({
-                            where: {
-                                text: undefined,
-                            },
-                        }),
-                    ).to.be.rejectedWith(
-                        new TypeORMError(
-                            "Undefined value encountered in property 'post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
-                        ),
+                try {
+                    await connection.getRepository(Post).find({
+                        where: {
+                            text: undefined,
+                        },
+                    })
+                    expect.fail("Expected query to throw an error")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.equal(
+                        "Undefined value encountered in property 'Post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
                     )
-                }),
-            ))
+                }
+            }
+        })
 
         it("should throw an error when undefined is encountered in relations and throwOnUndefinedInFind is enabled", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    // Test QueryBuilder
-                    await expect(
-                        connection
+                    try {
+                        await connection
                             .createQueryBuilder(Post, "post")
                             .where({
                                 category: undefined,
                             })
-                            .getMany(),
-                    ).to.be.rejectedWith(
-                        new TypeORMError(
-                            "Undefined value encountered in property 'post.category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
-                        ),
-                    )
+                            .getMany()
 
-                    // Test Repository
-                    await expect(
-                        connection.getRepository(Post).find({
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.equal(
+                            "Undefined value encountered in property 'post.category.id' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
+                        )
+                    }
+
+                    try {
+                        await connection.getRepository(Post).find({
                             where: {
                                 category: undefined,
                             },
-                        }),
-                    ).to.be.rejectedWith(
-                        new TypeORMError(
-                            "Undefined value encountered in property 'post.category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
-                        ),
-                    )
+                        })
+
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.equal(
+                            "Undefined value encountered in property 'Post.category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
+                        )
+                    }
                 }),
             ))
 
@@ -479,30 +484,38 @@ describe("find options > null and undefined handling", () => {
                     expect(postsWithNullCategory[0].title).to.equal("Post #1")
 
                     // Test undefined handling for text
-                    await expect(
-                        connection.getRepository(Post).find({
-                            where: {
+                    try {
+                        await connection
+                            .createQueryBuilder(Post, "post")
+                            .where({
                                 text: undefined,
-                            },
-                        }),
-                    ).to.be.rejectedWith(
-                        new TypeORMError(
+                            })
+                            .getMany()
+
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.equal(
                             "Undefined value encountered in property 'post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
-                        ),
-                    )
+                        )
+                    }
 
                     // Test undefined handling for relations
-                    await expect(
-                        connection.getRepository(Post).find({
-                            where: {
+                    try {
+                        await connection
+                            .createQueryBuilder(Post, "post")
+                            .where({
                                 category: undefined,
-                            },
-                        }),
-                    ).to.be.rejectedWith(
-                        new TypeORMError(
-                            "Undefined value encountered in property 'post.category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
-                        ),
-                    )
+                            })
+                            .getMany()
+
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.equal(
+                            "Undefined value encountered in property 'post.category.id' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
+                        )
+                    }
 
                     // Test omitted property
                     const posts2 = await connection.getRepository(Post).find({
