@@ -22,6 +22,13 @@ describe("columns > vector type > similarity operations", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
+    /**
+     * Inserts five test posts with predefined 3-dimensional vector embeddings into the database.
+     *
+     * Clears existing `Post` records and saves new posts with specific embeddings for use in similarity tests.
+     *
+     * @returns The array of saved `Post` entities with their assigned embeddings.
+     */
     async function setupTestData(connection: DataSource) {
         const postRepository = connection.getRepository(Post)
         await postRepository.clear() // Clear existing data
