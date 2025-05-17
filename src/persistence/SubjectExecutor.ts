@@ -370,13 +370,13 @@ export class SubjectExecutor {
                     if (subject.metadata.createDateColumn && subject.entity) {
                         subject.entity[
                             subject.metadata.createDateColumn.databaseName
-                            ] = new Date()
+                        ] = new Date()
                     }
 
                     if (subject.metadata.updateDateColumn && subject.entity) {
                         subject.entity[
                             subject.metadata.updateDateColumn.databaseName
-                            ] = new Date()
+                        ] = new Date()
                     }
 
                     subject.createValueSetAndPopChangeMap()
@@ -400,9 +400,9 @@ export class SubjectExecutor {
                         subject.changeMaps.length === 0 ||
                         subject.metadata.treeType ||
                         this.queryRunner.connection.driver.options.type ===
-                        "oracle" ||
+                            "oracle" ||
                         this.queryRunner.connection.driver.options.type ===
-                        "sap"
+                            "sap"
                     ) {
                         singleInsertSubjects.push(subject)
                     } else {
@@ -541,7 +541,7 @@ export class SubjectExecutor {
                 ) {
                     delete partialEntity[
                         subject.metadata.objectIdColumn.propertyName
-                        ]
+                    ]
                 }
 
                 if (
@@ -550,7 +550,7 @@ export class SubjectExecutor {
                 ) {
                     delete partialEntity[
                         subject.metadata.createDateColumn.propertyName
-                        ]
+                    ]
                 }
 
                 if (
@@ -559,7 +559,7 @@ export class SubjectExecutor {
                 ) {
                     partialEntity[
                         subject.metadata.updateDateColumn.propertyName
-                        ] = new Date()
+                    ] = new Date()
                 }
 
                 const manager = this.queryRunner.manager as MongoEntityManager
@@ -627,7 +627,7 @@ export class SubjectExecutor {
                         )
                     }
                 } else {
-                    // In this case identifier is just conditions object to update by
+                    // in this case identifier is just conditions object to update by
                     updateQueryBuilder.where(subject.identifier)
                 }
 
@@ -796,7 +796,7 @@ export class SubjectExecutor {
                     ) {
                         delete partialEntity[
                             subject.metadata.objectIdColumn.propertyName
-                            ]
+                        ]
                     }
 
                     if (
@@ -805,7 +805,7 @@ export class SubjectExecutor {
                     ) {
                         delete partialEntity[
                             subject.metadata.createDateColumn.propertyName
-                            ]
+                        ]
                     }
 
                     if (
@@ -814,7 +814,7 @@ export class SubjectExecutor {
                     ) {
                         partialEntity[
                             subject.metadata.updateDateColumn.propertyName
-                            ] = new Date()
+                        ] = new Date()
                     }
 
                     if (
@@ -823,7 +823,7 @@ export class SubjectExecutor {
                     ) {
                         partialEntity[
                             subject.metadata.deleteDateColumn.propertyName
-                            ] = new Date()
+                        ] = new Date()
                     }
 
                     const manager = this.queryRunner
@@ -919,7 +919,7 @@ export class SubjectExecutor {
                     ) {
                         delete partialEntity[
                             subject.metadata.objectIdColumn.propertyName
-                            ]
+                        ]
                     }
 
                     if (
@@ -928,7 +928,7 @@ export class SubjectExecutor {
                     ) {
                         delete partialEntity[
                             subject.metadata.createDateColumn.propertyName
-                            ]
+                        ]
                     }
 
                     if (
@@ -937,7 +937,7 @@ export class SubjectExecutor {
                     ) {
                         partialEntity[
                             subject.metadata.updateDateColumn.propertyName
-                            ] = new Date()
+                        ] = new Date()
                     }
 
                     if (
@@ -946,7 +946,7 @@ export class SubjectExecutor {
                     ) {
                         partialEntity[
                             subject.metadata.deleteDateColumn.propertyName
-                            ] = null
+                        ] = null
                     }
 
                     const manager = this.queryRunner
@@ -1074,11 +1074,11 @@ export class SubjectExecutor {
                     subject.metadata.objectIdColumn &&
                     subject.metadata.objectIdColumn.databaseName &&
                     subject.metadata.objectIdColumn.databaseName !==
-                    subject.metadata.objectIdColumn.propertyName
+                        subject.metadata.objectIdColumn.propertyName
                 ) {
                     delete subject.entity[
                         subject.metadata.objectIdColumn.databaseName
-                        ]
+                    ]
                 }
             }
         })
@@ -1132,8 +1132,8 @@ export class SubjectExecutor {
                                             updatedRelationMap.value,
                                         )
                                             ? column.referencedColumn!.getEntityValue(
-                                                updatedRelationMap.value,
-                                            )
+                                                  updatedRelationMap.value,
+                                              )
                                             : updatedRelationMap.value,
                                     )
                                 },
