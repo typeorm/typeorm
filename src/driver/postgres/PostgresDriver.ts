@@ -642,12 +642,10 @@ export class PostgresDriver implements Driver {
         ) {
             return JSON.stringify(value)
         } else if (columnMetadata.type === "vector") {
-            if (value === null || typeof value === "undefined") {
-                return "NULL"
-            } else if (typeof value === "string") {
-                return value
-            } else if (Array.isArray(value)) {
+            if (Array.isArray(value)) {
                 return `[${value.join(",")}]`
+            } else {
+                return value
             }
         } else if (columnMetadata.type === "hstore") {
             if (typeof value === "string") {

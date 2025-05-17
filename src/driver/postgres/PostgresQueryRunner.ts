@@ -3466,25 +3466,17 @@ export class PostgresQueryRunner
                             tableColumn.name = dbColumn["column_name"]
                             tableColumn.type = dbColumn["regtype"].toLowerCase()
 
-                            // If the base type from regtype is "vector", use format_type to get the
-                            // potentially dimensioned type string (e.g. "vector(3)") and parse dimensions.
-                            if (
-                                tableColumn.type === "vector" &&
-                                dbColumn["format_type"]
-                            ) {
-                                const formatTypeString =
-                                    dbColumn["format_type"].toLowerCase()
-                                tableColumn.type = formatTypeString // Update type to what format_type provides e.g. "vector(3)" or "vector"
-
+                            if (tableColumn.type === "vector") {
                                 const dimensionMatch =
-                                    formatTypeString.match(/^vector\((\d+)\)$/)
+                                    dbColumn["format_type"].match(
+                                        /^vector\((\d+)\)$/,
+                                    )
                                 if (dimensionMatch && dimensionMatch[1]) {
                                     tableColumn.dimensions = parseInt(
                                         dimensionMatch[1],
                                         10,
                                     )
                                 }
-                                // If no dimensionMatch (formatTypeString is just "vector"), dimensions remain undefined.
                             }
 
                             if (

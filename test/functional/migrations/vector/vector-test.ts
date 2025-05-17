@@ -57,10 +57,8 @@ describe("migrations > vector type", () => {
                 await queryRunner.release()
 
                 result.length.should.be.equal(1)
-                result[0].embedding.should.deep.equal([1, 2, 3, 4])
-                result[0].embedding_three_dimensions.should.deep.equal([
-                    4, 5, 6,
-                ])
+                result[0].embedding.should.equal("[1,2,3,4]")
+                result[0].embedding_three_dimensions.should.equal("[4,5,6]")
             }),
         ))
 })
