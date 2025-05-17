@@ -6,8 +6,8 @@ export class CreatePost0000000000001 implements MigrationInterface {
         await queryRunner.query(`
             CREATE TABLE "post" (
                 "id" SERIAL PRIMARY KEY,
-                "embedding" vector(3),
-                "embeddings" vector[]
+                "embedding" vector,
+                "embedding_three_dimensions" vector(3)
             )
         `)
     }

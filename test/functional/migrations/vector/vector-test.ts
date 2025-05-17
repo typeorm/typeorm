@@ -35,9 +35,11 @@ describe("migrations > vector type", () => {
                     .findColumnByName("embedding")!
                     .type.should.be.equal("vector")
                 table!
-                    .findColumnByName("embeddings")!
+                    .findColumnByName("embedding_three_dimensions")!
                     .type.should.be.equal("vector")
-                table!.findColumnByName("embeddings")!.isArray.should.be.true
+                table!
+                    .findColumnByName("embedding_three_dimensions")!
+                    .dimensions!.should.be.equal(3)
             }),
         ))
 
@@ -48,17 +50,16 @@ describe("migrations > vector type", () => {
 
                 const queryRunner = connection.createQueryRunner()
                 await queryRunner.query(
-                    'INSERT INTO "post"("embedding", "embeddings") VALUES (\'[1,2,3]\', \'{"[4,5,6]","[7,8,9]"}\')',
+                    'INSERT INTO "post"("embedding", "embedding_three_dimensions") VALUES (\'[1,2,3,4]\', \'[4,5,6]\')',
                 )
 
                 const result = await queryRunner.query('SELECT * FROM "post"')
                 await queryRunner.release()
 
                 result.length.should.be.equal(1)
-                result[0].embedding.should.deep.equal([1, 2, 3])
-                result[0].embeddings.should.deep.equal([
-                    [4, 5, 6],
-                    [7, 8, 9],
+                result[0].embedding.should.deep.equal([1, 2, 3, 4])
+                result[0].embedding_three_dimensions.should.deep.equal([
+                    4, 5, 6,
                 ])
             }),
         ))
