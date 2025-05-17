@@ -391,7 +391,7 @@ or
 `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`, `macaddr8`,
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
 `tsrange`, `tstzrange`, `daterange`, `int4multirange`, `int8multirange`, `nummultirange`,
-`tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `cube`, `ltree`
+`tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `cube`, `ltree`,`vector`
 
 ### Column types for `cockroachdb`
 
