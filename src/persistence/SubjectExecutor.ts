@@ -16,6 +16,7 @@ import { OrmUtils } from "../util/OrmUtils"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { OptimisticLockCanNotBeUsedError, OptimisticLockVersionMismatchError } from "../error"
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -369,13 +370,13 @@ export class SubjectExecutor {
                     if (subject.metadata.createDateColumn && subject.entity) {
                         subject.entity[
                             subject.metadata.createDateColumn.databaseName
-                        ] = new Date()
+                            ] = new Date()
                     }
 
                     if (subject.metadata.updateDateColumn && subject.entity) {
                         subject.entity[
                             subject.metadata.updateDateColumn.databaseName
-                        ] = new Date()
+                            ] = new Date()
                     }
 
                     subject.createValueSetAndPopChangeMap()
@@ -399,9 +400,9 @@ export class SubjectExecutor {
                         subject.changeMaps.length === 0 ||
                         subject.metadata.treeType ||
                         this.queryRunner.connection.driver.options.type ===
-                            "oracle" ||
+                        "oracle" ||
                         this.queryRunner.connection.driver.options.type ===
-                            "sap"
+                        "sap"
                     ) {
                         singleInsertSubjects.push(subject)
                     } else {
@@ -540,7 +541,7 @@ export class SubjectExecutor {
                 ) {
                     delete partialEntity[
                         subject.metadata.objectIdColumn.propertyName
-                    ]
+                        ]
                 }
 
                 if (
@@ -549,7 +550,7 @@ export class SubjectExecutor {
                 ) {
                     delete partialEntity[
                         subject.metadata.createDateColumn.propertyName
-                    ]
+                        ]
                 }
 
                 if (
@@ -558,7 +559,7 @@ export class SubjectExecutor {
                 ) {
                     partialEntity[
                         subject.metadata.updateDateColumn.propertyName
-                    ] = new Date()
+                        ] = new Date()
                 }
 
                 const manager = this.queryRunner.manager as MongoEntityManager
@@ -608,14 +609,42 @@ export class SubjectExecutor {
                     )
                     .callListeners(false)
 
+                let versionColumn = subject.metadata.versionColumn
+
                 if (subject.entity) {
                     updateQueryBuilder.whereEntity(subject.identifier)
+
+                    // Optimistic lock check
+                    versionColumn = subject.metadata.versionColumn
+                    if (versionColumn) {
+                        const expectedVersion = versionColumn.getEntityValue(subject.entity)
+                        if (expectedVersion === undefined || expectedVersion === null) {
+                            throw new OptimisticLockCanNotBeUsedError()
+                        }
+                        updateQueryBuilder.andWhere(
+                            `"${updateQueryBuilder.alias}"."${versionColumn.databaseName}" = :version`,
+                            { version: expectedVersion },
+                        )
+                    }
                 } else {
-                    // in this case identifier is just conditions object to update by
+                    // In this case identifier is just conditions object to update by
                     updateQueryBuilder.where(subject.identifier)
                 }
 
                 const updateResult = await updateQueryBuilder.execute()
+
+                if (updateResult.affected === 0 && versionColumn) {
+
+                    const expectedVersion = subject.entity?.[versionColumn.propertyName];
+                    const actualVersion = subject.databaseEntity?.[versionColumn.propertyName];
+
+                    throw new OptimisticLockVersionMismatchError(
+                        subject.metadata.name,
+                        expectedVersion,
+                        actualVersion
+                    );
+                }
+
                 const updateGeneratedMap = updateResult.generatedMaps[0]
                 if (updateGeneratedMap) {
                     subject.metadata.columns.forEach((column) => {
@@ -767,7 +796,7 @@ export class SubjectExecutor {
                     ) {
                         delete partialEntity[
                             subject.metadata.objectIdColumn.propertyName
-                        ]
+                            ]
                     }
 
                     if (
@@ -776,7 +805,7 @@ export class SubjectExecutor {
                     ) {
                         delete partialEntity[
                             subject.metadata.createDateColumn.propertyName
-                        ]
+                            ]
                     }
 
                     if (
@@ -785,7 +814,7 @@ export class SubjectExecutor {
                     ) {
                         partialEntity[
                             subject.metadata.updateDateColumn.propertyName
-                        ] = new Date()
+                            ] = new Date()
                     }
 
                     if (
@@ -794,7 +823,7 @@ export class SubjectExecutor {
                     ) {
                         partialEntity[
                             subject.metadata.deleteDateColumn.propertyName
-                        ] = new Date()
+                            ] = new Date()
                     }
 
                     const manager = this.queryRunner
@@ -890,7 +919,7 @@ export class SubjectExecutor {
                     ) {
                         delete partialEntity[
                             subject.metadata.objectIdColumn.propertyName
-                        ]
+                            ]
                     }
 
                     if (
@@ -899,7 +928,7 @@ export class SubjectExecutor {
                     ) {
                         delete partialEntity[
                             subject.metadata.createDateColumn.propertyName
-                        ]
+                            ]
                     }
 
                     if (
@@ -908,7 +937,7 @@ export class SubjectExecutor {
                     ) {
                         partialEntity[
                             subject.metadata.updateDateColumn.propertyName
-                        ] = new Date()
+                            ] = new Date()
                     }
 
                     if (
@@ -917,7 +946,7 @@ export class SubjectExecutor {
                     ) {
                         partialEntity[
                             subject.metadata.deleteDateColumn.propertyName
-                        ] = null
+                            ] = null
                     }
 
                     const manager = this.queryRunner
@@ -1045,11 +1074,11 @@ export class SubjectExecutor {
                     subject.metadata.objectIdColumn &&
                     subject.metadata.objectIdColumn.databaseName &&
                     subject.metadata.objectIdColumn.databaseName !==
-                        subject.metadata.objectIdColumn.propertyName
+                    subject.metadata.objectIdColumn.propertyName
                 ) {
                     delete subject.entity[
                         subject.metadata.objectIdColumn.databaseName
-                    ]
+                        ]
                 }
             }
         })
@@ -1103,8 +1132,8 @@ export class SubjectExecutor {
                                             updatedRelationMap.value,
                                         )
                                             ? column.referencedColumn!.getEntityValue(
-                                                  updatedRelationMap.value,
-                                              )
+                                                updatedRelationMap.value,
+                                            )
                                             : updatedRelationMap.value,
                                     )
                                 },
