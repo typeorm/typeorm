@@ -603,8 +603,7 @@ export class InsertQueryBuilder<
 
                     if (
                         Array.isArray(overwrite) &&
-                        skipUpdateIfNoValuesChanged &&
-                        DriverUtils.isPostgresFamily(this.connection.driver)
+                        skipUpdateIfNoValuesChanged
                     ) {
                         this.expressionMap.onUpdate.overwriteCondition ??= []
                         const wheres = overwrite.map<WhereClause>((column) => ({
@@ -621,6 +620,8 @@ export class InsertQueryBuilder<
                             type: "and",
                             condition: wheres,
                         })
+                    }
+                    if (DriverUtils.isPostgresFamily(this.connection.driver)) {
                         query += ` WHERE ${this.createUpsertConditionExpression()}`
                     }
                 }

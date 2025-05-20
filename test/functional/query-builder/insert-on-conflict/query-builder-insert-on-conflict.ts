@@ -308,13 +308,13 @@ describe("query builder > insert > on conflict", () => {
                 const post2 = new Post()
                 post2.id = "post#2"
                 post2.title = "Next post"
-                post2.date = new Date("06 Aug 2020 00:12:00 GMT")
+                post2.date = new Date("06 Aug 2020 00:13:00 GMT")
 
                 await dataSource
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
-                    .values(post1)
+                    .values(post2)
                     .execute()
 
                 const post3 = new Post()
@@ -336,9 +336,9 @@ describe("query builder > insert > on conflict", () => {
                 const sql = builder.getSql()
 
                 expect(sql).to.equal(
-                    `INSERT INTO post(id, title, date) ` +
-                        `VALUES ($1, $2, $3) ON CONFLICT ( date ) ` +
-                        `DO UPDATE SET title = EXCLUDED.title WHERE title = $4`,
+                    `INSERT INTO "post"("id", "title", "date") ` +
+                        `VALUES ($1, $2, $3) ON CONFLICT ( "date" ) ` +
+                        `DO UPDATE SET "title" = EXCLUDED."title" WHERE "post"."title" = $4`,
                 )
 
                 await builder.execute()
