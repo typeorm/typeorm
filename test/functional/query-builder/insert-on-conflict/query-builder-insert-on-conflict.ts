@@ -350,7 +350,7 @@ describe("query builder > insert > on conflict", () => {
                         `VALUES ($1, $2), ($3, $4), ($5, $6) ` +
                         `ON CONFLICT ( "id" ) DO UPDATE ` +
                         `SET "name" = EXCLUDED."name" ` +
-                        `WHERE ("Category"."name" IS DISTINCT FROM EXCLUDED."name")`,
+                        `WHERE "Category"."name" IS DISTINCT FROM EXCLUDED."name"`,
                 )
                 expect(await query.execute()).not.to.throw
 

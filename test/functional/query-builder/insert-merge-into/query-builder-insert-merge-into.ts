@@ -168,14 +168,13 @@ describe("query builder > insertion > merge into", () => {
                             `WHEN MATCHED AND post.date > @4 AND post.title != mergeIntoSource.title THEN UPDATE SET post.title = mergeIntoSource.title ` +
                             `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date);`,
                     )
-                }
-                if (connection.options.type === "sap") {
+                } else if (connection.options.type === "sap") {
                     expect(sql).to.equal(
                         `MERGE INTO post post USING (SELECT ? AS id, ? AS title, ? AS published, ? AS date FROM SYS.DUMMY) mergeIntoSource ON (post.date = mergeIntoSource.date) ` +
                             `WHEN MATCHED AND post.date > ? AND post.title != mergeIntoSource.title THEN UPDATE SET post.title = mergeIntoSource.title ` +
                             `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date)`,
                     )
-                } else {
+                } else if (connection.options.type === "oracle") {
                     expect(sql).to.equal(
                         `MERGE INTO post post USING (SELECT :1 AS id, :2 AS title, :3 AS published, :4 AS date FROM DUAL) mergeIntoSource ON (post.date = mergeIntoSource.date) ` +
                             `WHEN MATCHED THEN UPDATE SET post.title = mergeIntoSource.title WHERE post.date > :5 AND post.title != mergeIntoSource.title ` +
@@ -198,7 +197,7 @@ describe("query builder > insertion > merge into", () => {
                 post1.title = "About post"
                 post1.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                const sql = connection.manager
+                const builder = connection.manager
                     .createQueryBuilder()
                     .insert()
                     .into(Post)
@@ -208,9 +207,8 @@ describe("query builder > insertion > merge into", () => {
                     })
                     .setParameter("title", post1.title)
                     .disableEscaping()
-                    .getSql()
 
-                expect(sql).to.throw(Error)
+                expect(builder.getSql).to.throw(Error)
             }),
         ))
 })

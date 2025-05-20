@@ -375,12 +375,13 @@ export class InsertQueryBuilder<
         conflictTarget?: string | string[],
         orUpdateOptions?: InsertOrUpdateOptions,
     ): this {
-        const { where = {}, parameters } =
-            orUpdateOptions?.overwriteCondition ?? {}
+        const { where, parameters } = orUpdateOptions?.overwriteCondition ?? {}
         let wheres: WhereClause[] | undefined
-        const condition = this.getWhereCondition(where)
-        if (Array.isArray(condition) ? condition.length !== 0 : condition)
-            wheres = [{ type: "simple", condition: condition }]
+        if (where) {
+            const condition = this.getWhereCondition(where)
+            if (Array.isArray(condition) ? condition.length !== 0 : condition)
+                wheres = [{ type: "simple", condition: condition }]
+        }
         if (parameters) this.setParameters(parameters)
 
         if (!Array.isArray(statementOrOverwrite)) {
@@ -418,7 +419,6 @@ export class InsertQueryBuilder<
     protected createInsertExpression() {
         if (this.expressionMap.onUpdate || this.expressionMap.onIgnore) {
             if (
-                this.connection.driver.supportedUpsertTypes.length === 1 &&
                 this.connection.driver.supportedUpsertTypes.includes(
                     "merge-into",
                 )
