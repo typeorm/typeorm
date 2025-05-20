@@ -599,7 +599,6 @@ export class InsertQueryBuilder<
                         )
 
                         query += updatePart.join(", ")
-                        query += " "
                     }
 
                     if (
@@ -610,7 +609,7 @@ export class InsertQueryBuilder<
                         this.expressionMap.onUpdate.overwriteCondition ??= []
                         const wheres = overwrite.map<WhereClause>((column) => ({
                             type: "or",
-                            condition: `${tableName}.${this.escape(
+                            condition: `${this.escape(this.alias)}.${this.escape(
                                 column,
                             )} IS DISTINCT FROM EXCLUDED.${this.escape(
                                 column,
@@ -671,6 +670,13 @@ export class InsertQueryBuilder<
                 DriverUtils.isMySQLFamily(this.connection.driver))
         ) {
             query += ` RETURNING ${returningExpression}`
+        }
+
+        if (
+            returningExpression &&
+            this.connection.driver.options.type === "spanner"
+        ) {
+            query += ` THEN RETURN ${returningExpression}`
         }
 
         // Inserting a specific value for an auto-increment primary key in mssql requires enabling IDENTITY_INSERT
@@ -888,6 +894,13 @@ export class InsertQueryBuilder<
                                     this.connection.driver.normalizeDefault(
                                         column,
                                     )
+                            } else if (
+                                this.connection.driver.options.type ===
+                                    "spanner" &&
+                                column.isGenerated &&
+                                column.generationStrategy === "uuid"
+                            ) {
+                                expression += "GENERATE_UUID()" // Produces a random universally unique identifier (UUID) as a STRING value.
                             } else {
                                 expression += "NULL" // otherwise simply use NULL and pray if column is nullable
                             }
@@ -896,7 +909,8 @@ export class InsertQueryBuilder<
                         }
                     } else if (
                         value === null &&
-                        this.connection.driver.options.type === "spanner"
+                        (this.connection.driver.options.type === "spanner" ||
+                            this.connection.driver.options.type === "oracle")
                     ) {
                         expression += "NULL"
 

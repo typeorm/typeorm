@@ -11,6 +11,6 @@ export class PostAuthor extends PostUser {
     @Column()
     name: string
 
-    @OneToMany((type) => Post, (post) => post.author)
+    @OneToMany(() => Post, (post) => post.author)
     posts: Post[]
 }

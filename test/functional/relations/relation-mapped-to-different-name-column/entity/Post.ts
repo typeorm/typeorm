@@ -10,7 +10,7 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number
 
-    @OneToOne((type) => PostDetails)
+    @OneToOne(() => PostDetails)
     @JoinColumn()
     details: PostDetails
 

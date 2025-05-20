@@ -19,7 +19,7 @@ export class SimpleConsoleLogger extends AbstractLogger {
             highlightSql: false,
         })
 
-        for (let message of messages) {
+        for (const message of messages) {
             switch (message.type ?? level) {
                 case "log":
                 case "schema-build":
