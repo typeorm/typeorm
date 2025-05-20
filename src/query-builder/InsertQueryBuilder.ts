@@ -419,9 +419,8 @@ export class InsertQueryBuilder<
     protected createInsertExpression() {
         if (this.expressionMap.onUpdate || this.expressionMap.onIgnore) {
             if (
-                this.connection.driver.supportedUpsertTypes.includes(
-                    "merge-into",
-                )
+                (this.expressionMap.onUpdate?.upsertType ?? "merge-into") === "merge-into" &&
+                this.connection.driver.supportedUpsertTypes.includes("merge-into")
             )
                 return this.createMergeExpression()
         }
