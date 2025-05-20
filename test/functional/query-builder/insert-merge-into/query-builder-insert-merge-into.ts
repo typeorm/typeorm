@@ -168,6 +168,13 @@ describe("query builder > insertion > merge into", () => {
                             `WHEN MATCHED AND post.date > @4 AND post.title != mergeIntoSource.title THEN UPDATE SET post.title = mergeIntoSource.title ` +
                             `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date);`,
                     )
+                }
+                if (connection.options.type === "sap") {
+                    expect(sql).to.equal(
+                        `MERGE INTO post post USING (SELECT ? AS id, ? AS title, ? AS published, ? AS date FROM SYS.DUMMY) mergeIntoSource ON (post.date = mergeIntoSource.date) ` +
+                            `WHEN MATCHED AND post.date > ? AND post.title != mergeIntoSource.title THEN UPDATE SET post.title = mergeIntoSource.title ` +
+                            `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date)`,
+                    )
                 } else {
                     expect(sql).to.equal(
                         `MERGE INTO post post USING (SELECT :1 AS id, :2 AS title, :3 AS published, :4 AS date FROM DUAL) mergeIntoSource ON (post.date = mergeIntoSource.date) ` +

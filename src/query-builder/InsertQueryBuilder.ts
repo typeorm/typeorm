@@ -609,7 +609,9 @@ export class InsertQueryBuilder<
                         this.expressionMap.onUpdate.overwriteCondition ??= []
                         const wheres = overwrite.map<WhereClause>((column) => ({
                             type: "or",
-                            condition: `${this.escape(this.alias)}.${this.escape(
+                            condition: `${this.escape(
+                                this.alias,
+                            )}.${this.escape(
                                 column,
                             )} IS DISTINCT FROM EXCLUDED.${this.escape(
                                 column,
