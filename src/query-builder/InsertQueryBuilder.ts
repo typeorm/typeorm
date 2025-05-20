@@ -973,14 +973,9 @@ export class InsertQueryBuilder<
 
         const mergeSourceAlias = this.escape("mergeIntoSource")
 
-        const mergeSourceExpression = this.createMergeIntoSourceExpression()
+        const mergeSourceExpression = this.createMergeIntoSourceExpression(mergeSourceAlias)
 
-        query += ` USING (${mergeSourceExpression})`
-        query += ` ${mergeSourceAlias}`
-        if (this.connection.driver.options.type === "mssql")
-            query += ` (${this.getInsertedColumns()
-                .map((c) => this.escape(c.databaseName))
-                .join(", ")})`
+        query += ` ${mergeSourceExpression}`
 
         // build on condition
         if (this.expressionMap.onIgnore) {
@@ -1135,11 +1130,13 @@ export class InsertQueryBuilder<
     /**
      * Creates list of values needs to be inserted in the VALUES expression.
      */
-    protected createMergeIntoSourceExpression(): string {
+    protected createMergeIntoSourceExpression(mergeSourceAlias: string): string {
         const valueSets = this.getValueSets()
         const columns = this.getInsertedColumns()
 
-        let expression = ""
+        const columnNames: string[] = []
+
+        let expression = "USING ("
         // if column metadatas are given then apply all necessary operations with values
         if (columns.length > 0) {
             if (this.connection.driver.options.type === "mssql") {
@@ -1155,11 +1152,34 @@ export class InsertQueryBuilder<
                         }
                     }
 
-                    expression += this.createColumnValueExpression(
-                        valueSets,
-                        valueSetIndex,
-                        column,
-                    )
+                    let value = column.getEntityValue(valueSet)
+
+                    if (
+                        !(
+                            value === null ||
+                            (value === undefined &&
+                                column.default !== undefined &&
+                                column.default !== null)
+                        )
+                    ) {
+                        if (columnIndex > 0) {
+                            expression += ", "
+                        }
+                        expression += this.createColumnValueExpression(
+                            valueSets,
+                            valueSetIndex,
+                            column,
+                        )
+
+                        if (this.connection.driver.options.type !== "mssql") {
+                            expression += ` AS ${this.escape(
+                                column.databaseName,
+                            )}`
+                        }
+                        else {
+                           columnNames.push(this.escape(column.databaseName))
+                        }
+                    }
 
                     if (this.connection.driver.options.type !== "mssql")
                         expression += ` AS ${this.escape(column.databaseName)}`
@@ -1198,8 +1218,6 @@ export class InsertQueryBuilder<
                                 expression += " UNION ALL "
                             }
                         }
-                    } else {
-                        expression += ", "
                     }
                 })
             })
@@ -1209,7 +1227,9 @@ export class InsertQueryBuilder<
                 'Upsert type "merge-into" is not supported without metadata tables',
             )
         }
-        if (expression === "()") return ""
+        expression += `) ${mergeSourceAlias}`
+        if (this.connection.driver.options.type === "mssql")
+            expression += ` (${columnNames.join(', ')})`
         return expression
     }
 
@@ -1230,6 +1250,7 @@ export class InsertQueryBuilder<
                 }
 
                 if (
+                    column.default != null ||
                     (column.isGenerated &&
                         column.generationStrategy === "uuid" &&
                         this.connection.driver.isUUIDGenerationSupported()) ||
