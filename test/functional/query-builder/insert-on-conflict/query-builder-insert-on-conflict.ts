@@ -287,7 +287,7 @@ describe("query builder > insert > on conflict", () => {
             }),
         ))
 
-    it("should perform insertion correctly using orUpdate with condiction", () =>
+    it("should perform insertion correctly using orUpdate with condition", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 if (!DriverUtils.isPostgresFamily(dataSource.driver)) {

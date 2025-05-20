@@ -623,7 +623,12 @@ export class InsertQueryBuilder<
                             condition: wheres,
                         })
                     }
-                    if (DriverUtils.isPostgresFamily(this.connection.driver)) {
+                    if (
+                        DriverUtils.isPostgresFamily(this.connection.driver) &&
+                        this.expressionMap.onUpdate.overwriteCondition &&
+                        this.expressionMap.onUpdate.overwriteCondition.length >
+                            0
+                    ) {
                         query += ` WHERE ${this.createUpsertConditionExpression()}`
                     }
                 }
@@ -807,188 +812,11 @@ export class InsertQueryBuilder<
                         }
                     }
 
-                    // extract real value from the entity
-                    let value = column.getEntityValue(valueSet)
-
-                    // if column is relational and value is an object then get real referenced column value from this object
-                    // for example column value is { question: { id: 1 } }, value will be equal to { id: 1 }
-                    // and we extract "1" from this object
-                    /*if (column.referencedColumn && value instanceof Object && !(typeof value === "function")) { // todo: check if we still need it since getEntityValue already has similar code
-                        value = column.referencedColumn.getEntityValue(value);
-                    }*/
-
-                    if (!(typeof value === "function")) {
-                        // make sure our value is normalized by a driver
-                        value = this.connection.driver.preparePersistentValue(
-                            value,
-                            column,
-                        )
-                    }
-
-                    // newly inserted entities always have a version equal to 1 (first version)
-                    // also, user-specified version must be empty
-                    if (column.isVersion && value === undefined) {
-                        expression += "1"
-
-                        // } else if (column.isNestedSetLeft) {
-                        //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
-                        //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
-                        //     const subQuery = `(SELECT c.max + 1 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
-                        //     expression += subQuery;
-                        //
-                        // } else if (column.isNestedSetRight) {
-                        //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
-                        //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
-                        //     const subQuery = `(SELECT c.max + 2 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
-                        //     expression += subQuery;
-                    } else if (column.isDiscriminator) {
-                        expression += this.createParameter(
-                            this.expressionMap.mainAlias!.metadata
-                                .discriminatorValue,
-                        )
-                        // return "1";
-
-                        // for create and update dates we insert current date
-                        // no, we don't do it because this constant is already in "default" value of the column
-                        // with extended timestamp functionality, like CURRENT_TIMESTAMP(6) for example
-                        // } else if (column.isCreateDate || column.isUpdateDate) {
-                        //     return "CURRENT_TIMESTAMP";
-
-                        // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
-                    } else if (
-                        column.isGenerated &&
-                        column.generationStrategy === "uuid" &&
-                        !this.connection.driver.isUUIDGenerationSupported() &&
-                        value === undefined
-                    ) {
-                        value = uuidv4()
-                        expression += this.createParameter(value)
-
-                        if (
-                            !(
-                                valueSetIndex in
-                                this.expressionMap.locallyGenerated
-                            )
-                        ) {
-                            this.expressionMap.locallyGenerated[valueSetIndex] =
-                                {}
-                        }
-                        column.setEntityValue(
-                            this.expressionMap.locallyGenerated[valueSetIndex],
-                            value,
-                        )
-
-                        // if value for this column was not provided then insert default value
-                    } else if (value === undefined) {
-                        if (
-                            (this.connection.driver.options.type === "oracle" &&
-                                valueSets.length > 1) ||
-                            DriverUtils.isSQLiteFamily(
-                                this.connection.driver,
-                            ) ||
-                            this.connection.driver.options.type === "sap" ||
-                            this.connection.driver.options.type === "spanner"
-                        ) {
-                            // unfortunately sqlite does not support DEFAULT expression in INSERT queries
-                            if (
-                                column.default !== undefined &&
-                                column.default !== null
-                            ) {
-                                // try to use default defined in the column
-                                expression +=
-                                    this.connection.driver.normalizeDefault(
-                                        column,
-                                    )
-                            } else if (
-                                this.connection.driver.options.type ===
-                                    "spanner" &&
-                                column.isGenerated &&
-                                column.generationStrategy === "uuid"
-                            ) {
-                                expression += "GENERATE_UUID()" // Produces a random universally unique identifier (UUID) as a STRING value.
-                            } else {
-                                expression += "NULL" // otherwise simply use NULL and pray if column is nullable
-                            }
-                        } else {
-                            expression += "DEFAULT"
-                        }
-                    } else if (
-                        value === null &&
-                        (this.connection.driver.options.type === "spanner" ||
-                            this.connection.driver.options.type === "oracle")
-                    ) {
-                        expression += "NULL"
-
-                        // support for SQL expressions in queries
-                    } else if (typeof value === "function") {
-                        expression += value()
-
-                        // just any other regular value
-                    } else {
-                        if (this.connection.driver.options.type === "mssql")
-                            value = (
-                                this.connection.driver as SqlServerDriver
-                            ).parametrizeValue(column, value)
-
-                        // we need to store array values in a special class to make sure parameter replacement will work correctly
-                        // if (value instanceof Array)
-                        //     value = new ArrayParameter(value);
-
-                        const paramName = this.createParameter(value)
-
-                        if (
-                            (DriverUtils.isMySQLFamily(
-                                this.connection.driver,
-                            ) ||
-                                this.connection.driver.options.type ===
-                                    "aurora-mysql") &&
-                            this.connection.driver.spatialTypes.indexOf(
-                                column.type,
-                            ) !== -1
-                        ) {
-                            const useLegacy = (
-                                this.connection.driver as
-                                    | MysqlDriver
-                                    | AuroraMysqlDriver
-                            ).options.legacySpatialSupport
-                            const geomFromText = useLegacy
-                                ? "GeomFromText"
-                                : "ST_GeomFromText"
-                            if (column.srid != null) {
-                                expression += `${geomFromText}(${paramName}, ${column.srid})`
-                            } else {
-                                expression += `${geomFromText}(${paramName})`
-                            }
-                        } else if (
-                            DriverUtils.isPostgresFamily(
-                                this.connection.driver,
-                            ) &&
-                            this.connection.driver.spatialTypes.indexOf(
-                                column.type,
-                            ) !== -1
-                        ) {
-                            if (column.srid != null) {
-                                expression += `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
-                            } else {
-                                expression += `ST_GeomFromGeoJSON(${paramName})::${column.type}`
-                            }
-                        } else if (
-                            this.connection.driver.options.type === "mssql" &&
-                            this.connection.driver.spatialTypes.indexOf(
-                                column.type,
-                            ) !== -1
-                        ) {
-                            expression +=
-                                column.type +
-                                "::STGeomFromText(" +
-                                paramName +
-                                ", " +
-                                (column.srid || "0") +
-                                ")"
-                        } else {
-                            expression += paramName
-                        }
-                    }
+                    expression += this.createColumnValueExpression(
+                        valueSets,
+                        valueSetIndex,
+                        column,
+                    )
 
                     if (columnIndex === columns.length - 1) {
                         if (valueSetIndex === valueSets.length - 1) {
@@ -1327,127 +1155,12 @@ export class InsertQueryBuilder<
                         }
                     }
 
-                    // extract real value from the entity
-                    let value = column.getEntityValue(valueSet)
+                    expression += this.createColumnValueExpression(
+                        valueSets,
+                        valueSetIndex,
+                        column,
+                    )
 
-                    // if column is relational and value is an object then get real referenced column value from this object
-                    // for example column value is { question: { id: 1 } }, value will be equal to { id: 1 }
-                    // and we extract "1" from this object
-                    /*if (column.referencedColumn && value instanceof Object && !(typeof value === "function")) { // todo: check if we still need it since getEntityValue already has similar code
-                        value = column.referencedColumn.getEntityValue(value);
-                    }*/
-
-                    if (!(typeof value === "function")) {
-                        // make sure our value is normalized by a driver
-                        value = this.connection.driver.preparePersistentValue(
-                            value,
-                            column,
-                        )
-                    }
-
-                    // newly inserted entities always have a version equal to 1 (first version)
-                    // also, user-specified version must be empty
-                    if (column.isVersion && value === undefined) {
-                        expression += "1"
-                    } else if (column.isDiscriminator) {
-                        expression += this.createParameter(
-                            this.expressionMap.mainAlias!.metadata
-                                .discriminatorValue,
-                        )
-                        // return "1";
-
-                        // for create and update dates we insert current date
-                        // no, we don't do it because this constant is already in "default" value of the column
-                        // with extended timestamp functionality, like CURRENT_TIMESTAMP(6) for example
-                        // } else if (column.isCreateDate || column.isUpdateDate) {
-                        //     return "CURRENT_TIMESTAMP";
-
-                        // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
-                    } else if (
-                        column.isGenerated &&
-                        column.generationStrategy === "uuid" &&
-                        !this.connection.driver.isUUIDGenerationSupported() &&
-                        value === undefined
-                    ) {
-                        value = uuidv4()
-                        expression += this.createParameter(value)
-
-                        if (
-                            !(
-                                valueSetIndex in
-                                this.expressionMap.locallyGenerated
-                            )
-                        ) {
-                            this.expressionMap.locallyGenerated[valueSetIndex] =
-                                {}
-                        }
-                        column.setEntityValue(
-                            this.expressionMap.locallyGenerated[valueSetIndex],
-                            value,
-                        )
-
-                        // if value for this column was not provided then insert default value
-                    } else if (value === undefined) {
-                        if (
-                            column.default !== undefined &&
-                            column.default !== null
-                        ) {
-                            // try to use default defined in the column
-                            expression +=
-                                this.connection.driver.normalizeDefault(column)
-                        } else {
-                            expression += "NULL" // otherwise simply use NULL and pray if column is nullable
-                        }
-                    } else if (value === null) {
-                        expression += "NULL"
-
-                        // support for SQL expressions in queries
-                    } else if (typeof value === "function") {
-                        expression += value()
-
-                        // just any other regular value
-                    } else {
-                        if (this.connection.driver.options.type === "mssql")
-                            value = (
-                                this.connection.driver as SqlServerDriver
-                            ).parametrizeValue(column, value)
-
-                        // we need to store array values in a special class to make sure parameter replacement will work correctly
-                        // if (value instanceof Array)
-                        //     value = new ArrayParameter(value);
-
-                        const paramName = this.createParameter(value)
-
-                        if (
-                            DriverUtils.isPostgresFamily(
-                                this.connection.driver,
-                            ) &&
-                            this.connection.driver.spatialTypes.indexOf(
-                                column.type,
-                            ) !== -1
-                        ) {
-                            if (column.srid != null) {
-                                expression += `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
-                            } else {
-                                expression += `ST_GeomFromGeoJSON(${paramName})::${column.type}`
-                            }
-                        } else if (
-                            this.connection.driver.options.type === "mssql" &&
-                            this.connection.driver.spatialTypes.indexOf(
-                                column.type,
-                            ) !== -1
-                        ) {
-                            expression +=
-                                column.type +
-                                "::STGeomFromText(" +
-                                paramName +
-                                ", " +
-                                (column.srid || "0") +
-                                ")"
-                        } else {
-                            expression += paramName
-                        }
-                    }
                     if (this.connection.driver.options.type !== "mssql")
                         expression += ` AS ${this.escape(column.databaseName)}`
 
@@ -1606,5 +1319,167 @@ export class InsertQueryBuilder<
         }
 
         return condition
+    }
+
+    protected createColumnValueExpression(
+        valueSets: ObjectLiteral[],
+        valueSetIndex: number,
+        column: ColumnMetadata,
+    ): string {
+        const valueSet = valueSets[valueSetIndex]
+        let expression = ""
+
+        // extract real value from the entity
+        let value = column.getEntityValue(valueSet)
+
+        // if column is relational and value is an object then get real referenced column value from this object
+        // for example column value is { question: { id: 1 } }, value will be equal to { id: 1 }
+        // and we extract "1" from this object
+        /*if (column.referencedColumn && value instanceof Object && !(typeof value === "function")) { // todo: check if we still need it since getEntityValue already has similar code
+            value = column.referencedColumn.getEntityValue(value);
+        }*/
+
+        if (!(typeof value === "function")) {
+            // make sure our value is normalized by a driver
+            value = this.connection.driver.preparePersistentValue(value, column)
+        }
+
+        // newly inserted entities always have a version equal to 1 (first version)
+        // also, user-specified version must be empty
+        if (column.isVersion && value === undefined) {
+            expression += "1"
+
+            // } else if (column.isNestedSetLeft) {
+            //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
+            //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
+            //     const subQuery = `(SELECT c.max + 1 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
+            //     expression += subQuery;
+            //
+            // } else if (column.isNestedSetRight) {
+            //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
+            //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
+            //     const subQuery = `(SELECT c.max + 2 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
+            //     expression += subQuery;
+        } else if (column.isDiscriminator) {
+            expression += this.createParameter(
+                this.expressionMap.mainAlias!.metadata.discriminatorValue,
+            )
+            // return "1";
+
+            // for create and update dates we insert current date
+            // no, we don't do it because this constant is already in "default" value of the column
+            // with extended timestamp functionality, like CURRENT_TIMESTAMP(6) for example
+            // } else if (column.isCreateDate || column.isUpdateDate) {
+            //     return "CURRENT_TIMESTAMP";
+
+            // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
+        } else if (
+            column.isGenerated &&
+            column.generationStrategy === "uuid" &&
+            !this.connection.driver.isUUIDGenerationSupported() &&
+            value === undefined
+        ) {
+            value = uuidv4()
+            expression += this.createParameter(value)
+
+            if (!(valueSetIndex in this.expressionMap.locallyGenerated)) {
+                this.expressionMap.locallyGenerated[valueSetIndex] = {}
+            }
+            column.setEntityValue(
+                this.expressionMap.locallyGenerated[valueSetIndex],
+                value,
+            )
+
+            // if value for this column was not provided then insert default value
+        } else if (value === undefined) {
+            if (
+                (this.connection.driver.options.type === "oracle" &&
+                    valueSets.length > 1) ||
+                DriverUtils.isSQLiteFamily(this.connection.driver) ||
+                this.connection.driver.options.type === "sap" ||
+                this.connection.driver.options.type === "spanner"
+            ) {
+                // unfortunately sqlite does not support DEFAULT expression in INSERT queries
+                if (column.default !== undefined && column.default !== null) {
+                    // try to use default defined in the column
+                    expression +=
+                        this.connection.driver.normalizeDefault(column)
+                } else if (
+                    this.connection.driver.options.type === "spanner" &&
+                    column.isGenerated &&
+                    column.generationStrategy === "uuid"
+                ) {
+                    expression += "GENERATE_UUID()" // Produces a random universally unique identifier (UUID) as a STRING value.
+                } else {
+                    expression += "NULL" // otherwise simply use NULL and pray if column is nullable
+                }
+            } else {
+                expression += "DEFAULT"
+            }
+        } else if (
+            value === null &&
+            (this.connection.driver.options.type === "spanner" ||
+                this.connection.driver.options.type === "oracle")
+        ) {
+            expression += "NULL"
+
+            // support for SQL expressions in queries
+        } else if (typeof value === "function") {
+            expression += value()
+
+            // just any other regular value
+        } else {
+            if (this.connection.driver.options.type === "mssql")
+                value = (
+                    this.connection.driver as SqlServerDriver
+                ).parametrizeValue(column, value)
+
+            // we need to store array values in a special class to make sure parameter replacement will work correctly
+            // if (value instanceof Array)
+            //     value = new ArrayParameter(value);
+
+            const paramName = this.createParameter(value)
+
+            if (
+                (DriverUtils.isMySQLFamily(this.connection.driver) ||
+                    this.connection.driver.options.type === "aurora-mysql") &&
+                this.connection.driver.spatialTypes.indexOf(column.type) !== -1
+            ) {
+                const useLegacy = (
+                    this.connection.driver as MysqlDriver | AuroraMysqlDriver
+                ).options.legacySpatialSupport
+                const geomFromText = useLegacy
+                    ? "GeomFromText"
+                    : "ST_GeomFromText"
+                if (column.srid != null) {
+                    expression += `${geomFromText}(${paramName}, ${column.srid})`
+                } else {
+                    expression += `${geomFromText}(${paramName})`
+                }
+            } else if (
+                DriverUtils.isPostgresFamily(this.connection.driver) &&
+                this.connection.driver.spatialTypes.indexOf(column.type) !== -1
+            ) {
+                if (column.srid != null) {
+                    expression += `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
+                } else {
+                    expression += `ST_GeomFromGeoJSON(${paramName})::${column.type}`
+                }
+            } else if (
+                this.connection.driver.options.type === "mssql" &&
+                this.connection.driver.spatialTypes.indexOf(column.type) !== -1
+            ) {
+                expression +=
+                    column.type +
+                    "::STGeomFromText(" +
+                    paramName +
+                    ", " +
+                    (column.srid || "0") +
+                    ")"
+            } else {
+                expression += paramName
+            }
+        }
+        return expression
     }
 }

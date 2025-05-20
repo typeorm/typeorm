@@ -9,13 +9,13 @@ import { Post } from "./entity/Post"
 import { expect } from "chai"
 import { MoreThan } from "../../../../src"
 
-describe("query builder > insertion > merge into", () => {
+describe("query builder > insert > merge into", () => {
     let connections: DataSource[]
     before(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["oracle", "mssql", "sap"], // since on merge into statement is only supported in oracle, mssql and dmdb
+                enabledDrivers: ["oracle", "mssql", "sap"], // since on merge into statement is only supported in oracle, mssql and sap hana
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
