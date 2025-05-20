@@ -1143,8 +1143,7 @@ export class InsertQueryBuilder<
         const mergeSourceAlias = this.escape("mergeIntoSource")
 
         const mergeSourceExpression = this.createMergeIntoSourceExpression()
-        // if (mergeSourceExpression === "()") query += " USING DUAL"
-        // else query += ` USING (${mergeSourceExpression})`
+
         query += ` USING (${mergeSourceExpression})`
         query += ` ${mergeSourceAlias}`
         if (this.connection.driver.options.type === "mssql")

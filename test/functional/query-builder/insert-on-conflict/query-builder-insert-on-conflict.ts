@@ -286,6 +286,76 @@ describe("query builder > insert > on conflict", () => {
                 )
             }),
         ))
+
+    it("should perform insertion correctly using orUpdate with condiction", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
+                    return
+                }
+                const post1 = new Post()
+                post1.id = "post#1"
+                post1.title = "About post"
+                post1.date = new Date("06 Aug 2020 00:12:00 GMT")
+
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(Post)
+                    .values(post1)
+                    .execute()
+
+                const post2 = new Post()
+                post2.id = "post#2"
+                post2.title = "Next post"
+                post2.date = new Date("06 Aug 2020 00:12:00 GMT")
+
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(Post)
+                    .values(post1)
+                    .execute()
+
+                const post3 = new Post()
+                post3.id = "post#3"
+                post3.title = "Again post"
+                post3.date = new Date("06 Aug 2020 00:12:00 GMT")
+
+                const builder = dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(Post)
+                    .values(post3)
+                    .orUpdate(["title"], ["date"], {
+                        overwriteCondition: {
+                            where: { title: post1.title },
+                        },
+                    })
+
+                const sql = builder.getSql()
+
+                expect(sql).to.equal(
+                    `INSERT INTO post(id, title, date) ` +
+                        `VALUES ($1, $2, $3) ON CONFLICT ( date ) ` +
+                        `DO UPDATE SET title = EXCLUDED.title WHERE title = $4`,
+                )
+
+                await builder.execute()
+
+                await dataSource.manager
+                    .findOne(Post, {
+                        where: {
+                            id: "post#1",
+                        },
+                    })
+                    .should.eventually.be.eql({
+                        id: "post#1",
+                        title: "Again post",
+                        date: new Date("06 Aug 2020 00:12:00 GMT"),
+                    })
+            }),
+        ))
     it("should perform insertion using partial index and skipping update on no change", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

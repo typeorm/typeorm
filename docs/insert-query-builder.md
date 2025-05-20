@@ -57,7 +57,34 @@ await dataSource
     .execute()
 ```
 
-### IGNORE error (MySQL) or DO NOTHING (Postgres) during insert
+### Update values ON CONFLICT with condition (Postgres, Oracle, MSSQL, SAP HANA)
+
+```typescript
+await dataSource
+    .createQueryBuilder()
+    .insert()
+    .into(User)
+    .values({
+        firstName: "Timber",
+        lastName: "Saw",
+        externalId: "abc123",
+    })
+    .orUpdate(
+        ["firstName", "lastName"],
+        ["externalId"],
+        {
+            overwriteCondition: {
+                where: {
+                    firstName: Equal("Phantom"),
+                }
+            },
+        }
+    )
+    .execute()
+```
+
+
+### IGNORE error (MySQL) or DO NOTHING (Postgres, Oracle, MSSQL, SAP HANA) during insert
 
 If the values you are trying to insert conflict due to existing data or containing invalid data, the `orIgnore` function can be used to suppress errors and insert only rows that contain valid data.
 
@@ -75,7 +102,7 @@ await dataSource
     .execute()
 ```
 
-### Skip data update if values have not changed (Postgres)
+### Skip data update if values have not changed (Postgres, Oracle, MSSQL, SAP HANA)
 
 ```typescript
 await dataSource
