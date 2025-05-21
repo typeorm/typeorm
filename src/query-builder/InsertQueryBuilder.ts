@@ -1153,7 +1153,7 @@ export class InsertQueryBuilder<
                         }
                     }
 
-                    let value = column.getEntityValue(valueSet)
+                    const value = column.getEntityValue(valueSet)
 
                     if (
                         value === undefined &&
@@ -1469,7 +1469,7 @@ export class InsertQueryBuilder<
             if (
                 (DriverUtils.isMySQLFamily(this.connection.driver) ||
                     this.connection.driver.options.type === "aurora-mysql") &&
-                this.connection.driver.spatialTypes.indexOf(column.type) !== -1
+                this.connection.driver.spatialTypes.includes(column.type)
             ) {
                 const useLegacy = (
                     this.connection.driver as MysqlDriver | AuroraMysqlDriver
@@ -1484,7 +1484,7 @@ export class InsertQueryBuilder<
                 }
             } else if (
                 DriverUtils.isPostgresFamily(this.connection.driver) &&
-                this.connection.driver.spatialTypes.indexOf(column.type) !== -1
+                this.connection.driver.spatialTypes.includes(column.type)
             ) {
                 if (column.srid != null) {
                     expression += `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
@@ -1493,7 +1493,7 @@ export class InsertQueryBuilder<
                 }
             } else if (
                 this.connection.driver.options.type === "mssql" &&
-                this.connection.driver.spatialTypes.indexOf(column.type) !== -1
+                this.connection.driver.spatialTypes.includes(column.type)
             ) {
                 expression +=
                     column.type +

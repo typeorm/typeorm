@@ -183,7 +183,7 @@ describe("query builder > insert > merge into", () => {
                 }
             }),
         ))
-    it("should throw error if using indexPredicate amd an unsupported driver", () =>
+    it("should throw error if using indexPredicate and an unsupported driver", () =>
         Promise.all(
             connections.map(async (connection) => {
                 if (
