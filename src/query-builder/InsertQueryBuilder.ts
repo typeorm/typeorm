@@ -1155,7 +1155,14 @@ export class InsertQueryBuilder<
 
                     let value = column.getEntityValue(valueSet)
 
-                    if (value === undefined) {
+                    if (
+                        value === undefined &&
+                        !(
+                            column.isGenerated &&
+                            column.generationStrategy === "uuid" &&
+                            !this.connection.driver.isUUIDGenerationSupported()
+                        )
+                    ) {
                         if (
                             column.default !== undefined &&
                             column.default !== null
@@ -1249,7 +1256,6 @@ export class InsertQueryBuilder<
                 }
 
                 if (
-                    column.default != null ||
                     (column.isGenerated &&
                         column.generationStrategy === "uuid" &&
                         this.connection.driver.isUUIDGenerationSupported()) ||
