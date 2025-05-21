@@ -973,7 +973,8 @@ export class InsertQueryBuilder<
 
         const mergeSourceAlias = this.escape("mergeIntoSource")
 
-        const mergeSourceExpression = this.createMergeIntoSourceExpression(mergeSourceAlias)
+        const mergeSourceExpression =
+            this.createMergeIntoSourceExpression(mergeSourceAlias)
 
         query += ` ${mergeSourceExpression}`
 
@@ -1130,11 +1131,11 @@ export class InsertQueryBuilder<
     /**
      * Creates list of values needs to be inserted in the VALUES expression.
      */
-    protected createMergeIntoSourceExpression(mergeSourceAlias: string): string {
+    protected createMergeIntoSourceExpression(
+        mergeSourceAlias: string,
+    ): string {
         const valueSets = this.getValueSets()
         const columns = this.getInsertedColumns()
-
-        const columnNames: string[] = []
 
         let expression = "USING ("
         // if column metadatas are given then apply all necessary operations with values
@@ -1154,31 +1155,25 @@ export class InsertQueryBuilder<
 
                     let value = column.getEntityValue(valueSet)
 
-                    if (
-                        !(
-                            value === null ||
-                            (value === undefined &&
-                                column.default !== undefined &&
-                                column.default !== null)
-                        )
-                    ) {
-                        if (columnIndex > 0) {
-                            expression += ", "
+                    if (value === undefined) {
+                        if (
+                            column.default !== undefined &&
+                            column.default !== null
+                        ) {
+                            // try to use default defined in the column
+                            expression +=
+                                this.connection.driver.normalizeDefault(column)
+                        } else {
+                            expression += "NULL" // otherwise simply use NULL and pray if column is nullable
                         }
+                    } else if (value === null) {
+                        expression += "NULL"
+                    } else {
                         expression += this.createColumnValueExpression(
                             valueSets,
                             valueSetIndex,
                             column,
                         )
-
-                        if (this.connection.driver.options.type !== "mssql") {
-                            expression += ` AS ${this.escape(
-                                column.databaseName,
-                            )}`
-                        }
-                        else {
-                           columnNames.push(this.escape(column.databaseName))
-                        }
                     }
 
                     if (this.connection.driver.options.type !== "mssql")
@@ -1218,6 +1213,8 @@ export class InsertQueryBuilder<
                                 expression += " UNION ALL "
                             }
                         }
+                    } else {
+                        expression += ", "
                     }
                 })
             })
@@ -1229,7 +1226,9 @@ export class InsertQueryBuilder<
         }
         expression += `) ${mergeSourceAlias}`
         if (this.connection.driver.options.type === "mssql")
-            expression += ` (${columnNames.join(', ')})`
+            expression += ` (${columns
+                .map((column) => this.escape(column.databaseName))
+                .join(", ")})`
         return expression
     }
 
