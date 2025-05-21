@@ -3466,6 +3466,19 @@ export class PostgresQueryRunner
                             tableColumn.name = dbColumn["column_name"]
                             tableColumn.type = dbColumn["regtype"].toLowerCase()
 
+                            if (tableColumn.type === "vector") {
+                                const dimensionMatch =
+                                    dbColumn["format_type"].match(
+                                        /^vector\((\d+)\)$/,
+                                    )
+                                if (dimensionMatch && dimensionMatch[1]) {
+                                    tableColumn.dimensions = parseInt(
+                                        dimensionMatch[1],
+                                        10,
+                                    )
+                                }
+                            }
+
                             if (
                                 tableColumn.type === "numeric" ||
                                 tableColumn.type === "numeric[]" ||
