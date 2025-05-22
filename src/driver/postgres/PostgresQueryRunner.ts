@@ -2183,6 +2183,31 @@ export class PostgresQueryRunner
                 )
             }
 
+            // update column collation
+            if (newColumn.collation !== oldColumn.collation) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${newColumn.type} COLLATE "${
+                            newColumn.collation
+                        }"`,
+                    ),
+                )
+
+                const oldCollation = oldColumn.collation
+                    ? `"${oldColumn.collation}"`
+                    : `pg_catalog."default"` // if there's no old collation, use defualt
+
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                    ),
+                )
+            }
+
             if (newColumn.generatedType !== oldColumn.generatedType) {
                 // Convert generated column data to normal column
                 if (
