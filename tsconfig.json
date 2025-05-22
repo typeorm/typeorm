@@ -1,9 +1,8 @@
 {
-  "extends": "@tsconfig/node16/tsconfig.json",
+  "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "declaration": true,
-    "downlevelIteration": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
@@ -19,6 +18,7 @@
     "strictFunctionTypes": false,
     "strictPropertyInitialization": false,
     "stripInternal": true,
+    "useDefineForClassFields": false,
     "useUnknownInCatchVariables": false
   },
   "include": ["sample", "src", "test", "*.ts"],

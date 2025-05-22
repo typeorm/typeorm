@@ -14,7 +14,7 @@ interface Window {
 declare let window: Window
 
 export class CordovaDriver extends AbstractSqliteDriver {
-    options: CordovaConnectionOptions
+    declare options: CordovaConnectionOptions
 
     transactionSupport = "none" as const
 
