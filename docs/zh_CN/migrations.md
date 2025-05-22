@@ -576,11 +576,12 @@ createUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): 
 ---
 
 ```ts
-dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string): Promise<void>
+dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string, ifExist?: boolean): Promise<void>
 ```
 
 - `table` - 表对象或名称
 - `uniqueOrName` - 要删除的 TableUnique 对象或唯一约束名称
+- `ifExist` - 如果为`true`，则跳过删除，否则如果未找到约束，则抛出错误
 
 删除一个唯一约束。
 
@@ -589,11 +590,12 @@ dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string): Pro
 ---
 
 ```ts
-dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>
+dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[], ifExist?: boolean): Promise<void>
 ```
 
 - `table` - 表对象或名称
 - `uniqueConstraints` - 要删除的 TableUnique 对象的数组
+- `ifExist` - 如果为`true`，则跳过删除，否则如果未找到某些约束，则抛出错误
 
 删除一个唯一约束。
 
