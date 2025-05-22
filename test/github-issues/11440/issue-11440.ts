@@ -15,7 +15,7 @@ describe("github issues > #11440", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
-            enabledDrivers: ["postgres", "aurora-postgres", "cockroachdb"], // since the issue is for postgres
+            enabledDrivers: ["postgres", "aurora-postgres", "cockroachdb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
