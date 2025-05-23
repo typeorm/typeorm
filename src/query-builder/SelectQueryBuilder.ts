@@ -4266,13 +4266,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     continue
                 }
 
+                if (
+                    parameterValue === null &&
+                    !this.expressionMap.treatJsNullAsSqlNull
+                ) {
+                    continue
+                }
+
                 if (column) {
                     if (parameterValue === null) {
-                        if (!this.expressionMap.treatJsNullAsSqlNull) {
-                            continue // Skip null values by default
-                        }
-
-                        // If treatJsNullAsSqlNull is true, transform JS null to SQL NULL
                         const propertyPath = embedPrefix
                             ? embedPrefix + "." + key
                             : key
