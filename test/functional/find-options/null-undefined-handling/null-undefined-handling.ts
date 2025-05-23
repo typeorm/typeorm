@@ -61,6 +61,7 @@ describe("find options > null and undefined handling", () => {
                     const postsWithQb = await connection
                         .createQueryBuilder(Post, "post")
                         .setFindOptions({
+                            // @ts-expect-error - null should be marked as unsafe by default
                             where: {
                                 title: "Post #1",
                                 text: null,
@@ -77,6 +78,7 @@ describe("find options > null and undefined handling", () => {
                     const postsWithRepo = await connection
                         .getRepository(Post)
                         .find({
+                            // @ts-expect-error - null should be marked as unsafe by default
                             where: {
                                 text: null,
                             },
@@ -131,6 +133,7 @@ describe("find options > null and undefined handling", () => {
                     const postsWithQb = await connection
                         .createQueryBuilder(Post, "post")
                         .setFindOptions({
+                            // @ts-expect-error - null should be marked as unsafe by default
                             where: {
                                 category: null,
                             },
@@ -144,6 +147,7 @@ describe("find options > null and undefined handling", () => {
                     const postsWithRepo = await connection
                         .getRepository(Post)
                         .find({
+                            // @ts-expect-error - null should be marked as unsafe by default
                             where: {
                                 category: null,
                             },
@@ -248,6 +252,7 @@ describe("find options > null and undefined handling", () => {
 
                     // Test Repository with null text
                     const posts2 = await connection.getRepository(Post).find({
+                        // @ts-expect-error - null should be marked as unsafe by default
                         where: {
                             text: null,
                         },
@@ -269,6 +274,7 @@ describe("find options > null and undefined handling", () => {
                     const postWithRepo = await connection
                         .getRepository(Post)
                         .findOne({
+                            // @ts-expect-error - null should be marked as unsafe by default
                             where: {
                                 text: null,
                             },
@@ -296,6 +302,7 @@ describe("find options > null and undefined handling", () => {
 
                     // Test Repository with null relation
                     const posts2 = await connection.getRepository(Post).find({
+                        // @ts-expect-error - null should be marked as unsafe by default
                         where: {
                             category: null,
                         },
@@ -308,6 +315,7 @@ describe("find options > null and undefined handling", () => {
                     const postWithRepo = await connection
                         .getRepository(Post)
                         .findOne({
+                            // @ts-expect-error - null should be marked as unsafe by default
                             where: {
                                 category: null,
                             },
@@ -318,6 +326,7 @@ describe("find options > null and undefined handling", () => {
                     const postWithRepo2 = await connection
                         .getRepository(Post)
                         .findOne({
+                            // @ts-expect-error - null should be marked as unsafe by default
                             where: {
                                 category: {
                                     slug: null,
@@ -532,6 +541,7 @@ describe("find options > null and undefined handling", () => {
 
                     // Test null handling for text
                     const posts = await connection.getRepository(Post).find({
+                        // @ts-expect-error - null should be marked as unsafe by default
                         where: {
                             text: null,
                         },
@@ -544,6 +554,7 @@ describe("find options > null and undefined handling", () => {
                     const postsWithNullCategory = await connection
                         .getRepository(Post)
                         .find({
+                            // @ts-expect-error - null should be marked as unsafe by default
                             where: {
                                 category: null,
                             },

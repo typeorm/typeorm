@@ -46,5 +46,5 @@ export type FindOptionsWhereProperty<
 export type FindOptionsWhere<Entity> = {
     [P in keyof Entity]?: P extends "toString"
         ? unknown
-        : FindOptionsWhereProperty<Entity[P]>
+        : FindOptionsWhereProperty<NonNullable<Entity[P]>>
 }
