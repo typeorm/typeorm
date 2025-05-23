@@ -4239,7 +4239,22 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         } else {
             let andConditions: string[] = []
             for (let key in where) {
-                const parameterValue = where[key]
+                let parameterValue = where[key]
+
+                const propertyPath = embedPrefix ? embedPrefix + "." + key : key
+                const column =
+                    metadata.findColumnWithPropertyPathStrict(propertyPath)
+                const embed =
+                    metadata.findEmbeddedWithPropertyPath(propertyPath)
+                const relation =
+                    metadata.findRelationWithPropertyPath(propertyPath)
+
+                if (!embed && !column && !relation) {
+                    throw new EntityPropertyNotFoundError(
+                        propertyPath,
+                        metadata,
+                    )
+                }
 
                 if (parameterValue === undefined) {
                     if (this.expressionMap.throwOnUndefinedInFind) {
@@ -4251,18 +4266,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     continue
                 }
 
-                if (parameterValue === null) {
-                    if (!this.expressionMap.treatJsNullAsSqlNull) {
-                        continue // Skip null values by default
-                    }
+                if (column) {
+                    if (parameterValue === null) {
+                        if (!this.expressionMap.treatJsNullAsSqlNull) {
+                            continue // Skip null values by default
+                        }
 
-                    // If treatJsNullAsSqlNull is true, transform JS null to SQL NULL
-                    const propertyPath = embedPrefix
-                        ? embedPrefix + "." + key
-                        : key
-                    const column =
-                        metadata.findColumnWithPropertyPathStrict(propertyPath)
-                    if (column) {
+                        // If treatJsNullAsSqlNull is true, transform JS null to SQL NULL
+                        const propertyPath = embedPrefix
+                            ? embedPrefix + "." + key
+                            : key
                         let aliasPath = `${alias}.${propertyPath}`
                         if (column.isVirtualProperty && column.query) {
                             aliasPath = `(${column.query(alias)})`
@@ -4270,23 +4283,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         andConditions.push(`${aliasPath} IS NULL`)
                         continue
                     }
-                }
 
-                const propertyPath = embedPrefix ? embedPrefix + "." + key : key
-                const column =
-                    metadata.findColumnWithPropertyPathStrict(propertyPath)
-                const embed =
-                    metadata.findEmbeddedWithPropertyPath(propertyPath)
-                const relation =
-                    metadata.findRelationWithPropertyPath(propertyPath)
-
-                if (!embed && !column && !relation)
-                    throw new EntityPropertyNotFoundError(
-                        propertyPath,
-                        metadata,
-                    )
-
-                if (column) {
                     let aliasPath = `${alias}.${propertyPath}`
                     if (column.isVirtualProperty && column.query) {
                         aliasPath = `(${column.query(this.escape(alias))})`
@@ -4294,7 +4291,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
 
                     // todo: we need to handle other operators as well?
-                    let parameterValue = where[key]
                     if (InstanceChecker.isEqualOperator(where[key])) {
                         parameterValue = where[key].value
                     }
@@ -4316,38 +4312,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             this.connection.driver as SqlServerDriver
                         ).parametrizeValues(column, parameterValue)
                     }
-
-                    // if (parameterValue === null) {
-                    //     andConditions.push(`${aliasPath} IS NULL`);
-                    //
-                    // } else if (parameterValue instanceof FindOperator) {
-                    //     // let parameters: any[] = [];
-                    //     // if (parameterValue.useParameter) {
-                    //     //     const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
-                    //     //     realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
-                    //     //
-                    //     //         // don't create parameters for number to prevent max number of variables issues as much as possible
-                    //     //         if (typeof realParameterValue === "number") {
-                    //     //             parameters.push(realParameterValue);
-                    //     //
-                    //     //         } else {
-                    //     //             this.expressionMap.nativeParameters[parameterName + realParameterValueIndex] = realParameterValue;
-                    //     //             parameterIndex++;
-                    //     //             parameters.push(this.connection.driver.createParameter(parameterName + realParameterValueIndex, parameterIndex - 1));
-                    //     //         }
-                    //     //     });
-                    //     // }
-                    //     andConditions.push(
-                    //         this.createWhereConditionExpression(this.getWherePredicateCondition(aliasPath, parameterValue))
-                    //         // parameterValue.toSql(this.connection, aliasPath, parameters));
-                    //     )
-                    //
-                    // } else {
-                    //     this.expressionMap.nativeParameters[parameterName] = parameterValue;
-                    //     parameterIndex++;
-                    //     const parameter = this.connection.driver.createParameter(parameterName, parameterIndex - 1);
-                    //     andConditions.push(`${aliasPath} = ${parameter}`);
-                    // }
 
                     andConditions.push(
                         this.createWhereConditionExpression(
