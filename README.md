@@ -116,7 +116,7 @@ const firstUser = await userRepository.findOneBy({
 }) // find by id
 const timber = await userRepository.findOneBy({
     firstName: "Timber",
-    lastName: "Saw",
+    lastName: "Saw"
 }) // find by firstName and lastName
 
 await userRepository.remove(timber)
