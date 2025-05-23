@@ -158,48 +158,11 @@ const firstUser = await User.findOneBy({
 })
 const timber = await User.findOneBy({
     firstName: "Timber",
-    lastName: "Saw"
+    lastName: "Saw",
 })
 
 await timber.remove()
 ```
-
-## Null and Undefined Handling
-
-TypeORM provides fine-grained control over how `null` and `undefined` values are handled in find operations through two connection-level configuration options:
-
-```typescript
-const dataSource = new DataSource({
-    // ... other options
-    treatJsNullAsSqlNull: true,    // Convert JavaScript null to SQL NULL
-    throwOnUndefinedInFind: true   // Throw on undefined in find operations
-})
-```
-
-By default, both `null` and `undefined` values in where conditions are ignored. These options allow you to:
-
-1. `treatJsNullAsSqlNull`: When true, JavaScript `null` values in where conditions will be converted to SQL `NULL`
-2. `throwOnUndefinedInFind`: When true, an error will be thrown if `undefined` is encountered in find operations
-
-Note that `throwOnUndefinedInFind` only applies to explicitly set `undefined` values. Properties that are not provided in the where clause are still ignored:
-
-```typescript
-// This will throw with throwOnUndefinedInFind: true
-await repository.find({
-    where: {
-        text: undefined
-    }
-})
-
-// This will NOT throw, as the text property is not provided
-await repository.find({
-    where: {
-        title: "My Post"
-    }
-})
-```
-
-For more details, see the [null and undefined handling documentation](./docs/null-and-undefined-handling.md).
 
 ## Installation
 
