@@ -1,6 +1,7 @@
 import { FindOperator } from "./FindOperator"
 import { ObjectId } from "../driver/mongodb/typings"
 import { EqualOperator } from "./EqualOperator"
+import { TypeORMSettings } from "../common/TypeORMSettings"
 
 /**
  * A single property handler for FindOptionsWhere.
@@ -41,10 +42,19 @@ export type FindOptionsWhereProperty<
     : Property | FindOperator<Property>
 
 /**
+ * Helper type to conditionally allow null/undefined based on TypeORMSettings
+ */
+type NullableWhereValue<T> = TypeORMSettings extends {
+    allowNullableWhere: true
+}
+    ? T | null | undefined
+    : T
+
+/**
  * Used for find operations.
  */
 export type FindOptionsWhere<Entity> = {
     [P in keyof Entity]?: P extends "toString"
         ? unknown
-        : FindOptionsWhereProperty<NonNullable<Entity[P]>>
+        : NullableWhereValue<FindOptionsWhereProperty<NonNullable<Entity[P]>>>
 }

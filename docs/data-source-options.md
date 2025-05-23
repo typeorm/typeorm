@@ -101,6 +101,13 @@ Different RDBMS-es have their own specific options.
 -   `isolateWhereStatements` - Enables where statement isolation, wrapping each where clause in brackets automatically.
     eg. `.where("user.firstName = :search OR user.lastName = :search")` becomes `WHERE (user.firstName = ? OR user.lastName = ?)` instead of `WHERE user.firstName = ? OR user.lastName = ?`
 
+-   `findWhereBehavior` - Controls how null and undefined values are handled in find operations.
+    Options:
+    -   `null`: `'ignore'` (default) - skips null properties, `'sql-null'` - transforms null to SQL NULL, `'throw'` - throws an error
+    -   `undefined`: `'ignore'` (default) - skips undefined properties, `'throw'` - throws an error
+        Example: `findWhereBehavior: { null: 'sql-null', undefined: 'throw' }`.
+        Learn more about [Null and Undefined Handling](null-and-undefined-handling.md).
+
 ## `mysql` / `mariadb` data source options
 
 -   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.

@@ -4238,7 +4238,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
         } else {
             let andConditions: string[] = []
-            for (let key in where) {
+            for (const key in where) {
                 let parameterValue = where[key]
 
                 const propertyPath = embedPrefix ? embedPrefix + "." + key : key

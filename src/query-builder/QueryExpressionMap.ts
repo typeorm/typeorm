@@ -551,7 +551,6 @@ export class QueryExpressionMap {
                 options: cteOptions.options,
             }),
         )
-
         return map
     }
 }
