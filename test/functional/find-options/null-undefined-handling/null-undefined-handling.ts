@@ -314,6 +314,18 @@ describe("find options > null and undefined handling", () => {
                         })
 
                     expect(postWithRepo?.title).to.equal("Post #1")
+
+                    const postWithRepo2 = await connection
+                        .getRepository(Post)
+                        .findOne({
+                            where: {
+                                category: {
+                                    slug: null,
+                                },
+                            },
+                        })
+
+                    expect(postWithRepo2?.title).to.equal("Post #1")
                 }),
             ))
     })
