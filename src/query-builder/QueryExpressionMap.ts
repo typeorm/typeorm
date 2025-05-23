@@ -351,18 +351,6 @@ export class QueryExpressionMap {
         options: QueryBuilderCteOptions
     }[] = []
 
-    /**
-     * When true, null values will be treated as SQL NULL in find operations.
-     * By default, null values are skipped in where conditions.
-     */
-    treatJsNullAsSqlNull: boolean
-
-    /**
-     * When true, throws an error if undefined is encountered in a find operation.
-     * By default, undefined values are skipped in where conditions.
-     */
-    throwOnUndefinedInFind: boolean
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -375,9 +363,6 @@ export class QueryExpressionMap {
         this.timeTravel =
             (connection.options as CockroachConnectionOptions)
                 ?.timeTravelQueries || false
-        this.treatJsNullAsSqlNull = !!connection.options.treatJsNullAsSqlNull
-        this.throwOnUndefinedInFind =
-            !!connection.options.throwOnUndefinedInFind
     }
 
     // -------------------------------------------------------------------------
@@ -566,8 +551,7 @@ export class QueryExpressionMap {
                 options: cteOptions.options,
             }),
         )
-        map.treatJsNullAsSqlNull = this.treatJsNullAsSqlNull
-        map.throwOnUndefinedInFind = this.throwOnUndefinedInFind
+
         return map
     }
 }

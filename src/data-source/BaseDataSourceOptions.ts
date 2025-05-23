@@ -216,14 +216,22 @@ export interface BaseDataSourceOptions {
     readonly isolateWhereStatements?: boolean
 
     /**
-     * When true, null values will be treated as SQL NULL in find operations.
-     * By default, null values are skipped in where conditions.
+     * Controls how null and undefined values are handled in find operations.
      */
-    readonly treatJsNullAsSqlNull?: boolean
+    readonly findWhereBehavior?: {
+        /**
+         * How to handle null values in where conditions.
+         * - 'ignore': Skip null properties (default)
+         * - 'sql-null': Transform null to SQL NULL
+         * - 'throw': Throw an error when null is encountered
+         */
+        readonly null?: "ignore" | "sql-null" | "throw"
 
-    /**
-     * When true, throws an error if undefined is encountered in a find operation.
-     * By default, undefined values are skipped in where conditions.
-     */
-    readonly throwOnUndefinedInFind?: boolean
+        /**
+         * How to handle undefined values in where conditions.
+         * - 'ignore': Skip undefined properties (default)
+         * - 'throw': Throw an error when undefined is encountered
+         */
+        readonly undefined?: "ignore" | "throw"
+    }
 }

@@ -4257,20 +4257,31 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 }
 
                 if (parameterValue === undefined) {
-                    if (this.expressionMap.throwOnUndefinedInFind) {
+                    const undefinedBehavior =
+                        this.connection.options.findWhereBehavior?.undefined ||
+                        "ignore"
+                    if (undefinedBehavior === "throw") {
                         throw new TypeORMError(
                             `Undefined value encountered in property '${alias}.${key}' of the find operation. ` +
-                                `Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.`,
+                                `Set 'findWhereBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
                         )
                     }
                     continue
                 }
 
-                if (
-                    parameterValue === null &&
-                    !this.expressionMap.treatJsNullAsSqlNull
-                ) {
-                    continue
+                if (parameterValue === null) {
+                    const nullBehavior =
+                        this.connection.options.findWhereBehavior?.null ||
+                        "ignore"
+                    if (nullBehavior === "ignore") {
+                        continue
+                    } else if (nullBehavior === "throw") {
+                        throw new TypeORMError(
+                            `Null value encountered in property '${alias}.${key}' of the find operation. ` +
+                                `Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                        )
+                    }
+                    // 'sql-null' behavior continues to the next logic
                 }
 
                 if (column) {
@@ -4337,7 +4348,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     if (condition) andConditions.push(condition)
                 } else if (relation) {
                     if (where[key] === null) {
-                        andConditions.push(`${alias}.${propertyPath} IS NULL`)
+                        const nullBehavior =
+                            this.connection.options.findWhereBehavior?.null ||
+                            "ignore"
+                        if (nullBehavior === "sql-null") {
+                            andConditions.push(
+                                `${alias}.${propertyPath} IS NULL`,
+                            )
+                        } else if (nullBehavior === "throw") {
+                            throw new TypeORMError(
+                                `Null value encountered in property '${alias}.${key}' of the find operation. ` +
+                                    `Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                            )
+                        }
+                        // 'ignore' behavior falls through to continue
                         continue
                     }
 

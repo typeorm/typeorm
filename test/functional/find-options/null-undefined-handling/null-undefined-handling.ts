@@ -191,14 +191,16 @@ describe("find options > null and undefined handling", () => {
             ))
     })
 
-    describe("with treatJsNullAsSqlNull enabled", () => {
+    describe("with findWhereBehavior.null set to 'sql-null'", () => {
         before(async () => {
             connections = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
                 driverSpecific: {
-                    treatJsNullAsSqlNull: true,
+                    findWhereBehavior: {
+                        null: "sql-null",
+                    },
                 },
             })
         })
@@ -224,7 +226,7 @@ describe("find options > null and undefined handling", () => {
             await connection.manager.save(post2)
         }
 
-        it("should transform JS null to SQL NULL when treatJsNullAsSqlNull is enabled", () =>
+        it("should transform JS null to SQL NULL when findWhereBehavior.null is 'sql-null'", () =>
             Promise.all(
                 connections.map(async (connection) => {
                     await prepareData(connection)
@@ -284,7 +286,7 @@ describe("find options > null and undefined handling", () => {
                 }),
             ))
 
-        it("should transform JS null to SQL NULL for relations when treatJsNullAsSqlNull is enabled", () =>
+        it("should transform JS null to SQL NULL for relations when findWhereBehavior.null is 'sql-null'", () =>
             Promise.all(
                 connections.map(async (connection) => {
                     await prepareData(connection)
@@ -339,14 +341,16 @@ describe("find options > null and undefined handling", () => {
             ))
     })
 
-    describe("with throwOnUndefinedInFind enabled", () => {
+    describe("with findWhereBehavior.undefined set to 'throw'", () => {
         before(async () => {
             connections = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
                 driverSpecific: {
-                    throwOnUndefinedInFind: true,
+                    findWhereBehavior: {
+                        undefined: "throw",
+                    },
                 },
             })
         })
@@ -354,7 +358,7 @@ describe("find options > null and undefined handling", () => {
         beforeEach(() => reloadTestingDatabases(connections))
         after(() => closeTestingConnections(connections))
 
-        it("should throw an error when undefined is encountered and throwOnUndefinedInFind is enabled", async () => {
+        it("should throw an error when undefined is encountered and findWhereBehavior.undefined is 'throw'", async () => {
             for (const connection of connections) {
                 try {
                     await connection
@@ -367,7 +371,7 @@ describe("find options > null and undefined handling", () => {
                 } catch (error) {
                     expect(error).to.be.instanceOf(TypeORMError)
                     expect(error.message).to.equal(
-                        "Undefined value encountered in property 'post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
+                        "Undefined value encountered in property 'post.text' of the find operation. Set 'findWhereBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
                     )
                 }
 
@@ -381,7 +385,7 @@ describe("find options > null and undefined handling", () => {
                 } catch (error) {
                     expect(error).to.be.instanceOf(TypeORMError)
                     expect(error.message).to.equal(
-                        "Undefined value encountered in property 'Post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
+                        "Undefined value encountered in property 'Post.text' of the find operation. Set 'findWhereBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
                     )
                 }
 
@@ -395,13 +399,13 @@ describe("find options > null and undefined handling", () => {
                 } catch (error) {
                     expect(error).to.be.instanceOf(TypeORMError)
                     expect(error.message).to.equal(
-                        "Undefined value encountered in property 'Post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
+                        "Undefined value encountered in property 'Post.text' of the find operation. Set 'findWhereBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
                     )
                 }
             }
         })
 
-        it("should throw an error when undefined is encountered in relations and throwOnUndefinedInFind is enabled", () =>
+        it("should throw an error when undefined is encountered in relations and findWhereBehavior.undefined is 'throw'", () =>
             Promise.all(
                 connections.map(async (connection) => {
                     try {
@@ -416,7 +420,7 @@ describe("find options > null and undefined handling", () => {
                     } catch (error) {
                         expect(error).to.be.instanceOf(TypeORMError)
                         expect(error.message).to.equal(
-                            "Undefined value encountered in property 'post.category.id' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
+                            "Undefined value encountered in property 'post.category.id' of the find operation. Set 'findWhereBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
                         )
                     }
 
@@ -431,7 +435,7 @@ describe("find options > null and undefined handling", () => {
                     } catch (error) {
                         expect(error).to.be.instanceOf(TypeORMError)
                         expect(error.message).to.equal(
-                            "Undefined value encountered in property 'Post.category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
+                            "Undefined value encountered in property 'Post.category' of the find operation. Set 'findWhereBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
                         )
                     }
 
@@ -445,7 +449,7 @@ describe("find options > null and undefined handling", () => {
                     } catch (error) {
                         expect(error).to.be.instanceOf(TypeORMError)
                         expect(error.message).to.equal(
-                            "Undefined value encountered in property 'Post.category' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
+                            "Undefined value encountered in property 'Post.category' of the find operation. Set 'findWhereBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
                         )
                     }
                 }),
@@ -500,15 +504,17 @@ describe("find options > null and undefined handling", () => {
             ))
     })
 
-    describe("with both options enabled", () => {
+    describe("with both findWhereBehavior options enabled", () => {
         before(async () => {
             connections = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
                 driverSpecific: {
-                    treatJsNullAsSqlNull: true,
-                    throwOnUndefinedInFind: true,
+                    findWhereBehavior: {
+                        null: "sql-null",
+                        undefined: "throw",
+                    },
                 },
             })
         })
@@ -576,7 +582,7 @@ describe("find options > null and undefined handling", () => {
                     } catch (error) {
                         expect(error).to.be.instanceOf(TypeORMError)
                         expect(error.message).to.equal(
-                            "Undefined value encountered in property 'post.text' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
+                            "Undefined value encountered in property 'post.text' of the find operation. Set 'findWhereBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
                         )
                     }
 
@@ -593,7 +599,7 @@ describe("find options > null and undefined handling", () => {
                     } catch (error) {
                         expect(error).to.be.instanceOf(TypeORMError)
                         expect(error.message).to.equal(
-                            "Undefined value encountered in property 'post.category.id' of the find operation. Set 'throwOnUndefinedInFind' to false in connection options to skip properties with undefined values.",
+                            "Undefined value encountered in property 'post.category.id' of the find operation. Set 'findWhereBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
                         )
                     }
 
@@ -617,6 +623,125 @@ describe("find options > null and undefined handling", () => {
                         })
 
                     expect(postWithRepo?.title).to.equal("Post #2")
+                }),
+            ))
+    })
+
+    describe("with findWhereBehavior.null set to 'throw'", () => {
+        before(async () => {
+            connections = await createTestingConnections({
+                entities: [Post, Category],
+                schemaCreate: true,
+                dropSchema: true,
+                driverSpecific: {
+                    findWhereBehavior: {
+                        null: "throw",
+                    },
+                },
+            })
+        })
+
+        beforeEach(() => reloadTestingDatabases(connections))
+        after(() => closeTestingConnections(connections))
+
+        it("should throw an error when null is encountered and findWhereBehavior.null is 'throw'", async () => {
+            for (const connection of connections) {
+                try {
+                    await connection
+                        .createQueryBuilder(Post, "post")
+                        .where({
+                            text: null,
+                        })
+                        .getMany()
+                    expect.fail("Expected query to throw an error")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.equal(
+                        "Null value encountered in property 'post.text' of the find operation. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                    )
+                }
+
+                try {
+                    await connection.getRepository(Post).find({
+                        // @ts-expect-error - null should be marked as unsafe by default
+                        where: {
+                            text: null,
+                        },
+                    })
+                    expect.fail("Expected query to throw an error")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.equal(
+                        "Null value encountered in property 'Post.text' of the find operation. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                    )
+                }
+
+                try {
+                    await connection.getRepository(Post).findOne({
+                        // @ts-expect-error - null should be marked as unsafe by default
+                        where: {
+                            text: null,
+                        },
+                    })
+                    expect.fail("Expected query to throw an error")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.equal(
+                        "Null value encountered in property 'Post.text' of the find operation. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                    )
+                }
+            }
+        })
+
+        it("should throw an error when null is encountered in relations and findWhereBehavior.null is 'throw'", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    try {
+                        await connection
+                            .createQueryBuilder(Post, "post")
+                            .where({
+                                category: null,
+                            })
+                            .getMany()
+
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.equal(
+                            "Null value encountered in property 'post.category.id' of the find operation. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                        )
+                    }
+
+                    try {
+                        await connection.getRepository(Post).find({
+                            // @ts-expect-error - null should be marked as unsafe by default
+                            where: {
+                                category: null,
+                            },
+                        })
+
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.equal(
+                            "Null value encountered in property 'Post.category' of the find operation. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                        )
+                    }
+
+                    try {
+                        await connection.getRepository(Post).findOne({
+                            // @ts-expect-error - null should be marked as unsafe by default
+                            where: {
+                                category: null,
+                            },
+                        })
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.equal(
+                            "Null value encountered in property 'Post.category' of the find operation. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                        )
+                    }
                 }),
             ))
     })
