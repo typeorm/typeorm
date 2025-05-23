@@ -24,11 +24,11 @@ export interface SpannerConnectionCredentialsOptions {
         /**
          * Client email connection credentials (Optional)
          */
-        readonly client_email: string;
+        readonly client_email: string
 
         /**
          * Private key connection credentials (Optional)
          */
-        readonly private_key: string;
+        readonly private_key: string
     }
 }

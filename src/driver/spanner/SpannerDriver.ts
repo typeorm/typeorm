@@ -424,9 +424,9 @@ export class SpannerDriver implements Driver {
         if (value === null || value === undefined)
             return columnMetadata.transformer
                 ? ApplyValueTransformers.transformFrom(
-                    columnMetadata.transformer,
-                    value,
-                )
+                      columnMetadata.transformer,
+                      value,
+                  )
                 : value
 
         if (columnMetadata.type === Boolean || columnMetadata.type === "bool") {
@@ -736,9 +736,9 @@ export class SpannerDriver implements Driver {
             if (this.options.credentials) {
                 this.spanner = new lib.Spanner({
                     projectId: this.options.projectId,
-                    credentials: this.options.credentials
+                    credentials: this.options.credentials,
                 })
-                
+
                 return
             }
 
