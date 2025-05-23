@@ -732,6 +732,16 @@ export class SpannerDriver implements Driver {
     protected loadDependencies(): void {
         try {
             const lib = this.options.driver || PlatformTools.load("spanner")
+
+            if (this.options.credentials) {
+                this.spanner = new lib.Spanner({
+                    projectId: this.options.projectId,
+                    credentials: this.options.credentials,
+                })
+
+                return
+            }
+
             this.spanner = new lib.Spanner({
                 projectId: this.options.projectId,
             })
