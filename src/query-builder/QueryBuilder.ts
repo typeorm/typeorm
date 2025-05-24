@@ -1581,18 +1581,34 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     parameters: [aliasPath, ...parameters],
                 }
             }
-            // } else if (parameterValue === null) {
-            //     return {
-            //         operator: "isNull",
-            //         parameters: [
-            //             aliasPath,
-            //         ]
-            //     };
-        } else {
-            return {
-                operator: "equal",
-                parameters: [aliasPath, this.createParameter(parameterValue)],
+        } else if (parameterValue === null) {
+            const nullBehavior =
+                this.connection.options.findWhereBehavior?.null || "ignore"
+            if (nullBehavior === "sql-null") {
+                return {
+                    operator: "isNull",
+                    parameters: [aliasPath],
+                }
+            } else if (nullBehavior === "throw") {
+                throw new TypeORMError(
+                    `Null value encountered in property '${aliasPath}' of the find operation. ` +
+                        `Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                )
             }
+        } else if (parameterValue === undefined) {
+            const undefinedBehavior =
+                this.connection.options.findWhereBehavior?.undefined || "ignore"
+            if (undefinedBehavior === "throw") {
+                throw new TypeORMError(
+                    `Undefined value encountered in property '${aliasPath}' of the find operation. ` +
+                        `Set 'findWhereBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                )
+            }
+        }
+
+        return {
+            operator: "equal",
+            parameters: [aliasPath, this.createParameter(parameterValue)],
         }
     }
 
