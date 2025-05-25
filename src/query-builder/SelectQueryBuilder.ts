@@ -4237,7 +4237,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     .join(" OR ")
             }
         } else {
-            let andConditions: string[] = []
+            const andConditions: string[] = []
             for (const key in where) {
                 let parameterValue = where[key]
 
@@ -4278,6 +4278,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     } else if (nullBehavior === "throw") {
                         throw new TypeORMError(
                             `Null value encountered in property '${alias}.${key}' of the find operation. ` +
+                                `To match with SQL NULL, the IsNull() operator must be used. ` +
                                 `Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
                         )
                     }

@@ -657,7 +657,7 @@ describe("find options > null and undefined handling", () => {
                 } catch (error) {
                     expect(error).to.be.instanceOf(TypeORMError)
                     expect(error.message).to.equal(
-                        "Null value encountered in property 'post.text' of the find operation. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                        "Null value encountered in property 'post.text' of the find operation. To match with SQL NULL, the IsNull() operator must be used. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
                     )
                 }
 
@@ -672,7 +672,7 @@ describe("find options > null and undefined handling", () => {
                 } catch (error) {
                     expect(error).to.be.instanceOf(TypeORMError)
                     expect(error.message).to.equal(
-                        "Null value encountered in property 'Post.text' of the find operation. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                        "Null value encountered in property 'Post.text' of the find operation. To match with SQL NULL, the IsNull() operator must be used. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
                     )
                 }
 
@@ -687,7 +687,7 @@ describe("find options > null and undefined handling", () => {
                 } catch (error) {
                     expect(error).to.be.instanceOf(TypeORMError)
                     expect(error.message).to.equal(
-                        "Null value encountered in property 'Post.text' of the find operation. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                        "Null value encountered in property 'Post.text' of the find operation. To match with SQL NULL, the IsNull() operator must be used. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
                     )
                 }
             }
@@ -708,7 +708,7 @@ describe("find options > null and undefined handling", () => {
                     } catch (error) {
                         expect(error).to.be.instanceOf(TypeORMError)
                         expect(error.message).to.equal(
-                            "Null value encountered in property 'post.category.id' of the find operation. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                            "Null value encountered in property 'post.category.id' of the find operation. To match with SQL NULL, the IsNull() operator must be used. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
                         )
                     }
 
@@ -724,7 +724,7 @@ describe("find options > null and undefined handling", () => {
                     } catch (error) {
                         expect(error).to.be.instanceOf(TypeORMError)
                         expect(error.message).to.equal(
-                            "Null value encountered in property 'Post.category' of the find operation. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                            "Null value encountered in property 'Post.category' of the find operation. To match with SQL NULL, the IsNull() operator must be used. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
                         )
                     }
 
@@ -739,7 +739,7 @@ describe("find options > null and undefined handling", () => {
                     } catch (error) {
                         expect(error).to.be.instanceOf(TypeORMError)
                         expect(error.message).to.equal(
-                            "Null value encountered in property 'Post.category' of the find operation. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                            "Null value encountered in property 'Post.category' of the find operation. To match with SQL NULL, the IsNull() operator must be used. Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
                         )
                     }
                 }),
