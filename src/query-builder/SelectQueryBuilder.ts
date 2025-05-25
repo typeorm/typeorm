@@ -4286,22 +4286,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 }
 
                 if (column) {
-                    if (parameterValue === null) {
-                        const propertyPath = embedPrefix
-                            ? embedPrefix + "." + key
-                            : key
-                        let aliasPath = `${alias}.${propertyPath}`
-                        if (column.isVirtualProperty && column.query) {
-                            aliasPath = `(${column.query(alias)})`
-                        }
-                        andConditions.push(`${aliasPath} IS NULL`)
-                        continue
-                    }
-
                     let aliasPath = `${alias}.${propertyPath}`
                     if (column.isVirtualProperty && column.query) {
                         aliasPath = `(${column.query(this.escape(alias))})`
                     }
+
+                    if (parameterValue === null) {
+                        andConditions.push(`${aliasPath} IS NULL`)
+                        continue
+                    }
+
                     // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
 
                     // todo: we need to handle other operators as well?
