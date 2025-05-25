@@ -47,7 +47,7 @@ export type FindOptionsWhereProperty<
 type NullableWhereValue<T> = TypeORMSettings extends {
     allowNullableWhere: true
 }
-    ? T | null | undefined
+    ? T | null
     : T
 
 /**
