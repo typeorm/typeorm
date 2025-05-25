@@ -30,6 +30,7 @@ const posts = await repository.find({
     },
 })
 ```
+
 ## Configuration
 
 You can customize how null and undefined values are handled using the `findWhereBehavior` option in your connection configuration:
