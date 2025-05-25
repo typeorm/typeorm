@@ -21,6 +21,15 @@ const posts2 = await repository.find({
 })
 ```
 
+The correct way to match null values in where conditions is to use the `IsNull` operator (for details see [Find Options](find-options.md)):
+
+```typescript
+const posts = await repository.find({
+    where: {
+        text: IsNull(),
+    },
+})
+```
 ## Configuration
 
 You can customize how null and undefined values are handled using the `findWhereBehavior` option in your connection configuration:
