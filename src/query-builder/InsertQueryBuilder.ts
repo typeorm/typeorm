@@ -896,7 +896,6 @@ export class InsertQueryBuilder<
                     } else if (
                         this.connection.driver.options.type === "spanner" &&
                         value !== null &&
-                        Array.isArray(value) &&
                         column.type === "json"
                     ) {
                         expression += "JSON '" + JSON.stringify(value) + "'"

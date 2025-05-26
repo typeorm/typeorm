@@ -552,7 +552,6 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                         } else if (
                             this.connection.driver.options.type === "spanner" &&
                             value !== null &&
-                            Array.isArray(value) &&
                             column.type === "json"
                         ) {
                             updateColumnAndValues.push(
