@@ -24,7 +24,8 @@ import { DriverUtils } from "../driver/DriverUtils"
  */
 export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     extends QueryBuilder<Entity>
-    implements WhereExpressionBuilder {
+    implements WhereExpressionBuilder
+{
     readonly "@instanceof" = Symbol.for("UpdateQueryBuilder")
 
     // -------------------------------------------------------------------------
@@ -181,7 +182,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) { }
+                } catch (rollbackError) {}
             }
             throw error
         } finally {
@@ -536,25 +537,17 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             // support for SQL expressions in update query
                             updateColumnAndValues.push(
                                 this.escape(column.databaseName) +
-                                " = " +
-                                value(),
+                                    " = " +
+                                    value(),
                             )
                         } else if (
                             (this.connection.driver.options.type === "sap" ||
                                 this.connection.driver.options.type ===
-                                "spanner") &&
+                                    "spanner") &&
                             value === null
                         ) {
                             updateColumnAndValues.push(
                                 this.escape(column.databaseName) + " = NULL",
-                            )
-                        } else if (this.connection.driver.options.type ==="spanner" &&
-                            value !== null && 
-                            Array.isArray(value) &&
-                            column.type === "json"
-                        ) {
-                            updateColumnAndValues.push(
-                                this.escape(column.databaseName) + " = JSON '" + JSON.stringify(value) + "'",
                             )
                         } else {
                             if (
@@ -573,15 +566,15 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     this.connection.driver,
                                 ) ||
                                     this.connection.driver.options.type ===
-                                    "aurora-mysql") &&
+                                        "aurora-mysql") &&
                                 this.connection.driver.spatialTypes.indexOf(
                                     column.type,
                                 ) !== -1
                             ) {
                                 const useLegacy = (
                                     this.connection.driver as
-                                    | MysqlDriver
-                                    | AuroraMysqlDriver
+                                        | MysqlDriver
+                                        | AuroraMysqlDriver
                                 ).options.legacySpatialSupport
                                 const geomFromText = useLegacy
                                     ? "GeomFromText"
@@ -606,7 +599,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                 }
                             } else if (
                                 this.connection.driver.options.type ===
-                                "mssql" &&
+                                    "mssql" &&
                                 this.connection.driver.spatialTypes.indexOf(
                                     column.type,
                                 ) !== -1
@@ -623,8 +616,8 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             }
                             updateColumnAndValues.push(
                                 this.escape(column.databaseName) +
-                                " = " +
-                                expression,
+                                    " = " +
+                                    expression,
                             )
                         }
                     })
@@ -642,9 +635,9 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 )
                     updateColumnAndValues.push(
                         this.escape(metadata.versionColumn.databaseName) +
-                        " = " +
-                        this.escape(metadata.versionColumn.databaseName) +
-                        " + 1",
+                            " = " +
+                            this.escape(metadata.versionColumn.databaseName) +
+                            " + 1",
                     )
                 if (
                     metadata.updateDateColumn &&
@@ -652,7 +645,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 )
                     updateColumnAndValues.push(
                         this.escape(metadata.updateDateColumn.databaseName) +
-                        " = CURRENT_TIMESTAMP",
+                            " = CURRENT_TIMESTAMP",
                     ) // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
             }
         } else {
