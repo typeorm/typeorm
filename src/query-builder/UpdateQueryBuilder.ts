@@ -549,6 +549,18 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             updateColumnAndValues.push(
                                 this.escape(column.databaseName) + " = NULL",
                             )
+                        } else if (
+                            this.connection.driver.options.type === "spanner" &&
+                            value !== null &&
+                            Array.isArray(value) &&
+                            column.type === "json"
+                        ) {
+                            updateColumnAndValues.push(
+                                this.escape(column.databaseName) +
+                                    " = JSON '" +
+                                    JSON.stringify(value) +
+                                    "'",
+                            )
                         } else {
                             if (
                                 this.connection.driver.options.type === "mssql"
