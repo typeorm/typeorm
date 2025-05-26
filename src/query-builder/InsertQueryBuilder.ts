@@ -893,6 +893,15 @@ export class InsertQueryBuilder<
                         expression += "NULL"
 
                         // support for SQL expressions in queries
+                    } else if (
+                        this.connection.driver.options.type === "spanner" &&
+                        value !== null &&
+                        Array.isArray(value) &&
+                        column.type === "json"
+                    ) {
+                        expression += "JSON '" + JSON.stringify(value) + "'"
+
+                        // JSON Array insert sql Spanner Pattern
                     } else if (typeof value === "function") {
                         expression += value()
 
