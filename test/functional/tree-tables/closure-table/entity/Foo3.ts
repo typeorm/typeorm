@@ -22,7 +22,7 @@ export class Foo3Entity {
         charset: "latin1",
         collation: "latin1_bin",
     })
-    id: number
+    id: string
 
     @Column({
         type: "varchar",
@@ -31,7 +31,7 @@ export class Foo3Entity {
         charset: "latin1",
         collation: "latin1_bin",
     })
-    parentId: number
+    parentId: string
 
     @TreeParent()
     @JoinColumn({ name: "parent_id", referencedColumnName: "id" })
