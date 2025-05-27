@@ -187,11 +187,13 @@ This combination is useful when you want to:
 
 ## TypeScript Configuration
 
-By default, TypeScript will not allow `null` or `undefined` values in where conditions, encouraging type safety. However, if you've configured `findWhereBehavior` to handle these values at runtime, you can opt into more permissive TypeScript checking using declaration merging.
+By default, TypeScript will not allow you to pass `null` or `undefined` values in where conditions, encouraging type safety. However, if you've configured `findWhereBehavior` to handle `null` values as SQL NULL at runtime, you can opt into more permissive TypeScript checking using declaration merging.
+
+(Note this is only relevant when [strictNullChecks](https://www.typescriptlang.org/tsconfig/#strictNullChecks) is enabled in your tsconfig file, otherwise TypeScript ignores all `null` and `undefined` values.)
 
 ### Enabling Nullable Where Types
 
-To allow `null` and `undefined` values in TypeScript, use declaration merging to extend the `TypeORMSettings` interface. This should be done in a separate declaration file (e.g., `types/typeorm.d.ts`) or at the beginning of your application:
+To allow `null` values in TypeScript, use declaration merging to extend the `TypeORMSettings` interface. This should be done in a separate declaration file (e.g., `types/typeorm.d.ts`) or at the beginning of your application:
 
 ```typescript
 // types/typeorm.d.ts or at the top of your main file
@@ -205,31 +207,23 @@ declare module "typeorm" {
 const dataSource = new DataSource({
     findWhereBehavior: {
         null: "sql-null",
-        undefined: "throw",
     },
 })
 ```
 
-With this configuration, TypeScript will allow null and undefined values in where conditions:
+With this configuration, TypeScript will allow `null` values in where conditions:
 
 ```typescript
-// These are now allowed by TypeScript
+// This is now allowed by TypeScript
 const posts = await repository.find({
     where: {
-        text: null, // ✅ Transformed to SQL NULL
-        category: undefined, // ✅ Will throw at runtime as configured
-    },
-})
-
-// Complex queries also work
-const result = await repository.findOne({
-    where: {
-        title: "My Post",
-        text: null,
-        publishedAt: undefined,
+        text: null, // allowed, transformed to SQL NULL
     },
 })
 ```
+
+This setting only controls the behavior of `null` values; `undefined` values in where conditions are always invalid and therefore disallowed by TypeScript.
+
 
 ### Important Notes
 
