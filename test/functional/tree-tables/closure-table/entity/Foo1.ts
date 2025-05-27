@@ -6,27 +6,25 @@ import {
     Tree,
     TreeChildren,
     TreeParent,
-} from "../../../../src"
+} from "../../../../../src"
 
-// won't work if bug exists
-
-@Entity({ name: "foo" })
+@Entity({ name: "foo1" })
 @Tree("closure-table", {
-    closureTableName: "foo",
+    closureTableName: "foo1",
     ancestorColumnName: () => "ancestor_id",
     descendantColumnName: () => "descendant_id",
 })
-export class FooEntity {
+export class Foo1Entity {
     @PrimaryGeneratedColumn({ type: "int", name: "id", unsigned: true })
     id: number
 
-    @Column("int", { name: "parent_id", unsigned: true })
+    @Column({ type: "int", name: "parent_id", unsigned: true })
     parentId: number
 
     @TreeParent()
     @JoinColumn({ name: "parent_id", referencedColumnName: "id" })
-    parent: FooEntity
+    parent: Foo1Entity
 
     @TreeChildren()
-    children: FooEntity[]
+    children: Foo1Entity[]
 }
