@@ -11,7 +11,7 @@ import { Post } from "./entity/Post"
 import { LazyPost } from "./entity/LazyPost"
 import { LazyUser } from "./entity/LazyUser"
 
-describe.only("github issues > #10190 Cannot save a one-to-many relation", () => {
+describe("github issues > #10190 Cannot save a one-to-many relation", () => {
     let dataSources: DataSource[]
     before(
         async () =>
