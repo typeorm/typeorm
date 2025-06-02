@@ -668,9 +668,11 @@ export class EntityManager {
         entity:
             | QueryDeepPartialEntity<Entity>
             | QueryDeepPartialEntity<Entity>[],
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<InsertResult> {
         return this.createQueryBuilder()
             .insert()
+            .setSplitTableFunction(options?.splitTableFunction)
             .into(target)
             .values(entity)
             .execute()
@@ -720,6 +722,7 @@ export class EntityManager {
 
         return this.createQueryBuilder()
             .insert()
+            .setSplitTableFunction(options?.splitTableFunction)
             .into(target)
             .values(entities)
             .orUpdate(
@@ -759,6 +762,7 @@ export class EntityManager {
             | ObjectId[]
             | any,
         partialEntity: QueryDeepPartialEntity<Entity>,
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (
@@ -782,12 +786,14 @@ export class EntityManager {
         ) {
             return this.createQueryBuilder()
                 .update(target)
+                .setSplitTableFunction(options?.splitTableFunction)
                 .set(partialEntity)
                 .whereInIds(criteria)
                 .execute()
         } else {
             return this.createQueryBuilder()
                 .update(target)
+                .setSplitTableFunction(options?.splitTableFunction)
                 .set(partialEntity)
                 .where(criteria)
                 .execute()
@@ -813,6 +819,7 @@ export class EntityManager {
             | ObjectId
             | ObjectId[]
             | any,
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<DeleteResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (
@@ -836,12 +843,14 @@ export class EntityManager {
         ) {
             return this.createQueryBuilder()
                 .delete()
+                .setSplitTableFunction(options?.splitTableFunction)
                 .from(targetOrEntity)
                 .whereInIds(criteria)
                 .execute()
         } else {
             return this.createQueryBuilder()
                 .delete()
+                .setSplitTableFunction(options?.splitTableFunction)
                 .from(targetOrEntity)
                 .where(criteria)
                 .execute()
@@ -867,6 +876,7 @@ export class EntityManager {
             | ObjectId
             | ObjectId[]
             | any,
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (
@@ -890,12 +900,14 @@ export class EntityManager {
         ) {
             return this.createQueryBuilder()
                 .softDelete()
+                .setSplitTableFunction(options?.splitTableFunction)
                 .from(targetOrEntity)
                 .whereInIds(criteria)
                 .execute()
         } else {
             return this.createQueryBuilder()
                 .softDelete()
+                .setSplitTableFunction(options?.splitTableFunction)
                 .from(targetOrEntity)
                 .where(criteria)
                 .execute()
@@ -921,6 +933,7 @@ export class EntityManager {
             | ObjectId
             | ObjectId[]
             | any,
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (
@@ -944,12 +957,14 @@ export class EntityManager {
         ) {
             return this.createQueryBuilder()
                 .restore()
+                .setSplitTableFunction(options?.splitTableFunction)
                 .from(targetOrEntity)
                 .whereInIds(criteria)
                 .execute()
         } else {
             return this.createQueryBuilder()
                 .restore()
+                .setSplitTableFunction(options?.splitTableFunction)
                 .from(targetOrEntity)
                 .where(criteria)
                 .execute()
@@ -979,10 +994,14 @@ export class EntityManager {
     async existsBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<boolean> {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder(entityClass, metadata.name)
-            .setFindOptions({ where })
+            .setFindOptions({
+                where,
+                splitTableFunction: options?.splitTableFunction,
+            })
             .getExists()
     }
 
@@ -1011,10 +1030,14 @@ export class EntityManager {
     countBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<number> {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder(entityClass, metadata.name)
-            .setFindOptions({ where })
+            .setFindOptions({
+                where,
+                splitTableFunction: options?.splitTableFunction,
+            })
             .getCount()
     }
 
@@ -1025,8 +1048,15 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         columnName: PickKeysByType<Entity, number>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<number | null> {
-        return this.callAggregateFun(entityClass, "SUM", columnName, where)
+        return this.callAggregateFun(
+            entityClass,
+            "SUM",
+            columnName,
+            where,
+            options,
+        )
     }
 
     /**
@@ -1036,8 +1066,15 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         columnName: PickKeysByType<Entity, number>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<number | null> {
-        return this.callAggregateFun(entityClass, "AVG", columnName, where)
+        return this.callAggregateFun(
+            entityClass,
+            "AVG",
+            columnName,
+            where,
+            options,
+        )
     }
 
     /**
@@ -1047,8 +1084,15 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         columnName: PickKeysByType<Entity, number>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<number | null> {
-        return this.callAggregateFun(entityClass, "MIN", columnName, where)
+        return this.callAggregateFun(
+            entityClass,
+            "MIN",
+            columnName,
+            where,
+            options,
+        )
     }
 
     /**
@@ -1058,8 +1102,15 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         columnName: PickKeysByType<Entity, number>,
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<number | null> {
-        return this.callAggregateFun(entityClass, "MAX", columnName, where)
+        return this.callAggregateFun(
+            entityClass,
+            "MAX",
+            columnName,
+            where,
+            options,
+        )
     }
 
     private async callAggregateFun<Entity extends ObjectLiteral>(
@@ -1067,6 +1118,7 @@ export class EntityManager {
         fnName: "SUM" | "AVG" | "MIN" | "MAX",
         columnName: PickKeysByType<Entity, number>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[] = {},
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<number | null> {
         const metadata = this.connection.getMetadata(entityClass)
         const column = metadata.columns.find(
@@ -1079,7 +1131,10 @@ export class EntityManager {
         }
 
         const result = await this.createQueryBuilder(entityClass, metadata.name)
-            .setFindOptions({ where })
+            .setFindOptions({
+                where,
+                splitTableFunction: options?.splitTableFunction,
+            })
             .select(
                 `${fnName}(${this.connection.driver.escape(
                     column.databaseName,
@@ -1113,13 +1168,14 @@ export class EntityManager {
     async findBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<Entity[]> {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
             metadata.name,
         )
-            .setFindOptions({ where: where })
+            .setFindOptions({ where: where, ...options })
             .getMany()
     }
 
@@ -1150,13 +1206,14 @@ export class EntityManager {
     findAndCountBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<[Entity[], number]> {
         const metadata = this.connection.getMetadata(entityClass)
         return this.createQueryBuilder<Entity>(
             entityClass as any,
             metadata.name,
         )
-            .setFindOptions({ where })
+            .setFindOptions({ where, ...options })
             .getManyAndCount()
     }
 
@@ -1173,6 +1230,7 @@ export class EntityManager {
     async findByIds<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         ids: any[],
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<Entity[]> {
         // if no ids passed, no need to execute a query - just return an empty array of values
         if (!ids.length) return Promise.resolve([])
@@ -1183,6 +1241,7 @@ export class EntityManager {
             metadata.name,
         )
             .andWhereInIds(ids)
+            .setSplitTableFunction(options?.splitTableFunction)
             .getMany()
     }
 
@@ -1224,6 +1283,7 @@ export class EntityManager {
     async findOneBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<Entity | null> {
         const metadata = this.connection.getMetadata(entityClass)
 
@@ -1232,6 +1292,7 @@ export class EntityManager {
             .setFindOptions({
                 where,
                 take: 1,
+                splitTableFunction: options?.splitTableFunction,
             })
             .getOne()
     }
@@ -1249,6 +1310,7 @@ export class EntityManager {
     async findOneById<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         id: number | string | Date | ObjectId,
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<Entity | null> {
         const metadata = this.connection.getMetadata(entityClass)
 
@@ -1256,6 +1318,7 @@ export class EntityManager {
         return this.createQueryBuilder<Entity>(entityClass, metadata.name)
             .setFindOptions({
                 take: 1,
+                splitTableFunction: options?.splitTableFunction,
             })
             .whereInIds(metadata.ensureEntityIdMap(id))
             .getOne()
@@ -1288,8 +1351,9 @@ export class EntityManager {
     async findOneByOrFail<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<Entity> {
-        return this.findOneBy<Entity>(entityClass as any, where).then(
+        return this.findOneBy<Entity>(entityClass as any, where, options).then(
             (value) => {
                 if (value === null) {
                     return Promise.reject(
@@ -1307,12 +1371,21 @@ export class EntityManager {
      * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
      * @see https://stackoverflow.com/a/5972738/925151
      */
-    async clear<Entity>(entityClass: EntityTarget<Entity>): Promise<void> {
+    async clear<Entity>(
+        entityClass: EntityTarget<Entity>,
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
+    ): Promise<void> {
         const metadata = this.connection.getMetadata(entityClass)
         const queryRunner =
             this.queryRunner || this.connection.createQueryRunner()
         try {
-            return await queryRunner.clearTable(metadata.tablePath) // await is needed here because we are using finally
+            return await queryRunner.clearTable(
+                options?.splitTableFunction?.call(
+                    {} as any,
+                    metadata.tablePath,
+                    metadata,
+                ) || metadata.tablePath,
+            ) // await is needed here because we are using finally
         } finally {
             if (!this.queryRunner) await queryRunner.release()
         }
@@ -1326,6 +1399,7 @@ export class EntityManager {
         conditions: any,
         propertyPath: string,
         value: number | string,
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<UpdateResult> {
         const metadata = this.connection.getMetadata(entityClass)
         const column = metadata.findColumnWithPropertyPath(propertyPath)
@@ -1350,6 +1424,7 @@ export class EntityManager {
 
         return this.createQueryBuilder<Entity>(entityClass as any, "entity")
             .update(entityClass)
+            .setSplitTableFunction(options?.splitTableFunction)
             .set(values)
             .where(conditions)
             .execute()
@@ -1363,6 +1438,7 @@ export class EntityManager {
         conditions: any,
         propertyPath: string,
         value: number | string,
+        options?: { splitTableFunction?: FindOneOptions["splitTableFunction"] },
     ): Promise<UpdateResult> {
         const metadata = this.connection.getMetadata(entityClass)
         const column = metadata.findColumnWithPropertyPath(propertyPath)
@@ -1387,6 +1463,7 @@ export class EntityManager {
 
         return this.createQueryBuilder<Entity>(entityClass as any, "entity")
             .update(entityClass)
+            .setSplitTableFunction(options?.splitTableFunction)
             .set(values)
             .where(conditions)
             .execute()

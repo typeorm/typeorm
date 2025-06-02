@@ -1,4 +1,7 @@
+import { ObjectLiteral } from "../common/ObjectLiteral"
 import { UpsertType } from "../driver/types/UpsertType"
+import { EntityMetadata } from "../metadata/EntityMetadata"
+import { QueryBuilder } from "./QueryBuilder"
 
 export type InsertOrUpdateOptions = {
     /**
@@ -10,4 +13,11 @@ export type InsertOrUpdateOptions = {
      */
     indexPredicate?: string
     upsertType?: UpsertType
+
+    /** 分表模式，处理返回新表名 */
+    splitTableFunction?: <T extends ObjectLiteral>(
+        this: QueryBuilder<T>,
+        tablePath: string,
+        metadata?: EntityMetadata,
+    ) => string | undefined | null
 }

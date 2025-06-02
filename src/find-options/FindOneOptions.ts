@@ -9,6 +9,9 @@ import {
     FindOptionsRelations,
 } from "./FindOptionsRelations"
 import { FindOptionsOrder } from "./FindOptionsOrder"
+import { EntityMetadata } from "../metadata/EntityMetadata"
+import { QueryBuilder } from "../query-builder/QueryBuilder"
+import { ObjectLiteral } from "../common/ObjectLiteral"
 
 /**
  * Defines a special criteria to find specific entity.
@@ -111,4 +114,11 @@ export interface FindOneOptions<Entity = any> {
      * If this is set to true, SELECT query in a `find` method will be executed in a transaction.
      */
     transaction?: boolean
+
+    /** 分表模式，处理返回新表名 */
+    splitTableFunction?: <T extends ObjectLiteral>(
+        this: QueryBuilder<T>,
+        tablePath: string,
+        metadata?: EntityMetadata,
+    ) => string | undefined | null
 }

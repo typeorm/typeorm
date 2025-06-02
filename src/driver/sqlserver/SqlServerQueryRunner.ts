@@ -3125,7 +3125,7 @@ export class SqlServerQueryRunner
                 value: string
             }
 
-            const result: Obj[] = await this.query(sql )
+            const result: Obj[] = await this.query(sql)
             return result?.[0]?.value || ""
         }
 
@@ -3445,7 +3445,10 @@ export class SqlServerQueryRunner
                                 }
                             }
 
-                            const comment = await getTableComment(table.name,tableColumn.name)
+                            const comment = await getTableComment(
+                                table.name,
+                                tableColumn.name,
+                            )
                             tableColumn.comment = comment
 
                             return tableColumn

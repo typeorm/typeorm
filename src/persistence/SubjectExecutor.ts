@@ -435,6 +435,7 @@ export class SubjectExecutor {
                     const insertResult = await this.queryRunner.manager
                         .createQueryBuilder()
                         .insert()
+                        .setSplitTableFunction(this.options?.splitTableFunction)
                         .into(subjects[0].metadata.target)
                         .values(bulkInsertMaps)
                         .updateEntity(
@@ -467,6 +468,9 @@ export class SubjectExecutor {
                         await this.queryRunner.manager
                             .createQueryBuilder()
                             .insert()
+                            .setSplitTableFunction(
+                                this.options?.splitTableFunction,
+                            )
                             .into(subject.metadata.target)
                             .values(subject.insertedValueSet)
                             .updateEntity(
@@ -600,6 +604,8 @@ export class SubjectExecutor {
                 const updateQueryBuilder = this.queryRunner.manager
                     .createQueryBuilder()
                     .update(subject.metadata.target)
+                    .setSplitTableFunction(this.options?.splitTableFunction)
+
                     .set(updateMap)
                     .updateEntity(
                         this.options && this.options.reload === false
@@ -720,6 +726,8 @@ export class SubjectExecutor {
                 await this.queryRunner.manager
                     .createQueryBuilder()
                     .delete()
+                    .setSplitTableFunction(this.options?.splitTableFunction)
+
                     .from(subjects[0].metadata.target)
                     .where(deleteMaps)
                     .callListeners(false)
@@ -812,6 +820,7 @@ export class SubjectExecutor {
                     // also, we disable listeners because we call them on our own in persistence layer
                     const softDeleteQueryBuilder = this.queryRunner.manager
                         .createQueryBuilder()
+                        .setSplitTableFunction(this.options?.splitTableFunction)
                         .softDelete()
                         .from(subject.metadata.target)
                         .updateEntity(
@@ -935,6 +944,8 @@ export class SubjectExecutor {
                     // also, we disable listeners because we call them on our own in persistence layer
                     const softDeleteQueryBuilder = this.queryRunner.manager
                         .createQueryBuilder()
+                        .setSplitTableFunction(this.options?.splitTableFunction)
+
                         .restore()
                         .from(subject.metadata.target)
                         .updateEntity(

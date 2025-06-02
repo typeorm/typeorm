@@ -405,7 +405,10 @@ export class InsertQueryBuilder<
      * Creates INSERT express used to perform insert query.
      */
     protected createInsertExpression() {
-        const tableName = this.getTableName(this.getMainTableName())
+        const tableName = this.getTableName(
+            this.getMainTableName(),
+            this.expressionMap.mainAlias?.metadata,
+        )
         const valuesExpression = this.createValuesExpression() // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
         const returningExpression =
             this.connection.driver.options.type === "oracle" &&

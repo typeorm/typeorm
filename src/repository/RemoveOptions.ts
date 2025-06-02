@@ -1,3 +1,7 @@
+import { ObjectLiteral } from "../common/ObjectLiteral"
+import { EntityMetadata } from "../metadata/EntityMetadata"
+import { QueryBuilder } from "../query-builder/QueryBuilder"
+
 /**
  * Special options passed to Repository#remove and Repository#delete methods.
  */
@@ -27,4 +31,11 @@ export interface RemoveOptions {
      * This option is needed to perform very big insertions when you have issues with underlying driver parameter number limitation.
      */
     chunk?: number
+
+    /** 分表模式，处理返回新表名 */
+    splitTableFunction?: <T extends ObjectLiteral>(
+        this: QueryBuilder<T>,
+        tablePath: string,
+        metadata?: EntityMetadata,
+    ) => string | undefined | null
 }
