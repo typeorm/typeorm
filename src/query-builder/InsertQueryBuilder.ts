@@ -824,19 +824,37 @@ export class InsertQueryBuilder<
                         // } else if (column.isCreateDate || column.isUpdateDate) {
                         //     return "CURRENT_TIMESTAMP";
 
-                        // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
+                        // if column is generated  and provided one function for generation then we execute it
                     } else if (
                         column.isGenerated &&
-                        (column.generationStrategy === "uuid" ||
-                            typeof column.generationStrategy === "function") &&
+                        typeof column.generationStrategy === "function" &&
+                        value === undefined
+                    ) {
+                        // @ts-ignore
+                        value = column.generationStrategy(valueSet)
+
+                        expression += this.createParameter(value)
+
+                        if (
+                            !(
+                                valueSetIndex in
+                                this.expressionMap.locallyGenerated
+                            )
+                        ) {
+                            this.expressionMap.locallyGenerated[valueSetIndex] =
+                                {}
+                        }
+                        column.setEntityValue(
+                            this.expressionMap.locallyGenerated[valueSetIndex],
+                            value,
+                        )
+                    } else if (
+                        column.isGenerated &&
+                        column.generationStrategy === "uuid" &&
                         !this.connection.driver.isUUIDGenerationSupported() &&
                         value === undefined
                     ) {
-                        value =
-                        typeof column.generationStrategy === "function"
-                                // @ts-ignore
-                                ? column.generationStrategy(valueSet, column)
-                                : uuidv4()
+                        value = uuidv4()
                         expression += this.createParameter(value)
 
                         if (

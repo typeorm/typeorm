@@ -1,3 +1,5 @@
+import { ObjectLiteral } from "../../common/ObjectLiteral"
+
 /**
  * Table's column options.
  */
@@ -39,7 +41,12 @@ export interface TableColumnOptions {
     /**
      * Specifies generation strategy if this column will use auto increment.
      */
-    generationStrategy?: "uuid" | "increment" | "rowid" | "identity"
+    generationStrategy?:
+        | "uuid"
+        | "increment"
+        | "rowid"
+        | "identity"
+        | ((row:ObjectLiteral) => string | number)
 
     /**
      * Indicates if column is a primary key.

@@ -1,8 +1,9 @@
-import { User } from "./User"
+import { User } from "./entity/User"
 import { expect } from "chai"
 import { DataSource } from "../../src"
 import { SqlServerConnectionOptions } from "../../src/driver/sqlserver/SqlServerConnectionOptions"
-import { Roles } from "./Roles"
+import { Roles } from "./entity/Roles"
+import { UserGenerator } from "./entity/GeneratorUser"
 
 // npx mocha -r ts-node/register test/ding/mssql.test.ts
 describe("MSSQL Ding Functions", () => {
@@ -61,7 +62,7 @@ describe("MSSQL Ding Functions", () => {
                     meta?.tablePath,
                     meta?.givenTableName,
                 )
-                if (tablePath === "user") return `user_1`
+                // if (tablePath === "user") return `user_1`
                 return undefined
             })
             .leftJoinAndMapMany(
@@ -73,12 +74,48 @@ describe("MSSQL Ding Functions", () => {
 
             //   .leftJoinAndSelect("roles", "role", "role.userId=user.id")
             //   .getSql()
-            .getRawMany()
+            // .getRawMany()
         //   .printSql()
-        //   .getMany()
+          .getMany()
 
         console.log(data)
 
         await runner.release()
+    })
+    it("test generate uuid function", async () => {
+        const dataSourceOptions: SqlServerConnectionOptions = {
+            type: "mssql",
+            host: "192.168.2.3",
+            port: 1433,
+            database: "test",
+            username: "sa",
+            password: "CxKj78963214@@!@",
+            options: {
+                encrypt: false,
+                trustServerCertificate: true,
+            },
+            entities: [UserGenerator],
+        }
+
+        // reset data source just to make sure inside DataSource it's really being set
+        UserGenerator.useDataSource(null)
+
+        const dataSource = new DataSource(dataSourceOptions)
+        await dataSource.initialize()
+        await dataSource.synchronize(true)
+
+        const a = new UserGenerator()
+
+        a.name = "Ding Huang"
+
+        await dataSource.manager.save(UserGenerator, a)
+
+        const b = await dataSource.manager.findOneBy(UserGenerator, {
+            name: "Ding Huang",
+        })
+
+        console.log(a.id)
+        console.log(b?.id)
+        expect(b?.id).to.be.a("string")
     })
 })

@@ -1,4 +1,9 @@
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "../../src"
+import {
+    BaseEntity,
+    Column,
+    Entity,
+    PrimaryGeneratedColumn,
+} from "../../../src"
 
 @Entity({ comment: "角色表" })
 export class Roles extends BaseEntity {

@@ -637,7 +637,11 @@ export class CockroachDriver implements Driver {
         scale?: number
         isArray?: boolean
         isGenerated?: boolean
-        generationStrategy?: "increment" | "uuid" | "rowid"
+        generationStrategy?:
+            | "increment"
+            | "uuid"
+            | "rowid"
+            | ((row:ObjectLiteral) => string | number)
     }): string {
         if (
             column.type === Number ||

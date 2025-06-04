@@ -1,3 +1,4 @@
+import { ObjectLiteral } from "../common/ObjectLiteral"
 import { getMetadataArgsStorage } from "../globals"
 import { GeneratedMetadataArgs } from "../metadata-args/GeneratedMetadataArgs"
 
@@ -15,7 +16,7 @@ export function Generated(
         | "increment"
         | "uuid"
         | "rowid"
-        | (() => string | number) = "increment",
+        | ((row:ObjectLiteral) => string | number) = "increment",
 ): PropertyDecorator {
     return function (object: Object, propertyName: string) {
         getMetadataArgsStorage().generations.push({

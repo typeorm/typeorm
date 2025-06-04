@@ -114,7 +114,7 @@ export class ColumnMetadata {
         | "uuid"
         | "increment"
         | "rowid"
-        | (() => string | number)
+        | ((row:ObjectLiteral) => string | number)
 
     /**
      * Identity column type. Supports only in Postgres 10+.
