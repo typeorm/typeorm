@@ -827,11 +827,16 @@ export class InsertQueryBuilder<
                         // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
                     } else if (
                         column.isGenerated &&
-                        column.generationStrategy === "uuid" &&
+                        (column.generationStrategy === "uuid" ||
+                            typeof column.generationStrategy === "function") &&
                         !this.connection.driver.isUUIDGenerationSupported() &&
                         value === undefined
                     ) {
-                        value = uuidv4()
+                        value =
+                        typeof column.generationStrategy === "function"
+                                // @ts-ignore
+                                ? column.generationStrategy(valueSet, column)
+                                : uuidv4()
                         expression += this.createParameter(value)
 
                         if (
