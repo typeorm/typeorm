@@ -2545,13 +2545,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         let offset: number | undefined = this.expressionMap.offset,
             limit: number | undefined = this.expressionMap.limit
         if (
-            !offset &&
-            !limit &&
+            offset === undefined &&
+            limit === undefined &&
             this.expressionMap.joinAttributes.length === 0
         ) {
             offset = this.expressionMap.skip
             limit = this.expressionMap.take
         }
+
+        // Helper functions to check if values are set (including 0)
+        const hasLimit = limit !== undefined && limit !== null
+        const hasOffset = offset !== undefined && offset !== null
 
         if (this.connection.driver.options.type === "mssql") {
             // Due to a limitation in SQL Server's parser implementation it does not support using
@@ -2561,13 +2565,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // https://dba.stackexchange.com/a/193799
             let prefix = ""
             if (
-                (limit || offset) &&
+                (hasLimit || hasOffset) &&
                 Object.keys(this.expressionMap.allOrderBys).length <= 0
             ) {
                 prefix = " ORDER BY (SELECT NULL)"
             }
 
-            if (limit && offset)
+            if (hasLimit && hasOffset)
                 return (
                     prefix +
                     " OFFSET " +
@@ -2576,26 +2580,26 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     limit +
                     " ROWS ONLY"
                 )
-            if (limit)
+            if (hasLimit)
                 return (
                     prefix + " OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY"
                 )
-            if (offset) return prefix + " OFFSET " + offset + " ROWS"
+            if (hasOffset) return prefix + " OFFSET " + offset + " ROWS"
         } else if (
             DriverUtils.isMySQLFamily(this.connection.driver) ||
             this.connection.driver.options.type === "aurora-mysql" ||
             this.connection.driver.options.type === "sap" ||
             this.connection.driver.options.type === "spanner"
         ) {
-            if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
-            if (limit) return " LIMIT " + limit
-            if (offset) throw new OffsetWithoutLimitNotSupportedError()
+            if (hasLimit && hasOffset) return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit) return " LIMIT " + limit
+            if (hasOffset) throw new OffsetWithoutLimitNotSupportedError()
         } else if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
-            if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
-            if (limit) return " LIMIT " + limit
-            if (offset) return " LIMIT -1 OFFSET " + offset
+            if (hasLimit && hasOffset) return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit) return " LIMIT " + limit
+            if (hasOffset) return " LIMIT -1 OFFSET " + offset
         } else if (this.connection.driver.options.type === "oracle") {
-            if (limit && offset)
+            if (hasLimit && hasOffset)
                 return (
                     " OFFSET " +
                     offset +
@@ -2603,12 +2607,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     limit +
                     " ROWS ONLY"
                 )
-            if (limit) return " FETCH NEXT " + limit + " ROWS ONLY"
-            if (offset) return " OFFSET " + offset + " ROWS"
+            if (hasLimit) return " FETCH NEXT " + limit + " ROWS ONLY"
+            if (hasOffset) return " OFFSET " + offset + " ROWS"
         } else {
-            if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
-            if (limit) return " LIMIT " + limit
-            if (offset) return " OFFSET " + offset
+            if (hasLimit && hasOffset) return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit) return " LIMIT " + limit
+            if (hasOffset) return " OFFSET " + offset
         }
 
         return ""
