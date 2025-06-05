@@ -2591,11 +2591,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             this.connection.driver.options.type === "sap" ||
             this.connection.driver.options.type === "spanner"
         ) {
-            if (hasLimit && hasOffset) return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit && hasOffset)
+                return " LIMIT " + limit + " OFFSET " + offset
             if (hasLimit) return " LIMIT " + limit
             if (hasOffset) throw new OffsetWithoutLimitNotSupportedError()
         } else if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
-            if (hasLimit && hasOffset) return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit && hasOffset)
+                return " LIMIT " + limit + " OFFSET " + offset
             if (hasLimit) return " LIMIT " + limit
             if (hasOffset) return " LIMIT -1 OFFSET " + offset
         } else if (this.connection.driver.options.type === "oracle") {
@@ -2610,7 +2612,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (hasLimit) return " FETCH NEXT " + limit + " ROWS ONLY"
             if (hasOffset) return " OFFSET " + offset + " ROWS"
         } else {
-            if (hasLimit && hasOffset) return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit && hasOffset)
+                return " LIMIT " + limit + " OFFSET " + offset
             if (hasLimit) return " LIMIT " + limit
             if (hasOffset) return " OFFSET " + offset
         }
