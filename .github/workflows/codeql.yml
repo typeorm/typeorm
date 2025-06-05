@@ -8,6 +8,10 @@ on:
   schedule:
     - cron: "21 14 * * 2"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: Analyze (javascript-typescript)
