@@ -28,7 +28,7 @@ describe("github issues > #8647 Collation changes are not synced to RDBMS", () =
 
     const COLUMN_NAME = "name"
 
-    it("ALTER ... COLATE query should be created", async () => {
+    it("ALTER ... COLLATE query should be created", async () => {
         await Promise.all(
             connections.map(async (connection) => {
                 // change metadata

@@ -2197,7 +2197,7 @@ export class PostgresQueryRunner
 
                 const oldCollation = oldColumn.collation
                     ? `"${oldColumn.collation}"`
-                    : `pg_catalog."default"` // if there's no old collation, use defualt
+                    : `pg_catalog."default"` // if there's no old collation, use default
 
                 downQueries.push(
                     new Query(
