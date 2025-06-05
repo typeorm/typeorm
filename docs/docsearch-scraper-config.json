@@ -1,10 +1,10 @@
 {
   "index_name": "typeorm-docs",
   "start_urls": [
-    "https://typeorm.io/"
+    "https://new-docs.typeorm.pages.dev/"
   ],
   "sitemap_urls": [
-    "https://typeorm.io/sitemap.xml"
+    "https://new-docs.typeorm.pages.dev/sitemap.xml"
   ],
   "allowed_domains":["typeorm.io"],
   "sitemap_alternate_links": true,
