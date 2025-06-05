@@ -689,6 +689,34 @@ describe("query builder > select", () => {
                 }),
             ))
 
+        it("should work correctly with non-zero limits and offsets", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const sql = connection
+                        .createQueryBuilder(Post, "post")
+                        .limit(5)
+                        .offset(10)
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.contain("LIMIT 5 OFFSET 10")
+                }),
+            ))
+
+        it("should handle limit(0) with offset(0)", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const sql = connection
+                        .createQueryBuilder(Post, "post")
+                        .limit(0)
+                        .offset(0)
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.contain("LIMIT 0 OFFSET 0")
+                }),
+            ))
+
         it("should generate LIMIT 0 when take is set to 0 without joins", () =>
             Promise.all(
                 connections.map(async (connection) => {
