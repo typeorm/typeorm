@@ -6,7 +6,7 @@
   "sitemap_urls": [
     "https://new-docs.typeorm.pages.dev/sitemap.xml"
   ],
-  "allowed_domains":["typeorm.io"],
+  "allowed_domains":["new-docs.typeorm.pages.dev"],
   "sitemap_alternate_links": true,
   "stop_urls": [],
   "selectors": {
