@@ -73,6 +73,9 @@ export class MigrationRevertCommand implements yargs.CommandModule {
 
             await dataSource.undoLastMigration(options)
             await dataSource.destroy()
+            
+            // exit process if no errors
+            process.exit(0)
         } catch (err) {
             PlatformTools.logCmdErr("Error during migration revert:", err)
 
