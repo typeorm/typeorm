@@ -428,6 +428,10 @@ export class InsertQueryBuilder<
                 return this.createMergeExpression()
         }
         const tableName = this.getTableName(this.getMainTableName())
+        const tableOrAliasName =
+            this.alias !== this.getMainTableName()
+                ? this.escape(this.alias)
+                : tableName
         const valuesExpression = this.createValuesExpression() // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
         const returningExpression =
             this.connection.driver.options.type === "oracle" &&
@@ -610,9 +614,7 @@ export class InsertQueryBuilder<
                         this.expressionMap.onUpdate.overwriteCondition ??= []
                         const wheres = overwrite.map<WhereClause>((column) => ({
                             type: "or",
-                            condition: `${this.escape(
-                                this.alias,
-                            )}.${this.escape(
+                            condition: `${tableOrAliasName}.${this.escape(
                                 column,
                             )} IS DISTINCT FROM EXCLUDED.${this.escape(
                                 column,

@@ -139,6 +139,7 @@ describe("query builder > insert > merge into", () => {
                     })
             }),
         ))
+
     it("should perform insertion using overwrite condition and skipping update on no change", () =>
         Promise.all(
             connections.map(async (connection) => {
@@ -183,6 +184,7 @@ describe("query builder > insert > merge into", () => {
                 }
             }),
         ))
+
     it("should throw error if using indexPredicate and an unsupported driver", () =>
         Promise.all(
             connections.map(async (connection) => {
