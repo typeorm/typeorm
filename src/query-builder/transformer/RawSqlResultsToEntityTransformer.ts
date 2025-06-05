@@ -154,10 +154,10 @@ export class RawSqlResultsToEntityTransformer {
             const discriminatorValues = rawResults.map(
                 (result) =>
                     result[
-                        this.buildAlias(
-                            alias.name,
-                            alias.metadata.discriminatorColumn!.databaseName,
-                        )
+                    this.buildAlias(
+                        alias.name,
+                        alias.metadata.discriminatorColumn!.databaseName,
+                    )
                     ],
             )
             const discriminatorMetadata = metadata.childEntityMetadatas.find(
@@ -245,6 +245,7 @@ export class RawSqlResultsToEntityTransformer {
                 entity,
                 this.driver.prepareHydratedValue(value, column),
             )
+
         }
         return hasData
     }
@@ -408,12 +409,12 @@ export class RawSqlResultsToEntityTransformer {
                 referenceColumnName = relation.isOwning
                     ? relation.joinColumns[0].referencedColumn!.databaseName
                     : relation.inverseRelation!.joinColumns[0].referencedColumn!
-                          .databaseName
+                        .databaseName
             }
 
             const referenceColumnValue =
                 rawSqlResults[0][
-                    this.buildAlias(alias.name, referenceColumnName)
+                this.buildAlias(alias.name, referenceColumnName)
                 ] // we use zero index since its grouped data // todo: selection with alias for entity columns wont work
             if (
                 referenceColumnValue !== undefined &&
@@ -497,10 +498,10 @@ export class RawSqlResultsToEntityTransformer {
                     valueMap[column.databaseName] =
                         this.driver.prepareHydratedValue(
                             rawSqlResult[
-                                this.buildAlias(
-                                    parentAlias,
-                                    column.databaseName,
-                                )
+                            this.buildAlias(
+                                parentAlias,
+                                column.databaseName,
+                            )
                             ],
                             column,
                         )
@@ -508,10 +509,10 @@ export class RawSqlResultsToEntityTransformer {
                     valueMap[column.databaseName] =
                         this.driver.prepareHydratedValue(
                             rawSqlResult[
-                                this.buildAlias(
-                                    parentAlias,
-                                    column.referencedColumn!.databaseName,
-                                )
+                            this.buildAlias(
+                                parentAlias,
+                                column.referencedColumn!.databaseName,
+                            )
                             ],
                             column.referencedColumn!,
                         )
@@ -600,7 +601,7 @@ export class RawSqlResultsToEntityTransformer {
                                 column.isVirtual &&
                                 column.referencedColumn &&
                                 column.referencedColumn.propertyName !==
-                                    column.propertyName
+                                column.propertyName
                             ) {
                                 // if column is a relation
                                 value =
