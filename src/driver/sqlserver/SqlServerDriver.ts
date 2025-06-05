@@ -147,7 +147,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    supportedUpsertTypes: UpsertType[] = []
+    supportedUpsertTypes: UpsertType[] = ["merge-into"]
 
     /**
      * Gets list of spatial column data types.
