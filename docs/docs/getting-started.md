@@ -111,7 +111,7 @@ export class User {
 And your domain logic looks like this:
 
 ```typescript
-const userRepository = MyDataSource.getRepository(User)
+const userRepository = AppDataSource.getRepository(User)
 
 const user = new User()
 user.firstName = "Timber"
