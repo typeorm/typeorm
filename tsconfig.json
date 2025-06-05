@@ -22,5 +22,5 @@
     "useUnknownInCatchVariables": false
   },
   "include": ["sample", "src", "test", "*.ts"],
-  "exclude": ["build", "node_modules", "temp", "tmp"]
+  "exclude": ["build", "node_modules", "temp", "tmp", "sample/playground"]
 }

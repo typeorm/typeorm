@@ -85,16 +85,32 @@ export class SubjectChangedColumnsComputer {
                 if (entityValue !== null) {
                     switch (column.type) {
                         case "date":
-                            normalizedValue =
-                                DateUtils.mixedDateToDateString(entityValue)
+                            normalizedValue = column.isArray
+                                ? entityValue.map((date: Date) =>
+                                      DateUtils.mixedDateToDateString(date),
+                                  )
+                                : DateUtils.mixedDateToDateString(entityValue)
+                            databaseValue = column.isArray
+                                ? databaseValue.map((date: Date) =>
+                                      DateUtils.mixedDateToDateString(date),
+                                  )
+                                : DateUtils.mixedDateToDateString(databaseValue)
                             break
 
                         case "time":
                         case "time with time zone":
                         case "time without time zone":
                         case "timetz":
-                            normalizedValue =
-                                DateUtils.mixedDateToTimeString(entityValue)
+                            normalizedValue = column.isArray
+                                ? entityValue.map((date: Date) =>
+                                      DateUtils.mixedDateToTimeString(date),
+                                  )
+                                : DateUtils.mixedDateToTimeString(entityValue)
+                            databaseValue = column.isArray
+                                ? databaseValue.map((date: Date) =>
+                                      DateUtils.mixedDateToTimeString(date),
+                                  )
+                                : DateUtils.mixedDateToTimeString(databaseValue)
                             break
 
                         case "datetime":
@@ -105,14 +121,26 @@ export class SubjectChangedColumnsComputer {
                         case "timestamp with time zone":
                         case "timestamp with local time zone":
                         case "timestamptz":
-                            normalizedValue =
-                                DateUtils.mixedDateToUtcDatetimeString(
-                                    entityValue,
-                                )
-                            databaseValue =
-                                DateUtils.mixedDateToUtcDatetimeString(
-                                    databaseValue,
-                                )
+                            normalizedValue = column.isArray
+                                ? entityValue.map((date: Date) =>
+                                      DateUtils.mixedDateToUtcDatetimeString(
+                                          date,
+                                      ),
+                                  )
+                                : DateUtils.mixedDateToUtcDatetimeString(
+                                      entityValue,
+                                  )
+
+                            databaseValue = column.isArray
+                                ? databaseValue.map((date: Date) =>
+                                      DateUtils.mixedDateToUtcDatetimeString(
+                                          date,
+                                      ),
+                                  )
+                                : DateUtils.mixedDateToUtcDatetimeString(
+                                      databaseValue,
+                                  )
+
                             break
 
                         case "json":
@@ -155,7 +183,10 @@ export class SubjectChangedColumnsComputer {
                 }
 
                 // if value is not changed - then do nothing
-                if (
+                if (column.isArray) {
+                    if (OrmUtils.deepCompare(normalizedValue, databaseValue))
+                        return
+                } else if (
                     Buffer.isBuffer(normalizedValue) &&
                     Buffer.isBuffer(databaseValue)
                 ) {
