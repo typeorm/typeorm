@@ -7,7 +7,7 @@ import { Account } from "./Account"
 @Entity()
 @TableInheritance({ column: { type: "varchar", name: "type" } })
 export class AccountActivationToken extends Token {
-    @OneToOne((type) => Account, "accountActivationToken", {
+    @OneToOne(() => Account, "accountActivationToken", {
         cascade: ["insert", "update"],
     })
     @JoinColumn()

@@ -32,8 +32,8 @@ const rawData = await manager.query(`SELECT * FROM USERS`)
 // You can also use parameters to avoid SQL injection
 // The syntax differs between the drivers
 
-// aurora-mysql, better-sqlite3, capacitor, cordova, 
-// expo, mariadb, mysql, nativescript, react-native, 
+// aurora-mysql, better-sqlite3, capacitor, cordova,
+// expo, mariadb, mysql, nativescript, react-native,
 // sap, sqlite, sqljs
 const rawData = await manager.query(
     'SELECT * FROM USERS WHERE name = ? and age = ?',
@@ -64,6 +64,14 @@ const rawData = await manager.query(
     [ 'John', 24 ]
 )
 ```
+
+-   `sql` - Executes a raw SQL query using template literals.
+
+```typescript
+const rawData = await manager.sql`SELECT * FROM USERS WHERE name = ${'John'} and age = ${24}`
+```
+
+Learn more about using the [SQL Tag syntax](sql-tag.md).
 
 -   `createQueryBuilder` - Creates a query builder use to build SQL queries.
     Learn more about [QueryBuilder](select-query-builder.md).
@@ -168,7 +176,7 @@ await manager.insert(User, [
 ])
 ```
 
--   `update` - Partially updates entity by a given update options or entity id.
+-   `update` - Updates entities by entity id, ids or given conditions. Sets fields from supplied partial entity.
 
 ```typescript
 await manager.update(User, { age: 18 }, { category: "ADULT" })
@@ -176,6 +184,13 @@ await manager.update(User, { age: 18 }, { category: "ADULT" })
 
 await manager.update(User, 1, { firstName: "Rizzrak" })
 // executes UPDATE user SET firstName = Rizzrak WHERE id = 1
+```
+
+-   `updateAll` - Updates *all* entities of target type (without WHERE clause). Sets fields from supplied partial entity.
+
+```typescript
+await manager.updateAll(User, { category: "ADULT" })
+// executes UPDATE user SET category = ADULT
 ```
 
 -   `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
@@ -198,13 +213,22 @@ await manager.upsert(
  **/
 ```
 
--   `delete` - Deletes entities by entity id, ids or given conditions:
+-   `delete` - Deletes entities by entity id, ids or given conditions.
 
 ```typescript
 await manager.delete(User, 1)
 await manager.delete(User, [1, 2, 3])
 await manager.delete(User, { firstName: "Timber" })
 ```
+
+-   `deleteAll` - Deletes *all* entities of target type (without WHERE clause).
+
+```typescript
+await manager.deleteAll(User)
+// executes DELETE FROM user
+```
+
+Refer also to the `clear` method, which performs database `TRUNCATE TABLE` operation instead.
 
 -   `increment` - Increments some column by provided value of entities that match given options.
 

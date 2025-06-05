@@ -56,7 +56,7 @@ Different RDBMS-es have their own specific options.
     You can also specify different types of logging to be enabled, for example `["query", "error", "schema"]`.
     Learn more about [Logging](logging.md).
 
--   `logger` - Logger to be used for logging purposes. Possible values are "advanced-console", "simple-console" and "file".
+-   `logger` - Logger to be used for logging purposes. Possible values are "advanced-console", "formatted-console", "simple-console" and "file".
     Default is "advanced-console". You can also specify a logger class that implements `Logger` interface.
     Learn more about [Logging](logging.md).
 
@@ -162,6 +162,11 @@ Different RDBMS-es have their own specific options.
 -   `ssl` - object with SSL parameters or a string containing the name of the SSL profile.
     See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
+-   `enableQueryTimeout` - If a value is specified for maxQueryExecutionTime, in addition to generating a warning log when a
+    query exceeds this time limit,
+    the specified maxQueryExecutionTime value is also used as the timeout for the query.
+    For more information, check https://github.com/mysqljs/mysql?tab=readme-ov-file#timeouts
+
 ## `postgres` / `cockroachdb` data source options
 
 -   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
@@ -242,6 +247,7 @@ Different RDBMS-es have their own specific options.
 -   `database` - Database name
 
 ## `mssql` data source options
+
 Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation. See [SqlServerConnectionOptions.ts](..\src\driver\sqlserver\SqlServerConnectionOptions.ts) for details on exposed attributes.
 
 -   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
@@ -547,9 +553,9 @@ The following TNS connection string will be used in the next explanations:
      (SERVER=shared)))
 )
 ```
+
 -   `sid` - The System Identifier (SID) identifies a specific database instance. For example, "sales".
 -   `serviceName` - The Service Name is an identifier of a database service. For example, `sales.us.example.com`.
-
 
 ## Data Source Options example
 

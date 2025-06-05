@@ -23,7 +23,7 @@ export class Post {
         this.title += "!"
     }
 
-    loaded: Boolean = false
+    loaded: boolean = false
 
     @AfterLoad()
     async afterLoad() {

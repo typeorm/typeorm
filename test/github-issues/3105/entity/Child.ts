@@ -21,7 +21,7 @@ export class Child {
     })
     public parentId: number
 
-    @ManyToOne((type) => Parent, (parent) => parent.children)
+    @ManyToOne(() => Parent, (parent) => parent.children)
     @JoinColumn({
         name: "parent_id",
         referencedColumnName: "id",

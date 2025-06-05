@@ -21,7 +21,7 @@ export class Detail {
     })
     masterId: string
 
-    @ManyToOne((type) => Master, (master) => master.details, {
+    @ManyToOne(() => Master, (master) => master.details, {
         nullable: false,
         onDelete: "CASCADE",
     })

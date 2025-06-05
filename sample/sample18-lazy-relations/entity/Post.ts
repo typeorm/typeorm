@@ -16,13 +16,13 @@ export class Post {
     @Column()
     text: string
 
-    @ManyToOne((type) => Author, (author) => author.posts, {
+    @ManyToOne(() => Author, (author) => author.posts, {
         cascade: ["insert"],
         onDelete: "SET NULL",
     })
     author: Promise<Author | null>
 
-    @ManyToMany((type) => Category, (category) => category.posts, {
+    @ManyToMany(() => Category, (category) => category.posts, {
         cascade: true,
     })
     @JoinTable()

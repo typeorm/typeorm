@@ -15,6 +15,6 @@ export class Image {
     @Column()
     isRemoved: boolean = false
 
-    @ManyToOne((type) => Category, (category) => category.images)
+    @ManyToOne(() => Category, (category) => category.images)
     category: Category[]
 }
