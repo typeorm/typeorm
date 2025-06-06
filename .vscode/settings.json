@@ -1,4 +1,8 @@
 {
+  "[json][jsonc][javascript][markdown][typescript][yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
   "editor.formatOnSave": true,
+  "git.branchProtection": ["master"],
   "typescript.tsdk": "node_modules/typescript/lib"
 }
