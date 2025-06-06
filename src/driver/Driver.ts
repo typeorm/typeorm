@@ -16,6 +16,8 @@ import { TableForeignKey } from "../schema-builder/table/TableForeignKey"
 import { UpsertType } from "./types/UpsertType"
 import { OnDeleteType } from "../metadata/types/OnDeleteType"
 import { OnUpdateType } from "../metadata/types/OnUpdateType"
+import { TableIndex } from "../schema-builder/table/TableIndex"
+import { IndexMetadata } from "../metadata/IndexMetadata"
 
 export type ReturningType = "insert" | "update" | "delete"
 
@@ -282,4 +284,17 @@ export interface Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string
+
+    /**
+     * Returns true if driver supports type indices
+     */
+    isIndicesTypeSupported(): boolean
+
+    /**
+     * Returns true if both indexes types are equivalent
+     */
+    compareTableIndexTypes?: (
+        indexA: IndexMetadata,
+        indexB: TableIndex,
+    ) => boolean
 }
