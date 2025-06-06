@@ -142,7 +142,7 @@ Typeorm supports generating SQL with this option if when the concurrent option i
 @Index(["firstName", "middleName", "lastName"], { concurrent: true })
 ```
 
-For more information see the [postgres documentation](https://www.postgresql.org/docs/current/sql-createindex.html).
+For more information see the [Postgres documentation](https://www.postgresql.org/docs/current/sql-createindex.html).
 
 ## Disabling synchronization
 
