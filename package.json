@@ -76,6 +76,7 @@
   "scripts": {
     "changelog": "standard-changelog",
     "compile": "rimraf ./build && tsc",
+    "docs:dev": "cd docs && npm run start",
     "format": "prettier --cache --write \"./**/*.ts\"",
     "format:ci": "prettier --check \"./**/*.ts\"",
     "lint": "eslint .",
