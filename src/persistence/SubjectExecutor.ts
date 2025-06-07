@@ -16,6 +16,7 @@ import { OrmUtils } from "../util/OrmUtils"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { EntityTarget } from "../common/EntityTarget"
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -654,15 +655,18 @@ export class SubjectExecutor {
         }
 
         // Run nested set updates one by one
-        const nestedSetPromise = new Promise<void>(async (ok, fail) => {
-            for (const subject of nestedSetSubjects) {
-                try {
-                    await updateSubject(subject)
-                } catch (error) {
-                    fail(error)
+        const nestedSetPromise = new Promise<void>((ok, fail) => {
+            (async () => {
+                for (const subject of nestedSetSubjects) {
+                    try {
+                        await updateSubject(subject)
+                    } catch (error) {
+                        fail(error)
+                        return
+                    }
                 }
-            }
-            ok()
+                ok()
+            })()
         })
 
         // Run all remaining subjects in parallel
@@ -1065,7 +1069,9 @@ export class SubjectExecutor {
         subjects.forEach((subject) => {
             if (!subject.entity) return
 
-            // set values to "null" for nullable columns that did not have values
+            // Only set undefined nullable columns to null during insert
+            const isInsert = subject.mustBeInserted
+
             subject.metadata.columns.forEach((column) => {
                 // if table inheritance is used make sure this column is not child's column
                 if (
@@ -1082,8 +1088,8 @@ export class SubjectExecutor {
                 // if column is deletedAt
                 if (column.isDeleteDate) return
 
-                // update nullable columns
-                if (column.isNullable) {
+                // update nullable columns only on insert
+                if (isInsert && column.isNullable) {
                     const columnValue = column.getEntityValue(subject.entity!)
                     if (columnValue === undefined)
                         column.setEntityValue(subject.entity!, null)
@@ -1117,7 +1123,7 @@ export class SubjectExecutor {
             // merge into entity all generated values returned by a database
             if (subject.generatedMap)
                 this.queryRunner.manager.merge(
-                    subject.metadata.target as any,
+                    subject.metadata.target as EntityTarget<ObjectLiteral>,
                     subject.entity,
                     subject.generatedMap,
                 )
