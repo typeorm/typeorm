@@ -32,6 +32,14 @@ const config: Config = {
         locales: ["en"],
     },
 
+    scripts: [
+        {
+            src: "https://plausible.io/js/script.hash.js",
+            defer: true,
+            "data-domain": "typeorm.io",
+        },
+    ],
+
     presets: [
         [
             "classic",
