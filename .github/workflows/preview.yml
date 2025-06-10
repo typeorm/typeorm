@@ -8,8 +8,6 @@ on:
       - "gulpfile.ts"
       - "package.json"
       - "tsconfig.json"
-    paths-ignore:
-      - "docs/**"
 
 jobs:
   release:
