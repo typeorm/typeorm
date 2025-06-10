@@ -540,6 +540,20 @@ The following TNS connection string will be used in the next explanations:
 -   `sid` - The System Identifier (SID) identifies a specific database instance. For example, "sales".
 -   `serviceName` - The Service Name is an identifier of a database service. For example, `sales.us.example.com`.
 
+## `sap` data source options
+
+-   `host` - The hostname of the SAP HANA server. For example, `"localhost"`.
+-   `port` - The port number of the SAP HANA server. For example, `30015`.
+-   `username` - The username to connect to the SAP HANA server. For example, `"SYSTEM"`.
+-   `password` - The password to connect to the SAP HANA server. For example, `"password"`.
+-   `database` - The name of the database to connect to. For example, `"HXE"`.
+-   `encrypt` - Whether to encrypt the connection. For example, `true`.
+-   `sslValidateCertificate` - Whether to validate the SSL certificate. For example, `true`.
+-   `key`, `cert` and `ca` for the encrypted connection.
+-   `pool` - Options for the connection pool.
+
+See the official documentation of SAP HANA Client for more details as well as the `extra` properties: [Node.js Connection Properties](https://help.sap.com/docs/SAP_HANA_CLIENT/f1b440ded6144a54ada97ff95dac7adf/4fe9978ebac44f35b9369ef5a4a26f4c.html?locale=en-US).
+
 ## Data Source Options example
 
 Here is a small example of data source options for mysql:

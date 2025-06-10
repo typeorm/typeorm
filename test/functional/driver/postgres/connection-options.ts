@@ -7,7 +7,7 @@ import {
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
 
-describe("postgres specific options", () => {
+describe("driver > postgres > connection options", () => {
     let connections: DataSource[]
     before(
         async () =>
@@ -21,7 +21,7 @@ describe("postgres specific options", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should set application_name", () =>
+    it("should set session variable application_name", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const result = await connection.query(

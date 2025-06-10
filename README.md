@@ -215,10 +215,7 @@ await timber.remove()
 
         ```
         npm install @sap/hana-client
-        npm install hdb-pool
         ```
-
-        _SAP Hana support made possible by the sponsorship of [Neptune Software](https://www.neptune-software.com/)._
 
     - for **Google Cloud Spanner**
 
