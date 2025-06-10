@@ -6,11 +6,11 @@ name: test
 
 on:
   push:
-    branches: ["**"]
+    branches: ["master"]
     paths-ignore:
       - "docs/**"
   pull_request:
-    branches: ["master"]
+    branches: ["**"]
     paths-ignore:
       - "docs/**"
 
