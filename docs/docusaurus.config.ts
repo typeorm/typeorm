@@ -32,6 +32,18 @@ const config: Config = {
         locales: ["en"],
     },
 
+    // Plausible cookieless analytics for tracking site usage while respecting privacy
+    scripts:
+        process.env.NODE_ENV === "production"
+            ? [
+                  {
+                      src: "https://plausible.io/js/script.hash.js",
+                      defer: true,
+                      "data-domain": "typeorm.io",
+                  },
+              ]
+            : [],
+
     presets: [
         [
             "classic",
