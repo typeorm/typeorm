@@ -7,8 +7,12 @@ name: test
 on:
   push:
     branches: ["**"]
+    paths-ignore:
+      - "docs/**"
   pull_request:
     branches: ["master"]
+    paths-ignore:
+      - "docs/**"
 
 jobs:
   formatting:
