@@ -152,6 +152,10 @@ Different RDBMS-es have their own specific options.
 
 ## `postgres` / `cockroachdb` data source options
 
+PostgreSQL and CockroachDB are supported as TypeORM drivers. Databases that are PostgreSQL-compatible can also be used with TypeORM via the `postgres` data source option.
+
+To use YugabyteDB, refer to [their ORM docs](https://docs.yugabyte.com/stable/drivers-orms/nodejs/typeorm/) to get started. Note that because some postgres features are [not supported](https://docs.yugabyte.com/stable/develop/postgresql-compatibility/#unsupported-postgresql-features) by YugabyteDB, some TypeORM functionality may be limited.
+
 -   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
 -   `host` - Database host.
