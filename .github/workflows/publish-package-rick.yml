@@ -1,0 +1,35 @@
+name: Publish Package to npmjs rick
+on:
+  push:
+    branches:
+      - 0.3.22-optimistic-locking
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+      - run: |
+          npm ci
+          npm run package
+
+      - name: Set version using GitHub run number
+        run: |
+          cd build/package
+          base_version="0.3.22"
+          build_number="${{ github.run_number }}"
+          npm version "${base_version}-post.${build_number}" --no-git-tag-version
+
+      - name: Publish to npm
+        run: npm publish --access public --tag latest
+        working-directory: build/package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
