@@ -1875,11 +1875,28 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 queryRunner,
             )
             this.expressionMap.queryEntity = false
-            const cacheId = this.expressionMap.cacheId
-            // Creates a new cacheId for the count query, or it will retreive the above query results
-            // and count will return 0.
-            this.expressionMap.cacheId = cacheId ? `${cacheId}-count` : cacheId
-            const count = await this.executeCountQuery(queryRunner)
+
+            let count
+            if (
+                ((this.expressionMap.take !== undefined &&
+                    entitiesAndRaw.entities.length < this.expressionMap.take) ||
+                    (this.expressionMap.limit !== undefined &&
+                        entitiesAndRaw.entities.length <
+                            this.expressionMap.limit)) &&
+                this.expressionMap.skip === undefined &&
+                this.expressionMap.offset === undefined
+            ) {
+                // the limit was not reached, we already know the count
+                count = entitiesAndRaw.entities.length
+            } else {
+                const cacheId = this.expressionMap.cacheId
+                // Creates a new cacheId for the count query, or it will retreive the above query results
+                // and count will return 0.
+                this.expressionMap.cacheId = cacheId
+                    ? `${cacheId}-count`
+                    : cacheId
+                count = await this.executeCountQuery(queryRunner)
+            }
             const results: [Entity[], number] = [entitiesAndRaw.entities, count]
 
             // close transaction if we started it
