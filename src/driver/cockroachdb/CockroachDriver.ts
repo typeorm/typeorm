@@ -346,8 +346,9 @@ export class CockroachDriver implements Driver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("cockroachdb"))
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("cockroachdb")
+        }
 
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
