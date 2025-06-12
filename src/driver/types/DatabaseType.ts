@@ -21,3 +21,4 @@ export type DatabaseType =
     | "better-sqlite3"
     | "capacitor"
     | "spanner"
+    | "duckdb"
