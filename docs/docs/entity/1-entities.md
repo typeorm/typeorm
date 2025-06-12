@@ -401,9 +401,14 @@ or
 
 ### Column types for `sap`
 
-`tinyint`, `smallint`, `integer`, `bigint`, `smalldecimal`, `decimal`, `real`, `double`, `date`, `time`, `seconddate`, `timestamp`, `boolean`, `char`, `nchar`, `varchar`, `nvarchar`, `text`, `alphanum`, `shorttext`, `array`, `varbinary`, `blob`, `clob`, `nclob`, `st_geometry`, `st_point`.
+SAP HANA 2.0 and SAP HANA Cloud support slightly different data types. Check the SAP Help pages for more information:
 
-> Note: SAP HANA Cloud deprecated or removed some of these data types. TypeORM will convert them to the closest available alternative when connected to a Cloud version.
+-   [SAP HANA 2.0 Data Types](https://help.sap.com/docs/SAP_HANA_PLATFORM/4fe29514fd584807ac9f2a04f6754767/20a1569875191014b507cf392724b7eb.html?locale=en-US)
+-   [SAP HANA Cloud Data Types](https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/data-types)
+
+TypeORM's `SapDriver` supports `tinyint`, `smallint`, `integer`, `bigint`, `smalldecimal`, `decimal`, `real`, `double`, `date`, `time`, `seconddate`, `timestamp`, `boolean`, `char`, `nchar`, `varchar`, `nvarchar`, `text`, `alphanum`, `shorttext`, `array`, `varbinary`, `blob`, `clob`, `nclob`, `st_geometry`, `st_point`, `real_vector`. Some of these are deprecated or removed in SAP HANA Cloud, and will be converted to the closest available alternative when connected to a Cloud database. We strongly suggest to use the data types native the the version of HANA you are using.
+
+The `real_vector` data type was introduced in SAP HANA Cloud and it is usable since `@sap/hana-client@2.21.16`. By default, the client will return a `Buffer` in the `fvecs` format, which is more efficient. It is possible to let the driver convert the values to a `number[]` by adding `{ extra: { vectorOutputType: "Array" } }` to the connection options. See more about [REAL_VECTOR Support in the SAP HANA Client Documentation](https://help.sap.com/docs/SAP_HANA_CLIENT/f1b440ded6144a54ada97ff95dac7adf/0d197e4389c64e6b9cf90f6f698f62fe.html).
 
 ### Column types for `spanner`
 
