@@ -68,10 +68,11 @@ const rawData = await manager.query(
 -   `sql` - Executes a raw SQL query using template literals.
 
 ```typescript
-const rawData = await manager.sql`SELECT * FROM USERS WHERE name = ${'John'} and age = ${24}`
+const rawData =
+    await manager.sql`SELECT * FROM USERS WHERE name = ${"John"} and age = ${24}`
 ```
 
-Learn more about using the [SQL Tag syntax](sql-tag.md).
+Learn more about using the [SQL Tag syntax](../guides/7-sql-tag.md).
 
 -   `createQueryBuilder` - Creates a query builder use to build SQL queries.
     Learn more about [QueryBuilder](../query-builder/1-select-query-builder.md).
@@ -186,7 +187,7 @@ await manager.update(User, 1, { firstName: "Rizzrak" })
 // executes UPDATE user SET firstName = Rizzrak WHERE id = 1
 ```
 
--   `updateAll` - Updates *all* entities of target type (without WHERE clause). Sets fields from supplied partial entity.
+-   `updateAll` - Updates _all_ entities of target type (without WHERE clause). Sets fields from supplied partial entity.
 
 ```typescript
 await manager.updateAll(User, { category: "ADULT" })
@@ -221,7 +222,7 @@ await manager.delete(User, [1, 2, 3])
 await manager.delete(User, { firstName: "Timber" })
 ```
 
--   `deleteAll` - Deletes *all* entities of target type (without WHERE clause).
+-   `deleteAll` - Deletes _all_ entities of target type (without WHERE clause).
 
 ```typescript
 await manager.deleteAll(User)
