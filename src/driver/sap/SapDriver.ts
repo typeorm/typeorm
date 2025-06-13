@@ -611,11 +611,6 @@ export class SapDriver implements Driver {
             } else if (column.type === "char") {
                 return "nchar"
             }
-        } else {
-            // Not available in SAP HANA 2.0
-            if (column.type === "real_vector") {
-                return "blob"
-            }
         }
 
         return (column.type as string) || ""

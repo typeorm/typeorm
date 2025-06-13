@@ -1,23 +1,29 @@
 import "reflect-metadata"
 
 import { expect } from "chai"
-import { DataSource, DeepPartial } from "../../../../../src"
+import {
+    DataSource,
+    DeepPartial,
+    getMetadataArgsStorage,
+    Table,
+} from "../../../../../src"
 import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
+import { Embedding } from "./entity/Embedding"
 import { Post } from "./entity/Post"
 import { PostWithOptions } from "./entity/PostWithOptions"
 import { PostWithoutTypes } from "./entity/PostWithoutTypes"
-import { Embedding } from "./entity/Embedding"
+import { EntityMetadataBuilder } from "../../../../../src/metadata-builder/EntityMetadataBuilder"
 
 describe("database schema > column types > sap", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [Post, PostWithOptions, PostWithoutTypes],
             enabledDrivers: ["sap"],
             driverSpecific: {
                 extra: {
@@ -81,6 +87,7 @@ describe("database schema > column types > sap", () => {
                     ...plainPost,
                 })
 
+                // Verify column metadata
                 const queryRunner = dataSource.createQueryRunner()
                 const table = (await queryRunner.getTable("post"))!
                 await queryRunner.release()
@@ -204,6 +211,7 @@ describe("database schema > column types > sap", () => {
                 })
                 expect(loadedPost).to.deep.equal(plainPost)
 
+                // Verify column metadata
                 const queryRunner = dataSource.createQueryRunner()
                 const table = (await queryRunner.getTable("post_with_options"))!
                 await queryRunner.release()
@@ -280,6 +288,7 @@ describe("database schema > column types > sap", () => {
                 })
                 expect(loadedPost).to.deep.equal(plainPost)
 
+                // Verify column metadata
                 const queryRunner = dataSource.createQueryRunner()
                 const table = (await queryRunner.getTable(
                     "post_without_types",
@@ -310,6 +319,37 @@ describe("database schema > column types > sap", () => {
                 ) {
                     return
                 }
+
+                // register Embedding entity and create table only if REAL_VECTOR is supported
+                const [embeddingMetadata] = new EntityMetadataBuilder(
+                    dataSource,
+                    getMetadataArgsStorage(),
+                ).build([Embedding])
+                dataSource.entityMetadatas.push(embeddingMetadata)
+                dataSource.entityMetadatasMap.set(Embedding, embeddingMetadata)
+                const queryRunner = await dataSource.createQueryRunner()
+                const newTable = Table.create(
+                    embeddingMetadata,
+                    dataSource.driver,
+                )
+                await queryRunner.createTable(newTable)
+                const table = (await queryRunner.getTable("embedding"))!
+                await queryRunner.release()
+
+                // Verify column metadata
+                expect(table.findColumnByName("smallVector")).to.contain({
+                    type: "real_vector",
+                    length: "16",
+                })
+                expect(table.findColumnByName("largeVector")).to.contain({
+                    type: "real_vector",
+                    length: "1536",
+                    isNullable: true,
+                })
+                expect(table.findColumnByName("variableVector")).to.contain({
+                    type: "real_vector",
+                    length: "",
+                })
 
                 const plainEmbedding = {
                     id: 1,
@@ -347,25 +387,6 @@ describe("database schema > column types > sap", () => {
                     id: 1,
                 })
                 expect(loadedEmbedding).to.deep.equal(plainEmbedding)
-
-                // Verify column metadata
-                const queryRunner = dataSource.createQueryRunner()
-                const table = (await queryRunner.getTable("embedding"))!
-                await queryRunner.release()
-
-                expect(table.findColumnByName("smallVector")).to.contain({
-                    type: "real_vector",
-                    length: "16",
-                })
-                expect(table.findColumnByName("largeVector")).to.contain({
-                    type: "real_vector",
-                    length: "1536",
-                    isNullable: true,
-                })
-                expect(table.findColumnByName("variableVector")).to.contain({
-                    type: "real_vector",
-                    length: "",
-                })
             }),
         ))
 })
