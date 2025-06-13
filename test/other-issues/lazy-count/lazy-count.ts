@@ -127,7 +127,7 @@ describe("other issues > lazy count", () => {
                 const [entities, count] = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .take(10)
-                    .offset(3)
+                    .skip(3)
                     .orderBy("post.id")
                     .getManyAndCount()
 
