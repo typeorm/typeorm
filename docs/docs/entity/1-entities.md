@@ -401,9 +401,11 @@ or
 
 ### Column types for `sap`
 
-`tinyint`, `smallint`, `integer`, `bigint`, `smalldecimal`, `decimal`, `real`, `double`, `date`, `time`, `seconddate`, `timestamp`, `boolean`, `char`, `nchar`, `varchar`, `nvarchar`, `text`, `alphanum`, `shorttext`, `array`, `varbinary`, `blob`, `clob`, `nclob`, `st_geometry`, `st_point`.
+`tinyint`, `smallint`, `integer`, `bigint`, `smalldecimal`, `decimal`, `real`, `double`, `date`, `time`, `seconddate`, `timestamp`, `boolean`, `char`, `nchar`, `varchar`, `nvarchar`, `text`, `alphanum`, `shorttext`, `array`, `varbinary`, `blob`, `clob`, `nclob`, `st_geometry`, `st_point`, `real_vector`.
 
 > Note: SAP HANA Cloud deprecated or removed some of these data types. TypeORM will convert them to the closest available alternative when connected to a Cloud version.
+
+> Note 2: SAP HANA Cloud introduced the `real_vector` data type, usable since `@sap/hana-client@2.21.16` . By default, the client will return a `Buffer` in the `fvecs` format, which is more efficient. It is possible to let the driver convert the values to a `number[]` by adding `{ extra: { vectorOutputType: "Array" } }` to the connection options. See more about [REAL_VECTOR Support in the SAP HANA Client Documentation](https://help.sap.com/docs/SAP_HANA_CLIENT/f1b440ded6144a54ada97ff95dac7adf/0d197e4389c64e6b9cf90f6f698f62fe.html).
 
 ### Column types for `spanner`
 
