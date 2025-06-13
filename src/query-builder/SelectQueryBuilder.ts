@@ -1890,11 +1890,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 count = entitiesAndRaw.entities.length
             } else {
                 const cacheId = this.expressionMap.cacheId
-                // Creates a new cacheId for the count query, or it will retreive the above query results
+                // Creates a new cacheId for the count query, or it will retrieve the above query results
                 // and count will return 0.
-                this.expressionMap.cacheId = cacheId
-                    ? `${cacheId}-count`
-                    : cacheId
+                if (cacheId) {
+                    this.expressionMap.cacheId = `${cacheId}-count`
+                }
                 count = await this.executeCountQuery(queryRunner)
             }
             const results: [Entity[], number] = [entitiesAndRaw.entities, count]

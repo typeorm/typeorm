@@ -26,12 +26,7 @@ describe("other issues > lazy count", () => {
     it("skip count query when less entities are returned than the limit", () =>
         Promise.all(
             connections.map(async function (connection) {
-                for (let i = 1; i <= 5; i++) {
-                    const post = new Post()
-                    post.content = "Hello Post #" + i
-
-                    await connection.manager.save(post)
-                }
+                await savePostEntities(connection, 5)
 
                 const afterQuery = connection
                     .subscribers[0] as AfterQuerySubscriber
@@ -43,24 +38,21 @@ describe("other issues > lazy count", () => {
                     .orderBy("post.id")
                     .getManyAndCount()
 
-                count.should.be.equal(5)
+                expect(count).to.be.equal(5)
                 expect(entities).not.to.be.undefined
-                entities.length.should.be.equal(5)
+                expect(entities).to.be.equal(5)
 
                 expect(afterQuery.calls()).to.be.equal(1)
-                expect(afterQuery.lastCalledQuery()).to.not.match(/count/i)
+                expect(afterQuery.lastCalledQuery()).to.not.match(
+                    /(count|cnt)/i,
+                )
             }),
         ))
 
     it("skip count query when less entities are returned than the take", () =>
         Promise.all(
             connections.map(async function (connection) {
-                for (let i = 1; i <= 5; i++) {
-                    const post = new Post()
-                    post.content = "Hello Post #" + i
-
-                    await connection.manager.save(post)
-                }
+                await savePostEntities(connection, 5)
 
                 const afterQuery = connection
                     .subscribers[0] as AfterQuerySubscriber
@@ -72,24 +64,21 @@ describe("other issues > lazy count", () => {
                     .orderBy("post.id")
                     .getManyAndCount()
 
-                count.should.be.equal(5)
+                expect(count).to.be.equal(5)
                 expect(entities).not.to.be.undefined
-                entities.length.should.be.equal(5)
+                expect(entities.length).to.be.equal(5)
 
                 expect(afterQuery.calls()).to.be.equal(1)
-                expect(afterQuery.lastCalledQuery()).to.not.match(/count/i)
+                expect(afterQuery.lastCalledQuery()).to.not.match(
+                    /(count|cnt)/i,
+                )
             }),
         ))
 
     it("run count query when returned entities reach the take", () =>
         Promise.all(
             connections.map(async function (connection) {
-                for (let i = 1; i <= 2; i++) {
-                    const post = new Post()
-                    post.content = "Hello Post #" + i
-
-                    await connection.manager.save(post)
-                }
+                await savePostEntities(connection, 2)
 
                 const afterQuery = connection
                     .subscribers[0] as AfterQuerySubscriber
@@ -101,24 +90,19 @@ describe("other issues > lazy count", () => {
                     .orderBy("post.id")
                     .getManyAndCount()
 
-                count.should.be.equal(2)
+                expect(count).to.be.equal(2)
                 expect(entities).not.to.be.undefined
-                entities.length.should.be.equal(2)
+                expect(entities.length).to.be.equal(2)
 
                 expect(afterQuery.calls()).to.be.equal(2)
-                expect(afterQuery.lastCalledQuery()).to.match(/count/i)
+                expect(afterQuery.lastCalledQuery()).to.match(/(count|cnt)/i)
             }),
         ))
 
     it("run count query when an offset is defined", () =>
         Promise.all(
             connections.map(async function (connection) {
-                for (let i = 1; i <= 5; i++) {
-                    const post = new Post()
-                    post.content = "Hello Post #" + i
-
-                    await connection.manager.save(post)
-                }
+                await savePostEntities(connection, 5)
 
                 const afterQuery = connection
                     .subscribers[0] as AfterQuerySubscriber
@@ -131,12 +115,21 @@ describe("other issues > lazy count", () => {
                     .orderBy("post.id")
                     .getManyAndCount()
 
-                count.should.be.equal(5)
+                expect(count).to.be.equal(5)
                 expect(entities).not.to.be.undefined
-                entities.length.should.be.equal(2)
+                expect(entities.length).to.be.equal(2)
 
                 expect(afterQuery.calls()).to.be.equal(2)
-                expect(afterQuery.lastCalledQuery()).to.match(/count/i)
+                expect(afterQuery.lastCalledQuery()).to.match(/(count|cnt)/i)
             }),
         ))
+
+    async function savePostEntities(connection: DataSource, count: number) {
+        for (let i = 1; i <= count; i++) {
+            const post = new Post()
+            post.content = "Hello Post #" + i
+
+            await connection.manager.save(post)
+        }
+    }
 })
