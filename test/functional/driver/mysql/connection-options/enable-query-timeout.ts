@@ -16,8 +16,8 @@ describe("driver > mysql > connection options > enableQueryTimeout", () => {
         dropSchema: true,
         enabledDrivers: ["mysql"],
     }
-    const timeoutMs = 500
-    const longQueryTimeSec = 1
+    const timeoutMs = 10
+    const longQueryTimeSec = 0.02
     const shortQueryTimeSec = 0.005
 
     describe("when enableQueryTimeout is true", () => {
@@ -34,13 +34,13 @@ describe("driver > mysql > connection options > enableQueryTimeout", () => {
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
 
-        it("should throw a query execution timeout error for the query when it exceeds the maxQueryExecutionTime", async () => {
-            await Promise.all(
+        it("should throw a query execution timeout error for the query when it exceeds the maxQueryExecutionTime", () =>
+            Promise.all(
                 dataSources.map(async (dataSource) => {
                     await expect(
                         dataSource.manager
                             .sql`SELECT SLEEP(${longQueryTimeSec})`,
-                    ).to.be.rejected.then((err) => {
+                    ).to.eventually.be.rejected.then((err) => {
                         expect(err).to.have.nested.property(
                             "driverError.code",
                             "PROTOCOL_SEQUENCE_TIMEOUT",
@@ -51,19 +51,17 @@ describe("driver > mysql > connection options > enableQueryTimeout", () => {
                         )
                     })
                 }),
-            )
-        })
+            ))
 
-        it("should not throw a query execution timeout error for the query when it runs within the maxQueryExecutionTime", async () => {
-            await Promise.all(
+        it("should not throw a query execution timeout error for the query when it runs within the maxQueryExecutionTime", async () =>
+            Promise.all(
                 dataSources.map(async (dataSource) => {
                     await expect(
                         dataSource.manager
                             .sql`SELECT SLEEP(${shortQueryTimeSec})`,
-                    ).to.be.eventually.fulfilled
+                    ).to.eventually.be.fulfilled
                 }),
-            )
-        })
+            ))
     })
 
     describe("when enableQueryTimeout is not provided", () => {
@@ -78,7 +76,7 @@ describe("driver > mysql > connection options > enableQueryTimeout", () => {
 
         after(() => closeTestingConnections(datasources))
 
-        it("should not throw a query execution timeout error", () => {
+        it("should not throw a query execution timeout error", () =>
             Promise.all(
                 datasources.map(async (dataSource) => {
                     await expect(
@@ -86,7 +84,6 @@ describe("driver > mysql > connection options > enableQueryTimeout", () => {
                             .sql`SELECT SLEEP(${longQueryTimeSec})`,
                     ).to.eventually.be.fulfilled
                 }),
-            )
-        })
+            ))
     })
 })
