@@ -46,7 +46,7 @@ const config: Config = {
 
     presets: [
         [
-            "classic",
+            "@docusaurus/preset-classic",
             {
                 docs: {
                     sidebarPath: "./sidebars.ts",
@@ -54,6 +54,10 @@ const config: Config = {
                     // Remove this to remove the "edit this page" links.
                     editUrl:
                         "https://github.com/typeorm/typeorm/tree/master/docs/",
+                },
+                sitemap: {
+                    lastmod: "datetime",
+                    changefreq: null,
                 },
                 theme: {
                     customCss: "./src/css/custom.css",
@@ -145,7 +149,13 @@ const config: Config = {
         prism: {
             theme: prismThemes.github,
             darkTheme: prismThemes.dracula,
-            additionalLanguages: ["typescript", "javascript", "bash", "json"],
+            additionalLanguages: [
+                "typescript",
+                "javascript",
+                "bash",
+                "json",
+                "sql",
+            ],
         },
         typesense: {
             // Replace this with the name of your index/collection.
