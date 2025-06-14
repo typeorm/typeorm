@@ -445,8 +445,9 @@ export class MysqlDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.poolCluster && !this.pool)
-            return Promise.reject(new ConnectionIsNotSetError("mysql"))
+        if (!this.poolCluster && !this.pool) {
+            throw new ConnectionIsNotSetError("mysql")
+        }
 
         if (this.poolCluster) {
             return new Promise<void>((ok, fail) => {

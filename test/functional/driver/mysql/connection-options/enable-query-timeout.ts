@@ -8,7 +8,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 
-describe("mysql driver > enableQueryTimeout connection option", () => {
+describe("driver > mysql > connection options > enableQueryTimeout", () => {
     let dataSources: DataSource[]
     const commonConnectionOptions: TestingOptions = {
         entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -34,16 +34,13 @@ describe("mysql driver > enableQueryTimeout connection option", () => {
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
 
-        it("should throw a query execution timeout error for the query when it exceeds the maxQueryExecutionTime", async () => {
-            await Promise.all(
+        it("should throw a query execution timeout error for the query when it exceeds the maxQueryExecutionTime", () =>
+            Promise.all(
                 dataSources.map(async (dataSource) => {
-                    let errorThrown = false
-                    try {
-                        await dataSource.manager.query(
-                            `SELECT SLEEP(${longQueryTimeSec})`,
-                        )
-                    } catch (err) {
-                        errorThrown = true
+                    await expect(
+                        dataSource.manager
+                            .sql`SELECT SLEEP(${longQueryTimeSec})`,
+                    ).to.eventually.be.rejected.then((err) => {
                         expect(err).to.have.nested.property(
                             "driverError.code",
                             "PROTOCOL_SEQUENCE_TIMEOUT",
@@ -52,27 +49,19 @@ describe("mysql driver > enableQueryTimeout connection option", () => {
                             "driverError.timeout",
                             timeoutMs,
                         )
-                    }
-                    expect(errorThrown).to.be.true
+                    })
                 }),
-            )
-        })
+            ))
 
-        it("should not throw a query execution timeout error for the query when it runs within the maxQueryExecutionTime", async () => {
-            await Promise.all(
+        it("should not throw a query execution timeout error for the query when it runs within the maxQueryExecutionTime", async () =>
+            Promise.all(
                 dataSources.map(async (dataSource) => {
-                    let errorThrown = false
-                    try {
-                        await dataSource.manager.query(
-                            `SELECT SLEEP(${shortQueryTimeSec})`,
-                        )
-                    } catch (err) {
-                        errorThrown = true
-                    }
-                    expect(errorThrown).to.be.false
+                    await expect(
+                        dataSource.manager
+                            .sql`SELECT SLEEP(${shortQueryTimeSec})`,
+                    ).to.eventually.be.fulfilled
                 }),
-            )
-        })
+            ))
     })
 
     describe("when enableQueryTimeout is not provided", () => {
@@ -87,20 +76,14 @@ describe("mysql driver > enableQueryTimeout connection option", () => {
 
         after(() => closeTestingConnections(datasources))
 
-        it("should not throw a query execution timeout error", () => {
+        it("should not throw a query execution timeout error", () =>
             Promise.all(
                 datasources.map(async (dataSource) => {
-                    let errorThrown = false
-                    try {
-                        await dataSource.manager.query(
-                            `SELECT SLEEP(${longQueryTimeSec})`,
-                        )
-                    } catch (err) {
-                        errorThrown = true
-                    }
-                    expect(errorThrown).to.be.false
+                    await expect(
+                        dataSource.manager
+                            .sql`SELECT SLEEP(${longQueryTimeSec})`,
+                    ).to.eventually.be.fulfilled
                 }),
-            )
-        })
+            ))
     })
 })

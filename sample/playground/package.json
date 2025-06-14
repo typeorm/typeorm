@@ -12,11 +12,11 @@
     "reflect-metadata": "^0.2.2",
     "sql.js": "^1.13.0",
     "ts-node": "^10.9.2",
-    "typeorm": "0.3.22"
+    "typeorm": "*"
   },
   "devDependencies": {
-    "@types/node": "^20.11.24",
+    "@types/node": "^20.19.0",
     "@types/sql.js": "^1.4.9",
-    "typescript": "^5.3.3"
+    "typescript": "^5.8.3"
   }
 }

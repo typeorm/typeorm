@@ -343,8 +343,9 @@ export class OracleDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("oracle"))
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("oracle")
+        }
 
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))

@@ -88,6 +88,7 @@
     "test": "npm run compile && npm run test:fast --",
     "test:ci": "mocha --bail",
     "test:fast": "mocha",
+    "typecheck": "tsc --noEmit",
     "watch": "tsc --watch"
   },
   "dependencies": {
