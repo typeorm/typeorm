@@ -24,11 +24,11 @@ services:
       MYSQL_DATABASE: "test"
 
   # postgres
-  postgres-14:
+  postgres14:
     # postgis is postgres + PostGIS (only). If you need additional extensions,
     # it's probably time to create a purpose-built image.
     image: "postgis/postgis:14-3.5"
-    container_name: "typeorm-postgres"
+    container_name: "typeorm-postgres14"
     ports:
       - "5432:5432"
     environment:

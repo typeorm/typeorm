@@ -10,6 +10,7 @@ on:
       - "**"
     paths-ignore:
       - "docs/**"
+  workflow_dispatch:
 
 jobs:
   formatting:
@@ -66,7 +67,6 @@ jobs:
 
   # Run with most databases possible to provide the coverage of the tests
   coverage:
-    if: ${{ always() }}
     runs-on: ubuntu-latest
     needs: [tests-linux, tests-windows]
     steps:
