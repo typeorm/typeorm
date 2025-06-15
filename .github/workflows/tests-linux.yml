@@ -1,4 +1,4 @@
-name: database-tests-standard
+name: tests-linux
 on:
   workflow_call:
     inputs:
@@ -211,7 +211,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        postgis-version: ["14-3.5", "17-3.5"]
+        postgis-version:
+          - "14-3.5"
+          - "17-3.5"
 
     services:
       postgres:

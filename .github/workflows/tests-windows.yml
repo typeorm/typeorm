@@ -1,4 +1,4 @@
-name: database-tests-windows
+name: tests-windows
 on:
   workflow_call:
     inputs:
