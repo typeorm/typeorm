@@ -91,6 +91,7 @@ export class CascadesSubjectBuilder {
                 const relationEntitySubject = new Subject({
                     metadata: relationEntityMetadata,
                     parentSubject: subject,
+                    parentSubjectRelation: relation,
                     entity: relationEntity,
                     canBeInserted:
                         relation.isCascadeInsert === true &&
