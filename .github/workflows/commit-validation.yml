@@ -11,6 +11,7 @@ on:
 
 jobs:
   formatting:
+    if: ${{ (github.event_name != 'pull_request') || (github.event.pull_request.head.repo.fork) }}
     runs-on: ubuntu-latest
 
     steps:
@@ -25,6 +26,7 @@ jobs:
       - run: npm run format:ci
 
   build:
+    if: ${{ (github.event_name != 'pull_request') || (github.event.pull_request.head.repo.fork) }}
     runs-on: ubuntu-latest
 
     steps:
@@ -62,6 +64,7 @@ jobs:
 
   # Run with most databases possible to provide the coverage of the tests
   coverage:
+    if: ${{ (github.event_name != 'pull_request') || (github.event.pull_request.head.repo.fork) }}
     runs-on: ubuntu-latest
     needs: [tests-linux, tests-windows]
     steps:
