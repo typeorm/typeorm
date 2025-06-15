@@ -796,15 +796,16 @@ export class AuroraMysqlQueryRunner
         // Check if this is a safe length increase for compatible types
         const isSafeLengthIncrease =
             oldColumn.type === newColumn.type &&
-            (newColumn.type === "varchar" ||
-                newColumn.type === "char" ||
-                newColumn.type === "text") &&
-            oldColumn.length !== undefined &&
-            newColumn.length !== undefined &&
-            parseInt(newColumn.length) > parseInt(oldColumn.length) &&
+            (newColumn.type === "varchar" || newColumn.type === "char") && // TEXT has no length
+            Number.isFinite(+oldColumn.length) &&
+            Number.isFinite(+newColumn.length) &&
+            +newColumn.length > +oldColumn.length &&
             oldColumn.isGenerated === newColumn.isGenerated &&
             oldColumn.generatedType === newColumn.generatedType &&
-            oldColumn.generationStrategy === newColumn.generationStrategy
+            oldColumn.generationStrategy === newColumn.generationStrategy &&
+            oldColumn.isNullable === newColumn.isNullable &&
+            oldColumn.charset === newColumn.charset &&
+            oldColumn.collation === newColumn.collation
 
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
@@ -852,6 +853,10 @@ export class AuroraMysqlQueryRunner
                 if (tableColumn) {
                     tableColumn.length = newColumn.length
                 }
+
+                // Prevent double execution further down
+                this.replaceCachedTable(table, clonedTable)
+                return
             } else {
                 await this.dropColumn(table, oldColumn)
                 await this.addColumn(table, newColumn)

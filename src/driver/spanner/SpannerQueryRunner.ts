@@ -820,13 +820,21 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
 
         // Check if this is a safe length increase for compatible types
+        const normalizeLength = (len: string): number => {
+            return len === "MAX" ? Infinity : parseInt(len, 10)
+        }
+
+        const oldLength = normalizeLength(oldColumn.length!)
+        const newLength = normalizeLength(newColumn.length!)
+
         const isSafeLengthIncrease =
             oldColumn.name === newColumn.name &&
             oldColumn.type === newColumn.type &&
             newColumn.type === "string" && // Spanner uses "string" type
             oldColumn.length !== undefined &&
             newColumn.length !== undefined &&
-            parseInt(newColumn.length) > parseInt(oldColumn.length) &&
+            Number.isFinite(oldLength) &&
+            newLength > oldLength &&
             oldColumn.isArray === newColumn.isArray &&
             oldColumn.generatedType === newColumn.generatedType &&
             oldColumn.asExpression === newColumn.asExpression
@@ -840,10 +848,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             oldColumn.asExpression !== newColumn.asExpression
         ) {
             if (isSafeLengthIncrease) {
-                // Use ALTER COLUMN for safe length increases
-                const upQueries: Query[] = []
-                const downQueries: Query[] = []
-
+                // Use ALTER COLUMN for safe length increases - reuse outer accumulators
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
@@ -859,16 +864,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     ),
                 )
 
+                // Early commit and return - nothing else to change
                 await this.executeQueries(upQueries, downQueries)
 
                 // Update the cached table
-                clonedTable = table.clone()
-                const tableColumn = clonedTable.columns.find(
-                    (column) => column.name === oldColumn.name,
-                )
-                if (tableColumn) {
-                    tableColumn.length = newColumn.length
-                }
+                clonedTable.columns.find(
+                    (c) => c.name === oldColumn.name,
+                )!.length = newColumn.length
+                this.replaceCachedTable(table, clonedTable)
+                return
             } else {
                 // To avoid data conversion, we just recreate column
                 await this.dropColumn(table, oldColumn)

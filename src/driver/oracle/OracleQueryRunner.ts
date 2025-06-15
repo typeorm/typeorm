@@ -1087,7 +1087,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newColumn.type.toLowerCase() === "nchar") &&
             oldColumn.isGenerated === newColumn.isGenerated &&
             oldColumn.generatedType === newColumn.generatedType &&
-            oldColumn.asExpression === newColumn.asExpression
+            oldColumn.asExpression === newColumn.asExpression &&
+            oldColumn.isNullable === newColumn.isNullable &&
+            oldColumn.default === newColumn.default
 
         if (isSafeLengthIncrease) {
             // Use ALTER COLUMN for safe length increases

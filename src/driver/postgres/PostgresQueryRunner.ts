@@ -1232,15 +1232,30 @@ export class PostgresQueryRunner
             )
 
         // Check if this is a safe length increase for compatible types
+        const normalizeType = (type: string) => type.toLowerCase().trim()
+        const isCompatibleStringType = (type: string) => {
+            const normalized = normalizeType(type)
+            return (
+                normalized === "varchar" ||
+                normalized === "character varying" ||
+                normalized === "char" ||
+                normalized === "character" ||
+                normalized === "text" ||
+                normalized === "citext"
+            )
+        }
+
+        const oldLength = Number(oldColumn.length)
+        const newLength = Number(newColumn.length)
+
         const isSafeLengthIncrease =
-            oldColumn.type === newColumn.type &&
-            (newColumn.type === "varchar" ||
-                newColumn.type === "character varying" ||
-                newColumn.type === "char" ||
-                newColumn.type === "character") &&
+            normalizeType(oldColumn.type) === normalizeType(newColumn.type) &&
+            isCompatibleStringType(oldColumn.type) &&
             oldColumn.length !== undefined &&
             newColumn.length !== undefined &&
-            parseInt(newColumn.length) > parseInt(oldColumn.length) &&
+            Number.isFinite(oldLength) &&
+            Number.isFinite(newLength) &&
+            newLength > oldLength &&
             newColumn.isArray === oldColumn.isArray &&
             oldColumn.generatedType === newColumn.generatedType &&
             oldColumn.asExpression === newColumn.asExpression
@@ -1256,9 +1271,6 @@ export class PostgresQueryRunner
         ) {
             if (isSafeLengthIncrease) {
                 // Use ALTER COLUMN for safe length increases
-                const upQueries: Query[] = []
-                const downQueries: Query[] = []
-
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
@@ -1284,6 +1296,8 @@ export class PostgresQueryRunner
                 if (tableColumn) {
                     tableColumn.length = newColumn.length
                 }
+                this.replaceCachedTable(table, clonedTable)
+                return
             } else {
                 // To avoid data conversion, we just recreate column
                 await this.dropColumn(table, oldColumn)

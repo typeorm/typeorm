@@ -1255,12 +1255,22 @@ export class SqlServerQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Helper function to normalize length values for comparison
+        const normalizeLength = (length: string | undefined): number => {
+            if (!length) return 0
+            if (length.toLowerCase() === "max") return Infinity
+            const numericLength = Number(length)
+            return isNaN(numericLength) ? 0 : numericLength
+        }
+
         // Check if this is a safe length increase for compatible types
+        const oldNormalizedLength = normalizeLength(oldColumn.length)
+        const newNormalizedLength = normalizeLength(newColumn.length)
         const isSafeLengthIncrease =
             oldColumn.type === newColumn.type &&
             oldColumn.length !== undefined &&
             newColumn.length !== undefined &&
-            newColumn.length > oldColumn.length &&
+            newNormalizedLength > oldNormalizedLength &&
             (newColumn.type.toLowerCase() === "varchar" ||
                 newColumn.type.toLowerCase() === "char" ||
                 newColumn.type.toLowerCase() === "nvarchar" ||
@@ -1272,20 +1282,34 @@ export class SqlServerQueryRunner
         if (isSafeLengthIncrease) {
             // Use ALTER COLUMN for safe length increases
             const lengthPart = newColumn.length ? `(${newColumn.length})` : ""
+            const nullability = oldColumn.isNullable ? "NULL" : "NOT NULL"
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN [${
                         oldColumn.name
-                    }] ${newColumn.type.toUpperCase()}${lengthPart}`,
+                    }] ${newColumn.type.toUpperCase()}${lengthPart} ${nullability}`,
                 ),
             )
             downQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN [${
                         oldColumn.name
-                    }] ${oldColumn.type.toUpperCase()}(${oldColumn.length})`,
+                    }] ${oldColumn.type.toUpperCase()}${
+                        oldColumn.length ? `(${oldColumn.length})` : ""
+                    } ${nullability}`,
                 ),
             )
+
+            await this.executeQueries(upQueries, downQueries)
+
+            // keep the in-memory schema cache in sync
+            const col = clonedTable.columns.find(
+                (c) => c.name === oldColumn.name,
+            )
+            if (col) col.length = newColumn.length
+            this.replaceCachedTable(table, clonedTable)
+
+            return // prevent the slow path from running
         } else if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||

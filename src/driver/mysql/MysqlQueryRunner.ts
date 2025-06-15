@@ -1100,8 +1100,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     ),
                 )
 
-                await this.executeQueries(upQueries, downQueries)
-
+                // Queries will be executed later by the outer call
                 // Update the cached table
                 clonedTable = table.clone()
                 const tableColumn = clonedTable.columns.find(

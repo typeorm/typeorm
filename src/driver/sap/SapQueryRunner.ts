@@ -1169,10 +1169,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // Check if this is a safe length increase for compatible types
         const isSafeLengthIncrease =
-            oldColumn.type === newColumn.type &&
-            oldColumn.length !== undefined &&
-            newColumn.length !== undefined &&
-            newColumn.length > oldColumn.length &&
+            oldColumn.type.toLowerCase() === newColumn.type.toLowerCase() &&
+            oldColumn.length != null &&
+            newColumn.length != null &&
+            Number(newColumn.length) > Number(oldColumn.length) &&
             (newColumn.type.toLowerCase() === "varchar" ||
                 newColumn.type.toLowerCase() === "char" ||
                 newColumn.type.toLowerCase() === "nvarchar" ||
@@ -1196,6 +1196,16 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     }" ${oldColumn.type.toUpperCase()}(${oldColumn.length}))`,
                 ),
             )
+
+            await this.executeQueries(upQueries, downQueries)
+
+            // sync cache
+            const col = clonedTable.columns.find(
+                (c) => c.name === oldColumn.name,
+            )!
+            col.length = newColumn.length
+            this.replaceCachedTable(table, clonedTable)
+            return
         } else if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||

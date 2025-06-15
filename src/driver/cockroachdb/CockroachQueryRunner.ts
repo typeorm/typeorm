@@ -1328,9 +1328,6 @@ export class CockroachQueryRunner
         ) {
             if (isSafeLengthIncrease) {
                 // Use ALTER COLUMN for safe length increases
-                const upQueries: Query[] = []
-                const downQueries: Query[] = []
-
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
@@ -1348,7 +1345,7 @@ export class CockroachQueryRunner
 
                 await this.executeQueries(upQueries, downQueries)
 
-                // Update the cached table
+                // Update the cached table and exit early
                 clonedTable = table.clone()
                 const tableColumn = clonedTable.columns.find(
                     (column) => column.name === oldColumn.name,
@@ -1356,6 +1353,8 @@ export class CockroachQueryRunner
                 if (tableColumn) {
                     tableColumn.length = newColumn.length
                 }
+                this.replaceCachedTable(table, clonedTable)
+                return
             } else {
                 // To avoid data conversion, we just recreate column
                 await this.dropColumn(table, oldColumn)
