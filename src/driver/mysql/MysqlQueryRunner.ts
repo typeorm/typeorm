@@ -1046,6 +1046,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Check if this is a safe length increase for compatible types
+        const isSafeLengthIncrease =
+            oldColumn.type === newColumn.type &&
+            (newColumn.type === "varchar" ||
+                newColumn.type === "char" ||
+                newColumn.type === "text") &&
+            oldColumn.length !== undefined &&
+            newColumn.length !== undefined &&
+            parseInt(newColumn.length) > parseInt(oldColumn.length) &&
+            oldColumn.isGenerated === newColumn.isGenerated &&
+            oldColumn.generatedType === newColumn.generatedType &&
+            oldColumn.generationStrategy === newColumn.generationStrategy
+
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
@@ -1058,11 +1071,52 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newColumn.generatedType === "VIRTUAL") ||
             (oldColumn.generatedType === "VIRTUAL" && !newColumn.generatedType)
         ) {
-            await this.dropColumn(table, oldColumn)
-            await this.addColumn(table, newColumn)
+            if (isSafeLengthIncrease) {
+                // Use ALTER COLUMN for safe length increases
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} MODIFY COLUMN \`${
+                            oldColumn.name
+                        }\` ${this.buildCreateColumnSql(
+                            newColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} MODIFY COLUMN \`${
+                            oldColumn.name
+                        }\` ${this.buildCreateColumnSql(
+                            oldColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
 
-            // update cloned table
-            clonedTable = table.clone()
+                await this.executeQueries(upQueries, downQueries)
+
+                // Update the cached table
+                clonedTable = table.clone()
+                const tableColumn = clonedTable.columns.find(
+                    (column) => column.name === oldColumn.name,
+                )
+                if (tableColumn) {
+                    tableColumn.length = newColumn.length
+                }
+            } else {
+                await this.dropColumn(table, oldColumn)
+                await this.addColumn(table, newColumn)
+
+                // update cloned table
+                clonedTable = table.clone()
+            }
         } else {
             if (newColumn.name !== oldColumn.name) {
                 // We don't change any column properties, just rename it.

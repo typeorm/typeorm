@@ -1167,13 +1167,42 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
+        // Check if this is a safe length increase for compatible types
+        const isSafeLengthIncrease =
+            oldColumn.type === newColumn.type &&
+            oldColumn.length !== undefined &&
+            newColumn.length !== undefined &&
+            newColumn.length > oldColumn.length &&
+            (newColumn.type.toLowerCase() === "varchar" ||
+                newColumn.type.toLowerCase() === "char" ||
+                newColumn.type.toLowerCase() === "nvarchar" ||
+                newColumn.type.toLowerCase() === "nchar") &&
+            oldColumn.isGenerated === newColumn.isGenerated
+
+        if (isSafeLengthIncrease) {
+            // Use ALTER COLUMN for safe length increases
+            const lengthPart = newColumn.length ? `(${newColumn.length})` : ""
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER ("${
+                        oldColumn.name
+                    }" ${newColumn.type.toUpperCase()}${lengthPart})`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER ("${
+                        oldColumn.name
+                    }" ${oldColumn.type.toUpperCase()}(${oldColumn.length}))`,
+                ),
+            )
+        } else if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             newColumn.type !== oldColumn.type ||
             newColumn.length !== oldColumn.length
         ) {
-            // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
+            // SAP HANA does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)

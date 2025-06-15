@@ -1075,7 +1075,38 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )} table.`,
             )
 
-        if (
+        // Check if this is a safe length increase for compatible types
+        const isSafeLengthIncrease =
+            oldColumn.type === newColumn.type &&
+            oldColumn.length !== undefined &&
+            newColumn.length !== undefined &&
+            newColumn.length > oldColumn.length &&
+            (newColumn.type.toLowerCase() === "varchar2" ||
+                newColumn.type.toLowerCase() === "char" ||
+                newColumn.type.toLowerCase() === "nvarchar2" ||
+                newColumn.type.toLowerCase() === "nchar") &&
+            oldColumn.isGenerated === newColumn.isGenerated &&
+            oldColumn.generatedType === newColumn.generatedType &&
+            oldColumn.asExpression === newColumn.asExpression
+
+        if (isSafeLengthIncrease) {
+            // Use ALTER COLUMN for safe length increases
+            const lengthPart = newColumn.length ? `(${newColumn.length})` : ""
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} MODIFY "${
+                        oldColumn.name
+                    }" ${newColumn.type.toUpperCase()}${lengthPart}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} MODIFY "${
+                        oldColumn.name
+                    }" ${oldColumn.type.toUpperCase()}(${oldColumn.length})`,
+                ),
+            )
+        } else if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
