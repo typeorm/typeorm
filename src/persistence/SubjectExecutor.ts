@@ -16,6 +16,7 @@ import { OrmUtils } from "../util/OrmUtils"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { OptimisticLockCanNotBeUsedError, OptimisticLockVersionMismatchError } from "../error"
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -608,14 +609,42 @@ export class SubjectExecutor {
                     )
                     .callListeners(false)
 
+                let versionColumn = subject.metadata.versionColumn
+
                 if (subject.entity) {
                     updateQueryBuilder.whereEntity(subject.identifier)
+
+                    // Optimistic lock check
+                    versionColumn = subject.metadata.versionColumn
+                    if (versionColumn) {
+                        const expectedVersion = versionColumn.getEntityValue(subject.entity)
+                        if (expectedVersion === undefined || expectedVersion === null) {
+                            throw new OptimisticLockCanNotBeUsedError()
+                        }
+                        updateQueryBuilder.andWhere(
+                            `"${updateQueryBuilder.alias}"."${versionColumn.databaseName}" = :version`,
+                            { version: expectedVersion },
+                        )
+                    }
                 } else {
                     // in this case identifier is just conditions object to update by
                     updateQueryBuilder.where(subject.identifier)
                 }
 
                 const updateResult = await updateQueryBuilder.execute()
+
+                if (updateResult.affected === 0 && versionColumn) {
+
+                    const expectedVersion = subject.entity?.[versionColumn.propertyName];
+                    const actualVersion = subject.databaseEntity?.[versionColumn.propertyName];
+
+                    throw new OptimisticLockVersionMismatchError(
+                        subject.metadata.name,
+                        expectedVersion,
+                        actualVersion
+                    );
+                }
+
                 const updateGeneratedMap = updateResult.generatedMaps[0]
                 if (updateGeneratedMap) {
                     subject.metadata.columns.forEach((column) => {
