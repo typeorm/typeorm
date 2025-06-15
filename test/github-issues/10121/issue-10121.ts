@@ -1,3 +1,4 @@
+import { expect } from "chai"
 import { DataSource } from "../../../src"
 import {
     closeTestingConnections,
@@ -42,10 +43,14 @@ describe("github issues > #10121 Multiple relations with same columns", () => {
 
                 const estates = await dataSource
                     .getRepository(EstateModel)
-                    .find({ relations: ["city", "pref"] })
+                    .find({
+                        relations: {
+                            city: true,
+                            pref: true,
+                        },
+                    })
 
-                estates.length.should.be.eql(2)
-                estates.should.include.deep.members([
+                expect(estates).to.deep.equal([
                     {
                         id: 1,
                         name: "Tokyo Tower",
