@@ -6,6 +6,7 @@ import { JoinColumnMetadataArgs } from "../metadata-args/JoinColumnMetadataArgs"
 import { DataSource } from "../data-source/DataSource"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
+import { OrmUtils } from "../util/OrmUtils"
 
 /**
  * Builds join column for the many-to-one and one-to-one owner relations.
@@ -237,10 +238,7 @@ export class RelationJoinColumnBuilder {
                 // Clone the relational column to prevent modifying the original when multiple
                 // relations reference the same column. This ensures each relation gets its own
                 // copy with independent referencedColumn and type properties.
-                relationalColumn = Object.assign(
-                    Object.create(ColumnMetadata.prototype) as ColumnMetadata,
-                    relationalColumn,
-                )
+                relationalColumn = OrmUtils.cloneObject(relationalColumn)
             }
             relationalColumn.referencedColumn = referencedColumn // its important to set it here because we need to set referenced column for user defined join column
             relationalColumn.type = referencedColumn.type // also since types of relational column and join column must be equal we override user defined column type
