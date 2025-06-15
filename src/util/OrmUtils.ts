@@ -101,7 +101,7 @@ export class OrmUtils {
         }
 
         return Object.assign(
-            Object.create(object.constructor.prototype),
+            Object.create(Object.getPrototypeOf(object)),
             object,
         )
     }

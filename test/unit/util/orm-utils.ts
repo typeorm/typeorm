@@ -165,27 +165,37 @@ describe(`OrmUtils`, () => {
         it("should create a shallow copy of an instance without invoking the constructor", () => {
             class SomeClass {
                 static hasConstructorBeenInvoked = false
+
                 constructor(
                     public someString: string,
                     public someNumber: number,
                 ) {
                     if (SomeClass.hasConstructorBeenInvoked) {
                         throw Error(
-                            "The constructor was invoked a seconds time!",
+                            "The constructor was invoked a second time!",
                         )
                     }
                     SomeClass.hasConstructorBeenInvoked = true
+                }
+
+                clone() {
+                    return new SomeClass(this.someString, this.someNumber)
                 }
             }
 
             const obj = new SomeClass("string", 0)
 
             let objCopy: SomeClass | undefined
+            let objCopy2: SomeClass | undefined
             expect(() => {
                 objCopy = OrmUtils.cloneObject(obj)
             }).not.to.throw()
+            expect(() => {
+                objCopy2 = obj.clone()
+            }).to.throw()
             expect(objCopy).not.to.equal(obj)
             expect(objCopy).to.deep.equal(obj)
+            expect(objCopy2).to.equal(undefined)
         })
     })
 })
