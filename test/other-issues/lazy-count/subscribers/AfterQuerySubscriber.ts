@@ -12,11 +12,8 @@ export class AfterQuerySubscriber implements EntitySubscriberInterface {
         this.calledQueries.push(event.query)
     }
 
-    lastCalledQuery(): any | undefined {
-        let calledQueryLength = this.calledQueries.length
-        return calledQueryLength > 0
-            ? this.calledQueries[calledQueryLength - 1]
-            : undefined
+    getCalledQueries(): any[] {
+        return this.calledQueries
     }
 
     calls(): number {

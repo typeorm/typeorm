@@ -1,4 +1,10 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../src"
+import {
+    Column,
+    Entity,
+    OneToMany,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
+import { Comment } from "./Comment"
 
 @Entity()
 export class Post {
@@ -7,4 +13,9 @@ export class Post {
 
     @Column()
     content!: string
+
+    @OneToMany(() => Comment, (comment) => comment.post, {
+        cascade: ["insert"],
+    })
+    comments: Comment[]
 }
