@@ -39,8 +39,7 @@ describe("other issues > lazy count", () => {
                     .getManyAndCount()
 
                 expect(count).to.be.equal(5)
-                expect(entities).not.to.be.undefined
-                expect(entities).to.be.equal(5)
+                expect(entities.length).to.be.equal(5)
 
                 expect(afterQuery.calls()).to.be.equal(1)
                 expect(afterQuery.lastCalledQuery()).to.not.match(
@@ -65,7 +64,6 @@ describe("other issues > lazy count", () => {
                     .getManyAndCount()
 
                 expect(count).to.be.equal(5)
-                expect(entities).not.to.be.undefined
                 expect(entities.length).to.be.equal(5)
 
                 expect(afterQuery.calls()).to.be.equal(1)
@@ -91,7 +89,6 @@ describe("other issues > lazy count", () => {
                     .getManyAndCount()
 
                 expect(count).to.be.equal(2)
-                expect(entities).not.to.be.undefined
                 expect(entities.length).to.be.equal(2)
 
                 expect(afterQuery.calls()).to.be.equal(2)
@@ -116,7 +113,6 @@ describe("other issues > lazy count", () => {
                     .getManyAndCount()
 
                 expect(count).to.be.equal(5)
-                expect(entities).not.to.be.undefined
                 expect(entities.length).to.be.equal(2)
 
                 expect(afterQuery.calls()).to.be.equal(2)
