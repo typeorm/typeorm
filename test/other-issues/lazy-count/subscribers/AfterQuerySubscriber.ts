@@ -16,10 +16,6 @@ export class AfterQuerySubscriber implements EntitySubscriberInterface {
         return this.calledQueries
     }
 
-    calls(): number {
-        return this.calledQueries.length
-    }
-
     clear(): void {
         this.calledQueries = []
     }
