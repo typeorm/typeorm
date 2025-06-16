@@ -17,5 +17,5 @@ export class Post {
     @OneToMany(() => Comment, (comment) => comment.post, {
         cascade: ["insert"],
     })
-    comments: Comment[]
+    comments!: Comment[]
 }
