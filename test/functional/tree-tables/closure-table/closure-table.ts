@@ -16,7 +16,7 @@ describe("tree tables > closure-table", () => {
     before(
         async () =>
             (connections = await createTestingConnections({
-                entities: [Category, Foo1Entity, Foo2Entity, Foo3Entity],
+                entities: [Category],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -732,6 +732,19 @@ describe("tree tables > closure-table", () => {
                 })
             }),
         ))
+})
+
+describe("mysql > tree tables > closure-table", () => {
+    let connections: DataSource[]
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                entities: [Foo1Entity, Foo2Entity, Foo3Entity],
+                enabledDrivers: ["mysql"],
+            })),
+    )
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
 
     it("foo1 should create closure columns unsigned", () =>
         Promise.all(
