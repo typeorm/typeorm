@@ -749,10 +749,6 @@ describe("mysql > tree tables > closure-table", () => {
     it("foo1 should create closure columns unsigned", () =>
         Promise.all(
             connections.map(async (dataSource) => {
-                if (dataSource.driver.options.type !== "mysql") {
-                    return
-                }
-
                 const fooMetadata = dataSource.entityMetadatas.find(
                     (el) => el.tableName === "foo1",
                 )!
@@ -785,10 +781,6 @@ describe("mysql > tree tables > closure-table", () => {
     it("foo2 should create closure columns with specified zerofill, width, precision and scale", () =>
         Promise.all(
             connections.map(async (dataSource) => {
-                if (dataSource.driver.options.type !== "mysql") {
-                    return
-                }
-
                 const fooMetadata = dataSource.entityMetadatas.find(
                     (el) => el.tableName === "foo2",
                 )!
@@ -830,10 +822,6 @@ describe("mysql > tree tables > closure-table", () => {
     it("foo3 should create closure columns with specified length, charset and collation", () =>
         Promise.all(
             connections.map(async (dataSource) => {
-                if (dataSource.driver.options.type !== "mysql") {
-                    return
-                }
-
                 const fooMetadata = dataSource.entityMetadatas.find(
                     (el) => el.tableName === "foo3",
                 )!
