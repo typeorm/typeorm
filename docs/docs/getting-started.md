@@ -1,31 +1,9 @@
-#
-
-<div align="center" style={{ marginTop: "4rem" }}>
-  <img className="dark-mode-only" src="/img/typeorm-logo-white.svg" width="400" alt="TypeORM Logo Light" />
-  <img className="light-mode-only" src="/img/typeorm-logo-colored-dark.svg" width="400" alt="TypeORM Logo Dark" />
-  <br></br>
-  <br></br>
-
-<div style={{display: "flex", justifyContent: "center", gap: "0.5rem"}}>
-    <a href="https://github.com/typeorm/typeorm/actions/workflows/test.yml">
-        <img src="https://github.com/typeorm/typeorm/actions/workflows/test.yml/badge.svg?branch=master" />
-    </a>
-    <a href="https://badge.fury.io/js/typeorm">
-        <img src="https://badge.fury.io/js/typeorm.svg" />
-    </a>
-    <a href='https://coveralls.io/github/typeorm/typeorm?branch=master'>
-        <img src='https://coveralls.io/repos/github/typeorm/typeorm/badge.svg?branch=master' alt='Coverage Status' />
-    </a>
-</div>
-
-<br></br>
-<br></br>
-
-</div>
+# Getting Started
 
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)
 that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native, NativeScript, Expo, and Electron platforms
 and can be used with TypeScript and JavaScript (ES2021).
+
 Its goal is to always support the latest JavaScript features and provide additional features
 that help you to develop any kind of application that uses databases - from
 small applications with a few tables to large-scale enterprise applications
@@ -38,13 +16,6 @@ maintainable applications in the most productive way.
 
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
 [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
-
-> **📣 Announcement: The Future of TypeORM**
->
-> We're excited to share our vision for a revitalized TypeORM—a strategy focused on building a stable, robust, and sustainable foundation for the long term. Learn how we're structuring maintenance
-> and bringing together dedicated resources to ensure TypeORM thrives for years to come.
->
-> [Read the full announcement](./future-of-typeorm.md)
 
 ## Features
 
