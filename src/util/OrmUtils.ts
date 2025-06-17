@@ -93,6 +93,20 @@ export class OrmUtils {
     }
 
     /**
+     * Creates a shallow copy of the object, without invoking the constructor
+     */
+    public static cloneObject<T extends object>(object: T): T {
+        if (object === null || object === undefined) {
+            return object
+        }
+
+        return Object.assign(
+            Object.create(Object.getPrototypeOf(object)),
+            object,
+        )
+    }
+
+    /**
      * Deep compare objects.
      *
      * @see http://stackoverflow.com/a/1144249
