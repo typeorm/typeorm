@@ -9,7 +9,7 @@ import {
 } from "../../../utils/test-utils"
 import { City } from "./entity/City"
 import { Country } from "./entity/Country"
-import { Order } from "./entity/Order"
+import { Company } from "./entity/Company"
 
 describe("metadata builder > RelationJoinColumnBuilder", () => {
     let dataSources: DataSource[]
@@ -27,44 +27,72 @@ describe("metadata builder > RelationJoinColumnBuilder", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 await dataSource.getRepository(Country).save([
-                    { id: 1, name: "Japan" },
-                    { id: 2, name: "England" },
-                ])
+                    { name: "Texas", region: "USA" },
+                    { name: "France", region: "EU" },
+                ] satisfies Country[])
 
                 await dataSource.getRepository(City).save([
-                    { id: 1, countryId: 1, name: "Tokyo" },
-                    { id: 2, countryId: 1, name: "Osaka" },
-                    { id: 3, countryId: 2, name: "London" },
-                    { id: 4, countryId: 2, name: "Manchester" },
-                    { id: 5, countryId: 2, name: "Liverpool" },
-                ])
+                    {
+                        name: "Paris",
+                        countryName: "France",
+                        population: 2_100_000,
+                    },
+                    {
+                        name: "Paris",
+                        countryName: "Texas",
+                        population: 25_000,
+                    },
+                    {
+                        name: "Strasbourg",
+                        countryName: "France",
+                        population: 270_000,
+                    },
+                    {
+                        name: "Lyon",
+                        countryName: "France",
+                        population: 720_000,
+                    },
+                    {
+                        name: "Houston",
+                        countryName: "Texas",
+                        population: 2_300_000,
+                    },
+                ] satisfies City[])
 
-                await dataSource.getRepository(Order).save([
-                    { id: 1, countryId: 1, cityId: 1 },
-                    { id: 2, countryId: 2, cityId: 4 },
-                ])
+                await dataSource.getRepository(Company).save([
+                    { name: "NASA", countryName: "Texas", cityName: "Houston" },
+                    { name: "AXA", countryName: "France", cityName: "Paris" },
+                ] satisfies Company[])
 
-                const orders = await dataSource.getRepository(Order).find({
+                const companies = await dataSource.getRepository(Company).find({
                     relations: { city: true, country: true },
-                    order: { id: "asc" },
+                    order: { name: "asc" },
                 })
 
-                expect(orders).to.deep.members([
+                expect(companies).to.deep.members([
                     {
-                        id: 1,
-                        countryId: 1,
-                        cityId: 1,
-                        city: { id: 1, countryId: 1, name: "Tokyo" },
-                        country: { id: 1, name: "Japan" },
+                        name: "AXA",
+                        countryName: "France",
+                        cityName: "Paris",
+                        city: {
+                            countryName: "France",
+                            name: "Paris",
+                            population: 2_100_000,
+                        },
+                        country: { name: "France", region: "EU" },
                     },
                     {
-                        id: 2,
-                        countryId: 2,
-                        cityId: 4,
-                        city: { id: 4, countryId: 2, name: "Manchester" },
-                        country: { id: 2, name: "England" },
+                        name: "NASA",
+                        countryName: "Texas",
+                        cityName: "Houston",
+                        city: {
+                            countryName: "Texas",
+                            name: "Houston",
+                            population: 2_300_000,
+                        },
+                        country: { name: "Texas", region: "USA" },
                     },
-                ])
+                ] satisfies Company[])
             }),
         ))
 })

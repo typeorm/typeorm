@@ -3,30 +3,30 @@ import {
     Entity,
     JoinColumn,
     ManyToOne,
-    PrimaryGeneratedColumn,
+    PrimaryColumn,
 } from "../../../../../src"
 import { City } from "./City"
 import { Country } from "./Country"
 
 @Entity()
-export class Order {
-    @PrimaryGeneratedColumn()
-    id: number
+export class Company {
+    @PrimaryColumn()
+    name: string
 
     @Column()
-    countryId: number
+    countryName: string
 
     @ManyToOne(() => Country)
-    @JoinColumn({ name: "countryId" })
+    @JoinColumn({ name: "countryName" })
     country?: Country
 
     @Column()
-    cityId: number
+    cityName: string
 
     @ManyToOne(() => City)
     @JoinColumn([
-        { name: "cityId", referencedColumnName: "id" },
-        { name: "countryId", referencedColumnName: "countryId" },
+        { name: "cityName", referencedColumnName: "name" },
+        { name: "countryName", referencedColumnName: "countryName" },
     ])
     city?: City
 }

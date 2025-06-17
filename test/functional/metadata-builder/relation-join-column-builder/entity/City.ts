@@ -1,14 +1,13 @@
-import { Column, Entity, PrimaryColumn, Unique } from "../../../../../src"
+import { Column, Entity, PrimaryColumn } from "../../../../../src"
 
 @Entity()
-@Unique(["id", "countryId"])
 export class City {
     @PrimaryColumn()
-    id: number
-
-    @Column()
-    countryId: number
-
-    @Column()
     name: string
+
+    @PrimaryColumn()
+    countryName: string
+
+    @Column()
+    population: number
 }
