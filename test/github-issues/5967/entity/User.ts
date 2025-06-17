@@ -22,5 +22,5 @@ export class User {
         nullable: true,
         array: true,
     })
-    nullable_times: [string, string] | null
+    nullable_times: string[] | null
 }
