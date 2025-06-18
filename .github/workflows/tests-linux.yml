@@ -1,14 +1,15 @@
-name: database-tests
-
+name: tests-linux
 on:
   workflow_call:
     inputs:
       node-version:
         required: true
-        type: string
+        type: number
 
 jobs:
   cockroachdb:
+    # CockroachDB is slow, run less often so it doesn't block other workflows
+    if: ${{ inputs.node-version >= 20 }}
     runs-on: ubuntu-latest
 
     services:
@@ -29,7 +30,7 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
@@ -43,7 +44,7 @@ jobs:
 
     services:
       mongodb:
-        image: mongo:5.0.12
+        image: mongo:5.0.31
         ports:
           - "27017:27017"
 
@@ -57,7 +58,7 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
@@ -68,10 +69,6 @@ jobs:
 
   mssql:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        mssql-version: ["^9.1.1", "^10.0.1", "^11.0.1"]
 
     services:
       mssql:
@@ -92,14 +89,13 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
-      - run: npm install mssql@${{ matrix.mssql-version }}
+      - run: npm ci
       - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: mssql-client:${{ matrix.mssql-version }}-node:${{ inputs.node-version }}
+          flag-name: mssql-node:${{ inputs.node-version }}
           parallel: true
 
   mysql_mariadb:
@@ -116,7 +112,7 @@ jobs:
           MYSQL_PASSWORD: "test"
           MYSQL_DATABASE: "test"
       mariadb:
-        image: mariadb:10.10.3
+        image: mariadb:10.11.13
         ports:
           - "3307:3306"
         env:
@@ -135,7 +131,7 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
@@ -157,7 +153,7 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
@@ -179,7 +175,7 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
@@ -201,7 +197,7 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
@@ -215,7 +211,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        postgis-version: ["14-3.5", "17-3.5"]
+        postgis-version:
+          - "14-3.5"
+          - "17-3.5"
 
     services:
       postgres:
@@ -242,11 +240,67 @@ jobs:
         with:
           name: build
           path: build/
-      - run: npm i
+      - run: npm ci
       - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
       - run: npx nyc npm run test:ci
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: postgres-postgis:${{ matrix.postgis-version }}-node:${{ inputs.node-version }}
+          flag-name: postgres:${{ matrix.postgis-version }}-node:${{ inputs.node-version }}
+          parallel: true
+
+  oracle:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: docker compose up oracle --detach
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "npm"
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: build/
+
+      - run: npm ci
+      - run: cat ormconfig.sample.json | jq 'map(select(.name == "oracle"))' > ormconfig.json
+      - run: docker compose up oracle --no-recreate --wait
+      - run: npx nyc npm run test:ci
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: oracle-node:${{ inputs.node-version }}
+          parallel: true
+
+  sap:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: docker compose up hanaexpress --detach
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "npm"
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: build/
+
+      - run: npm ci
+      - run: cat ormconfig.sample.json | jq 'map(select(.name == "hanaexpress"))' > ormconfig.json
+      - run: docker compose up hanaexpress --no-recreate --wait
+      - run: npx nyc npm run test:ci
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: sap-node:${{ inputs.node-version }}
           parallel: true

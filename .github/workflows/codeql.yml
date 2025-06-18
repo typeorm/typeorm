@@ -1,12 +1,13 @@
-name: "CodeQL"
-
+name: CodeQL
 on:
   push:
-    branches: ["master"]
+    branches:
+      - master
     paths-ignore:
       - "docs/**"
   pull_request:
-    branches: ["master"]
+    branches:
+      - master
     paths-ignore:
       - "docs/**"
   schedule:
