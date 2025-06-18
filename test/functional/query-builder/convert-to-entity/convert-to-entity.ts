@@ -8,7 +8,7 @@ import {
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
-describe("driver > convert raw results to entity", () => {
+describe("query builder > convert raw results to entity", () => {
     let connections: DataSource[]
     before(
         async () =>
