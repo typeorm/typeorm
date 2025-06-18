@@ -1,16 +1,15 @@
 import { expect } from "chai"
-import { ArrayEmbedding } from "./entity/ArrayEmbedding"
+import { DataSource, DeepPartial } from "../../../../../src"
 import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 import {
-    createTestingConnections,
-    reloadTestingDatabases,
     closeTestingConnections,
+    createTestingConnections,
 } from "../../../../utils/test-utils"
-import { DataSource, DeepPartial } from "../../../../../src"
-import { FvecsEmbedding } from "./entity/FvecsEmbedding"
+import { ArrayEmbedding } from "./entity/ArrayEmbedding"
+import { BufferEmbedding } from "./entity/BufferEmbedding"
 
-describe("database-schema > vector columns > sap", () => {
-    describe("real_vector with output type Array", () => {
+describe("database-schema > vectors > sap", () => {
+    describe("with vector output type Array", () => {
         let dataSources: DataSource[]
         before(async () => {
             dataSources = await createTestingConnections({
@@ -20,10 +19,10 @@ describe("database-schema > vector columns > sap", () => {
                     extra: {
                         vectorOutputType: "Array",
                     },
+                    synchronize: false,
                 },
             })
         })
-        beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
 
         it("should work correctly - create, persist and hydrate", () =>
@@ -63,32 +62,35 @@ describe("database-schema > vector columns > sap", () => {
                         },
                     )
 
+                    const smallVector = [
+                        0.004318627528846264, -0.008295782841742039,
+                        0.011462775990366936, -0.03171011060476303,
+                        -0.003404685528948903, 0.018827877938747406,
+                        0.010692788287997246, 0.014154385775327682,
+                        -0.026206370443105698, -0.03977154940366745,
+                        -0.008630559779703617, 0.040039367973804474,
+                        0.0019048830727115273, 0.01347813569009304,
+                        -0.02147931419312954, -0.004211498890072107,
+                    ]
+                    const variableVector = [
+                        -0.0015692687593400478, -0.013364311307668686,
+                        0.013545091263949871, 0.034843627363443375,
+                        0.02682236023247242, -0.011710511520504951,
+                        0.0019400346791371703, -0.003324338933452964,
+                        0.004094745498150587, -0.01127530075609684,
+                        -0.020943669602274895, -0.018211888149380684,
+                        -0.00585190812125802, 0.01311657577753067,
+                        -0.011121302843093872, 0.003078277688473463,
+                    ]
+
                     const plainEmbedding = {
                         id: 1,
                         content:
                             "This is a sample text to be analyzed by SAP Joule AI",
                         metadata: `{"client":"typeorm"}`,
-                        smallVector: [
-                            0.004318627528846264, -0.008295782841742039,
-                            0.011462775990366936, -0.03171011060476303,
-                            -0.003404685528948903, 0.018827877938747406,
-                            0.010692788287997246, 0.014154385775327682,
-                            -0.026206370443105698, -0.03977154940366745,
-                            -0.008630559779703617, 0.040039367973804474,
-                            0.0019048830727115273, 0.01347813569009304,
-                            -0.02147931419312954, -0.004211498890072107,
-                        ],
+                        smallVector,
                         largeVector: null,
-                        variableVector: [
-                            -0.0015692687593400478, -0.013364311307668686,
-                            0.013545091263949871, 0.034843627363443375,
-                            0.02682236023247242, -0.011710511520504951,
-                            0.0019400346791371703, -0.003324338933452964,
-                            0.004094745498150587, -0.01127530075609684,
-                            -0.020943669602274895, -0.018211888149380684,
-                            -0.00585190812125802, 0.01311657577753067,
-                            -0.011121302843093872, 0.003078277688473463,
-                        ],
+                        variableVector,
                     } satisfies DeepPartial<ArrayEmbedding>
 
                     const embeddingRepository =
@@ -104,15 +106,17 @@ describe("database-schema > vector columns > sap", () => {
             ))
     })
 
-    describe("real_vector with output type Buffer", () => {
+    describe("with vector output type Buffer", () => {
         let dataSources: DataSource[]
         before(async () => {
             dataSources = await createTestingConnections({
-                entities: [FvecsEmbedding],
+                entities: [BufferEmbedding],
                 enabledDrivers: ["sap"],
+                driverSpecific: {
+                    synchronize: false,
+                },
             })
         })
-        beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
 
         function deserializeFvecs(buffer: Buffer) {
@@ -173,11 +177,11 @@ describe("database-schema > vector columns > sap", () => {
                         content:
                             "This is a sample text to be analyzed by SAP Joule AI",
                         metadata: `{"client":"typeorm"}`,
-                        vector: serializeFvecs(plainVector),
-                    } satisfies DeepPartial<FvecsEmbedding>
+                        realVector: serializeFvecs(plainVector),
+                    } satisfies DeepPartial<BufferEmbedding>
 
                     const embeddingRepository =
-                        dataSource.getRepository(FvecsEmbedding)
+                        dataSource.getRepository(BufferEmbedding)
                     const embedding = embeddingRepository.create(plainEmbedding)
                     await embeddingRepository.save(embedding)
 
@@ -185,7 +189,7 @@ describe("database-schema > vector columns > sap", () => {
                         { id: 1 },
                     )
                     const loadedVector = deserializeFvecs(
-                        loadedEmbedding!.vector,
+                        loadedEmbedding!.realVector,
                     )
                     expect(loadedVector).to.deep.equal(plainVector)
                 }),

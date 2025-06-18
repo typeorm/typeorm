@@ -18,11 +18,6 @@ describe("database schema > column types > sap", () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sap"],
-            driverSpecific: {
-                extra: {
-                    vectorOutputType: "Array",
-                },
-            },
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))

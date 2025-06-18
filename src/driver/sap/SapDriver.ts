@@ -122,6 +122,7 @@ export class SapDriver implements Driver {
         "decimal",
         "double",
         "float", // database alias for "real" / "double"
+        "half_vector", // only supported in SAP HANA Cloud, not in SAP HANA 2.0
         "int", // typeorm alias for "integer"
         "integer",
         "nchar", // not officially supported
@@ -159,6 +160,7 @@ export class SapDriver implements Driver {
     withLengthColumnTypes: ColumnType[] = [
         "alphanum",
         "binary",
+        "half_vector",
         "nvarchar",
         "real_vector",
         "shorttext",
@@ -617,6 +619,13 @@ export class SapDriver implements Driver {
                 return "nclob"
             } else if (column.type === "char") {
                 return "nchar"
+            }
+        } else {
+            if (
+                column.type === "real_vector" ||
+                column.type === "half_vector"
+            ) {
+                return "varbinary"
             }
         }
 

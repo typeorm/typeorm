@@ -1,6 +1,6 @@
 import { Column, Entity, PrimaryColumn } from "../../../../../../src"
 
-@Entity({ synchronize: false })
+@Entity()
 export class ArrayEmbedding {
     @PrimaryColumn()
     id: number

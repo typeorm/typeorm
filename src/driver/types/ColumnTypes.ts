@@ -75,6 +75,7 @@ export type WithLengthColumnType =
     | "binary" // mssql
     | "varbinary" // mssql, sap
     | "string" // cockroachdb, spanner
+    | "half_vector" // sap
     | "real_vector" // sap
 
 export type WithWidthColumnType =

@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryColumn } from "../../../../../../src"
 
-@Entity({ synchronize: false })
-export class FvecsEmbedding {
+@Entity()
+export class BufferEmbedding {
     @PrimaryColumn()
     id: number
 
@@ -12,5 +12,5 @@ export class FvecsEmbedding {
     metadata: string
 
     @Column("real_vector")
-    vector: Buffer
+    realVector: Buffer
 }
