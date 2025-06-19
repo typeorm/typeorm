@@ -1,3 +1,27 @@
+## [0.3.25](https://github.com/typeorm/typeorm/compare/0.3.24...0.3.25) (2025-06-19)
+
+
+### Bug Fixes
+
+* add collation update detection in PostgresDriver ([#11441](https://github.com/typeorm/typeorm/issues/11441)) ([24c3e38](https://github.com/typeorm/typeorm/commit/24c3e38c517bf67366704822668b3e618fa56430)), closes [#8647](https://github.com/typeorm/typeorm/issues/8647) [#8647](https://github.com/typeorm/typeorm/issues/8647)
+* fix null pointer exception on date array column comparison ([#11532](https://github.com/typeorm/typeorm/issues/11532)) ([42e7cbe](https://github.com/typeorm/typeorm/commit/42e7cbe7da4444a3cbe3168f7e5056c964a241e8))
+* handle limit(0) and offset(0) correctly in SelectQueryBuilder ([#11507](https://github.com/typeorm/typeorm/issues/11507)) ([413f0a6](https://github.com/typeorm/typeorm/commit/413f0a68c891ef463b6940fc40f92efc9a935adc))
+* improve async calls on disconnect ([#11523](https://github.com/typeorm/typeorm/issues/11523)) ([ead4f98](https://github.com/typeorm/typeorm/commit/ead4f98ee4cbf07843002f14771ef19ef44c5af1))
+* multiple relations with same column name(s) generate invalid SELECT statement ([#11400](https://github.com/typeorm/typeorm/issues/11400)) ([63a3b9a](https://github.com/typeorm/typeorm/commit/63a3b9abc1b4dd336e63ca7c65246891ceebae3d)), closes [#1668](https://github.com/typeorm/typeorm/issues/1668) [#9788](https://github.com/typeorm/typeorm/issues/9788) [#9814](https://github.com/typeorm/typeorm/issues/9814) [#10121](https://github.com/typeorm/typeorm/issues/10121) [#10148](https://github.com/typeorm/typeorm/issues/10148) [#11109](https://github.com/typeorm/typeorm/issues/11109) [#11132](https://github.com/typeorm/typeorm/issues/11132) [#11180](https://github.com/typeorm/typeorm/issues/11180)
+* **postgres:** resolve alias or table name in upsert/insert or update conditionally ([#11452](https://github.com/typeorm/typeorm/issues/11452)) ([2bfa300](https://github.com/typeorm/typeorm/commit/2bfa300996110d2ed34b8d190e39c0eeeff24fe7)), closes [#11082](https://github.com/typeorm/typeorm/issues/11082) [#11440](https://github.com/typeorm/typeorm/issues/11440)
+* **tree-entity:** closure junction table primary key definition should match parent table ([#11422](https://github.com/typeorm/typeorm/issues/11422)) ([ce23d46](https://github.com/typeorm/typeorm/commit/ce23d4648ea026085ed0eae52bb9d6f07b2f836a))
+* **docs:** fix up doc search workflow ([#11513](https://github.com/typeorm/typeorm/issues/11513)) ([930eefd](https://github.com/typeorm/typeorm/commit/930eefd758eb6954f29dc8b8c4f189eb02491ffd))
+
+
+### Features
+
+* add upsert support for Oracle, SQLServer and SAP HANA ([#10974](https://github.com/typeorm/typeorm/issues/10974)) ([a9c16ee](https://github.com/typeorm/typeorm/commit/a9c16ee66d12d327e2ad9a511c8223bb72d4e693))
+* **spanner:** use credentials from connection options ([#11492](https://github.com/typeorm/typeorm/issues/11492)) ([07d7913](https://github.com/typeorm/typeorm/commit/07d7913be7f3e85ecf7933098384b80cd06070c4)), closes [#11442](https://github.com/typeorm/typeorm/issues/11442)
+* **docs:** add typesense/docsearch-scraper ([#11424](https://github.com/typeorm/typeorm/issues/11424)) ([65d5a00](https://github.com/typeorm/typeorm/commit/65d5a00ef1a1d604aa39e6c3ff49ac14191d24e4))
+* **docs:** add Plausible analytics script to Docusaurus config ([#11517](https://github.com/typeorm/typeorm/issues/11517)) ([86f12c9](https://github.com/typeorm/typeorm/commit/86f12c922641653873a36d960cd05730090295d2))
+
+
+
 ## [0.3.24](https://github.com/typeorm/typeorm/compare/0.3.23...0.3.24) (2025-05-14)
 
 
