@@ -1,4 +1,6 @@
 {
+  "__comment": "TODO: remove --exit flag: https://mochajs.org/#-exit",
+  "exit": true,
   "check-leaks": true,
   "color": true,
   "file": ["./build/compiled/test/utils/test-setup.js"],
