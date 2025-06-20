@@ -9,6 +9,7 @@ export async function importOrRequireFile(
         // `Function` is required to make sure the `import` statement wil stay `import` after
         // transpilation and won't be converted to `require`
         return [
+            // eslint-disable-next-line @typescript-eslint/no-implied-eval
             await Function("return filePath => import(filePath)")()(
                 filePath.startsWith("file://")
                     ? filePath
