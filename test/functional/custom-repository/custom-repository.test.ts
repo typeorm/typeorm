@@ -40,7 +40,7 @@ describe("custom repository", () => {
                 await dataSource.manager.transaction(
                     async (transactionalManager) => {
                         const transactionalCustomRepository =
-                            await transactionalManager.withRepository(
+                            transactionalManager.withRepository(
                                 CustomRepository,
                             )
                         await transactionalCustomRepository.save({

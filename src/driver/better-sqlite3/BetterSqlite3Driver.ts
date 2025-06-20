@@ -198,10 +198,9 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      */
     protected async attachDatabases() {
         // @todo - possibly check number of databases (but unqueriable at runtime sadly) - https://www.sqlite.org/limits.html#max_attached
-        for await (const {
-            attachHandle,
-            attachFilepathAbsolute,
-        } of Object.values(this.attachedDatabases)) {
+        for (const { attachHandle, attachFilepathAbsolute } of Object.values(
+            this.attachedDatabases,
+        )) {
             await this.createDatabaseDirectory(
                 path.dirname(attachFilepathAbsolute),
             )

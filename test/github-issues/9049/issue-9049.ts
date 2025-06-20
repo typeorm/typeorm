@@ -22,21 +22,22 @@ describe("github issues > #9049 mongodb entities with 2 level-nested arrays thro
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should save entities properly", async () => {
-        for (const connection of connections) {
-            const post = new Post()
-            const comment = new Comment()
-            const value = new Value()
+    it("should save entities properly", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const post = new Post()
+                const comment = new Comment()
+                const value = new Value()
 
-            value.description = "description"
-            comment.values = [value]
-            post.comments = [comment]
+                value.description = "description"
+                comment.values = [value]
+                post.comments = [comment]
 
-            await connection.mongoManager.save(post)
+                await connection.mongoManager.save(post)
 
-            const postRepo = await connection.getRepository(Post)
-            const posts = await postRepo.find({})
-            posts.forEach((post) => expect(post).to.be.instanceof(Post))
-        }
-    })
+                const postRepo = connection.getRepository(Post)
+                const posts = await postRepo.find({})
+                posts.forEach((post) => expect(post).to.be.instanceof(Post))
+            }),
+        ))
 })

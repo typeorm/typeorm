@@ -25,9 +25,7 @@ describe("github issues > #1805 bigint PK incorrectly returning as a number (exp
                 const account = new Account()
                 account.id = bigIntId
 
-                const accountRepository = await connection.getRepository(
-                    Account,
-                )
+                const accountRepository = connection.getRepository(Account)
 
                 await accountRepository.save(account)
 
