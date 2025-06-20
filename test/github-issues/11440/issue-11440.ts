@@ -21,7 +21,7 @@ describe("github issues > #11440", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should use table or alias name during upsert or doUpdate when both schema name and skipUpdateIfNoValuesChanged supplied", async () => {
+    it("should use table or alias name during upsert or doUpdate when both schema name and skipUpdateIfNoValuesChanged supplied", async () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const repository = dataSource.getRepository(Post)
@@ -82,7 +82,7 @@ describe("github issues > #11440", () => {
                         `VALUES ($1, $2), ($3, $4) ` +
                         `ON CONFLICT ( "id" ) DO UPDATE ` +
                         `SET "title" = EXCLUDED."title" ` +
-                        `WHERE ("Post"."title" IS DISTINCT FROM EXCLUDED."title")`,
+                        `WHERE "Post"."title" IS DISTINCT FROM EXCLUDED."title"`,
                 )
                 await query.execute()
 
@@ -105,6 +105,5 @@ describe("github issues > #11440", () => {
                     },
                 ])
             }),
-        )
-    })
+        ))
 })

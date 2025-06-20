@@ -107,12 +107,12 @@ describe("github issues > #6168 fix multiple foreign keys with the same name in 
 
                 const questionTable = tables.find(
                     (table) => table.name === questionName,
-                ) as Table
+                )!
                 const categoryTable = tables.find(
                     (table) => table.name === categoryName,
-                ) as Table
+                )!
 
-                queryRunner.release()
+                await queryRunner.release()
 
                 expect(categoryTable.foreignKeys.length).to.eq(1)
                 expect(categoryTable.foreignKeys[0].name).to.eq(
