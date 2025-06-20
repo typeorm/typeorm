@@ -1,4 +1,5 @@
 import { expect } from "chai"
+import { DeepPartial } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {
@@ -117,15 +118,18 @@ describe(`OrmUtils`, () => {
         })
 
         it("should merge moderately deep objects correctly.", () => {
-            const a = {
-                a: { b: { c: { d: { e: 123, h: { i: 23 } } } } },
-                g: 19,
-            }
-            const b = { a: { b: { c: { d: { f: 99 } }, f: 31 } } }
             const c = {
                 a: { b: { c: { d: { e: 123, f: 99, h: { i: 23 } } }, f: 31 } },
                 g: 19,
             }
+            const a: DeepPartial<typeof c> = {
+                a: { b: { c: { d: { e: 123, h: { i: 23 } } } } },
+                g: 19,
+            }
+            const b: DeepPartial<typeof c> = {
+                a: { b: { c: { d: { f: 99 } }, f: 31 } },
+            }
+
             expect(OrmUtils.mergeDeep(a, b)).to.deep.equal(c)
             expect(OrmUtils.mergeDeep(b, a)).to.deep.equal(c)
             expect(OrmUtils.mergeDeep(b, a, a)).to.deep.equal(c)

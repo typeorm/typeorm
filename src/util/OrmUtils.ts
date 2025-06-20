@@ -1,3 +1,4 @@
+import { DeepPartial } from "../common/DeepPartial"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import {
     PrimitiveCriteria,
@@ -47,11 +48,11 @@ export class OrmUtils {
         }, [] as Array<{ id: R; items: T[] }>)
     }
 
-    public static uniq<T>(array: T[], criteria?: (item: T) => any): T[]
+    public static uniq<T>(array: T[], criteria?: (item: T) => unknown): T[]
     public static uniq<T, K extends keyof T>(array: T[], property: K): T[]
     public static uniq<T, K extends keyof T>(
         array: T[],
-        criteriaOrProperty?: ((item: T) => any) | K,
+        criteriaOrProperty?: ((item: T) => unknown) | K,
     ): T[] {
         return array.reduce((uniqueArray, item) => {
             let found: boolean = false
@@ -80,7 +81,10 @@ export class OrmUtils {
     /**
      * Deep Object.assign.
      */
-    public static mergeDeep(target: any, ...sources: any[]): any {
+    public static mergeDeep<T>(
+        target: T,
+        ...sources: (DeepPartial<T> | undefined)[]
+    ): T {
         if (!sources.length) {
             return target
         }
@@ -101,7 +105,7 @@ export class OrmUtils {
         }
 
         return Object.assign(
-            Object.create(Object.getPrototypeOf(object)),
+            Object.create(Object.getPrototypeOf(object)) as T,
             object,
         )
     }
@@ -111,25 +115,20 @@ export class OrmUtils {
      *
      * @see http://stackoverflow.com/a/1144249
      */
-    public static deepCompare(...args: any[]): boolean {
+    public static deepCompare<T>(...args: T[]): boolean {
         let i: any, l: any, leftChain: any, rightChain: any
 
-        if (arguments.length < 1) {
+        if (args.length < 1) {
             return true // Die silently? Don't know how to handle such case, please help...
             // throw "Need two or more arguments to compare";
         }
 
-        for (i = 1, l = arguments.length; i < l; i++) {
+        for (i = 1, l = args.length; i < l; i++) {
             leftChain = [] // Todo: this can be cached
             rightChain = []
 
             if (
-                !this.compare2Objects(
-                    leftChain,
-                    rightChain,
-                    arguments[0],
-                    arguments[i],
-                )
+                !this.compare2Objects(leftChain, rightChain, args[0], args[i])
             ) {
                 return false
             }
@@ -141,7 +140,7 @@ export class OrmUtils {
     /**
      * Gets deeper value of object.
      */
-    public static deepValue(obj: ObjectLiteral, path: string) {
+    public static deepValue(obj: ObjectLiteral, path: string): any {
         const segments = path.split(".")
         for (let i = 0, len = segments.length; i < len; i++) {
             obj = obj[segments[i]]
@@ -233,23 +232,14 @@ export class OrmUtils {
     }
 
     /**
-     * Composes an object from the given array of keys and values.
-     */
-    public static zipObject(keys: any[], values: any[]): ObjectLiteral {
-        return keys.reduce((object, column, index) => {
-            object[column] = values[index]
-            return object
-        }, {} as ObjectLiteral)
-    }
-
-    /**
      * Compares two arrays.
      */
-    public static isArraysEqual(arr1: any[], arr2: any[]): boolean {
-        if (arr1.length !== arr2.length) return false
-        return arr1.every((element) => {
-            return arr2.indexOf(element) !== -1
-        })
+    public static isArraysEqual<T>(arr1: T[], arr2: T[]): boolean {
+        if (arr1.length !== arr2.length) {
+            return false
+        }
+
+        return arr1.every((element) => arr2.includes(element))
     }
 
     public static areMutuallyExclusive<T>(...lists: T[][]): boolean {
@@ -564,15 +554,17 @@ export class OrmUtils {
         memo.delete(value)
     }
 
-    private static merge(
-        target: any,
-        source: any,
+    private static merge<T>(
+        target: T,
+        source: DeepPartial<T> | undefined,
         memo: Map<any, any> = new Map(),
-    ): any {
+    ): void {
         if (this.isPlainObject(target) && this.isPlainObject(source)) {
-            for (const key of Object.keys(source)) {
+            for (const [key, value] of Object.entries(
+                source as ObjectLiteral,
+            )) {
                 if (key === "__proto__") continue
-                this.mergeObjectKey(target, key, source[key], memo)
+                this.mergeObjectKey(target, key, value, memo)
             }
         }
 
