@@ -62,7 +62,7 @@ describe("github issues > #5119 migration with foreign key that changes target",
                         `ALTER TABLE "post" DROP CONSTRAINT "FK_4490d00e1925ca046a1f52ddf04"`,
                     ])
                 } finally {
-                    dataSource.close()
+                    await dataSource.destroy()
                 }
             }),
         )

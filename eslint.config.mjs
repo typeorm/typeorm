@@ -72,7 +72,6 @@ export default tseslint.config([
 
             // temporary exceptions
             "@typescript-eslint/await-thenable": "off",
-            "@typescript-eslint/no-floating-promises": "off",
             "@typescript-eslint/no-unnecessary-type-assertion": "off",
             "@typescript-eslint/require-await": "off",
 

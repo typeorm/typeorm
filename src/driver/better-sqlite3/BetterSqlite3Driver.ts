@@ -155,7 +155,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
         // function to run before a database is used in typeorm.
         if (typeof prepareDatabase === "function") {
-            prepareDatabase(databaseConnection)
+            await prepareDatabase(databaseConnection)
         }
 
         // we need to enable foreign keys in sqlite to make sure all foreign key related features
