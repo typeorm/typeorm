@@ -49,6 +49,13 @@ export default tseslint.config([
 
             // exceptions from recommended type checked
             "@typescript-eslint/no-base-to-string": "off",
+            "@typescript-eslint/no-misused-promises": [
+                "error",
+                {
+                    checksConditionals: false,
+                    checksVoidReturn: false,
+                },
+            ],
             "@typescript-eslint/no-redundant-type-constituents": "warn",
             "@typescript-eslint/no-unsafe-argument": "off",
             "@typescript-eslint/no-unsafe-assignment": "off",
@@ -66,7 +73,6 @@ export default tseslint.config([
             // temporary exceptions
             "@typescript-eslint/await-thenable": "off",
             "@typescript-eslint/no-floating-promises": "off",
-            "@typescript-eslint/no-misused-promises": "off",
             "@typescript-eslint/no-unnecessary-type-assertion": "off",
             "@typescript-eslint/require-await": "off",
 

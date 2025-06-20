@@ -913,7 +913,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Creates connection with the database.
      */
-    protected createDatabaseConnection() {
+    protected async createDatabaseConnection(): Promise<any> {
         throw new TypeORMError(
             "Do not use AbstractSqlite directly, it has to be used with one of the sqlite drivers",
         )
