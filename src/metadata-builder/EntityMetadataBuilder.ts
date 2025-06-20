@@ -315,7 +315,19 @@ export class EntityMetadataBuilder {
                             junctionEntityMetadata,
                             entityMetadatas,
                         )
-                        entityMetadatas.push(junctionEntityMetadata)
+
+                        // check if there's already a user-defined entity with the same table name
+                        // if so, don't add the auto-generated junction entity to avoid duplicates
+                        const existingEntity = entityMetadatas.find(
+                            (metadata) =>
+                                metadata.tableName ===
+                                    junctionEntityMetadata.tableName &&
+                                !metadata.isJunction,
+                        )
+
+                        if (!existingEntity) {
+                            entityMetadatas.push(junctionEntityMetadata)
+                        }
                     })
             })
 
