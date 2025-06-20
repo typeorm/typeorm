@@ -20,17 +20,16 @@ describe("github issues > #4958 getRepository returns results from another Repo"
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("sql generated is for correct model", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const rawSql = await connection
-                    .getRepository(Second)
-                    .createQueryBuilder("a")
-                    .getSql()
+    it("sql generated is for correct model", () => {
+        for (const connection of connections) {
+            const rawSql = connection
+                .getRepository(Second)
+                .createQueryBuilder("a")
+                .getSql()
 
-                expect(rawSql).to.be.equal(
-                    'SELECT "a"."notId" AS "a_notId" FROM "second" "a"',
-                )
-            }),
-        ))
+            expect(rawSql).to.be.equal(
+                'SELECT "a"."notId" AS "a_notId" FROM "second" "a"',
+            )
+        }
+    })
 })

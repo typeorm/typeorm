@@ -1177,7 +1177,7 @@ export class MongoEntityManager extends EntityManager {
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
             )
-        const cursor = await this.createEntityCursor(entityClassOrName, query)
+        const cursor = this.createEntityCursor(entityClassOrName, query)
         const deleteDateColumn =
             this.connection.getMetadata(entityClassOrName).deleteDateColumn
 
