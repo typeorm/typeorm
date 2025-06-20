@@ -20,9 +20,9 @@
     ".": {
       "types": "./index.d.ts",
       "node": {
+        "types": "./index.d.ts",
         "import": "./index.mjs",
-        "require": "./index.js",
-        "types": "./index.d.ts"
+        "require": "./index.js"
       },
       "browser": {
         "require": "./index.js",
@@ -108,7 +108,7 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@eslint/js": "^9.28.0",
+    "@eslint/js": "^9.29.0",
     "@sap/hana-client": "^2.25.22",
     "@tsconfig/node16": "^16.1.4",
     "@types/chai": "^4.3.20",
@@ -127,7 +127,7 @@
     "chai": "^4.5.0",
     "chai-as-promised": "^7.1.2",
     "class-transformer": "^0.5.1",
-    "eslint": "^9.28.0",
+    "eslint": "^9.29.0",
     "globals": "^16.2.0",
     "gulp": "^4.0.2",
     "gulp-rename": "^2.0.0",
@@ -151,6 +151,7 @@
     "pkg-pr-new": "^0.0.43",
     "prettier": "^2.8.8",
     "redis": "^4.7.0",
+    "reflect-metadata": "^0.2.2",
     "remap-istanbul": "^0.13.0",
     "rimraf": "^5.0.10",
     "sinon": "^15.2.0",
@@ -162,7 +163,7 @@
     "standard-changelog": "^6.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.33.1"
+    "typescript-eslint": "^8.34.1"
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^5.18.0 || ^6.0.0 || ^7.0.0",
