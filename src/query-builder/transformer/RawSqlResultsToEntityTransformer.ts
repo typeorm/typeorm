@@ -589,7 +589,9 @@ export class RawSqlResultsToEntityTransformer {
                 }
 
                 // Calculate the idMaps for the rawRelationIdResult
-                return rawRelationIdResult.results.reduce((agg, result) => {
+                return rawRelationIdResult.results.reduce<{
+                    [idHash: string]: any[]
+                }>((agg, result) => {
                     let idMap = columns.reduce((idMap, column) => {
                         let value = result[column.databaseName]
                         if (
@@ -620,7 +622,7 @@ export class RawSqlResultsToEntityTransformer {
                         ) {
                             // if column is a relation
                             value =
-                                column.referencedColumn!.referencedColumn!.createValueMap(
+                                column.referencedColumn!.referencedColumn.createValueMap(
                                     value,
                                 )
                         }

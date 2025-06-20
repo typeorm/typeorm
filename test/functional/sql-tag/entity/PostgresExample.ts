@@ -26,5 +26,5 @@ export class PostgresExample {
     createdAt: Date
 
     @Column({ type: "jsonb", nullable: true })
-    tags: any | null
+    tags: string[] | null
 }
