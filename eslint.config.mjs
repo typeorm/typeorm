@@ -6,9 +6,10 @@ export default tseslint.config([
     {
         ignores: [
             "build/**",
+            "docs/**",
             "node_modules/**",
             "sample/playground/**",
-            "docs/**",
+            "temp/**",
         ],
     },
     {
@@ -32,7 +33,6 @@ export default tseslint.config([
             "@typescript-eslint/ban-ts-comment": "warn",
             "@typescript-eslint/no-empty-object-type": "warn",
             "@typescript-eslint/no-explicit-any": "warn",
-            "@typescript-eslint/no-misused-new": "warn",
             "@typescript-eslint/no-namespace": "warn",
             "@typescript-eslint/no-require-imports": "warn",
             "@typescript-eslint/no-this-alias": "warn",
@@ -57,6 +57,7 @@ export default tseslint.config([
                 },
             ],
             "@typescript-eslint/no-redundant-type-constituents": "warn",
+            "@typescript-eslint/no-unnecessary-type-assertion": "off",
             "@typescript-eslint/no-unsafe-argument": "off",
             "@typescript-eslint/no-unsafe-assignment": "off",
             "@typescript-eslint/no-unsafe-call": "off",
@@ -70,9 +71,6 @@ export default tseslint.config([
                 "warn",
                 { ignoreStatic: true },
             ],
-
-            // temporary exceptions
-            "@typescript-eslint/no-unnecessary-type-assertion": "off",
 
             // exceptions for eslint
             "no-async-promise-executor": "warn",

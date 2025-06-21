@@ -560,8 +560,8 @@ export declare interface AuthMechanismProperties extends Document {
 }
 
 /** @public */
-export declare interface AutoEncrypter {
-    new (client: MongoClient, options: AutoEncryptionOptions): AutoEncrypter
+export declare class AutoEncrypter {
+    constructor(client: MongoClient, options: AutoEncryptionOptions)
     init(cb: Callback): void
     teardown(force: boolean, callback: Callback): void
     encrypt(
