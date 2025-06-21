@@ -2,6 +2,11 @@
 
 TypeORM provides fine-grained control over how `null` and `undefined` values are handled in find operations through the `findWhereBehavior` configuration option in your data source options.
 
+:::note
+The current behavior will be changing in future versions of TypeORM,
+we recommend setting both `null` and `undefined` behaviors to throw to prepare for these changes
+:::
+
 ## Default Behavior
 
 By default, TypeORM skips both `null` and `undefined` values in where conditions. This means that if you include a property with a `null` or `undefined` value in your where clause, it will be ignored:
@@ -21,7 +26,7 @@ const posts2 = await repository.find({
 })
 ```
 
-The correct way to match null values in where conditions is to use the `IsNull` operator (for details see [Find Options](find-options.md)):
+The correct way to match null values in where conditions is to use the `IsNull` operator (for details see [Find Options](../working-with-entity-manager/3-find-options.md)):
 
 ```typescript
 const posts = await repository.find({
@@ -108,6 +113,7 @@ const posts = await repository.find({
     },
 })
 // Error: Null value encountered in property 'text' of the find operation.
+// To match with SQL NULL, the IsNull() operator must be used.
 // Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.
 ```
 
@@ -185,49 +191,8 @@ This combination is useful when you want to:
 -   Catch potential programming errors where undefined values might slip into your queries
 -   Maintain the convenience of partial where conditions
 
-## TypeScript Configuration
+## TypeScript Considerations
 
-By default, TypeScript will not allow you to pass `null` or `undefined` values in where conditions, encouraging type safety. However, if you've configured `findWhereBehavior` to handle `null` values as SQL NULL at runtime, you can opt into more permissive TypeScript checking using declaration merging.
+TypeScript will not allow you to pass `null` values in where conditions, we believe that this is the recommended behavior
 
-(Note this is only relevant when [strictNullChecks](https://www.typescriptlang.org/tsconfig/#strictNullChecks) is enabled in your tsconfig file, otherwise TypeScript ignores all `null` and `undefined` values.)
-
-### Enabling Nullable Where Types
-
-To allow `null` values in TypeScript, use declaration merging to extend the `TypeORMSettings` interface. This should be done in a separate declaration file (e.g., `types/typeorm.d.ts`) or at the beginning of your application:
-
-```typescript
-// types/typeorm.d.ts or at the top of your main file
-declare module "typeorm" {
-    interface TypeORMSettings {
-        allowNullableWhere: true
-    }
-}
-
-// Your runtime configuration
-const dataSource = new DataSource({
-    findWhereBehavior: {
-        null: "sql-null",
-    },
-})
-```
-
-With this configuration, TypeScript will allow `null` values in where conditions:
-
-```typescript
-// This is now allowed by TypeScript
-const posts = await repository.find({
-    where: {
-        text: null, // allowed, transformed to SQL NULL
-    },
-})
-```
-
-This setting only controls the behavior of `null` values; `undefined` values in where conditions are always invalid and therefore disallowed by TypeScript.
-
-
-### Important Notes
-
--   Only enable `allowNullableWhere` when you've properly configured `findWhereBehavior`
--   The TypeScript declaration should reflect your actual runtime configuration
--   This setting affects all find operations in your application
--   Consider the trade-offs between type safety and convenience for your team
+(Note this is only relevant when [strictNullChecks](https://www.typescriptlang.org/tsconfig/#strictNullChecks) is enabled in your tsconfig file, otherwise TypeScript ignores all `null` values.)
