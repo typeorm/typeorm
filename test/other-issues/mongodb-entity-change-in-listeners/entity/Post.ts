@@ -19,14 +19,14 @@ export class Post {
     updateDate: Date
 
     @BeforeUpdate()
-    async beforeUpdate() {
+    beforeUpdate() {
         this.title += "!"
     }
 
     loaded: boolean = false
 
     @AfterLoad()
-    async afterLoad() {
+    afterLoad() {
         this.loaded = true
     }
 }

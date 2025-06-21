@@ -10,7 +10,7 @@ export class ExtendedAfterLoadSubscriber
         return Post
     }
 
-    async afterLoad(entity: Post, event: LoadEvent<Post>) {
+    afterLoad(entity: Post, event: LoadEvent<Post>) {
         entity.extendedSubscriberSaw = event
     }
 }

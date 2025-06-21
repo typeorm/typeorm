@@ -123,7 +123,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                             ok(result.raw)
                         }
                     },
-                    async (err: any) => {
+                    (err: any) => {
                         this.driver.connection.logger.logQueryError(
                             err,
                             query,

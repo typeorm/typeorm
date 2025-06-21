@@ -155,26 +155,25 @@ describe("github issues > #3118 shorten alias names (for RDBMS with a limit) whe
             }),
         ))
 
-    it("should shorten table names which exceed the max length", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const shortName =
-                    "cat_wit_ver_lon_nam_pos_wit_ver_lon_nam_pos_wit_ver_lon_nam"
-                const normalName =
-                    "category_with_very_long_name_posts_with_very_long_name_post_with_very_long_name"
-                const { maxAliasLength } = connection.driver
-                const expectedTableName =
-                    maxAliasLength &&
-                    maxAliasLength > 0 &&
-                    normalName.length > maxAliasLength
-                        ? shortName
-                        : normalName
+    it("should shorten table names which exceed the max length", () => {
+        connections.forEach((connection) => {
+            const shortName =
+                "cat_wit_ver_lon_nam_pos_wit_ver_lon_nam_pos_wit_ver_lon_nam"
+            const normalName =
+                "category_with_very_long_name_posts_with_very_long_name_post_with_very_long_name"
+            const { maxAliasLength } = connection.driver
+            const expectedTableName =
+                maxAliasLength &&
+                maxAliasLength > 0 &&
+                normalName.length > maxAliasLength
+                    ? shortName
+                    : normalName
 
-                expect(
-                    connection.entityMetadatas.some(
-                        (em) => em.tableName === expectedTableName,
-                    ),
-                ).to.be.true
-            }),
-        ))
+            expect(
+                connection.entityMetadatas.some(
+                    (em) => em.tableName === expectedTableName,
+                ),
+            ).to.equal(true)
+        })
+    })
 })

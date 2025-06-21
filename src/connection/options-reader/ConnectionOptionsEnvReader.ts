@@ -17,7 +17,7 @@ export class ConnectionOptionsEnvReader {
     /**
      * Reads connection options from environment variables.
      */
-    async read(): Promise<DataSourceOptions[]> {
+    read(): DataSourceOptions[] {
         return [
             {
                 type:

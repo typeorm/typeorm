@@ -34,21 +34,20 @@ describe("github issues > #2216 - Ability to capture Postgres notifications in l
         })
         after(() => closeTestingConnections(connections))
 
-        it("should NOT pass extension setup notices to client", async () =>
-            Promise.all(
-                connections.map(async (connection) => {
-                    sinon.assert.neverCalledWith(
-                        logInfoStub,
-                        "info",
-                        `extension "uuid-ossp" already exists, skipping`,
-                    )
-                    sinon.assert.neverCalledWith(
-                        logInfoStub,
-                        "info",
-                        `extension "citext" already exists, skipping`,
-                    )
-                }),
-            ))
+        it("should NOT pass extension setup notices to client", () => {
+            connections.forEach((_connection) => {
+                sinon.assert.neverCalledWith(
+                    logInfoStub,
+                    "info",
+                    `extension "uuid-ossp" already exists, skipping`,
+                )
+                sinon.assert.neverCalledWith(
+                    logInfoStub,
+                    "info",
+                    `extension "citext" already exists, skipping`,
+                )
+            })
+        })
 
         it("should NOT pass manual notices to client", async () =>
             Promise.all(
@@ -93,21 +92,20 @@ describe("github issues > #2216 - Ability to capture Postgres notifications in l
         })
         after(() => closeTestingConnections(connections))
 
-        it("should pass extension setup notices to client", async () =>
-            Promise.all(
-                connections.map(async (connection) => {
-                    sinon.assert.calledWith(
-                        logInfoStub,
-                        "info",
-                        `extension "uuid-ossp" already exists, skipping`,
-                    )
-                    sinon.assert.calledWith(
-                        logInfoStub,
-                        "info",
-                        `extension "citext" already exists, skipping`,
-                    )
-                }),
-            ))
+        it("should pass extension setup notices to client", () => {
+            connections.forEach((_connection) => {
+                sinon.assert.calledWith(
+                    logInfoStub,
+                    "info",
+                    `extension "uuid-ossp" already exists, skipping`,
+                )
+                sinon.assert.calledWith(
+                    logInfoStub,
+                    "info",
+                    `extension "citext" already exists, skipping`,
+                )
+            })
+        })
 
         it("should pass manual notices to client", async () =>
             Promise.all(

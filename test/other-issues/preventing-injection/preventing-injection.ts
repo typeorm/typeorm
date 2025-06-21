@@ -111,37 +111,35 @@ describe("other issues > preventing-injection", () => {
             }),
         ))
 
-    it("should not allow non-numeric values in skip and take in QueryBuilder", () =>
-        Promise.all(
-            connections.map(async function (connection) {
-                expect(() => {
-                    connection.manager
-                        .createQueryBuilder(Post, "post")
-                        .take("(WHERE XXX)" as any)
-                }).to.throw(Error)
+    it("should not allow non-numeric values in skip and take in QueryBuilder", () => {
+        connections.forEach((connection) => {
+            expect(() => {
+                connection.manager
+                    .createQueryBuilder(Post, "post")
+                    .take("(WHERE XXX)" as any)
+            }).to.throw(Error)
 
-                expect(() => {
-                    connection.manager
-                        .createQueryBuilder(Post, "post")
-                        .skip("(WHERE LIMIT 1)" as any)
-                }).to.throw(Error)
-            }),
-        ))
+            expect(() => {
+                connection.manager
+                    .createQueryBuilder(Post, "post")
+                    .skip("(WHERE LIMIT 1)" as any)
+            }).to.throw(Error)
+        })
+    })
 
-    it("should not allow non-allowed values in order by in QueryBuilder", () =>
-        Promise.all(
-            connections.map(async function (connection) {
-                expect(() => {
-                    connection.manager
-                        .createQueryBuilder(Post, "post")
-                        .orderBy("post.id", "MIX" as any)
-                }).to.throw(Error)
+    it("should not allow non-allowed values in order by in QueryBuilder", () => {
+        connections.forEach((connection) => {
+            expect(() => {
+                connection.manager
+                    .createQueryBuilder(Post, "post")
+                    .orderBy("post.id", "MIX" as any)
+            }).to.throw(Error)
 
-                expect(() => {
-                    connection.manager
-                        .createQueryBuilder(Post, "post")
-                        .orderBy("post.id", "DESC", "SOMETHING LAST" as any)
-                }).to.throw(Error)
-            }),
-        ))
+            expect(() => {
+                connection.manager
+                    .createQueryBuilder(Post, "post")
+                    .orderBy("post.id", "DESC", "SOMETHING LAST" as any)
+            }).to.throw(Error)
+        })
+    })
 })

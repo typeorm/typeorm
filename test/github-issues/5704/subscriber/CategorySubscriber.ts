@@ -7,7 +7,7 @@ export class CategorySubscriber implements EntitySubscriberInterface<Category> {
         return Category
     }
 
-    async afterLoad(entity: Category): Promise<any> {
+    afterLoad(entity: Category) {
         entity.addedProp = true
     }
 }

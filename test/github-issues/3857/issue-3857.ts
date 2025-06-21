@@ -1,12 +1,13 @@
+import { expect } from "chai"
 import "reflect-metadata"
+import { DataSource } from "../../../src"
 import {
-    createTestingConnections,
     closeTestingConnections,
+    createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { Person } from "./entity/Person"
 import { Men } from "./entity/Men"
+import { Person } from "./entity/Person"
 import { Women } from "./entity/Women"
 
 describe("github issues > #3857 Schema inheritance when STI pattern is used", () => {
@@ -23,18 +24,14 @@ describe("github issues > #3857 Schema inheritance when STI pattern is used", ()
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("Child classes should have same schema as parent", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const personMetadata = connection.getMetadata(Person)
-                const menMetadata = connection.getMetadata(Men)
-                const womenMetadata = connection.getMetadata(Women)
-                // @ts-ignore
-                personMetadata.schema.should.be.eq("custom")
-                // @ts-ignore
-                menMetadata.schema.should.be.eq(personMetadata.schema)
-                // @ts-ignore
-                womenMetadata.schema.should.be.eq(personMetadata.schema)
-            }),
-        ))
+    it("Child classes should have same schema as parent", () => {
+        connections.map((connection) => {
+            const personMetadata = connection.getMetadata(Person)
+            const menMetadata = connection.getMetadata(Men)
+            const womenMetadata = connection.getMetadata(Women)
+            expect(personMetadata.schema).to.be.equal("custom")
+            expect(menMetadata.schema).to.be.equal(personMetadata.schema)
+            expect(womenMetadata.schema).to.be.equal(personMetadata.schema)
+        })
+    })
 })

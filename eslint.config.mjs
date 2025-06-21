@@ -63,6 +63,7 @@ export default tseslint.config([
             "@typescript-eslint/no-unsafe-member-access": "off",
             "@typescript-eslint/no-unsafe-return": "off",
             "@typescript-eslint/prefer-promise-reject-errors": "off",
+            "@typescript-eslint/require-await": "warn",
             "@typescript-eslint/restrict-plus-operands": "warn",
             "@typescript-eslint/restrict-template-expressions": "warn",
             "@typescript-eslint/unbound-method": [
@@ -72,7 +73,6 @@ export default tseslint.config([
 
             // temporary exceptions
             "@typescript-eslint/no-unnecessary-type-assertion": "off",
-            "@typescript-eslint/require-await": "off",
 
             // exceptions for eslint
             "no-async-promise-executor": "warn",
