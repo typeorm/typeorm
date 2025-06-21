@@ -22,114 +22,111 @@ describe("mysql > tree tables > closure-table", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("foo1 should create closure columns unsigned", () =>
-        Promise.all(
-            connections.map(async (dataSource) => {
-                const fooMetadata = dataSource.entityMetadatas.find(
-                    (el) => el.tableName === "foo1",
-                )!
+    it("foo1 should create closure columns unsigned", () => {
+        connections.forEach((dataSource) => {
+            const fooMetadata = dataSource.entityMetadatas.find(
+                (el) => el.tableName === "foo1",
+            )!
 
-                expect(fooMetadata).to.exist
+            expect(fooMetadata).to.exist
 
-                const fooClosureMetadata = dataSource.entityMetadatas.find(
-                    (el) => el.tableName === "foo1_closure",
-                )!
+            const fooClosureMetadata = dataSource.entityMetadatas.find(
+                (el) => el.tableName === "foo1_closure",
+            )!
 
-                expect(fooClosureMetadata).to.exist
+            expect(fooClosureMetadata).to.exist
 
-                const ancestorCol = fooClosureMetadata.columns.find(
-                    (col) => col.databaseName === "ancestor_id",
-                )!
+            const ancestorCol = fooClosureMetadata.columns.find(
+                (col) => col.databaseName === "ancestor_id",
+            )!
 
-                expect(ancestorCol).to.exist
+            expect(ancestorCol).to.exist
 
-                const descendantCol = fooClosureMetadata.columns.find(
-                    (col) => col.databaseName === "descendant_id",
-                )!
+            const descendantCol = fooClosureMetadata.columns.find(
+                (col) => col.databaseName === "descendant_id",
+            )!
 
-                expect(descendantCol).to.exist
+            expect(descendantCol).to.exist
 
-                expect(ancestorCol.unsigned).to.be.true
-                expect(descendantCol.unsigned).to.be.true
-            }),
-        ))
+            expect(ancestorCol.unsigned).to.be.true
+            expect(descendantCol.unsigned).to.be.true
+        })
+    })
 
-    it("foo2 should create closure columns with specified zerofill, width, precision and scale", () =>
-        Promise.all(
-            connections.map(async (dataSource) => {
-                const fooMetadata = dataSource.entityMetadatas.find(
-                    (el) => el.tableName === "foo2",
-                )!
+    it("foo2 should create closure columns with specified zerofill, width, precision and scale", () => {
+        connections.forEach((dataSource) => {
+            const fooMetadata = dataSource.entityMetadatas.find(
+                (el) => el.tableName === "foo2",
+            )!
 
-                expect(fooMetadata).to.exist
+            expect(fooMetadata).to.exist
 
-                const fooClosureMetadata = dataSource.entityMetadatas.find(
-                    (el) => el.tableName === "foo2_closure",
-                )!
+            const fooClosureMetadata = dataSource.entityMetadatas.find(
+                (el) => el.tableName === "foo2_closure",
+            )!
 
-                expect(fooClosureMetadata).to.exist
+            expect(fooClosureMetadata).to.exist
 
-                const ancestorCol = fooClosureMetadata.columns.find(
-                    (col) => col.databaseName === "ancestor_id",
-                )!
+            const ancestorCol = fooClosureMetadata.columns.find(
+                (col) => col.databaseName === "ancestor_id",
+            )!
 
-                expect(ancestorCol).to.exist
+            expect(ancestorCol).to.exist
 
-                const descendantCol = fooClosureMetadata.columns.find(
-                    (col) => col.databaseName === "descendant_id",
-                )!
+            const descendantCol = fooClosureMetadata.columns.find(
+                (col) => col.databaseName === "descendant_id",
+            )!
 
-                expect(descendantCol).to.exist
+            expect(descendantCol).to.exist
 
-                expect(ancestorCol.zerofill).to.be.true
-                expect(descendantCol.zerofill).to.be.true
+            expect(ancestorCol.zerofill).to.be.true
+            expect(descendantCol.zerofill).to.be.true
 
-                expect(ancestorCol.width).to.be.eq(13)
-                expect(descendantCol.width).to.be.eq(13)
+            expect(ancestorCol.width).to.be.eq(13)
+            expect(descendantCol.width).to.be.eq(13)
 
-                expect(ancestorCol.precision).to.be.eq(9)
-                expect(descendantCol.precision).to.be.eq(9)
+            expect(ancestorCol.precision).to.be.eq(9)
+            expect(descendantCol.precision).to.be.eq(9)
 
-                expect(ancestorCol.scale).to.be.eq(3)
-                expect(descendantCol.scale).to.be.eq(3)
-            }),
-        ))
+            expect(ancestorCol.scale).to.be.eq(3)
+            expect(descendantCol.scale).to.be.eq(3)
+        })
+    })
 
-    it("foo3 should create closure columns with specified length, charset and collation", () =>
-        Promise.all(
-            connections.map(async (dataSource) => {
-                const fooMetadata = dataSource.entityMetadatas.find(
-                    (el) => el.tableName === "foo3",
-                )!
+    it("foo3 should create closure columns with specified length, charset and collation", () => {
+        connections.forEach((dataSource) => {
+            const fooMetadata = dataSource.entityMetadatas.find(
+                (el) => el.tableName === "foo3",
+            )!
 
-                expect(fooMetadata).to.exist
+            expect(fooMetadata).to.exist
 
-                const fooClosureMetadata = dataSource.entityMetadatas.find(
-                    (el) => el.tableName === "foo3_closure",
-                )!
+            const fooClosureMetadata = dataSource.entityMetadatas.find(
+                (el) => el.tableName === "foo3_closure",
+            )!
 
-                expect(fooClosureMetadata).to.exist
+            expect(fooClosureMetadata).to.exist
 
-                const ancestorCol = fooClosureMetadata.columns.find(
-                    (col) => col.databaseName === "ancestor_id",
-                )!
+            const ancestorCol = fooClosureMetadata.columns.find(
+                (col) => col.databaseName === "ancestor_id",
+            )!
 
-                expect(ancestorCol).to.exist
+            expect(ancestorCol).to.exist
 
-                const descendantCol = fooClosureMetadata.columns.find(
-                    (col) => col.databaseName === "descendant_id",
-                )!
+            const descendantCol = fooClosureMetadata.columns.find(
+                (col) => col.databaseName === "descendant_id",
+            )!
 
-                expect(descendantCol).to.exist
+            expect(descendantCol).to.exist
 
-                expect(ancestorCol.length).to.be.eq("201")
-                expect(descendantCol.length).to.be.eq("201")
+            expect(ancestorCol.length).to.be.eq("201")
+            expect(descendantCol.length).to.be.eq("201")
 
-                expect(ancestorCol.charset).to.be.eq("latin1")
-                expect(descendantCol.charset).to.be.eq("latin1")
+            expect(ancestorCol.charset).to.be.eq("latin1")
+            expect(descendantCol.charset).to.be.eq("latin1")
 
-                expect(ancestorCol.collation).to.be.eq("latin1_bin")
-                expect(descendantCol.collation).to.be.eq("latin1_bin")
-            }),
-        ))
+            expect(ancestorCol.collation).to.be.eq("latin1_bin")
+            expect(descendantCol.collation).to.be.eq("latin1_bin")
+        })
+    })
 })

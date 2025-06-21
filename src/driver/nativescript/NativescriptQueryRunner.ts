@@ -56,7 +56,7 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
 
         const databaseConnection = await this.connect()
 
-        return new Promise(async (ok, fail) => {
+        return new Promise((ok, fail) => {
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
             connection.logger.logQuery(query, parameters, this)
 
