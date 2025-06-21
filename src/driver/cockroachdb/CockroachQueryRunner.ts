@@ -2712,9 +2712,10 @@ export class CockroachQueryRunner
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
     ): Promise<void> {
-        for (const foreignKey of foreignKeys) {
-            await this.dropForeignKey(tableOrName, foreignKey)
-        }
+        const promises = foreignKeys.map((foreignKey) =>
+            this.dropForeignKey(tableOrName, foreignKey),
+        )
+        await Promise.all(promises)
     }
 
     /**
@@ -2758,9 +2759,10 @@ export class CockroachQueryRunner
         tableOrName: Table | string,
         indices: TableIndex[],
     ): Promise<void> {
-        for (const index of indices) {
-            await this.createIndex(tableOrName, index)
-        }
+        const promises = indices.map((index) =>
+            this.createIndex(tableOrName, index),
+        )
+        await Promise.all(promises)
     }
 
     /**
@@ -2797,9 +2799,10 @@ export class CockroachQueryRunner
         tableOrName: Table | string,
         indices: TableIndex[],
     ): Promise<void> {
-        for (const index of indices) {
-            await this.dropIndex(tableOrName, index)
-        }
+        const promises = indices.map((index) =>
+            this.dropIndex(tableOrName, index),
+        )
+        await Promise.all(promises)
     }
 
     /**

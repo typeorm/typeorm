@@ -2692,9 +2692,10 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
     ): Promise<void> {
-        for (const uniqueConstraint of uniqueConstraints) {
-            await this.createUniqueConstraint(tableOrName, uniqueConstraint)
-        }
+        const promises = uniqueConstraints.map((uniqueConstraint) =>
+            this.createUniqueConstraint(tableOrName, uniqueConstraint),
+        )
+        await Promise.all(promises)
     }
 
     /**
@@ -2728,9 +2729,10 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
     ): Promise<void> {
-        for (const uniqueConstraint of uniqueConstraints) {
-            await this.dropUniqueConstraint(tableOrName, uniqueConstraint)
-        }
+        const promises = uniqueConstraints.map((uniqueConstraint) =>
+            this.dropUniqueConstraint(tableOrName, uniqueConstraint),
+        )
+        await Promise.all(promises)
     }
 
     /**
@@ -2921,9 +2923,10 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
     ): Promise<void> {
-        for (const foreignKey of foreignKeys) {
-            await this.createForeignKey(tableOrName, foreignKey)
-        }
+        const promises = foreignKeys.map((foreignKey) =>
+            this.createForeignKey(tableOrName, foreignKey),
+        )
+        await Promise.all(promises)
     }
 
     /**
@@ -2966,9 +2969,10 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
     ): Promise<void> {
-        for (const foreignKey of foreignKeys) {
-            await this.dropForeignKey(tableOrName, foreignKey)
-        }
+        const promises = foreignKeys.map((foreignKey) =>
+            this.dropForeignKey(tableOrName, foreignKey),
+        )
+        await Promise.all(promises)
     }
 
     /**
@@ -3018,9 +3022,10 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         indices: TableIndex[],
     ): Promise<void> {
-        for (const index of indices) {
-            await this.createIndex(tableOrName, index)
-        }
+        const promises = indices.map((index) =>
+            this.createIndex(tableOrName, index),
+        )
+        await Promise.all(promises)
     }
 
     /**
@@ -3030,9 +3035,10 @@ export class PostgresQueryRunner
         viewOrName: View | string,
         indices: TableIndex[],
     ): Promise<void> {
-        for (const index of indices) {
-            await this.createViewIndex(viewOrName, index)
-        }
+        const promises = indices.map((index) =>
+            this.createViewIndex(viewOrName, index),
+        )
+        await Promise.all(promises)
     }
 
     /**
@@ -3094,9 +3100,10 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         indices: TableIndex[],
     ): Promise<void> {
-        for (const index of indices) {
-            await this.dropIndex(tableOrName, index)
-        }
+        const promises = indices.map((index) =>
+            this.dropIndex(tableOrName, index),
+        )
+        await Promise.all(promises)
     }
 
     /**
