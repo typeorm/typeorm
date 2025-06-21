@@ -8,7 +8,7 @@ import { DataSource } from "../../../src"
 import { TestEntity } from "./entities/TestEntity"
 import { expect } from "chai"
 
-describe("query builder order nulls first/last", async () => {
+describe("query builder order nulls first/last", () => {
     let dataSources: DataSource[]
 
     before(async () => {

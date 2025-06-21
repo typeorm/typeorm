@@ -5,13 +5,13 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { Connection } from "../../../../src/connection/Connection"
 import { Foo } from "./entity/foo"
 import { filterByCteCapabilities } from "./helpers"
 import { QueryBuilderCteOptions } from "../../../../src/query-builder/QueryBuilderCte"
+import { DataSource } from "../../../../src"
 
 describe("query builder > cte > materialized", () => {
-    let connections: Connection[]
+    let connections: DataSource[]
     before(
         async () =>
             (connections = await createTestingConnections({
@@ -49,7 +49,7 @@ describe("query builder > cte > materialized", () => {
 
                     const cteSelection = "qaz.raz"
 
-                    const qb = await connection
+                    const qb = connection
                         .createQueryBuilder()
                         .addCommonTableExpression(cteQuery, "qaz", cteOptions)
                         .from("qaz", "qaz")
@@ -88,7 +88,7 @@ describe("query builder > cte > materialized", () => {
 
                     const cteSelection = "qaz.raz"
 
-                    const qb = await connection
+                    const qb = connection
                         .createQueryBuilder()
                         .addCommonTableExpression(cteQuery, "qaz", cteOptions)
                         .from("qaz", "qaz")
@@ -126,7 +126,7 @@ describe("query builder > cte > materialized", () => {
 
                     const cteSelection = "qaz.raz"
 
-                    const qb = await connection
+                    const qb = connection
                         .createQueryBuilder()
                         .addCommonTableExpression(cteQuery, "qaz", cteOptions)
                         .from("qaz", "qaz")

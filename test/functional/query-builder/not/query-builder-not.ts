@@ -24,7 +24,7 @@ describe("query builder > not", () => {
     it("should put negation in the SQL with one condition", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const sql = await connection
+                const sql = connection
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .andWhere(
@@ -50,7 +50,7 @@ describe("query builder > not", () => {
     it("should put negation in the SQL with two condition", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const sql = await connection
+                const sql = connection
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
                     .andWhere(

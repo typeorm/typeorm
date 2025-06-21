@@ -7,7 +7,7 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 
-describe("github issues > #3588 Migration:generate issue with onUpdate using mysql 8.0", async () => {
+describe("github issues > #3588 Migration:generate issue with onUpdate using mysql 8.0", () => {
     let connections: DataSource[]
     before(
         async () =>

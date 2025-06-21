@@ -58,21 +58,20 @@ describe("github issues > #7932  non-ascii characters assigned to var/char colum
             }),
         ))
 
-    it("should not change char or varchar column types to nchar or nvarchar", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const repo = connection.getRepository(Example)
+    it("should not change char or varchar column types to nchar or nvarchar", () => {
+        connections.forEach((connection) => {
+            const repo = connection.getRepository(Example)
 
-                const columnMetadata = repo.metadata.ownColumns
-                const contentColumnType = columnMetadata.find(
-                    (m) => m.propertyName === "content",
-                )?.type
-                const fixedLengthContentColumnType = columnMetadata.find(
-                    (m) => m.propertyName === "fixedLengthContent",
-                )?.type
+            const columnMetadata = repo.metadata.ownColumns
+            const contentColumnType = columnMetadata.find(
+                (m) => m.propertyName === "content",
+            )?.type
+            const fixedLengthContentColumnType = columnMetadata.find(
+                (m) => m.propertyName === "fixedLengthContent",
+            )?.type
 
-                expect(contentColumnType).to.be.equal("varchar")
-                expect(fixedLengthContentColumnType).to.be.equal("char")
-            }),
-        ))
+            expect(contentColumnType).to.be.equal("varchar")
+            expect(fixedLengthContentColumnType).to.be.equal("char")
+        })
+    })
 })

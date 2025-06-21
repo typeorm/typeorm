@@ -15,20 +15,31 @@ const options: DataSourceOptions = {
     entities: [Post],
 }
 
-const dataSource = new DataSource(options)
-dataSource.initialize().then(
-    async (dataSource) => {
-        const post = new Post()
-        post.text = "Hello how are you?"
-        post.title = "hello"
-        post.likesCount = 100
+async function main() {
+    const dataSource = new DataSource(options)
 
-        const postRepository = dataSource.getRepository(Post)
+    try {
+        await dataSource.initialize()
+    } catch (error) {
+        console.log("Cannot connect: ", error)
+        return
+    }
 
-        postRepository
-            .save(post)
-            .then((post) => console.log("Post has been saved: ", post))
-            .catch((error) => console.log("Cannot save. Error: ", error))
-    },
-    (error) => console.log("Cannot connect: ", error),
-)
+    const post = new Post()
+    post.text = "Hello how are you?"
+    post.title = "hello"
+    post.likesCount = 100
+
+    const postRepository = dataSource.getRepository(Post)
+
+    try {
+        await postRepository.save(post)
+        console.log("Post has been saved: ", post)
+    } catch (error) {
+        console.log("Cannot save. Error: ", error)
+    }
+
+    await dataSource.destroy()
+}
+
+void main()

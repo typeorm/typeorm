@@ -25,18 +25,17 @@ describe("github issues > #10569 Fix type inferencing of EntityManager#create", 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should correctly inference entity type", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                const createUserContract: CreateUserContract = {
-                    name: "John Doe",
-                }
+    it("should correctly inference entity type", () => {
+        dataSources.forEach((dataSource) => {
+            const createUserContract: CreateUserContract = {
+                name: "John Doe",
+            }
 
-                const user = dataSource.manager.create(User, createUserContract)
+            const user = dataSource.manager.create(User, createUserContract)
 
-                user.id = v4()
+            user.id = v4()
 
-                expect(user.id).to.exist
-            }),
-        ))
+            expect(user.id).to.exist
+        })
+    })
 })

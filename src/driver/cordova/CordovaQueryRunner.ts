@@ -61,7 +61,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
         const queryStartTime = Date.now()
 
         try {
-            const raw = await new Promise<any>(async (ok, fail) => {
+            const raw = await new Promise<any>((ok, fail) => {
                 databaseConnection.executeSql(
                     query,
                     parameters,

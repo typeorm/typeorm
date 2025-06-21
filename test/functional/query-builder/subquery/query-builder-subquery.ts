@@ -76,7 +76,7 @@ describe("query builder > sub-query", () => {
             connections.map(async (connection) => {
                 await prepare(connection)
 
-                const qb = await connection
+                const qb = connection
                     .getRepository(Post)
                     .createQueryBuilder("post")
                 const posts = await qb
@@ -161,7 +161,7 @@ describe("query builder > sub-query", () => {
             connections.map(async (connection) => {
                 await prepare(connection)
 
-                const userQb = await connection
+                const userQb = connection
                     .getRepository(User)
                     .createQueryBuilder("usr")
                     .select("usr.name")
@@ -187,7 +187,7 @@ describe("query builder > sub-query", () => {
             connections.map(async (connection) => {
                 await prepare(connection)
 
-                const userQb = await connection
+                const userQb = connection
                     .getRepository(User)
                     .createQueryBuilder("usr")
                     .select("usr.name", "name")
@@ -217,7 +217,7 @@ describe("query builder > sub-query", () => {
             connections.map(async (connection) => {
                 await prepare(connection)
 
-                const userQb = await connection
+                const userQb = connection
                     .getRepository(User)
                     .createQueryBuilder("usr")
                     .select("usr.name", "name")
@@ -254,7 +254,7 @@ describe("query builder > sub-query", () => {
             connections.map(async (connection) => {
                 await prepare(connection)
 
-                const userQb = await connection
+                const userQb = connection
                     .getRepository(User)
                     .createQueryBuilder("usr")
                     .select("usr.name", "name")

@@ -19,16 +19,15 @@ describe("github issues > #4842 QueryExpressionMap doesn't clone distinct proper
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should contain correct distinct value after query builder is cloned", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const query = connection.manager
-                    .createQueryBuilder(Post, "post")
-                    .distinct()
-                    .disableEscaping()
-                const sqlWithDistinct = query.getSql()
+    it("should contain correct distinct value after query builder is cloned", () => {
+        connections.forEach((connection) => {
+            const query = connection.manager
+                .createQueryBuilder(Post, "post")
+                .distinct()
+                .disableEscaping()
+            const sqlWithDistinct = query.getSql()
 
-                expect(query.clone().getSql()).to.equal(sqlWithDistinct)
-            }),
-        ))
+            expect(query.clone().getSql()).to.equal(sqlWithDistinct)
+        })
+    })
 })
