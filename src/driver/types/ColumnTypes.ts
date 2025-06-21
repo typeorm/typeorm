@@ -47,7 +47,7 @@ export type WithPrecisionColumnType =
     | "time" // mysql, postgres, mssql, cockroachdb
     | "time with time zone" // postgres, cockroachdb
     | "time without time zone" // postgres
-    | "timestamp" // mysql, postgres, mssql, oracle, cockroachdb, spanner
+    | "timestamp" // mysql, postgres, mssql, oracle, cockroachdb, sap, spanner
     | "timestamp without time zone" // postgres, cockroachdb
     | "timestamp with time zone" // postgres, oracle, cockroachdb
     | "timestamp with local time zone" // oracle
@@ -75,6 +75,8 @@ export type WithLengthColumnType =
     | "binary" // mssql
     | "varbinary" // mssql, sap
     | "string" // cockroachdb, spanner
+    | "half_vector" // sap
+    | "real_vector" // sap
 
 export type WithWidthColumnType =
     | "tinyint" // mysql

@@ -109,7 +109,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",
-    "@sap/hana-client": "^2.24.21",
+    "@sap/hana-client": "^2.25.22",
     "@tsconfig/node16": "^16.1.4",
     "@types/chai": "^4.3.20",
     "@types/chai-as-promised": "^7.1.8",

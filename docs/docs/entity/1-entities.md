@@ -401,9 +401,14 @@ or
 
 ### Column types for `sap`
 
-`tinyint`, `smallint`, `integer`, `bigint`, `smalldecimal`, `decimal`, `real`, `double`, `date`, `time`, `seconddate`, `timestamp`, `boolean`, `char`, `nchar`, `varchar`, `nvarchar`, `text`, `alphanum`, `shorttext`, `array`, `varbinary`, `blob`, `clob`, `nclob`, `st_geometry`, `st_point`.
+SAP HANA 2.0 and SAP HANA Cloud support slightly different data types. Check the SAP Help pages for more information:
 
-> Note: SAP HANA Cloud deprecated or removed some of these data types. TypeORM will convert them to the closest available alternative when connected to a Cloud version.
+-   [SAP HANA 2.0 Data Types](https://help.sap.com/docs/SAP_HANA_PLATFORM/4fe29514fd584807ac9f2a04f6754767/20a1569875191014b507cf392724b7eb.html?locale=en-US)
+-   [SAP HANA Cloud Data Types](https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/data-types)
+
+TypeORM's `SapDriver` supports `tinyint`, `smallint`, `integer`, `bigint`, `smalldecimal`, `decimal`, `real`, `double`, `date`, `time`, `seconddate`, `timestamp`, `boolean`, `char`, `nchar`, `varchar`, `nvarchar`, `text`, `alphanum`, `shorttext`, `array`, `varbinary`, `blob`, `clob`, `nclob`, `st_geometry`, `st_point`, `real_vector` and `half_vector`. Some of these data types have been deprecated or removed in SAP HANA Cloud, and will be converted to the closest available alternative when connected to a Cloud database.
+
+The `real_vector` and `half_vector` data types were introduced in SAP HANA Cloud (2024Q1 and 2025Q2 respectively), and require a supported version of `@sap/hana-client` as well. By default, the client will return a `Buffer` in the `fvecs`/`hvecs` format, which is more efficient. It is possible to let the driver convert the values to a `number[]` by adding `{ extra: { vectorOutputType: "Array" } }` to the connection options. Check the SAP HANA Client documentation for more information about [REAL_VECTOR](https://help.sap.com/docs/SAP_HANA_CLIENT/f1b440ded6144a54ada97ff95dac7adf/0d197e4389c64e6b9cf90f6f698f62fe.html) or [HALF_VECTOR](https://help.sap.com/docs/SAP_HANA_CLIENT/f1b440ded6144a54ada97ff95dac7adf/8bb854b4ce4a4299bed27c365b717e91.html).
 
 ### Column types for `spanner`
 
