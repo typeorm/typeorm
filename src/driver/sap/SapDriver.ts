@@ -1,5 +1,6 @@
 import {
     ColumnType,
+    ConnectionIsNotSetError,
     DataSource,
     EntityMetadata,
     ObjectLiteral,
@@ -143,7 +144,7 @@ export class SapDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    supportedUpsertTypes: UpsertType[] = []
+    supportedUpsertTypes: UpsertType[] = ["merge-into"]
 
     /**
      * Gets list of spatial column data types.
@@ -324,9 +325,13 @@ export class SapDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        const promise = this.master.clear()
+        const pool = this.master
+        if (!pool) {
+            throw new ConnectionIsNotSetError("sap")
+        }
+
         this.master = undefined
-        return promise
+        await pool.clear()
     }
 
     /**

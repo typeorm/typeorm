@@ -585,8 +585,9 @@ export class PostgresDriver implements Driver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("postgres"))
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("postgres")
+        }
 
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
@@ -1249,7 +1250,8 @@ export class PostgresDriver implements Driver {
                 tableColumn.srid !== columnMetadata.srid ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
                 (tableColumn.asExpression || "").trim() !==
-                    (columnMetadata.asExpression || "").trim()
+                    (columnMetadata.asExpression || "").trim() ||
+                tableColumn.collation !== columnMetadata.collation
 
             // DEBUG SECTION
             // if (isColumnChanged) {

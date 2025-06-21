@@ -1,3 +1,27 @@
+## [0.3.25](https://github.com/typeorm/typeorm/compare/0.3.24...0.3.25) (2025-06-19)
+
+
+### Bug Fixes
+
+* add collation update detection in PostgresDriver ([#11441](https://github.com/typeorm/typeorm/issues/11441)) ([24c3e38](https://github.com/typeorm/typeorm/commit/24c3e38c517bf67366704822668b3e618fa56430)), closes [#8647](https://github.com/typeorm/typeorm/issues/8647) [#8647](https://github.com/typeorm/typeorm/issues/8647)
+* fix null pointer exception on date array column comparison ([#11532](https://github.com/typeorm/typeorm/issues/11532)) ([42e7cbe](https://github.com/typeorm/typeorm/commit/42e7cbe7da4444a3cbe3168f7e5056c964a241e8))
+* handle limit(0) and offset(0) correctly in SelectQueryBuilder ([#11507](https://github.com/typeorm/typeorm/issues/11507)) ([413f0a6](https://github.com/typeorm/typeorm/commit/413f0a68c891ef463b6940fc40f92efc9a935adc))
+* improve async calls on disconnect ([#11523](https://github.com/typeorm/typeorm/issues/11523)) ([ead4f98](https://github.com/typeorm/typeorm/commit/ead4f98ee4cbf07843002f14771ef19ef44c5af1))
+* multiple relations with same column name(s) generate invalid SELECT statement ([#11400](https://github.com/typeorm/typeorm/issues/11400)) ([63a3b9a](https://github.com/typeorm/typeorm/commit/63a3b9abc1b4dd336e63ca7c65246891ceebae3d)), closes [#1668](https://github.com/typeorm/typeorm/issues/1668) [#9788](https://github.com/typeorm/typeorm/issues/9788) [#9814](https://github.com/typeorm/typeorm/issues/9814) [#10121](https://github.com/typeorm/typeorm/issues/10121) [#10148](https://github.com/typeorm/typeorm/issues/10148) [#11109](https://github.com/typeorm/typeorm/issues/11109) [#11132](https://github.com/typeorm/typeorm/issues/11132) [#11180](https://github.com/typeorm/typeorm/issues/11180)
+* **postgres:** resolve alias or table name in upsert/insert or update conditionally ([#11452](https://github.com/typeorm/typeorm/issues/11452)) ([2bfa300](https://github.com/typeorm/typeorm/commit/2bfa300996110d2ed34b8d190e39c0eeeff24fe7)), closes [#11082](https://github.com/typeorm/typeorm/issues/11082) [#11440](https://github.com/typeorm/typeorm/issues/11440)
+* **tree-entity:** closure junction table primary key definition should match parent table ([#11422](https://github.com/typeorm/typeorm/issues/11422)) ([ce23d46](https://github.com/typeorm/typeorm/commit/ce23d4648ea026085ed0eae52bb9d6f07b2f836a))
+* **docs:** fix up doc search workflow ([#11513](https://github.com/typeorm/typeorm/issues/11513)) ([930eefd](https://github.com/typeorm/typeorm/commit/930eefd758eb6954f29dc8b8c4f189eb02491ffd))
+
+
+### Features
+
+* add upsert support for Oracle, SQLServer and SAP HANA ([#10974](https://github.com/typeorm/typeorm/issues/10974)) ([a9c16ee](https://github.com/typeorm/typeorm/commit/a9c16ee66d12d327e2ad9a511c8223bb72d4e693))
+* **spanner:** use credentials from connection options ([#11492](https://github.com/typeorm/typeorm/issues/11492)) ([07d7913](https://github.com/typeorm/typeorm/commit/07d7913be7f3e85ecf7933098384b80cd06070c4)), closes [#11442](https://github.com/typeorm/typeorm/issues/11442)
+* **docs:** add typesense/docsearch-scraper ([#11424](https://github.com/typeorm/typeorm/issues/11424)) ([65d5a00](https://github.com/typeorm/typeorm/commit/65d5a00ef1a1d604aa39e6c3ff49ac14191d24e4))
+* **docs:** add Plausible analytics script to Docusaurus config ([#11517](https://github.com/typeorm/typeorm/issues/11517)) ([86f12c9](https://github.com/typeorm/typeorm/commit/86f12c922641653873a36d960cd05730090295d2))
+
+
+
 ## [0.3.24](https://github.com/typeorm/typeorm/compare/0.3.23...0.3.24) (2025-05-14)
 
 
@@ -80,40 +104,34 @@ await repository.clear()
 
 ## [0.3.22](https://github.com/typeorm/typeorm/compare/0.3.21...0.3.22) (2025-04-03)
 
-
 ### Bug Fixes
 
-* bulk insert NULL values in Oracle ([#11363](https://github.com/typeorm/typeorm/issues/11363)) ([bcaa0bf](https://github.com/typeorm/typeorm/commit/bcaa0bf0714c271a35e02cd4a512618a5eedccce))
-* ensure correct MSSQL parameter conversion in where conditions ([ecae9f5](https://github.com/typeorm/typeorm/commit/ecae9f599066947ad1515bf6e55c2fdfbd3bf3f9)), closes [#11285](https://github.com/typeorm/typeorm/issues/11285)
-* export QueryEvent before/after types ([#10688](https://github.com/typeorm/typeorm/issues/10688)) ([03dbc7a](https://github.com/typeorm/typeorm/commit/03dbc7a697f6fae2be77585030245a5877b8b33e))
-* FindOptionsSelect to use correct type when property is an object ([#11355](https://github.com/typeorm/typeorm/issues/11355)) ([834e856](https://github.com/typeorm/typeorm/commit/834e85692f8bb0d6edc2bfed601717e57ac7dcb7))
-* incorrect table alias in insert orUpdate with Postgres driver ([#11082](https://github.com/typeorm/typeorm/issues/11082)) ([72c6991](https://github.com/typeorm/typeorm/commit/72c6991680b39a39799c005914e16b127c8ab805)), closes [#11077](https://github.com/typeorm/typeorm/issues/11077)
-* inverse relation metadata not cyclic ([50a660a](https://github.com/typeorm/typeorm/commit/50a660aecc9d34c3985d4460f05b8ffe52450549))
-* remove unnecessary import from JS migration ([#11327](https://github.com/typeorm/typeorm/issues/11327)) ([72145b8](https://github.com/typeorm/typeorm/commit/72145b859d52094f77a043b80f9235955bf6ff01))
-* remove unnecessary spaces in message when running non-fake migrations ([#10809](https://github.com/typeorm/typeorm/issues/10809)) ([c3bebdc](https://github.com/typeorm/typeorm/commit/c3bebdcb4e9bd2a501bebec39ec22465ae7a3305))
-* **sap:** incorrect handling of simple array/json data type ([#11322](https://github.com/typeorm/typeorm/issues/11322)) ([27b4207](https://github.com/typeorm/typeorm/commit/27b4207c48a391c7bf7013b251f756f48861c496))
-* **sap:** normalize deprecated/removed data types in SAP HANA Cloud ([#11356](https://github.com/typeorm/typeorm/issues/11356)) ([460ef02](https://github.com/typeorm/typeorm/commit/460ef023bad9b5333c8ea01d3143a4f1e9128d9e))
-* **sap:** pass the configured schema to the db client ([#11321](https://github.com/typeorm/typeorm/issues/11321)) ([04ca83a](https://github.com/typeorm/typeorm/commit/04ca83a72f03f7afcad0e7b7f8c9bf60291a87a9))
-* sql escape issues identified by CodeQL ([#11338](https://github.com/typeorm/typeorm/issues/11338)) ([863caf1](https://github.com/typeorm/typeorm/commit/863caf1471e87f18f170492ab8642e51845912ce))
-* update mongodb connection options ([#11310](https://github.com/typeorm/typeorm/issues/11310)) ([81bb9d5](https://github.com/typeorm/typeorm/commit/81bb9d53e898f977ccf1ed16f09d1c860303a8f5))
-* version detection for Postgres derived variants ([#11375](https://github.com/typeorm/typeorm/issues/11375)) ([3d79786](https://github.com/typeorm/typeorm/commit/3d79786a926f12416755bff1eb340d68577c40ed))
-
+-   bulk insert NULL values in Oracle ([#11363](https://github.com/typeorm/typeorm/issues/11363)) ([bcaa0bf](https://github.com/typeorm/typeorm/commit/bcaa0bf0714c271a35e02cd4a512618a5eedccce))
+-   ensure correct MSSQL parameter conversion in where conditions ([ecae9f5](https://github.com/typeorm/typeorm/commit/ecae9f599066947ad1515bf6e55c2fdfbd3bf3f9)), closes [#11285](https://github.com/typeorm/typeorm/issues/11285)
+-   export QueryEvent before/after types ([#10688](https://github.com/typeorm/typeorm/issues/10688)) ([03dbc7a](https://github.com/typeorm/typeorm/commit/03dbc7a697f6fae2be77585030245a5877b8b33e))
+-   FindOptionsSelect to use correct type when property is an object ([#11355](https://github.com/typeorm/typeorm/issues/11355)) ([834e856](https://github.com/typeorm/typeorm/commit/834e85692f8bb0d6edc2bfed601717e57ac7dcb7))
+-   incorrect table alias in insert orUpdate with Postgres driver ([#11082](https://github.com/typeorm/typeorm/issues/11082)) ([72c6991](https://github.com/typeorm/typeorm/commit/72c6991680b39a39799c005914e16b127c8ab805)), closes [#11077](https://github.com/typeorm/typeorm/issues/11077)
+-   inverse relation metadata not cyclic ([50a660a](https://github.com/typeorm/typeorm/commit/50a660aecc9d34c3985d4460f05b8ffe52450549))
+-   remove unnecessary import from JS migration ([#11327](https://github.com/typeorm/typeorm/issues/11327)) ([72145b8](https://github.com/typeorm/typeorm/commit/72145b859d52094f77a043b80f9235955bf6ff01))
+-   remove unnecessary spaces in message when running non-fake migrations ([#10809](https://github.com/typeorm/typeorm/issues/10809)) ([c3bebdc](https://github.com/typeorm/typeorm/commit/c3bebdcb4e9bd2a501bebec39ec22465ae7a3305))
+-   **sap:** incorrect handling of simple array/json data type ([#11322](https://github.com/typeorm/typeorm/issues/11322)) ([27b4207](https://github.com/typeorm/typeorm/commit/27b4207c48a391c7bf7013b251f756f48861c496))
+-   **sap:** normalize deprecated/removed data types in SAP HANA Cloud ([#11356](https://github.com/typeorm/typeorm/issues/11356)) ([460ef02](https://github.com/typeorm/typeorm/commit/460ef023bad9b5333c8ea01d3143a4f1e9128d9e))
+-   **sap:** pass the configured schema to the db client ([#11321](https://github.com/typeorm/typeorm/issues/11321)) ([04ca83a](https://github.com/typeorm/typeorm/commit/04ca83a72f03f7afcad0e7b7f8c9bf60291a87a9))
+-   sql escape issues identified by CodeQL ([#11338](https://github.com/typeorm/typeorm/issues/11338)) ([863caf1](https://github.com/typeorm/typeorm/commit/863caf1471e87f18f170492ab8642e51845912ce))
+-   update mongodb connection options ([#11310](https://github.com/typeorm/typeorm/issues/11310)) ([81bb9d5](https://github.com/typeorm/typeorm/commit/81bb9d53e898f977ccf1ed16f09d1c860303a8f5))
+-   version detection for Postgres derived variants ([#11375](https://github.com/typeorm/typeorm/issues/11375)) ([3d79786](https://github.com/typeorm/typeorm/commit/3d79786a926f12416755bff1eb340d68577c40ed))
 
 ### Features
 
-* **postgres:** support macaddr8 column type ([b0ea913](https://github.com/typeorm/typeorm/commit/b0ea913f4ef903590221dee3699dbd39b6fc9986))
-* Send DriverInfo to MongoDB client ([#11214](https://github.com/typeorm/typeorm/issues/11214)) ([a29e047](https://github.com/typeorm/typeorm/commit/a29e04750dffffe76c1646d3b3050499576b5dc3))
-* Support Expo SQLite Next  ([7b242e1](https://github.com/typeorm/typeorm/commit/7b242e1698e1188c6a0899667c71f16fffe9ddb7))
-
+-   **postgres:** support macaddr8 column type ([b0ea913](https://github.com/typeorm/typeorm/commit/b0ea913f4ef903590221dee3699dbd39b6fc9986))
+-   Send DriverInfo to MongoDB client ([#11214](https://github.com/typeorm/typeorm/issues/11214)) ([a29e047](https://github.com/typeorm/typeorm/commit/a29e04750dffffe76c1646d3b3050499576b5dc3))
+-   Support Expo SQLite Next ([7b242e1](https://github.com/typeorm/typeorm/commit/7b242e1698e1188c6a0899667c71f16fffe9ddb7))
 
 ### Reverts
 
-* Revert "fix: nested transactions issues (#10210)" ([7aa4f3c](https://github.com/typeorm/typeorm/commit/7aa4f3c3e05f5b2ec262b31af32864dc16ef7c82)), closes [#10210](https://github.com/typeorm/typeorm/issues/10210)
-
-
+-   Revert "fix: nested transactions issues (#10210)" ([7aa4f3c](https://github.com/typeorm/typeorm/commit/7aa4f3c3e05f5b2ec262b31af32864dc16ef7c82)), closes [#10210](https://github.com/typeorm/typeorm/issues/10210)
 
 ## [0.3.21](https://github.com/typeorm/typeorm/compare/v0.3.20...v0.3.21) (2025-03-03)
-
 
 ### Bug Fixes
 
@@ -126,12 +144,9 @@ await repository.clear()
 -   Fix maximum call stack error ([#10733](https://github.com/typeorm/typeorm/issues/10733)) ([7a384be0](https://github.com/typeorm/typeorm/commit/7a384be0f64630a6891528a0b2b466136752f588))
 -   use sql-highlight instead of cli-highlight ([#11221](https://github.com/typeorm/typeorm/issues/11221)) ([1516cfe](https://github.com/typeorm/typeorm/commit/1516cfebdd34739f723d65030eb9540a44d786b2))
 
-
 ### Performance Improvements
 
 -   improve results transformer performance ([#10349](https://github.com/typeorm/typeorm/issues/10349)) ([7bea198](https://github.com/typeorm/typeorm/commit/7bea198b9bc5688647d089eed03e1639116766b6))
-
-
 
 ## [0.3.20](https://github.com/typeorm/typeorm/compare/0.3.19...0.3.20) (2024-01-26)
 
@@ -1878,7 +1893,7 @@ export const MyDataSources = {
 ### Features
 
 -   added deferrable options for foreign keys (postgres) ([#2191](https://github.com/typeorm/typeorm/issues/2191))
--   added View entity implementation ([#1024](https://github.com/typeorm/typeorm/issues/1024)). Read more at [View entities](https://typeorm.io/#/view-entities)
+-   added View entity implementation ([#1024](https://github.com/typeorm/typeorm/issues/1024)). Read more at [View entities](https://typeorm.io/docs/entity/view-entities/)
 -   added multiple value transformer support ([#4007](https://github.com/typeorm/typeorm/issues/4007))
 
 ## 0.2.16 (2019-03-26)
@@ -2196,7 +2211,7 @@ stringEnums: StringEnum[];
 -   added support for more complex ordering in paginated results ([#1259](https://github.com/typeorm/typeorm/issues/1259))
 -   MSSQL users are required to add "order by" for skip/offset operations since mssql does not support OFFSET/LIMIT statement without order by applied
 -   fixed issue when relation query builder methods execute operations with empty arrays ([#1241](https://github.com/typeorm/typeorm/issues/1241))
--   Webpack can now be used for node projects and not only for browser projects. To use TypeORM in Ionic with minimal changes checkout the [ionic-example](https://github.com/typeorm/ionic-example#typeorm--017) for the needed changes. To use webpack for non-Ionic browser webpack projects, the needed configuration can be found in the [docs](http://typeorm.io/#/supported-platforms) ([#1280](https://github.com/typeorm/typeorm/pulls/1280))
+-   Webpack can now be used for node projects and not only for browser projects. To use TypeORM in Ionic with minimal changes checkout the [ionic-example](https://github.com/typeorm/ionic-example#typeorm--017) for the needed changes. To use webpack for non-Ionic browser webpack projects, the needed configuration can be found in the [docs](http://typeorm.io/docs/help/supported-platforms) ([#1280](https://github.com/typeorm/typeorm/pulls/1280))
 -   added support for loading sub-relations in via find options ([#1270](https://github.com/typeorm/typeorm/issues/1270))
 
 ## 0.1.6
