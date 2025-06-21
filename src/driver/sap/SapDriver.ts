@@ -109,36 +109,39 @@ export class SapDriver implements Driver {
      * @see https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/data-types
      */
     supportedDataTypes: ColumnType[] = [
-        "tinyint",
-        "smallint",
-        "int", // typeorm alias for "integer"
-        "integer",
+        "alphanum", // removed in SAP HANA Cloud
+        "array",
         "bigint",
-        "smalldecimal",
-        "decimal",
-        "dec", // typeorm alias for "decimal"
-        "real",
-        "double",
-        "float", // database alias for "real" / "double"
-        "date",
-        "time",
-        "seconddate",
-        "timestamp",
+        "binary",
+        "blob",
         "boolean",
         "char", // not officially supported, in SAP HANA Cloud: alias for "nchar"
-        "nchar", // not officially supported
-        "varchar", // in SAP HANA Cloud: alias for "nvarchar"
-        "nvarchar",
-        "text", // removed in SAP HANA Cloud
-        "alphanum", // removed in SAP HANA Cloud
-        "shorttext", // removed in SAP HANA Cloud
-        "array",
-        "varbinary",
-        "blob",
         "clob", // in SAP HANA Cloud: alias for "nclob"
+        "date",
+        "dec", // typeorm alias for "decimal"
+        "decimal",
+        "double",
+        "float", // database alias for "real" / "double"
+        "half_vector", // only supported in SAP HANA Cloud, not in SAP HANA 2.0
+        "int", // typeorm alias for "integer"
+        "integer",
+        "nchar", // not officially supported
         "nclob",
+        "nvarchar",
+        "real_vector", // only supported in SAP HANA Cloud, not in SAP HANA 2.0
+        "real",
+        "seconddate",
+        "shorttext", // removed in SAP HANA Cloud
+        "smalldecimal",
+        "smallint",
         "st_geometry",
         "st_point",
+        "text", // removed in SAP HANA Cloud
+        "time",
+        "timestamp",
+        "tinyint",
+        "varbinary",
+        "varchar", // in SAP HANA Cloud: alias for "nvarchar"
     ]
 
     /**
@@ -155,11 +158,14 @@ export class SapDriver implements Driver {
      * Gets list of column data types that support length by a driver.
      */
     withLengthColumnTypes: ColumnType[] = [
-        "varchar",
-        "nvarchar",
         "alphanum",
+        "binary",
+        "half_vector",
+        "nvarchar",
+        "real_vector",
         "shorttext",
         "varbinary",
+        "varchar",
     ]
 
     /**
@@ -170,7 +176,7 @@ export class SapDriver implements Driver {
     /**
      * Gets list of column data types that support scale by a driver.
      */
-    withScaleColumnTypes: ColumnType[] = ["decimal"]
+    withScaleColumnTypes: ColumnType[] = ["decimal", "timestamp"]
 
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
@@ -207,13 +213,14 @@ export class SapDriver implements Driver {
      * Used in the cases when length/precision/scale is not specified by user.
      */
     dataTypeDefaults: DataTypeDefaults = {
+        binary: { length: 1 },
         char: { length: 1 },
+        decimal: { precision: 18, scale: 0 },
         nchar: { length: 1 },
-        varchar: { length: 255 },
         nvarchar: { length: 255 },
         shorttext: { length: 255 },
         varbinary: { length: 255 },
-        decimal: { precision: 18, scale: 0 },
+        varchar: { length: 255 },
     }
 
     /**
@@ -493,9 +500,7 @@ export class SapDriver implements Driver {
 
         if (value === null || value === undefined) return value
 
-        if (columnMetadata.type === Boolean) {
-            return value === true ? 1 : 0
-        } else if (columnMetadata.type === "date") {
+        if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedDateToTimeString(value)
@@ -531,9 +536,7 @@ export class SapDriver implements Driver {
                   )
                 : value
 
-        if (columnMetadata.type === Boolean) {
-            value = value ? true : false
-        } else if (
+        if (
             columnMetadata.type === "timestamp" ||
             columnMetadata.type === "seconddate" ||
             columnMetadata.type === Date
@@ -549,9 +552,6 @@ export class SapDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "simple-enum") {
             value = DateUtils.stringToSimpleEnum(value, columnMetadata)
-        } else if (columnMetadata.type === Number) {
-            // convert to number if number
-            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)
@@ -619,6 +619,13 @@ export class SapDriver implements Driver {
                 return "nclob"
             } else if (column.type === "char") {
                 return "nchar"
+            }
+        } else {
+            if (
+                column.type === "real_vector" ||
+                column.type === "half_vector"
+            ) {
+                return "varbinary"
             }
         }
 

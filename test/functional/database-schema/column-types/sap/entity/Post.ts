@@ -1,6 +1,4 @@
-import { Entity } from "../../../../../../src"
-import { PrimaryColumn } from "../../../../../../src"
-import { Column } from "../../../../../../src"
+import { Column, Entity, PrimaryColumn } from "../../../../../../src"
 
 @Entity()
 export class Post {
@@ -77,13 +75,7 @@ export class Post {
     // -------------------------------------------------------------------------
 
     @Column("date")
-    dateObj: Date
-
-    @Column("date")
     date: string
-
-    @Column("time")
-    timeObj: Date
 
     @Column("time")
     time: string
