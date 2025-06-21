@@ -33,7 +33,6 @@ export default tseslint.config([
             "@typescript-eslint/ban-ts-comment": "warn",
             "@typescript-eslint/no-empty-object-type": "warn",
             "@typescript-eslint/no-explicit-any": "warn",
-            "@typescript-eslint/no-namespace": "warn",
             "@typescript-eslint/no-require-imports": "warn",
             "@typescript-eslint/no-this-alias": "warn",
             "@typescript-eslint/no-unnecessary-type-constraint": "warn",
@@ -45,7 +44,6 @@ export default tseslint.config([
                 { argsIgnorePattern: "^_" },
             ],
             "@typescript-eslint/no-wrapper-object-types": "off",
-            "@typescript-eslint/triple-slash-reference": "warn",
 
             // exceptions from recommended type checked
             "@typescript-eslint/no-base-to-string": "off",
