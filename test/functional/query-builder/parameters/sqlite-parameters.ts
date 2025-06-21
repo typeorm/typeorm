@@ -1,14 +1,14 @@
+import { expect } from "chai"
 import "reflect-metadata"
-import { Example } from "./entity/Example"
+import { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { expect } from "chai"
-import { DataSource } from "../../../../src"
+import { Example } from "./entity/Example"
 
-describe("query builder > parameters", () => {
+describe("query builder > parameters > sqlite", () => {
     let connections: DataSource[]
     before(
         async () =>
