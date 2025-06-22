@@ -1003,9 +1003,7 @@ export class PostgresDriver implements Driver {
         }
 
         if (columnMetadata.isArray && Array.isArray(defaultValue)) {
-            return `'{${defaultValue
-                .map((val: string) => `${val}`)
-                .join(",")}}'`
+            return `'{${defaultValue.map((val) => String(val)).join(",")}}'`
         }
 
         if (

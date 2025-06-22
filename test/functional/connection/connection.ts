@@ -281,9 +281,7 @@ describe("Connection", () => {
                 dropSchema: true,
             })
             await Promise.all(
-                connections.map(async (connection) => {
-                    await connection.destroy()
-                }),
+                connections.map((connection) => connection.destroy()),
             )
         })
 

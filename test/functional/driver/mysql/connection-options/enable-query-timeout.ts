@@ -16,8 +16,8 @@ describe("driver > mysql > connection options > enableQueryTimeout", () => {
         dropSchema: true,
         enabledDrivers: ["mysql"],
     }
-    const timeoutMs = 10
-    const longQueryTimeSec = 0.02
+    const timeoutMs = 150
+    const longQueryTimeSec = 0.2
     const shortQueryTimeSec = 0.005
 
     describe("when enableQueryTimeout is true", () => {

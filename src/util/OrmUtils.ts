@@ -128,7 +128,12 @@ export class OrmUtils {
             rightChain = []
 
             if (
-                !this.compare2Objects(leftChain, rightChain, args[0], args[i])
+                !OrmUtils.compare2Objects(
+                    leftChain,
+                    rightChain,
+                    args[0],
+                    args[i],
+                )
             ) {
                 return false
             }
@@ -154,7 +159,7 @@ export class OrmUtils {
                 if (Object.keys(obj[key]).length === 0) {
                     obj[key] = true
                 } else {
-                    this.replaceEmptyObjectsWithBooleans(obj[key])
+                    OrmUtils.replaceEmptyObjectsWithBooleans(obj[key])
                 }
             }
         }
@@ -184,7 +189,7 @@ export class OrmUtils {
                 }
             }
         }
-        this.replaceEmptyObjectsWithBooleans(obj)
+        OrmUtils.replaceEmptyObjectsWithBooleans(obj)
         return obj
     }
 
@@ -232,7 +237,7 @@ export class OrmUtils {
     }
 
     /**
-     * Compares two arrays.
+     * Checks if two arrays of unique values contain the same values
      */
     public static isArraysEqual<T>(arr1: T[], arr2: T[]): boolean {
         if (arr1.length !== arr2.length) {
@@ -336,7 +341,8 @@ export class OrmUtils {
             criteria === null ||
             criteria === "" ||
             (Array.isArray(criteria) && criteria.length === 0) ||
-            (this.isPlainObject(criteria) && Object.keys(criteria).length === 0)
+            (OrmUtils.isPlainObject(criteria) &&
+                Object.keys(criteria).length === 0)
         )
     }
 
@@ -362,11 +368,11 @@ export class OrmUtils {
     ): criteria is PrimitiveCriteria {
         if (Array.isArray(criteria)) {
             return criteria.every((value) =>
-                this.isSinglePrimitiveCriteria(value),
+                OrmUtils.isSinglePrimitiveCriteria(value),
             )
         }
 
-        return this.isSinglePrimitiveCriteria(criteria)
+        return OrmUtils.isSinglePrimitiveCriteria(criteria)
     }
 
     // -------------------------------------------------------------------------
@@ -457,7 +463,12 @@ export class OrmUtils {
                     rightChain.push(y)
 
                     if (
-                        !this.compare2Objects(leftChain, rightChain, x[p], y[p])
+                        !OrmUtils.compare2Objects(
+                            leftChain,
+                            rightChain,
+                            x[p],
+                            y[p],
+                        )
                     ) {
                         return false
                     }
@@ -506,7 +517,7 @@ export class OrmUtils {
             return
         }
 
-        if (!this.isPlainObject(value) && !Array.isArray(value)) {
+        if (!OrmUtils.isPlainObject(value) && !Array.isArray(value)) {
             target[key] = value
             return
         }
@@ -516,7 +527,7 @@ export class OrmUtils {
         }
 
         memo.set(value, target[key])
-        this.merge(target[key], value, memo)
+        OrmUtils.merge(target[key], value, memo)
         memo.delete(value)
     }
 
@@ -540,7 +551,7 @@ export class OrmUtils {
             return
         }
 
-        if (!this.isPlainObject(value) && !Array.isArray(value)) {
+        if (!OrmUtils.isPlainObject(value) && !Array.isArray(value)) {
             Object.assign(target, { [key]: value })
             return
         }
@@ -550,7 +561,7 @@ export class OrmUtils {
         }
 
         memo.set(value, target[key])
-        this.merge(target[key], value, memo)
+        OrmUtils.merge(target[key], value, memo)
         memo.delete(value)
     }
 
@@ -559,18 +570,18 @@ export class OrmUtils {
         source: DeepPartial<T> | undefined,
         memo: Map<any, any> = new Map(),
     ): void {
-        if (this.isPlainObject(target) && this.isPlainObject(source)) {
+        if (OrmUtils.isPlainObject(target) && OrmUtils.isPlainObject(source)) {
             for (const [key, value] of Object.entries(
                 source as ObjectLiteral,
             )) {
                 if (key === "__proto__") continue
-                this.mergeObjectKey(target, key, value, memo)
+                OrmUtils.mergeObjectKey(target, key, value, memo)
             }
         }
 
         if (Array.isArray(target) && Array.isArray(source)) {
             for (let key = 0; key < source.length; key++) {
-                this.mergeArrayKey(target, key, source[key], memo)
+                OrmUtils.mergeArrayKey(target, key, source[key], memo)
             }
         }
     }
