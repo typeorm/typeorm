@@ -26,7 +26,7 @@ describe("github issues > #11085 BeforeQuery promises are not awaited before que
     it("should find user since beforeQuery promise must be awaited before query execution", async () =>
         Promise.all(
             connections.map(async (connection) => {
-                const userRepository = await connection.getRepository(User)
+                const userRepository = connection.getRepository(User)
 
                 const user = await userRepository.findBy({
                     isActive: true,

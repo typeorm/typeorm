@@ -208,7 +208,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 databaseConnection.query(
                     queryPayload,
                     parameters,
-                    async (err: any, raw: any) => {
+                    (err: any, raw: any) => {
                         // log slow queries if maxQueryExecution time is set
                         const maxQueryExecutionTime =
                             this.driver.options.maxQueryExecutionTime

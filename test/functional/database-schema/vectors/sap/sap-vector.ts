@@ -40,7 +40,7 @@ describe("database-schema > vectors > sap", () => {
                     await dataSource.synchronize()
 
                     // Verify column metadata
-                    const queryRunner = await dataSource.createQueryRunner()
+                    const queryRunner = dataSource.createQueryRunner()
                     const table = (await queryRunner.getTable(
                         dataSource.getMetadata(ArrayEmbedding).tableName,
                     ))!

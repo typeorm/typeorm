@@ -4,11 +4,12 @@ import { pathToFileURL } from "url"
 
 export async function importOrRequireFile(
     filePath: string,
-): Promise<[result: any, moduleType: "esm" | "commonjs"]> {
+): Promise<[any, "esm" | "commonjs"]> {
     const tryToImport = async (): Promise<[any, "esm"]> => {
         // `Function` is required to make sure the `import` statement wil stay `import` after
         // transpilation and won't be converted to `require`
         return [
+            // eslint-disable-next-line @typescript-eslint/no-implied-eval
             await Function("return filePath => import(filePath)")()(
                 filePath.startsWith("file://")
                     ? filePath
@@ -17,7 +18,7 @@ export async function importOrRequireFile(
             "esm",
         ]
     }
-    const tryToRequire = async (): Promise<[any, "commonjs"]> => {
+    const tryToRequire = (): [any, "commonjs"] => {
         return [require(filePath), "commonjs"]
     }
 
