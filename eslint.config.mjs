@@ -29,7 +29,7 @@ export default tseslint.config([
             ...tseslint.configs.recommendedTypeChecked,
         ],
         rules: {
-            // exceptions from recommended
+            // exceptions from typescript-eslint/recommended
             "@typescript-eslint/ban-ts-comment": "warn",
             "@typescript-eslint/no-empty-object-type": "warn",
             "@typescript-eslint/no-explicit-any": "warn",
@@ -44,8 +44,9 @@ export default tseslint.config([
                 { argsIgnorePattern: "^_" },
             ],
             "@typescript-eslint/no-wrapper-object-types": "off",
+            "prefer-const": ["error", { destructuring: "all" }],
 
-            // exceptions from recommended type checked
+            // exceptions from typescript-eslint/recommended-type-checked
             "@typescript-eslint/no-base-to-string": "off",
             "@typescript-eslint/no-misused-promises": [
                 "error",
@@ -70,18 +71,13 @@ export default tseslint.config([
                 { ignoreStatic: true },
             ],
 
-            // exceptions for eslint
+            // exceptions for eslint/recommended
             "no-async-promise-executor": "warn",
             "no-control-regex": "warn",
             "no-empty": "warn",
             "no-loss-of-precision": "warn",
             "no-prototype-builtins": "warn",
             "no-regex-spaces": "warn",
-
-            // custom
-            "prefer-const": "warn",
-            "prefer-rest-params": "warn",
-            "prefer-spread": "warn",
         },
     },
 ])
