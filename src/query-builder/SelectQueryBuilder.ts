@@ -1950,9 +1950,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         // offset overrides skip when no join is defined
         const previousResults: number = hasOffset
-            ? <number>this.expressionMap.offset
+            ? this.expressionMap.offset!
             : hasSkip
-            ? <number>this.expressionMap.skip
+            ? this.expressionMap.skip!
             : 0
 
         return entitiesAndRaw.entities.length + previousResults
