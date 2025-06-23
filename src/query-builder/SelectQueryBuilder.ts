@@ -1875,11 +1875,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 queryRunner,
             )
             this.expressionMap.queryEntity = false
-            const cacheId = this.expressionMap.cacheId
-            // Creates a new cacheId for the count query, or it will retreive the above query results
-            // and count will return 0.
-            this.expressionMap.cacheId = cacheId ? `${cacheId}-count` : cacheId
-            const count = await this.executeCountQuery(queryRunner)
+
+            let count: number | undefined = this.lazyCount(entitiesAndRaw)
+            if (count === undefined) {
+                const cacheId = this.expressionMap.cacheId
+                // Creates a new cacheId for the count query, or it will retrieve the above query results
+                // and count will return 0.
+                if (cacheId) {
+                    this.expressionMap.cacheId = `${cacheId}-count`
+                }
+                count = await this.executeCountQuery(queryRunner)
+            }
             const results: [Entity[], number] = [entitiesAndRaw.entities, count]
 
             // close transaction if we started it
@@ -1901,6 +1907,55 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 // means we created our own query runner
                 await queryRunner.release()
         }
+    }
+
+    private lazyCount(entitiesAndRaw: {
+        entities: Entity[]
+        raw: any[]
+    }): number | undefined {
+        const hasLimit =
+            this.expressionMap.limit !== undefined &&
+            this.expressionMap.limit !== null
+        if (this.expressionMap.joinAttributes.length > 0 && hasLimit) {
+            return undefined
+        }
+
+        const hasTake =
+            this.expressionMap.take !== undefined &&
+            this.expressionMap.take !== null
+
+        // limit overrides take when no join is defined
+        const maxResults = hasLimit
+            ? this.expressionMap.limit
+            : hasTake
+            ? this.expressionMap.take
+            : undefined
+
+        if (
+            maxResults !== undefined &&
+            entitiesAndRaw.entities.length === maxResults
+        ) {
+            // stop here when the result set contains the max number of rows; we need to execute a full count
+            return undefined
+        }
+
+        const hasSkip =
+            this.expressionMap.skip !== undefined &&
+            this.expressionMap.skip !== null &&
+            this.expressionMap.skip > 0
+        const hasOffset =
+            this.expressionMap.offset !== undefined &&
+            this.expressionMap.offset !== null &&
+            this.expressionMap.offset > 0
+
+        // offset overrides skip when no join is defined
+        const previousResults: number = hasOffset
+            ? this.expressionMap.offset!
+            : hasSkip
+            ? this.expressionMap.skip!
+            : 0
+
+        return entitiesAndRaw.entities.length + previousResults
     }
 
     /**
