@@ -6,26 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
-import {
-    documentEntitySchema,
-    documentRelationEntitySchema,
-    userEntitySchema,
-} from "./entity/JunctionTableEntities"
+import { documentRelationEntitySchema } from "./entity/junction-table/entities"
 
-describe.only("entity-metadata-builder > build", () => {
+describe("entity-metadata-builder > build", () => {
     let dataSources: DataSource[]
 
     before(
         async () =>
             (dataSources = await createTestingConnections({
-                entities: [
-                    userEntitySchema,
-                    documentEntitySchema,
-                    documentRelationEntitySchema,
-                ],
-                logging: true,
-                dropSchema: true,
-                schemaCreate: true,
+                entities: [__dirname + "/entity/junction-table/*{.js,.ts}"],
+                enabledDrivers: ["sqlite"],
             })),
     )
 

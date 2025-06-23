@@ -1,4 +1,4 @@
-import { EntitySchema } from "../../../../src/entity-schema/EntitySchema"
+import { EntitySchema } from "../../../../../src/entity-schema/EntitySchema"
 
 interface DocumentRelation {
     documentRelationId: number
