@@ -1,20 +1,28 @@
 import "reflect-metadata"
 import {
-    createTestingConnections,
     closeTestingConnections,
+    createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/index.js"
+import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
-import { documentRelationEntitySchema } from "./entity/entities"
+import {
+    documentEntitySchema,
+    documentRelationEntitySchema,
+    userEntitySchema,
+} from "./entity/JunctionTableEntities"
 
-describe("github issues > #10412 EntityPropertyNotFoundError when joinTable is used", () => {
+describe.only("entity-metadata-builder > build", () => {
     let dataSources: DataSource[]
 
     before(
         async () =>
             (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
+                entities: [
+                    userEntitySchema,
+                    documentEntitySchema,
+                    documentRelationEntitySchema,
+                ],
                 logging: true,
                 dropSchema: true,
                 schemaCreate: true,
@@ -24,7 +32,7 @@ describe("github issues > #10412 EntityPropertyNotFoundError when joinTable is u
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("repository has relations in metadata", () =>
+    it("repository has relations in metadata when user defined junction tables are used", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const repository = dataSource.manager.getRepository(
@@ -34,7 +42,7 @@ describe("github issues > #10412 EntityPropertyNotFoundError when joinTable is u
             }),
         ))
 
-    it("save doesn't throw with EntityPropertyNotFoundError", () =>
+    it("save doesn't throw with EntityPropertyNotFoundError when user defined junction tables are used", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const repository = dataSource.manager.getRepository(
