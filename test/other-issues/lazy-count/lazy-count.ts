@@ -24,7 +24,7 @@ describe("other issues > lazy count", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("skip count query when less entities are returned than the limit", () =>
+    it("skip count query when fewer entities are returned than the limit", () =>
         Promise.all(
             connections.map(async function (connection) {
                 await savePostEntities(connection, 5)
@@ -50,7 +50,7 @@ describe("other issues > lazy count", () => {
             }),
         ))
 
-    it("skip count query when less entities are returned than the take", () =>
+    it("skip count query when fewer entities are returned than the take", () =>
         Promise.all(
             connections.map(async function (connection) {
                 await savePostEntities(connection, 5)
@@ -156,7 +156,7 @@ describe("other issues > lazy count", () => {
             }),
         ))
 
-    it("skip count query when joining a subentity with a take", () =>
+    it("skip count query when joining a relation with a take", () =>
         Promise.all(
             connections.map(async function (connection) {
                 await savePostEntities(connection, 5)
@@ -183,7 +183,7 @@ describe("other issues > lazy count", () => {
             }),
         ))
 
-    it("run count query when joining a subentity with a limit", () =>
+    it("run count query when joining a relation with a limit", () =>
         Promise.all(
             connections.map(async function (connection) {
                 await savePostEntities(connection, 5)
@@ -210,7 +210,7 @@ describe("other issues > lazy count", () => {
             }),
         ))
 
-    it("skip count query when joining a subentity with a take and a skip", () =>
+    it("skip count query when joining a relation with a take and a skip", () =>
         Promise.all(
             connections.map(async function (connection) {
                 await savePostEntities(connection, 5)
@@ -238,7 +238,7 @@ describe("other issues > lazy count", () => {
             }),
         ))
 
-    it("run count query when joining a subentity with a limit and an offset", () =>
+    it("run count query when joining a relation with a limit and an offset", () =>
         Promise.all(
             connections.map(async function (connection) {
                 await savePostEntities(connection, 5)
