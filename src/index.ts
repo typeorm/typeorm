@@ -2,7 +2,7 @@
  */
 
 try {
-    void import("reflect-metadata")
+    require("reflect-metadata")
 } catch {
     console.log("reflect-metadata is not imported")
 }
