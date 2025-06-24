@@ -1,6 +1,11 @@
 /*!
  */
-import "reflect-metadata"
+
+try {
+    void import("reflect-metadata")
+} catch {
+    console.log("reflect-metadata is not imported")
+}
 
 // -------------------------------------------------------------------------
 // Commonly Used exports
