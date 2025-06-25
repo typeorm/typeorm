@@ -52,7 +52,7 @@ describe("github issues > #10079 Unwanted quotation marks in json field", () => 
                 expect(query.includes('Increased "age" by one')).to.be.false
 
                 // query should run with no errors
-                expect(result.affected == 1).to.be.true
+                expect(result.affected === 1).to.be.true
             }),
         )
     })
