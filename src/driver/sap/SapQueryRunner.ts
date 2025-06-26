@@ -90,9 +90,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (this.databaseConnection) {
             // return the connection back to the pool
-            await promisify(this.databaseConnection.disconnect).call(
-                this.databaseConnection,
-            )
+            try {
+                await promisify(this.databaseConnection.disconnect).call(
+                    this.databaseConnection,
+                )
+            } catch (error) {
+                this.driver.poolErrorHandler(error)
+                throw error
+            }
         }
     }
 

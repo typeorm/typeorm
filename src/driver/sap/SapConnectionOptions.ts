@@ -95,7 +95,7 @@ export interface SapConnectionOptions
 
         /**
          * Function handling errors thrown by drivers pool.
-         * @deprecated Obsolete, no alternative exists.
+         * Defaults to logging error with `warn` level.
          */
         readonly poolErrorHandler?: (err: any) => any
     }

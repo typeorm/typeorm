@@ -58,6 +58,11 @@ export class SapDriver implements Driver {
      */
     master: any
 
+    /**
+     * Function handling errors thrown by drivers pool.
+     */
+    poolErrorHandler: (error: any) => void
+
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
@@ -220,7 +225,7 @@ export class SapDriver implements Driver {
 
     /**
      * Max length allowed by SAP HANA for aliases (identifiers).
-     * @see https://help.sap.com/viewer/4fe29514fd584807ac9f2a04f6754767/2.0.03/en-US/20a760537519101497e3cfe07b348f3c.html
+     * @see https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/system-limitations
      */
     maxAliasLength = 128
 
@@ -294,8 +299,22 @@ export class SapDriver implements Driver {
             poolOptions.poolCapacity = this.options.pool.poolCapacity
         }
 
+        this.poolErrorHandler =
+            this.options.pool?.poolErrorHandler ??
+            ((error: Error) => {
+                this.connection.logger.log(
+                    "warn",
+                    `SAP HANA pool raised an error: ${error}`,
+                )
+            })
+
         // create the pool
-        this.master = this.client.createPool(connectionOptions, poolOptions)
+        try {
+            this.master = this.client.createPool(connectionOptions, poolOptions)
+        } catch (error) {
+            this.poolErrorHandler(error)
+            throw error
+        }
 
         const queryRunner = this.createQueryRunner("master")
 
@@ -327,7 +346,12 @@ export class SapDriver implements Driver {
         }
 
         this.master = undefined
-        await promisify(pool.clear).call(pool)
+        try {
+            await promisify(pool.clear).call(pool)
+        } catch (error) {
+            this.poolErrorHandler(error)
+            throw error
+        }
     }
 
     /**
@@ -341,7 +365,12 @@ export class SapDriver implements Driver {
             throw new TypeORMError("Driver not Connected")
         }
 
-        return await promisify(pool.getConnection).call(pool)
+        try {
+            return await promisify(pool.getConnection).call(pool)
+        } catch (error) {
+            this.poolErrorHandler(error)
+            throw error
+        }
     }
 
     /**

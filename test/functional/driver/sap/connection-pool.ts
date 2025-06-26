@@ -8,6 +8,7 @@ import { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { SapDriver } from "../../../../src/driver/sap/SapDriver"
 import { QueryRunner } from "../../../../src"
+import { ConnectionPool } from "@sap/hana-client"
 
 describe("driver > sap > connection pool", () => {
     let dataSources: DataSource[]
@@ -28,7 +29,8 @@ describe("driver > sap > connection pool", () => {
     it("should be managed correctly", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                const poolClient = (dataSource.driver as SapDriver).master
+                const poolClient = (dataSource.driver as SapDriver)
+                    .master as ConnectionPool
                 expect(poolClient.getInUseCount()).to.equal(0)
                 expect(poolClient.getPooledCount()).to.be.at.most(3)
 
