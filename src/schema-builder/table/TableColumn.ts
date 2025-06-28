@@ -57,6 +57,12 @@ export class TableColumn {
     isUnique: boolean = false
 
     /**
+     * Indicates if column handles null values as distinct.
+     * Works only in PostgreSQL 15 and above.
+     */
+    isNullsNotDistinct: boolean = false
+
+    /**
      * Indicates if column stores array.
      */
     isArray: boolean = false
@@ -175,6 +181,7 @@ export class TableColumn {
             this.generatedIdentity = options.generatedIdentity
             this.isPrimary = options.isPrimary || false
             this.isUnique = options.isUnique || false
+            this.isNullsNotDistinct = options.isNullsNotDistinct || false
             this.isArray = options.isArray || false
             this.comment = options.comment
             this.enum = options.enum

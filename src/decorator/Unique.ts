@@ -100,6 +100,8 @@ export function Unique(
             name: name,
             columns,
             deferrable: options ? options.deferrable : undefined,
+            nullsNotDistinct:
+                options && options.nullsNotDistinct ? true : false,
         }
         getMetadataArgsStorage().uniques.push(args)
     }
