@@ -154,6 +154,7 @@ export interface TestingOptions {
     createLogger?: () =>
         | "advanced-console"
         | "simple-console"
+        | "formatted-console"
         | "file"
         | "debug"
         | Logger

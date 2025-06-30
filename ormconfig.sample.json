@@ -45,6 +45,12 @@
     "logging": false
   },
   {
+    "skip": true,
+    "name": "sqljs",
+    "type": "sqljs",
+    "logging": false
+  },
+  {
     "skip": false,
     "name": "postgres",
     "type": "postgres",
@@ -133,6 +139,17 @@
     "serviceConfigOptions": {
       "maxRetries": 3
     },
+    "logging": false
+  },
+  {
+    "skip": false,
+    "name": "spanner",
+    "type": "spanner",
+    "host": "localhost",
+    "projectId": "test-project",
+    "instanceId": "test-instance",
+    "databaseId": "test-db",
+    "port": 9010,
     "logging": false
   }
 ]

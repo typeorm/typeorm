@@ -47,7 +47,7 @@ describe("github issues > #4220 Fix the bug when using buffer as the key.", () =
                     "11E9845B852510C0A99EDBC51EED5BB5",
                 ]
 
-                const repo = await connection.getRepository(User)
+                const repo = connection.getRepository(User)
 
                 await Promise.all(
                     [...Array(10)]
