@@ -193,18 +193,11 @@ await timber.remove()
 
     - for **SAP Hana**
 
-        ```
-        npm install @sap/hana-client
-        npm install hdb-pool
-        ```
-
-        _SAP Hana support made possible by the sponsorship of [Neptune Software](https://www.neptune-software.com/)._
+        `npm install @sap/hana-client --save`
 
     - for **Google Cloud Spanner**
 
-        ```
-        npm install @google-cloud/spanner --save
-        ```
+        `npm install @google-cloud/spanner --save`
 
         Provide authentication credentials to your application code
         by setting the environment variable `GOOGLE_APPLICATION_CREDENTIALS`:
