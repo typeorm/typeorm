@@ -3387,6 +3387,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const versionString = row.version ?? row["version()"];
 
+        if (!versionString) {
+            throw new TypeORMError("Unable to determine database version: neither 'version' nor 'version()' property found in query result");
+        }
+
         return versionString.replace(/^([\d.]+).*$/, "$1")
     }
 
