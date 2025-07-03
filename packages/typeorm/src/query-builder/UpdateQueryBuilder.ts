@@ -512,6 +512,85 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     // -------------------------------------------------------------------------
 
     /**
+     * Helper method to process update values and create column assignment expressions.
+     * Eliminates code duplication for value processing logic.
+     *
+     * @param columnName
+     * @param value
+     * @param column
+     */
+    protected createColumnAssignment(
+        columnName: string,
+        value: unknown,
+        column?: ColumnMetadata,
+    ): string {
+        let expression: string = ""
+        if (typeof value === "function") {
+            // support for SQL expressions in update query
+            return this.escape(columnName) + " = " + value()
+        } else if (
+            (this.dataSource.driver.options.type === "sap" ||
+                this.dataSource.driver.options.type === "spanner") &&
+            value === null
+        ) {
+            return this.escape(columnName) + " = NULL"
+        } else if (column) {
+            if (this.dataSource.driver.options.type === "mssql") {
+                value = (
+                    this.dataSource.driver as SqlServerDriver
+                ).parametrizeValue(column, value)
+            }
+
+            const paramName = this.createParameter(value)
+            if (
+                (DriverUtils.isMySQLFamily(this.dataSource.driver) ||
+                    this.dataSource.driver.options.type === "aurora-mysql") &&
+                this.dataSource.driver.spatialTypes.indexOf(column.type) !== -1
+            ) {
+                const useLegacy = (
+                    this.dataSource.driver as MysqlDriver | AuroraMysqlDriver
+                ).options.legacySpatialSupport
+                const geomFromText = useLegacy
+                    ? "GeomFromText"
+                    : "ST_GeomFromText"
+                if (column.srid != null) {
+                    expression = `${geomFromText}(${paramName}, ${column.srid})`
+                } else {
+                    expression = `${geomFromText}(${paramName})`
+                }
+            } else if (
+                DriverUtils.isPostgresFamily(this.dataSource.driver) &&
+                this.dataSource.driver.spatialTypes.indexOf(column.type) !== -1
+            ) {
+                if (column.srid != null) {
+                    expression = `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
+                } else {
+                    expression = `ST_GeomFromGeoJSON(${paramName})::${column.type}`
+                }
+            } else if (
+                this.dataSource.driver.options.type === "mssql" &&
+                this.dataSource.driver.spatialTypes.indexOf(column.type) !== -1
+            ) {
+                expression =
+                    column.type +
+                    "::STGeomFromText(" +
+                    paramName +
+                    ", " +
+                    (column.srid ?? "0") +
+                    ")"
+            } else if (DriverUtils.isSQLiteFamily(this.dataSource.driver)) {
+                expression = (
+                    this.dataSource.driver as
+                        AbstractSqliteDriver | ReactNativeDriver
+                ).wrapWithJsonFunction(paramName, column, true)
+            } else {
+                expression = paramName
+            }
+        }
+        return this.escape(columnName) + " = " + expression
+    }
+
+    /**
      * Creates UPDATE express used to perform insert query.
      */
     protected createUpdateExpression() {
@@ -527,17 +606,42 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 valuesSetNormalized[key] = valuesSet[key]
             }
         }
-        
-        if (metadata?.updateDateColumn &&
-            valuesSetNormalized[metadata.updateDateColumn.databaseName] === undefined) {
-            valuesSetNormalized[metadata.updateDateColumn.databaseName] = metadata.updateDateColumn.default;
+
+        // add update date column to values set if it's not already provided by user
+        if (
+            metadata?.updateDateColumn &&
+            valuesSetNormalized[metadata.updateDateColumn.databaseName] ===
+                undefined
+        ) {
+            valuesSetNormalized[metadata.updateDateColumn.databaseName] =
+                metadata.updateDateColumn.default
         }
 
         // prepare columns and values to be updated
         const updateColumnAndValues: string[] = []
         const updatedColumns: ColumnMetadata[] = []
+
         if (metadata) {
-            this.createPropertyPath(metadata, valuesSetNormalized).forEach(
+            // First, separate property paths from database names
+            const propertyPathValues: ObjectLiteral = {}
+            const databaseNameValues: ObjectLiteral = {}
+
+            Object.keys(valuesSetNormalized).forEach((key) => {
+                try {
+                    const columns = metadata.findColumnsWithPropertyPath(key)
+                    if (columns.length > 0) {
+                        propertyPathValues[key] = valuesSetNormalized[key]
+                    } else {
+                        databaseNameValues[key] = valuesSetNormalized[key]
+                    }
+                } catch {
+                    // Not a valid property path, treat as database name
+                    databaseNameValues[key] = valuesSetNormalized[key]
+                }
+            })
+
+            // Process property paths normally
+            this.createPropertyPath(metadata, propertyPathValues).forEach(
                 (propertyPath) => {
                     // todo: make this and other query builder to work with properly with tables without metadata
                     const columns =
@@ -561,7 +665,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                         updatedColumns.push(column)
 
                         //
-                        let value = column.getEntityValue(valuesSetNormalized)
+                        let value = column.getEntityValue(propertyPathValues)
                         if (
                             column.referencedColumn &&
                             typeof value === "object" &&
@@ -579,102 +683,13 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                 )
                         }
 
-                        // todo: duplication zone
-                        if (typeof value === "function") {
-                            // support for SQL expressions in update query
-                            updateColumnAndValues.push(
-                                this.escape(column.databaseName) +
-                                    " = " +
-                                    value(),
-                            )
-                        } else if (
-                            (this.dataSource.driver.options.type === "sap" ||
-                                this.dataSource.driver.options.type ===
-                                    "spanner") &&
-                            value === null
-                        ) {
-                            updateColumnAndValues.push(
-                                this.escape(column.databaseName) + " = NULL",
-                            )
-                        } else {
-                            if (
-                                this.dataSource.driver.options.type === "mssql"
-                            ) {
-                                value = (
-                                    this.dataSource.driver as SqlServerDriver
-                                ).parametrizeValue(column, value)
-                            }
-
-                            const paramName = this.createParameter(value)
-
-                            let expression: string
-                            if (
-                                (DriverUtils.isMySQLFamily(
-                                    this.dataSource.driver,
-                                ) ||
-                                    this.dataSource.driver.options.type ===
-                                        "aurora-mysql") &&
-                                this.dataSource.driver.spatialTypes.indexOf(
-                                    column.type,
-                                ) !== -1
-                            ) {
-                                const useLegacy = (
-                                    this.dataSource.driver as
-                                        MysqlDriver | AuroraMysqlDriver
-                                ).options.legacySpatialSupport
-                                const geomFromText = useLegacy
-                                    ? "GeomFromText"
-                                    : "ST_GeomFromText"
-                                if (column.srid != null) {
-                                    expression = `${geomFromText}(${paramName}, ${column.srid})`
-                                } else {
-                                    expression = `${geomFromText}(${paramName})`
-                                }
-                            } else if (
-                                DriverUtils.isPostgresFamily(
-                                    this.dataSource.driver,
-                                ) &&
-                                this.dataSource.driver.spatialTypes.indexOf(
-                                    column.type,
-                                ) !== -1
-                            ) {
-                                if (column.srid != null) {
-                                    expression = `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
-                                } else {
-                                    expression = `ST_GeomFromGeoJSON(${paramName})::${column.type}`
-                                }
-                            } else if (
-                                this.dataSource.driver.options.type ===
-                                    "mssql" &&
-                                this.dataSource.driver.spatialTypes.indexOf(
-                                    column.type,
-                                ) !== -1
-                            ) {
-                                expression =
-                                    column.type +
-                                    "::STGeomFromText(" +
-                                    paramName +
-                                    ", " +
-                                    (column.srid ?? "0") +
-                                    ")"
-                            } else if (
-                                DriverUtils.isSQLiteFamily(
-                                    this.dataSource.driver,
-                                )
-                            ) {
-                                expression = (
-                                    this.dataSource.driver as
-                                        AbstractSqliteDriver | ReactNativeDriver
-                                ).wrapWithJsonFunction(paramName, column, true)
-                            } else {
-                                expression = paramName
-                            }
-                            updateColumnAndValues.push(
-                                this.escape(column.databaseName) +
-                                    " = " +
-                                    expression,
-                            )
-                        }
+                        updateColumnAndValues.push(
+                            this.createColumnAssignment(
+                                column.databaseName,
+                                value,
+                                column,
+                            ),
+                        )
                     })
                 },
             )
@@ -694,33 +709,21 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             this.escape(metadata.versionColumn.databaseName) +
                             " + 1",
                     )
-            }
+            } // Process database names (like UpdateDateColumn) using the else block logic
+            Object.keys(databaseNameValues).forEach((key) => {
+                const value = databaseNameValues[key]
+
+                updateColumnAndValues.push(
+                    this.createColumnAssignment(key, value),
+                )
+            })
         } else {
-            Object.keys(valuesSetNormalized).map((key) => {
+            Object.keys(valuesSetNormalized).forEach((key) => {
                 const value = valuesSetNormalized[key]
 
-                // todo: duplication zone
-                if (typeof value === "function") {
-                    // support for SQL expressions in update query
-                    updateColumnAndValues.push(
-                        this.escape(key) + " = " + value(),
-                    )
-                } else if (
-                    (this.dataSource.driver.options.type === "sap" ||
-                        this.dataSource.driver.options.type === "spanner") &&
-                    value === null
-                ) {
-                    updateColumnAndValues.push(this.escape(key) + " = NULL")
-                } else {
-                    // we need to store array values in a special class to make sure parameter replacement will work correctly
-                    // if (value instanceof Array)
-                    //     value = new ArrayParameter(value);
-
-                    const paramName = this.createParameter(value)
-                    updateColumnAndValues.push(
-                        this.escape(key) + " = " + paramName,
-                    )
-                }
+                updateColumnAndValues.push(
+                    this.createColumnAssignment(key, value),
+                )
             })
         }
 
