@@ -168,6 +168,7 @@ export class PostgresDriver implements Driver {
         "cidr",
         "inet",
         "macaddr",
+        "macaddr8",
         "tsvector",
         "tsquery",
         "uuid",
@@ -357,19 +358,19 @@ export class PostgresDriver implements Driver {
             this.master = await this.createPool(this.options, this.options)
         }
 
-        if (!this.database || !this.searchSchema) {
-            const queryRunner = await this.createQueryRunner("master")
+        const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+        this.version = await queryRunner.getVersion()
 
-            if (!this.searchSchema) {
-                this.searchSchema = await queryRunner.getCurrentSchema()
-            }
-
-            await queryRunner.release()
+        if (!this.database) {
+            this.database = await queryRunner.getCurrentDatabase()
         }
+
+        if (!this.searchSchema) {
+            this.searchSchema = await queryRunner.getCurrentSchema()
+        }
+
+        await queryRunner.release()
 
         if (!this.schema) {
             this.schema = this.searchSchema
@@ -390,21 +391,8 @@ export class PostgresDriver implements Driver {
             await this.enableExtensions(extensionsMetadata, connection)
         }
 
-        const results = (await this.executeQuery(
-            connection,
-            "SELECT version();",
-        )) as {
-            rows: {
-                version: string
-            }[]
-        }
-        const versionString = results.rows[0].version.replace(
-            /^PostgreSQL ([\d.]+) .*$/,
-            "$1",
-        )
-        this.version = versionString
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
-            versionString,
+            this.version,
             "12.0",
         )
 
@@ -597,8 +585,9 @@ export class PostgresDriver implements Driver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("postgres"))
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("postgres")
+        }
 
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
@@ -616,7 +605,7 @@ export class PostgresDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: ReplicationMode): QueryRunner {
+    createQueryRunner(mode: ReplicationMode): PostgresQueryRunner {
         return new PostgresQueryRunner(this, mode)
     }
 
@@ -786,16 +775,14 @@ export class PostgresDriver implements Driver {
 
                 // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
                 value = (value as string)
-                    .substr(1, (value as string).length - 2)
+                    .slice(1, -1)
                     .split(",")
                     .map((val) => {
                         // replace double quotes from the beginning and from the end
                         if (val.startsWith(`"`) && val.endsWith(`"`))
                             val = val.slice(1, -1)
-                        // replace double escaped backslash to single escaped e.g. \\\\ -> \\
-                        val = val.replace(/(\\\\)/g, "\\")
-                        // replace escaped double quotes to non-escaped e.g. \"asd\" -> "asd"
-                        return val.replace(/(\\")/g, '"')
+                        // replace escaped backslash and double quotes
+                        return val.replace(/\\(\\|")/g, "$1")
                     })
 
                 // convert to number if that exists in possible enum options
@@ -853,7 +840,7 @@ export class PostgresDriver implements Driver {
                     return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -891,7 +878,7 @@ export class PostgresDriver implements Driver {
      * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)
@@ -1016,9 +1003,7 @@ export class PostgresDriver implements Driver {
         }
 
         if (columnMetadata.isArray && Array.isArray(defaultValue)) {
-            return `'{${defaultValue
-                .map((val: string) => `${val}`)
-                .join(",")}}'`
+            return `'{${defaultValue.map((val) => String(val)).join(",")}}'`
         }
 
         if (
@@ -1263,7 +1248,8 @@ export class PostgresDriver implements Driver {
                 tableColumn.srid !== columnMetadata.srid ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
                 (tableColumn.asExpression || "").trim() !==
-                    (columnMetadata.asExpression || "").trim()
+                    (columnMetadata.asExpression || "").trim() ||
+                tableColumn.collation !== columnMetadata.collation
 
             // DEBUG SECTION
             // if (isColumnChanged) {

@@ -10,7 +10,7 @@ export class MainModel {
     @PrimaryGeneratedColumn()
     id: number
 
-    @OneToMany((type) => DataModel, (dataModel) => dataModel.main, {
+    @OneToMany(() => DataModel, (dataModel) => dataModel.main, {
         cascade: true,
         eager: true,
     })

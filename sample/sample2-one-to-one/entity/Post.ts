@@ -24,7 +24,7 @@ export class Post {
     text: string
 
     // post has relation with category, however inverse relation is not set (category does not have relation with post set)
-    @OneToOne((type) => PostCategory, {
+    @OneToOne(() => PostCategory, {
         cascade: true,
     })
     @JoinColumn()
@@ -32,7 +32,7 @@ export class Post {
 
     // post has relation with details. cascade inserts here means if new PostDetails instance will be set to this
     // relation it will be inserted automatically to the db when you save this Post entity
-    @OneToOne((type) => PostDetails, (details) => details.post, {
+    @OneToOne(() => PostDetails, (details) => details.post, {
         cascade: ["insert"],
     })
     @JoinColumn()
@@ -40,7 +40,7 @@ export class Post {
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
     // it will be inserted automatically to the db when you save this Post entity
-    @OneToOne((type) => PostImage, (image) => image.post, {
+    @OneToOne(() => PostImage, (image) => image.post, {
         cascade: ["update"],
     })
     @JoinColumn()
@@ -48,19 +48,19 @@ export class Post {
 
     // post has relation with details. cascade update here means if new PostDetail instance will be set to this relation
     // it will be inserted automatically to the db when you save this Post entity
-    @OneToOne((type) => PostMetadata, (metadata) => metadata.post)
+    @OneToOne(() => PostMetadata, (metadata) => metadata.post)
     @JoinColumn()
     metadata: PostMetadata | null
 
     // post has relation with details. full cascades here
-    @OneToOne((type) => PostInformation, (information) => information.post, {
+    @OneToOne(() => PostInformation, (information) => information.post, {
         cascade: true,
     })
     @JoinColumn()
     information: PostInformation
 
     // post has relation with details. not cascades here. means cannot be persisted, updated or removed
-    @OneToOne((type) => PostAuthor, (author) => author.post)
+    @OneToOne(() => PostAuthor, (author) => author.post)
     @JoinColumn()
     author: PostAuthor
 }

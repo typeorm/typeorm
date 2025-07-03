@@ -16,7 +16,7 @@ export class OrderCustomer {
     @Column({ type: "varchar", nullable: false })
     name: string
 
-    @OneToOne((type) => Order, (order) => order.orderCustomer, {
+    @OneToOne(() => Order, (order) => order.orderCustomer, {
         cascade: ["insert", "update"],
         nullable: true,
     })

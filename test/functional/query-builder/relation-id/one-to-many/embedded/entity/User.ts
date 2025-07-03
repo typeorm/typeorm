@@ -13,7 +13,7 @@ export class User {
     @Column()
     name: string
 
-    @ManyToOne((type) => Post, (post) => post.counters.subcounters.watchedUsers)
+    @ManyToOne(() => Post, (post) => post.counters.subcounters.watchedUsers)
     @JoinColumn()
     posts: Post[]
 }
