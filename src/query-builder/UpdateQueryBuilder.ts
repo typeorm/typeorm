@@ -572,41 +572,11 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             }
         }
 
-        // add update date column to values set if it's not already provided by user
-        if (
-            metadata?.updateDateColumn &&
-            valuesSetNormalized[metadata.updateDateColumn.databaseName] ===
-                undefined
-        ) {
-            valuesSetNormalized[metadata.updateDateColumn.databaseName] =
-                metadata.updateDateColumn.default
-        }
-
         // prepare columns and values to be updated
         const updateColumnAndValues: string[] = []
         const updatedColumns: ColumnMetadata[] = []
-
         if (metadata) {
-            // First, separate property paths from database names
-            const propertyPathValues: ObjectLiteral = {}
-            const databaseNameValues: ObjectLiteral = {}
-
-            Object.keys(valuesSetNormalized).forEach((key) => {
-                try {
-                    const columns = metadata.findColumnsWithPropertyPath(key)
-                    if (columns.length > 0) {
-                        propertyPathValues[key] = valuesSetNormalized[key]
-                    } else {
-                        databaseNameValues[key] = valuesSetNormalized[key]
-                    }
-                } catch {
-                    // Not a valid property path, treat as database name
-                    databaseNameValues[key] = valuesSetNormalized[key]
-                }
-            })
-
-            // Process property paths normally
-            this.createPropertyPath(metadata, propertyPathValues).forEach(
+            this.createPropertyPath(metadata, valuesSetNormalized).forEach(
                 (propertyPath) => {
                     // todo: make this and other query builder to work with properly with tables without metadata
                     const columns =
@@ -630,7 +600,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                         updatedColumns.push(column)
 
                         //
-                        let value = column.getEntityValue(propertyPathValues)
+                        let value = column.getEntityValue(valuesSetNormalized)
                         if (
                             column.referencedColumn &&
                             typeof value === "object" &&
@@ -674,14 +644,28 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             this.escape(metadata.versionColumn.databaseName) +
                             " + 1",
                     )
-            } // Process database names (like UpdateDateColumn) using the else block logic
-            Object.keys(databaseNameValues).forEach((key) => {
-                const value = databaseNameValues[key]
-
-                updateColumnAndValues.push(
-                    this.createColumnAssignment(key, value),
-                )
-            })
+                if (
+                    metadata.updateDateColumn &&
+                    updatedColumns.indexOf(metadata.updateDateColumn) === -1
+                ) {
+                    const updateDateColumn = metadata.updateDateColumn
+                    let defaultUpdateDateValue = "CURRENT_TIMESTAMP"
+                    if (updateDateColumn.default) {
+                        if (typeof updateDateColumn.default === "function") {
+                            defaultUpdateDateValue = updateDateColumn.default()
+                        } else if (
+                            typeof updateDateColumn.default === "string"
+                        ) {
+                            defaultUpdateDateValue = updateDateColumn.default
+                        }
+                    }
+                    updateColumnAndValues.push(
+                        this.escape(updateDateColumn.databaseName) +
+                            " = " +
+                            defaultUpdateDateValue,
+                    )
+                }
+            }
         } else {
             Object.keys(valuesSetNormalized).forEach((key) => {
                 const value = valuesSetNormalized[key]
