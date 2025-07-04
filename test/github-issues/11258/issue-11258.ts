@@ -1,0 +1,738 @@
+import "reflect-metadata"
+import { expect } from "chai"
+import { DataSource } from "../../../src/data-source/DataSource"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../utils/test-utils"
+import { Parent as Parent0 } from "./entity_precision_0/Parent"
+import { Child as Child0 } from "./entity_precision_0/Child"
+import { Parent as Parent6 } from "./entity_precision_6/Parent"
+import { Child as Child6 } from "./entity_precision_6/Child"
+
+describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used in relation updates", () => {
+    let connections: DataSource[]
+
+    before(async () => {
+        connections = await createTestingConnections({
+            entities: [
+                __dirname + "/entity_precision_0/*{.js,.ts}",
+                __dirname + "/entity_precision_6/*{.js,.ts}",
+            ],
+            enabledDrivers: [
+                "mysql",
+                "mariadb",
+                "mssql",
+                "postgres",
+                "sqlite",
+                "oracle",
+                "spanner",
+            ],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
+
+    const createEntities = async (
+        connection: DataSource,
+        Parent: any,
+        Child: any,
+        id: number,
+        nameSuffix: string,
+    ) => {
+        const parent = Object.assign(new Parent(), {
+            id,
+            name: `Parent ${nameSuffix}`,
+        })
+        await connection.manager.save(parent)
+        const child = Object.assign(new Child(), {
+            id,
+            name: `Child ${nameSuffix}`,
+        })
+        await connection.manager.save(child)
+        return { parent, child }
+    }
+
+    describe("Precision 0 (CURRENT_TIMESTAMP) tests", () => {
+        it("should use CURRENT_TIMESTAMP (precision 0) when updating relations", async () => {
+            for (const connection of connections) {
+                const { parent, child } = await createEntities(
+                    connection,
+                    Parent0,
+                    Child0,
+                    1,
+                    "Precision 0",
+                )
+                const childBefore = await connection.manager.findOne(Child0, {
+                    where: { id: 1 },
+                    relations: ["parent"],
+                })
+                expect(childBefore).to.not.be.null
+                expect(childBefore!.updated_date!.getMilliseconds()).to.equal(0)
+                await new Promise((res) => setTimeout(res, 1100))
+                await connection.manager
+                    .createQueryBuilder()
+                    .relation(Parent0, "entities")
+                    .of(parent)
+                    .add(child)
+                const childAfter = await connection.manager.findOne(Child0, {
+                    where: { id: 1 },
+                    relations: ["parent"],
+                })
+                expect(childAfter).to.not.be.null
+                expect(childAfter!.parent?.id).to.equal(1)
+                expect(childAfter!.updated_date!.getMilliseconds()).to.equal(0)
+            }
+        })
+
+        it("should use CURRENT_TIMESTAMP (precision 0) in SQL for relation updates", async () => {
+            for (const connection of connections) {
+                const { parent, child } = await createEntities(
+                    connection,
+                    Parent0,
+                    Child0,
+                    2,
+                    "Precision 0",
+                )
+                const queryRunner = connection.createQueryRunner()
+                let lastQuery = ""
+                const originalQuery = queryRunner.query
+                queryRunner.query = function (sql: string, parameters?: any[]) {
+                    lastQuery = sql
+                    return originalQuery.call(this, sql, parameters)
+                }
+                await queryRunner.connect()
+                try {
+                    await connection
+                        .createQueryBuilder(queryRunner)
+                        .relation(Parent0, "entities")
+                        .of(parent)
+                        .add(child)
+                    expect(lastQuery.toLowerCase()).to.include(
+                        "current_timestamp",
+                    )
+                    expect(lastQuery.toLowerCase()).to.not.include(
+                        "current_timestamp(6)",
+                    )
+                    expect(/\bCURRENT_TIMESTAMP\b(?!\s*\()/i.test(lastQuery)).to
+                        .be.true
+                } finally {
+                    await queryRunner.release()
+                }
+            }
+        })
+    })
+
+    describe("Precision 6 (CURRENT_TIMESTAMP(6)) tests", () => {
+        it("should use CURRENT_TIMESTAMP(6) (precision 6) when updating relations", async () => {
+            for (const connection of connections) {
+                const { parent, child } = await createEntities(
+                    connection,
+                    Parent6,
+                    Child6,
+                    10,
+                    "Precision 6",
+                )
+                const childBefore = await connection.manager.findOne(Child6, {
+                    where: { id: 10 },
+                })
+                await new Promise((res) => setTimeout(res, 10))
+                await connection.manager
+                    .createQueryBuilder()
+                    .relation(Parent6, "entities")
+                    .of(parent)
+                    .add(child)
+                const childAfter = await connection.manager.findOne(Child6, {
+                    where: { id: 10 },
+                    relations: ["parent"],
+                })
+                expect(childAfter).to.not.be.null
+                expect(childAfter!.parent?.id).to.equal(10)
+                expect(childAfter!.updated_date!.getTime()).to.be.greaterThan(
+                    childBefore!.updated_date!.getTime(),
+                )
+                expect(
+                    Number.isInteger(
+                        childAfter!.updated_date!.getMilliseconds(),
+                    ),
+                ).to.be.true
+            }
+        })
+
+        it("should use CURRENT_TIMESTAMP(6) in SQL for relation updates", async () => {
+            for (const connection of connections) {
+                const { parent, child } = await createEntities(
+                    connection,
+                    Parent6,
+                    Child6,
+                    11,
+                    "Precision 6",
+                )
+                const queryRunner = connection.createQueryRunner()
+                let lastQuery = ""
+                const originalQuery = queryRunner.query
+                queryRunner.query = function (sql: string, parameters?: any[]) {
+                    lastQuery = sql
+                    return originalQuery.call(this, sql, parameters)
+                }
+                await queryRunner.connect()
+                try {
+                    await connection
+                        .createQueryBuilder(queryRunner)
+                        .relation(Parent6, "entities")
+                        .of(parent)
+                        .add(child)
+                    expect(lastQuery.toLowerCase()).to.include(
+                        "current_timestamp(6)",
+                    )
+                    expect(/\bCURRENT_TIMESTAMP\(6\)/i.test(lastQuery)).to.be
+                        .true
+                } finally {
+                    await queryRunner.release()
+                }
+            }
+        })
+
+        it("should preserve microsecond precision when using CURRENT_TIMESTAMP(6) with relation updates", async () => {
+            for (const connection of connections) {
+                const { parent, child } = await createEntities(
+                    connection,
+                    Parent6,
+                    Child6,
+                    12,
+                    "Precision Test",
+                )
+                const before = await connection.manager.findOne(Child6, {
+                    where: { id: 12 },
+                })
+                await connection.manager
+                    .createQueryBuilder()
+                    .relation(Parent6, "entities")
+                    .of(parent)
+                    .add(child)
+                const updatedChild = await connection.manager.findOne(Child6, {
+                    where: { id: 12 },
+                })
+                const dbTimestamp = updatedChild!.updated_date!.getTime()
+                expect(dbTimestamp).to.be.at.least(
+                    before!.updated_date!.getTime(),
+                )
+                expect(dbTimestamp).to.be.at.most(
+                    updatedChild!.updated_date!.getTime() + 1000,
+                )
+                expect(dbTimestamp).to.be.a("number").and.greaterThan(0)
+            }
+        })
+    })
+
+    describe("Relation removal tests", () => {
+        it("should handle removal of relations with proper timestamp updates (precision 0)", async () => {
+            for (const connection of connections) {
+                const { parent, child } = await createEntities(
+                    connection,
+                    Parent0,
+                    Child0,
+                    20,
+                    "Precision 0",
+                )
+                child.parent = parent
+                await connection.manager.save(child)
+                const childBefore = await connection.manager.findOne(Child0, {
+                    where: { id: 20 },
+                })
+                await new Promise((res) => setTimeout(res, 1100))
+                await connection.manager
+                    .createQueryBuilder()
+                    .relation(Parent0, "entities")
+                    .of(parent)
+                    .remove(child)
+                const childAfter = await connection.manager.findOne(Child0, {
+                    where: { id: 20 },
+                    relations: ["parent"],
+                })
+                expect(childAfter).to.not.be.null
+                expect(childAfter!.parent).to.be.null
+                expect(
+                    childAfter!.updated_date!.getTime() -
+                        childBefore!.updated_date!.getTime(),
+                ).to.be.greaterThanOrEqual(0)
+            }
+        })
+
+        it("should handle removal of relations with proper timestamp updates (precision 6)", async () => {
+            for (const connection of connections) {
+                const { parent, child } = await createEntities(
+                    connection,
+                    Parent6,
+                    Child6,
+                    21,
+                    "Precision 6",
+                )
+                child.parent = parent
+                await connection.manager.save(child)
+                const childBefore = await connection.manager.findOne(Child6, {
+                    where: { id: 21 },
+                })
+                await new Promise((res) => setTimeout(res, 10))
+                await connection.manager
+                    .createQueryBuilder()
+                    .relation(Parent6, "entities")
+                    .of(parent)
+                    .remove(child)
+                const childAfter = await connection.manager.findOne(Child6, {
+                    where: { id: 21 },
+                    relations: ["parent"],
+                })
+                expect(childAfter).to.not.be.null
+                expect(childAfter!.parent).to.be.null
+                expect(childAfter!.updated_date!.getTime()).to.be.greaterThan(
+                    childBefore!.updated_date!.getTime(),
+                )
+            }
+        })
+    })
+
+    describe("Backward compatibility and configuration tests", () => {
+        it("should respect the default value configuration from UpdateDateColumn decorator (precision 0)", async () => {
+            for (const connection of connections) {
+                const { parent, child } = await createEntities(
+                    connection,
+                    Parent0,
+                    Child0,
+                    30,
+                    "Config 0",
+                )
+                const queryRunner = connection.createQueryRunner()
+                const queries: string[] = []
+                const originalQuery = queryRunner.query.bind(queryRunner)
+                queryRunner.query = function (sql: string, parameters?: any[]) {
+                    queries.push(sql)
+                    return originalQuery(sql, parameters)
+                }
+                await queryRunner.connect()
+                try {
+                    await connection
+                        .createQueryBuilder(queryRunner)
+                        .relation(Parent0, "entities")
+                        .of(parent)
+                        .add(child)
+                    const updateQuery = queries.find(
+                        (q) =>
+                            q.toLowerCase().includes("update") &&
+                            q.toLowerCase().includes("updated_date"),
+                    )
+                    expect(updateQuery).to.not.be.undefined
+                    expect(updateQuery!.toLowerCase()).to.include(
+                        "current_timestamp",
+                    )
+                    expect(updateQuery!.toLowerCase()).to.not.include(
+                        "current_timestamp(6)",
+                    )
+                    expect(/\bCURRENT_TIMESTAMP\b(?!\s*\()/i.test(updateQuery!))
+                        .to.be.true
+                } finally {
+                    await queryRunner.release()
+                }
+            }
+        })
+
+        it("should respect the default value configuration from UpdateDateColumn decorator (precision 6)", async () => {
+            for (const connection of connections) {
+                const { parent, child } = await createEntities(
+                    connection,
+                    Parent6,
+                    Child6,
+                    31,
+                    "Config 6",
+                )
+                const queryRunner = connection.createQueryRunner()
+                const queries: string[] = []
+                const originalQuery = queryRunner.query.bind(queryRunner)
+                queryRunner.query = function (sql: string, parameters?: any[]) {
+                    queries.push(sql)
+                    return originalQuery(sql, parameters)
+                }
+                await queryRunner.connect()
+                try {
+                    await connection
+                        .createQueryBuilder(queryRunner)
+                        .relation(Parent6, "entities")
+                        .of(parent)
+                        .add(child)
+                    const updateQuery = queries.find(
+                        (q) =>
+                            q.toLowerCase().includes("update") &&
+                            q.toLowerCase().includes("updated_date"),
+                    )
+                    expect(updateQuery).to.not.be.undefined
+                    expect(updateQuery!.toLowerCase()).to.include(
+                        "current_timestamp(6)",
+                    )
+                    expect(/\bCURRENT_TIMESTAMP\(6\)/i.test(updateQuery!)).to.be
+                        .true
+                } finally {
+                    await queryRunner.release()
+                }
+            }
+        })
+    })
+
+    describe("Table creation verification (MySQL/MariaDB only)", () => {
+        it("should create tables with correct timestamp precision", async () => {
+            for (const connection of connections) {
+                // Only test on MySQL/MariaDB since issue #11258 was specific to these databases
+                if (!["mysql", "mariadb"].includes(connection.options.type)) {
+                    continue
+                }
+
+                const queryRunner = connection.createQueryRunner()
+                await queryRunner.connect()
+                try {
+                    // Test precision 0 table
+                    const child0TableName =
+                        connection.getMetadata(Child0).tableName
+                    const showCreateChild0 = await queryRunner.query(
+                        `SHOW CREATE TABLE \`${child0TableName}\``,
+                    )
+                    const createTableSql0 =
+                        showCreateChild0[0]?.["Create Table"] ?? ""
+
+                    // For precision 0, we expect timestamp without precision specifier
+                    // Accept both "timestamp" and "timestamp()" (some MySQL versions add empty parens)
+                    const hasCorrectPrecision0 =
+                        /`updated_date`\s+timestamp(\(\))?\s+not\s+null/i.test(
+                            createTableSql0,
+                        ) &&
+                        !/`updated_date`\s+timestamp\(\d+\)/i.test(
+                            createTableSql0,
+                        )
+
+                    expect(
+                        hasCorrectPrecision0,
+                        `Precision 0 table should use 'timestamp' without precision, got: ${createTableSql0}`,
+                    ).to.be.true
+
+                    // Test precision 6 table
+                    const child6TableName =
+                        connection.getMetadata(Child6).tableName
+                    const showCreateChild6 = await queryRunner.query(
+                        `SHOW CREATE TABLE \`${child6TableName}\``,
+                    )
+                    const createTableSql6 =
+                        showCreateChild6[0]?.["Create Table"] ?? ""
+
+                    // For precision 6, we expect timestamp(6)
+                    const hasCorrectPrecision6 =
+                        /`updated_date`\s+timestamp\(6\)/i.test(createTableSql6)
+                    expect(
+                        hasCorrectPrecision6,
+                        `Precision 6 table should use 'timestamp(6)', got: ${createTableSql6}`,
+                    ).to.be.true
+                } finally {
+                    await queryRunner.release()
+                }
+            }
+        })
+    })
+
+    describe("Parent entity update tests", () => {
+        it("should use CURRENT_TIMESTAMP (precision 0) when updating parent entities directly", async () => {
+            for (const connection of connections) {
+                const { parent } = await createEntities(
+                    connection,
+                    Parent0,
+                    Child0,
+                    40,
+                    "Parent Update 0",
+                )
+                const parentBefore = await connection.manager.findOne(Parent0, {
+                    where: { id: 40 },
+                })
+                expect(parentBefore).to.not.be.null
+                expect(parentBefore!.updated_date!.getMilliseconds()).to.equal(
+                    0,
+                )
+
+                await new Promise((res) => setTimeout(res, 1100))
+
+                // Update parent directly
+                parent.name = "Updated Parent Precision 0"
+                await connection.manager.save(parent)
+
+                const parentAfter = await connection.manager.findOne(Parent0, {
+                    where: { id: 40 },
+                })
+                expect(parentAfter).to.not.be.null
+                expect(parentAfter!.name).to.equal("Updated Parent Precision 0")
+                expect(parentAfter!.updated_date!.getMilliseconds()).to.equal(0)
+                expect(parentAfter!.updated_date!.getTime()).to.be.greaterThan(
+                    parentBefore!.updated_date!.getTime(),
+                )
+            }
+        })
+
+        it("should use CURRENT_TIMESTAMP(6) (precision 6) when updating parent entities directly", async () => {
+            for (const connection of connections) {
+                const { parent } = await createEntities(
+                    connection,
+                    Parent6,
+                    Child6,
+                    41,
+                    "Parent Update 6",
+                )
+                const parentBefore = await connection.manager.findOne(Parent6, {
+                    where: { id: 41 },
+                })
+                expect(parentBefore).to.not.be.null
+
+                await new Promise((res) => setTimeout(res, 10))
+
+                // Update parent directly
+                parent.name = "Updated Parent Precision 6"
+                await connection.manager.save(parent)
+
+                const parentAfter = await connection.manager.findOne(Parent6, {
+                    where: { id: 41 },
+                })
+                expect(parentAfter).to.not.be.null
+                expect(parentAfter!.name).to.equal("Updated Parent Precision 6")
+                expect(parentAfter!.updated_date!.getTime()).to.be.greaterThan(
+                    parentBefore!.updated_date!.getTime(),
+                )
+                expect(
+                    Number.isInteger(
+                        parentAfter!.updated_date!.getMilliseconds(),
+                    ),
+                ).to.be.true
+            }
+        })
+
+        it("should use CURRENT_TIMESTAMP in SQL for parent entity updates (precision 0)", async () => {
+            for (const connection of connections) {
+                const { parent } = await createEntities(
+                    connection,
+                    Parent0,
+                    Child0,
+                    42,
+                    "Parent SQL 0",
+                )
+                const queryRunner = connection.createQueryRunner()
+                let lastQuery = ""
+                const originalQuery = queryRunner.query
+                queryRunner.query = function (sql: string, parameters?: any[]) {
+                    lastQuery = sql
+                    return originalQuery.call(this, sql, parameters)
+                }
+                await queryRunner.connect()
+                try {
+                    // Use query builder to update the entity directly
+                    await connection.manager
+                        .createQueryBuilder(queryRunner)
+                        .update(Parent0)
+                        .set({ name: "Updated Parent SQL 0" })
+                        .where("id = :id", { id: parent.id })
+                        .execute()
+
+                    // Check that the update query uses CURRENT_TIMESTAMP without precision
+                    expect(lastQuery.toLowerCase()).to.include("update")
+                    expect(lastQuery.toLowerCase()).to.include("updated_date")
+                    expect(lastQuery.toLowerCase()).to.include(
+                        "current_timestamp",
+                    )
+                    expect(lastQuery.toLowerCase()).to.not.include(
+                        "current_timestamp(6)",
+                    )
+                    expect(/\bCURRENT_TIMESTAMP\b(?!\s*\()/i.test(lastQuery)).to
+                        .be.true
+                } finally {
+                    await queryRunner.release()
+                }
+            }
+        })
+
+        it("should use CURRENT_TIMESTAMP(6) in SQL for parent entity updates (precision 6)", async () => {
+            for (const connection of connections) {
+                const { parent } = await createEntities(
+                    connection,
+                    Parent6,
+                    Child6,
+                    43,
+                    "Parent SQL 6",
+                )
+                const queryRunner = connection.createQueryRunner()
+                let lastQuery = ""
+                const originalQuery = queryRunner.query
+                queryRunner.query = function (sql: string, parameters?: any[]) {
+                    lastQuery = sql
+                    return originalQuery.call(this, sql, parameters)
+                }
+                await queryRunner.connect()
+                try {
+                    // Use query builder to update the entity directly
+                    await connection.manager
+                        .createQueryBuilder(queryRunner)
+                        .update(Parent6)
+                        .set({ name: "Updated Parent SQL 6" })
+                        .where("id = :id", { id: parent.id })
+                        .execute()
+
+                    // Check that the update query uses CURRENT_TIMESTAMP(6)
+                    expect(lastQuery.toLowerCase()).to.include("update")
+                    expect(lastQuery.toLowerCase()).to.include("updated_date")
+                    expect(lastQuery.toLowerCase()).to.include(
+                        "current_timestamp(6)",
+                    )
+                    expect(/\bCURRENT_TIMESTAMP\(6\)/i.test(lastQuery)).to.be
+                        .true
+                } finally {
+                    await queryRunner.release()
+                }
+            }
+        })
+
+        it("should handle bulk updates with correct timestamp precision (precision 0)", async () => {
+            for (const connection of connections) {
+                await createEntities(connection, Parent0, Child0, 44, "Bulk 0")
+                await createEntities(connection, Parent0, Child0, 45, "Bulk 0")
+
+                const queryRunner = connection.createQueryRunner()
+                let lastQuery = ""
+                const originalQuery = queryRunner.query
+                queryRunner.query = function (sql: string, parameters?: any[]) {
+                    lastQuery = sql
+                    return originalQuery.call(this, sql, parameters)
+                }
+                await queryRunner.connect()
+                try {
+                    await connection.manager
+                        .createQueryBuilder(queryRunner)
+                        .update(Parent0)
+                        .set({ name: "Bulk Updated 0" })
+                        .where("id IN (:...ids)", { ids: [44, 45] })
+                        .execute()
+
+                    expect(lastQuery.toLowerCase()).to.include("update")
+                    expect(lastQuery.toLowerCase()).to.include("updated_date")
+                    expect(lastQuery.toLowerCase()).to.include(
+                        "current_timestamp",
+                    )
+                    expect(lastQuery.toLowerCase()).to.not.include(
+                        "current_timestamp(6)",
+                    )
+                    expect(/\bCURRENT_TIMESTAMP\b(?!\s*\()/i.test(lastQuery)).to
+                        .be.true
+                } finally {
+                    await queryRunner.release()
+                }
+            }
+        })
+
+        it("should handle bulk updates with correct timestamp precision (precision 6)", async () => {
+            for (const connection of connections) {
+                await createEntities(connection, Parent6, Child6, 46, "Bulk 6")
+                await createEntities(connection, Parent6, Child6, 47, "Bulk 6")
+
+                const queryRunner = connection.createQueryRunner()
+                let lastQuery = ""
+                const originalQuery = queryRunner.query
+                queryRunner.query = function (sql: string, parameters?: any[]) {
+                    lastQuery = sql
+                    return originalQuery.call(this, sql, parameters)
+                }
+                await queryRunner.connect()
+                try {
+                    await connection.manager
+                        .createQueryBuilder(queryRunner)
+                        .update(Parent6)
+                        .set({ name: "Bulk Updated 6" })
+                        .where("id IN (:...ids)", { ids: [46, 47] })
+                        .execute()
+
+                    expect(lastQuery.toLowerCase()).to.include("update")
+                    expect(lastQuery.toLowerCase()).to.include("updated_date")
+                    expect(lastQuery.toLowerCase()).to.include(
+                        "current_timestamp(6)",
+                    )
+                    expect(/\bCURRENT_TIMESTAMP\(6\)/i.test(lastQuery)).to.be
+                        .true
+                } finally {
+                    await queryRunner.release()
+                }
+            }
+        })
+    })
+
+    describe("Child entity update tests", () => {
+        it("should use CURRENT_TIMESTAMP (precision 0) when updating child entities directly", async () => {
+            for (const connection of connections) {
+                const { child } = await createEntities(
+                    connection,
+                    Parent0,
+                    Child0,
+                    50,
+                    "Child Update 0",
+                )
+                const childBefore = await connection.manager.findOne(Child0, {
+                    where: { id: 50 },
+                })
+                expect(childBefore).to.not.be.null
+                expect(childBefore!.updated_date!.getMilliseconds()).to.equal(0)
+
+                await new Promise((res) => setTimeout(res, 1100))
+
+                // Update child directly
+                child.name = "Updated Child Precision 0"
+                await connection.manager.save(child)
+
+                const childAfter = await connection.manager.findOne(Child0, {
+                    where: { id: 50 },
+                })
+                expect(childAfter).to.not.be.null
+                expect(childAfter!.name).to.equal("Updated Child Precision 0")
+                expect(childAfter!.updated_date!.getMilliseconds()).to.equal(0)
+                expect(childAfter!.updated_date!.getTime()).to.be.greaterThan(
+                    childBefore!.updated_date!.getTime(),
+                )
+            }
+        })
+
+        it("should use CURRENT_TIMESTAMP(6) (precision 6) when updating child entities directly", async () => {
+            for (const connection of connections) {
+                const { child } = await createEntities(
+                    connection,
+                    Parent6,
+                    Child6,
+                    51,
+                    "Child Update 6",
+                )
+                const childBefore = await connection.manager.findOne(Child6, {
+                    where: { id: 51 },
+                })
+                expect(childBefore).to.not.be.null
+
+                await new Promise((res) => setTimeout(res, 10))
+
+                // Update child directly
+                child.name = "Updated Child Precision 6"
+                await connection.manager.save(child)
+
+                const childAfter = await connection.manager.findOne(Child6, {
+                    where: { id: 51 },
+                })
+                expect(childAfter).to.not.be.null
+                expect(childAfter!.name).to.equal("Updated Child Precision 6")
+                expect(childAfter!.updated_date!.getTime()).to.be.greaterThan(
+                    childBefore!.updated_date!.getTime(),
+                )
+                expect(
+                    Number.isInteger(
+                        childAfter!.updated_date!.getMilliseconds(),
+                    ),
+                ).to.be.true
+            }
+        })
+    })
+})
