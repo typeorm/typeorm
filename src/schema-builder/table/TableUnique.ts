@@ -27,6 +27,12 @@ export class TableUnique {
      */
     deferrable?: string
 
+    /**
+     * Indicates if column handles null values as distinct.
+     * Works only in PostgreSQL 15 and above.
+     */
+    nullsNotDistinct?: boolean
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -35,6 +41,7 @@ export class TableUnique {
         this.name = options.name
         this.columnNames = options.columnNames
         this.deferrable = options.deferrable
+        this.nullsNotDistinct = options.nullsNotDistinct
     }
 
     // -------------------------------------------------------------------------
@@ -66,6 +73,7 @@ export class TableUnique {
                 (column) => column.databaseName,
             ),
             deferrable: uniqueMetadata.deferrable,
+            nullsNotDistinct: uniqueMetadata.nullsNotDistinct,
         })
     }
 }
