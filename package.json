@@ -1,7 +1,7 @@
 {
   "name": "typeorm",
   "version": "0.3.25",
-  "description": "Data-Mapper ORM for TypeScript and ES2021+. Supports MySQL/MariaDB, PostgreSQL, MS SQL Server, Oracle, SAP HANA, SQLite, MongoDB databases.",
+  "description": "Data-Mapper ORM for TypeScript and ES2021+. Supports MySQL/MariaDB, PostgreSQL, MS SQL Server, Oracle, SAP HANA, SQLite, LibSQL, MongoDB databases.",
   "homepage": "https://typeorm.io",
   "bugs": {
     "url": "https://github.com/typeorm/typeorm/issues"
@@ -58,6 +58,7 @@
     "./browser/driver/postgres/PostgresDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/sap/SapDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/sqlite/SqliteDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
+    "./browser/driver/libsql/LibsqlDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/sqlserver/SqlServerDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/entity-manager/MongoEntityManager.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/logger/FileLogger.js": "./browser/platform/BrowserFileLoggerDummy.js",
@@ -92,7 +93,6 @@
     "watch": "tsc --watch"
   },
   "dependencies": {
-    "@libsql/client": "^0.15.9",
     "@sqltools/formatter": "^1.2.5",
     "ansis": "^3.17.0",
     "app-root-path": "^3.1.0",
@@ -167,6 +167,7 @@
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^5.18.0 || ^6.0.0 || ^7.0.0",
+    "@libsql/client": "^0.14.0 || ^0.15.0",
     "@sap/hana-client": "^2.14.22",
     "better-sqlite3": "^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0",
     "ioredis": "^5.0.4",
@@ -186,6 +187,9 @@
   },
   "peerDependenciesMeta": {
     "@google-cloud/spanner": {
+      "optional": true
+    },
+    "@libsql/client": {
       "optional": true
     },
     "@sap/hana-client": {
@@ -262,6 +266,9 @@
     "cloud-spanner-orm",
     "sqlite",
     "sqlite-orm",
+    "libsql",
+    "libsql-orm",
+    "turso",
     "sql-server",
     "sql-server-orm"
   ]
