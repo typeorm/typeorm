@@ -1,0 +1,9 @@
+[
+  {
+    "skip": false,
+    "name": "libsql",
+    "type": "libsql",
+    "url": "file:./temp/libsqldb.db",
+    "logging": false
+  }
+]
