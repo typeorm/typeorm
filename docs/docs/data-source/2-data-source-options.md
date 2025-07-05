@@ -9,7 +9,7 @@ Different RDBMS-es have their own specific options.
 
 -   `type` - RDBMS type. You must specify what database engine you use.
     Possible values are:
-    "mysql", "postgres", "cockroachdb", "sap", "spanner", "mariadb", "sqlite", "cordova", "react-native", "nativescript", "sqljs", "oracle", "mssql", "mongodb", "aurora-mysql", "aurora-postgres", "expo", "better-sqlite3", "capacitor".
+    "mysql", "postgres", "cockroachdb", "sap", "spanner", "mariadb", "sqlite", "libsql", "cordova", "react-native", "nativescript", "sqljs", "oracle", "mssql", "mongodb", "aurora-mysql", "aurora-postgres", "expo", "better-sqlite3", "capacitor".
     This option is **required**.
 
 -   `extra` - Extra options to be passed to the underlying driver.
@@ -204,6 +204,31 @@ To use YugabyteDB, refer to [their ORM docs](https://docs.yugabyte.com/stable/dr
 -   `prepareDatabase` - Function to run before a database is used in typeorm. You can access original better-sqlite3 Database object here.
 
 -   `nativeBinding` - Relative or absolute path to the native addon (better_sqlite3.node).
+
+## `libsql` data source options
+
+-   `url` - Database URL for remote connections or file path for local connections. Examples:
+    - `"file:local.db"` for local file
+    - `"http://localhost:8080"` for remote server  
+    - `"https://[database].[region].turso.io"` for Turso
+
+-   `database` - Database name (optional, can be derived from URL). For local files, this is the file path. For remote connections, this is the database name.
+
+-   `authToken` - Authentication token for remote connections. Required for remote connections to Turso and other libSQL servers.
+
+-   `driver` - The driver object. This defaults to `require("@libsql/client")`.
+
+-   `key` - Encryption key for SQLCipher.
+
+-   `prepareDatabase` - Function to run before a database is used in typeorm. You can set pragmas, register plugins or register functions or aggregates in this function.
+
+-   `enableWAL` - Enable WAL mode for local databases. Default: false.
+
+-   `syncUrl` - Sync URL for embedded replicas. When provided, creates an embedded replica that syncs with the remote database.
+
+-   `syncPeriod` - Sync period in seconds for embedded replicas. Default: 60.
+
+-   `readYourWrites` - Read your writes consistency for embedded replicas. Default: false.
 
 ## `capacitor` data source options
 

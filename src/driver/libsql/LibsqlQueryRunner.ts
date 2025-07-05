@@ -33,7 +33,11 @@ export class LibsqlQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
+    async query(
+        query: string,
+        parameters?: any[],
+        useStructuredResult = false,
+    ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
@@ -67,7 +71,40 @@ export class LibsqlQueryRunner extends AbstractSqliteQueryRunner {
             const queryResult = new QueryResult()
             queryResult.affected = result.rowsAffected
             queryResult.records = result.rows
-            queryResult.raw = result.rows
+
+            // For INSERT/UPDATE/DELETE queries, return the lastInsertRowId
+            // For SELECT queries, return the rows
+            const isInsertQuery = query
+                .trim()
+                .toLowerCase()
+                .startsWith("insert")
+            const isUpdateQuery = query
+                .trim()
+                .toLowerCase()
+                .startsWith("update")
+            const isDeleteQuery = query
+                .trim()
+                .toLowerCase()
+                .startsWith("delete")
+
+            if (isInsertQuery && result.lastInsertRowid !== undefined) {
+                // Convert BigInt or string to number for compatibility with TypeORM
+                if (typeof result.lastInsertRowid === "bigint") {
+                    queryResult.raw = Number(result.lastInsertRowid)
+                } else if (typeof result.lastInsertRowid === "string") {
+                    queryResult.raw = parseInt(result.lastInsertRowid, 10)
+                } else {
+                    queryResult.raw = result.lastInsertRowid
+                }
+            } else if (isUpdateQuery || isDeleteQuery) {
+                queryResult.raw = result.rowsAffected
+            } else {
+                queryResult.raw = result.rows
+            }
+
+            if (!useStructuredResult) {
+                return queryResult.raw
+            }
 
             return queryResult
         } catch (err: any) {

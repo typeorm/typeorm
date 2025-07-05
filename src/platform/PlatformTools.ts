@@ -128,6 +128,12 @@ export class PlatformTools {
                  */
                 case "react-native-sqlite-storage":
                     return require("react-native-sqlite-storage")
+
+                /**
+                 * libsql
+                 */
+                case "@libsql/client":
+                    return require("@libsql/client")
             }
         } catch (err) {
             return require(path.resolve(
