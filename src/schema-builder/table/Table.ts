@@ -88,6 +88,11 @@ export class Table {
      */
     comment?: string
 
+    /**
+     * Set initial value for auto increment. Supported by MySQL family DBs.
+     */
+    autoIncrementStartFrom?: number
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -144,6 +149,8 @@ export class Table {
             this.engine = options.engine
 
             this.comment = options.comment
+
+            this.autoIncrementStartFrom = options.autoIncrementStartFrom
         }
     }
 
@@ -179,6 +186,7 @@ export class Table {
             withoutRowid: this.withoutRowid,
             engine: this.engine,
             comment: this.comment,
+            autoIncrementStartFrom: this.autoIncrementStartFrom,
         })
     }
 
@@ -420,6 +428,7 @@ export class Table {
                 TableExclusion.create(exclusion),
             ),
             comment: entityMetadata.comment,
+            autoIncrementStartFrom: entityMetadata.autoIncrementStartFrom,
         }
 
         return new Table(options)
