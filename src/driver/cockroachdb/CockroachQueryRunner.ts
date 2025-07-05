@@ -1,32 +1,32 @@
+import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { TypeORMError } from "../../error"
+import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { ReadStream } from "../../platform/PlatformTools"
+import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { Table } from "../../schema-builder/table/Table"
-import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
-import { View } from "../../schema-builder/view/View"
-import { Query } from "../Query"
-import { CockroachDriver } from "./CockroachDriver"
-import { ReadStream } from "../../platform/PlatformTools"
-import { QueryFailedError } from "../../error/QueryFailedError"
-import { Broadcaster } from "../../subscriber/Broadcaster"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
-import { TableUnique } from "../../schema-builder/table/TableUnique"
-import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
-import { OrmUtils } from "../../util/OrmUtils"
+import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableExclusion } from "../../schema-builder/table/TableExclusion"
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import { TableIndex } from "../../schema-builder/table/TableIndex"
+import { TableUnique } from "../../schema-builder/table/TableUnique"
+import { View } from "../../schema-builder/view/View"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import { VersionUtils } from "../../util/VersionUtils"
+import { Query } from "../Query"
 import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { InstanceChecker } from "../../util/InstanceChecker"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
-import { VersionUtils } from "../../util/VersionUtils"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { CockroachDriver } from "./CockroachDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -190,7 +190,6 @@ export class CockroachQueryRunner
         }
 
         if (this.transactionDepth === 0) {
-            this.transactionDepth += 1
             await this.query("START TRANSACTION")
             await this.query("SAVEPOINT cockroach_restart")
             if (isolationLevel) {
@@ -199,10 +198,10 @@ export class CockroachQueryRunner
                 )
             }
         } else {
-            this.transactionDepth += 1
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
         }
 
+        this.transactionDepth += 1
         this.storeQueries = true
 
         await this.broadcaster.broadcast("AfterTransactionStart")
@@ -218,18 +217,18 @@ export class CockroachQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
+            this.transactionDepth -= 1
         } else {
             this.storeQueries = false
-            this.transactionDepth -= 1
             await this.query("RELEASE SAVEPOINT cockroach_restart")
             await this.query("COMMIT")
             this.queries = []
             this.isTransactionActive = false
             this.transactionRetries = 0
+            this.transactionDepth -= 1
         }
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
@@ -245,18 +244,17 @@ export class CockroachQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
             this.storeQueries = false
-            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.queries = []
             this.isTransactionActive = false
             this.transactionRetries = 0
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -272,16 +270,12 @@ export class CockroachQueryRunner
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
-        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-        const queryStartTime = +new Date()
+        const broadcasterResult = new BroadcasterResult()
+        const queryStartTime = Date.now()
 
         if (this.isTransactionActive && this.storeQueries) {
             this.queries.push({ query, parameters })
@@ -299,7 +293,7 @@ export class CockroachQueryRunner
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
             if (
                 maxQueryExecutionTime &&
@@ -1019,7 +1013,7 @@ export class CockroachQueryRunner
         const enumColumns = newTable.columns.filter(
             (column) => column.type === "enum" || column.type === "simple-enum",
         )
-        for (let column of enumColumns) {
+        for (const column of enumColumns) {
             // skip renaming for user-defined enum name
             if (column.enumName) continue
 
@@ -2875,7 +2869,9 @@ export class CockroachQueryRunner
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {}
+            } catch {
+                // no-op
+            }
             throw error
         }
     }
@@ -3741,12 +3737,13 @@ export class CockroachQueryRunner
     /**
      * Loads Cockroachdb version.
      */
-    protected async getVersion(): Promise<string> {
-        const result = await this.query(`SELECT version()`)
-        return result[0]["version"].replace(
-            /^CockroachDB CCL v([\d.]+) .*$/,
-            "$1",
+    async getVersion(): Promise<string> {
+        const result: [{ version: string }] = await this.query(
+            `SELECT version() AS "version"`,
         )
+        const versionString = result[0].version
+
+        return versionString.replace(/^CockroachDB CCL v([\d.]+) .*$/, "$1")
     }
 
     /**
@@ -3862,7 +3859,7 @@ export class CockroachQueryRunner
     ): Query {
         if (!enumName) enumName = this.buildEnumName(table, column)
         const enumValues = column
-            .enum!.map((value) => `'${value.replace("'", "''")}'`)
+            .enum!.map((value) => `'${value.replaceAll("'", "''")}'`)
             .join(", ")
         return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`)
     }
@@ -3903,7 +3900,7 @@ export class CockroachQueryRunner
         table: Table,
         indexOrName: TableIndex | TableUnique | string,
     ): Query {
-        let indexName =
+        const indexName =
             InstanceChecker.isTableIndex(indexOrName) ||
             InstanceChecker.isTableUnique(indexOrName)
                 ? indexOrName.name

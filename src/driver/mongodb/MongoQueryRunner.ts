@@ -575,6 +575,18 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
+     * Unsupported - Executing SQL query is not supported by MongoDB driver.
+     */
+    async sql(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<any> {
+        throw new TypeORMError(
+            `Executing SQL query is not supported by MongoDB driver.`,
+        )
+    }
+
+    /**
      * Returns raw data stream.
      */
     stream(

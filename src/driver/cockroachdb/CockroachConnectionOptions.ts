@@ -46,7 +46,7 @@ export interface CockroachConnectionOptions
         readonly master: CockroachConnectionCredentialsOptions
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from servers (slaves).
          */
         readonly slaves: CockroachConnectionCredentialsOptions[]
 

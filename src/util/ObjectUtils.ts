@@ -6,7 +6,7 @@ export class ObjectUtils {
      * We cannot use instanceof because it has problems when running on different contexts.
      * And we don't simply use typeof because typeof null === "object".
      */
-    static isObject(val: any): val is Object {
+    static isObject(val: any): val is object {
         return val !== null && typeof val === "object"
     }
 
@@ -15,7 +15,7 @@ export class ObjectUtils {
      * We cannot use instanceof because it has problems when running on different contexts.
      * And we don't simply use typeof because typeof null === "object".
      */
-    static isObjectWithName(val: any): val is Object & { name: string } {
+    static isObjectWithName(val: any): val is object & { name: string } {
         return (
             val !== null && typeof val === "object" && val["name"] !== undefined
         )

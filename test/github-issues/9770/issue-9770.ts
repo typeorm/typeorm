@@ -1,5 +1,5 @@
-import "reflect-metadata"
 import { expect } from "chai"
+import "reflect-metadata"
 
 import { DataSource } from "../../../src"
 //import { DataSource, TableColumn } from "../../../src"
@@ -9,8 +9,8 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 
-import { Foo } from "./entity/Foo"
 import { Bar } from "./entity/Bar"
+import { Foo } from "./entity/Foo"
 
 describe("github issues > #9770 check for referencing foreign keys when altering a table using sqlite", () => {
     let dataSources: DataSource[]
@@ -21,7 +21,6 @@ describe("github issues > #9770 check for referencing foreign keys when altering
             enabledDrivers: ["sqlite", "better-sqlite3"],
             schemaCreate: true,
             dropSchema: true,
-            logging: true,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))

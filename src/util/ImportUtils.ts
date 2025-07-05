@@ -1,14 +1,15 @@
-import fs from "fs"
+import fs from "fs/promises"
 import path from "path"
 import { pathToFileURL } from "url"
 
 export async function importOrRequireFile(
     filePath: string,
-): Promise<[result: any, moduleType: "esm" | "commonjs"]> {
+): Promise<[any, "esm" | "commonjs"]> {
     const tryToImport = async (): Promise<[any, "esm"]> => {
         // `Function` is required to make sure the `import` statement wil stay `import` after
         // transpilation and won't be converted to `require`
         return [
+            // eslint-disable-next-line @typescript-eslint/no-implied-eval
             await Function("return filePath => import(filePath)")()(
                 filePath.startsWith("file://")
                     ? filePath
@@ -17,7 +18,7 @@ export async function importOrRequireFile(
             "esm",
         ]
     }
-    const tryToRequire = async (): Promise<[any, "commonjs"]> => {
+    const tryToRequire = (): [any, "commonjs"] => {
         return [require(filePath), "commonjs"]
     }
 
@@ -39,45 +40,31 @@ export async function importOrRequireFile(
     return tryToRequire()
 }
 
-function getNearestPackageJson(filePath: string): Promise<object | null> {
-    return new Promise((accept) => {
-        let currentPath = filePath
+async function getNearestPackageJson(filePath: string): Promise<object | null> {
+    let currentPath = filePath
 
-        function searchPackageJson() {
-            const nextPath = path.dirname(currentPath)
+    while (currentPath !== path.dirname(currentPath)) {
+        currentPath = path.dirname(currentPath)
+        const potentialPackageJson = path.join(currentPath, "package.json")
 
-            if (currentPath === nextPath)
-                // the top of the file tree is reached
-                accept(null)
-            else {
-                currentPath = nextPath
-                const potentialPackageJson = path.join(
-                    currentPath,
-                    "package.json",
-                )
-
-                fs.stat(potentialPackageJson, (err, stats) => {
-                    if (err != null) searchPackageJson()
-                    else if (stats.isFile()) {
-                        fs.readFile(
-                            potentialPackageJson,
-                            "utf8",
-                            (err, data) => {
-                                if (err != null) accept(null)
-                                else {
-                                    try {
-                                        accept(JSON.parse(data))
-                                    } catch (err) {
-                                        accept(null)
-                                    }
-                                }
-                            },
-                        )
-                    } else searchPackageJson()
-                })
+        try {
+            const stats = await fs.stat(potentialPackageJson)
+            if (!stats.isFile()) {
+                continue
             }
-        }
 
-        searchPackageJson()
-    })
+            try {
+                return JSON.parse(
+                    await fs.readFile(potentialPackageJson, "utf8"),
+                )
+            } catch {
+                return null
+            }
+        } catch {
+            continue
+        }
+    }
+
+    // the top of the file tree is reached
+    return null
 }

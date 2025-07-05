@@ -15,6 +15,6 @@ export class Post {
     @Column()
     title: string
 
-    @ManyToOne((type) => Category, (category) => category.posts)
+    @ManyToOne(() => Category, (category) => category.posts)
     category: Category
 }

@@ -27,7 +27,7 @@ describe("github issues > #1355 Allow explicitly named primary keys, foreign key
             connections.map(async (connection) => {
                 await connection.getRepository(Animal).find()
 
-                let metadata = connection.getMetadata(Animal)
+                const metadata = connection.getMetadata(Animal)
 
                 const joinTable = metadata.ownRelations[0]
                 expect(joinTable.foreignKeys[0].name).to.eq(
