@@ -19,6 +19,7 @@ import { SapDriver } from "./sap/SapDriver"
 import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver"
 import { CapacitorDriver } from "./capacitor/CapacitorDriver"
 import { SpannerDriver } from "./spanner/SpannerDriver"
+import { LibsqlDriver } from "./libsql/LibsqlDriver"
 
 /**
  * Helps to create drivers.
@@ -44,6 +45,8 @@ export class DriverFactory {
                 return new SqliteDriver(connection)
             case "better-sqlite3":
                 return new BetterSqlite3Driver(connection)
+            case "libsql":
+                return new LibsqlDriver(connection)
             case "cordova":
                 return new CordovaDriver(connection)
             case "nativescript":
@@ -77,6 +80,7 @@ export class DriverFactory {
                     "cockroachdb",
                     "cordova",
                     "expo",
+                    "libsql",
                     "mariadb",
                     "mongodb",
                     "mssql",

@@ -92,6 +92,7 @@
     "watch": "tsc --watch"
   },
   "dependencies": {
+    "@libsql/client": "^0.15.9",
     "@sqltools/formatter": "^1.2.5",
     "ansis": "^3.17.0",
     "app-root-path": "^3.1.0",
