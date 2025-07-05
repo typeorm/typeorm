@@ -33,7 +33,11 @@ export class LibsqlQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    async query(query: string, parameters?: any[]): Promise<any> {
+    async query(
+        query: string,
+        parameters?: any[],
+        useStructuredResult = false,
+    ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
@@ -68,6 +72,10 @@ export class LibsqlQueryRunner extends AbstractSqliteQueryRunner {
             queryResult.affected = result.rowsAffected
             queryResult.records = result.rows
             queryResult.raw = result.rows
+
+            if (!useStructuredResult) {
+                return queryResult.raw
+            }
 
             return queryResult
         } catch (err: any) {
