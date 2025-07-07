@@ -49,7 +49,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 __dirname + "/entity_precision_6/Child{.js,.ts}",
                 __dirname + "/entity_precision_6/Base{.js,.ts}",
             ],
-            enabledDrivers: ["mysql", "mariadb", "oracle", "postgres"],
+            enabledDrivers: ["mariadb", "mysql", "oracle", "postgres", "sap"],
             schemaCreate: true,
             dropSchema: true,
         })
