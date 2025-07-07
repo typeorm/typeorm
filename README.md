@@ -8,8 +8,8 @@
   </a>
   <br>
   <br>
-	<a href="https://github.com/typeorm/typeorm/actions/workflows/test.yml">
-		<img src="https://github.com/typeorm/typeorm/actions/workflows/test.yml/badge.svg?branch=master">
+	<a href="https://github.com/typeorm/typeorm/actions/workflows/commit-validation.yml">
+		<img src="https://github.com/typeorm/typeorm/actions/workflows/commit-validation.yml/badge.svg?branch=master">
 	</a>
 	<a href="https://badge.fury.io/js/typeorm">
 		<img src="https://badge.fury.io/js/typeorm.svg">
