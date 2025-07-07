@@ -41,14 +41,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
 
     before(async () => {
         connections = await createTestingConnections({
-            entities: [
-                __dirname + "/entity_precision_0/Parent{.js,.ts}",
-                __dirname + "/entity_precision_0/Child{.js,.ts}",
-                __dirname + "/entity_precision_0/Base{.js,.ts}",
-                __dirname + "/entity_precision_6/Parent{.js,.ts}",
-                __dirname + "/entity_precision_6/Child{.js,.ts}",
-                __dirname + "/entity_precision_6/Base{.js,.ts}",
-            ],
+            entities: [Parent0, Child0, Parent6, Child6],
             enabledDrivers: ["mariadb", "mysql", "oracle", "postgres", "sap"],
             schemaCreate: true,
             dropSchema: true,
