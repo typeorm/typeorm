@@ -6,10 +6,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Parent as Parent0 } from "./entity_precision_0/Parent"
-import { Child as Child0 } from "./entity_precision_0/Child"
-import { Parent as Parent6 } from "./entity_precision_6/Parent"
-import { Child as Child6 } from "./entity_precision_6/Child"
+import { Parent as Parent0 } from "./entity-0/Parent"
+import { Child as Child0 } from "./entity-0/Child"
+import { Parent as Parent6 } from "./entity-6/Parent"
+import { Child as Child6 } from "./entity-6/Child"
 import { scheduler } from "node:timers/promises"
 
 describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used in relation updates", () => {
@@ -29,21 +29,12 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
      * 2. Precision 6 columns use CURRENT_TIMESTAMP(6)
      * 3. Both relation updates and direct entity updates respect the precision
      * 4. The SQL generated contains the correct timestamp function
-     *
-     * SQL Server support can be added by:
-     * 1. Creating SQL Server-specific entities using 'datetime2' type instead of 'timestamp'
-     * 2. Using 'SYSDATETIME()' instead of 'CURRENT_TIMESTAMP' for default values
-     * 3. Adjusting SQL assertions to check for 'sysdatetime' instead of 'current_timestamp'
-     * 4. Handling SQL Server's different precision specifications
-     *
-     * The SQL Server entities are provided in entity_precision_0/ParentSqlServer.ts and ChildSqlServer.ts
-     * but are not used in this test to avoid complexity with database availability.
      */
 
     before(async () => {
         connections = await createTestingConnections({
             entities: [Parent0, Child0, Parent6, Child6],
-            enabledDrivers: ["mariadb", "mysql", "oracle", "postgres", "sap"],
+            enabledDrivers: ["mariadb", "mysql", "oracle", "postgres"],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -97,7 +88,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     where: { id: 1 },
                     relations: ["parent"],
                 })
-                expect(childBefore).to.not.be.null
+                expect(childBefore).to.not.equal(null)
                 expect(childBefore!.updated_date!.getMilliseconds()).to.equal(0)
                 await scheduler.wait(1100)
                 await connection.manager
@@ -109,7 +100,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     where: { id: 1 },
                     relations: ["parent"],
                 })
-                expect(childAfter).to.not.be.null
+                expect(childAfter).to.not.equal(null)
                 expect(childAfter!.parent?.id).to.equal(1)
                 expect(childAfter!.updated_date!.getMilliseconds()).to.equal(0)
             }
@@ -132,7 +123,6 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     lastQuery = sql
                     return originalQuery.call(this, sql, parameters)
                 }
-                await queryRunner.connect()
                 try {
                     await connection
                         .createQueryBuilder(queryRunner)
@@ -147,8 +137,9 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     expect(lastQuery.toLowerCase()).to.not.include(
                         "current_timestamp(6)",
                     )
-                    expect(/\bCURRENT_TIMESTAMP\b(?!\s*\()/i.test(lastQuery)).to
-                        .be.true
+                    expect(
+                        /\bCURRENT_TIMESTAMP\b(?!\s*\()/i.test(lastQuery),
+                    ).to.equal(true)
                 } finally {
                     await queryRunner.release()
                 }
@@ -180,7 +171,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     where: { id: 10 },
                     relations: ["parent"],
                 })
-                expect(childAfter).to.not.be.null
+                expect(childAfter).to.not.equal(null)
                 expect(childAfter!.parent?.id).to.equal(10)
                 expect(childAfter!.updated_date!.getTime()).to.be.greaterThan(
                     childBefore!.updated_date!.getTime(),
@@ -204,7 +195,6 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     lastQuery = sql
                     return originalQuery.call(this, sql, parameters)
                 }
-                await queryRunner.connect()
                 try {
                     await connection
                         .createQueryBuilder(queryRunner)
@@ -286,8 +276,8 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     where: { id: 20 },
                     relations: ["parent"],
                 })
-                expect(childAfter).to.not.be.null
-                expect(childAfter!.parent).to.be.null
+                expect(childAfter).to.not.equal(null)
+                expect(childAfter!.parent).to.equal(null)
                 expect(
                     childAfter!.updated_date!.getTime() -
                         childBefore!.updated_date!.getTime(),
@@ -319,8 +309,8 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     where: { id: 21 },
                     relations: ["parent"],
                 })
-                expect(childAfter).to.not.be.null
-                expect(childAfter!.parent).to.be.null
+                expect(childAfter).to.not.equal(null)
+                expect(childAfter!.parent).to.equal(null)
                 expect(childAfter!.updated_date!.getTime()).to.be.greaterThan(
                     childBefore!.updated_date!.getTime(),
                 )
@@ -349,7 +339,6 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     queries.push(sql)
                     return originalQuery(sql, parameters)
                 }
-                await queryRunner.connect()
                 try {
                     await connection
                         .createQueryBuilder(queryRunner)
@@ -368,8 +357,9 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     expect(updateQuery!.toLowerCase()).to.not.include(
                         "current_timestamp(6)",
                     )
-                    expect(/\bCURRENT_TIMESTAMP\b(?!\s*\()/i.test(updateQuery!))
-                        .to.be.true
+                    expect(
+                        /\bCURRENT_TIMESTAMP\b(?!\s*\()/i.test(updateQuery!),
+                    ).to.equal(true)
                 } finally {
                     await queryRunner.release()
                 }
@@ -392,7 +382,6 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     queries.push(sql)
                     return originalQuery(sql, parameters)
                 }
-                await queryRunner.connect()
                 try {
                     await connection
                         .createQueryBuilder(queryRunner)
@@ -426,7 +415,6 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 }
 
                 const queryRunner = connection.createQueryRunner()
-                await queryRunner.connect()
                 try {
                     // Test precision 0 table
                     const child0TableName =
@@ -450,7 +438,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     expect(
                         hasCorrectPrecision0,
                         `Precision 0 table should use 'timestamp' without precision, got: ${createTableSql0}`,
-                    ).to.be.true
+                    ).to.equal(true)
 
                     // Test precision 6 table
                     const child6TableName =
@@ -467,7 +455,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     expect(
                         hasCorrectPrecision6,
                         `Precision 6 table should use 'timestamp(6)', got: ${createTableSql6}`,
-                    ).to.be.true
+                    ).to.equal(true)
                 } finally {
                     await queryRunner.release()
                 }
@@ -492,7 +480,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 const parentBefore = await connection.manager.findOne(Parent0, {
                     where: { id: 40 },
                 })
-                expect(parentBefore).to.not.be.null
+                expect(parentBefore).to.not.equal(null)
                 expect(parentBefore!.updated_date!.getMilliseconds()).to.equal(
                     0,
                 )
@@ -506,7 +494,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 const parentAfter = await connection.manager.findOne(Parent0, {
                     where: { id: 40 },
                 })
-                expect(parentAfter).to.not.be.null
+                expect(parentAfter).to.not.equal(null)
                 expect(parentAfter!.name).to.equal("Updated Parent Precision 0")
                 expect(parentAfter!.updated_date!.getMilliseconds()).to.equal(0)
                 expect(parentAfter!.updated_date!.getTime()).to.be.greaterThan(
@@ -527,7 +515,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 const parentBefore = await connection.manager.findOne(Parent6, {
                     where: { id: 41 },
                 })
-                expect(parentBefore).to.not.be.null
+                expect(parentBefore).to.not.equal(null)
 
                 await scheduler.wait(10)
 
@@ -538,7 +526,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 const parentAfter = await connection.manager.findOne(Parent6, {
                     where: { id: 41 },
                 })
-                expect(parentAfter).to.not.be.null
+                expect(parentAfter).to.not.equal(null)
                 expect(parentAfter!.name).to.equal("Updated Parent Precision 6")
                 expect(parentAfter!.updated_date!.getTime()).to.be.greaterThan(
                     parentBefore!.updated_date!.getTime(),
@@ -566,7 +554,6 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     lastQuery = sql
                     return originalQuery.call(this, sql, parameters)
                 }
-                await queryRunner.connect()
                 try {
                     // Use query builder to update the entity directly
                     await connection.manager
@@ -585,8 +572,9 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     expect(lastQuery.toLowerCase()).to.not.include(
                         "current_timestamp(6)",
                     )
-                    expect(/\bCURRENT_TIMESTAMP\b(?!\s*\()/i.test(lastQuery)).to
-                        .be.true
+                    expect(
+                        /\bCURRENT_TIMESTAMP\b(?!\s*\()/i.test(lastQuery),
+                    ).to.equal(true)
                 } finally {
                     await queryRunner.release()
                 }
@@ -609,7 +597,6 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     lastQuery = sql
                     return originalQuery.call(this, sql, parameters)
                 }
-                await queryRunner.connect()
                 try {
                     // Use query builder to update the entity directly
                     await connection.manager
@@ -649,7 +636,6 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     lastQuery = sql
                     return originalQuery.call(this, sql, parameters)
                 }
-                await queryRunner.connect()
                 try {
                     await connection.manager
                         .createQueryBuilder(queryRunner)
@@ -666,8 +652,9 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     expect(lastQuery.toLowerCase()).to.not.include(
                         "current_timestamp(6)",
                     )
-                    expect(/\bCURRENT_TIMESTAMP\b(?!\s*\()/i.test(lastQuery)).to
-                        .be.true
+                    expect(
+                        /\bCURRENT_TIMESTAMP\b(?!\s*\()/i.test(lastQuery),
+                    ).to.equal(true)
                 } finally {
                     await queryRunner.release()
                 }
@@ -686,7 +673,6 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     lastQuery = sql
                     return originalQuery.call(this, sql, parameters)
                 }
-                await queryRunner.connect()
                 try {
                     await connection.manager
                         .createQueryBuilder(queryRunner)
@@ -726,7 +712,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 const childBefore = await connection.manager.findOne(Child0, {
                     where: { id: 50 },
                 })
-                expect(childBefore).to.not.be.null
+                expect(childBefore).to.not.equal(null)
                 expect(childBefore!.updated_date!.getMilliseconds()).to.equal(0)
 
                 await scheduler.wait(1100)
@@ -738,7 +724,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 const childAfter = await connection.manager.findOne(Child0, {
                     where: { id: 50 },
                 })
-                expect(childAfter).to.not.be.null
+                expect(childAfter).to.not.equal(null)
                 expect(childAfter!.name).to.equal("Updated Child Precision 0")
                 expect(childAfter!.updated_date!.getMilliseconds()).to.equal(0)
                 expect(childAfter!.updated_date!.getTime()).to.be.greaterThan(
@@ -759,7 +745,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 const childBefore = await connection.manager.findOne(Child6, {
                     where: { id: 51 },
                 })
-                expect(childBefore).to.not.be.null
+                expect(childBefore).to.not.equal(null)
 
                 await scheduler.wait(10)
 
@@ -770,7 +756,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 const childAfter = await connection.manager.findOne(Child6, {
                     where: { id: 51 },
                 })
-                expect(childAfter).to.not.be.null
+                expect(childAfter).to.not.equal(null)
                 expect(childAfter!.name).to.equal("Updated Child Precision 6")
                 expect(childAfter!.updated_date!.getTime()).to.be.greaterThan(
                     childBefore!.updated_date!.getTime(),

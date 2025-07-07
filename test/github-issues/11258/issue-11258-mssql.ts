@@ -6,10 +6,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { ParentSqlServer as ParentSqlServer0 } from "./entity_precision_0/ParentSqlServer"
-import { ChildSqlServer as ChildSqlServer0 } from "./entity_precision_0/ChildSqlServer"
-import { ParentSqlServer as ParentSqlServer6 } from "./entity_precision_6/ParentSqlServer"
-import { ChildSqlServer as ChildSqlServer6 } from "./entity_precision_6/ChildSqlServer"
+import { ParentSqlServer as ParentSqlServer0 } from "./entity-mssql-0/ParentSqlServer"
+import { ChildSqlServer as ChildSqlServer0 } from "./entity-mssql-0/ChildSqlServer"
+import { ParentSqlServer as ParentSqlServer6 } from "./entity-mssql-6/ParentSqlServer"
+import { ChildSqlServer as ChildSqlServer6 } from "./entity-mssql-6/ChildSqlServer"
 import { scheduler } from "node:timers/promises"
 
 describe("github issues > #11258 SQL Server - datetime2 precision handling with GETDATE() and SYSDATETIME()", () => {
@@ -108,7 +108,6 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
         it("should create tables with correct datetime2 precision", async () => {
             for (const connection of connections) {
                 const queryRunner = connection.createQueryRunner()
-                await queryRunner.connect()
                 try {
                     // Test precision 0 table
                     const child0TableName =
@@ -159,7 +158,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     where: { id: 1 },
                     relations: ["parent"],
                 })
-                expect(childBefore).to.not.be.null
+                expect(childBefore).to.not.equal(null)
                 expect(childBefore!.updated_date).to.not.be.undefined
                 expect(
                     childBefore!.updated_date!.getMilliseconds(),
@@ -177,7 +176,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     where: { id: 1 },
                     relations: ["parent"],
                 })
-                expect(childAfter).to.not.be.null
+                expect(childAfter).to.not.equal(null)
                 expect(childAfter!.parent?.id).to.equal(1)
                 expect(childAfter!.updated_date).to.not.be.undefined
                 expect(childAfter!.updated_date!.getMilliseconds()).to.be.equal(
@@ -207,7 +206,6 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     const result = originalQuery.call(this, sql, parameters)
                     return result
                 }
-                await queryRunner.connect()
                 try {
                     await connection
                         .createQueryBuilder(queryRunner)
@@ -217,12 +215,12 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
 
                     // SQL Server should use GETDATE() for precision 0
                     expect(lastQuery.toLowerCase()).to.include("getdate")
-                    expect(/\bGETDATE\(\)/i.test(lastQuery)).to.be.true
+                    expect(/\bGETDATE\(\)/i.test(lastQuery)).to.equal(true)
                 } catch (error) {
                     // If there's an error with the relation update, still check the query
                     if (lastQuery) {
                         expect(lastQuery.toLowerCase()).to.include("getdate")
-                        expect(/\bGETDATE\(\)/i.test(lastQuery)).to.be.true
+                        expect(/\bGETDATE\(\)/i.test(lastQuery)).to.equal(true)
                     } else {
                         throw error
                     }
@@ -247,7 +245,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                 const childBefore = await connection.manager.findOne(Child, {
                     where: { id: 10 },
                 })
-                expect(childBefore).to.not.be.null
+                expect(childBefore).to.not.equal(null)
                 expect(childBefore!.updated_date).to.not.be.undefined
                 expect(
                     childBefore!.updated_date!.getMilliseconds(),
@@ -265,7 +263,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     where: { id: 10 },
                     relations: ["parent"],
                 })
-                expect(childAfter).to.not.be.null
+                expect(childAfter).to.not.equal(null)
                 expect(childAfter!.parent?.id).to.equal(10)
                 expect(childAfter!.updated_date).to.not.be.undefined
                 expect(
@@ -298,7 +296,6 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     lastQuery = sql
                     return originalQuery.call(this, sql, parameters)
                 }
-                await queryRunner.connect()
                 try {
                     await connection
                         .createQueryBuilder(queryRunner)
@@ -308,14 +305,16 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
 
                     // SQL Server should use SYSDATETIME() (same function regardless of precision)
                     expect(lastQuery.toLowerCase()).to.include("sysdatetime")
-                    expect(/\bSYSDATETIME\(\)/i.test(lastQuery)).to.be.true
+                    expect(/\bSYSDATETIME\(\)/i.test(lastQuery)).to.equal(true)
                 } catch (error) {
                     // If there's an error with the relation update, still check the query
                     if (lastQuery) {
                         expect(lastQuery.toLowerCase()).to.include(
                             "sysdatetime",
                         )
-                        expect(/\bSYSDATETIME\(\)/i.test(lastQuery)).to.be.true
+                        expect(/\bSYSDATETIME\(\)/i.test(lastQuery)).to.equal(
+                            true,
+                        )
                     } else {
                         throw error
                     }
@@ -390,7 +389,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                         where: { id: 40 },
                     },
                 )
-                expect(parentBefore).to.not.be.null
+                expect(parentBefore).to.not.equal(null)
                 expect(parentBefore!.updated_date!.getMilliseconds()).to.equal(
                     0,
                 )
@@ -407,7 +406,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                         where: { id: 40 },
                     },
                 )
-                expect(parentAfter).to.not.be.null
+                expect(parentAfter).to.not.equal(null)
                 expect(parentAfter!.name).to.equal(
                     "Updated SQL Server Parent Precision 0",
                 )
@@ -434,7 +433,6 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     lastQuery = sql
                     return originalQuery.call(this, sql, parameters)
                 }
-                await queryRunner.connect()
                 try {
                     // Use query builder to update the entity directly
                     await connection.manager
@@ -448,12 +446,12 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     expect(lastQuery.toLowerCase()).to.include("update")
                     expect(lastQuery.toLowerCase()).to.include("updated_date")
                     expect(lastQuery.toLowerCase()).to.include("getdate")
-                    expect(/\bGETDATE\(\)/i.test(lastQuery)).to.be.true
+                    expect(/\bGETDATE\(\)/i.test(lastQuery)).to.equal(true)
                 } catch (error) {
                     // If there's an error with the update, still check the query
                     if (lastQuery) {
                         expect(lastQuery.toLowerCase()).to.include("getdate")
-                        expect(/\bGETDATE\(\)/i.test(lastQuery)).to.be.true
+                        expect(/\bGETDATE\(\)/i.test(lastQuery)).to.equal(true)
                     } else {
                         throw error
                     }
@@ -478,7 +476,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                         where: { id: 41 },
                     },
                 )
-                expect(parentBefore).to.not.be.null
+                expect(parentBefore).to.not.equal(null)
 
                 await scheduler.wait(10)
 
@@ -492,7 +490,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                         where: { id: 41 },
                     },
                 )
-                expect(parentAfter).to.not.be.null
+                expect(parentAfter).to.not.equal(null)
                 expect(parentAfter!.name).to.equal(
                     "Updated SQL Server Parent Precision 6",
                 )
@@ -538,8 +536,8 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                         relations: ["parent"],
                     },
                 )
-                expect(childAfter).to.not.be.null
-                expect(childAfter!.parent).to.be.null
+                expect(childAfter).to.not.equal(null)
+                expect(childAfter!.parent).to.equal(null)
                 expect(childAfter!.updated_date!.getTime()).to.be.greaterThan(
                     childBefore!.updated_date!.getTime(),
                 )
@@ -580,8 +578,8 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                         relations: ["parent"],
                     },
                 )
-                expect(childAfter).to.not.be.null
-                expect(childAfter!.parent).to.be.null
+                expect(childAfter).to.not.equal(null)
+                expect(childAfter!.parent).to.equal(null)
                 expect(childAfter!.updated_date!.getTime()).to.be.greaterThan(
                     childBefore!.updated_date!.getTime(),
                 )

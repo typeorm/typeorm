@@ -6,10 +6,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { ParentSqlite as ParentSqlite0 } from "./entity_sqlite_0/ParentSqlite"
-import { ChildSqlite as ChildSqlite0 } from "./entity_sqlite_0/ChildSqlite"
-import { ParentSqlite as ParentSqlite6 } from "./entity_sqlite_6/ParentSqlite"
-import { ChildSqlite as ChildSqlite6 } from "./entity_sqlite_6/ChildSqlite"
+import { ParentSqlite as ParentSqlite0 } from "./entity-sqlite-0/ParentSqlite"
+import { ChildSqlite as ChildSqlite0 } from "./entity-sqlite-0/ChildSqlite"
+import { ParentSqlite as ParentSqlite6 } from "./entity-sqlite-6/ParentSqlite"
+import { ChildSqlite as ChildSqlite6 } from "./entity-sqlite-6/ChildSqlite"
 import { scheduler } from "node:timers/promises"
 
 describe("github issues > #11258 SQLite - datetime precision handling", () => {
@@ -99,7 +99,6 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
         it("should create tables with correct datetime precision", async () => {
             for (const connection of connections) {
                 const queryRunner = connection.createQueryRunner()
-                await queryRunner.connect()
                 try {
                     // Test precision 0 table
                     const child0TableName =
@@ -156,7 +155,7 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
                 const childBefore = await connection.manager.findOne(Child, {
                     where: { id: 1 },
                 })
-                expect(childBefore).to.not.be.null
+                expect(childBefore).to.not.equal(null)
                 expect(childBefore!.updated_date).to.not.be.undefined
                 expect(
                     childBefore!.updated_date!.getMilliseconds(),
@@ -171,7 +170,7 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
                 const childAfter = await connection.manager.findOne(Child, {
                     where: { id: 1 },
                 })
-                expect(childAfter).to.not.be.null
+                expect(childAfter).to.not.equal(null)
                 expect(childAfter!.updated_date).to.not.be.undefined
                 expect(childAfter!.updated_date!.getMilliseconds()).to.be.equal(
                     0,
@@ -197,7 +196,7 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
                 const childBefore = await connection.manager.findOne(Child, {
                     where: { id: 10 },
                 })
-                expect(childBefore).to.not.be.null
+                expect(childBefore).to.not.equal(null)
                 expect(childBefore!.updated_date).to.not.be.undefined
                 expect(
                     childBefore!.updated_date!.getMilliseconds(),
@@ -212,7 +211,7 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
                 const childAfter = await connection.manager.findOne(Child, {
                     where: { id: 10 },
                 })
-                expect(childAfter).to.not.be.null
+                expect(childAfter).to.not.equal(null)
                 expect(childAfter!.updated_date).to.not.be.undefined
                 expect(
                     childAfter!.updated_date!.getMilliseconds(),
@@ -247,7 +246,7 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
                 const updatedChild = await connection.manager.findOne(Child, {
                     where: { id: 20 },
                 })
-                expect(updatedChild).to.not.be.null
+                expect(updatedChild).to.not.equal(null)
                 expect(updatedChild!.name).to.equal("Updated via Save")
                 expect(updatedChild!.updated_date).to.not.be.undefined
 
@@ -289,7 +288,7 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
                 const updatedChild = await connection.manager.findOne(Child, {
                     where: { id: 30 },
                 })
-                expect(updatedChild).to.not.be.null
+                expect(updatedChild).to.not.equal(null)
                 expect(updatedChild!.name).to.equal("Updated via Save P0")
                 expect(updatedChild!.updated_date).to.not.be.undefined
 
