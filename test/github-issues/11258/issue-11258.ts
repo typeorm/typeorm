@@ -51,7 +51,10 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    const createEntities = async <P = Parent0 | Parent6, C = Child0 | Child6>(
+    const createEntities = async <
+        P extends Parent0 | Parent6,
+        C extends Child0 | Child6,
+    >(
         connection: DataSource,
         Parent: new () => P,
         Child: new () => C,
@@ -59,14 +62,16 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
         nameSuffix: string,
     ): Promise<{ parent: P; child: C }> => {
         const parent = new Parent()
-        ;(parent as any).id = id
-        ;(parent as any).name = `Parent ${nameSuffix}`
-        await connection.manager.save(parent)
+        parent.id = id
+        parent.name = `Parent ${nameSuffix}`
+        const savedParent = await connection.manager.save(parent)
+
         const child = new Child()
-        ;(child as any).id = id
-        ;(child as any).name = `Child ${nameSuffix}`
-        await connection.manager.save(child)
-        return { parent, child }
+        child.id = id
+        child.name = `Child ${nameSuffix}`
+        const savedChild = await connection.manager.save(child)
+
+        return { parent: savedParent, child: savedChild }
     }
 
     // Helper function to get the appropriate entity classes based on database type

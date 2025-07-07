@@ -74,24 +74,27 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    const createSqlServerEntities = async (
+    const createSqlServerEntities = async <
+        P extends ParentSqlServer0 | ParentSqlServer6,
+        C extends ChildSqlServer0 | ChildSqlServer6,
+    >(
         connection: DataSource,
-        Parent: any,
-        Child: any,
+        Parent: new () => P,
+        Child: new () => C,
         id: number,
         nameSuffix: string,
-    ) => {
-        const parent = Object.assign(new Parent(), {
-            id,
-            name: `Parent ${nameSuffix}`,
-        })
-        await connection.manager.save(parent)
-        const child = Object.assign(new Child(), {
-            id,
-            name: `Child ${nameSuffix}`,
-        })
-        await connection.manager.save(child)
-        return { parent, child }
+    ): Promise<{ parent: P; child: C }> => {
+        const parent = new Parent()
+        parent.id = id
+        parent.name = `Parent ${nameSuffix}`
+        const savedParent = await connection.manager.save(parent)
+
+        const child = new Child()
+        child.id = id
+        child.name = `Child ${nameSuffix}`
+        const savedChild = await connection.manager.save(child)
+
+        return { parent: savedParent, child: savedChild }
     }
 
     // Helper function to get SQL Server entity classes based on precision
