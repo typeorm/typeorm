@@ -4,8 +4,8 @@ export abstract class BaseEntitySqlServer {
     @PrimaryColumn()
     id?: number
 
-    // for precision 3 testing - SQL Server uses datetime2 and SYSDATETIME()
-    // `updated_date` datetime2(0) NOT NULL DEFAULT SYSDATETIME()
+    // for precision 0 testing - SQL Server uses datetime2 and GETDATE()
+    // `updated_date` datetime2(0) NOT NULL DEFAULT GETDATE()
     @UpdateDateColumn({
         type: "datetime2",
         precision: 0,

@@ -10,6 +10,7 @@ import { ParentSqlServer as ParentSqlServer0 } from "./entity_precision_0/Parent
 import { ChildSqlServer as ChildSqlServer0 } from "./entity_precision_0/ChildSqlServer"
 import { ParentSqlServer as ParentSqlServer6 } from "./entity_precision_6/ParentSqlServer"
 import { ChildSqlServer as ChildSqlServer6 } from "./entity_precision_6/ChildSqlServer"
+import { scheduler } from "node:timers/promises"
 
 describe("github issues > #11258 SQL Server - datetime2 precision handling with GETDATE() and SYSDATETIME()", () => {
     let connections: DataSource[]
@@ -53,12 +54,10 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
         try {
             connections = await createTestingConnections({
                 entities: [
-                    __dirname + "/entity_precision_0/ParentSqlServer{.js,.ts}",
-                    __dirname + "/entity_precision_0/ChildSqlServer{.js,.ts}",
-                    __dirname + "/entity_precision_0/BaseSqlServer{.js,.ts}",
-                    __dirname + "/entity_precision_6/ParentSqlServer{.js,.ts}",
-                    __dirname + "/entity_precision_6/ChildSqlServer{.js,.ts}",
-                    __dirname + "/entity_precision_6/BaseSqlServer{.js,.ts}",
+                    ParentSqlServer0,
+                    ChildSqlServer0,
+                    ParentSqlServer6,
+                    ChildSqlServer6,
                 ],
                 enabledDrivers: ["mssql"],
                 schemaCreate: true,
@@ -163,7 +162,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     childBefore!.updated_date!.getMilliseconds(),
                 ).to.be.equal(0)
 
-                await new Promise((res) => setTimeout(res, 1100)) // Wait to ensure timestamp changes
+                await scheduler.wait(1100) // Wait to ensure timestamp changes
 
                 await connection.manager
                     .createQueryBuilder()
@@ -251,7 +250,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     childBefore!.updated_date!.getMilliseconds(),
                 ).to.be.within(0, 999)
 
-                await new Promise((res) => setTimeout(res, 10))
+                await scheduler.wait(10)
 
                 await connection.manager
                     .createQueryBuilder()
@@ -393,7 +392,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     0,
                 )
 
-                await new Promise((res) => setTimeout(res, 1100))
+                await scheduler.wait(1100)
 
                 // Update parent directly
                 parent.name = "Updated SQL Server Parent Precision 0"
@@ -442,7 +441,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                         .where("id = :id", { id: parent.id })
                         .execute()
 
-                    // Check that the update query uses SYSDATETIME()
+                    // Check that the update query uses GETDATE()
                     expect(lastQuery.toLowerCase()).to.include("update")
                     expect(lastQuery.toLowerCase()).to.include("updated_date")
                     expect(lastQuery.toLowerCase()).to.include("getdate")
@@ -478,7 +477,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                 )
                 expect(parentBefore).to.not.be.null
 
-                await new Promise((res) => setTimeout(res, 10))
+                await scheduler.wait(10)
 
                 // Update parent directly
                 parent.name = "Updated SQL Server Parent Precision 6"
@@ -497,11 +496,6 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                 expect(parentAfter!.updated_date!.getTime()).to.be.greaterThan(
                     parentBefore!.updated_date!.getTime(),
                 )
-                expect(
-                    Number.isInteger(
-                        parentAfter!.updated_date!.getMilliseconds(),
-                    ),
-                ).to.be.true
             }
         })
     })
@@ -526,7 +520,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     },
                 )
 
-                await new Promise((res) => setTimeout(res, 1100))
+                await scheduler.wait(1100)
 
                 await connection.manager
                     .createQueryBuilder()
@@ -568,7 +562,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     },
                 )
 
-                await new Promise((res) => setTimeout(res, 10))
+                await scheduler.wait(10)
 
                 await connection.manager
                     .createQueryBuilder()
