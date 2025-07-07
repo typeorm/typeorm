@@ -3372,7 +3372,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     async getVersion(): Promise<string> {
         const result: [{ "version()": string }] = await this.query(
-            `SELECT VERSION()`,
+            "SELECT version()",
         )
 
         // MariaDB: https://mariadb.com/kb/en/version/
