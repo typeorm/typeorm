@@ -57,16 +57,14 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
         id: number,
         nameSuffix: string,
     ) => {
-        const parent = Object.assign(new Parent(), {
+        const parent = await connection.manager.save(new Parent(), {
             id,
             name: `Parent ${nameSuffix}`,
         })
-        await connection.manager.save(parent)
-        const child = Object.assign(new Child(), {
+        const child = await connection.manager.save(new Child(), {
             id,
             name: `Child ${nameSuffix}`,
         })
-        await connection.manager.save(child)
         return { parent, child }
     }
 
