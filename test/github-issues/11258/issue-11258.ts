@@ -10,6 +10,7 @@ import { Parent as Parent0 } from "./entity_precision_0/Parent"
 import { Child as Child0 } from "./entity_precision_0/Child"
 import { Parent as Parent6 } from "./entity_precision_6/Parent"
 import { Child as Child6 } from "./entity_precision_6/Child"
+import { scheduler } from "node:timers/promises"
 
 describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used in relation updates", () => {
     let connections: DataSource[]
@@ -50,21 +51,21 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    const createEntities = async (
+    const createEntities = async <P = Parent0 | Parent6, C = Child0 | Child6>(
         connection: DataSource,
-        Parent: any,
-        Child: any,
+        Parent: new () => P,
+        Child: new () => C,
         id: number,
         nameSuffix: string,
-    ) => {
-        const parent = await connection.manager.save(new Parent(), {
-            id,
-            name: `Parent ${nameSuffix}`,
-        })
-        const child = await connection.manager.save(new Child(), {
-            id,
-            name: `Child ${nameSuffix}`,
-        })
+    ): Promise<{ parent: P; child: C }> => {
+        const parent = new Parent()
+        ;(parent as any).id = id
+        ;(parent as any).name = `Parent ${nameSuffix}`
+        await connection.manager.save(parent)
+        const child = new Child()
+        ;(child as any).id = id
+        ;(child as any).name = `Child ${nameSuffix}`
+        await connection.manager.save(child)
         return { parent, child }
     }
 
@@ -93,7 +94,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 })
                 expect(childBefore).to.not.be.null
                 expect(childBefore!.updated_date!.getMilliseconds()).to.equal(0)
-                await new Promise((res) => setTimeout(res, 1100))
+                await scheduler.wait(1100)
                 await connection.manager
                     .createQueryBuilder()
                     .relation(Parent, "entities")
@@ -164,7 +165,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 const childBefore = await connection.manager.findOne(Child, {
                     where: { id: 10 },
                 })
-                await new Promise((res) => setTimeout(res, 10))
+                await scheduler.wait(10)
                 await connection.manager
                     .createQueryBuilder()
                     .relation(Parent, "entities")
@@ -179,11 +180,6 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 expect(childAfter!.updated_date!.getTime()).to.be.greaterThan(
                     childBefore!.updated_date!.getTime(),
                 )
-                expect(
-                    Number.isInteger(
-                        childAfter!.updated_date!.getMilliseconds(),
-                    ),
-                ).to.be.true
             }
         })
 
@@ -245,10 +241,13 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 expect(dbTimestamp).to.be.at.least(
                     before!.updated_date!.getTime(),
                 )
-                expect(dbTimestamp).to.be.at.most(
-                    updatedChild!.updated_date!.getTime() + 1000,
+                // For precision 6, verify microsecond precision is preserved
+                // The timestamp should not be rounded to the nearest second
+                const timestampMs = dbTimestamp % 1000
+                expect(timestampMs).to.not.equal(
+                    0,
+                    "Timestamp should preserve microsecond precision",
                 )
-                expect(dbTimestamp).to.be.a("number").and.greaterThan(0)
             }
         })
     })
@@ -272,7 +271,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 const childBefore = await connection.manager.findOne(Child0, {
                     where: { id: 20 },
                 })
-                await new Promise((res) => setTimeout(res, 1100))
+                await scheduler.wait(1100)
                 await connection.manager
                     .createQueryBuilder()
                     .relation(Parent0, "entities")
@@ -305,7 +304,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 const childBefore = await connection.manager.findOne(Child6, {
                     where: { id: 21 },
                 })
-                await new Promise((res) => setTimeout(res, 10))
+                await scheduler.wait(10)
                 await connection.manager
                     .createQueryBuilder()
                     .relation(Parent6, "entities")
@@ -493,7 +492,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     0,
                 )
 
-                await new Promise((res) => setTimeout(res, 1100))
+                await scheduler.wait(1100)
 
                 // Update parent directly
                 parent.name = "Updated Parent Precision 0"
@@ -525,7 +524,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 })
                 expect(parentBefore).to.not.be.null
 
-                await new Promise((res) => setTimeout(res, 10))
+                await scheduler.wait(10)
 
                 // Update parent directly
                 parent.name = "Updated Parent Precision 6"
@@ -539,11 +538,6 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 expect(parentAfter!.updated_date!.getTime()).to.be.greaterThan(
                     parentBefore!.updated_date!.getTime(),
                 )
-                expect(
-                    Number.isInteger(
-                        parentAfter!.updated_date!.getMilliseconds(),
-                    ),
-                ).to.be.true
             }
         })
 
@@ -730,7 +724,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 expect(childBefore).to.not.be.null
                 expect(childBefore!.updated_date!.getMilliseconds()).to.equal(0)
 
-                await new Promise((res) => setTimeout(res, 1100))
+                await scheduler.wait(1100)
 
                 // Update child directly
                 child.name = "Updated Child Precision 0"
@@ -762,7 +756,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 })
                 expect(childBefore).to.not.be.null
 
-                await new Promise((res) => setTimeout(res, 10))
+                await scheduler.wait(10)
 
                 // Update child directly
                 child.name = "Updated Child Precision 6"
@@ -776,11 +770,6 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 expect(childAfter!.updated_date!.getTime()).to.be.greaterThan(
                     childBefore!.updated_date!.getTime(),
                 )
-                expect(
-                    Number.isInteger(
-                        childAfter!.updated_date!.getMilliseconds(),
-                    ),
-                ).to.be.true
             }
         })
     })
