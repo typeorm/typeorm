@@ -3371,8 +3371,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     async getVersion(): Promise<string> {
-        const result = await this.query(
-            `SELECT VERSION() AS \`version\``,
+        const result:[{'version()':string}] = await this.query(
+            `SELECT VERSION()`,
         )
 
         // MariaDB: https://mariadb.com/kb/en/version/
@@ -3382,14 +3382,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // - "8.4.3"
         // - "8.4.4-standard"
 
-        // support AnalyticDB for MySQL returning version() column name in getVersion
-        const row = result[0] as { version?: string; "version()"?: string };
-
-        const versionString = row.version ?? row["version()"];
-
-        if (!versionString) {
-            throw new TypeORMError("Unable to determine database version: neither 'version' nor 'version()' property found in query result");
-        }
+        const versionString = result[0]["version()"]
 
         return versionString.replace(/^([\d.]+).*$/, "$1")
     }
