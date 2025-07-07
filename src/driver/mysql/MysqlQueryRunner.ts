@@ -3371,7 +3371,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     async getVersion(): Promise<string> {
-        const result:[{'version()':string}] = await this.query(
+        const result: [{ "version()": string }] = await this.query(
             `SELECT VERSION()`,
         )
 
