@@ -149,23 +149,51 @@ describe("github issues > #11563 QueryRunner array modification during iteration
                 await queryRunner.connect()
 
                 try {
-                    // Add multiple test indices
+                    // Add columns for indices first
+                    await queryRunner.addColumns("test_entity", [
+                        new TableColumn({
+                            name: "idx_col_1",
+                            type: "varchar",
+                            length: "100",
+                            isNullable: true,
+                        }),
+                        new TableColumn({
+                            name: "idx_col_2",
+                            type: "varchar",
+                            length: "100",
+                            isNullable: true,
+                        }),
+                        new TableColumn({
+                            name: "idx_col_3",
+                            type: "varchar",
+                            length: "100",
+                            isNullable: true,
+                        }),
+                        new TableColumn({
+                            name: "idx_col_4",
+                            type: "varchar",
+                            length: "100",
+                            isNullable: true,
+                        }),
+                    ])
+
+                    // Add multiple test indices on different columns to avoid Oracle conflicts
                     await queryRunner.createIndices("test_entity", [
                         new TableIndex({
                             name: "test_idx_1",
-                            columnNames: ["name"],
+                            columnNames: ["idx_col_1"],
                         }),
                         new TableIndex({
                             name: "test_idx_2",
-                            columnNames: ["name"],
+                            columnNames: ["idx_col_2"],
                         }),
                         new TableIndex({
                             name: "test_idx_3",
-                            columnNames: ["name"],
+                            columnNames: ["idx_col_3"],
                         }),
                         new TableIndex({
                             name: "test_idx_4",
-                            columnNames: ["name"],
+                            columnNames: ["idx_col_4"],
                         }),
                     ])
 
