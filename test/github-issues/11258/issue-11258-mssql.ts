@@ -342,11 +342,6 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     (col) => col.name === "updated_date",
                 )
                 expect(updatedDateColumn0!.precision).to.equal(0)
-                console.log("Precision 0 column schema:", {
-                    type: updatedDateColumn0!.type,
-                    precision: updatedDateColumn0!.precision,
-                    default: updatedDateColumn0!.default,
-                })
                 await queryRunner0.release()
 
                 // Test precision 6 schema
@@ -363,11 +358,6 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     (col) => col.name === "updated_date",
                 )
                 expect(updatedDateColumn6!.precision).to.equal(6)
-                console.log("Precision 6 column schema:", {
-                    type: updatedDateColumn6!.type,
-                    precision: updatedDateColumn6!.precision,
-                    default: updatedDateColumn6!.default,
-                })
                 await queryRunner6.release()
             }
         })
