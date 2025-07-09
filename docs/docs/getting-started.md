@@ -47,7 +47,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 -   Listeners and subscribers (hooks).
 -   Supports closure table pattern.
 -   Schema declaration in models or separate configuration files.
--   Supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js.
+-   Supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / LibSQL / Microsoft SQL Server / Oracle / SAP Hana / sql.js.
 -   Supports MongoDB NoSQL database.
 -   Works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
 -   TypeScript and JavaScript support.
