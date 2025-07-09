@@ -61,7 +61,7 @@ describe("find options > where", () => {
                 const posts1 = await connection
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
-                        // @ts-expect-error
+                        // @ts-expect-error - null should be marked as unsafe by default
                         where: {
                             title: "Post #1",
                             text: null,
@@ -79,7 +79,7 @@ describe("find options > where", () => {
                 const posts2 = await connection
                     .createQueryBuilder(Post, "post")
                     .setFindOptions({
-                        // @ts-expect-error
+                        // @ts-expect-error - null should be marked as unsafe by default
                         where: {
                             text: null,
                         },
