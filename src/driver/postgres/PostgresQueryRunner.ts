@@ -2527,7 +2527,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -2728,7 +2728,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
     ): Promise<void> {
-        for (const uniqueConstraint of uniqueConstraints) {
+        for (const uniqueConstraint of [...uniqueConstraints]) {
             await this.dropUniqueConstraint(tableOrName, uniqueConstraint)
         }
     }
@@ -2966,7 +2966,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
     ): Promise<void> {
-        for (const foreignKey of foreignKeys) {
+        for (const foreignKey of [...foreignKeys]) {
             await this.dropForeignKey(tableOrName, foreignKey)
         }
     }
@@ -3094,7 +3094,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         indices: TableIndex[],
     ): Promise<void> {
-        for (const index of indices) {
+        for (const index of [...indices]) {
             await this.dropIndex(tableOrName, index)
         }
     }
