@@ -210,17 +210,19 @@ describe("repository > find options", () => {
                     },
                 ])
 
+                const readonlyWhere = [
+                    {
+                        name: "Bears",
+                    },
+                    {
+                        name: "Cats",
+                    },
+                ] as const
+
                 const loadedCategories2 = await connection
                     .getRepository(Category)
                     .find({
-                        where: [
-                            {
-                                name: "Bears",
-                            },
-                            {
-                                name: "Cats",
-                            },
-                        ],
+                        where: readonlyWhere,
                         order: { id: "ASC" },
                     })
 
