@@ -142,6 +142,8 @@ export class SqlServerDriver implements Driver {
         "geometry",
         "geography",
         "rowversion",
+        "bool", // synonym for bit
+        "boolean", // synonym for bit
     ]
 
     /**
@@ -526,7 +528,10 @@ export class SqlServerDriver implements Driver {
 
         if (value === null || value === undefined) return value
 
-        if (columnMetadata.type === Boolean) {
+        if (columnMetadata.type === Boolean ||
+            columnMetadata.type === "bool" ||
+            columnMetadata.type === "boolean"
+        ) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDate(value)
@@ -566,7 +571,10 @@ export class SqlServerDriver implements Driver {
                   )
                 : value
 
-        if (columnMetadata.type === Boolean) {
+        if (columnMetadata.type === Boolean ||
+            columnMetadata.type === "bool" ||
+            columnMetadata.type === "boolean"
+        ) {
             value = value ? true : false
         } else if (
             columnMetadata.type === "datetime" ||
@@ -615,7 +623,10 @@ export class SqlServerDriver implements Driver {
             return "nvarchar"
         } else if (column.type === Date) {
             return "datetime"
-        } else if (column.type === Boolean) {
+        } else if (column.type === Boolean ||
+            column.type === "bool" ||
+            column.type === "boolean"
+        ) {
             return "bit"
         } else if ((column.type as any) === Buffer) {
             return "binary"
