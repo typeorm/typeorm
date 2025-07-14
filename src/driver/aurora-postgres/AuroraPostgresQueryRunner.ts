@@ -364,8 +364,8 @@ export class AuroraPostgresQueryRunner
 
                 const getSchemaFromKey = (dbObject: any, key: string) => {
                     return dbObject[key] === currentSchema &&
-                    (!this.driver.options.schema ||
-                        this.driver.options.schema === currentSchema)
+                        (!this.driver.options.schema ||
+                            this.driver.options.schema === currentSchema)
                         ? undefined
                         : dbObject[key]
                 }
@@ -385,20 +385,20 @@ export class AuroraPostgresQueryRunner
                         .filter(
                             (dbColumn) =>
                                 dbColumn["table_name"] ===
-                                dbTable["table_name"] &&
+                                    dbTable["table_name"] &&
                                 dbColumn["table_schema"] ===
-                                dbTable["table_schema"],
+                                    dbTable["table_schema"],
                         )
                         .map(async (dbColumn) => {
                             const columnConstraints = dbConstraints.filter(
                                 (dbConstraint) => {
                                     return (
                                         dbConstraint["table_name"] ===
-                                        dbColumn["table_name"] &&
+                                            dbColumn["table_name"] &&
                                         dbConstraint["table_schema"] ===
-                                        dbColumn["table_schema"] &&
+                                            dbColumn["table_schema"] &&
                                         dbConstraint["column_name"] ===
-                                        dbColumn["column_name"]
+                                            dbColumn["column_name"]
                                     )
                                 },
                             )
@@ -419,7 +419,7 @@ export class AuroraPostgresQueryRunner
                                 if (dbColumn["data_type"] === "ARRAY") {
                                     const numericSize = dbColumn[
                                         "format_type"
-                                        ].match(
+                                    ].match(
                                         /^numeric\(([0-9]+),([0-9]+)\)\[\]$/,
                                     )
                                     if (numericSize) {
@@ -474,7 +474,7 @@ export class AuroraPostgresQueryRunner
                                 tableColumn.type === "time without time zone" ||
                                 tableColumn.type === "time with time zone" ||
                                 tableColumn.type ===
-                                "timestamp without time zone" ||
+                                    "timestamp without time zone" ||
                                 tableColumn.type === "timestamp with time zone"
                             ) {
                                 tableColumn.precision =
@@ -585,7 +585,7 @@ export class AuroraPostgresQueryRunner
                                     length =
                                         dbColumn[
                                             "character_maximum_length"
-                                            ].toString()
+                                        ].toString()
                                 }
                                 if (length) {
                                     tableColumn.length =
@@ -612,13 +612,13 @@ export class AuroraPostgresQueryRunner
                                     dbConstraints.filter(
                                         (constraint) =>
                                             constraint["table_name"] ===
-                                            dbColumn["table_name"] &&
+                                                dbColumn["table_name"] &&
                                             constraint["table_schema"] ===
-                                            dbColumn["table_schema"] &&
+                                                dbColumn["table_schema"] &&
                                             constraint["column_name"] !==
-                                            dbColumn["column_name"] &&
+                                                dbColumn["column_name"] &&
                                             constraint["constraint_type"] ===
-                                            "PRIMARY",
+                                                "PRIMARY",
                                     )
 
                                 // collect all column names
@@ -655,13 +655,13 @@ export class AuroraPostgresQueryRunner
                                     return dbConstraints.some(
                                         (dbConstraint) =>
                                             dbConstraint["constraint_type"] ===
-                                            "UNIQUE" &&
+                                                "UNIQUE" &&
                                             dbConstraint["constraint_name"] ===
-                                            uniqueConstraint[
-                                                "constraint_name"
+                                                uniqueConstraint[
+                                                    "constraint_name"
                                                 ] &&
                                             dbConstraint["column_name"] !==
-                                            dbColumn["column_name"],
+                                                dbColumn["column_name"],
                                     )
                                 })
                             tableColumn.isUnique =
@@ -689,18 +689,18 @@ export class AuroraPostgresQueryRunner
 
                                 const defaultWithoutQuotes = dbColumn[
                                     "column_default"
-                                    ].replace(/"/g, "")
+                                ].replace(/"/g, "")
 
                                 if (
                                     defaultWithoutQuotes ===
-                                    serialDefaultName ||
+                                        serialDefaultName ||
                                     defaultWithoutQuotes === serialDefaultPath
                                 ) {
                                     tableColumn.isGenerated = true
                                     tableColumn.generationStrategy = "increment"
                                 } else if (
                                     dbColumn["column_default"] ===
-                                    "gen_random_uuid()" ||
+                                        "gen_random_uuid()" ||
                                     /^uuid_generate_v\d\(\)/.test(
                                         dbColumn["column_default"],
                                     )
@@ -723,7 +723,7 @@ export class AuroraPostgresQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                        ].replace(/::[\w\s.[\]\-"]+/g, "")
+                                    ].replace(/::[\w\s.[\]\-"]+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
                                             /^(-?\d+)$/,
@@ -777,9 +777,9 @@ export class AuroraPostgresQueryRunner
                     dbConstraints.filter((dbConstraint) => {
                         return (
                             dbConstraint["table_name"] ===
-                            dbTable["table_name"] &&
+                                dbTable["table_name"] &&
                             dbConstraint["table_schema"] ===
-                            dbTable["table_schema"] &&
+                                dbTable["table_schema"] &&
                             dbConstraint["constraint_type"] === "UNIQUE"
                         )
                     }),
@@ -806,9 +806,9 @@ export class AuroraPostgresQueryRunner
                     dbConstraints.filter((dbConstraint) => {
                         return (
                             dbConstraint["table_name"] ===
-                            dbTable["table_name"] &&
+                                dbTable["table_name"] &&
                             dbConstraint["table_schema"] ===
-                            dbTable["table_schema"] &&
+                                dbTable["table_schema"] &&
                             dbConstraint["constraint_type"] === "CHECK"
                         )
                     }),
@@ -836,9 +836,9 @@ export class AuroraPostgresQueryRunner
                     dbConstraints.filter((dbConstraint) => {
                         return (
                             dbConstraint["table_name"] ===
-                            dbTable["table_name"] &&
+                                dbTable["table_name"] &&
                             dbConstraint["table_schema"] ===
-                            dbTable["table_schema"] &&
+                                dbTable["table_schema"] &&
                             dbConstraint["constraint_type"] === "EXCLUDE"
                         )
                     }),
@@ -859,9 +859,9 @@ export class AuroraPostgresQueryRunner
                     dbForeignKeys.filter((dbForeignKey) => {
                         return (
                             dbForeignKey["table_name"] ===
-                            dbTable["table_name"] &&
+                                dbTable["table_name"] &&
                             dbForeignKey["table_schema"] ===
-                            dbTable["table_schema"]
+                                dbTable["table_schema"]
                         )
                     }),
                     (dbForeignKey) => dbForeignKey["constraint_name"],
@@ -920,10 +920,10 @@ export class AuroraPostgresQueryRunner
                     const indices = dbIndices.filter((index) => {
                         return (
                             index["table_schema"] ===
-                            constraint["table_schema"] &&
+                                constraint["table_schema"] &&
                             index["table_name"] === constraint["table_name"] &&
                             index["constraint_name"] ===
-                            constraint["constraint_name"]
+                                constraint["constraint_name"]
                         )
                     })
                     return new TableIndex(<TableIndexOptions>{
@@ -941,5 +941,4 @@ export class AuroraPostgresQueryRunner
             }),
         )
     }
-
 }
