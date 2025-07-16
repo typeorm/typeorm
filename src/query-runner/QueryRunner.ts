@@ -144,8 +144,8 @@ export interface QueryRunner {
     stream(
         query: string,
         parameters?: any[],
-        onEnd?: Function,
-        onError?: Function,
+        onEnd?: () => void,
+        onError?: (error: Error) => void,
     ): Promise<ReadStream>
 
     /**
