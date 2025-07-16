@@ -133,6 +133,8 @@ export function Index(
                     : true,
             where: options ? options.where : undefined,
             unique: options && options.unique ? true : false,
+            nullsNotDistinct:
+                options && options.nullsNotDistinct ? true : false,
             spatial: options && options.spatial ? true : false,
             fulltext: options && options.fulltext ? true : false,
             nullFiltered: options && options.nullFiltered ? true : false,
