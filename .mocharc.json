@@ -1,0 +1,10 @@
+{
+  "check-leaks": true,
+  "color": true,
+  "exit": true,
+  "file": ["./build/compiled/test/utils/test-setup.js"],
+  "recursive": true,
+  "spec": ["./build/compiled/test"],
+  "timeout": 90000,
+  "__comment": "TODO: remove --exit flag: https://mochajs.org/#-exit"
+}

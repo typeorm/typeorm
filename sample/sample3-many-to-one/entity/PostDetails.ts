@@ -29,7 +29,7 @@ export class PostDetails {
     })
     metadata: string | null
 
-    @OneToMany((type) => Post, (post) => post.details, {
+    @OneToMany(() => Post, (post) => post.details, {
         cascade: true,
     })
     posts: Post[]

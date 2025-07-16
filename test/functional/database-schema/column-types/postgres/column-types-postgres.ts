@@ -85,6 +85,7 @@ describe("database schema > column types > postgres", () => {
                 post.cidr = "192.168.100.128/25"
                 post.inet = "192.168.100.128"
                 post.macaddr = "08:00:2b:01:02:03"
+                post.macaddr8 = "08:00:2b:01:02:03:04:05"
                 post.bit = "1"
                 post.varbit = "100"
                 post.bitVarying = "00"
@@ -178,6 +179,7 @@ describe("database schema > column types > postgres", () => {
                 loadedPost.cidr.should.be.equal(post.cidr)
                 loadedPost.inet.should.be.equal(post.inet)
                 loadedPost.macaddr.should.be.equal(post.macaddr)
+                loadedPost.macaddr8.should.be.equal(post.macaddr8)
                 loadedPost.bit.should.be.equal(post.bit)
                 loadedPost.varbit.should.be.equal(post.varbit)
                 loadedPost.bitVarying.should.be.equal(post.bitVarying)
@@ -308,6 +310,9 @@ describe("database schema > column types > postgres", () => {
                 table!
                     .findColumnByName("macaddr")!
                     .type.should.be.equal("macaddr")
+                table!
+                    .findColumnByName("macaddr8")!
+                    .type.should.be.equal("macaddr8")
                 table!.findColumnByName("bit")!.type.should.be.equal("bit")
                 table!
                     .findColumnByName("varbit")!

@@ -20,6 +20,6 @@ export class Comment {
     @Column()
     context: string
 
-    @ManyToOne((type) => Guest, (guest) => guest.comments)
+    @ManyToOne(() => Guest, (guest) => guest.comments)
     author: Guest
 }

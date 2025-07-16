@@ -1,11 +1,15 @@
 <div align="center">
   <a href="http://typeorm.io/">
-    <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-light.png">
+        <source  media="(prefers-color-scheme: light)" srcset="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-dark.png">
+        <img height="80" width="auto" alt="TypeORM Logo" src="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-dark.png">
+    </picture>
   </a>
   <br>
   <br>
-	<a href="https://app.circleci.com/pipelines/github/typeorm/typeorm">
-		<img src="https://circleci.com/gh/typeorm/typeorm/tree/master.svg?style=shield">
+	<a href="https://github.com/typeorm/typeorm/actions/workflows/commit-validation.yml">
+		<img src="https://github.com/typeorm/typeorm/actions/workflows/commit-validation.yml/badge.svg?branch=master">
 	</a>
 	<a href="https://badge.fury.io/js/typeorm">
 		<img src="https://badge.fury.io/js/typeorm.svg">
@@ -25,7 +29,7 @@ that help you to develop any kind of application that uses databases - from
 small applications with a few tables to large-scale enterprise applications
 with multiple databases.
 
-TypeORM supports both [Active Record](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) and [Data Mapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) patterns,
+TypeORM supports both [Active Record](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) and [Data Mapper](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) patterns,
 unlike all other JavaScript ORMs currently in existence,
 which means you can write high-quality, loosely coupled, scalable,
 maintainable applications in the most productive way.
@@ -33,16 +37,9 @@ maintainable applications in the most productive way.
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
 [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
 
-> **📣 Announcement: The Future of TypeORM**
->
-> We’re excited to share our vision for a revitalized TypeORM—a strategy focused on building a stable, robust, and sustainable foundation for the long term. Learn how we’re structuring maintenance
-> and bringing together dedicated resources to ensure TypeORM thrives for years to come.
->
-> [Read the full announcement](./docs/future-of-typeorm.md)
-
 ## Features
 
--   Supports both [DataMapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice).
+-   Supports both [DataMapper](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) and [ActiveRecord](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) (your choice).
 -   Entities and columns.
 -   Database-specific column types.
 -   Entity manager.
@@ -161,7 +158,7 @@ const firstUser = await User.findOneBy({
 })
 const timber = await User.findOneBy({
     firstName: "Timber",
-    lastName: "Saw"
+    lastName: "Saw",
 })
 
 await timber.remove()
@@ -218,10 +215,7 @@ await timber.remove()
 
         ```
         npm install @sap/hana-client
-        npm install hdb-pool
         ```
-
-        _SAP Hana support made possible by the sponsorship of [Neptune Software](https://www.neptune-software.com/)._
 
     - for **Google Cloud Spanner**
 
@@ -258,7 +252,7 @@ await timber.remove()
 
     - for **NativeScript**, **react-native** and **Cordova**
 
-        Check [documentation of supported platforms](./docs/supported-platforms.md)
+        Check [documentation of supported platforms](./docs/docs/help/2-supported-platforms.md)
 
     Install only _one_ of them, depending on which database you use.
 
@@ -550,7 +544,7 @@ export class Photo {
 
 Column types are database-specific.
 You can set any column type your database supports.
-More information on supported column types can be found [here](./docs/entities.md#column-types).
+More information on supported column types can be found [here](./docs/docs/entity/1-entities.md#column-types).
 
 ### Creating a new `DataSource`
 
@@ -651,7 +645,7 @@ console.log("All photos from the db: ", savedPhotos)
 
 `savedPhotos` will be an array of Photo objects with the data loaded from the database.
 
-Learn more about EntityManager [here](./docs/working-with-entity-manager.md).
+Learn more about EntityManager [here](./docs/docs/working-with-entity-manager/1-working-with-entity-manager.md).
 
 ### Using Repositories
 
@@ -679,7 +673,7 @@ const savedPhotos = await photoRepository.find()
 console.log("All photos from the db: ", savedPhotos)
 ```
 
-Learn more about Repository [here](./docs/working-with-repository.md).
+Learn more about Repository [here](./docs/docs/working-with-entity-manager/2-working-with-repository.md).
 
 ### Loading from the database
 
@@ -969,7 +963,7 @@ const photos = await photoRepository.find({
 ```
 
 Here, photos will contain an array of photos from the database, and each photo will contain its photo metadata.
-Learn more about Find Options in [this documentation](./docs/find-options.md).
+Learn more about Find Options in [this documentation](./docs/docs/working-with-entity-manager/3-find-options.md).
 
 Using find options is good and dead simple, but if you need a more complex query, you should use `QueryBuilder` instead.
 `QueryBuilder` allows more complex queries to be used in an elegant way:
@@ -1258,7 +1252,7 @@ The selection result will be ordered by id in descending order.
 The photo albums will be left joined and their metadata will be inner joined.
 
 You'll use the query builder in your application a lot.
-Learn more about QueryBuilder [here](./docs/select-query-builder.md).
+Learn more about QueryBuilder [here](./docs/docs/query-builder/1-select-query-builder.md).
 
 ## Samples
 

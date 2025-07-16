@@ -173,7 +173,7 @@ export class RawSqlResultsToEntityTransformer {
             )
             if (discriminatorMetadata) metadata = discriminatorMetadata
         }
-        let entity: any = metadata.create(this.queryRunner, {
+        const entity: any = metadata.create(this.queryRunner, {
             fromDeserializer: true,
             pojo: this.pojo,
         })
@@ -239,7 +239,7 @@ export class RawSqlResultsToEntityTransformer {
 
             if (value === undefined) continue
             // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
-            else if (value !== null) hasData = true
+            else if (value !== null && !column.isVirtualProperty) hasData = true
 
             column.setEntityValue(
                 entity,
@@ -589,7 +589,9 @@ export class RawSqlResultsToEntityTransformer {
                 }
 
                 // Calculate the idMaps for the rawRelationIdResult
-                return rawRelationIdResult.results.reduce((agg, result) => {
+                return rawRelationIdResult.results.reduce<{
+                    [idHash: string]: any[]
+                }>((agg, result) => {
                     let idMap = columns.reduce((idMap, column) => {
                         let value = result[column.databaseName]
                         if (
@@ -620,7 +622,7 @@ export class RawSqlResultsToEntityTransformer {
                         ) {
                             // if column is a relation
                             value =
-                                column.referencedColumn!.referencedColumn!.createValueMap(
+                                column.referencedColumn!.referencedColumn.createValueMap(
                                     value,
                                 )
                         }

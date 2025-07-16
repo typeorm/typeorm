@@ -12,6 +12,6 @@ export class Specialization {
     @Column()
     name: string
 
-    @ManyToOne((type) => Teacher, (teacher) => teacher.specializations)
+    @ManyToOne(() => Teacher, (teacher) => teacher.specializations)
     teacher: Teacher
 }

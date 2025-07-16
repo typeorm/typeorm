@@ -20,7 +20,7 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     async (dataSource) => {
-        let employeeRepository = dataSource.getRepository(Employee)
+        const employeeRepository = dataSource.getRepository(Employee)
         const employee = new Employee()
         employee.id = 1
         employee.firstName = "umed"
@@ -39,7 +39,7 @@ dataSource.initialize().then(
 
         console.log("-----------------")
 
-        let homesitterRepository = dataSource.getRepository(Homesitter)
+        const homesitterRepository = dataSource.getRepository(Homesitter)
         const homesitter = new Homesitter()
         homesitter.id = 2
         homesitter.firstName = "umed"
@@ -58,7 +58,7 @@ dataSource.initialize().then(
 
         console.log("-----------------")
 
-        let studentRepository = dataSource.getRepository(Student)
+        const studentRepository = dataSource.getRepository(Student)
         const student = new Student()
         student.id = 3
         student.firstName = "umed"
