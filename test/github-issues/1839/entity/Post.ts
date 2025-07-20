@@ -4,10 +4,10 @@ import { Category } from "./Category"
 
 @Entity()
 export class Post {
-    @PrimaryColumn({ collation: "utf8_unicode_ci", charset: "utf8" })
+    @PrimaryColumn({ charset: "latin2", collation: "latin2_general_ci" })
     id: string
 
-    @ManyToMany((type) => Category, (category) => category.posts)
+    @ManyToMany(() => Category, (category) => category.posts)
     @JoinTable()
     categories: Category[]
 }
