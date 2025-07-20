@@ -3389,6 +3389,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if column display width is by default.
+     * @deprecated MySQL no longer supports column width in newer versions.
      */
     protected isDefaultColumnWidth(
         table: Table,

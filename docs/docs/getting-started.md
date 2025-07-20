@@ -771,13 +771,13 @@ If you run the app, you'll see a newly generated table, and it will contain a co
 +-------------+--------------+----------------------------+
 |                     photo_metadata                      |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| height      | int(11)      |                            |
-| width       | int(11)      |                            |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
+| height      | int          |                            |
+| width       | int          |                            |
 | comment     | varchar(255) |                            |
 | compressed  | boolean      |                            |
 | orientation | varchar(255) |                            |
-| photoId     | int(11)      | FOREIGN KEY                |
+| photoId     | int          | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
 

@@ -78,7 +78,7 @@ export type WithLengthColumnType =
     | "half_vector" // sap
     | "real_vector" // sap
 
-export type WithWidthColumnType =
+export type WithSignColumnType =
     | "tinyint" // mysql
     | "smallint" // mysql
     | "mediumint" // mysql
@@ -217,7 +217,7 @@ export type SimpleColumnType =
 export type ColumnType =
     | WithPrecisionColumnType
     | WithLengthColumnType
-    | WithWidthColumnType
+    | WithSignColumnType
     | SpatialColumnType
     | SimpleColumnType
     | BooleanConstructor

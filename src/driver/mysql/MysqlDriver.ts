@@ -345,7 +345,6 @@ export class MysqlDriver implements Driver {
     constructor(connection: DataSource) {
         this.connection = connection
         this.options = {
-            legacySpatialSupport: true,
             ...connection.options,
         } as MysqlConnectionOptions
         this.isReplicated = this.options.replication ? true : false
