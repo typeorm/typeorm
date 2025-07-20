@@ -5,7 +5,7 @@ import {
     SpatialColumnType,
     WithLengthColumnType,
     WithPrecisionColumnType,
-    WithWidthColumnType,
+    WithSignColumnType,
 } from "../../driver/types/ColumnTypes"
 import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
 import { ColumnCommonOptions } from "../options/ColumnCommonOptions"
@@ -17,7 +17,7 @@ import { ColumnEmbeddedOptions } from "../options/ColumnEmbeddedOptions"
 import { EmbeddedMetadataArgs } from "../../metadata-args/EmbeddedMetadataArgs"
 import { ColumnTypeUndefinedError } from "../../error/ColumnTypeUndefinedError"
 import { ColumnHstoreOptions } from "../options/ColumnHstoreOptions"
-import { ColumnWithWidthOptions } from "../options/ColumnWithWidthOptions"
+import { ColumnWithSignOptions } from "../options/ColumnWithSignOptions"
 import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs"
 import { ColumnOptions } from "../options/ColumnOptions"
 
@@ -65,8 +65,8 @@ export function Column(
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
 export function Column(
-    type: WithWidthColumnType,
-    options?: ColumnCommonOptions & ColumnWithWidthOptions,
+    type: WithSignColumnType,
+    options?: ColumnCommonOptions & ColumnWithSignOptions,
 ): PropertyDecorator
 
 /**
