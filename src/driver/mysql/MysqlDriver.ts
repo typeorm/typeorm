@@ -1233,6 +1233,7 @@ export class MysqlDriver implements Driver {
                 trace: options.trace,
                 multipleStatements: options.multipleStatements,
                 flags: options.flags,
+                stringifyObjects: true,
             },
             {
                 host: credentials.host,
@@ -1242,11 +1243,11 @@ export class MysqlDriver implements Driver {
                 port: credentials.port,
                 ssl: options.ssl,
                 socketPath: credentials.socketPath,
+                connectionLimit: options.poolSize,
             },
             options.acquireTimeout === undefined
                 ? {}
                 : { acquireTimeout: options.acquireTimeout },
-            { connectionLimit: options.poolSize },
             options.extra || {},
         )
     }
