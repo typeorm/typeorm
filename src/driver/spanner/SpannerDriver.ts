@@ -113,11 +113,6 @@ export class SpannerDriver implements Driver {
     withLengthColumnTypes: ColumnType[] = ["string", "bytes"]
 
     /**
-     * Gets list of column data types that support length by a driver.
-     */
-    withWidthColumnTypes: ColumnType[] = []
-
-    /**
      * Gets list of column data types that support precision by a driver.
      */
     withPrecisionColumnTypes: ColumnType[] = []

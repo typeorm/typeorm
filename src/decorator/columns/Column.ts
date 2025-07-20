@@ -1,25 +1,25 @@
-import { getMetadataArgsStorage } from "../../globals"
 import {
     ColumnType,
     SimpleColumnType,
     SpatialColumnType,
+    UnsignedColumnType,
     WithLengthColumnType,
     WithPrecisionColumnType,
-    WithWidthColumnType,
 } from "../../driver/types/ColumnTypes"
-import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
-import { ColumnCommonOptions } from "../options/ColumnCommonOptions"
-import { SpatialColumnOptions } from "../options/SpatialColumnOptions"
-import { ColumnWithLengthOptions } from "../options/ColumnWithLengthOptions"
-import { ColumnNumericOptions } from "../options/ColumnNumericOptions"
-import { ColumnEnumOptions } from "../options/ColumnEnumOptions"
-import { ColumnEmbeddedOptions } from "../options/ColumnEmbeddedOptions"
-import { EmbeddedMetadataArgs } from "../../metadata-args/EmbeddedMetadataArgs"
 import { ColumnTypeUndefinedError } from "../../error/ColumnTypeUndefinedError"
-import { ColumnHstoreOptions } from "../options/ColumnHstoreOptions"
-import { ColumnWithWidthOptions } from "../options/ColumnWithWidthOptions"
+import { getMetadataArgsStorage } from "../../globals"
+import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
+import { EmbeddedMetadataArgs } from "../../metadata-args/EmbeddedMetadataArgs"
 import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs"
+import { ColumnCommonOptions } from "../options/ColumnCommonOptions"
+import { ColumnEmbeddedOptions } from "../options/ColumnEmbeddedOptions"
+import { ColumnEnumOptions } from "../options/ColumnEnumOptions"
+import { ColumnHstoreOptions } from "../options/ColumnHstoreOptions"
+import { ColumnNumericOptions } from "../options/ColumnNumericOptions"
 import { ColumnOptions } from "../options/ColumnOptions"
+import { ColumnUnsignedOptions } from "../options/ColumnUnsignedOptions"
+import { ColumnWithLengthOptions } from "../options/ColumnWithLengthOptions"
+import { SpatialColumnOptions } from "../options/SpatialColumnOptions"
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
@@ -65,8 +65,8 @@ export function Column(
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  */
 export function Column(
-    type: WithWidthColumnType,
-    options?: ColumnCommonOptions & ColumnWithWidthOptions,
+    type: UnsignedColumnType,
+    options?: ColumnCommonOptions & ColumnUnsignedOptions,
 ): PropertyDecorator
 
 /**
