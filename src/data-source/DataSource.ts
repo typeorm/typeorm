@@ -528,6 +528,7 @@ export class DataSource {
         query: string,
         parameters?: any[],
         queryRunner?: QueryRunner,
+        useStructuredResult?: boolean,
     ): Promise<T> {
         if (InstanceChecker.isMongoEntityManager(this.manager))
             throw new TypeORMError(`Queries aren't supported by MongoDB.`)
@@ -538,7 +539,11 @@ export class DataSource {
         const usedQueryRunner = queryRunner || this.createQueryRunner()
 
         try {
-            return await usedQueryRunner.query(query, parameters) // await is needed here because we are using finally
+            return (await usedQueryRunner.query(
+                query,
+                parameters,
+                (useStructuredResult || false) as any,
+            )) as T // await is needed here because we are using finally
         } finally {
             if (!queryRunner) await usedQueryRunner.release()
         }
