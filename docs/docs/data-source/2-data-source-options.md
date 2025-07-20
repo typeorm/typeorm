@@ -86,6 +86,8 @@ Different RDBMS-es have their own specific options.
 
 ## `mysql` / `mariadb` data source options
 
+-   `connectorPackage` - either `"mysql"` or `"mysql2"`, current default is `mysql`. Sets the client library. The newer client library `mysql2` is highly recommended, especially when connecting to MySQL 8.0 or later.
+
 -   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
 -   `host` - Database host.
@@ -98,8 +100,7 @@ Different RDBMS-es have their own specific options.
 
 -   `database` - Database name.
 
--   `charset` - The charset for the connection. This is called "collation" in the SQL-level of MySQL
-    (like utf8_general_ci). If a SQL-level charset is specified (like utf8mb4) then the default collation for that charset is used. (Default: `UTF8_GENERAL_CI`).
+-   `charset` and `collation` - The charset/collation for the connection. If a SQL-level charset is specified (like utf8mb4) then the default collation for that charset is used.
 
 -   `timezone` - the timezone configured on the MySQL server. This is used to typecast server date/time
     values to JavaScript Date object and vice versa. This can be `local`, `Z`, or an offset in the form
