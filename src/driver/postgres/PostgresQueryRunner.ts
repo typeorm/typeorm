@@ -1231,6 +1231,35 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Check if this is a safe length increase for compatible types
+        const normalizeType = (type: string) => type.toLowerCase().trim()
+        const isCompatibleStringType = (type: string) => {
+            const normalized = normalizeType(type)
+            return (
+                normalized === "varchar" ||
+                normalized === "character varying" ||
+                normalized === "char" ||
+                normalized === "character" ||
+                normalized === "text" ||
+                normalized === "citext"
+            )
+        }
+
+        const oldLength = Number(oldColumn.length)
+        const newLength = Number(newColumn.length)
+
+        const isSafeLengthIncrease =
+            normalizeType(oldColumn.type) === normalizeType(newColumn.type) &&
+            isCompatibleStringType(oldColumn.type) &&
+            oldColumn.length !== undefined &&
+            newColumn.length !== undefined &&
+            Number.isFinite(oldLength) &&
+            Number.isFinite(newLength) &&
+            newLength > oldLength &&
+            newColumn.isArray === oldColumn.isArray &&
+            oldColumn.generatedType === newColumn.generatedType &&
+            oldColumn.asExpression === newColumn.asExpression
+
         if (
             oldColumn.type !== newColumn.type ||
             oldColumn.length !== newColumn.length ||
@@ -1240,12 +1269,43 @@ export class PostgresQueryRunner
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
-            await this.dropColumn(table, oldColumn)
-            await this.addColumn(table, newColumn)
+            if (isSafeLengthIncrease) {
+                // Use ALTER COLUMN for safe length increases
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
 
-            // update cloned table
-            clonedTable = table.clone()
+                await this.executeQueries(upQueries, downQueries)
+
+                // Update the cached table
+                clonedTable = table.clone()
+                const tableColumn = clonedTable.columns.find(
+                    (column) => column.name === oldColumn.name,
+                )
+                if (tableColumn) {
+                    tableColumn.length = newColumn.length
+                }
+                this.replaceCachedTable(table, clonedTable)
+                return
+            } else {
+                // To avoid data conversion, we just recreate column
+                await this.dropColumn(table, oldColumn)
+                await this.addColumn(table, newColumn)
+
+                // update cloned table
+                clonedTable = table.clone()
+            }
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
@@ -4316,7 +4376,7 @@ export class PostgresQueryRunner
     ): Query {
         if (!enumName) enumName = this.buildEnumName(table, column)
         const enumValues = column
-            .enum!.map((value) => `'${value.replaceAll("'", "''")}'`)
+            .enum!.map((value) => `'${value.replace(/'/g, "''")}'`)
             .join(", ")
         return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`)
     }

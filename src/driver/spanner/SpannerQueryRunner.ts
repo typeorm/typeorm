@@ -819,6 +819,26 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Check if this is a safe length increase for compatible types
+        const normalizeLength = (len: string): number => {
+            return len === "MAX" ? Infinity : parseInt(len, 10)
+        }
+
+        const oldLength = normalizeLength(oldColumn.length!)
+        const newLength = normalizeLength(newColumn.length!)
+
+        const isSafeLengthIncrease =
+            oldColumn.name === newColumn.name &&
+            oldColumn.type === newColumn.type &&
+            newColumn.type === "string" && // Spanner uses "string" type
+            oldColumn.length !== undefined &&
+            newColumn.length !== undefined &&
+            Number.isFinite(oldLength) &&
+            newLength > oldLength &&
+            oldColumn.isArray === newColumn.isArray &&
+            oldColumn.generatedType === newColumn.generatedType &&
+            oldColumn.asExpression === newColumn.asExpression
+
         if (
             oldColumn.name !== newColumn.name ||
             oldColumn.type !== newColumn.type ||
@@ -827,12 +847,40 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
-            // To avoid data conversion, we just recreate column
-            await this.dropColumn(table, oldColumn)
-            await this.addColumn(table, newColumn)
+            if (isSafeLengthIncrease) {
+                // Use ALTER COLUMN for safe length increases - reuse outer accumulators
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
 
-            // update cloned table
-            clonedTable = table.clone()
+                // Early commit and return - nothing else to change
+                await this.executeQueries(upQueries, downQueries)
+
+                // Update the cached table
+                clonedTable.columns.find(
+                    (c) => c.name === oldColumn.name,
+                )!.length = newColumn.length
+                this.replaceCachedTable(table, clonedTable)
+                return
+            } else {
+                // To avoid data conversion, we just recreate column
+                await this.dropColumn(table, oldColumn)
+                await this.addColumn(table, newColumn)
+
+                // update cloned table
+                clonedTable = table.clone()
+            }
         } else {
             if (
                 newColumn.precision !== oldColumn.precision ||

@@ -451,6 +451,107 @@ export class QuestionRefactoringTIMESTAMP implements MigrationInterface {
 }
 ```
 
+## Smart Column Alterations
+
+TypeORM provides intelligent column alteration capabilities that automatically determine whether a column change can be performed safely using `ALTER COLUMN` statements or requires the more destructive `DROP COLUMN` + `ADD COLUMN` approach. This behavior is currently always enabled and cannot be configured.
+
+### Safe vs Unsafe Column Changes
+
+TypeORM categorizes column changes into two types:
+
+**Safe Changes** (use `ALTER COLUMN`):
+- Increasing varchar/text length
+- Making columns nullable
+- Changing column comments
+- Adding default values (in most cases)
+- Renaming columns
+
+**Unsafe Changes** (use `DROP COLUMN` + `ADD COLUMN`):
+- Decreasing varchar/text length
+- Making nullable columns non-nullable
+- Changing column data types
+- Removing default values that would cause constraint violations
+
+### Automatic Detection
+
+When you generate migrations using `typeorm migration:generate`, TypeORM automatically detects the type of column change and generates the appropriate SQL:
+
+```typescript
+// Safe change - increases varchar length
+export class IncreaseNameLengthTIMESTAMP implements MigrationInterface {
+    async up(queryRunner: QueryRunner): Promise<void> {
+        // TypeORM generates safe ALTER COLUMN statement
+        await queryRunner.query(`ALTER TABLE "user" ALTER COLUMN "name" TYPE varchar(255)`);
+    }
+
+    async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "user" ALTER COLUMN "name" TYPE varchar(100)`);
+    }
+}
+```
+
+```typescript
+// Unsafe change - changes data type
+export class ChangeUserAgeTIMESTAMP implements MigrationInterface {
+    async up(queryRunner: QueryRunner): Promise<void> {
+        // TypeORM generates DROP/ADD approach for safety
+        await queryRunner.query(`ALTER TABLE "user" DROP COLUMN "age"`);
+        await queryRunner.query(`ALTER TABLE "user" ADD "age" varchar NOT NULL`);
+    }
+
+    async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "user" DROP COLUMN "age"`);
+        await queryRunner.query(`ALTER TABLE "user" ADD "age" integer NOT NULL`);
+    }
+}
+```
+
+### Manual Control
+
+You can also manually control column alteration behavior using the QueryRunner API:
+
+```typescript
+import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
+
+export class ManualColumnChangeTIMESTAMP implements MigrationInterface {
+    async up(queryRunner: QueryRunner): Promise<void> {
+        // Use changeColumn for automatic detection
+        await queryRunner.changeColumn("user", "name", new TableColumn({
+            name: "name",
+            type: "varchar",
+            length: "255", // Increased from 100 - will use ALTER COLUMN
+            isNullable: false
+        }));
+    }
+
+    async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.changeColumn("user", "name", new TableColumn({
+            name: "name",
+            type: "varchar",
+            length: "100",
+            isNullable: false
+        }));
+    }
+}
+```
+
+### Performance Benefits
+
+Using safe column alterations provides significant performance benefits:
+
+- **Faster execution**: `ALTER COLUMN` is typically much faster than `DROP` + `ADD`
+- **No data copying**: Data remains in place during safe alterations
+- **Reduced downtime**: Minimal table locking compared to column recreation
+- **Index preservation**: Existing indexes on the column are maintained
+
+### Best Practices
+
+1. **Always test migrations**: Test your migrations on a copy of production data
+2. **Review generated SQL**: Check the generated migration SQL before running in production
+3. **Use safe changes when possible**: Design schema changes to take advantage of safe alterations
+4. **Monitor performance**: Large tables may still take time even with safe alterations
+5. **Backup before major changes**: Always backup your database before running migrations
+
 ---
 
 ```ts
