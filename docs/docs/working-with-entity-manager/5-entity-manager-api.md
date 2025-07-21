@@ -62,7 +62,6 @@ const rawData = await manager.query(
 const rawData = await manager.query(
     "SELECT * FROM USERS WHERE name = @0 and age = @1",
     ["John", 24],
-    queryRunner, // optional query runner
     true, // optional flag to return a structured result set object containing all recordsets
 )
 ```

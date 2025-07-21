@@ -19,21 +19,7 @@ describe("github issues > #11566 .query() useStructuredResult option", () => {
     fakeResult.records = [{ id: 1 }, { id: 2 }]
     fakeResult.recordsets = [[{ id: 1 }, { id: 2 }], [{ id: 2 }]]
 
-    // before(async () => {
-    //     dataSource = (
-    //         await createTestingConnections({
-    //             entities: [Post],
-    //             enabledDrivers: ["mssql"],
-    //             dropSchema: false,
-    //             schemaCreate: false,
-    //         })
-    //     )[0]
-    // })
-    // after(() => closeTestingConnections([dataSource]))
-
-    beforeEach(async () => {
-        // await reloadTestingDatabases([dataSource])
-
+    beforeEach(() => {
         // Create stubs for QueryRunner and EntityManager
         queryStub = sinon.stub().resolves("structured-result")
         releaseStub = sinon.stub().resolves()
