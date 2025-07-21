@@ -5,12 +5,12 @@ import { QueryRunner } from "../../../src/query-runner/QueryRunner"
 import { expect } from "chai"
 import sinon from "sinon"
 import "reflect-metadata"
-import { Post } from "./entity/Post"
-import {
-    closeTestingConnections,
-    createTestingConnections,
-    reloadTestingDatabases,
-} from "../../utils/test-utils"
+// import { Post } from "./entity/Post"
+// import {
+//     closeTestingConnections,
+//     createTestingConnections,
+//     reloadTestingDatabases,
+// } from "../../utils/test-utils"
 
 describe("github issues > #11566 .query() useStructuredResult option", () => {
     let dataSource: DataSource
@@ -25,20 +25,20 @@ describe("github issues > #11566 .query() useStructuredResult option", () => {
     fakeResult.records = [{ id: 1 }, { id: 2 }]
     fakeResult.recordsets = [[{ id: 1 }, { id: 2 }], [{ id: 2 }]]
 
-    before(async () => {
-        dataSource = (
-            await createTestingConnections({
-                entities: [Post],
-                enabledDrivers: ["mssql"],
-                dropSchema: false,
-                schemaCreate: false,
-            })
-        )[0]
-    })
-    after(() => closeTestingConnections([dataSource]))
+    // before(async () => {
+    //     dataSource = (
+    //         await createTestingConnections({
+    //             entities: [Post],
+    //             enabledDrivers: ["mssql"],
+    //             dropSchema: false,
+    //             schemaCreate: false,
+    //         })
+    //     )[0]
+    // })
+    // after(() => closeTestingConnections([dataSource]))
 
     beforeEach(async () => {
-        await reloadTestingDatabases([dataSource])
+        // await reloadTestingDatabases([dataSource])
 
         // Create stubs for QueryRunner and EntityManager
         queryStub = sinon.stub().resolves("structured-result")
@@ -77,6 +77,7 @@ describe("github issues > #11566 .query() useStructuredResult option", () => {
                         return [{ id: 1 }, { id: 2 }]
                     },
                 ),
+            transaction: async (fn: any) => fn(manager),
         } as any
         dataSource = Object.create(DataSource.prototype)
         Object.defineProperty(dataSource, "manager", {
@@ -113,6 +114,26 @@ describe("github issues > #11566 .query() useStructuredResult option", () => {
             undefined,
             true,
         )
+        expect(result).to.be.instanceOf(QueryResult)
+        expect(result.records).to.deep.equal([{ id: 1 }, { id: 2 }])
+        expect(result.recordsets).to.deep.equal([
+            [{ id: 1 }, { id: 2 }],
+            [{ id: 2 }],
+        ])
+    })
+
+    it("should return a structured result when useStructuredResult is true and manager.query() is used", async () => {
+        // Simulate QueryRunner returning a QueryResult instance
+        queryStub.resolves(fakeResult)
+
+        const result = await dataSource.transaction(async (entityManager) => {
+            return await entityManager.query(
+                `SELECT * FROM users; SELECT id FROM users WHERE id = 2;`,
+                [],
+                true,
+            )
+        })
+
         expect(result).to.be.instanceOf(QueryResult)
         expect(result.records).to.deep.equal([{ id: 1 }, { id: 2 }])
         expect(result.recordsets).to.deep.equal([
