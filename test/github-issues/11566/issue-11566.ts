@@ -86,7 +86,6 @@ describe("github issues > #11566 .query() useStructuredResult option", () => {
     })
 
     it("should return a structured result when useStructuredResult is true and multiple queries are defined", async () => {
-        // Simulate QueryRunner returning a QueryResult instance
         queryStub.resolves(fakeResult)
         const result = await dataSource.query(
             `SELECT * FROM users; SELECT id FROM users WHERE id = 2;`,
@@ -102,28 +101,7 @@ describe("github issues > #11566 .query() useStructuredResult option", () => {
         ])
     })
 
-    it("should return a structured result when useStructuredResult is true and manager.query() is used", async () => {
-        // Simulate QueryRunner returning a QueryResult instance
-        queryStub.resolves(fakeResult)
-
-        const result = await dataSource.transaction(async (entityManager) => {
-            return await entityManager.query(
-                `SELECT * FROM users; SELECT id FROM users WHERE id = 2;`,
-                [],
-                true,
-            )
-        })
-
-        expect(result).to.be.instanceOf(QueryResult)
-        expect(result.records).to.deep.equal([{ id: 1 }, { id: 2 }])
-        expect(result.recordsets).to.deep.equal([
-            [{ id: 1 }, { id: 2 }],
-            [{ id: 2 }],
-        ])
-    })
-
     it("should return a structured result in the same way when using EntityManager.query & useStructuredResult", async () => {
-        // Simulate EntityManager.query using the same QueryRunner
         queryStub.resolves(fakeResult)
         const result = await manager.query(
             `SELECT * FROM users; SELECT id FROM users WHERE id = 2;`,
@@ -139,7 +117,6 @@ describe("github issues > #11566 .query() useStructuredResult option", () => {
     })
 
     it("should return a structured result in the same way when using DataSource.query & useStructuredResult", async () => {
-        // Simulate DataSource.query using the same QueryRunner
         queryStub.resolves(fakeResult)
         const result = await dataSource.query(
             `
@@ -150,7 +127,7 @@ describe("github issues > #11566 .query() useStructuredResult option", () => {
             undefined,
             true,
         )
-        console.log(result)
+
         expect(result).to.be.instanceOf(QueryResult)
         expect(result.records).to.deep.equal([{ id: 1 }, { id: 2 }])
         expect(result.recordsets).to.deep.equal([
