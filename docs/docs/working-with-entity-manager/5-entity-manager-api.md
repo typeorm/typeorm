@@ -196,6 +196,8 @@ await manager.updateAll(User, { category: "ADULT" })
 
 -   `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
 
+**Note:** When an upsert operation results in an update (due to a conflict), special columns like `@UpdateDateColumn` and `@VersionColumn` are automatically updated to their current values.
+
 ```typescript
 await manager.upsert(
     User,
