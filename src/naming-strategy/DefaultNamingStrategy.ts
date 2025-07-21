@@ -122,12 +122,9 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         columnNames: string[],
         where?: string,
     ): string {
-        // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
-        const clonedColumnNames = [...columnNames]
-        clonedColumnNames.sort()
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
-        let key = `${replacedTableName}_${clonedColumnNames.join("_")}`
+        let key = `${replacedTableName}_${columnNames.join("_")}`
         if (where) key += `_${where}`
 
         return "IDX_" + RandomGenerator.sha1(key).substr(0, 26)
