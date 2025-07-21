@@ -5,12 +5,6 @@ import { QueryRunner } from "../../../src/query-runner/QueryRunner"
 import { expect } from "chai"
 import sinon from "sinon"
 import "reflect-metadata"
-// import { Post } from "./entity/Post"
-// import {
-//     closeTestingConnections,
-//     createTestingConnections,
-//     reloadTestingDatabases,
-// } from "../../utils/test-utils"
 
 describe("github issues > #11566 .query() useStructuredResult option", () => {
     let dataSource: DataSource
