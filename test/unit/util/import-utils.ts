@@ -1,6 +1,9 @@
 import { expect } from "chai"
 import fs from "fs/promises"
 import path from "path"
+import { strict as assert } from "assert"
+import sinon from "sinon"
+import fsAsync from "fs"
 
 import { importOrRequireFile } from "../../../src/util/ImportUtils"
 
@@ -176,5 +179,58 @@ describe("ImportUtils.importOrRequireFile", () => {
         expect(exports.test).to.be.eq(6)
 
         await fs.rmdir(testDir, { recursive: true })
+    })
+
+    it("Should use cache to find package.json", async () => {
+        const statStub = sinon.stub(fsAsync.promises, "stat")
+        const readFileStub = sinon.stub(fsAsync.promises, "readFile")
+
+        assert.equal(
+            statStub.callCount,
+            0,
+            "stat should not be called before importOrRequireFile",
+        )
+        assert.equal(
+            readFileStub.callCount,
+            0,
+            "readFile should not be called before importOrRequireFile",
+        )
+
+        const filePath1 = path.join(__dirname, "file1.js")
+        const filePath2 = path.join(__dirname, "file2.js")
+        const filePath3 = path.join(__dirname, "file3.js")
+
+        await fs.writeFile(filePath1, "", "utf8")
+        await fs.writeFile(filePath2, "", "utf8")
+        await fs.writeFile(filePath3, "", "utf8")
+
+        // Trigger the first import to create the cache
+        await importOrRequireFile(filePath1)
+
+        // Get the number of calls to stat and readFile after the first import
+        const numberOfStatCalls = statStub.callCount
+        const numberOfReadFileCalls = readFileStub.callCount
+
+        // Trigger next imports to check if cache is used
+        await importOrRequireFile(filePath2)
+        await importOrRequireFile(filePath3)
+
+        assert.equal(
+            statStub.callCount,
+            numberOfStatCalls,
+            "stat should be called only during the first import",
+        )
+        assert.equal(
+            readFileStub.callCount,
+            numberOfReadFileCalls,
+            "readFile should be called only during the first import",
+        )
+
+        // Clean up test files
+        await fs.unlink(filePath1)
+        await fs.unlink(filePath2)
+        await fs.unlink(filePath3)
+
+        sinon.restore()
     })
 })

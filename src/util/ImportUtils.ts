@@ -40,11 +40,20 @@ export async function importOrRequireFile(
     return tryToRequire()
 }
 
-const packageJsonCache: Record<string, object | null> = {}
+const packageJsonCache = new Map<string, object | null>()
+const MAX_CACHE_SIZE = 1000
 
 function setPackageJsonCache(paths: string[], packageJson: object | null) {
     for (const path of paths) {
-        packageJsonCache[path] = packageJson
+        // Simple LRU-like behavior: if we're at capacity, remove oldest entry
+        if (
+            packageJsonCache.size >= MAX_CACHE_SIZE &&
+            !packageJsonCache.has(path)
+        ) {
+            const firstKey = packageJsonCache.keys().next().value
+            if (firstKey) packageJsonCache.delete(firstKey)
+        }
+        packageJsonCache.set(path, packageJson)
     }
 }
 
@@ -56,9 +65,9 @@ async function getNearestPackageJson(filePath: string): Promise<object | null> {
         currentPath = path.dirname(currentPath)
 
         // Check if we have already cached the package.json for this path
-        if (packageJsonCache[currentPath] !== undefined) {
-            setPackageJsonCache(paths, packageJsonCache[currentPath])
-            return packageJsonCache[currentPath]
+        if (packageJsonCache.has(currentPath)) {
+            setPackageJsonCache(paths, packageJsonCache.get(currentPath)!)
+            return packageJsonCache.get(currentPath)!
         }
 
         // Add the current path to the list of paths to cache
