@@ -1,13 +1,15 @@
 # Getting Started
 
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)
-that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native, NativeScript, Expo, and Electron platforms
+that can run in NodeJS, Browser, Cordova, Ionic, React Native, NativeScript, Expo, and Electron platforms
 and can be used with TypeScript and JavaScript (ES2021).
 
 Its goal is to always support the latest JavaScript features and provide additional features
 that help you to develop any kind of application that uses databases - from
 small applications with a few tables to large-scale enterprise applications
 with multiple databases.
+
+TypeORM support more databases than any other JS/TS ORM: [Google Spanner](./drivers/google-spanner.md), [Microsoft SqlServer](./drivers/microsoft-sqlserver.md), [MongoDB](./drivers/mongodb.md), [MySQL/MariaDB](./drivers/mysql.md), [Oracle](./drivers/oracle.md), [Postgres](./drivers/postgres.md), [SAP HANA](./drivers/sap.md) and [SQLite](./drivers/sqlite.md), as well we derived databases and different drivers.
 
 TypeORM supports both [Active Record](./guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) and [Data Mapper](./guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) patterns,
 unlike all other JavaScript ORMs currently in existence,
@@ -148,11 +150,11 @@ await timber.remove()
 
 1. Install the npm package:
 
-    `npm install typeorm --save`
+    `npm install typeorm`
 
 2. You need to install `reflect-metadata` shim:
 
-    `npm install reflect-metadata --save`
+    `npm install reflect-metadata`
 
     and import it somewhere in the global place of your app (for example in `app.ts`):
 
@@ -162,77 +164,9 @@ await timber.remove()
 
     `npm install @types/node --save-dev`
 
-4. Install a database driver:
+4. Install a database driver: see the documentation for each particular driver: [mongodb](./drivers/mongodb.md#installation), [mssql](./drivers/microsoft-sqlserver.md#installation), [mysql/mariadb](./drivers/mysql.md#installation), [oracle](./drivers/oracle.md#installation), [postgres](./drivers/postgres.md#installation), [sap](./drivers/sap.md#installation), [spanner](./drivers/google-spanner.md#installation), [sqlite](./drivers/sqlite.md#installation).
 
-    - for **MySQL** or **MariaDB**
-
-        `npm install mysql --save` (you can install `mysql2` instead as well)
-
-    - for **PostgreSQL** or **CockroachDB**
-
-        `npm install pg --save`
-
-    - for **SQLite**
-
-        `npm install sqlite3 --save`
-
-    - for **Microsoft SQL Server**
-
-        `npm install mssql --save`
-
-    - for **sql.js**
-
-        `npm install sql.js --save`
-
-    - for **Oracle**
-
-        `npm install oracledb --save`
-
-        To make the Oracle driver work, you need to follow the installation instructions from
-        [their](https://github.com/oracle/node-oracledb) site.
-
-    - for **SAP Hana**
-
-        `npm install @sap/hana-client --save`
-
-    - for **Google Cloud Spanner**
-
-        `npm install @google-cloud/spanner --save`
-
-        Provide authentication credentials to your application code
-        by setting the environment variable `GOOGLE_APPLICATION_CREDENTIALS`:
-
-        ```shell
-        # Linux/macOS
-        export GOOGLE_APPLICATION_CREDENTIALS="KEY_PATH"
-
-        # Windows
-        set GOOGLE_APPLICATION_CREDENTIALS=KEY_PATH
-
-        # Replace KEY_PATH with the path of the JSON file that contains your service account key.
-        ```
-
-        To use Spanner with the emulator you should set `SPANNER_EMULATOR_HOST` environment variable:
-
-        ```shell
-        # Linux/macOS
-        export SPANNER_EMULATOR_HOST=localhost:9010
-
-        # Windows
-        set SPANNER_EMULATOR_HOST=localhost:9010
-        ```
-
-    - for **MongoDB** (experimental)
-
-        `npm install mongodb@^5.2.0 --save`
-
-    - for **NativeScript**, **react-native** and **Cordova**
-
-        Check [documentation of supported platforms](./help/2-supported-platforms.md)
-
-    Install only _one_ of them, depending on which database you use.
-
-##### TypeScript configuration
+### TypeScript configuration
 
 Also, make sure you are using TypeScript version **4.5** or higher,
 and you have enabled the following settings in `tsconfig.json`:
@@ -241,8 +175,6 @@ and you have enabled the following settings in `tsconfig.json`:
 "emitDecoratorMetadata": true,
 "experimentalDecorators": true,
 ```
-
-You may also need to enable `es6` in the `lib` section of compiler options, or install `es6-shim` from `@types`.
 
 ## Quick Start
 
@@ -262,7 +194,7 @@ Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `co
 
 This command will generate a new project in the `MyProject` directory with the following files:
 
-```
+```text
 MyProject
 ├── src                   // place of your TypeScript code
 │   ├── entity            // place where your entities (database models) are stored
@@ -546,11 +478,11 @@ const AppDataSource = new DataSource({
 // to initialize the initial connection with the database, register all entities
 // and "synchronize" database schema, call "initialize()" method of a newly created database
 // once in your application bootstrap
-AppDataSource.initialize()
-    .then(() => {
-        // here you can start to work with your database
-    })
-    .catch((error) => console.log(error))
+try {
+    await AppDataSource.initialize()
+} catch (error) {
+    console.log(error)
+}
 ```
 
 We are using Postgres in this example, but you can use any other supported database.
@@ -568,7 +500,7 @@ Setting `synchronize` makes sure your entities will be synced with the database,
 
 Now if you run your `index.ts`, a connection with the database will be initialized and a database table for your photos will be created.
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
@@ -767,7 +699,7 @@ Using `@JoinColumn` decorator is required on the owner side of the relationship.
 
 If you run the app, you'll see a newly generated table, and it will contain a column with a foreign key for the photo relation:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                     photo_metadata                      |
 +-------------+--------------+----------------------------+
@@ -1063,7 +995,7 @@ It means that the class that uses `@ManyToOne` will store the id of the related 
 
 After you run the application, the ORM will create the `author` table:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                          author                         |
 +-------------+--------------+----------------------------+
@@ -1074,7 +1006,7 @@ After you run the application, the ORM will create the `author` table:
 
 It will also modify the `photo` table, adding a new `author` column and creating a foreign key for it:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
@@ -1131,7 +1063,7 @@ export class Photo {
 
 After you run the application, the ORM will create a **album_photos_photo_albums** _junction table_:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                album_photos_photo_albums                |
 +-------------+--------------+----------------------------+
@@ -1244,7 +1176,7 @@ There are a few repositories that you can clone and start with:
 -   [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
 -   [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
 -   [Example how to use TypeORM with MongoDB](https://github.com/typeorm/mongo-typescript-example)
--   [Example how to use TypeORM in a Cordova/PhoneGap app](https://github.com/typeorm/cordova-example)
+-   [Example how to use TypeORM in a Cordova app](https://github.com/typeorm/cordova-example)
 -   [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
 -   [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
 -   [Example how to use TypeORM with Nativescript-Vue](https://github.com/typeorm/nativescript-vue-typeorm-sample)
