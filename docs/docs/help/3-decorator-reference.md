@@ -258,7 +258,7 @@ export class User {
 }
 ```
 
-Learn more about [MongoDB](../guides/2-mongodb.md).
+Learn more about [MongoDB](../drivers/mongodb.md).
 
 #### `@CreateDateColumn`
 

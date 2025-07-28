@@ -75,9 +75,9 @@ repository.merge(user, { firstName: "Timber" }, { lastName: "Saw" }) // same as 
 -   `preload` - Creates a new entity from the given plain javascript object. If the entity already exists in the database, then
     it loads it (and everything related to it), replaces all values with the new ones from the given object,
     and returns the new entity. The new entity is actually an entity loaded from the database with all properties
-    replaced from the new object. <br></br>
-    Note that given entity-like object must have an entity id / primary key to find entity by.
-    Returns undefined if entity with given id was not found.
+    replaced from the new object.
+
+    > Note that given entity-like object must have an entity id / primary key to find entity by. Returns undefined if entity with given id was not found.
 
 ```typescript
 const partialUser = {
@@ -143,7 +143,7 @@ await repository.update(1, { firstName: "Rizzrak" })
 // executes UPDATE user SET firstName = Rizzrak WHERE id = 1
 ```
 
--   `updateAll` - Updates *all* entities of target type (without WHERE clause). Sets fields from supplied partial entity.
+-   `updateAll` - Updates _all_ entities of target type (without WHERE clause). Sets fields from supplied partial entity.
 
 ```typescript
 await repository.updateAll({ category: "ADULT" })
@@ -224,7 +224,7 @@ await repository.delete([1, 2, 3])
 await repository.delete({ firstName: "Timber" })
 ```
 
--   `deleteAll` - Deletes *all* entities of target type (without WHERE clause).
+-   `deleteAll` - Deletes _all_ entities of target type (without WHERE clause).
 
 ```typescript
 await repository.deleteAll()
@@ -482,4 +482,4 @@ For `TreeRepository` API refer to [the Tree Entities documentation](../entity/4-
 
 ## `MongoRepository` API
 
-For `MongoRepository` API refer to [the MongoDB documentation](../guides/2-mongodb.md).
+For `MongoRepository` API refer to [the MongoDB documentation](../drivers/mongodb.md).

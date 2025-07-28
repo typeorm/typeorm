@@ -242,9 +242,9 @@ export class RedisQueryResultCache implements QueryResultCache {
             } else {
                 return PlatformTools.load(this.clientType)
             }
-        } catch (e) {
+        } catch {
             throw new TypeORMError(
-                `Cannot use cache because ${this.clientType} is not installed. Please run "npm i ${this.clientType} --save".`,
+                `Cannot use cache because ${this.clientType} is not installed. Please run "npm i ${this.clientType}".`,
             )
         }
     }
