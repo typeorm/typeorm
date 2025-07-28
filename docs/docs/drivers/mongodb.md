@@ -26,7 +26,7 @@ npm install mongodb
 
 -   `database` - Database name.
 
--   `poolSize` - Set the maximum pool size for each individual server or proxy connection.
+-   `poolSize` - Set the maximum pool size for each server or proxy connection.
 
 -   `tls` - Use a TLS/SSL connection (needs a mongod server with ssl support, 2.4 or higher). Default: `false`.
 
@@ -36,7 +36,7 @@ npm install mongodb
 
 -   `tlsCertificateKeyFile` - Specifies the location of a local .pem file that contains the client's TLS/SSL certificate and key.
 
--   `tlsCertificateKeyFilePassword` - Specifies the password to de-crypt the `tlsCertificateKeyFile`.
+-   `tlsCertificateKeyFilePassword` - Specifies the password to decrypt the `tlsCertificateKeyFile`.
 
 -   `keepAlive` - The number of milliseconds to wait before initiating keepAlive on the TCP socket. Default: `30000`.
 
@@ -58,7 +58,7 @@ npm install mongodb
 
 -   `raw` - Return document results as raw BSON buffers. Default: `false`.
 
--   `promoteLongs` - Promotes Long values to number if they fit inside the 53 bits resolution. Default: `true`.
+-   `promoteLongs` - Promotes Long values to number if they fit inside the 53-bit resolution. Default: `true`.
 
 -   `promoteBuffers` - Promotes Binary BSON values to native Node Buffers. Default: `false`.
 
@@ -85,7 +85,7 @@ npm install mongodb
 
 -   `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
 
--   `directConnection` - Specifies whether to force dispatch all operations to the specified host.
+-   `directConnection` - Specifies whether to force-dispatch all operations to the specified host.
 
 Additional options can be added to the `extra` object and will be passed directly to the client library. See more in `mongodb`'s documentation for [Connection Options](https://mongodb-node.netlify.app/docs/drivers/node/current/connect/connection-options/).
 
@@ -128,8 +128,7 @@ const myDataSource = new DataSource({
 
 ## Defining subdocuments (embed documents)
 
-Since MongoDB stores objects and objects inside objects (or documents inside documents)
-you can do the same in TypeORM:
+Since MongoDB stores objects and objects inside objects (or documents inside documents), you can do the same in TypeORM:
 
 ```typescript
 import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
@@ -210,7 +209,7 @@ const manager = getMongoManager()
 await manager.save(user)
 ```
 
-Following document will be saved in the database:
+The following document will be saved in the database:
 
 ```json
 {
@@ -339,15 +338,15 @@ const users = await myDataSource.getMongoRepository(User).find({
 })
 ```
 
-Both `MongoEntityManager` and `MongoRepository` contain lot of useful MongoDB-specific methods:
+Both `MongoEntityManager` and `MongoRepository` contain a lot of useful MongoDB-specific methods:
 
 ### `createCursor`
 
-Creates a cursor for a query that can be used to iterate over results from MongoDB.
+Create a cursor for a query that can be used to iterate over results from MongoDB.
 
 ### `createEntityCursor`
 
-Creates a cursor for a query that can be used to iterate over results from MongoDB.
+Create a cursor for a query that can be used to iterate over results from MongoDB.
 This returns a modified version of the cursor that transforms each result into Entity models.
 
 ### `aggregate`
@@ -360,19 +359,19 @@ Perform a bulkWrite operation without a fluent API.
 
 ### `count`
 
-Count number of matching documents in the db to a query.
+Count the number of matching documents in the db to a query.
 
 ### `countDocuments`
 
-Count number of matching documents in the db to a query.
+Count the number of matching documents in the db to a query.
 
 ### `createCollectionIndex`
 
-Creates an index on the db and collection.
+Create an index on the db and collection.
 
 ### `createCollectionIndexes`
 
-Creates multiple indexes in the collection, this method is only supported in MongoDB 2.6 or higher. Earlier versions of MongoDB will throw a "command not supported" error. Index specifications are defined at [createIndexes](http://docs.mongodb.org/manual/reference/command/createIndexes/).
+Create multiple indexes in the collection, this method is only supported in MongoDB 2.6 or higher. Earlier versions of MongoDB will throw a "command not supported" error. Index specifications are defined at [createIndexes](http://docs.mongodb.org/manual/reference/command/createIndexes/).
 
 ### `deleteMany`
 
@@ -420,7 +419,7 @@ Run a group command across a collection.
 
 ### `collectionIndexes`
 
-Retrieve all the indexes on the collection.
+Retrieve all the indexes of the collection.
 
 ### `collectionIndexExists`
 
@@ -428,27 +427,27 @@ Retrieve if an index exists on the collection
 
 ### `collectionIndexInformation`
 
-Retrieves this collections index info.
+Retrieve this collection's index info.
 
 ### `initializeOrderedBulkOp`
 
-Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
+Initiate an In order bulk write operation; operations will be serially executed in the order they are added, creating a new operation for each switch in types.
 
 ### `initializeUnorderedBulkOp`
 
-Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
+Initiate an Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
 
 ### `insertMany`
 
-Inserts an array of documents into MongoDB.
+Insert an array of documents into MongoDB.
 
 ### `insertOne`
 
-Inserts a single document into MongoDB.
+Insert a single document into MongoDB.
 
 ### `isCapped`
 
-Returns if the collection is a capped collection.
+Return if the collection is a capped collection.
 
 ### `listCollectionIndexes`
 
@@ -456,7 +455,7 @@ Get the list of all indexes information for the collection.
 
 ### `parallelCollectionScan`
 
-Return N number of parallel cursors for a collection allowing parallel reading of entire collection. There are no ordering guarantees for returned results
+Return N number of parallel cursors for a collection allowing parallel reading of the entire collection. There are no ordering guarantees for returned results
 
 ### `reIndex`
 
@@ -464,7 +463,7 @@ Reindex all indexes on the collection Warning: reIndex is a blocking operation (
 
 ### `rename`
 
-Changes the name of an existing collection.
+Change the name of an existing collection.
 
 ### `replaceOne`
 
@@ -476,8 +475,8 @@ Get all the collection statistics.
 
 ### `updateMany`
 
-Updates multiple documents within the collection based on the filter.
+Update multiple documents within the collection based on the filter.
 
 ### `updateOne`
 
-Updates a single document within the collection based on the filter.
+Update a single document within the collection based on the filter.

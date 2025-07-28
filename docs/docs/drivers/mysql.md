@@ -34,7 +34,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 -   `database` - Database name.
 
 -   `charset` - The charset for the connection. This is called "collation" in the SQL-level of MySQL
-    (like utf8_general_ci). If a SQL-level charset is specified (like utf8mb4) then the default collation for that charset is used. (Default: `UTF8_GENERAL_CI`).
+    (like utf8_general_ci). If an SQL-level charset is specified (like utf8mb4), then the default collation for that charset is used. (Default: `UTF8_GENERAL_CI`).
 
 -   `timezone` - the timezone configured on the MySQL server. This is used to typecast server date/time
     values to JavaScript Date object and vice versa. This can be `local`, `Z`, or an offset in the form
@@ -98,7 +98,7 @@ See [enum column type](../entity/1-entities.md#enum-column-type).
 
 `set` column type is supported by `mariadb` and `mysql`. There are various possible column definitions:
 
-Using typescript enums:
+Using TypeScript enums:
 
 ```typescript
 export enum UserRole {
@@ -121,7 +121,7 @@ export class User {
 }
 ```
 
-Using array with `set` values:
+Using an array with `set` values:
 
 ```typescript
 export type UserRoleType = "admin" | "editor" | "ghost"

@@ -18,7 +18,7 @@
 </div>
 
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)
-that can run in NodeJS, Browser, Cordova, Ionic, React Native, NativeScript, Expo, and Electron platforms
+that can run in Node.js, Browser, Cordova, Ionic, React Native, NativeScript, Expo, and Electron platforms
 and can be used with TypeScript and JavaScript (ES2021).
 Its goal is to always support the latest JavaScript features and provide additional features
 that help you to develop any kind of application that uses databases - from
@@ -42,7 +42,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 -   Clean object-relational model.
 -   Associations (relations).
 -   Eager and lazy relations.
--   Uni-directional, bi-directional, and self-referenced relations.
+-   Unidirectional, bidirectional, and self-referenced relations.
 -   Supports multiple inheritance patterns.
 -   Cascades.
 -   Indices.
@@ -64,7 +64,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 -   Schema declaration in models or separate configuration files.
 -   Supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js.
 -   Supports MongoDB NoSQL database.
--   Works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
+-   Works in Node.js / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
 -   TypeScript and JavaScript support.
 -   ESM and CommonJS support.
 -   Produced code is performant, flexible, clean, and maintainable.
@@ -73,7 +73,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
 And more...
 
-With TypeORM your models look like this:
+With TypeORM, your models look like this:
 
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
@@ -191,7 +191,7 @@ There are several extensions that simplify working with TypeORM and integrating 
 -   Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
 -   ER Diagram generator - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
 -   another ER Diagram generator - [erdia](https://www.npmjs.com/package/erdia/)
--   Create, drop & seed database - [typeorm-extension](https://github.com/tada5hi/typeorm-extension)
+-   Create, drop and seed database - [typeorm-extension](https://github.com/tada5hi/typeorm-extension)
 -   Automatically update `data-source.ts` after generating migrations/entities - [typeorm-codebase-sync](https://www.npmjs.com/package/typeorm-codebase-sync)
 -   Easy manipulation of `relations` objects - [typeorm-relations](https://npmjs.com/package/typeorm-relations)
 -   Automatically generate `relations` based on a GraphQL query - [typeorm-relations-graphql](https://npmjs.com/package/typeorm-relations-graphql)
@@ -206,7 +206,7 @@ This project exists thanks to all the people who contribute:
 
 ## Sponsors
 
-Open source is hard and time-consuming. If you want to invest in TypeORM's future you can become a sponsor and allow our core team to spend more time on TypeORM's improvements and new features. [Become a sponsor](https://opencollective.com/typeorm)
+Open source is hard and time-consuming. If you want to invest in TypeORM's future, you can become a sponsor and allow our core team to spend more time on TypeORM's improvements and new features. [Become a sponsor](https://opencollective.com/typeorm)
 
 <a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/sponsor.svg?width=890"></a>
 

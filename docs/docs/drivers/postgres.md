@@ -44,7 +44,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 -   `poolErrorHandler` - A function that gets called when the underlying pool emits `'error'` event. Takes a single parameter (error instance) and defaults to logging with `warn` level.
 
--   `maxTransactionRetries` - A maximum number of transaction retries in case of 40001 error. Defaults to 5.
+-   `maxTransactionRetries` - A maximum number of transaction retries in case of a 40001 error. Defaults to 5.
 
 -   `logNotifications` - A boolean to determine whether postgres server [notice messages](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html) and [notification events](https://www.postgresql.org/docs/current/sql-notify.html) should be included in client's logs with `info` level (default: `false`).
 
@@ -66,7 +66,7 @@ Additional options can be added to the `extra` object and will be passed directl
 
 `array`, `bool`, `boolean`, `bytes`, `bytea`, `blob`, `date`, `numeric`, `decimal`, `dec`, `float`, `float4`, `float8`, `double precision`, `real`, `inet`, `int`, `integer`, `int2`, `int8`, `int64`, `smallint`, `bigint`, `interval`, `string`, `character varying`, `character`, `char`, `char varying`, `varchar`, `text`, `time`, `time without time zone`, `timestamp`, `timestamptz`, `timestamp without time zone`, `timestamp with time zone`, `json`, `jsonb`, `uuid`
 
-Note: CockroachDB returns all numeric data types as `string`. However if you omit column type and define your property as `number` ORM will `parseInt` string into number.
+Note: CockroachDB returns all numeric data types as `string`. However, if you omit the column type and define your property as `number` ORM will `parseInt` string into number.
 
 ### Spatial columns
 

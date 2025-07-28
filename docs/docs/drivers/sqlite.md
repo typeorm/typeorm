@@ -28,13 +28,13 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 ### `sqlite` data source options
 
--   `database` - Database path. For example "mydb.sql"
+-   `database` - Database path. For example, "mydb.sql"
 
 ### `better-sqlite3` data source options
 
--   `database` - Database path. For example "mydb.sql"
--   `statementCacheSize` - Cache size of sqlite statement to speed up queries (default 100).
--   `prepareDatabase` - Function to run before a database is used in typeorm. You can access original better-sqlite3 Database object here.
+-   `database` - Database path. For example, "mydb.sql"
+-   `statementCacheSize` - Cache size of the SQLite statement to speed up queries (default 100).
+-   `prepareDatabase` - Function to run before a database is used in typeorm. You can access the original better-sqlite3 Database object here.
 -   `nativeBinding` - Relative or absolute path to the native addon (better_sqlite3.node).
 
 ### `sql.js` data source options
@@ -44,7 +44,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 -   `autoSave`: Enable automatic persistence of database changes, requires either `location` or `autoSaveCallback`. When set to `true`, every change is saved to the file system (Node.js) or to `localStorage`/`indexedDB` (browser) if `location` is specified, or the `autoSaveCallback` is invoked otherwise.
 -   `autoSaveCallback`: A function that gets called when changes to the database are made and `autoSave` is enabled. The function gets a `UInt8Array` that represents the database.
 -   `location`: The file location to load and save the database to.
--   `useLocalForage`: Enables the usage of the [localforage library](https://github.com/localForage/localForage) to save & load the database asynchronously from the indexedDB instead of using the synchrony local storage methods in a browser environment. The localforage node module needs to be added to your project and the localforage.js should be imported in your page.
+-   `useLocalForage`: Enables the usage of the [localforage library](https://github.com/localForage/localForage) to save and load the database asynchronously from the indexedDB instead of using the synchrony local storage methods in a browser environment. The localforage node module needs to be added to your project, and the localforage.js should be imported in your page.
 
 ### `capacitor` data source options
 

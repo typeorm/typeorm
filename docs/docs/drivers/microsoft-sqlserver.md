@@ -33,22 +33,22 @@ Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation
 -   `requestTimeout` - Request timeout in ms (default: `15000`). NOTE: msnodesqlv8 driver doesn't support
     timeouts < 1 second.
 
--   `stream` - Stream recordsets/rows instead of returning them all at once as an argument of callback (default: `false`).
+-   `stream` - Stream record sets/rows instead of returning them all at once as an argument of callback (default: `false`).
     You can also enable streaming for each request independently (`request.stream = true`). Always set to `true` if you plan to
-    work with a large amount of rows.
+    work with a large number of rows.
 
 -   `pool.max` - The maximum number of connections there can be in the pool (default: `10`).
 
 -   `pool.min` - The minimum of connections there can be in the pool (default: `0`).
 
--   `pool.maxWaitingClients` - maximum number of queued requests allowed, additional acquire calls will be callback with
-    an err in a future cycle of the event loop.
+-   `pool.maxWaitingClients` - maximum number of queued requests allowed, additional acquire calls will be called back with
+    an error in a future cycle of the event loop.
 
 -   `pool.acquireTimeoutMillis` - max milliseconds an `acquire` call will wait for a resource before timing out.
     (default no limit), if supplied should non-zero positive integer.
 
--   `pool.fifo` - if true the oldest resources will be first to be allocated. If false the most recently released resources
-    will be the first to be allocated. This in effect turns the pool's behaviour from a queue into a stack. boolean,
+-   `pool.fifo` - if true the oldest resources will be first to be allocated. If false, the most recently released resources
+    will be the first to be allocated. This, in effect, turns the pool's behaviour from a queue into a stack. boolean,
     (default `true`).
 
 -   `pool.priorityRange` - int between 1 and x - if set, borrowers can specify their relative priority in the queue if no
@@ -71,7 +71,7 @@ Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation
 
 -   `options.instanceName` - The instance name to connect to. The SQL Server Browser service must be running on the database server, and UDP port 1434 on the database server must be reachable. Mutually exclusive with `port`. (no default).
 
--   `options.enableAnsiNullDefault` - If true, SET ANSI_NULL_DFLT_ON ON will be set in the initial sql. This means new
+-   `options.enableAnsiNullDefault` - If true, `SET ANSI_NULL_DFLT_ON ON` will be set in the initial SQL. This means new
     columns will be nullable by default. See the [T-SQL documentation](https://msdn.microsoft.com/en-us/library/ms187375.aspx)
     for more details. (Default: `true`).
 
@@ -81,7 +81,7 @@ Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation
 
 -   `options.useUTC` - A boolean determining whether to pass time values in UTC or local time. (default: `false`).
 
--   `options.abortTransactionOnError` - A boolean determining whether to rollback a transaction automatically if any
+-   `options.abortTransactionOnError` - A boolean determining whether to roll back a transaction automatically if any
     error is encountered during the given transaction's execution. This sets the value for `SET XACT_ABORT` during the
     initial SQL phase of a connection ([documentation](http://msdn.microsoft.com/en-us/library/ms188792.aspx)).
 
