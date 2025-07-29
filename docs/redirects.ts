@@ -80,7 +80,8 @@ export const redirects = [
         from: "/active-record-data-mapper",
         to: "/docs/guides/active-record-data-mapper",
     },
-    { from: "/mongodb", to: "/docs/guides/mongodb" },
+    { from: "/mongodb", to: "/docs/drivers/mongodb" },
+    { from: "/docs/guides/mongodb", to: "/docs/drivers/mongodb" },
     { from: "/validation", to: "/docs/guides/validation" },
     { from: "/example-with-express", to: "/docs/guides/example-with-express" },
     {
