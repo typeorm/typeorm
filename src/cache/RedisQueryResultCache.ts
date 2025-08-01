@@ -43,7 +43,6 @@ export class RedisQueryResultCache implements QueryResultCache {
     ) {
         this.clientType = clientType
         this.redis = this.loadRedis()
-        this.redisMajorVersion = this.getRedisVersion()
     }
 
     // -------------------------------------------------------------------------
@@ -60,12 +59,21 @@ export class RedisQueryResultCache implements QueryResultCache {
                 ...cacheOptions?.options,
             }
 
-            // Only add legacyMode for Redis 4.x
-            if (this.redisMajorVersion === 4) {
-                clientOptions.legacyMode = true
-            }
-
+            // Create client first
             this.client = this.redis.createClient(clientOptions)
+
+            // Check if this is Redis 4.x by looking for connect method before connecting
+            const isRedis4Plus = typeof this.client.connect === 'function'
+            
+            if (isRedis4Plus) {
+                // For Redis 4.x, we need to recreate the client with legacyMode
+                // First check if we're dealing with Redis 4 (has connect but uses callbacks)
+                // or Redis 5 (has connect and uses promises)
+                this.client = this.redis.createClient({
+                    ...clientOptions,
+                    legacyMode: true
+                })
+            }
 
             if (
                 typeof this.connection.options.cache === "object" &&
@@ -76,9 +84,13 @@ export class RedisQueryResultCache implements QueryResultCache {
                 })
             }
 
-            if ("connect" in this.client) {
+            // Connect if Redis 4+
+            if (typeof this.client.connect === 'function') {
                 await this.client.connect()
             }
+
+            // Detect version after connection is established
+            this.detectRedisVersion()
         } else if (this.clientType === "ioredis") {
             if (cacheOptions && cacheOptions.port) {
                 if (cacheOptions.options) {
@@ -290,23 +302,36 @@ export class RedisQueryResultCache implements QueryResultCache {
     }
 
     /**
-     * Gets the Redis package major version
+     * Detects the Redis version based on the connected client's API
      */
-    private getRedisVersion(): number | undefined {
-        if (this.clientType !== "redis") return undefined
+    private detectRedisVersion(): void {
+        if (this.clientType !== "redis") return
 
         try {
-            const packageJson = PlatformTools.load("redis/package.json")
-            if (packageJson && packageJson.version) {
-                const version = packageJson.version.split('.')[0]
-                return parseInt(version, 10)
+            // Check if the client's set method accepts options as the third parameter (Redis 5+)
+            // This is the most reliable way to detect Redis 5 vs older versions
+            const testKey = `__typeorm_redis_version_test_${Date.now()}`
+            
+            // Try Redis 5 style first
+            const setResult = this.client.set(testKey, 'test', { EX: 1 })
+            
+            if (setResult && typeof setResult.then === 'function') {
+                // Redis 5 returns a promise
+                this.redisMajorVersion = 5
+                
+                // Clean up test key
+                setResult.then(() => this.client.del(testKey)).catch(() => {})
+            } else {
+                // Redis 3/4 style - callback based
+                this.redisMajorVersion = 3
+                
+                // Clean up test key
+                this.client.del(testKey, () => {})
             }
-        } catch {
-            // If we can't determine version, assume older version
-            return undefined
+        } catch (error) {
+            // If the Redis 5 style fails, assume it's an older version
+            this.redisMajorVersion = 3
         }
-
-        return undefined
     }
 
     /**
