@@ -300,34 +300,25 @@ export class RedisQueryResultCache implements QueryResultCache {
     }
 
     /**
-     * Detects the Redis version based on the connected client's API
+     * Detects the Redis version based on the connected client's API characteristics
+     * without creating test keys in the database
      */
     private detectRedisVersion(): void {
         if (this.clientType !== "redis") return
 
         try {
-            // Check if the client's set method accepts options as the third parameter (Redis 5+)
-            // This is the most reliable way to detect Redis 5 vs older versions
-            const testKey = `__typeorm_redis_version_test_${Date.now()}`
-            
-            // Try Redis 5 style first
-            const setResult = this.client.set(testKey, 'test', { EX: 1 })
-            
-            if (setResult && typeof setResult.then === 'function') {
-                // Redis 5 returns a promise
+            // Detect version by examining the client's method signatures
+            // This avoids creating test keys in the database
+            const setMethod = this.client.set
+            if (setMethod && setMethod.length <= 3) {
+                // Redis 5+ set method accepts fewer parameters (key, value, options)
                 this.redisMajorVersion = 5
-                
-                // Clean up test key
-                setResult.then(() => this.client.del(testKey)).catch(() => {})
             } else {
-                // Redis 3/4 style - callback based
+                // Redis 3/4 set method requires more parameters (key, value, flag, duration, callback)
                 this.redisMajorVersion = 3
-                
-                // Clean up test key
-                this.client.del(testKey, () => {})
             }
-        } catch (error) {
-            // If the Redis 5 style fails, assume it's an older version
+        } catch {
+            // Default to Redis 3/4 for maximum compatibility
             this.redisMajorVersion = 3
         }
     }
