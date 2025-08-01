@@ -40,11 +40,39 @@ export async function importOrRequireFile(
     return tryToRequire()
 }
 
+const packageJsonCache = new Map<string, object | null>()
+const MAX_CACHE_SIZE = 1000
+
+function setPackageJsonCache(paths: string[], packageJson: object | null) {
+    for (const path of paths) {
+        // Simple LRU-like behavior: if we're at capacity, remove oldest entry
+        if (
+            packageJsonCache.size >= MAX_CACHE_SIZE &&
+            !packageJsonCache.has(path)
+        ) {
+            const firstKey = packageJsonCache.keys().next().value
+            if (firstKey) packageJsonCache.delete(firstKey)
+        }
+        packageJsonCache.set(path, packageJson)
+    }
+}
+
 async function getNearestPackageJson(filePath: string): Promise<object | null> {
     let currentPath = filePath
+    const paths: string[] = []
 
     while (currentPath !== path.dirname(currentPath)) {
         currentPath = path.dirname(currentPath)
+
+        // Check if we have already cached the package.json for this path
+        if (packageJsonCache.has(currentPath)) {
+            setPackageJsonCache(paths, packageJsonCache.get(currentPath)!)
+            return packageJsonCache.get(currentPath)!
+        }
+
+        // Add the current path to the list of paths to cache
+        paths.push(currentPath)
+
         const potentialPackageJson = path.join(currentPath, "package.json")
 
         try {
@@ -54,10 +82,15 @@ async function getNearestPackageJson(filePath: string): Promise<object | null> {
             }
 
             try {
-                return JSON.parse(
+                const parsedPackage = JSON.parse(
                     await fs.readFile(potentialPackageJson, "utf8"),
                 )
+                // Cache the parsed package.json object and return it
+                setPackageJsonCache(paths, parsedPackage)
+                return parsedPackage
             } catch {
+                // If parsing fails, we still cache null to avoid repeated attempts
+                setPackageJsonCache(paths, null)
                 return null
             }
         } catch {
@@ -66,5 +99,6 @@ async function getNearestPackageJson(filePath: string): Promise<object | null> {
     }
 
     // the top of the file tree is reached
+    setPackageJsonCache(paths, null)
     return null
 }
