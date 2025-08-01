@@ -61,8 +61,8 @@ export class RedisQueryResultCache implements QueryResultCache {
 
             // Create initial client to test Redis version
             let tempClient = this.redis.createClient(clientOptions)
-            const isRedis4Plus = typeof tempClient.connect === 'function'
-            
+            const isRedis4Plus = typeof tempClient.connect === "function"
+
             if (isRedis4Plus) {
                 // Redis 4+ detected, recreate with legacyMode for Redis 4.x
                 // (Redis 5 will ignore legacyMode if not needed)
@@ -83,7 +83,7 @@ export class RedisQueryResultCache implements QueryResultCache {
             }
 
             // Connect if Redis 4+
-            if (typeof this.client.connect === 'function') {
+            if (typeof this.client.connect === "function") {
                 await this.client.connect()
             }
 
@@ -206,7 +206,7 @@ export class RedisQueryResultCache implements QueryResultCache {
         if (this.isRedis5OrHigher()) {
             // Redis 5+ Promise-based API with PX option
             await this.client.set(key, value, {
-                PX: duration
+                PX: duration,
             })
             return
         }
@@ -328,6 +328,8 @@ export class RedisQueryResultCache implements QueryResultCache {
      */
     private isRedis5OrHigher(): boolean {
         if (this.clientType !== "redis") return false
-        return this.redisMajorVersion !== undefined && this.redisMajorVersion >= 5
+        return (
+            this.redisMajorVersion !== undefined && this.redisMajorVersion >= 5
+        )
     }
 }
