@@ -40,6 +40,12 @@ export class UniqueMetadata {
     deferrable?: DeferrableType
 
     /**
+     * Indicates if column handles null values as distinct.
+     * Works only in PostgreSQL 15 and above.
+     */
+    nullsNotDistinct?: boolean
+
+    /**
      * User specified unique constraint name.
      */
     givenName?: string
@@ -83,6 +89,7 @@ export class UniqueMetadata {
             this.givenName = options.args.name
             this.givenColumnNames = options.args.columns
             this.deferrable = options.args.deferrable
+            this.nullsNotDistinct = options.args.nullsNotDistinct
         }
     }
 
