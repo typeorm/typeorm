@@ -103,7 +103,7 @@ jobs:
 
     services:
       mysql:
-        image: mysql:5.7.37
+        image: mysql:5.7.44
         ports:
           - "3306:3306"
         env:
@@ -112,7 +112,7 @@ jobs:
           MYSQL_PASSWORD: "test"
           MYSQL_DATABASE: "test"
       mariadb:
-        image: mariadb:10.11.13
+        image: mariadb:10.6.22-jammy
         ports:
           - "3307:3306"
         env:
@@ -137,7 +137,49 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: mysql+mariadb-node:${{ inputs.node-version }}
+          flag-name: mysql_mariadb-node:${{ inputs.node-version }}
+          parallel: true
+
+  mysql_mariadb_latest:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:9.4.0
+        ports:
+          - "3306:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
+          MYSQL_DATABASE: "test"
+      mariadb:
+        image: mariadb:12.0.1-rc
+        ports:
+          - "3307:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
+          MYSQL_DATABASE: "test"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "npm"
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: build/
+      - run: npm ci
+      - run: cp .github/workflows/test/mysql-mariadb-latest.ormconfig.json ormconfig.json
+      - run: npx nyc npm run test:ci
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: mysql_mariadb_latest-node:${{ inputs.node-version }}
           parallel: true
 
   better-sqlite3:

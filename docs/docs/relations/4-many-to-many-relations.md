@@ -51,18 +51,18 @@ You must put `@JoinTable` on one (owning) side of relation.
 
 This example will produce following tables:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                        category                         |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(255) |                            |
 +-------------+--------------+----------------------------+
 
 +-------------+--------------+----------------------------+
 |                        question                         |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | title       | varchar(255) |                            |
 | text        | varchar(255) |                            |
 +-------------+--------------+----------------------------+
@@ -70,8 +70,8 @@ This example will produce following tables:
 +-------------+--------------+----------------------------+
 |              question_categories_category               |
 +-------------+--------------+----------------------------+
-| questionId  | int(11)      | PRIMARY KEY FOREIGN KEY    |
-| categoryId  | int(11)      | PRIMARY KEY FOREIGN KEY    |
+| questionId  | int          | PRIMARY KEY FOREIGN KEY    |
+| categoryId  | int          | PRIMARY KEY FOREIGN KEY    |
 +-------------+--------------+----------------------------+
 ```
 
