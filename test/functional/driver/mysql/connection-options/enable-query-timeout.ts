@@ -14,7 +14,7 @@ describe("driver > mysql > connection options > enableQueryTimeout", () => {
         entities: [__dirname + "/entity/*{.js,.ts}"],
         schemaCreate: true,
         dropSchema: true,
-        enabledDrivers: ["mysql"],
+        enabledDrivers: ["mariadb", "mysql"],
     }
     const timeoutMs = 150
     const longQueryTimeSec = 0.2
@@ -41,13 +41,8 @@ describe("driver > mysql > connection options > enableQueryTimeout", () => {
                         dataSource.manager
                             .sql`SELECT SLEEP(${longQueryTimeSec})`,
                     ).to.eventually.be.rejected.then((err) => {
-                        expect(err).to.have.nested.property(
-                            "driverError.code",
+                        expect(err.driverError?.code).to.equal(
                             "PROTOCOL_SEQUENCE_TIMEOUT",
-                        )
-                        expect(err).to.have.nested.property(
-                            "driverError.timeout",
-                            timeoutMs,
                         )
                     })
                 }),

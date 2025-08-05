@@ -1,28 +1,28 @@
+import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { TypeORMError } from "../../error"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { ReadStream } from "../../platform/PlatformTools"
+import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
+import { TableCheck } from "../../schema-builder/table/TableCheck"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
-import { View } from "../../schema-builder/view/View"
-import { Query } from "../Query"
-import { AuroraMysqlDriver } from "./AuroraMysqlDriver"
-import { ReadStream } from "../../platform/PlatformTools"
-import { OrmUtils } from "../../util/OrmUtils"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
-import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
-import { ColumnType } from "../types/ColumnTypes"
-import { TableCheck } from "../../schema-builder/table/TableCheck"
-import { IsolationLevel } from "../types/IsolationLevel"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
-import { TypeORMError } from "../../error"
-import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import { Query } from "../Query"
+import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
+import { IsolationLevel } from "../types/IsolationLevel"
+import { MetadataTableType } from "../types/MetadataTableType"
+import { AuroraMysqlDriver } from "./AuroraMysqlDriver"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -2137,14 +2137,16 @@ export class AuroraMysqlQueryRunner
 
                     // Unsigned columns are handled differently when it comes to width.
                     // Hence, we need to set the unsigned attribute before we check the width.
-                    tableColumn.unsigned = tableColumn.zerofill
-                        ? true
-                        : dbColumn["COLUMN_TYPE"].indexOf("unsigned") !== -1
+                    tableColumn.zerofill =
+                        dbColumn["COLUMN_TYPE"].includes("zerofill")
+                    tableColumn.unsigned =
+                        tableColumn.zerofill ||
+                        dbColumn["COLUMN_TYPE"].includes("unsigned")
 
                     if (
-                        this.driver.withWidthColumnTypes.indexOf(
-                            tableColumn.type as ColumnType,
-                        ) !== -1
+                        this.driver.unsignedColumnTypes.includes(
+                            tableColumn.type as UnsignedColumnType,
+                        )
                     ) {
                         const width = dbColumn["COLUMN_TYPE"].substring(
                             dbColumn["COLUMN_TYPE"].indexOf("(") + 1,
