@@ -4,12 +4,14 @@ import { TimeSheet } from "./TimeSheet"
 
 @Entity({ name: "employees" })
 export class Employee {
-    @PrimaryColumn("varchar", { length: 50 })
+    @PrimaryColumn()
     name: string
 
     @ManyToOne(() => Company, (company) => company.employees)
     company: Company
 
-    @OneToMany(() => TimeSheet, (timesheet) => timesheet.employee)
+    @OneToMany(() => TimeSheet, (timesheet) => timesheet.employee, {
+        cascade: true,
+    })
     timesheets: TimeSheet[]
 }
