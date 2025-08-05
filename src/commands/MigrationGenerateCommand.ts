@@ -270,6 +270,7 @@ ${downSqls.join(`
 
         return `/**
  * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ * @typedef {import('typeorm').QueryRunner} QueryRunner
  */
 
 /**
@@ -279,11 +280,17 @@ ${downSqls.join(`
 ${exportMethod} class ${migrationName} {
     name = '${migrationName}'
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async up(queryRunner) {
 ${upSqls.join(`
 `)}
     }
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async down(queryRunner) {
 ${downSqls.join(`
 `)}
