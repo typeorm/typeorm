@@ -45,6 +45,7 @@ export async function importClassesFromDirectories(
             `${classesFoundMessage} "${directories}" : "${allFiles}"`,
         )
     }
+    const packageMap = new Map<string, any>()
     const dirPromises = allFiles
         .filter((file) => {
             const dtsExtension = file.substring(file.length - 5, file.length)
@@ -56,6 +57,7 @@ export async function importClassesFromDirectories(
         .map(async (file) => {
             const [importOrRequireResult] = await importOrRequireFile(
                 PlatformTools.pathResolve(file),
+                packageMap,
             )
             return importOrRequireResult
         })

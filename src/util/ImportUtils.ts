@@ -4,6 +4,7 @@ import { pathToFileURL } from "url"
 
 export async function importOrRequireFile(
     filePath: string,
+    packageMap: Map<string, any> | undefined = undefined,
 ): Promise<[any, "esm" | "commonjs"]> {
     const tryToImport = async (): Promise<[any, "esm"]> => {
         // `Function` is required to make sure the `import` statement wil stay `import` after
@@ -23,12 +24,18 @@ export async function importOrRequireFile(
     }
 
     const extension = filePath.substring(filePath.lastIndexOf(".") + ".".length)
-
+    const dirname = path.dirname(filePath)
     if (extension === "mjs" || extension === "mts") return tryToImport()
     else if (extension === "cjs" || extension === "cts") return tryToRequire()
     else if (extension === "js" || extension === "ts") {
+        if (packageMap?.has(filePath)) {
+            const packageJson = packageMap.get(dirname)
+            const isModule = (packageJson as any)?.type === "module"
+            if (isModule) return tryToImport()
+            else return tryToRequire()
+        }
         const packageJson = await getNearestPackageJson(filePath)
-
+        if (packageMap) packageMap.set(dirname, packageJson)
         if (packageJson != null) {
             const isModule = (packageJson as any)?.type === "module"
 
