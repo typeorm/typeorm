@@ -45,6 +45,11 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     treeLevel?: boolean
 
     /**
+     * Indicates if this column is a virtualProperty column.
+     */
+    virtualProperty?: boolean
+
+    /**
      * Column type. Must be one of the value from the ColumnTypes class.
      */
     type: ColumnType
