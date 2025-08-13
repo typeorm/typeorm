@@ -105,7 +105,9 @@ export class EntitySchemaTransformer {
                 propertyName: columnName,
                 options: {
                     type: regularColumn.type,
-                    name: regularColumn.objectId ? "_id" : regularColumn.name,
+                    name: regularColumn.objectId
+                        ? regularColumn.name || "_id"
+                        : regularColumn.name,
                     primaryKeyConstraintName:
                         regularColumn.primaryKeyConstraintName,
                     length: regularColumn.length,
