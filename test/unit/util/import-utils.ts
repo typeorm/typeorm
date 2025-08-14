@@ -182,16 +182,16 @@ describe("ImportUtils.importOrRequireFile", () => {
     })
 
     it("Should use cache to find package.json", async () => {
-        const statStub = sinon.stub(fsAsync.promises, "stat")
-        const readFileStub = sinon.stub(fsAsync.promises, "readFile")
+        const statSpy = sinon.spy(fsAsync.promises, "stat")
+        const readFileSpy = sinon.spy(fsAsync.promises, "readFile")
 
         assert.equal(
-            statStub.callCount,
+            statSpy.callCount,
             0,
             "stat should not be called before importOrRequireFile",
         )
         assert.equal(
-            readFileStub.callCount,
+            readFileSpy.callCount,
             0,
             "readFile should not be called before importOrRequireFile",
         )
@@ -208,20 +208,31 @@ describe("ImportUtils.importOrRequireFile", () => {
         await importOrRequireFile(filePath1)
 
         // Get the number of calls to stat and readFile after the first import
-        const numberOfStatCalls = statStub.callCount
-        const numberOfReadFileCalls = readFileStub.callCount
+        const numberOfStatCalls = statSpy.callCount
+        const numberOfReadFileCalls = readFileSpy.callCount
+
+        assert.equal(
+            numberOfStatCalls,
+            6,
+            "stat should be called for the first import",
+        )
+        assert.equal(
+            numberOfReadFileCalls,
+            1,
+            "readFile should be called for the first import",
+        )
 
         // Trigger next imports to check if cache is used
         await importOrRequireFile(filePath2)
         await importOrRequireFile(filePath3)
 
         assert.equal(
-            statStub.callCount,
+            statSpy.callCount,
             numberOfStatCalls,
             "stat should be called only during the first import",
         )
         assert.equal(
-            readFileStub.callCount,
+            readFileSpy.callCount,
             numberOfReadFileCalls,
             "readFile should be called only during the first import",
         )
