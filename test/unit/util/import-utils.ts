@@ -196,10 +196,16 @@ describe("ImportUtils.importOrRequireFile", () => {
             "readFile should not be called before importOrRequireFile",
         )
 
+        const packageJsonPath = path.join(__dirname, "package.json")
         const filePath1 = path.join(__dirname, "file1.js")
         const filePath2 = path.join(__dirname, "file2.js")
         const filePath3 = path.join(__dirname, "file3.js")
 
+        await fs.writeFile(
+            packageJsonPath,
+            JSON.stringify({ type: "module" }),
+            "utf8",
+        )
         await fs.writeFile(filePath1, "", "utf8")
         await fs.writeFile(filePath2, "", "utf8")
         await fs.writeFile(filePath3, "", "utf8")
@@ -208,15 +214,12 @@ describe("ImportUtils.importOrRequireFile", () => {
         await importOrRequireFile(filePath1)
 
         // Get the number of calls to stat and readFile after the first import
-        const numberOfStatCalls: number = statSpy.callCount
+        const numberOfStatCalls = statSpy.callCount
         const numberOfReadFileCalls = readFileSpy.callCount
 
-        const isExpectedStatCallCount =
-            numberOfStatCalls === 1 || numberOfStatCalls === 6 // It should be 6 on local environment and 1 on CI
-
         assert.equal(
-            isExpectedStatCallCount,
-            true,
+            numberOfStatCalls,
+            1,
             "stat should be called for the first import",
         )
         assert.equal(
@@ -241,6 +244,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         )
 
         // Clean up test files
+        await fs.unlink(packageJsonPath)
         await fs.unlink(filePath1)
         await fs.unlink(filePath2)
         await fs.unlink(filePath3)
