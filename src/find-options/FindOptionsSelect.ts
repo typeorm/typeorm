@@ -42,4 +42,4 @@ export type FindOptionsSelect<Entity> = {
  *
  * @deprecated will be removed in the next version, use FindOptionsSelect type notation instead
  */
-export type FindOptionsSelectByString<Entity> = (keyof Entity)[]
+export type FindOptionsSelectByString<Entity> = readonly (keyof Entity)[]
