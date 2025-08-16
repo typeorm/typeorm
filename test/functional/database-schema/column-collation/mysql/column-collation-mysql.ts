@@ -1,11 +1,12 @@
-import "reflect-metadata"
-import { Post } from "./entity/Post"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import { expect } from "chai"
+import { DataSource } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
+import { Post } from "./entity/Post"
+import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 
 describe("database schema > column collation > mysql", () => {
     let connections: DataSource[]
@@ -33,24 +34,34 @@ describe("database schema > column collation > mysql", () => {
                 post.description = "This is post"
                 await postRepository.save(post)
 
-                table!
-                    .findColumnByName("name")!
-                    .charset!.should.be.equal("ascii")
-                table!
-                    .findColumnByName("name")!
-                    .collation!.should.be.equal("ascii_general_ci")
-                table!
-                    .findColumnByName("title")!
-                    .charset!.should.be.equal("utf8")
-                table!
-                    .findColumnByName("title")!
-                    .collation!.should.be.equal("utf8_general_ci")
-                table!
-                    .findColumnByName("description")!
-                    .charset!.should.be.equal("cp852")
-                table!
-                    .findColumnByName("description")!
-                    .collation!.should.be.equal("cp852_general_ci")
+                expect(table!.findColumnByName("name")).to.include({
+                    charset: "ascii",
+                    collation: "ascii_general_ci",
+                })
+
+                if (
+                    connection.driver.options.type === "mysql" &&
+                    DriverUtils.isReleaseVersionOrGreater(
+                        connection.driver,
+                        "8.0",
+                    )
+                ) {
+                    // Charset: utf8mb4 and collation: utf8mb4_0900_ai_ci are default on MySQL 8.0+
+                    expect(table!.findColumnByName("title")).to.include({
+                        charset: undefined,
+                        collation: undefined,
+                    })
+                } else {
+                    expect(table!.findColumnByName("title")).to.include({
+                        charset: "utf8mb4",
+                        collation: "utf8mb4_general_ci",
+                    })
+                }
+
+                expect(table!.findColumnByName("description")).to.include({
+                    charset: "cp852",
+                    collation: "cp852_general_ci",
+                })
             }),
         ))
 })

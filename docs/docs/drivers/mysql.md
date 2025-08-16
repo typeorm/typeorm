@@ -21,6 +21,7 @@ npm install mysql2
 See [Data Source Options](../data-source/2-data-source-options.md) for the common data source options. You can use the data source types `mysql`, `mariadb` and `aurora-mysql` to connect to the respective databases.
 
 -   `connectorPackage` - The database client, either `mysql` or `mysql2`. If the specified client cannot be loaded, it will fall back to the alternative. (Current default: `mysql`)
+
 -   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
 -   `host` - Database host.
@@ -33,8 +34,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 -   `database` - Database name.
 
--   `charset` - The charset for the connection. This is called "collation" in the SQL-level of MySQL
-    (like utf8_general_ci). If an SQL-level charset is specified (like utf8mb4), then the default collation for that charset is used. (Default: `UTF8_GENERAL_CI`).
+-   `charset` and `collation` - The charset/collation for the connection. If an SQL-level charset is specified (like utf8mb4) then the default collation for that charset is used.
 
 -   `timezone` - the timezone configured on the MySQL server. This is used to typecast server date/time
     values to JavaScript Date object and vice versa. This can be `local`, `Z`, or an offset in the form
