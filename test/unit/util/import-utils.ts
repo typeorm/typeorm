@@ -188,7 +188,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         if (!packageJsonAlreadyExisted) {
             await fs.writeFile(
                 packageJsonPath,
-                JSON.stringify({ type: "module" }),
+                JSON.stringify({ name: "test-package" }),
                 "utf8",
             )
         }
@@ -220,7 +220,7 @@ describe("ImportUtils.importOrRequireFile", () => {
 
         // Get the number of calls to stat and readFile after the first import
         const numberOfStatCalls = statSpy.callCount
-        const numberOfReadFileCalls: number = readFileSpy.callCount
+        const numberOfReadFileCalls = readFileSpy.callCount
 
         assert.equal(
             numberOfStatCalls,
@@ -228,11 +228,9 @@ describe("ImportUtils.importOrRequireFile", () => {
             "stat should be called for the first import",
         )
 
-        const isCorrectNumberOfReadFileCalls =
-            numberOfReadFileCalls === 1 || numberOfReadFileCalls === 2 // Depending on platform, it might call readFile once or twice
         assert.equal(
-            isCorrectNumberOfReadFileCalls,
-            true,
+            numberOfReadFileCalls,
+            1,
             "readFile should be called for the first import",
         )
 
