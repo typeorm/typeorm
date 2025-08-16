@@ -1,5 +1,9 @@
 ## [0.3.26](https://github.com/typeorm/typeorm/compare/0.3.25...0.3.26) (2025-08-16)
 
+Note: When using MySQL, the setting `stringifyObjects: true` is now the default. This was changed
+in order to patch a potential security vulnerability (see release notes for more detail).
+
+You can revert to the old behaviour by setting `connectionOptions.extra.stringifyObjects = false`.
 
 ### Bug Fixes
 
