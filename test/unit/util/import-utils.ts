@@ -182,6 +182,17 @@ describe("ImportUtils.importOrRequireFile", () => {
     })
 
     it("Should use cache to find package.json", async () => {
+        // Create package.json if not exists
+        const packageJsonPath = path.join(__dirname, "package.json")
+        const packageJsonAlreadyExisted = fsAsync.existsSync(packageJsonPath)
+        if (!packageJsonAlreadyExisted) {
+            await fs.writeFile(
+                packageJsonPath,
+                JSON.stringify({ type: "module" }),
+                "utf8",
+            )
+        }
+
         const statSpy = sinon.spy(fsAsync.promises, "stat")
         const readFileSpy = sinon.spy(fsAsync.promises, "readFile")
 
@@ -196,16 +207,10 @@ describe("ImportUtils.importOrRequireFile", () => {
             "readFile should not be called before importOrRequireFile",
         )
 
-        const packageJsonPath = path.join(__dirname, "package.json")
         const filePath1 = path.join(__dirname, "file1.js")
         const filePath2 = path.join(__dirname, "file2.js")
         const filePath3 = path.join(__dirname, "file3.js")
 
-        await fs.writeFile(
-            packageJsonPath,
-            JSON.stringify({ type: "module" }),
-            "utf8",
-        )
         await fs.writeFile(filePath1, "", "utf8")
         await fs.writeFile(filePath2, "", "utf8")
         await fs.writeFile(filePath3, "", "utf8")
@@ -244,10 +249,14 @@ describe("ImportUtils.importOrRequireFile", () => {
         )
 
         // Clean up test files
-        await fs.unlink(packageJsonPath)
         await fs.unlink(filePath1)
         await fs.unlink(filePath2)
         await fs.unlink(filePath3)
+
+        // If package.json was created by this test, remove it
+        if (!packageJsonAlreadyExisted) {
+            await fs.unlink(packageJsonPath)
+        }
 
         sinon.restore()
     })
