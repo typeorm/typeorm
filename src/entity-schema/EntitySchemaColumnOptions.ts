@@ -219,4 +219,11 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
      * Foreign key options of this column.
      */
     foreignKey?: EntitySchemaColumnForeignKeyOptions
+
+    /**
+     * Query to be used to populate the column data. This query is used when generating the relational db script.
+     * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
+     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
+     */
+    query?: (alias: string) => string
 }
