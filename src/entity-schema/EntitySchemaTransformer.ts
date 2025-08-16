@@ -98,6 +98,7 @@ export class EntitySchemaTransformer {
             if (regularColumn.treeChildrenCount) mode = "treeChildrenCount"
             if (regularColumn.treeLevel) mode = "treeLevel"
             if (regularColumn.objectId) mode = "objectId"
+            if (regularColumn.virtualProperty) mode = "virtual-property"
 
             const columnArgs: ColumnMetadataArgs = {
                 target: options.target || options.name,
@@ -135,6 +136,7 @@ export class EntitySchemaTransformer {
                     transformer: regularColumn.transformer,
                     spatialFeatureType: regularColumn.spatialFeatureType,
                     srid: regularColumn.srid,
+                    query: regularColumn.query,
                 },
             }
             metadataArgsStorage.columns.push(columnArgs)
