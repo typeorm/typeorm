@@ -1,9 +1,12 @@
 ## [0.3.26](https://github.com/typeorm/typeorm/compare/0.3.25...0.3.26) (2025-08-16)
 
-Note: When using MySQL, the setting `stringifyObjects: true` is now the default. This was changed
-in order to patch a potential security vulnerability (see release notes for more detail).
+Notes:
 
-You can revert to the old behaviour by setting `connectionOptions.extra.stringifyObjects = false`.
+- When using MySQL, TypeORM now connects using `stringifyObjects: true`, in order to avoid a potential security vulnerability
+  in the mysql/mysql2 client libraries. You can revert to the old behavior by setting `connectionOptions.extra.stringifyObjects = false`.
+- When using SAP HANA, TypeORM now uses the built-in pool from the `@sap/hana-client` library. The deprecated `hdb-pool`
+  is no longer necessary and can be removed. See https://typeorm.io/docs/drivers/sap/#data-source-options for the new pool options.
+
 
 ### Bug Fixes
 
