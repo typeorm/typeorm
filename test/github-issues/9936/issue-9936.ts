@@ -19,6 +19,16 @@ describe("github issues > #9936 Self-referencing relations in table inheritance 
                 entities: [Region, Country, Province],
                 schemaCreate: true,
                 dropSchema: true,
+                // Skip SQL Server due to STI with self-referencing foreign key limitations
+                enabledDrivers: [
+                    "mysql",
+                    "mariadb",
+                    "postgres",
+                    "sqlite",
+                    "better-sqlite3",
+                    "cockroachdb",
+                    "oracle",
+                ],
             })),
     )
 
