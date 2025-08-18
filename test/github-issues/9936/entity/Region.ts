@@ -27,7 +27,7 @@ export abstract class Region {
         nullable: true,
         onDelete: "SET NULL",
     })
-    @JoinColumn()
+    @JoinColumn({ name: "parentId" })
     parent?: Region
 
     @RelationId((region: Region) => region.parent)

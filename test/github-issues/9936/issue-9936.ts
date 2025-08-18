@@ -12,7 +12,7 @@ import { Province } from "./entity/Province"
 
 describe("github issues > #9936 Self-referencing relations in table inheritance cause duplicate join error with query strategy", () => {
     let dataSources: DataSource[]
-    
+
     before(
         async () =>
             (dataSources = await createTestingConnections({
@@ -21,7 +21,7 @@ describe("github issues > #9936 Self-referencing relations in table inheritance 
                 dropSchema: true,
             })),
     )
-    
+
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -58,7 +58,9 @@ describe("github issues > #9936 Self-referencing relations in table inheritance 
                 expect(provincesWithParentQuery).to.have.length(2)
                 expect(provincesWithParentQuery[0].parent).to.exist
                 expect(provincesWithParentQuery[0].parent!.id).to.equal(usa.id)
-                expect(provincesWithParentQuery[0].parent!.name).to.equal("United States")
+                expect(provincesWithParentQuery[0].parent!.name).to.equal(
+                    "United States",
+                )
                 expect(provincesWithParentQuery[1].parent).to.exist
                 expect(provincesWithParentQuery[1].parent!.id).to.equal(usa.id)
             }),
@@ -87,18 +89,21 @@ describe("github issues > #9936 Self-referencing relations in table inheritance 
                 await provinceRepository.save(quebec)
 
                 // Load country with children using query strategy - this was throwing duplicate join error before fix
-                const countryWithChildrenQuery = await countryRepository.findOne({
-                    where: { id: canada.id },
-                    relations: {
-                        children: true,
-                    },
-                    relationLoadStrategy: "query",
-                })
+                const countryWithChildrenQuery =
+                    await countryRepository.findOne({
+                        where: { id: canada.id },
+                        relations: {
+                            children: true,
+                        },
+                        relationLoadStrategy: "query",
+                    })
 
                 expect(countryWithChildrenQuery).to.exist
                 expect(countryWithChildrenQuery!.children).to.have.length(2)
-                
-                const childNames = countryWithChildrenQuery!.children.map(c => c.name).sort()
+
+                const childNames = countryWithChildrenQuery!.children
+                    .map((c) => c.name)
+                    .sort()
                 expect(childNames).to.deep.equal(["Ontario", "Quebec"])
             }),
         ))
@@ -142,7 +147,9 @@ describe("github issues > #9936 Self-referencing relations in table inheritance 
                 expect(londonWithParents!.parent).to.exist
                 expect(londonWithParents!.parent!.name).to.equal("England")
                 expect(londonWithParents!.parent!.parent).to.exist
-                expect(londonWithParents!.parent!.parent!.name).to.equal("United Kingdom")
+                expect(londonWithParents!.parent!.parent!.name).to.equal(
+                    "United Kingdom",
+                )
             }),
         ))
 
@@ -181,10 +188,12 @@ describe("github issues > #9936 Self-referencing relations in table inheritance 
                 })
 
                 // Should have 2 provinces with parents
-                const provincesWithParent = regionsWithParent.filter(r => r instanceof Province)
+                const provincesWithParent = regionsWithParent.filter(
+                    (r) => r instanceof Province,
+                )
                 expect(provincesWithParent).to.have.length(2)
-                
-                provincesWithParent.forEach(province => {
+
+                provincesWithParent.forEach((province) => {
                     expect(province.parent).to.exist
                     expect(province.parent).to.be.instanceOf(Country)
                 })
@@ -199,7 +208,7 @@ describe("github issues > #9936 Self-referencing relations in table inheritance 
 
                 // Should have 2 countries with children
                 const countriesWithChildren = regionsWithChildren.filter(
-                    r => r instanceof Country && r.children.length > 0
+                    (r) => r instanceof Country && r.children.length > 0,
                 )
                 expect(countriesWithChildren).to.have.length(2)
             }),
