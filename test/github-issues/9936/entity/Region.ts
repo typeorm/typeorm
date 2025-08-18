@@ -5,6 +5,7 @@ import {
     ManyToOne,
     OneToMany,
     PrimaryGeneratedColumn,
+    RelationId,
     TableInheritance,
 } from "../../../../src"
 
@@ -29,8 +30,8 @@ export abstract class Region {
     @JoinColumn()
     parent?: Region
 
-    @Column({ nullable: true })
-    parentId?: number
+    @RelationId((region: Region) => region.parent)
+    parentId?: number | null
 
     @OneToMany(() => Region, (region) => region.parent)
     children: Region[]
