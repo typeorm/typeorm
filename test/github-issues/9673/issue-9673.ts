@@ -34,7 +34,7 @@ describe("github issues > #9673 TreeRepository not loading relations on findDesc
                 const factRepository = dataSource.getRepository(Fact)
 
                 // Entity instances setup
-                let parent = await nodeRepository.save(
+                const parent = await nodeRepository.save(
                     nodeRepository.create({ name: "root node" }),
                 )
                 let child = await nodeRepository.save(

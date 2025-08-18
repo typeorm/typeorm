@@ -13,7 +13,7 @@ export class Person {
     @Column()
     fullName: string
 
-    @OneToOne((type) => User)
+    @OneToOne(() => User)
     @JoinColumn()
     user: User
 }

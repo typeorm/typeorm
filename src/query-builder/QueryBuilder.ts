@@ -522,7 +522,10 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Uses same query runner as current QueryBuilder.
      */
     createQueryBuilder(queryRunner?: QueryRunner): this {
-        return new (this.constructor as any)(this.connection, queryRunner ?? this.queryRunner)
+        return new (this.constructor as any)(
+            this.connection,
+            queryRunner ?? this.queryRunner,
+        )
     }
 
     /**
@@ -1149,16 +1152,15 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
         const cteStrings = this.expressionMap.commonTableExpressions.map(
             (cte) => {
-                const cteBodyExpression =
-                    typeof cte.queryBuilder === "string"
-                        ? cte.queryBuilder
-                        : cte.queryBuilder.getQuery()
+                let cteBodyExpression =
+                    typeof cte.queryBuilder === "string" ? cte.queryBuilder : ""
                 if (typeof cte.queryBuilder !== "string") {
                     if (cte.queryBuilder.hasCommonTableExpressions()) {
                         throw new TypeORMError(
                             `Nested CTEs aren't supported (CTE: ${cte.alias})`,
                         )
                     }
+                    cteBodyExpression = cte.queryBuilder.getQuery()
                     if (
                         !this.connection.driver.cteCapabilities.writable &&
                         !InstanceChecker.isSelectQueryBuilder(cte.queryBuilder)
@@ -1508,7 +1510,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         parameterValue: any,
     ): WhereClauseCondition {
         if (InstanceChecker.isFindOperator(parameterValue)) {
-            let parameters: any[] = []
+            const parameters: any[] = []
             if (parameterValue.useParameter) {
                 if (parameterValue.objectLiteralParameters) {
                     this.setParameters(parameterValue.objectLiteralParameters)

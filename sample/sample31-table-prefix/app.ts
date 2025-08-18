@@ -17,23 +17,23 @@ const dataSource = new DataSource(options)
 dataSource
     .initialize()
     .then(async (dataSource) => {
-        let category1 = new Category()
+        const category1 = new Category()
         category1.name = "Animals"
 
-        let category2 = new Category()
+        const category2 = new Category()
         category2.name = "People"
 
-        let author = new Author()
+        const author = new Author()
         author.firstName = "Umed"
         author.lastName = "Khudoiberdiev"
 
-        let post = new Post()
+        const post = new Post()
         post.text = "Hello how are you?"
         post.title = "hello"
         post.author = author
         post.categories = [category1, category2]
 
-        let postRepository = dataSource.getRepository(Post)
+        const postRepository = dataSource.getRepository(Post)
 
         await postRepository.save(post)
         console.log("Post has been saved")

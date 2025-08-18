@@ -14,6 +14,6 @@ export class Cover {
     @Column()
     url: string
 
-    @OneToMany((type) => Post, (post) => post.cover)
+    @OneToMany(() => Post, (post) => post.cover)
     posts: Post[]
 }

@@ -15,7 +15,7 @@ export class Post {
     @Column()
     title: string
 
-    @OneToOne((type) => Category)
+    @OneToOne(() => Category)
     @JoinColumn()
     category: Category
 

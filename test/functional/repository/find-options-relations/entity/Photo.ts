@@ -14,10 +14,10 @@ export class Photo {
     @Column()
     filename: string
 
-    @ManyToOne((type) => User)
+    @ManyToOne(() => User)
     user: User
 
-    @ManyToOne((type) => Post, (post) => post.photos)
+    @ManyToOne(() => Post, (post) => post.photos)
     post: Post
 
     @Column((type) => Counters)

@@ -24,21 +24,21 @@ export class Category {
     @Column({ nullable: true })
     description: string
 
-    @OneToOne((type) => Post, (post) => post.category)
+    @OneToOne(() => Post, (post) => post.category)
     post: Post
 
-    @OneToOne((type) => Post, (post) => post.categoryWithOptions)
+    @OneToOne(() => Post, (post) => post.categoryWithOptions)
     postWithOptions: Post
 
-    @OneToOne((type) => Post, (post) => post.categoryWithNonPKColumns)
+    @OneToOne(() => Post, (post) => post.categoryWithNonPKColumns)
     postWithNonPKColumns: Post
 
-    @OneToOne((type) => Tag, (tag) => tag.category)
+    @OneToOne(() => Tag, (tag) => tag.category)
     tag: Tag
 
-    @OneToOne((type) => Tag, (tag) => tag.categoryWithOptions)
+    @OneToOne(() => Tag, (tag) => tag.categoryWithOptions)
     tagWithOptions: Tag
 
-    @OneToOne((type) => Tag, (tag) => tag.categoryWithNonPKColumns)
+    @OneToOne(() => Tag, (tag) => tag.categoryWithNonPKColumns)
     tagWithNonPKColumns: Tag
 }

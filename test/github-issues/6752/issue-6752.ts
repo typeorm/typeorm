@@ -10,8 +10,8 @@ import { Block } from "./entity/Block"
 import { PlanOfRecord } from "./entity/PlanOfRecord"
 
 describe("github issues > #6752 column name not been find on unique index decorator", () => {
-    it("dont change anything", async () => {
-        let connections: DataSource[]
+    let connections: DataSource[]
+    before(async () => {
         connections = await createTestingConnections({
             entities: [Block, PlanOfRecord],
             schemaCreate: false,
@@ -19,14 +19,19 @@ describe("github issues > #6752 column name not been find on unique index decora
             enabledDrivers: ["mssql"],
         })
         await reloadTestingDatabases(connections)
-        await Promise.all(
+    })
+
+    after(async () => {
+        await closeTestingConnections(connections)
+    })
+
+    it("don't change anything", async () =>
+        Promise.all(
             connections.map(async (connection) => {
                 const schemaBuilder = connection.driver.createSchemaBuilder()
                 const syncQueries = await schemaBuilder.log()
                 expect(syncQueries.downQueries).to.be.eql([])
                 expect(syncQueries.upQueries).to.be.eql([])
             }),
-        )
-        await closeTestingConnections(connections)
-    })
+        ))
 })
