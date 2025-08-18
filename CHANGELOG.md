@@ -1,3 +1,41 @@
+## [0.3.26](https://github.com/typeorm/typeorm/compare/0.3.25...0.3.26) (2025-08-16)
+
+Notes:
+
+- When using MySQL, TypeORM now connects using `stringifyObjects: true`, in order to avoid a potential security vulnerability
+  in the mysql/mysql2 client libraries. You can revert to the old behavior by setting `connectionOptions.extra.stringifyObjects = false`.
+- When using SAP HANA, TypeORM now uses the built-in pool from the `@sap/hana-client` library. The deprecated `hdb-pool`
+  is no longer necessary and can be removed. See https://typeorm.io/docs/drivers/sap/#data-source-options for the new pool options.
+
+
+### Bug Fixes
+
+* add stricter type-checking and improve event loop handling ([#11540](https://github.com/typeorm/typeorm/issues/11540)) ([01dddfe](https://github.com/typeorm/typeorm/commit/01dddfef971b25884cd59497d003ea008740b0e9))
+* do not create junction table metadata when it already exists ([#11114](https://github.com/typeorm/typeorm/issues/11114)) ([3c26cf1](https://github.com/typeorm/typeorm/commit/3c26cf18a77b5b0cd7c15c811fc3d0a43af32e47))
+* **mysql:** set `stringifyObjects` implicitly ([#11574](https://github.com/typeorm/typeorm/issues/11574)) ([d57fe3b](https://github.com/typeorm/typeorm/commit/d57fe3bd8578b0b8f9847647fd046bccf825a7ef))
+* **mysql:** support Alibaba AnalyticDB returning version() column name in getVersion() ([#11555](https://github.com/typeorm/typeorm/issues/11555)) ([1737e97](https://github.com/typeorm/typeorm/commit/1737e97d1aab59307b230a25713d2afce3c8630a))
+* **oracle:** pass duplicated parameters correctly to the client when executing a query ([#11537](https://github.com/typeorm/typeorm/issues/11537)) ([f2d2236](https://github.com/typeorm/typeorm/commit/f2d2236218ea0fd80bc551c325511896538ec518))
+* **platform[web worker]:** improve globalThis variable retrieval for browser environment ([#11495](https://github.com/typeorm/typeorm/issues/11495)) ([ec26eae](https://github.com/typeorm/typeorm/commit/ec26eae8245eeea20d00e37cdb59a97f3d8c49c8))
+* preserve `useIndex` when cloning a QueryExpressionMap (or a QueryBuilder) ([#10679](https://github.com/typeorm/typeorm/issues/10679)) ([66ee307](https://github.com/typeorm/typeorm/commit/66ee3077847b16f2fc1464373668097fee270e65)), closes [#10678](https://github.com/typeorm/typeorm/issues/10678) [#10678](https://github.com/typeorm/typeorm/issues/10678)
+* regtype is not supported in aurora serverless v2 ([#11568](https://github.com/typeorm/typeorm/issues/11568)) ([6e9f20d](https://github.com/typeorm/typeorm/commit/6e9f20d4d94eeb6e89e2d49d8fcf7d7ea4f9c243))
+* resolve array modification bug in QueryRunner drop methods ([#11564](https://github.com/typeorm/typeorm/issues/11564)) ([f351757](https://github.com/typeorm/typeorm/commit/f351757a15b9d2bd9d4222c69dcfd2316f46b5d1)), closes [#11563](https://github.com/typeorm/typeorm/issues/11563)
+* support for better-sqlite3 v12 ([#11557](https://github.com/typeorm/typeorm/issues/11557)) ([1ea3a5e](https://github.com/typeorm/typeorm/commit/1ea3a5eb0605b6f253510b70df05af0211417706))
+
+
+### Features
+
+* add Redis 5.x support with backward compatibility with peer dependency to allow ([#11585](https://github.com/typeorm/typeorm/issues/11585)) ([17cf837](https://github.com/typeorm/typeorm/commit/17cf837ba9d6dc1878d1ed4bb6b9342e767fa5ac)), closes [#11528](https://github.com/typeorm/typeorm/issues/11528)
+* **sap:** add support for REAL_VECTOR and HALF_VECTOR data types in SAP HANA Cloud ([#11526](https://github.com/typeorm/typeorm/issues/11526)) ([abf8863](https://github.com/typeorm/typeorm/commit/abf8863a5346c465d998852b920c72d51e506985))
+* **sap:** use the native driver for connection pooling ([#11520](https://github.com/typeorm/typeorm/issues/11520)) ([aebc7eb](https://github.com/typeorm/typeorm/commit/aebc7ebc67528ab5f980c7216d3f131d484f4e0d))
+* support virtual columns in entity schema ([#11597](https://github.com/typeorm/typeorm/issues/11597)) ([d1e3950](https://github.com/typeorm/typeorm/commit/d1e39509076000485e77bbdf1841c29dc6588933))
+
+
+### Performance Improvements
+
+* avoid unnecessary count on getManyAndCount ([#11524](https://github.com/typeorm/typeorm/issues/11524)) ([5904ac3](https://github.com/typeorm/typeorm/commit/5904ac3db21d928e858cd7a6e5f4448fc44256d1))
+
+
+
 ## [0.3.25](https://github.com/typeorm/typeorm/compare/0.3.24...0.3.25) (2025-06-19)
 
 
