@@ -181,12 +181,12 @@ describe("github issues > #9936 Self-referencing relations in table inheritance 
                 })
 
                 // Should have 2 provinces with parents
-                const provincesWithParent = regionsWithParent.filter(r => r.type === "province")
+                const provincesWithParent = regionsWithParent.filter(r => r instanceof Province)
                 expect(provincesWithParent).to.have.length(2)
                 
                 provincesWithParent.forEach(province => {
                     expect(province.parent).to.exist
-                    expect(province.parent!.type).to.equal("country")
+                    expect(province.parent).to.be.instanceOf(Country)
                 })
 
                 // Query all regions with children
@@ -199,7 +199,7 @@ describe("github issues > #9936 Self-referencing relations in table inheritance 
 
                 // Should have 2 countries with children
                 const countriesWithChildren = regionsWithChildren.filter(
-                    r => r.type === "country" && r.children.length > 0
+                    r => r instanceof Country && r.children.length > 0
                 )
                 expect(countriesWithChildren).to.have.length(2)
             }),
