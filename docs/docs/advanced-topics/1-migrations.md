@@ -297,32 +297,6 @@ export class PostRefactoringTIMESTAMP {
 }
 ```
 
-By default, it generates CommonJS JavaScript code with the `o` (alias for `--outputJs`) flag, but you can also generate ESM code with the `esm` flag. This is useful for Javascript projects that use ESM:
-
-```javascript
-/**
- * @typedef {import('typeorm').MigrationInterface} MigrationInterface
- */
-
-/**
- * @class
- * @implements {MigrationInterface}
- */
-export class PostRefactoringTIMESTAMP {
-    async up(queryRunner) {
-        await queryRunner.query(
-            `ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`,
-        )
-    }
-
-    async down(queryRunner) {
-        await queryRunner.query(
-            `ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`,
-        )
-    }
-}
-```
-
 See, you don't need to write the queries on your own.
 The rule of thumb for generating migrations is that you generate them after **each** change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag.
 
