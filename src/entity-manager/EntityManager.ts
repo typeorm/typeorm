@@ -731,23 +731,37 @@ export class EntityManager {
                 : Object.keys(options.conflictPaths),
         )
 
-        const overwriteColumns = metadata.columns.filter(
-            (col) =>
-                !conflictColumns.includes(col) &&
-                entities.some(
-                    (entity) =>
-                        typeof col.getEntityValue(entity) !== "undefined",
-                ),
-        )
+        const overwriteColumns = (() => {
+            if (options.updateOnly) {
+                const updateOnlyColumns = metadata.mapPropertyPathsToColumns(
+                    Array.isArray(options.updateOnly)
+                        ? options.updateOnly
+                        : Object.keys(options.updateOnly),
+                )
+                return updateOnlyColumns.filter(
+                    (col) => !conflictColumns.includes(col),
+                )
+            } else {
+                return metadata.columns.filter(
+                    (col) =>
+                        !conflictColumns.includes(col) &&
+                        entities.some(
+                            (entity) =>
+                                typeof col.getEntityValue(entity) !==
+                                "undefined",
+                        ),
+                )
+            }
+        })()
 
         return this.createQueryBuilder()
             .insert()
             .into(target)
             .values(entities)
             .orUpdate(
-                [...conflictColumns, ...overwriteColumns].map(
-                    (col) => col.databaseName,
-                ),
+                // [...conflictColumns, ...overwriteColumns].map(
+                //     (col) => col.databaseName,
+                overwriteColumns.map((col) => col.databaseName),
                 conflictColumns.map((col) => col.databaseName),
                 {
                     skipUpdateIfNoValuesChanged:
