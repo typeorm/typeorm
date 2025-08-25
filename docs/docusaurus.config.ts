@@ -197,6 +197,7 @@ const config: Config = {
                 redirects,
             },
         ],
+        "docusaurus-plugin-generate-llms-txt",
     ],
 }
 
