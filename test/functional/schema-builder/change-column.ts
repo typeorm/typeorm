@@ -9,6 +9,74 @@ import {
 import { Post } from "./entity/Post"
 import { PostVersion } from "./entity/PostVersion"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../src"
+
+@Entity({ name: "bug" })
+class BugInitial {
+    @PrimaryGeneratedColumn()
+    id!: number
+
+    @Column({ type: "varchar", length: 50 })
+    example!: string
+}
+
+@Entity({ name: "bug" })
+class BugUpdated {
+    @PrimaryGeneratedColumn()
+    id!: number
+
+    @Column({ type: "varchar", length: 51 })
+    example!: string
+}
+
+describe("schema builder > change varchar length in-place", () => {
+    let ds1!: DataSource
+    let ds2!: DataSource
+
+    before(async () => {
+        ds1 = new DataSource({
+            // fill with driver under test: "mysql" | "mariadb" | "mssql" | "cockroachdb" | "oracle"
+            type: "mysql" as any,
+            database: "mydb",
+            username: "myuser",
+            password: "mypassword",
+            synchronize: false,
+            entities: [BugInitial],
+        } as any)
+        await ds1.initialize()
+        await ds1.synchronize()
+
+        // seed so table isn't empty
+        await ds1.query(`INSERT INTO bug (example) VALUES ('hello')`)
+
+        ds2 = new DataSource({
+            ...(ds1.options as any),
+            synchronize: false,
+            entities: [BugUpdated],
+        } as any)
+        await ds2.initialize()
+    })
+
+    after(async () => {
+        if (ds2?.isInitialized) await ds2.destroy()
+        if (ds1?.isInitialized) {
+            try {
+                await ds1.dropDatabase()
+            } catch {}
+            await ds1.destroy()
+        }
+    })
+
+    it("emits ALTER, not DROP/ADD", async () => {
+        const sql = await ds2.driver.createSchemaBuilder().log()
+        const up = sql.upQueries.map((q) => q.query).join("\n")
+        expect(up.toUpperCase()).to.match(
+            /ALTER TABLE .* (ALTER COLUMN|CHANGE|MODIFY)/,
+        )
+        expect(up.toUpperCase()).to.not.match(/\bDROP COLUMN\b/)
+        expect(up.toUpperCase()).to.not.match(/\bADD\b/)
+    })
+})
 
 describe("schema builder > change column", () => {
     let connections: DataSource[]

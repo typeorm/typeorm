@@ -1522,9 +1522,12 @@ export class PostgresQueryRunner
                 oldColumn.name = newColumn.name
             }
 
+            // newColumn.length !== oldColumn.length: Handle length changes without recreating the column (e.g., varchar(n) -> varchar(m))
+
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.length !== oldColumn.length
             ) {
                 upQueries.push(
                     new Query(
@@ -1541,23 +1544,7 @@ export class PostgresQueryRunner
                     ),
                 )
             }
-            // Handle length changes without recreating the column (e.g., varchar(n) -> varchar(m))
-            if (newColumn.length !== oldColumn.length) {
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
-                    ),
-                )
-            }
+
             if (
                 (newColumn.type === "enum" ||
                     newColumn.type === "simple-enum") &&
