@@ -1287,7 +1287,7 @@ export class MysqlDriver implements Driver {
                 port: credentials.port,
                 ssl: options.ssl,
                 socketPath: credentials.socketPath,
-                connectionLimit: options.poolSize,
+                connectionLimit: credentials.poolSize ?? options.poolSize,
             },
             options.acquireTimeout === undefined
                 ? {}
