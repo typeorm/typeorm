@@ -40,6 +40,7 @@ import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
 import { buildSqlTag } from "../util/SqlTagUtils"
 import { OrmUtils } from "../util/OrmUtils"
+import { DriverUtils } from "../driver/DriverUtils"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -773,7 +774,12 @@ export class EntityManager {
 
         return this.createQueryBuilder()
             .insert()
-            .into(target, insertColumnProps)
+            .into(
+                target,
+                DriverUtils.isPostgresFamily(this.connection.driver)
+                    ? insertColumnProps
+                    : undefined,
+            )
             .values(entities)
             .orUpdate(
                 [...conflictColumns, ...overwriteColumns].map(
