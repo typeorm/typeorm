@@ -754,9 +754,26 @@ export class EntityManager {
             }
         })()
 
+        // Ensure Postgres include conflict columns (e.g. PK) in INSERT column list
+        // so that ON CONFLICT is actually triggered on those columns.
+        const insertColumnProps = Array.from(
+            new Set([
+                ...metadata.columns
+                    .filter((col) =>
+                        entities.some(
+                            (entity) =>
+                                typeof col.getEntityValue(entity) !==
+                                "undefined",
+                        ),
+                    )
+                    .map((c) => c.propertyPath),
+                ...conflictColumns.map((c) => c.propertyPath),
+            ]),
+        )
+
         return this.createQueryBuilder()
             .insert()
-            .into(target)
+            .into(target, insertColumnProps)
             .values(entities)
             .orUpdate(
                 [...conflictColumns, ...overwriteColumns].map(
