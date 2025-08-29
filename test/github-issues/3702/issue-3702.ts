@@ -1,10 +1,10 @@
-import "reflect-metadata"
-import {
-    createTestingConnections,
-    closeTestingConnections,
-} from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
+import { DataSource } from "../../../src/data-source/DataSource"
+import { DriverUtils } from "../../../src/driver/DriverUtils"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../utils/test-utils"
 import { LetterBox } from "./entity/LetterBox"
 
 // Another related path: test/functional/spatial
@@ -12,24 +12,31 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
     describe("when legacySpatialSupport: true", () => {
         let connections: DataSource[]
 
-        before(
-            async () =>
-                (connections = await createTestingConnections({
-                    entities: [__dirname + "/entity/*{.js,.ts}"],
-                    enabledDrivers: ["mysql"],
-                    dropSchema: true,
-                    schemaCreate: true,
-                    driverSpecific: {
-                        // it's default
-                        // legacySpatialSupport: true,
-                    },
-                })),
-        )
+        before(async () => {
+            connections = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                enabledDrivers: ["mysql"],
+                dropSchema: true,
+                schemaCreate: true,
+                driverSpecific: {
+                    legacySpatialSupport: true,
+                },
+            })
+        })
         after(() => closeTestingConnections(connections))
 
         it("should use GeomFromText", () =>
             Promise.all(
                 connections.map(async (connection) => {
+                    if (
+                        DriverUtils.isReleaseVersionOrGreater(
+                            connection.driver,
+                            "8.0",
+                        )
+                    ) {
+                        return
+                    }
+
                     const queryBuilder = connection
                         .createQueryBuilder()
                         .insert()
@@ -48,6 +55,15 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
         it("should provide SRID", () =>
             Promise.all(
                 connections.map(async (connection) => {
+                    if (
+                        DriverUtils.isReleaseVersionOrGreater(
+                            connection.driver,
+                            "8.0",
+                        )
+                    ) {
+                        return
+                    }
+
                     const queryBuilder = connection
                         .createQueryBuilder()
                         .insert()
@@ -65,6 +81,15 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
         it("should use AsText", () =>
             Promise.all(
                 connections.map(async (connection) => {
+                    if (
+                        DriverUtils.isReleaseVersionOrGreater(
+                            connection.driver,
+                            "8.0",
+                        )
+                    ) {
+                        return
+                    }
+
                     const repository = connection.getRepository(LetterBox)
                     const queryBuilder = repository
                         .createQueryBuilder("letterBox")
