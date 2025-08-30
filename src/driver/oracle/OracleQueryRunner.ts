@@ -1079,7 +1079,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -1303,7 +1302,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true)) {
+            if (
+                this.isColumnChanged(oldColumn, newColumn, true) ||
+                oldColumn.length !== newColumn.length
+            ) {
                 let defaultUp: string = ""
                 let defaultDown: string = ""
                 let nullableUp: string = ""
