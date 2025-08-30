@@ -1305,28 +1305,6 @@ export class CockroachQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        // BEGIN: handle varchar length-only changes without recreating (CockroachDB)
-        if (
-            oldColumn.type === newColumn.type &&
-            oldColumn.length !== newColumn.length
-        ) {
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                        newColumn.name
-                    }" TYPE ${this.driver.createFullType(newColumn)}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                        newColumn.name
-                    }" TYPE ${this.driver.createFullType(oldColumn)}`,
-                ),
-            )
-        }
-        // END
-
         if (
             oldColumn.type !== newColumn.type ||
             newColumn.isArray !== oldColumn.isArray ||
@@ -1583,7 +1561,8 @@ export class CockroachQueryRunner
 
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.length !== oldColumn.length
             ) {
                 upQueries.push(
                     new Query(

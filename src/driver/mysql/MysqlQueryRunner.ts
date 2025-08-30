@@ -1047,33 +1047,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
 
         if (
-            oldColumn.type === newColumn.type &&
-            oldColumn.length !== newColumn.length
-        ) {
-            // make safe copies (avoid generated clauses)
-            const newColDef = new TableColumn({
-                ...newColumn,
-                asExpression: undefined,
-                generatedType: undefined,
-            })
-            const oldColDef = new TableColumn({
-                ...oldColumn,
-                asExpression: undefined,
-                generatedType: undefined,
-            })
-
-            // NOTE: buildCreateColumnSql expects (column, skipPrimary[, skipName])
-            const up = `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                oldColumn.name
-            }\` ${this.buildCreateColumnSql(newColDef, !!oldColumn.isPrimary)}`
-            const down = `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                newColumn.name
-            }\` ${this.buildCreateColumnSql(oldColDef, !!oldColumn.isPrimary)}`
-
-            upQueries.push(new Query(up))
-            downQueries.push(new Query(down))
-        }
-        if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
@@ -1257,7 +1230,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true, true)) {
+            if (
+                this.isColumnChanged(oldColumn, newColumn, true, true) ||
+                oldColumn.length !== newColumn.length
+            ) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${

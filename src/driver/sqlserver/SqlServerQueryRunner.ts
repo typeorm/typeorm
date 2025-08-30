@@ -1255,33 +1255,6 @@ export class SqlServerQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        // BEGIN: handle varchar length-only changes without recreating (SQL Server)
-        if (
-            oldColumn.type === newColumn.type &&
-            oldColumn.length !== newColumn.length
-        ) {
-            const upType = this.driver.createFullType(newColumn)
-            const downType = this.driver.createFullType(oldColumn)
-            const upNull = newColumn.isNullable ? "NULL" : "NOT NULL"
-            const downNull = oldColumn.isNullable ? "NULL" : "NOT NULL"
-
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                        newColumn.name
-                    }" ${upType} ${upNull}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                        newColumn.name
-                    }" ${downType} ${downNull}`,
-                ),
-            )
-        }
-        // END
-
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
@@ -1621,7 +1594,14 @@ export class SqlServerQueryRunner
             }
 
             if (
-                this.isColumnChanged(oldColumn, newColumn, false, false, false)
+                this.isColumnChanged(
+                    oldColumn,
+                    newColumn,
+                    false,
+                    false,
+                    false,
+                ) ||
+                oldColumn.length !== newColumn.length
             ) {
                 upQueries.push(
                     new Query(

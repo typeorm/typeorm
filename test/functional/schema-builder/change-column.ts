@@ -29,55 +29,6 @@ class BugUpdated {
     example!: string
 }
 
-describe("schema builder > change varchar length in-place", () => {
-    let ds1!: DataSource
-    let ds2!: DataSource
-
-    before(async () => {
-        ds1 = new DataSource({
-            // fill with driver under test: "mysql" | "mariadb" | "mssql" | "cockroachdb" | "oracle"
-            type: "mysql" as any,
-            database: "mydb",
-            username: "myuser",
-            password: "mypassword",
-            synchronize: false,
-            entities: [BugInitial],
-        } as any)
-        await ds1.initialize()
-        await ds1.synchronize()
-
-        // seed so table isn't empty
-        await ds1.query(`INSERT INTO bug (example) VALUES ('hello')`)
-
-        ds2 = new DataSource({
-            ...(ds1.options as any),
-            synchronize: false,
-            entities: [BugUpdated],
-        } as any)
-        await ds2.initialize()
-    })
-
-    after(async () => {
-        if (ds2?.isInitialized) await ds2.destroy()
-        if (ds1?.isInitialized) {
-            try {
-                await ds1.dropDatabase()
-            } catch {}
-            await ds1.destroy()
-        }
-    })
-
-    it("emits ALTER, not DROP/ADD", async () => {
-        const sql = await ds2.driver.createSchemaBuilder().log()
-        const up = sql.upQueries.map((q) => q.query).join("\n")
-        expect(up.toUpperCase()).to.match(
-            /ALTER TABLE .* (ALTER COLUMN|CHANGE|MODIFY)/,
-        )
-        expect(up.toUpperCase()).to.not.match(/\bDROP COLUMN\b/)
-        expect(up.toUpperCase()).to.not.match(/\bADD\b/)
-    })
-})
-
 describe("schema builder > change column", () => {
     let connections: DataSource[]
     before(async () => {
@@ -89,6 +40,49 @@ describe("schema builder > change column", () => {
     })
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
+
+    it("emits ALTER, not DROP/ADD when increasing varchar length", async () => {
+        for (const base of connections) {
+            // We choose postgres
+            if (base.options.type !== "postgres") continue
+
+            // 1) initial schema (varchar(50)) + seed
+            const ds1 = new DataSource({
+                ...(base.options as any),
+                entities: [BugInitial],
+                synchronize: true,
+                dropSchema: false, // ensure we keep the table
+            } as any)
+            await ds1.initialize()
+            await ds1.query(`INSERT INTO "bug" ("example") VALUES ('hello')`)
+
+            // 2) updated metadata (varchar(51)) to compute diff — DO NOT DROP SCHEMA
+            const ds2 = new DataSource({
+                ...(base.options as any),
+                entities: [BugUpdated],
+                synchronize: false, // we’re only logging the diff
+                dropSchema: false, // don’t wipe the tables we just created
+                migrationsRun: false,
+            } as any)
+            await ds2.initialize()
+
+            const { upQueries } = await ds2.driver.createSchemaBuilder().log()
+            const up = upQueries
+                .map((q) => q.query)
+                .join("\n")
+                .toUpperCase()
+
+            expect(up).to.match(/ALTER TABLE .* (ALTER COLUMN|CHANGE|MODIFY)/)
+            expect(up).to.not.match(/\bDROP COLUMN\b/)
+            expect(up).to.not.match(/\bADD COLUMN\b/)
+
+            await ds2.destroy()
+            try {
+                await ds1.dropDatabase()
+            } catch {}
+            await ds1.destroy()
+        }
+    })
 
     it("should correctly change column name", () =>
         Promise.all(

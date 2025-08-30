@@ -1522,8 +1522,9 @@ export class PostgresQueryRunner
                 oldColumn.name = newColumn.name
             }
 
-            // newColumn.length !== oldColumn.length: Handle length changes without recreating the column (e.g., varchar(n) -> varchar(m))
-
+            // Handle length, scale and precision changes without recreating the column, e.g.:
+            // varchar(n) -> varchar(m)
+            // numeric(x, y) -> numeric(v, w)
             if (
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale ||

@@ -1075,23 +1075,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )} table.`,
             )
 
-        // BEGIN: handle varchar length-only changes without recreating (Oracle)
-        if (
-            oldColumn.type === newColumn.type &&
-            oldColumn.length !== newColumn.length
-        ) {
-            const up = `ALTER TABLE ${this.escapePath(table)} MODIFY ("${
-                newColumn.name
-            }" ${this.driver.createFullType(newColumn)})`
-            const down = `ALTER TABLE ${this.escapePath(table)} MODIFY ("${
-                newColumn.name
-            }" ${this.driver.createFullType(oldColumn)})`
-
-            upQueries.push(new Query(up))
-            downQueries.push(new Query(down))
-        }
-        // END
-
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
@@ -1319,7 +1302,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true)) {
+            if (
+                this.isColumnChanged(oldColumn, newColumn, true) ||
+                oldColumn.length !== newColumn.length
+            ) {
                 let defaultUp: string = ""
                 let defaultDown: string = ""
                 let nullableUp: string = ""
