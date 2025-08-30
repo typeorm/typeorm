@@ -396,5 +396,15 @@ export class EntitySchemaTransformer {
                 )
             })
         }
+
+        if (options.trees) {
+            options.trees.forEach((tree) => {
+                metadataArgsStorage.trees.push({
+                    target: options.target || options.name,
+                    type: tree.type,
+                    options: tree.options,
+                })
+            })
+        }
     }
 }
