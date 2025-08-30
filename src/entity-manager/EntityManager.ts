@@ -40,6 +40,7 @@ import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
 import { buildSqlTag } from "../util/SqlTagUtils"
 import { OrmUtils } from "../util/OrmUtils"
+import { DriverUtils } from "../driver/DriverUtils"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -731,18 +732,54 @@ export class EntityManager {
                 : Object.keys(options.conflictPaths),
         )
 
-        const overwriteColumns = metadata.columns.filter(
-            (col) =>
-                !conflictColumns.includes(col) &&
-                entities.some(
-                    (entity) =>
-                        typeof col.getEntityValue(entity) !== "undefined",
-                ),
+        const overwriteColumns = (() => {
+            if (options.updateOnly) {
+                const updateOnlyColumns = metadata.mapPropertyPathsToColumns(
+                    Array.isArray(options.updateOnly)
+                        ? options.updateOnly
+                        : Object.keys(options.updateOnly),
+                )
+                return updateOnlyColumns.filter(
+                    (col) => !conflictColumns.includes(col),
+                )
+            } else {
+                return metadata.columns.filter(
+                    (col) =>
+                        !conflictColumns.includes(col) &&
+                        entities.some(
+                            (entity) =>
+                                typeof col.getEntityValue(entity) !==
+                                "undefined",
+                        ),
+                )
+            }
+        })()
+
+        // Ensure Postgres include conflict columns (e.g. PK) in INSERT column list
+        // so that ON CONFLICT is actually triggered on those columns.
+        const insertColumnProps = Array.from(
+            new Set([
+                ...metadata.columns
+                    .filter((col) =>
+                        entities.some(
+                            (entity) =>
+                                typeof col.getEntityValue(entity) !==
+                                "undefined",
+                        ),
+                    )
+                    .map((c) => c.propertyPath),
+                ...conflictColumns.map((c) => c.propertyPath),
+            ]),
         )
 
         return this.createQueryBuilder()
             .insert()
-            .into(target)
+            .into(
+                target,
+                DriverUtils.isPostgresFamily(this.connection.driver)
+                    ? insertColumnProps
+                    : undefined,
+            )
             .values(entities)
             .orUpdate(
                 [...conflictColumns, ...overwriteColumns].map(
