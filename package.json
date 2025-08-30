@@ -19,6 +19,9 @@
   "exports": {
     ".": {
       "types": "./index.d.ts",
+      "react-native": {
+        "default": "./browser/index.js"
+      },
       "node": {
         "types": "./index.d.ts",
         "import": "./index.mjs",
