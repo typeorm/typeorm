@@ -78,11 +78,12 @@ export type WithLengthColumnType =
     | "half_vector" // sap
     | "real_vector" // sap
 
-export type WithWidthColumnType =
+export type UnsignedColumnType =
     | "tinyint" // mysql
     | "smallint" // mysql
     | "mediumint" // mysql
     | "int" // mysql
+    | "integer" // mysql
     | "bigint" // mysql
 
 /**
@@ -217,7 +218,7 @@ export type SimpleColumnType =
 export type ColumnType =
     | WithPrecisionColumnType
     | WithLengthColumnType
-    | WithWidthColumnType
+    | UnsignedColumnType
     | SpatialColumnType
     | SimpleColumnType
     | BooleanConstructor

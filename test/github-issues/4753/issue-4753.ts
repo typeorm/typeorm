@@ -1,3 +1,4 @@
+import { expect } from "chai"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions"
 import {
@@ -25,29 +26,20 @@ describe("github issues > #4753 MySQL Replication Config broken", () => {
             // Skip if MySQL tests aren't enabled at all
             return
         }
+
+        const { host, username, password, database, ...restConfig } =
+            connectionOptions
         const dataSource = new DataSource({
-            type: "mysql",
+            ...restConfig,
             replication: {
-                master: {
-                    host: connectionOptions.host,
-                    username: connectionOptions.username,
-                    password: connectionOptions.password,
-                    database: connectionOptions.database,
-                },
-                slaves: [
-                    {
-                        host: connectionOptions.host,
-                        username: connectionOptions.username,
-                        password: connectionOptions.password,
-                        database: connectionOptions.database,
-                    },
-                ],
+                master: { host, username, password, database },
+                slaves: [{ host, username, password, database }],
             },
             entities: [User],
         })
-
         dataSources.push(dataSource)
-        await dataSource.connect()
-        dataSource.isInitialized.should.be.true
+
+        await dataSource.initialize()
+        expect(dataSource.isInitialized).to.equal(true)
     })
 })

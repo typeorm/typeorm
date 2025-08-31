@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn } from "../../../../src"
+import { Entity, PrimaryGeneratedColumn } from "../../../../../../src"
 
 @Entity()
 export class UuidEntity {

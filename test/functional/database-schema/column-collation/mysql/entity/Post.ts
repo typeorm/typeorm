@@ -10,7 +10,7 @@ export class Post {
     @Column({ collation: "ascii_general_ci" })
     name: string
 
-    @Column({ charset: "utf8" })
+    @Column({ charset: "utf8mb4" })
     title: string
 
     @Column({ charset: "cp852", collation: "cp852_general_ci" })
