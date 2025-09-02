@@ -266,6 +266,33 @@ describe("other issues > lazy count", () => {
             }),
         ))
 
+    it("run count query when offset is greater than total entities", () =>
+        Promise.all(
+            connections.map(async function (connection) {
+                await savePostEntities(connection, 5)
+
+                const afterQuery = connection
+                    .subscribers[0] as AfterQuerySubscriber
+                afterQuery.clear()
+
+                const [entities, count] = await connection.manager
+                    .createQueryBuilder(Post, "post")
+                    .limit(10)
+                    .offset(20)
+                    .orderBy("post.id")
+                    .getManyAndCount()
+
+                expect(count).to.be.equal(5)
+                expect(entities.length).to.be.equal(0)
+
+                expect(
+                    afterQuery
+                        .getCalledQueries()
+                        .filter((query) => query.match(/(count|cnt)/i)),
+                ).not.to.be.empty
+            }),
+        ))
+
     async function savePostEntities(connection: DataSource, count: number) {
         for (let i = 1; i <= count; i++) {
             const post = new Post()

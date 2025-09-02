@@ -1939,6 +1939,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             return undefined
         }
 
+        if (entitiesAndRaw.entities.length === 0) {
+            return undefined;
+        }
+
         const hasSkip =
             this.expressionMap.skip !== undefined &&
             this.expressionMap.skip !== null &&
