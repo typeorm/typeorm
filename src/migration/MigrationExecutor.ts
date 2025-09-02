@@ -71,6 +71,33 @@ export class MigrationExecutor {
      * Tries to execute a single migration given.
      */
     public async executeMigration(migration: Migration): Promise<Migration> {
+        // Handle migrations with transaction = false specially
+        if (migration.instance?.transaction === false) {
+            const tempQueryRunner = this.connection.createQueryRunner()
+
+            try {
+                await this.createMigrationsTableIfNotExist(tempQueryRunner)
+
+                // create typeorm_metadata table if it's not created yet
+                const schemaBuilder =
+                    this.connection.driver.createSchemaBuilder()
+                if (InstanceChecker.isRdbmsSchemaBuilder(schemaBuilder)) {
+                    await schemaBuilder.createMetadataTableIfNecessary(
+                        tempQueryRunner,
+                    )
+                }
+
+                await tempQueryRunner.beforeMigration()
+                await (migration.instance as any).up(tempQueryRunner)
+                await tempQueryRunner.afterMigration()
+                await this.insertExecutedMigration(tempQueryRunner, migration)
+
+                return migration
+            } finally {
+                await tempQueryRunner.release()
+            }
+        }
+
         return this.withQueryRunner(async (queryRunner) => {
             await this.createMigrationsTableIfNotExist(queryRunner)
 
@@ -260,26 +287,24 @@ export class MigrationExecutor {
         )
 
         if (this.transaction === "all") {
-            // If we desire to run all migrations in a single transaction
-            // but there is a migration that explicitly overrides the transaction mode
-            // then we have to fail since we cannot properly resolve that intent
-            // In theory we could support overrides that are set to `true`,
-            // however to keep the interface more rigid, we fail those too
-            const migrationsOverridingTransactionMode =
-                pendingMigrations.filter(
-                    (migration) =>
-                        !(migration.instance?.transaction === undefined),
-                )
+            // Check for migrations that explicitly set transaction = true
+            // These are not allowed when the global mode is "all"
+            const migrationsForcingTransaction = pendingMigrations.filter(
+                (migration) => migration.instance?.transaction === true,
+            )
 
-            if (migrationsOverridingTransactionMode.length > 0) {
+            if (migrationsForcingTransaction.length > 0) {
                 const error = new ForbiddenTransactionModeOverrideError(
-                    migrationsOverridingTransactionMode,
+                    migrationsForcingTransaction,
                 )
                 this.connection.logger.logMigration(
                     `Migrations failed, error: ${error.message}`,
                 )
                 throw error
             }
+
+            // Migrations with transaction = false are allowed and will be handled specially
+            // They will run outside the main transaction to support concurrent operations
         }
 
         // Set the per-migration defaults for the transaction mode
@@ -325,6 +350,45 @@ export class MigrationExecutor {
 
                     // nothing else needs to be done, continue to next migration
                     continue
+                }
+
+                // Handle migrations with transaction = false specially
+                if (migration.transaction === false) {
+                    // Run migration outside of transaction
+                    const tempQueryRunner = this.connection.createQueryRunner()
+
+                    try {
+                        await tempQueryRunner.beforeMigration()
+
+                        await migration
+                            .instance!.up(tempQueryRunner)
+                            .catch((error) => {
+                                // informative log about migration failure
+                                this.connection.logger.logMigration(
+                                    `Migration "${migration.name}" failed, error: ${error?.message}`,
+                                )
+                                throw error
+                            })
+
+                        // Insert migration record
+                        await this.insertExecutedMigration(
+                            tempQueryRunner,
+                            migration,
+                        )
+
+                        await tempQueryRunner.afterMigration()
+
+                        successMigrations.push(migration)
+                        this.connection.logger.logSchemaBuild(
+                            `Migration ${migration.name} has been ${
+                                this.fake ? "(fake) " : ""
+                            }executed successfully.`,
+                        )
+                    } finally {
+                        await tempQueryRunner.release()
+                    }
+
+                    continue // Skip the normal transaction handling
                 }
 
                 if (migration.transaction && !queryRunner.isTransactionActive) {
@@ -447,7 +511,40 @@ export class MigrationExecutor {
         )
         this.connection.logger.logSchemaBuild(`Now reverting it...`)
 
-        // start transaction if its not started yet
+        // Handle migration transaction setting for reversion
+        if (migrationToRevert.instance?.transaction === false) {
+            // Run reversion outside of transaction
+            const tempQueryRunner = this.connection.createQueryRunner()
+
+            try {
+                if (!this.fake) {
+                    await tempQueryRunner.beforeMigration()
+                    await migrationToRevert.instance!.down(tempQueryRunner)
+                    await tempQueryRunner.afterMigration()
+                }
+
+                await this.deleteExecutedMigration(
+                    tempQueryRunner,
+                    migrationToRevert,
+                )
+                this.connection.logger.logSchemaBuild(
+                    `Migration ${migrationToRevert.name} has been ${
+                        this.fake ? "(fake) " : ""
+                    }reverted successfully.`,
+                )
+            } finally {
+                await tempQueryRunner.release()
+            }
+
+            // if query runner was created by us then release it
+            if (!this.queryRunner) {
+                await queryRunner.release()
+            }
+
+            return
+        }
+
+        // For other migrations, use the global transaction setting
         let transactionStartedByUs = false
         if (this.transaction !== "none" && !queryRunner.isTransactionActive) {
             await queryRunner.startTransaction()
