@@ -1939,10 +1939,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             return undefined
         }
 
-        if (entitiesAndRaw.entities.length === 0) {
-            return undefined;
-        }
-
         const hasSkip =
             this.expressionMap.skip !== undefined &&
             this.expressionMap.skip !== null &&
@@ -1951,6 +1947,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             this.expressionMap.offset !== undefined &&
             this.expressionMap.offset !== null &&
             this.expressionMap.offset > 0
+
+        if (entitiesAndRaw.entities.length === 0 && (hasSkip || hasOffset)) {
+            // when skip or offset were used and no results found, we need to execute a full count
+            // (the given offset may have exceeded the actual number of rows)
+            return undefined
+        }
 
         // offset overrides skip when no join is defined
         const previousResults: number = hasOffset
