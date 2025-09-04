@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { camelCase, snakeCase } from "../../../src/util/StringUtils"
+import { camelCase, snakeCase, hash } from "../../../src/util/StringUtils"
 
 describe("StringUtils", () => {
     describe("snakeCase", () => {
@@ -117,6 +117,51 @@ describe("StringUtils", () => {
             const actual = camelCase(input)
 
             expect(actual).to.be.equal(expected, `Failed for Input: ${input}`)
+        })
+    })
+
+    describe.only("hash", () => {
+        it("should return a SHA1 hash in hex format", () => {
+            const result = hash("hello")
+            // Precomputed SHA1 of "hello"
+            expect(result).to.be.equal(
+                "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d",
+            )
+        })
+
+        it("should respect options.length and return truncated hash", () => {
+            const result = hash("hello", { length: 8 })
+            expect(result).to.be.equal("aaf4c61d") // first 8 chars of SHA1("hello")
+        })
+
+        it("should return full length hash if options.length is 0", () => {
+            const result = hash("hello", { length: 0 })
+            expect(result).to.be.equal(
+                "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d",
+            )
+        })
+
+        it("should return full length hash if options.length is not provided", () => {
+            const result = hash("world")
+            // Precomputed SHA1 of "world"
+            expect(result).to.be.equal(
+                "7c211433f02071597741e6ff5a8ea34789abbf43",
+            )
+        })
+
+        it("should handle empty string input", () => {
+            const result = hash("")
+            // Precomputed SHA1 of empty string
+            expect(result).to.be.equal(
+                "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+            )
+        })
+
+        it("should be deterministic (same input => same output)", () => {
+            const input = "typeorm"
+            const hash1 = hash(input)
+            const hash2 = hash(input)
+            expect(hash1).to.be.equal(hash2)
         })
     })
 })
