@@ -127,6 +127,9 @@ describe("StringUtils", () => {
             expect(result).to.be.equal(
                 "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d",
             )
+            // Defensive checks against encoding/length regressions
+            expect(result).to.have.lengthOf(40)
+            expect(result).to.match(/^[0-9a-f]{40}$/)
         })
 
         it("should respect options.length and return truncated hash", () => {
@@ -139,6 +142,7 @@ describe("StringUtils", () => {
             expect(result).to.be.equal(
                 "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d",
             )
+            expect(result).to.have.lengthOf(40)
         })
 
         it("should return full length hash if options.length is not provided", () => {
@@ -162,6 +166,26 @@ describe("StringUtils", () => {
             const hash1 = hash(input)
             const hash2 = hash(input)
             expect(hash1).to.be.equal(hash2)
+        })
+
+        it("should ignore negative length and return full hash", () => {
+            const full = "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"
+            const result = hash("hello", { length: -5 as unknown as number })
+            expect(result).to.be.equal(full)
+        })
+
+        it("should clamp length larger than hash length to full length", () => {
+            const full = "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"
+            const result = hash("hello", { length: 999 })
+            expect(result).to.be.equal(full)
+            expect(result).to.have.lengthOf(40)
+        })
+
+        it("should return full length when options.length exceeds digest size", () => {
+            const full = hash("hello")
+            const over = hash("hello", { length: 100 })
+            expect(over).to.equal(full)
+            expect(over).to.have.lengthOf(40)
         })
     })
 })

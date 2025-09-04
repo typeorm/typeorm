@@ -120,7 +120,7 @@ export function hash(input: string, options: IHashOptions = {}): string {
     const hashFunction = shajs("sha1")
     hashFunction.update(input, "utf8")
     const hashedInput = hashFunction.digest("hex")
-    if (options.length) {
+    if (options.length && options.length > 0) {
         return hashedInput.slice(0, options.length)
     }
     return hashedInput
