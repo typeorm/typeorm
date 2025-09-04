@@ -174,16 +174,9 @@ describe("StringUtils", () => {
             expect(result).to.be.equal(full)
         })
 
-        it("should clamp length larger than hash length to full length", () => {
-            const full = "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"
-            const result = hash("hello", { length: 999 })
-            expect(result).to.be.equal(full)
-            expect(result).to.have.lengthOf(40)
-        })
-
         it("should return full length when options.length exceeds digest size", () => {
             const full = hash("hello")
-            const over = hash("hello", { length: 100 })
+            const over = hash("hello", { length: 999 })
             expect(over).to.equal(full)
             expect(over).to.have.lengthOf(40)
         })
