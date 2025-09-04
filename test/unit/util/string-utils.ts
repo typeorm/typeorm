@@ -120,7 +120,7 @@ describe("StringUtils", () => {
         })
     })
 
-    describe.only("hash", () => {
+    describe("hash", () => {
         it("should return a SHA1 hash in hex format", () => {
             const result = hash("hello")
             // Precomputed SHA1 of "hello"
