@@ -266,6 +266,34 @@ describe("other issues > lazy count", () => {
             }),
         ))
 
+    it("should execute count query when skip is out-of-bounds", () =>
+        Promise.all(
+            connections.map(async function (connection) {
+                await savePostEntities(connection, 5)
+
+                const afterQuery = connection
+                    .subscribers[0] as AfterQuerySubscriber
+                afterQuery.clear()
+
+                const [entities, count] = await connection.manager
+                    .createQueryBuilder(Post, "post")
+                    .take(10)
+                    .skip(10) // Skip beyond the total number of records
+                    .orderBy("post.id")
+                    .getManyAndCount()
+
+                expect(count).to.be.equal(5)
+                expect(entities.length).to.be.equal(0)
+
+                // The count query MUST be executed when skip is out-of-bounds
+                expect(
+                    afterQuery
+                        .getCalledQueries()
+                        .filter((query) => query.match(/(count|cnt)/i)),
+                ).not.to.be.empty
+            }),
+        ))
+
     async function savePostEntities(connection: DataSource, count: number) {
         for (let i = 1; i <= count; i++) {
             const post = new Post()

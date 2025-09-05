@@ -1955,6 +1955,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             ? this.expressionMap.skip!
             : 0
 
+        // When we have no entities and there's a skip/offset, we can't deduce the total count
+        // because the skip might be out-of-bounds
+        if (entitiesAndRaw.entities.length === 0 && previousResults > 0) {
+            return undefined
+        }
+
         return entitiesAndRaw.entities.length + previousResults
     }
 
