@@ -1259,7 +1259,6 @@ export class SqlServerQueryRunner
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
             newColumn.asExpression !== oldColumn.asExpression ||
             newColumn.generatedType !== oldColumn.generatedType
         ) {
@@ -1595,7 +1594,14 @@ export class SqlServerQueryRunner
             }
 
             if (
-                this.isColumnChanged(oldColumn, newColumn, false, false, false)
+                this.isColumnChanged(
+                    oldColumn,
+                    newColumn,
+                    false,
+                    false,
+                    false,
+                ) ||
+                oldColumn.length !== newColumn.length
             ) {
                 upQueries.push(
                     new Query(

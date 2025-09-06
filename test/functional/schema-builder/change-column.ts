@@ -22,6 +22,42 @@ describe("schema builder > change column", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
+    it("uses ALTER COLUMN when increasing varchar length (postgres)", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                // use the same entity set as the rest of this file
+                const postMetadata = connection.getMetadata(Post)
+                const nameCol = postMetadata.findColumnWithPropertyName("name")!
+                const originalLen = nameCol.length
+
+                // 1) ensure starting point length=50 and create schema
+                nameCol.length = "50"
+                nameCol.build(connection)
+                await connection.synchronize()
+
+                // request length=51 and inspect the generated diff
+                nameCol.length = "51"
+                nameCol.build(connection)
+
+                const { upQueries } = await connection.driver
+                    .createSchemaBuilder()
+                    .log()
+                const up = upQueries.map((q) => q.query).join("\n")
+
+                // PG-specific assertion: ALTER TYPE, no drop/add
+                expect(up).to.match(
+                    /ALTER TABLE .* ALTER COLUMN "name" TYPE character varying\(51\)/,
+                )
+                expect(up).to.not.match(/\bDROP COLUMN\b/)
+                expect(up).to.not.match(/\bADD COLUMN\b/)
+
+                // cleanup: restore metadata and schema
+                nameCol.length = originalLen
+                nameCol.build(connection)
+                await connection.synchronize()
+            }),
+        ))
+
     it("should correctly change column name", () =>
         Promise.all(
             connections.map(async (connection) => {
