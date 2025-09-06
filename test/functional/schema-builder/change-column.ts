@@ -9,25 +9,6 @@ import {
 import { Post } from "./entity/Post"
 import { PostVersion } from "./entity/PostVersion"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../src"
-
-@Entity({ name: "bug" })
-class BugInitial {
-    @PrimaryGeneratedColumn()
-    id!: number
-
-    @Column({ type: "varchar", length: 50 })
-    example!: string
-}
-
-@Entity({ name: "bug" })
-class BugUpdated {
-    @PrimaryGeneratedColumn()
-    id!: number
-
-    @Column({ type: "varchar", length: 51 })
-    example!: string
-}
 
 describe("schema builder > change column", () => {
     let connections: DataSource[]
@@ -41,48 +22,41 @@ describe("schema builder > change column", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("emits ALTER, not DROP/ADD when increasing varchar length", async () => {
-        for (const base of connections) {
-            // We choose postgres
-            if (base.options.type !== "postgres") continue
+    it("uses ALTER COLUMN when increasing varchar length (postgres)", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                // use the same entity set as the rest of this file
+                const postMetadata = connection.getMetadata(Post)
+                const nameCol = postMetadata.findColumnWithPropertyName("name")!
+                const originalLen = nameCol.length
 
-            // 1) initial schema (varchar(50)) + seed
-            const ds1 = new DataSource({
-                ...(base.options as any),
-                entities: [BugInitial],
-                synchronize: true,
-                dropSchema: false, // ensure we keep the table
-            } as any)
-            await ds1.initialize()
-            await ds1.query(`INSERT INTO "bug" ("example") VALUES ('hello')`)
+                // 1) ensure starting point length=50 and create schema
+                nameCol.length = "50"
+                nameCol.build(connection)
+                await connection.synchronize()
 
-            // 2) updated metadata (varchar(51)) to compute diff — DO NOT DROP SCHEMA
-            const ds2 = new DataSource({
-                ...(base.options as any),
-                entities: [BugUpdated],
-                synchronize: false, // we’re only logging the diff
-                dropSchema: false, // don’t wipe the tables we just created
-                migrationsRun: false,
-            } as any)
-            await ds2.initialize()
+                // request length=51 and inspect the generated diff
+                nameCol.length = "51"
+                nameCol.build(connection)
 
-            const { upQueries } = await ds2.driver.createSchemaBuilder().log()
-            const up = upQueries
-                .map((q) => q.query)
-                .join("\n")
-                .toUpperCase()
+                const { upQueries } = await connection.driver
+                    .createSchemaBuilder()
+                    .log()
+                const up = upQueries.map((q) => q.query).join("\n")
 
-            expect(up).to.match(/ALTER TABLE .* (ALTER COLUMN|CHANGE|MODIFY)/)
-            expect(up).to.not.match(/\bDROP COLUMN\b/)
-            expect(up).to.not.match(/\bADD COLUMN\b/)
+                // PG-specific assertion: ALTER TYPE, no drop/add
+                expect(up).to.match(
+                    /ALTER TABLE .* ALTER COLUMN "name" TYPE character varying\(51\)/,
+                )
+                expect(up).to.not.match(/\bDROP COLUMN\b/)
+                expect(up).to.not.match(/\bADD COLUMN\b/)
 
-            await ds2.destroy()
-            try {
-                await ds1.dropDatabase()
-            } catch {}
-            await ds1.destroy()
-        }
-    })
+                // cleanup: restore metadata and schema
+                nameCol.length = originalLen
+                nameCol.build(connection)
+                await connection.synchronize()
+            }),
+        ))
 
     it("should correctly change column name", () =>
         Promise.all(
