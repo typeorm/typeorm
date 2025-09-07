@@ -19,14 +19,14 @@ export class Post {
     @Column()
     text: string
 
-    @ManyToOne((type) => Author, { cascade: true })
+    @ManyToOne(() => Author, { cascade: true })
     author: Author
 
-    @ManyToMany((type) => Category, { cascade: true })
+    @ManyToMany(() => Category, { cascade: true })
     @JoinTable()
     categories: Category[]
 
-    @OneToOne((type) => PostMetadata, { cascade: true })
+    @OneToOne(() => PostMetadata, { cascade: true })
     @JoinColumn()
     metadata: PostMetadata
 }

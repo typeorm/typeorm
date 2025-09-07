@@ -129,10 +129,7 @@ export class EntityMetadataValidator {
                     const normalizedColumn = driver.normalizeType(
                         column,
                     ) as ColumnType
-                    if (
-                        driver.supportedDataTypes.indexOf(normalizedColumn) ===
-                        -1
-                    )
+                    if (!driver.supportedDataTypes.includes(normalizedColumn))
                         throw new DataTypeNotSupportedError(
                             column,
                             normalizedColumn,
@@ -140,9 +137,7 @@ export class EntityMetadataValidator {
                         )
                     if (
                         column.length &&
-                        driver.withLengthColumnTypes.indexOf(
-                            normalizedColumn,
-                        ) === -1
+                        !driver.withLengthColumnTypes.includes(normalizedColumn)
                     )
                         throw new TypeORMError(
                             `Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`,
@@ -318,8 +313,6 @@ export class EntityMetadataValidator {
                         `This may lead to unexpected circular removals. Please set cascade remove only from one side of relationship.`,
                 )
         }) // todo: maybe better just deny removal from one to one relation without join column?
-
-        entityMetadata.eagerRelations.forEach((relation) => {})
     }
 
     /**

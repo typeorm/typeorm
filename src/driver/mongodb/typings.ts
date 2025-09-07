@@ -1,5 +1,12 @@
+import type { SrvRecord } from "dns"
+import type { Socket, TcpNetConnectOpts } from "net"
+import type {
+    ConnectionOptions as ConnectionOptions_2,
+    TLSSocket,
+    TLSSocketOptions,
+} from "tls"
+import { EventEmitter, Readable } from "../../platform/PlatformTools"
 import {
-    BSON,
     BSONRegExp,
     BSONSymbol,
     BSONType,
@@ -21,13 +28,7 @@ import {
     deserialize,
     serialize,
 } from "./bson.typings"
-import type { ConnectionOptions as ConnectionOptions_2 } from "tls"
-import type { Socket } from "net"
-import type { SrvRecord } from "dns"
-import type { TcpNetConnectOpts } from "net"
-import type { TLSSocket } from "tls"
-import type { TLSSocketOptions } from "tls"
-import { Readable, EventEmitter } from "../../platform/PlatformTools"
+export * as BSON from "./bson.typings"
 
 /** @public */
 export declare abstract class AbstractCursor<
@@ -560,8 +561,8 @@ export declare interface AuthMechanismProperties extends Document {
 }
 
 /** @public */
-export declare interface AutoEncrypter {
-    new (client: MongoClient, options: AutoEncryptionOptions): AutoEncrypter
+export declare class AutoEncrypter {
+    constructor(client: MongoClient, options: AutoEncryptionOptions)
     init(cb: Callback): void
     teardown(force: boolean, callback: Callback): void
     encrypt(
@@ -813,8 +814,6 @@ export declare type BitwiseFilter =
     | number /** numeric bit mask */
     | Binary /** BinData bit mask */
     | ReadonlyArray<number>
-
-export { BSON }
 
 export { BSONRegExp }
 

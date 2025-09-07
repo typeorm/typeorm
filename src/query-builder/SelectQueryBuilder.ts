@@ -45,6 +45,7 @@ import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
+import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -1874,11 +1875,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 queryRunner,
             )
             this.expressionMap.queryEntity = false
-            const cacheId = this.expressionMap.cacheId
-            // Creates a new cacheId for the count query, or it will retreive the above query results
-            // and count will return 0.
-            this.expressionMap.cacheId = cacheId ? `${cacheId}-count` : cacheId
-            const count = await this.executeCountQuery(queryRunner)
+
+            let count: number | undefined = this.lazyCount(entitiesAndRaw)
+            if (count === undefined) {
+                const cacheId = this.expressionMap.cacheId
+                // Creates a new cacheId for the count query, or it will retrieve the above query results
+                // and count will return 0.
+                if (cacheId) {
+                    this.expressionMap.cacheId = `${cacheId}-count`
+                }
+                count = await this.executeCountQuery(queryRunner)
+            }
             const results: [Entity[], number] = [entitiesAndRaw.entities, count]
 
             // close transaction if we started it
@@ -1900,6 +1907,61 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 // means we created our own query runner
                 await queryRunner.release()
         }
+    }
+
+    private lazyCount(entitiesAndRaw: {
+        entities: Entity[]
+        raw: any[]
+    }): number | undefined {
+        const hasLimit =
+            this.expressionMap.limit !== undefined &&
+            this.expressionMap.limit !== null
+        if (this.expressionMap.joinAttributes.length > 0 && hasLimit) {
+            return undefined
+        }
+
+        const hasTake =
+            this.expressionMap.take !== undefined &&
+            this.expressionMap.take !== null
+
+        // limit overrides take when no join is defined
+        const maxResults = hasLimit
+            ? this.expressionMap.limit
+            : hasTake
+            ? this.expressionMap.take
+            : undefined
+
+        if (
+            maxResults !== undefined &&
+            entitiesAndRaw.entities.length === maxResults
+        ) {
+            // stop here when the result set contains the max number of rows; we need to execute a full count
+            return undefined
+        }
+
+        const hasSkip =
+            this.expressionMap.skip !== undefined &&
+            this.expressionMap.skip !== null &&
+            this.expressionMap.skip > 0
+        const hasOffset =
+            this.expressionMap.offset !== undefined &&
+            this.expressionMap.offset !== null &&
+            this.expressionMap.offset > 0
+
+        if (entitiesAndRaw.entities.length === 0 && (hasSkip || hasOffset)) {
+            // when skip or offset were used and no results found, we need to execute a full count
+            // (the given offset may have exceeded the actual number of rows)
+            return undefined
+        }
+
+        // offset overrides skip when no join is defined
+        const previousResults: number = hasOffset
+            ? this.expressionMap.offset!
+            : hasSkip
+            ? this.expressionMap.skip!
+            : 0
+
+        return entitiesAndRaw.entities.length + previousResults
     }
 
     /**
@@ -2559,13 +2621,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         let offset: number | undefined = this.expressionMap.offset,
             limit: number | undefined = this.expressionMap.limit
         if (
-            !offset &&
-            !limit &&
+            offset === undefined &&
+            limit === undefined &&
             this.expressionMap.joinAttributes.length === 0
         ) {
             offset = this.expressionMap.skip
             limit = this.expressionMap.take
         }
+
+        // Helper functions to check if values are set (including 0)
+        const hasLimit = limit !== undefined && limit !== null
+        const hasOffset = offset !== undefined && offset !== null
 
         if (this.connection.driver.options.type === "mssql") {
             // Due to a limitation in SQL Server's parser implementation it does not support using
@@ -2575,13 +2641,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // https://dba.stackexchange.com/a/193799
             let prefix = ""
             if (
-                (limit || offset) &&
+                (hasLimit || hasOffset) &&
                 Object.keys(this.expressionMap.allOrderBys).length <= 0
             ) {
                 prefix = " ORDER BY (SELECT NULL)"
             }
 
-            if (limit && offset)
+            if (hasLimit && hasOffset)
                 return (
                     prefix +
                     " OFFSET " +
@@ -2590,26 +2656,28 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     limit +
                     " ROWS ONLY"
                 )
-            if (limit)
+            if (hasLimit)
                 return (
                     prefix + " OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY"
                 )
-            if (offset) return prefix + " OFFSET " + offset + " ROWS"
+            if (hasOffset) return prefix + " OFFSET " + offset + " ROWS"
         } else if (
             DriverUtils.isMySQLFamily(this.connection.driver) ||
             this.connection.driver.options.type === "aurora-mysql" ||
             this.connection.driver.options.type === "sap" ||
             this.connection.driver.options.type === "spanner"
         ) {
-            if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
-            if (limit) return " LIMIT " + limit
-            if (offset) throw new OffsetWithoutLimitNotSupportedError()
+            if (hasLimit && hasOffset)
+                return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit) return " LIMIT " + limit
+            if (hasOffset) throw new OffsetWithoutLimitNotSupportedError()
         } else if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
-            if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
-            if (limit) return " LIMIT " + limit
-            if (offset) return " LIMIT -1 OFFSET " + offset
+            if (hasLimit && hasOffset)
+                return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit) return " LIMIT " + limit
+            if (hasOffset) return " LIMIT -1 OFFSET " + offset
         } else if (this.connection.driver.options.type === "oracle") {
-            if (limit && offset)
+            if (hasLimit && hasOffset)
                 return (
                     " OFFSET " +
                     offset +
@@ -2617,12 +2685,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     limit +
                     " ROWS ONLY"
                 )
-            if (limit) return " FETCH NEXT " + limit + " ROWS ONLY"
-            if (offset) return " OFFSET " + offset + " ROWS"
+            if (hasLimit) return " FETCH NEXT " + limit + " ROWS ONLY"
+            if (hasOffset) return " OFFSET " + offset + " ROWS"
         } else {
-            if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
-            if (limit) return " LIMIT " + limit
-            if (offset) return " OFFSET " + offset
+            if (hasLimit && hasOffset)
+                return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit) return " LIMIT " + limit
+            if (hasOffset) return " OFFSET " + offset
         }
 
         return ""
@@ -2897,11 +2966,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     })
                 })
             } else {
-                if (column.isVirtualProperty) {
-                    // Do not add unselected virtual properties to final select
-                    return
-                }
-
                 finalSelects.push({
                     selection: selectionPath,
                     aliasName: DriverUtils.buildAlias(
@@ -2922,17 +2986,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         aliasName: string,
         metadata: EntityMetadata,
     ): SelectQuery[] {
-        const mainSelect = this.expressionMap.selects.find(
-            (select) => select.selection === aliasName,
+        return this.expressionMap.selects.filter(
+            (select) =>
+                select.selection === aliasName ||
+                metadata.columns.some(
+                    (column) =>
+                        select.selection ===
+                        aliasName + "." + column.propertyPath,
+                ),
         )
-        if (mainSelect) return [mainSelect]
-
-        return this.expressionMap.selects.filter((select) => {
-            return metadata.columns.some(
-                (column) =>
-                    select.selection === aliasName + "." + column.propertyPath,
-            )
-        })
     }
 
     private computeCountExpression() {
@@ -3831,7 +3893,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     {
                         identifier: this.expressionMap.cacheId,
                         query: queryId,
-                        time: new Date().getTime(),
+                        time: Date.now(),
                         duration:
                             this.expressionMap.cacheDuration ||
                             cacheOptions.duration ||
@@ -3889,7 +3951,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         embedPrefix?: string,
     ) {
-        for (let key in select) {
+        for (const key in select) {
             if (select[key] === undefined || select[key] === false) continue
 
             const propertyPath = embedPrefix ? embedPrefix + "." + key : key
@@ -4134,7 +4196,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         embedPrefix?: string,
     ) {
-        for (let key in order) {
+        for (const key in order) {
             if (order[key] === undefined) continue
 
             const propertyPath = embedPrefix ? embedPrefix + "." + key : key
@@ -4168,7 +4230,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         ? "NULLS LAST"
                         : undefined
 
-                let aliasPath = `${alias}.${propertyPath}`
+                const aliasPath = `${alias}.${propertyPath}`
                 // const selection = this.expressionMap.selects.find(
                 //     (s) => s.selection === aliasPath,
                 // )
@@ -4257,8 +4319,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     .join(" OR ")
             }
         } else {
-            let andConditions: string[] = []
-            for (let key in where) {
+            const andConditions: string[] = []
+            for (const key in where) {
                 if (where[key] === undefined || where[key] === null) continue
 
                 const propertyPath = embedPrefix ? embedPrefix + "." + key : key
@@ -4278,7 +4340,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (column) {
                     let aliasPath = `${alias}.${propertyPath}`
                     if (column.isVirtualProperty && column.query) {
-                        aliasPath = `(${column.query(alias)})`
+                        aliasPath = `(${column.query(this.escape(alias))})`
                     }
                     // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
 
@@ -4287,14 +4349,23 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     if (InstanceChecker.isEqualOperator(where[key])) {
                         parameterValue = where[key].value
                     }
+
                     if (column.transformer) {
-                        parameterValue instanceof FindOperator
-                            ? parameterValue.transformValue(column.transformer)
-                            : (parameterValue =
-                                  ApplyValueTransformers.transformTo(
-                                      column.transformer,
-                                      parameterValue,
-                                  ))
+                        if (parameterValue instanceof FindOperator) {
+                            parameterValue.transformValue(column.transformer)
+                        } else {
+                            parameterValue = ApplyValueTransformers.transformTo(
+                                column.transformer,
+                                parameterValue,
+                            )
+                        }
+                    }
+
+                    // MSSQL requires parameters to carry extra type information
+                    if (this.connection.driver.options.type === "mssql") {
+                        parameterValue = (
+                            this.connection.driver as SqlServerDriver
+                        ).parametrizeValues(column, parameterValue)
                     }
 
                     // if (parameterValue === null) {
