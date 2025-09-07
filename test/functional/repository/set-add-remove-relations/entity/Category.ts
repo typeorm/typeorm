@@ -13,7 +13,7 @@ export class Category {
     @Column()
     name: string
 
-    @ManyToOne((type) => Post, (post) => post.categories)
+    @ManyToOne(() => Post, (post) => post.categories)
     post: Post
 
     @ManyToMany((type) => Post, (post) => post.manyCategories)

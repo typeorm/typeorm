@@ -7,7 +7,7 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 
-describe("github issues > #3158 Cannot run sync a second time", async () => {
+describe("github issues > #3158 Cannot run sync a second time", () => {
     let connections: DataSource[]
     before(
         async () =>

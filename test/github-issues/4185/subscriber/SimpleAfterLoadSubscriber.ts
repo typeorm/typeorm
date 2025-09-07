@@ -11,7 +11,7 @@ export class SimpleAfterLoadSubscriber
         return Post
     }
 
-    async afterLoad(entity: Post) {
+    afterLoad(entity: Post) {
         entity.simpleSubscriberSaw = true
     }
 }

@@ -166,9 +166,9 @@ export class SubjectTopologicalSorter {
      */
     protected toposort(edges: any[][]) {
         function uniqueNodes(arr: any[]) {
-            let res = []
+            const res = []
             for (let i = 0, len = arr.length; i < len; i++) {
-                let edge: any = arr[i]
+                const edge: any = arr[i]
                 if (res.indexOf(edge[0]) < 0) res.push(edge[0])
                 if (res.indexOf(edge[1]) < 0) res.push(edge[1])
             }
@@ -177,12 +177,12 @@ export class SubjectTopologicalSorter {
 
         const nodes = uniqueNodes(edges)
         let cursor = nodes.length,
-            sorted = new Array(cursor),
-            visited: any = {},
             i = cursor
+        const sorted = new Array(cursor),
+            visited = new Set<number>()
 
         while (i--) {
-            if (!visited[i]) visit(nodes[i], i, [])
+            if (!visited.has(i)) visit(nodes[i], i, [])
         }
 
         function visit(node: any, i: number, predecessors: any[]) {
@@ -199,17 +199,17 @@ export class SubjectTopologicalSorter {
                 )
             }
 
-            if (visited[i]) return
-            visited[i] = true
+            if (visited.has(i)) return
+            visited.add(i)
 
             // outgoing edges
-            let outgoing = edges.filter(function (edge) {
+            const outgoing = edges.filter(function (edge) {
                 return edge[0] === node
             })
             if ((i = outgoing.length)) {
-                let preds = predecessors.concat(node)
+                const preds = predecessors.concat(node)
                 do {
-                    let child = outgoing[--i][1]
+                    const child = outgoing[--i][1]
                     visit(child, nodes.indexOf(child), preds)
                 } while (i)
             }

@@ -27,6 +27,7 @@ import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TypeORMError } from "../../error"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { FindOperator } from "../../find-options/FindOperator"
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -148,7 +149,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    supportedUpsertTypes: UpsertType[] = []
+    supportedUpsertTypes: UpsertType[] = ["merge-into"]
 
     /**
      * Gets list of spatial column data types.
@@ -302,7 +303,7 @@ export class SqlServerDriver implements Driver {
         }
 
         if (!this.database || !this.searchSchema) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
             if (!this.database) {
                 this.database = await queryRunner.getCurrentDatabase()
@@ -331,9 +332,9 @@ export class SqlServerDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("mssql"))
-
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("mssql")
+        }
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
         this.master = undefined
@@ -390,7 +391,7 @@ export class SqlServerDriver implements Driver {
                     return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -432,7 +433,7 @@ export class SqlServerDriver implements Driver {
         schema?: string,
         database?: string,
     ): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)
@@ -982,6 +983,32 @@ export class SqlServerDriver implements Driver {
         }
 
         return new MssqlParameter(value, normalizedType as any)
+    }
+
+    /**
+     * Recursively wraps values (including those inside FindOperators) into MssqlParameter instances,
+     * ensuring correct type metadata is passed to the SQL Server driver.
+     *
+     * - If the value is a FindOperator containing an array, all elements are individually parametrized.
+     * - If the value is a non-raw FindOperator, a transformation is applied to its internal value.
+     * - Otherwise, the value is passed directly to parametrizeValue for wrapping.
+     *
+     * This ensures SQL Server receives properly typed parameters for queries involving operators like
+     * In, MoreThan, Between, etc.
+     */
+    parametrizeValues(column: ColumnMetadata, value: any) {
+        if (value instanceof FindOperator) {
+            if (value.type !== "raw") {
+                value.transformValue({
+                    to: (v) => this.parametrizeValues(column, v),
+                    from: (v) => v,
+                })
+            }
+
+            return value
+        }
+
+        return this.parametrizeValue(column, value)
     }
 
     /**

@@ -8,6 +8,6 @@ export class Player {
     @PrimaryColumn()
     email: string
 
-    @ManyToOne((type) => Group)
+    @ManyToOne(() => Group)
     group: Group
 }
