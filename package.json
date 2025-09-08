@@ -117,6 +117,7 @@
     "@types/chai": "^4.3.20",
     "@types/chai-as-promised": "^7.1.8",
     "@types/debug": "^4.1.12",
+    "@types/gulp": "^4.0.17",
     "@types/gulp-rename": "^2.0.6",
     "@types/gulp-sourcemaps": "^0.0.38",
     "@types/mocha": "^10.0.10",

@@ -1,31 +1,23 @@
 import { User } from "./entity/User"
-import { expect } from "chai"
-import { DataSource } from "../../src"
-import { SqlServerConnectionOptions } from "../../src/driver/sqlserver/SqlServerConnectionOptions"
 import { Roles } from "./entity/Roles"
 import { UserGenerator } from "./entity/GeneratorUser"
+import { expect } from "chai"
+import { DataSource } from "../../src"
+// import { SqlServerConnectionOptions } from "../../src/driver/sqlserver/SqlServerConnectionOptions"
+import { setupTestingConnections } from "../utils/test-utils"
 
-// npx mocha -r ts-node/register test/ding/mssql.test.ts
+// npx mocha -r ts-node/register --no-config test/ding/mssql.test.ts
 describe("MSSQL Ding Functions", () => {
     it("test mssql support json column type", async () => {
-        const dataSourceOptions: SqlServerConnectionOptions = {
-            type: "mssql",
-            host: "192.168.2.3",
-            port: 1433,
-            database: "test",
-            username: "sa",
-            password: "CxKj78963214@@!@",
-            options: {
-                encrypt: false,
-                trustServerCertificate: true,
-            },
+        const dataSourceOptions = setupTestingConnections({
             entities: [User, Roles],
-        }
+            enabledDrivers: ["mssql"],
+        })
 
         // reset data source just to make sure inside DataSource it's really being set
         User.useDataSource(null)
 
-        const dataSource = new DataSource(dataSourceOptions)
+        const dataSource = new DataSource(dataSourceOptions[0])
         await dataSource.initialize()
         await dataSource.synchronize(true)
 
@@ -75,32 +67,23 @@ describe("MSSQL Ding Functions", () => {
             //   .leftJoinAndSelect("roles", "role", "role.userId=user.id")
             //   .getSql()
             // .getRawMany()
-        //   .printSql()
-          .getMany()
+            //   .printSql()
+            .getMany()
 
         console.log(data)
 
         await runner.release()
     })
     it("test generate uuid function", async () => {
-        const dataSourceOptions: SqlServerConnectionOptions = {
-            type: "mssql",
-            host: "192.168.2.3",
-            port: 1433,
-            database: "test",
-            username: "sa",
-            password: "CxKj78963214@@!@",
-            options: {
-                encrypt: false,
-                trustServerCertificate: true,
-            },
+        const dataSourceOptions = setupTestingConnections({
             entities: [UserGenerator],
-        }
+            enabledDrivers: ["mssql"],
+        })
 
         // reset data source just to make sure inside DataSource it's really being set
         UserGenerator.useDataSource(null)
 
-        const dataSource = new DataSource(dataSourceOptions)
+        const dataSource = new DataSource(dataSourceOptions[0])
         await dataSource.initialize()
         await dataSource.synchronize(true)
 
