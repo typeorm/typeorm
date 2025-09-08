@@ -1029,4 +1029,57 @@ describe("repository > basic methods", () => {
         })));
 
     });*/
+
+    it("should return null when findOneBy has undefined conditions", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+
+                // Save some test data
+                const post1 = new Post()
+                post1.id = 1
+                post1.title = "Hello post"
+                await postRepository.save(post1)
+
+                const post2 = new Post()
+                post2.id = 2
+                post2.title = "About post"
+                await postRepository.save(post2)
+
+                // Test findOneBy with undefined id should return null, not first record
+                const foundPost = await postRepository.findOneBy({
+                    id: undefined
+                })
+
+                if (foundPost !== null) {
+                    throw new Error(`Expected null but got post with id: ${foundPost.id}`)
+                }
+                // Ensure we got null as expected
+                ;(foundPost as any).should.be.null
+            }),
+        ))
+
+    it("should return null when findOne has undefined conditions", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+
+                // Save some test data
+                const post1 = new Post()
+                post1.id = 1
+                post1.title = "Hello post"
+                await postRepository.save(post1)
+
+                // Test findOne with undefined where should return null, not first record
+                const foundPost = await postRepository.findOne({
+                    where: { id: undefined }
+                })
+
+                if (foundPost !== null) {
+                    throw new Error(`Expected null but got post with id: ${foundPost.id}`)
+                }
+                // Ensure we got null as expected
+                ;(foundPost as any).should.be.null
+            }),
+        ))
 })

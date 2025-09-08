@@ -4303,8 +4303,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
         } else {
             const andConditions: string[] = []
+            let hasAnyValidCondition = false
+
             for (const key in where) {
                 if (where[key] === undefined || where[key] === null) continue
+
+                hasAnyValidCondition = true
 
                 const propertyPath = embedPrefix ? embedPrefix + "." + key : key
                 const column =
@@ -4581,6 +4585,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             condition = andConditions.length
                 ? "(" + andConditions.join(") AND (") + ")"
                 : andConditions.join(" AND ")
+
+            // If we had where object with keys but no valid conditions (all undefined/null),
+            // return a condition that matches nothing instead of empty condition
+            if (!hasAnyValidCondition && Object.keys(where).length > 0) {
+                condition = "1 = 0"
+            }
         }
         return condition.length ? "(" + condition + ")" : condition
     }

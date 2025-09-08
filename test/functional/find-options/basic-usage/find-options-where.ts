@@ -120,7 +120,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([])
+                ;(posts as any).should.be.eql([])
             }),
         ))
 
@@ -751,6 +751,41 @@ describe("find options > where", () => {
                         counters: { likes: 1 },
                     },
                 ])
+            }),
+        ))
+
+    it("should return no results when where contains only undefined values for columns", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await prepareData(connection.manager)
+
+                const posts = await connection
+                    .createQueryBuilder(Post, "post")
+                    .setFindOptions({
+                        where: {
+                            id: undefined,
+                            title: undefined,
+                        },
+                    })
+                    .getMany()
+                ;(posts as any).should.be.eql([])
+            }),
+        ))
+
+    it("should return no results when where contains single undefined column value", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await prepareData(connection.manager)
+
+                const posts = await connection
+                    .createQueryBuilder(Post, "post")
+                    .setFindOptions({
+                        where: {
+                            id: undefined,
+                        },
+                    })
+                    .getMany()
+                ;(posts as any).should.be.eql([])
             }),
         ))
 })
