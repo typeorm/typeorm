@@ -120,12 +120,8 @@ export function hash(input: string, options: IHashOptions = {}): string {
     const hashFunction = shajs("sha1")
     hashFunction.update(input, "utf8")
     const hashedInput = hashFunction.digest("hex")
-    const len = Number.isFinite(options.length as number)
-        ? Math.trunc(options.length as number)
-        : 0
-    if (len > 0) {
-        // slice already caps to hashedInput.length; the Math.min keeps intent explicit
-        return hashedInput.slice(0, Math.min(len, hashedInput.length))
+    if (options.length && options.length > 0) {
+        return hashedInput.slice(0, options.length)
     }
     return hashedInput
 }
