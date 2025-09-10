@@ -733,24 +733,37 @@ export class EntityManager {
         )
 
         const overwriteColumns = (() => {
-            if (options.updateOnly) {
-                const updateOnlyColumns = metadata.mapPropertyPathsToColumns(
-                    Array.isArray(options.updateOnly)
-                        ? options.updateOnly
-                        : Object.keys(options.updateOnly),
+            const hasDefined = (col: (typeof metadata.columns)[number]) =>
+                entities.some(
+                    (entity) =>
+                        typeof col.getEntityValue(entity) !== "undefined",
                 )
+            if (options.updateOnly) {
+                const requestedColumnPaths = Array.isArray(options.updateOnly)
+                    ? options.updateOnly
+                    : Object.keys(options.updateOnly)
+                const updateOnlyColumns =
+                    metadata.mapPropertyPathsToColumns(requestedColumnPaths)
+                // Optional: fail fast on unknown paths
+                const resolvedColumnPaths = new Set(
+                    updateOnlyColumns.map((c) => c.propertyPath),
+                )
+                const unknown = requestedColumnPaths.filter(
+                    (p) => !resolvedColumnPaths.has(p),
+                )
+                if (unknown.length > 0) {
+                    throw new TypeORMError(
+                        `Unknown column(s) in updateOnly: ${unknown.join(
+                            ", ",
+                        )}`,
+                    )
+                }
                 return updateOnlyColumns.filter(
-                    (col) => !conflictColumns.includes(col),
+                    (col) => !conflictColumns.includes(col) && hasDefined(col),
                 )
             } else {
                 return metadata.columns.filter(
-                    (col) =>
-                        !conflictColumns.includes(col) &&
-                        entities.some(
-                            (entity) =>
-                                typeof col.getEntityValue(entity) !==
-                                "undefined",
-                        ),
+                    (col) => !conflictColumns.includes(col) && hasDefined(col),
                 )
             }
         })()
