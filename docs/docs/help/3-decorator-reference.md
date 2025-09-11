@@ -312,7 +312,7 @@ Special column that is automatically set to the entity's version (incremental nu
 each time you call `save` from entity manager or repository.
 You don't need to write a value into this column - it will be automatically set.
 
-**Note:** This column is also automatically updated during `upsert` operations when an update occurs due to a conflict.
+This column is also automatically updated during `upsert` operations when an update occurs due to a conflict.
 
 ```typescript
 @Entity()
