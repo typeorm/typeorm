@@ -192,6 +192,7 @@ export class PostgresDriver implements Driver {
         "cube",
         "ltree",
         "vector",
+        "halfvec",
     ]
 
     /**
