@@ -3,7 +3,7 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     OneToMany,
-} from "../../../../../src"
+} from "../../../../src"
 import { Post } from "./Post"
 
 @Entity()

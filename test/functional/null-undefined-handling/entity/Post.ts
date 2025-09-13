@@ -4,7 +4,7 @@ import {
     PrimaryGeneratedColumn,
     ManyToOne,
     JoinColumn,
-} from "../../../../../src"
+} from "../../../../src"
 import { Category } from "./Category"
 
 @Entity()
