@@ -126,18 +126,14 @@ describe("schema builder > change column", () => {
                     expect(up).to.not.match(/\bDROP COLUMN\b/)
                     expect(up).to.not.match(/\bADD COLUMN\b/)
                 } else if (connection.driver.options.type === "mssql") {
-                    expect(up).to.match(
-                        /ALTER TABLE .* ALTER COLUMN .*NVARCHAR?\(80\)/i,
-                    )
+                    expect(up).to.match(/ALTER TABLE .* ALTER COLUMN .*N?VARCHAR\(\s*80\s*\)/i)
                     expect(up).to.not.match(/\bDROP COLUMN\b/)
                     expect(up).to.not.match(/\bADD COLUMN\b/)
                 } else if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
                     connection.driver.options.type === "aurora-mysql"
                 ) {
-                    expect(up).to.match(
-                        /ALTER TABLE .* CHANGE .*`name`.*varchar\(80\)/i,
-                    )
+                    expect(up).to.match(/ALTER TABLE .* (CHANGE|MODIFY) .*`name`.*varchar\(\s*80\s*\)/i)
                     expect(up).to.not.match(/\bDROP COLUMN\b/)
                     expect(up).to.not.match(/\bADD COLUMN\b/)
                 } else if (connection.driver.options.type === "sap") {
