@@ -28,11 +28,6 @@ export type SpatialColumnType =
     | "st_point" // sap
 
 /**
- * Column types where vector properties are used.
- */
-export type VectorColumnType = "vector" | "halfvec"
-
-/**
  * Column types where precision and scale properties are used.
  */
 export type WithPrecisionColumnType =

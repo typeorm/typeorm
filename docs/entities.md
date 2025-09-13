@@ -6,6 +6,7 @@
     - [Primary columns](#primary-columns)
     - [Special columns](#special-columns)
     - [Spatial columns](#spatial-columns)
+    - [Vector columns](#vector-columns)
   - [Column types](#column-types)
     - [Column types for `mysql` / `mariadb`](#column-types-for-mysql--mariadb)
     - [Column types for `postgres`](#column-types-for-postgres)
@@ -337,6 +338,61 @@ await dataSource.manager
     .getMany()
 ```
 
+### Vector columns
+
+PostgreSQL supports vector columns through the [`pgvector`](https://github.com/pgvector/pgvector) extension, which enables storing and querying vector embeddings for similarity search and machine learning applications.
+
+TypeORM supports both `vector` and `halfvec` column types:
+
+- `vector` - stores vectors as 4-byte floats (single precision)
+- `halfvec` - stores vectors as 2-byte floats (half precision) for memory efficiency
+
+You can specify the vector dimensions using the `length` option:
+
+```typescript
+@Entity()
+export class Post {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    // Vector without specified dimensions
+    @Column("vector")
+    embedding: number[]
+
+    // Vector with 3 dimensions: vector(3)
+    @Column("vector", { length: 3 })
+    embedding_3d: number[]
+
+    // Half-precision vector with 4 dimensions: halfvec(4)
+    @Column("halfvec", { length: 4 })
+    halfvec_embedding: number[]
+}
+```
+
+Vector columns can be used for similarity searches using PostgreSQL's vector operators:
+
+```typescript
+// L2 distance (Euclidean) - <->
+const results = await dataSource.query(
+    `SELECT id, embedding FROM post ORDER BY embedding <-> $1 LIMIT 5`,
+    ["[1,2,3]"]
+)
+
+// Cosine distance - <=>
+const results = await dataSource.query(
+    `SELECT id, embedding FROM post ORDER BY embedding <=> $1 LIMIT 5`,
+    ["[1,2,3]"]
+)
+
+// Inner product - <#>
+const results = await dataSource.query(
+    `SELECT id, embedding FROM post ORDER BY embedding <#> $1 LIMIT 5`,
+    ["[1,2,3]"]
+)
+```
+
+> Note: Vector columns require the `pgvector` extension to be installed in your PostgreSQL database. The extension provides the vector data types and similarity operators.
+
 ## Column types
 
 TypeORM supports all of the most commonly used database-supported column types.
@@ -391,7 +447,7 @@ or
 `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`, `macaddr8`,
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
 `tsrange`, `tstzrange`, `daterange`, `int4multirange`, `int8multirange`, `nummultirange`,
-`tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `cube`, `ltree`,`vector`
+`tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `cube`, `ltree`, `vector`, `halfvec`
 
 ### Column types for `cockroachdb`
 

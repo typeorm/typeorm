@@ -6,6 +6,7 @@
     - [主列](#主列)
     - [特殊列](#特殊列)
     - [空间列](#空间列)
+    - [Vector 列](#vector-列)
   - [列类型](#列类型)
     - [`mysql`/`mariadb`的列类型](#mysqlmariadb的列类型)
     - [`postgres`的列类型](#postgres的列类型)
@@ -236,6 +237,61 @@ await getManager()
     .getMany()
 ```
 
+### Vector 列
+
+PostgreSQL 通过 [`pgvector`](https://github.com/pgvector/pgvector) 扩展支持向量列，这使得能够存储和查询向量嵌入以进行相似性搜索和机器学习应用。
+
+TypeORM 支持 `vector` 和 `halfvec` 列类型：
+
+- `vector` - 将向量存储为 4 字节浮点数（单精度）
+- `halfvec` - 将向量存储为 2 字节浮点数（半精度）以提高内存效率
+
+你可以使用 `length` 选项指定向量维度：
+
+```typescript
+@Entity()
+export class Post {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    // 不指定维度的向量
+    @Column("vector")
+    embedding: number[]
+
+    // 3 维向量：vector(3)
+    @Column("vector", { length: 3 })
+    embedding_3d: number[]
+
+    // 4 维半精度向量：halfvec(4)
+    @Column("halfvec", { length: 4 })
+    halfvec_embedding: number[]
+}
+```
+
+向量列可以使用 PostgreSQL 的向量运算符进行相似性搜索：
+
+```typescript
+// L2 距离（欧几里得）- <->
+const results = await dataSource.query(
+    `SELECT id, embedding FROM post ORDER BY embedding <-> $1 LIMIT 5`,
+    ["[1,2,3]"]
+)
+
+// 余弦距离 - <=>
+const results = await dataSource.query(
+    `SELECT id, embedding FROM post ORDER BY embedding <=> $1 LIMIT 5`,
+    ["[1,2,3]"]
+)
+
+// 内积 - <#>
+const results = await dataSource.query(
+    `SELECT id, embedding FROM post ORDER BY embedding <#> $1 LIMIT 5`,
+    ["[1,2,3]"]
+)
+```
+
+> 注意：向量列需要在 PostgreSQL 数据库中安装 `pgvector` 扩展。该扩展提供向量数据类型和相似性运算符。
+
 ## 列类型
 
 TypeORM 支持所有最常用的数据库支持的列类型。
@@ -284,7 +340,7 @@ TypeORM 支持所有最常用的数据库支持的列类型。
 `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`, `macaddr8`,
 `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
 `tsrange`, `tstzrange`, `daterange`, `int4multirange`, `int8multirange`, `nummultirange`,
-`tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `vector`
+`tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `vector`, `halfvec`
 
 ### `sqlite`/`cordova`/`react-native`/`expo`的列类型
 

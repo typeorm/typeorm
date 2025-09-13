@@ -67,7 +67,6 @@ export class ColumnMetadata {
      */
     width?: number
 
-
     /**
      * Defines column character set.
      */
