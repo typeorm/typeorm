@@ -76,13 +76,14 @@ describe("schema builder > change column", () => {
                     expect(up).to.match(/\bCREATE TABLE\b/i)
                     expect(up).to.match(/\bDROP TABLE\b/i)
                 } else if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
-                ) {
-                    // CockroachDB/Spanner: allow generic ALTER COLUMN ... TYPE ... (exact type name varies)
-                    expect(up).to.match(
-                        /ALTER TABLE .* ALTER COLUMN .* (TYPE )?.*\(51\)/i,
-                    )
+                } else if (connection.driver.options.type === "cockroachdb") {
+                    // CockroachDB: Postgres-style TYPE
+                    expect(up).to.match(/ALTER TABLE .* ALTER COLUMN .* TYPE .*?\(\s*51\s*\)/i)
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else if (connection.driver.options.type === "spanner") {
+                    // Spanner: SET DATA TYPE
+                    expect(up).to.match(/ALTER TABLE .* ALTER COLUMN .* SET DATA TYPE .*?\(\s*51\s*\)/i)
                     expect(up).to.not.match(/\bDROP COLUMN\b/)
                     expect(up).to.not.match(/\bADD COLUMN\b/)
                 } else {
