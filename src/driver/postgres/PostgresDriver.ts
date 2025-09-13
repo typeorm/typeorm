@@ -216,6 +216,8 @@ export class PostgresDriver implements Driver {
         "bit",
         "varbit",
         "bit varying",
+        "vector",
+        "halfvec",
     ]
 
     /**
