@@ -671,7 +671,10 @@ export class PostgresDriver implements Driver {
             ) >= 0
         ) {
             return JSON.stringify(value)
-        } else if (columnMetadata.type === "vector") {
+        } else if (
+            columnMetadata.type === "vector" ||
+            columnMetadata.type === "halfvec"
+        ) {
             if (Array.isArray(value)) {
                 return `[${value.join(",")}]`
             } else {
@@ -753,7 +756,10 @@ export class PostgresDriver implements Driver {
             value = DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
-        } else if (columnMetadata.type === "vector") {
+        } else if (
+            columnMetadata.type === "vector" ||
+            columnMetadata.type === "halfvec"
+        ) {
             if (
                 typeof value === "string" &&
                 value.startsWith("[") &&

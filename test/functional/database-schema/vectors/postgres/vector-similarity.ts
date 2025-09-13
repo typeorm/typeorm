@@ -129,9 +129,12 @@ describe("columns > vector type > similarity operations", () => {
                 const foundPostWithMalformedEmbedding = await connection
                     .getRepository(Post)
                     .createQueryBuilder("p")
-                    .where("p.embedding::text = :embeddingText", {
-                        embeddingText: "[1,1]",
-                    })
+                    .where(
+                        "p.embedding_three_dimensions::text = :embeddingText",
+                        {
+                            embeddingText: "[1,1]",
+                        },
+                    )
                     .getOne()
                 expect(foundPostWithMalformedEmbedding).to.be.null
             }),
