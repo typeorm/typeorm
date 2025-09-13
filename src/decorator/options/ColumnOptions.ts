@@ -28,11 +28,6 @@ export interface ColumnOptions extends ColumnCommonOptions {
      */
     width?: number
 
-    /**
-     * Vector dimensions. Used only for vector type.
-     * For example type = "vector" and dimensions = 3 means that we will create a column with type vector(3).
-     */
-    dimensions?: number
 
     /**
      * Indicates if column's value can be set to NULL.

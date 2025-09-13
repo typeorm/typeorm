@@ -30,7 +30,7 @@ export type SpatialColumnType =
 /**
  * Column types where vector properties are used.
  */
-export type VectorColumnType = "vector"
+export type VectorColumnType = "vector" | "halfvec"
 
 /**
  * Column types where precision and scale properties are used.
@@ -80,6 +80,8 @@ export type WithLengthColumnType =
     | "binary" // mssql
     | "varbinary" // mssql, sap
     | "string" // cockroachdb, spanner
+    | "vector" // postgres
+    | "halfvec" // postgres
 
 export type WithWidthColumnType =
     | "tinyint" // mysql
@@ -213,7 +215,6 @@ export type SimpleColumnType =
     | "array" // cockroachdb, sap, spanner
     | "cube" // postgres
     | "ltree" // postgres
-    | "vector" // postgres
 
 /**
  * Any column type column can be.
@@ -223,7 +224,6 @@ export type ColumnType =
     | WithLengthColumnType
     | WithWidthColumnType
     | SpatialColumnType
-    | VectorColumnType
     | SimpleColumnType
     | BooleanConstructor
     | DateConstructor

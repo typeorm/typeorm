@@ -67,11 +67,6 @@ export class ColumnMetadata {
      */
     width?: number
 
-    /**
-     * Vector dimensions. Used only for vector type.
-     * For example type = "vector" and dimensions = 3 means that we will create a column with type vector(3).
-     */
-    dimensions?: number
 
     /**
      * Defines column character set.
@@ -379,8 +374,6 @@ export class ColumnMetadata {
                 ? options.args.options.length.toString()
                 : ""
         if (options.args.options.width) this.width = options.args.options.width
-        if (options.args.options.dimensions)
-            this.dimensions = options.args.options.dimensions
         if (options.args.options.charset)
             this.charset = options.args.options.charset
         if (options.args.options.collation)

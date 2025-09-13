@@ -37,7 +37,6 @@ export class TableUtils {
             primaryKeyConstraintName: columnMetadata.primaryKeyConstraintName,
             spatialFeatureType: columnMetadata.spatialFeatureType,
             srid: columnMetadata.srid,
-            dimensions: columnMetadata.dimensions,
         }
     }
 }

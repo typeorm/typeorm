@@ -78,11 +78,6 @@ export class TableColumn {
      */
     width?: number
 
-    /**
-     * Vector dimensions. Used only for vector type.
-     * For example type = "vector" and dimensions = 3 means that we will create a column with type vector(3).
-     */
-    dimensions?: number
 
     /**
      * Defines column character set.
@@ -167,7 +162,6 @@ export class TableColumn {
             this.type = options.type || ""
             this.length = options.length || ""
             this.width = options.width
-            this.dimensions = options.dimensions
             this.charset = options.charset
             this.collation = options.collation
             this.precision = options.precision
@@ -207,7 +201,6 @@ export class TableColumn {
             type: this.type,
             length: this.length,
             width: this.width,
-            dimensions: this.dimensions,
             charset: this.charset,
             collation: this.collation,
             precision: this.precision,

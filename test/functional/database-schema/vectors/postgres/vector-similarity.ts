@@ -1,11 +1,11 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { Post } from "./entity/Post"
 
 describe("columns > vector type > similarity operations", () => {

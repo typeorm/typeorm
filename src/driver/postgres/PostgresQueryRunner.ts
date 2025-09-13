@@ -3466,16 +3466,13 @@ export class PostgresQueryRunner
                             tableColumn.name = dbColumn["column_name"]
                             tableColumn.type = dbColumn["regtype"].toLowerCase()
 
-                            if (tableColumn.type === "vector") {
-                                const dimensionMatch =
+                            if (tableColumn.type === "vector" || tableColumn.type === "halfvec") {
+                                const lengthMatch =
                                     dbColumn["format_type"].match(
-                                        /^vector\((\d+)\)$/,
+                                        /^(?:vector|halfvec)\((\d+)\)$/,
                                     )
-                                if (dimensionMatch && dimensionMatch[1]) {
-                                    tableColumn.dimensions = parseInt(
-                                        dimensionMatch[1],
-                                        10,
-                                    )
+                                if (lengthMatch && lengthMatch[1]) {
+                                    tableColumn.length = lengthMatch[1]
                                 }
                             }
 

@@ -39,7 +39,7 @@ describe("migrations > vector type", () => {
                     .type.should.be.equal("vector")
                 table!
                     .findColumnByName("embedding_three_dimensions")!
-                    .dimensions!.should.be.equal(3)
+                    .length!.should.be.equal("3")
             }),
         ))
 

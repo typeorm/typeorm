@@ -1,11 +1,11 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { Post } from "./entity/Post"
 
 describe("columns > vector type", () => {
@@ -32,10 +32,14 @@ describe("columns > vector type", () => {
 
                 const embedding = [1.0, 2.0, 3.0]
                 const embedding_three_dimensions = [1.0, 2.0, 3.0]
+                const halfvec_embedding = [1.5, 2.5]
+                const halfvec_four_dimensions = [1.5, 2.5, 3.5, 4.5]
 
                 const post = new Post()
                 post.embedding = embedding
                 post.embedding_three_dimensions = embedding_three_dimensions
+                post.halfvec_embedding = halfvec_embedding
+                post.halfvec_four_dimensions = halfvec_four_dimensions
 
                 await postRepository.save(post)
 
@@ -48,6 +52,8 @@ describe("columns > vector type", () => {
                 expect(loadedPost!.embedding_three_dimensions).to.deep.equal(
                     embedding_three_dimensions,
                 )
+                expect(loadedPost!.halfvec_embedding).to.deep.equal(halfvec_embedding)
+                expect(loadedPost!.halfvec_four_dimensions).to.deep.equal(halfvec_four_dimensions)
 
                 table!
                     .findColumnByName("embedding")!
@@ -57,7 +63,16 @@ describe("columns > vector type", () => {
                     .type.should.be.equal("vector")
                 table!
                     .findColumnByName("embedding_three_dimensions")!
-                    .dimensions!.should.be.equal(3)
+                    .length!.should.be.equal("3")
+                table!
+                    .findColumnByName("halfvec_embedding")!
+                    .type.should.be.equal("halfvec")
+                table!
+                    .findColumnByName("halfvec_four_dimensions")!
+                    .type.should.be.equal("halfvec")
+                table!
+                    .findColumnByName("halfvec_four_dimensions")!
+                    .length!.should.be.equal("4")
             }),
         ))
 
