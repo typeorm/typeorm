@@ -1,6 +1,6 @@
-# Handling Null and Undefined Values in Find Operations
+# Handling Null and Undefined Values in Where Conditions
 
-TypeORM provides fine-grained control over how `null` and `undefined` values are handled in find operations through the `invalidWhereValuesBehavior` configuration option in your data source options.
+TypeORM provides fine-grained control over how `null` and `undefined` values are handled in where conditions through the `invalidWhereValuesBehavior` configuration option in your data source options. This applies to all operations that support where clauses, including find operations, query builders, and repository methods.
 
 :::note
 The current behavior will be changing in future versions of TypeORM,
@@ -189,6 +189,59 @@ This combination is useful when you want to:
 
 -   Be explicit about searching for NULL values in the database
 -   Catch potential programming errors where undefined values might slip into your queries
+
+## Works with All Where Operations
+
+The `invalidWhereValuesBehavior` configuration applies to **all TypeORM operations** that support where conditions, not just repository find methods:
+
+### Query Builders
+
+```typescript
+// UpdateQueryBuilder
+await dataSource
+    .createQueryBuilder()
+    .update(Post)
+    .set({ title: "Updated" })
+    .where({ text: null }) // Respects invalidWhereValuesBehavior
+    .execute()
+
+// DeleteQueryBuilder  
+await dataSource
+    .createQueryBuilder()
+    .delete()
+    .from(Post)
+    .where({ text: null }) // Respects invalidWhereValuesBehavior
+    .execute()
+
+// SoftDeleteQueryBuilder
+await dataSource
+    .createQueryBuilder()
+    .softDelete()
+    .from(Post)
+    .where({ text: null }) // Respects invalidWhereValuesBehavior
+    .execute()
+```
+
+### Repository Methods
+
+```typescript
+// Repository.update()
+await repository.update({ text: null }, { title: "Updated" }) // Respects invalidWhereValuesBehavior
+
+// Repository.delete()
+await repository.delete({ text: null }) // Respects invalidWhereValuesBehavior
+
+// EntityManager.update()
+await manager.update(Post, { text: null }, { title: "Updated" }) // Respects invalidWhereValuesBehavior
+
+// EntityManager.delete()
+await manager.delete(Post, { text: null }) // Respects invalidWhereValuesBehavior
+
+// EntityManager.softDelete()
+await manager.softDelete(Post, { text: null }) // Respects invalidWhereValuesBehavior
+```
+
+All these operations will consistently apply your configured `invalidWhereValuesBehavior` settings.
 
 ## TypeScript Considerations
 

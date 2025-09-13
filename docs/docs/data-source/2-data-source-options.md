@@ -84,7 +84,7 @@ Different RDBMS-es have their own specific options.
 -   `isolateWhereStatements` - Enables where statement isolation, wrapping each where clause in brackets automatically.
     eg. `.where("user.firstName = :search OR user.lastName = :search")` becomes `WHERE (user.firstName = ? OR user.lastName = ?)` instead of `WHERE user.firstName = ? OR user.lastName = ?`
 
--   `invalidWhereValuesBehavior` - Controls how null and undefined values are handled in find operations.
+-   `invalidWhereValuesBehavior` - Controls how null and undefined values are handled in where conditions across all TypeORM operations (find operations, query builders, repository methods).
     Options:
 
     -   `null`: `'ignore'` (default) - skips null properties, `'sql-null'` - transforms null to SQL NULL, `'throw'` - throws an error
