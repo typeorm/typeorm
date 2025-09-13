@@ -1594,14 +1594,7 @@ export class SqlServerQueryRunner
             }
 
             if (
-                this.isColumnChanged(
-                    oldColumn,
-                    newColumn,
-                    false,
-                    false,
-                    false,
-                ) ||
-                oldColumn.length !== newColumn.length
+                this.isColumnChanged(oldColumn, newColumn, false, false, false)
             ) {
                 upQueries.push(
                     new Query(

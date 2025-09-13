@@ -536,7 +536,8 @@ export abstract class BaseQueryRunner {
             oldColumn.onUpdate !== newColumn.onUpdate || // MySQL only
             oldColumn.isNullable !== newColumn.isNullable ||
             (checkComment && oldColumn.comment !== newColumn.comment) ||
-            (checkEnum && this.isEnumChanged(oldColumn, newColumn))
+            (checkEnum && this.isEnumChanged(oldColumn, newColumn)) ||
+            oldColumn.length !== newColumn.length
         )
     }
 

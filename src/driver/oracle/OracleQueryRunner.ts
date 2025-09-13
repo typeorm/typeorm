@@ -1302,10 +1302,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (
-                this.isColumnChanged(oldColumn, newColumn, true) ||
-                oldColumn.length !== newColumn.length
-            ) {
+            if (this.isColumnChanged(oldColumn, newColumn, true)) {
                 let defaultUp: string = ""
                 let defaultDown: string = ""
                 let nullableUp: string = ""
