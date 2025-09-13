@@ -67,6 +67,7 @@ export class ColumnMetadata {
      */
     width?: number
 
+
     /**
      * Defines column character set.
      */
@@ -420,8 +421,7 @@ export class ColumnMetadata {
             ) {
                 this.enum = Object.keys(options.args.options.enum)
                     // remove numeric keys - typescript numeric enum types generate them
-                    // From the documentation: "declaration merging" means that the compiler merges two separate declarations
-                    // declared with the same name into a single definition. This concept is often used to merge enum with namespace
+                    // From the documentation: “declaration merging” means that the compiler merges two separate declarations                    // declared with the same name into a single definition. This concept is often used to merge enum with namespace
                     // where in namespace we define e.g. utility methods for creating enum. This is well known in other languages
                     // like Java (enum methods). Here in case if enum have function, we need to remove it from metadata, otherwise
                     // generated SQL statements contains string representation of that function which leads into syntax error
