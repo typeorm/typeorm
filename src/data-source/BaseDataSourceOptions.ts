@@ -218,7 +218,7 @@ export interface BaseDataSourceOptions {
     /**
      * Controls how null and undefined values are handled in find operations.
      */
-    readonly findWhereBehavior?: {
+    readonly invalidWhereValuesBehavior?: {
         /**
          * How to handle null values in where conditions.
          * - 'ignore': Skip null properties (default)

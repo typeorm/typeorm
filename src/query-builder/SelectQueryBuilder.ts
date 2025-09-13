@@ -4324,12 +4324,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                 if (parameterValue === undefined) {
                     const undefinedBehavior =
-                        this.connection.options.findWhereBehavior?.undefined ||
-                        "ignore"
+                        this.connection.options.invalidWhereValuesBehavior
+                            ?.undefined || "ignore"
                     if (undefinedBehavior === "throw") {
                         throw new TypeORMError(
                             `Undefined value encountered in property '${alias}.${key}' of the find operation. ` +
-                                `Set 'findWhereBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                                `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
                         )
                     }
                     continue
@@ -4337,15 +4337,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                 if (parameterValue === null) {
                     const nullBehavior =
-                        this.connection.options.findWhereBehavior?.null ||
-                        "ignore"
+                        this.connection.options.invalidWhereValuesBehavior
+                            ?.null || "ignore"
                     if (nullBehavior === "ignore") {
                         continue
                     } else if (nullBehavior === "throw") {
                         throw new TypeORMError(
                             `Null value encountered in property '${alias}.${key}' of the find operation. ` +
                                 `To match with SQL NULL, the IsNull() operator must be used. ` +
-                                `Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                                `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
                         )
                     }
                     // 'sql-null' behavior continues to the next logic
@@ -4410,8 +4410,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 } else if (relation) {
                     if (where[key] === null) {
                         const nullBehavior =
-                            this.connection.options.findWhereBehavior?.null ||
-                            "ignore"
+                            this.connection.options.invalidWhereValuesBehavior
+                                ?.null || "ignore"
                         if (nullBehavior === "sql-null") {
                             andConditions.push(
                                 `${alias}.${propertyPath} IS NULL`,
@@ -4419,7 +4419,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         } else if (nullBehavior === "throw") {
                             throw new TypeORMError(
                                 `Null value encountered in property '${alias}.${key}' of the find operation. ` +
-                                    `Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                                    `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
                             )
                         }
                         // 'ignore' behavior falls through to continue

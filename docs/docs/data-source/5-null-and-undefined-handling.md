@@ -1,6 +1,6 @@
 # Handling Null and Undefined Values in Find Operations
 
-TypeORM provides fine-grained control over how `null` and `undefined` values are handled in find operations through the `findWhereBehavior` configuration option in your data source options.
+TypeORM provides fine-grained control over how `null` and `undefined` values are handled in find operations through the `invalidWhereValuesBehavior` configuration option in your data source options.
 
 :::note
 The current behavior will be changing in future versions of TypeORM,
@@ -38,12 +38,12 @@ const posts = await repository.find({
 
 ## Configuration
 
-You can customize how null and undefined values are handled using the `findWhereBehavior` option in your connection configuration:
+You can customize how null and undefined values are handled using the `invalidWhereValuesBehavior` option in your connection configuration:
 
 ```typescript
 const dataSource = new DataSource({
     // ... other options
-    findWhereBehavior: {
+    invalidWhereValuesBehavior: {
         null: "ignore" | "sql-null" | "throw",
         undefined: "ignore" | "throw",
     },
@@ -61,7 +61,7 @@ JavaScript `null` values in where conditions are ignored and the property is ski
 ```typescript
 const dataSource = new DataSource({
     // ... other options
-    findWhereBehavior: {
+    invalidWhereValuesBehavior: {
         null: "ignore",
     },
 })
@@ -81,7 +81,7 @@ JavaScript `null` values are transformed into SQL `NULL` conditions:
 ```typescript
 const dataSource = new DataSource({
     // ... other options
-    findWhereBehavior: {
+    invalidWhereValuesBehavior: {
         null: "sql-null",
     },
 })
@@ -101,7 +101,7 @@ JavaScript `null` values cause a TypeORMError to be thrown:
 ```typescript
 const dataSource = new DataSource({
     // ... other options
-    findWhereBehavior: {
+    invalidWhereValuesBehavior: {
         null: "throw",
     },
 })
@@ -114,7 +114,7 @@ const posts = await repository.find({
 })
 // Error: Null value encountered in property 'text' of the find operation.
 // To match with SQL NULL, the IsNull() operator must be used.
-// Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.
+// Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.
 ```
 
 ### Undefined Behavior Options
@@ -128,7 +128,7 @@ JavaScript `undefined` values in where conditions are ignored and the property i
 ```typescript
 const dataSource = new DataSource({
     // ... other options
-    findWhereBehavior: {
+    invalidWhereValuesBehavior: {
         undefined: "ignore",
     },
 })
@@ -148,7 +148,7 @@ JavaScript `undefined` values cause a TypeORMError to be thrown:
 ```typescript
 const dataSource = new DataSource({
     // ... other options
-    findWhereBehavior: {
+    invalidWhereValuesBehavior: {
         undefined: "throw",
     },
 })
@@ -160,7 +160,7 @@ const posts = await repository.find({
     },
 })
 // Error: Undefined value encountered in property 'text' of the find operation.
-// Set 'findWhereBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.
+// Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.
 ```
 
 Note that this only applies to explicitly set `undefined` values, not omitted properties.
@@ -172,7 +172,7 @@ You can configure both behaviors independently for comprehensive control:
 ```typescript
 const dataSource = new DataSource({
     // ... other options
-    findWhereBehavior: {
+    invalidWhereValuesBehavior: {
         null: "sql-null",
         undefined: "throw",
     },

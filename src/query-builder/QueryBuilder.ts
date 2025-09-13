@@ -1583,7 +1583,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             }
         } else if (parameterValue === null) {
             const nullBehavior =
-                this.connection.options.findWhereBehavior?.null || "ignore"
+                this.connection.options.invalidWhereValuesBehavior?.null ||
+                "ignore"
             if (nullBehavior === "sql-null") {
                 return {
                     operator: "isNull",
@@ -1593,16 +1594,17 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 throw new TypeORMError(
                     `Null value encountered in property '${aliasPath}' of the find operation. ` +
                         `To match with SQL NULL, the IsNull() operator must be used. ` +
-                        `Set 'findWhereBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                        `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
                 )
             }
         } else if (parameterValue === undefined) {
             const undefinedBehavior =
-                this.connection.options.findWhereBehavior?.undefined || "ignore"
+                this.connection.options.invalidWhereValuesBehavior?.undefined ||
+                "ignore"
             if (undefinedBehavior === "throw") {
                 throw new TypeORMError(
                     `Undefined value encountered in property '${aliasPath}' of the find operation. ` +
-                        `Set 'findWhereBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                        `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
                 )
             }
         }
