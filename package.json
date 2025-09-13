@@ -19,6 +19,9 @@
   "exports": {
     ".": {
       "types": "./index.d.ts",
+      "react-native": {
+        "default": "./browser/index.js"
+      },
       "node": {
         "types": "./index.d.ts",
         "import": "./index.mjs",
@@ -101,7 +104,7 @@
     "dedent": "^1.6.0",
     "dotenv": "^16.4.7",
     "glob": "^10.4.5",
-    "sha.js": "^2.4.11",
+    "sha.js": "^2.4.12",
     "sql-highlight": "^6.0.0",
     "tslib": "^2.8.1",
     "uuid": "^11.1.0",

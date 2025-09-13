@@ -171,13 +171,13 @@ There are several special column types with additional functionality available:
     You don't need to set this column - it will be automatically set.
 
 -   `@UpdateDateColumn` is a special column that is automatically set to the entity's update time
-    each time you call `save` of entity manager or repository.
+    each time you call `save` of entity manager or repository, or during `upsert` operations when an update occurs.
     You don't need to set this column - it will be automatically set.
 
 -   `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set. If the @DeleteDateColumn is set, the default scope will be "non-deleted".
 
 -   `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)
-    each time you call `save` of entity manager or repository.
+    each time you call `save` of entity manager or repository, or during `upsert` operations when an update occurs.
     You don't need to set this column - it will be automatically set.
 
 ## Column types
