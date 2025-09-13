@@ -154,7 +154,7 @@ describe("columns > vector type > similarity operations", () => {
                     { halfvec_four_dimensions: [2, 2, 2, 2] },
                 ])
 
-                const queryVector = "[1,1,1.5,1.5]" // Search vector
+                const queryVector = "[1,1,1.8,1.8]" // Search vector
 
                 const results = await connection.query(
                     `SELECT id, halfvec_four_dimensions FROM "post" ORDER BY halfvec_four_dimensions <-> $1 LIMIT 2`,
@@ -162,7 +162,7 @@ describe("columns > vector type > similarity operations", () => {
                 )
 
                 expect(results.length).to.equal(2)
-                // [1,1,2,2] should be closest to [1,1,1.5,1.5], then [1,1,1,1]
+                // [1,1,2,2] should be closest to [1,1,1.8,1.8], then [1,1,1,1]
                 expect(results[0].halfvec_four_dimensions).to.deep.equal(
                     "[1,1,2,2]",
                 )
