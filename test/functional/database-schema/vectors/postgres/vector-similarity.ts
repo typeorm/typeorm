@@ -136,4 +136,61 @@ describe("columns > vector type > similarity operations", () => {
                 expect(foundPostWithMalformedEmbedding).to.be.null
             }),
         ))
+
+    it("should perform halfvec similarity search using L2 distance", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                await postRepository.clear()
+
+                // Create test posts with known halfvec values
+                await postRepository.save([
+                    { halfvec_four_dimensions: [1, 1, 1, 1] },
+                    { halfvec_four_dimensions: [1, 1, 2, 2] },
+                    { halfvec_four_dimensions: [5, 5, 5, 5] },
+                    { halfvec_four_dimensions: [2, 2, 2, 2] },
+                ])
+
+                const queryVector = "[1,1,1.5,1.5]" // Search vector
+
+                const results = await connection.query(
+                    `SELECT id, halfvec_four_dimensions FROM "post" ORDER BY halfvec_four_dimensions <-> $1 LIMIT 2`,
+                    [queryVector],
+                )
+
+                expect(results.length).to.equal(2)
+                // [1,1,2,2] should be closest to [1,1,1.5,1.5], then [1,1,1,1]
+                expect(results[0].halfvec_four_dimensions).to.deep.equal("[1,1,2,2]")
+                expect(results[1].halfvec_four_dimensions).to.deep.equal("[1,1,1,1]")
+            }),
+        ))
+
+    it("should prevent persistence of Post with incorrect halfvec dimensions due to DB constraints", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const post = new Post()
+                post.halfvec_four_dimensions = [1, 1, 1] // Wrong dimensions (3 instead of 4)
+
+                let saveThrewError = false
+                try {
+                    await postRepository.save(post)
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                } catch (error) {
+                    saveThrewError = true
+                }
+
+                expect(saveThrewError).to.be.true
+                expect(post.id).to.be.undefined
+
+                const foundPostWithMalformedHalfvec = await connection
+                    .getRepository(Post)
+                    .createQueryBuilder("p")
+                    .where("p.halfvec_four_dimensions::text = :embeddingText", {
+                        embeddingText: "[1,1,1]",
+                    })
+                    .getOne()
+                expect(foundPostWithMalformedHalfvec).to.be.null
+            }),
+        ))
 })

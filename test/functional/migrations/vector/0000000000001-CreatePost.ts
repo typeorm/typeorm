@@ -7,7 +7,9 @@ export class CreatePost0000000000001 implements MigrationInterface {
             CREATE TABLE "post" (
                 "id" SERIAL PRIMARY KEY,
                 "embedding" vector,
-                "embedding_three_dimensions" vector(3)
+                "embedding_three_dimensions" vector(3),
+                "halfvec_embedding" halfvec,
+                "halfvec_four_dimensions" halfvec(4)
             )
         `)
     }
