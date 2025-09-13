@@ -1,4 +1,5 @@
 import { expect } from "chai"
+import { DeepPartial } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {
@@ -117,15 +118,18 @@ describe(`OrmUtils`, () => {
         })
 
         it("should merge moderately deep objects correctly.", () => {
-            const a = {
-                a: { b: { c: { d: { e: 123, h: { i: 23 } } } } },
-                g: 19,
-            }
-            const b = { a: { b: { c: { d: { f: 99 } }, f: 31 } } }
             const c = {
                 a: { b: { c: { d: { e: 123, f: 99, h: { i: 23 } } }, f: 31 } },
                 g: 19,
             }
+            const a: DeepPartial<typeof c> = {
+                a: { b: { c: { d: { e: 123, h: { i: 23 } } } } },
+                g: 19,
+            }
+            const b: DeepPartial<typeof c> = {
+                a: { b: { c: { d: { f: 99 } }, f: 31 } },
+            }
+
             expect(OrmUtils.mergeDeep(a, b)).to.deep.equal(c)
             expect(OrmUtils.mergeDeep(b, a)).to.deep.equal(c)
             expect(OrmUtils.mergeDeep(b, a, a)).to.deep.equal(c)
@@ -158,6 +162,44 @@ describe(`OrmUtils`, () => {
             const result = OrmUtils.mergeDeep({}, { foo })
             expect(result).to.have.property("foo")
             expect(result.foo).to.equal(foo)
+        })
+    })
+
+    describe("cloneObject", () => {
+        it("should create a shallow copy of an instance without invoking the constructor", () => {
+            class SomeClass {
+                static hasConstructorBeenInvoked = false
+
+                constructor(
+                    public someString: string,
+                    public someNumber: number,
+                ) {
+                    if (SomeClass.hasConstructorBeenInvoked) {
+                        throw Error(
+                            "The constructor was invoked a second time!",
+                        )
+                    }
+                    SomeClass.hasConstructorBeenInvoked = true
+                }
+
+                clone() {
+                    return new SomeClass(this.someString, this.someNumber)
+                }
+            }
+
+            const obj = new SomeClass("string", 0)
+
+            let objCopy: SomeClass | undefined
+            let objCopy2: SomeClass | undefined
+            expect(() => {
+                objCopy = OrmUtils.cloneObject(obj)
+            }).not.to.throw()
+            expect(() => {
+                objCopy2 = obj.clone()
+            }).to.throw()
+            expect(objCopy).not.to.equal(obj)
+            expect(objCopy).to.deep.equal(obj)
+            expect(objCopy2).to.equal(undefined)
         })
     })
 })

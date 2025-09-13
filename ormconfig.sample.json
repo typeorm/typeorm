@@ -45,6 +45,12 @@
     "logging": false
   },
   {
+    "skip": true,
+    "name": "sqljs",
+    "type": "sqljs",
+    "logging": false
+  },
+  {
     "skip": false,
     "name": "postgres",
     "type": "postgres",

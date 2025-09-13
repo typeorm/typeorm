@@ -1875,11 +1875,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 queryRunner,
             )
             this.expressionMap.queryEntity = false
-            const cacheId = this.expressionMap.cacheId
-            // Creates a new cacheId for the count query, or it will retreive the above query results
-            // and count will return 0.
-            this.expressionMap.cacheId = cacheId ? `${cacheId}-count` : cacheId
-            const count = await this.executeCountQuery(queryRunner)
+
+            let count: number | undefined = this.lazyCount(entitiesAndRaw)
+            if (count === undefined) {
+                const cacheId = this.expressionMap.cacheId
+                // Creates a new cacheId for the count query, or it will retrieve the above query results
+                // and count will return 0.
+                if (cacheId) {
+                    this.expressionMap.cacheId = `${cacheId}-count`
+                }
+                count = await this.executeCountQuery(queryRunner)
+            }
             const results: [Entity[], number] = [entitiesAndRaw.entities, count]
 
             // close transaction if we started it
@@ -1901,6 +1907,61 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 // means we created our own query runner
                 await queryRunner.release()
         }
+    }
+
+    private lazyCount(entitiesAndRaw: {
+        entities: Entity[]
+        raw: any[]
+    }): number | undefined {
+        const hasLimit =
+            this.expressionMap.limit !== undefined &&
+            this.expressionMap.limit !== null
+        if (this.expressionMap.joinAttributes.length > 0 && hasLimit) {
+            return undefined
+        }
+
+        const hasTake =
+            this.expressionMap.take !== undefined &&
+            this.expressionMap.take !== null
+
+        // limit overrides take when no join is defined
+        const maxResults = hasLimit
+            ? this.expressionMap.limit
+            : hasTake
+            ? this.expressionMap.take
+            : undefined
+
+        if (
+            maxResults !== undefined &&
+            entitiesAndRaw.entities.length === maxResults
+        ) {
+            // stop here when the result set contains the max number of rows; we need to execute a full count
+            return undefined
+        }
+
+        const hasSkip =
+            this.expressionMap.skip !== undefined &&
+            this.expressionMap.skip !== null &&
+            this.expressionMap.skip > 0
+        const hasOffset =
+            this.expressionMap.offset !== undefined &&
+            this.expressionMap.offset !== null &&
+            this.expressionMap.offset > 0
+
+        if (entitiesAndRaw.entities.length === 0 && (hasSkip || hasOffset)) {
+            // when skip or offset were used and no results found, we need to execute a full count
+            // (the given offset may have exceeded the actual number of rows)
+            return undefined
+        }
+
+        // offset overrides skip when no join is defined
+        const previousResults: number = hasOffset
+            ? this.expressionMap.offset!
+            : hasSkip
+            ? this.expressionMap.skip!
+            : 0
+
+        return entitiesAndRaw.entities.length + previousResults
     }
 
     /**
@@ -2545,13 +2606,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         let offset: number | undefined = this.expressionMap.offset,
             limit: number | undefined = this.expressionMap.limit
         if (
-            !offset &&
-            !limit &&
+            offset === undefined &&
+            limit === undefined &&
             this.expressionMap.joinAttributes.length === 0
         ) {
             offset = this.expressionMap.skip
             limit = this.expressionMap.take
         }
+
+        // Helper functions to check if values are set (including 0)
+        const hasLimit = limit !== undefined && limit !== null
+        const hasOffset = offset !== undefined && offset !== null
 
         if (this.connection.driver.options.type === "mssql") {
             // Due to a limitation in SQL Server's parser implementation it does not support using
@@ -2561,13 +2626,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // https://dba.stackexchange.com/a/193799
             let prefix = ""
             if (
-                (limit || offset) &&
+                (hasLimit || hasOffset) &&
                 Object.keys(this.expressionMap.allOrderBys).length <= 0
             ) {
                 prefix = " ORDER BY (SELECT NULL)"
             }
 
-            if (limit && offset)
+            if (hasLimit && hasOffset)
                 return (
                     prefix +
                     " OFFSET " +
@@ -2576,26 +2641,28 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     limit +
                     " ROWS ONLY"
                 )
-            if (limit)
+            if (hasLimit)
                 return (
                     prefix + " OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY"
                 )
-            if (offset) return prefix + " OFFSET " + offset + " ROWS"
+            if (hasOffset) return prefix + " OFFSET " + offset + " ROWS"
         } else if (
             DriverUtils.isMySQLFamily(this.connection.driver) ||
             this.connection.driver.options.type === "aurora-mysql" ||
             this.connection.driver.options.type === "sap" ||
             this.connection.driver.options.type === "spanner"
         ) {
-            if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
-            if (limit) return " LIMIT " + limit
-            if (offset) throw new OffsetWithoutLimitNotSupportedError()
+            if (hasLimit && hasOffset)
+                return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit) return " LIMIT " + limit
+            if (hasOffset) throw new OffsetWithoutLimitNotSupportedError()
         } else if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
-            if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
-            if (limit) return " LIMIT " + limit
-            if (offset) return " LIMIT -1 OFFSET " + offset
+            if (hasLimit && hasOffset)
+                return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit) return " LIMIT " + limit
+            if (hasOffset) return " LIMIT -1 OFFSET " + offset
         } else if (this.connection.driver.options.type === "oracle") {
-            if (limit && offset)
+            if (hasLimit && hasOffset)
                 return (
                     " OFFSET " +
                     offset +
@@ -2603,12 +2670,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     limit +
                     " ROWS ONLY"
                 )
-            if (limit) return " FETCH NEXT " + limit + " ROWS ONLY"
-            if (offset) return " OFFSET " + offset + " ROWS"
+            if (hasLimit) return " FETCH NEXT " + limit + " ROWS ONLY"
+            if (hasOffset) return " OFFSET " + offset + " ROWS"
         } else {
-            if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
-            if (limit) return " LIMIT " + limit
-            if (offset) return " OFFSET " + offset
+            if (hasLimit && hasOffset)
+                return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit) return " LIMIT " + limit
+            if (hasOffset) return " OFFSET " + offset
         }
 
         return ""
@@ -2903,17 +2971,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         aliasName: string,
         metadata: EntityMetadata,
     ): SelectQuery[] {
-        const mainSelect = this.expressionMap.selects.find(
-            (select) => select.selection === aliasName,
+        return this.expressionMap.selects.filter(
+            (select) =>
+                select.selection === aliasName ||
+                metadata.columns.some(
+                    (column) =>
+                        select.selection ===
+                        aliasName + "." + column.propertyPath,
+                ),
         )
-        if (mainSelect) return [mainSelect]
-
-        return this.expressionMap.selects.filter((select) => {
-            return metadata.columns.some(
-                (column) =>
-                    select.selection === aliasName + "." + column.propertyPath,
-            )
-        })
     }
 
     private computeCountExpression() {

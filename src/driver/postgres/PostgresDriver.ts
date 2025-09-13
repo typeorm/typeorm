@@ -587,8 +587,9 @@ export class PostgresDriver implements Driver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("postgres"))
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("postgres")
+        }
 
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
@@ -1019,9 +1020,7 @@ export class PostgresDriver implements Driver {
         }
 
         if (columnMetadata.isArray && Array.isArray(defaultValue)) {
-            return `'{${defaultValue
-                .map((val: string) => `${val}`)
-                .join(",")}}'`
+            return `'{${defaultValue.map((val) => String(val)).join(",")}}'`
         }
 
         if (
@@ -1270,7 +1269,8 @@ export class PostgresDriver implements Driver {
                 tableColumn.srid !== columnMetadata.srid ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
                 (tableColumn.asExpression || "").trim() !==
-                    (columnMetadata.asExpression || "").trim()
+                    (columnMetadata.asExpression || "").trim() ||
+                tableColumn.collation !== columnMetadata.collation
 
             // DEBUG SECTION
             // if (isColumnChanged) {
@@ -1432,10 +1432,10 @@ export class PostgresDriver implements Driver {
     loadStreamDependency() {
         try {
             return PlatformTools.load("pg-query-stream")
-        } catch (e) {
+        } catch {
             // todo: better error for browser env
             throw new TypeORMError(
-                `To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`,
+                `To use streams you should install pg-query-stream package. Please run "npm i pg-query-stream".`,
             )
         }
     }
