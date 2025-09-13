@@ -55,19 +55,15 @@ describe("schema builder > change column", () => {
                     expect(up).to.not.match(/\bADD COLUMN\b/)
                 } else if (connection.driver.options.type === "mssql") {
                     // ALTER COLUMN NVARCHAR(51)
-                    expect(up).to.match(
-                        /ALTER TABLE .* ALTER COLUMN .*NVARCHAR?\(51\)/i,
-                    )
+                    expect(up).to.match(/ALTER TABLE .* ALTER COLUMN .*N?VARCHAR\(\s*51\s*\)/i)
                     expect(up).to.not.match(/\bDROP COLUMN\b/)
                     expect(up).to.not.match(/\bADD COLUMN\b/)
                 } else if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
                     connection.driver.options.type === "aurora-mysql"
                 ) {
-                    // MySQL/MariaDB/Aurora: CHANGE `name` ... varchar(51)
-                    expect(up).to.match(
-                        /ALTER TABLE .* CHANGE .*`name`.*varchar\(51\)/i,
-                    )
+                    // MySQL/MariaDB/Aurora: CHANGE/MODIFY `name` ... varchar(51)
+                    expect(up).to.match(/ALTER TABLE .* (CHANGE|MODIFY) .*`name`.*varchar\(\s*51\s*\)/i)
                     expect(up).to.not.match(/\bDROP COLUMN\b/)
                     expect(up).to.not.match(/\bADD COLUMN\b/)
                 } else if (connection.driver.options.type === "sap") {
