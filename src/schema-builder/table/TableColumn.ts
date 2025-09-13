@@ -78,7 +78,6 @@ export class TableColumn {
      */
     width?: number
 
-
     /**
      * Defines column character set.
      */
