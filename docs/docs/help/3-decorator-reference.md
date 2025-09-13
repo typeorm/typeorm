@@ -258,7 +258,7 @@ export class User {
 }
 ```
 
-Learn more about [MongoDB](../guides/2-mongodb.md).
+Learn more about [MongoDB](../drivers/mongodb.md).
 
 #### `@CreateDateColumn`
 
@@ -279,6 +279,8 @@ export class User {
 Special column that is automatically set to the entity's update time
 each time you call `save` from entity manager or repository.
 You don't need to write a value into this column - it will be automatically set.
+
+This column is also automatically updated during `upsert` operations when an update occurs due to a conflict.
 
 ```typescript
 @Entity()
@@ -309,6 +311,8 @@ export class User {
 Special column that is automatically set to the entity's version (incremental number)
 each time you call `save` from entity manager or repository.
 You don't need to write a value into this column - it will be automatically set.
+
+This column is also automatically updated during `upsert` operations when an update occurs due to a conflict.
 
 ```typescript
 @Entity()

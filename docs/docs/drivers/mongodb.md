@@ -6,6 +6,89 @@ TypeORM has basic MongoDB support.
 Most of TypeORM functionality is RDBMS-specific,
 this page contains all MongoDB-specific functionality documentation.
 
+## Installation
+
+```shell
+npm install mongodb
+```
+
+## Data Source Options
+
+-   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
+
+-   `host` - Database host.
+
+-   `port` - Database host port. Default mongodb port is `27017`.
+
+-   `username` - Database username (replacement for `auth.user`).
+
+-   `password` - Database password (replacement for `auth.password`).
+
+-   `database` - Database name.
+
+-   `poolSize` - Set the maximum pool size for each server or proxy connection.
+
+-   `tls` - Use a TLS/SSL connection (needs a mongod server with ssl support, 2.4 or higher). Default: `false`.
+
+-   `tlsAllowInvalidCertificates` - Specifies whether the driver generates an error when the server's TLS certificate is invalid. Default: `false`.
+
+-   `tlsCAFile` - Specifies the location of a local .pem file that contains the root certificate chain from the Certificate Authority.
+
+-   `tlsCertificateKeyFile` - Specifies the location of a local .pem file that contains the client's TLS/SSL certificate and key.
+
+-   `tlsCertificateKeyFilePassword` - Specifies the password to decrypt the `tlsCertificateKeyFile`.
+
+-   `keepAlive` - The number of milliseconds to wait before initiating keepAlive on the TCP socket. Default: `30000`.
+
+-   `connectTimeoutMS` - TCP Connection timeout setting. Default: `30000`.
+
+-   `socketTimeoutMS` - TCP Socket timeout setting. Default: `360000`.
+
+-   `replicaSet` - The name of the replica set to connect to.
+
+-   `authSource` - If the database authentication is dependent on another databaseName.
+
+-   `writeConcern` - The write concern.
+
+-   `forceServerObjectId` - Force server to assign \_id values instead of driver. Default: `false`.
+
+-   `serializeFunctions` - Serialize functions on any object. Default: `false`.
+
+-   `ignoreUndefined` - Specify if the BSON serializer should ignore undefined fields. Default: `false`.
+
+-   `raw` - Return document results as raw BSON buffers. Default: `false`.
+
+-   `promoteLongs` - Promotes Long values to number if they fit inside the 53-bit resolution. Default: `true`.
+
+-   `promoteBuffers` - Promotes Binary BSON values to native Node Buffers. Default: `false`.
+
+-   `promoteValues` - Promotes BSON values to native types where possible, set to false to only receive wrapper types.
+    Default: `true`.
+
+-   `readPreference` - The preferred read preference.
+
+    -   `ReadPreference.PRIMARY`
+    -   `ReadPreference.PRIMARY_PREFERRED`
+    -   `ReadPreference.SECONDARY`
+    -   `ReadPreference.SECONDARY_PREFERRED`
+    -   `ReadPreference.NEAREST`
+
+-   `pkFactory` - A primary key factory object for generation of custom \_id keys.
+
+-   `readConcern` - Specify a read concern for the collection. (only MongoDB 3.2 or higher supported).
+
+-   `maxStalenessSeconds` - Specify a maxStalenessSeconds value for secondary reads, minimum is 90 seconds.
+
+-   `appName` - The name of the application that created this MongoClient instance. MongoDB 3.4 and newer will print this
+    value in the server log upon establishing each connection. It is also recorded in the slow query log and profile
+    collections
+
+-   `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
+
+-   `directConnection` - Specifies whether to force-dispatch all operations to the specified host.
+
+Additional options can be added to the `extra` object and will be passed directly to the client library. See more in `mongodb`'s documentation for [Connection Options](https://mongodb-node.netlify.app/docs/drivers/node/current/connect/connection-options/).
+
 ## Defining entities and columns
 
 Defining entities and columns is almost the same as in relational databases,
@@ -45,8 +128,7 @@ const myDataSource = new DataSource({
 
 ## Defining subdocuments (embed documents)
 
-Since MongoDB stores objects and objects inside objects (or documents inside documents)
-you can do the same in TypeORM:
+Since MongoDB stores objects and objects inside objects (or documents inside documents), you can do the same in TypeORM:
 
 ```typescript
 import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
@@ -127,7 +209,7 @@ const manager = getMongoManager()
 await manager.save(user)
 ```
 
-Following document will be saved in the database:
+The following document will be saved in the database:
 
 ```json
 {
@@ -256,146 +338,145 @@ const users = await myDataSource.getMongoRepository(User).find({
 })
 ```
 
-Both `MongoEntityManager` and `MongoRepository` contain lot of useful MongoDB-specific methods:
+Both `MongoEntityManager` and `MongoRepository` contain a lot of useful MongoDB-specific methods:
 
-#### `createCursor`
+### `createCursor`
 
-Creates a cursor for a query that can be used to iterate over results from MongoDB.
+Create a cursor for a query that can be used to iterate over results from MongoDB.
 
-#### `createEntityCursor`
+### `createEntityCursor`
 
-Creates a cursor for a query that can be used to iterate over results from MongoDB.
+Create a cursor for a query that can be used to iterate over results from MongoDB.
 This returns a modified version of the cursor that transforms each result into Entity models.
 
-#### `aggregate`
+### `aggregate`
 
 Execute an aggregation framework pipeline against the collection.
 
-#### `bulkWrite`
+### `bulkWrite`
 
 Perform a bulkWrite operation without a fluent API.
 
-#### `count`
+### `count`
 
-Count number of matching documents in the db to a query.
+Count the number of matching documents in the db to a query.
 
-#### `countDocuments`
+### `countDocuments`
 
-Count number of matching documents in the db to a query.
+Count the number of matching documents in the db to a query.
 
-#### `createCollectionIndex`
+### `createCollectionIndex`
 
-Creates an index on the db and collection.
+Create an index on the db and collection.
 
-#### `createCollectionIndexes`
+### `createCollectionIndexes`
 
-Creates multiple indexes in the collection, this method is only supported in MongoDB 2.6 or higher.
-Earlier version of MongoDB will throw a command not supported error. Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
+Create multiple indexes in the collection, this method is only supported in MongoDB 2.6 or higher. Earlier versions of MongoDB will throw a "command not supported" error. Index specifications are defined at [createIndexes](http://docs.mongodb.org/manual/reference/command/createIndexes/).
 
-#### `deleteMany`
+### `deleteMany`
 
 Delete multiple documents on MongoDB.
 
-#### `deleteOne`
+### `deleteOne`
 
 Delete a document on MongoDB.
 
-#### `distinct`
+### `distinct`
 
 The distinct command returns a list of distinct values for the given key across a collection.
 
-#### `dropCollectionIndex`
+### `dropCollectionIndex`
 
 Drops an index from this collection.
 
-#### `dropCollectionIndexes`
+### `dropCollectionIndexes`
 
 Drops all indexes from the collection.
 
-#### `findOneAndDelete`
+### `findOneAndDelete`
 
 Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
 
-#### `findOneAndReplace`
+### `findOneAndReplace`
 
 Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
 
-#### `findOneAndUpdate`
+### `findOneAndUpdate`
 
 Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
 
-#### `geoHaystackSearch`
+### `geoHaystackSearch`
 
 Execute a geo search using a geo haystack index on a collection.
 
-#### `geoNear`
+### `geoNear`
 
 Execute the geoNear command to search for items in the collection.
 
-#### `group`
+### `group`
 
 Run a group command across a collection.
 
-#### `collectionIndexes`
+### `collectionIndexes`
 
-Retrieve all the indexes on the collection.
+Retrieve all the indexes of the collection.
 
-#### `collectionIndexExists`
+### `collectionIndexExists`
 
 Retrieve if an index exists on the collection
 
-#### `collectionIndexInformation`
+### `collectionIndexInformation`
 
-Retrieves this collections index info.
+Retrieve this collection's index info.
 
-#### `initializeOrderedBulkOp`
+### `initializeOrderedBulkOp`
 
-Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
+Initiate an In order bulk write operation; operations will be serially executed in the order they are added, creating a new operation for each switch in types.
 
-#### `initializeUnorderedBulkOp`
+### `initializeUnorderedBulkOp`
 
-Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
+Initiate an Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
 
-#### `insertMany`
+### `insertMany`
 
-Inserts an array of documents into MongoDB.
+Insert an array of documents into MongoDB.
 
-#### `insertOne`
+### `insertOne`
 
-Inserts a single document into MongoDB.
+Insert a single document into MongoDB.
 
-#### `isCapped`
+### `isCapped`
 
-Returns if the collection is a capped collection.
+Return if the collection is a capped collection.
 
-#### `listCollectionIndexes`
+### `listCollectionIndexes`
 
 Get the list of all indexes information for the collection.
 
-#### `parallelCollectionScan`
+### `parallelCollectionScan`
 
-Return N number of parallel cursors for a collection allowing parallel reading of entire collection. There are no ordering guarantees for returned results
+Return N number of parallel cursors for a collection allowing parallel reading of the entire collection. There are no ordering guarantees for returned results
 
-#### `reIndex`
+### `reIndex`
 
 Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
 
-#### `rename`
+### `rename`
 
-Changes the name of an existing collection.
+Change the name of an existing collection.
 
-#### `replaceOne`
+### `replaceOne`
 
 Replace a document on MongoDB.
 
-#### `stats`
+### `stats`
 
 Get all the collection statistics.
 
-#### `updateMany`
+### `updateMany`
 
-Updates multiple documents within the collection based on the filter.
+Update multiple documents within the collection based on the filter.
 
-#### `updateOne`
+### `updateOne`
 
-Updates a single document within the collection based on the filter.
+Update a single document within the collection based on the filter.

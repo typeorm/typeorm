@@ -16,6 +16,7 @@ import { VersionCommand } from "./commands/VersionCommand"
 import { InitCommand } from "./commands/InitCommand"
 import { CacheClearCommand } from "./commands/CacheClearCommand"
 
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 yargs
     .usage("Usage: $0 <command> [options]")
     .command(new SchemaSyncCommand())
@@ -37,4 +38,5 @@ yargs
     .strict()
     .alias("v", "version")
     .help("h")
-    .alias("h", "help").argv
+    .alias("h", "help")
+    .parse()

@@ -569,7 +569,7 @@ export class ColumnMetadata {
             const extractEmbeddedColumnValue = (
                 propertyNames: string[],
                 map: ObjectLiteral,
-            ): any => {
+            ) => {
                 const propertyName = propertyNames.shift()
                 if (propertyName) {
                     map[propertyName] = {}

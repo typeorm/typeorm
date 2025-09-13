@@ -29,7 +29,7 @@ WHERE user.id = 1
 
 and returns you an instance of `User`:
 
-```
+```javascript
 User {
     id: 1,
     firstName: "Timber",
@@ -41,26 +41,26 @@ User {
 
 When using the `QueryBuilder`, you need to provide unique parameters in your `WHERE` expressions. **This will not work**:
 
-```TypeScript
+```typescript
 const result = await dataSource
     .getRepository(User)
-    .createQueryBuilder('user')
-    .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
-    .leftJoinAndSelect('user.linkedCow', 'linkedCow')
-    .where('user.linkedSheep = :id', { id: sheepId })
-    .andWhere('user.linkedCow = :id', { id: cowId });
+    .createQueryBuilder("user")
+    .leftJoinAndSelect("user.linkedSheep", "linkedSheep")
+    .leftJoinAndSelect("user.linkedCow", "linkedCow")
+    .where("user.linkedSheep = :id", { id: sheepId })
+    .andWhere("user.linkedCow = :id", { id: cowId })
 ```
 
 ... but this will:
 
-```TypeScript
+```typescript
 const result = await dataSource
     .getRepository(User)
-    .createQueryBuilder('user')
-    .leftJoinAndSelect('user.linkedSheep', 'linkedSheep')
-    .leftJoinAndSelect('user.linkedCow', 'linkedCow')
-    .where('user.linkedSheep = :sheepId', { sheepId })
-    .andWhere('user.linkedCow = :cowId', { cowId });
+    .createQueryBuilder("user")
+    .leftJoinAndSelect("user.linkedSheep", "linkedSheep")
+    .leftJoinAndSelect("user.linkedCow", "linkedCow")
+    .where("user.linkedSheep = :sheepId", { sheepId })
+    .andWhere("user.linkedCow = :cowId", { cowId })
 ```
 
 Note that we uniquely named `:sheepId` and `:cowId` instead of using `:id` twice for different parameters.
@@ -893,7 +893,7 @@ Using `take` and `skip` will prevent those issues.
 
 QueryBuilder supports both optimistic and pessimistic locking.
 
-#### Lock modes
+### Lock modes
 
 Support of lock modes, and SQL statements they translate to, are listed in the table below (blank cell denotes unsupported). When specified lock mode is not supported, a `LockNotSupportedOnGivenDriverError` error will be thrown.
 
@@ -951,7 +951,7 @@ const users = await dataSource
 
 Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` decorators.
 
-#### Lock tables
+### Lock tables
 
 You can also lock tables using the following method:
 

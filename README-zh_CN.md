@@ -1,34 +1,31 @@
 <div align="center">
   <a href="http://typeorm.io/">
-    <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-light.png">
+        <source  media="(prefers-color-scheme: light)" srcset="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-dark.png">
+        <img height="80" width="auto" alt="TypeORM Logo" src="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-dark.png">
+    </picture>
   </a>
   <br>
   <br>
-	<a href="https://app.circleci.com/pipelines/github/typeorm/typeorm">
-		<img src="https://circleci.com/gh/typeorm/typeorm/tree/master.svg?style=shield">
-	</a>
-	<a href="https://badge.fury.io/js/typeorm">
-		<img src="https://badge.fury.io/js/typeorm.svg">
-	</a>
-	<a href="https://david-dm.org/typeorm/typeorm">
-		<img src="https://david-dm.org/typeorm/typeorm.svg">
-	</a>
-	<a href="https://gitter.im/typeorm/typeorm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge">
-		<img src="https://badges.gitter.im/typeorm/typeorm.svg">
-	</a>
+    <a href="https://www.npmjs.com/package/typeorm"><img src="https://img.shields.io/npm/v/typeorm" alt="NPM Version" /></a>
+    <a href="https://www.npmjs.com/package/typeorm"><img src="https://img.shields.io/npm/dm/typeorm" alt="NPM Downloads" /></a>
+    <a href="https://github.com/typeorm/typeorm/actions/workflows/commit-validation.yml?query=branch%3Amaster"><img src="https://github.com/typeorm/typeorm/actions/workflows/commit-validation.yml/badge.svg?branch=master" alt="Commit Validation"/></a>
+    <a href="https://coveralls.io/github/typeorm/typeorm?branch=master"><img src="https://coveralls.io/repos/github/typeorm/typeorm/badge.svg?branch=master" alt="Coverage Status" /></a>
+    <a href=""><img src="https://img.shields.io/badge/License-MIT-teal.svg" alt="MIT License" /></a>
   <br>
   <br>
 </div>
 
-TypeORM 是一个 [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 框架，它可以运行在 NodeJS、Browser、Cordova、PhoneGap、Ionic、React Native、Expo 和 Electron 平台上，可以与 TypeScript 和 JavaScript (ES2021)一起使用。 它的目标是始终支持最新的 JavaScript 特性并提供额外的特性以帮助你开发任何使用数据库的（不管是只有几张表的小型应用还是拥有多数据库的大型企业应用）应用程序。
+TypeORM 是一个 [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) 框架，它可以运行在 NodeJS、Browser、Cordova、Ionic、React Native、Expo 和 Electron 平台上，可以与 TypeScript 和 JavaScript (ES2021)一起使用。 它的目标是始终支持最新的 JavaScript 特性并提供额外的特性以帮助你开发任何使用数据库的（不管是只有几张表的小型应用还是拥有多数据库的大型企业应用）应用程序。
 
-不同于现有的所有其他 JavaScript ORM 框架，TypeORM 支持 [Data Mapper](./docs/docs/Guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) 和 [Active Record](./docs/docs/Guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) 模式，这意味着你可以以最高效的方式编写高质量的、松耦合的、可扩展的、可维护的应用程序。
+不同于现有的所有其他 JavaScript ORM 框架，TypeORM 支持 [Active Record](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) 和 [Data Mapper](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) 模式，这意味着你可以以最高效的方式编写高质量的、松耦合的、可扩展的、可维护的应用程序。
 
 TypeORM 参考了很多其他优秀 ORM 的实现, 比如 [Hibernate](http://hibernate.org/orm/), [Doctrine](http://www.doctrine-project.org/) 和 [Entity Framework](https://www.asp.net/entity-framework)。
 
 TypeORM 的一些特性:
 
--   同时支持 [DataMapper](./docs/docs/Guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) 和 [ActiveRecord](./docs/docs/Guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) (随你选择)
+-   同时支持 [Active Record](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) 和 [Data Mapper](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) (随你选择)
 -   实体和列
 -   数据库特性列类型
 -   实体管理
@@ -149,11 +146,11 @@ await timber.remove()
 
 1. 通过 `npm` 安装:
 
-    `npm install typeorm --save`
+    `npm install typeorm`
 
 2. 你还需要安装 `reflect-metadata`:
 
-    `npm install reflect-metadata --save`
+    `npm install reflect-metadata`
 
     并且需要在应用程序的全局位置导入（例如在`app.ts`中）
 
@@ -161,54 +158,54 @@ await timber.remove()
 
 3. 你可能还需要安装 node typings(以此来使用 Node 的智能提示):
 
-    `npm install @types/node --save`
+    `npm install @types/node --save-dev`
 
 4. 安装数据库驱动:
 
     - **MySQL** 或者 **MariaDB**
 
-        `npm install mysql --save` (也可以安装 `mysql2`)
+        `npm install mysql` (也可以安装 `mysql2`)
 
     - **PostgreSQL**
 
-        `npm install pg --save`
+        `npm install pg`
 
     - **SQLite**
 
-        `npm install sqlite3 --save`
+        `npm install sqlite3`
+
+    - **Better SQLite**
+
+        `npm install better-sqlite3`
 
     - **Microsoft SQL Server**
 
-        `npm install mssql --save`
+        `npm install mssql`
 
     - **sql.js**
 
-        `npm install sql.js --save`
+        `npm install sql.js`
 
     - **Oracle**
 
-        `npm install oracledb --save`
+        `npm install oracledb`
 
         根据你使用的数据库，仅安装其中*一个*即可。
         要使 Oracle 驱动程序正常工作，需要按照其[站点](https://github.com/oracle/node-oracledb)中的安装说明进行操作。
 
+    - **SAP Hana**
+
+        `npm i @sap/hana-client`
+
     - **MongoDB** (试验性)
 
-        `npm install mongodb --save`
+        `npm install mongodb`
 
-    - **NativeScript**, **react-native** 和 **Cordova**
+    - **NativeScript**, **React Native**, **Cordova** 和 **Expo**
 
         查看 [支持的平台](/supported-platforms.md)
 
-    - **SAP Hana**
-
-        ```
-        npm config set @sap:registry https://npm.sap.com
-        npm i @sap/hana-client
-        npm i hdb-pool
-        ```
-
-##### TypeScript 配置
+### TypeScript 配置
 
 此外，请确保你使用的 TypeScript 编译器版本是**3.3**或更高版本，并且已经在 `tsconfig.json` 中启用了以下设置:
 
@@ -217,8 +214,6 @@ await timber.remove()
 "experimentalDecorators": true,
 ```
 
-除此之外，你可能还需要在编译器选项的 `lib` 中启用 `es6`，或者安装 `es6-shim` 的 `@types`。
-
 ## 快速开始
 
 快速上手 TypeORM 的方法是使用其 CLI 命令生成启动项目。
@@ -226,13 +221,13 @@ await timber.remove()
 
 首先全局安装 TypeORM:
 
-```
+```shell
 npm install typeorm -g
 ```
 
 然后转到要创建新项目的目录并运行命令：
 
-```
+```shell
 typeorm init --name MyProject --database mysql
 ```
 
@@ -261,9 +256,9 @@ MyProject
 
 接下来安装项目依赖项：
 
-```sh
-$ cd MyProject
-$ npm install
+```shell
+cd MyProject
+npm install
 ```
 
 在安装过程中，编辑 `ormconfig.json` 文件并在其中编辑自己的数据库连接配置选项：
@@ -288,8 +283,8 @@ $ npm install
 
 完成配置并安装所有 node modules 后，即可运行应用程序：
 
-```sh
-$ npm start
+```shell
+npm start
 ```
 
 至此你的应用程序应该成功运行并将新用户插入数据库。你可以继续使用此项目并集成所需的其他模块并创建更多实体。
@@ -325,7 +320,7 @@ export class Photo {
 
 让我们将 `Photo` 模型作为一个实体
 
-```ts
+```typescript
 import { Entity } from "typeorm"
 
 @Entity()
@@ -346,7 +341,7 @@ export class Photo {
 
 要添加数据库列，你只需要将要生成的实体属性加上 `@Column` 装饰器。
 
-```ts
+```typescript
 import { Entity, Column } from "typeorm"
 
 @Entity()
@@ -380,7 +375,7 @@ export class Photo {
 
 每个**必须**至少有一个主键列。这是必须的，你无法避免。要使列成为主键，你需要使用 `@PrimaryColumn` 装饰器。
 
-```ts
+```typescript
 import { Entity, Column, PrimaryColumn } from "typeorm"
 
 @Entity()
@@ -466,7 +461,7 @@ export class Photo {
 }
 ```
 
-列类型是特定于数据库的。你可以设置数据库支持的任何列类型。有关支持的列类型的更多信息，请参见[此处](./docs/docs/Entity/1-entities.md#column-types)。
+列类型是特定于数据库的。你可以设置数据库支持的任何列类型。有关支持的列类型的更多信息，请参见[此处](./docs/docs/entity/1-entities.md#column-types)。
 
 ### 创建数据库的连接
 
@@ -532,7 +527,7 @@ createConnection({
 
 现在可以启动 `app.ts`，启动后可以发现数据库自动被初始化，并且 Photo 这个表也会创建出来。
 
-```bash
+```text
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
@@ -615,7 +610,7 @@ createConnection(/*...*/)
 
 `savedPhotos` 是一个 Photo 对象数组，其中包含从数据库加载的数据。
 
-了解更多有关 [EntityManager](./docs/docs/Working%20with%20Entity%20Manager/2-working-with-repository.md) 的信息。
+了解更多有关 [EntityManager](./docs/docs/working-with-entity-manager/2-working-with-repository.md) 的信息。
 
 ### 使用 Repositories
 
@@ -645,7 +640,7 @@ createConnection(/*...*/)
     .catch((error) => console.log(error))
 ```
 
-了解更多有关 [Repository](./docs/docs/Working%20with%20Entity%20Manager/2-working-with-repository.md) 的信息。
+了解更多有关 [Repository](./docs/docs/working-with-entity-manager/2-working-with-repository.md) 的信息。
 
 ### 从数据库加载
 
@@ -771,7 +766,7 @@ export class PhotoMetadata {
 
 如果运行该应用程序，你将看到一个新生成的表，它将包含一个带有外键的列：
 
-```bash
+```text
 +-------------+--------------+----------------------------+
 |                     photo_metadata                      |
 +-------------+--------------+----------------------------+
@@ -890,7 +885,7 @@ createConnection(/*...*/)
     .catch((error) => console.log(error))
 ```
 
-photos 包含来自数据库的 photos 数组，每个 photo 包含其 photo metadata。详细了解本文档中的[Find 选项](./docs/docs/Working%20with%20Entity%20Manager/3-find-options.md)。
+photos 包含来自数据库的 photos 数组，每个 photo 包含其 photo metadata。详细了解本文档中的[Find 选项](./docs/docs/working-with-entity-manager/3-find-options.md)。
 
 使用 find 选项很简单，但是如果你需要更复杂的查询，则应该使用 `QueryBuilder`。 `QueryBuilder` 使用更优雅的方式执行更复杂的查询：
 
@@ -1010,7 +1005,7 @@ export class Photo {
 在多对一/一对多的关系中，拥有方总是多对一的。这意味着使用`@ManyToOne`的类将存储相关对象的 id。
 运行应用程序后，ORM 将创建`author`表：
 
-```bash
+```text
 +-------------+--------------+----------------------------+
 |                          author                         |
 +-------------+--------------+----------------------------+
@@ -1021,7 +1016,7 @@ export class Photo {
 
 它还将修改`photo`表，添加新的`author`列并为其创建外键：
 
-```bash
+```text
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
@@ -1076,7 +1071,7 @@ export class Photo {
 
 运行后，ORM 将创建**album_photos_photo_albums**\_联结表。
 
-```bash
+```text
 +-------------+--------------+----------------------------+
 |                album_photos_photo_albums                |
 +-------------+--------------+----------------------------+
@@ -1163,7 +1158,7 @@ let photos = await connection
 此查询选择所有 published 的 name 等于"My"或"Mishka"的 photos。它将从结果中的第 5 个（分页偏移）开始，并且仅选择 10 个结果（分页限制）。得到的结果将按 ID 降序排序。photo 的 albums 将被 left-joined，其元数据将被 inner joined。
 
 由于 QueryBuilder 的自由度更高，因此在项目中可能会大量的使用它。
-更多关于 QueryBuilder 的信息，[可查看](./docs/docs/Query%20Builder/1-select-query-builder.md)。
+更多关于 QueryBuilder 的信息，[可查看](./docs/docs/query-builder/1-select-query-builder.md)。
 
 ## 示例
 
@@ -1178,7 +1173,7 @@ let photos = await connection
 -   [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
 -   [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
 -   [Example how to use TypeORM with MongoDB](https://github.com/typeorm/mongo-typescript-example)
--   [Example how to use TypeORM in a Cordova/PhoneGap app](https://github.com/typeorm/cordova-example)
+-   [Example how to use TypeORM in a Cordova app](https://github.com/typeorm/cordova-example)
 -   [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
 -   [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
 -   [Example how to use TypeORM with Electron using JavaScript](https://github.com/typeorm/electron-javascript-example)

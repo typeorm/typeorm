@@ -76,9 +76,8 @@ Here we setup two options:
 
 Once you setup the connection options you can create a new migration using CLI:
 
-```
+```shell
 typeorm migration:create ./path-to-migrations-dir/PostRefactoring
-
 ```
 
 Here, `PostRefactoring` is the name of the migration - you can specify any name you want.
@@ -131,25 +130,25 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 
 Once you have a migration to run on production, you can run them using a CLI command:
 
-```
+```shell
 typeorm migration:run -- -d path-to-datasource-config
 ```
 
-**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files, unless you use the `o` flag (see more in [Generating migrations](#generating-migrations)). The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively you can use `ts-node` in conjunction with `typeorm` to run `.ts` migration files.
+**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files, unless you use the `o` flag (see more in [Generating migrations](#generating-migrations)). The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively, you can use `ts-node` with `typeorm` to run `.ts` migration files.
 
 Example with `ts-node`:
 
-```
+```shell
 npx typeorm-ts-node-commonjs migration:run -- -d path-to-datasource-config
 ```
 
 Example with `ts-node` in ESM projects:
 
-```
+```shell
 npx typeorm-ts-node-esm migration:run -- -d path-to-datasource-config
 ```
 
-```
+```shell
 npx typeorm-ts-node-esm migration:generate ./src/migrations/update-post-table -d ./src/data-source.ts
 ```
 
@@ -159,7 +158,7 @@ That's all! Now you have your database schema up-to-date.
 
 If for some reason you want to revert the changes, you can run:
 
-```
+```shell
 typeorm migration:revert -- -d path-to-datasource-config
 ```
 
@@ -173,14 +172,14 @@ to the migrations table without running it. This is useful for migrations create
 have already been made to the database or when migrations have been run externally
 (e.g. by another tool or application), and you still would like to keep a consistent migration history.
 
-```
-typeorm migration:run --fake
+```shell
+typeorm migration:run -d path-to-datasource-config --fake
 ```
 
 This is also possible with rollbacks.
 
-```
-typeorm migration:revert --fake
+```shell
+typeorm migration:revert -d path-to-datasource-config --fake
 ```
 
 ### Transaction modes
@@ -216,13 +215,13 @@ TypeORM is able to automatically generate migration files with schema changes yo
 Let's say you have a `Post` entity with a `title` column, and you have changed the name `title` to `name`.
 You can run following command:
 
-```
+```shell
 typeorm migration:generate PostRefactoring -d path-to-datasource-config
 ```
 
 If you encounter any error, it require you have the path to migration name and data source. You can try this option
 
-```
+```shell
 typeorm migration:generate -d <path/to/datasource> path/to/migrations/<migration-name>
 ```
 
@@ -246,7 +245,7 @@ export class PostRefactoringTIMESTAMP implements MigrationInterface {
 }
 ```
 
-Alternatively you can also output your migrations as Javascript files using the `o` (alias for `--outputJs`) flag. This is useful for Javascript only projects in which TypeScript additional packages are not installed. This command, will generate a new migration file `{TIMESTAMP}-PostRefactoring.js` with the following content:
+Alternatively, you can also output your migrations as Javascript files using the `o` (alias for `--outputJs`) flag. This is useful for Javascript only projects in which TypeScript additional packages are not installed. This command, will generate a new migration file `{TIMESTAMP}-PostRefactoring.js` with the following content:
 
 ```javascript
 /**
@@ -270,15 +269,14 @@ module.exports = class PostRefactoringTIMESTAMP {
         )
     }
 }
-
 ```
+
 By default, it generates CommonJS JavaScript code with the `o` (alias for `--outputJs`) flag, but you can also generate ESM code with the `esm` flag. This is useful for Javascript projects that use ESM:
 
 ```javascript
 /**
  * @typedef {import('typeorm').MigrationInterface} MigrationInterface
  */
-
 
 /**
  * @class
@@ -332,7 +330,7 @@ The rule of thumb for generating migrations is that you generate them after **ea
 
 If you need to run/revert/generate/show your migrations use the `-d` (alias for `--dataSource`) and pass the path to the file where your DataSource instance is defined as an argument
 
-```
+```shell
 typeorm -d <your-data-source-path> migration:{run|revert}
 ```
 
@@ -340,7 +338,7 @@ typeorm -d <your-data-source-path> migration:{run|revert}
 
 If you need to specify a timestamp for the migration name, use the `-t` (alias for `--timestamp`) and pass the timestamp (should be a non-negative number)
 
-```
+```shell
 typeorm -t <specific-timestamp> migration:{create|generate}
 ```
 

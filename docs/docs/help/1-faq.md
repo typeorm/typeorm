@@ -21,7 +21,7 @@ There are two ways that help you achieve this:
 
 -   Use command line tools and run schema sync manually in the command line:
 
-    ```
+    ```shell
     typeorm schema:sync
     ```
 
@@ -135,7 +135,7 @@ That's why when you remove and move entities with `outDir` enabled, it's strongl
 You can prevent compiling files each time using [ts-node](https://github.com/TypeStrong/ts-node).
 If you are using ts-node, you can specify `ts` entities inside data source options:
 
-```
+```javascript
 {
     entities: ["src/entity/*.ts"],
     subscribers: ["src/subscriber/*.ts"]
@@ -148,13 +148,13 @@ make sure to use the `outDir` compiler option to prevent
 
 Also, if you want to use the ts-node CLI, you can execute TypeORM the following way:
 
-```
+```shell
 npx typeorm-ts-node-commonjs schema:sync
 ```
 
 For ESM projects use this instead:
 
-```
+```shell
 npx typeorm-ts-node-esm schema:sync
 ```
 
@@ -162,7 +162,7 @@ npx typeorm-ts-node-esm schema:sync
 
 Webpack produces warnings due to what it views as missing require statements -- require statements for all drivers supported by TypeORM. To suppress these warnings for unused drivers, you will need to edit your webpack config file.
 
-```js
+```javascript
 const FilterWarningsPlugin = require('webpack-filter-warnings-plugin');
 
 module.exports = {
@@ -180,7 +180,7 @@ module.exports = {
 
 By default Webpack tries to bundle everything into one file. This can be problematic when your project has migration files which are meant to be executed after bundled code is deployed to production. To make sure all your migrations can be recognized and executed by TypeORM, you may need to use "Object Syntax" for the `entry` configuration for the migration files only.
 
-```js
+```javascript
 const glob = require("glob")
 const path = require("path")
 
@@ -212,7 +212,7 @@ module.exports = {
 
 Also, since Webpack 4, when using `mode: 'production'`, files are optimized by default which includes mangling your code in order to minimize file sizes. This breaks the migrations because TypeORM relies on their names to determine which has already been executed. You may disable minimization completely by adding:
 
-```js
+```javascript
 module.exports = {
     // ... other Webpack configurations here
     optimization: {
@@ -223,7 +223,7 @@ module.exports = {
 
 Alternatively, if you are using the `UglifyJsPlugin`, you can tell it to not change class or function names like so:
 
-```js
+```javascript
 const UglifyJsPlugin = require("uglifyjs-webpack-plugin")
 
 module.exports = {
@@ -243,7 +243,7 @@ module.exports = {
 
 Lastly, make sure in your data source options, the transpiled migration files are included:
 
-```js
+```javascript
 // TypeORM Configurations
 module.exports = {
     // ...
@@ -264,7 +264,7 @@ On production builds, files are [optimized by default](https://vite.dev/config/b
 
 You have 3 options to mitigate this. The 3 options are shown belown as diff to this basic "vite.config.ts"
 
-```ts
+```typescript
 import legacy from "@vitejs/plugin-legacy"
 import vue from "@vitejs/plugin-vue"
 import path from "path"

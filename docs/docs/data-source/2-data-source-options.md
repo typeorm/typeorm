@@ -553,7 +553,6 @@ The following TNS connection string will be used in the next explanations:
 
 -   `sid` - The System Identifier (SID) identifies a specific database instance. For example, "sales".
 -   `serviceName` - The Service Name is an identifier of a database service. For example, `sales.us.example.com`.
-
 ## Data Source Options example
 
 Here is a small example of data source options for mysql:

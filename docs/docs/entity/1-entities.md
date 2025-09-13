@@ -171,145 +171,14 @@ There are several special column types with additional functionality available:
     You don't need to set this column - it will be automatically set.
 
 -   `@UpdateDateColumn` is a special column that is automatically set to the entity's update time
-    each time you call `save` of entity manager or repository.
+    each time you call `save` of entity manager or repository, or during `upsert` operations when an update occurs.
     You don't need to set this column - it will be automatically set.
 
 -   `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set. If the @DeleteDateColumn is set, the default scope will be "non-deleted".
 
 -   `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)
-    each time you call `save` of entity manager or repository.
+    each time you call `save` of entity manager or repository, or during `upsert` operations when an update occurs.
     You don't need to set this column - it will be automatically set.
-
-### Spatial columns
-
-MS SQL, MySQL, MariaDB, PostgreSQL and CockroachDB all support spatial columns. TypeORM's
-support for each varies slightly between databases, particularly as the column
-names vary between databases.
-
-MS SQL and MySQL / MariaDB's TypeORM support exposes (and expects) geometries to
-be provided as [well-known text
-(WKT)](https://en.wikipedia.org/wiki/Well-known_text), so geometry columns
-should be tagged with the `string` type.
-
-```typescript
-import { Entity, PrimaryColumn, Column } from "typeorm"
-
-@Entity()
-export class Thing {
-    @PrimaryColumn()
-    id: number
-
-    @Column("point")
-    point: string
-
-    @Column("linestring")
-    linestring: string
-}
-
-...
-
-const thing = new Thing()
-thing.point = "POINT(1 1)"
-thing.linestring = "LINESTRING(0 0,1 1,2 2)"
-```
-
-TypeORM's PostgreSQL and CockroachDB support uses [GeoJSON](http://geojson.org/) as an
-interchange format, so geometry columns should be tagged either as `object` or
-`Geometry` (or subclasses, e.g. `Point`) after importing [`geojson`
-types](https://www.npmjs.com/package/@types/geojson) or using TypeORM built in [GeoJSON types](../../../src/driver/types/GeoJsonTypes.ts).
-
-```typescript
-import {
-    Entity,
-    PrimaryColumn,
-    Column,
-    Point,
-    LineString,
-    MultiPoint
-} from "typeorm"
-
-@Entity()
-export class Thing {
-    @PrimaryColumn()
-    id: number
-
-    @Column("geometry")
-    point: Point
-
-    @Column("geometry")
-    linestring: LineString
-
-    @Column("geometry", {
-        spatialFeatureType: "MultiPoint",
-        srid: 4326,
-    })
-    multiPointWithSRID: MultiPoint
-}
-
-...
-
-const thing = new Thing()
-thing.point = {
-    type: "Point",
-    coordinates: [116.443987, 39.920843],
-}
-thing.linestring = {
-    type: "LineString",
-    coordinates: [
-        [-87.623177, 41.881832],
-        [-90.199402, 38.627003],
-        [-82.446732, 38.413651],
-        [-87.623177, 41.881832],
-    ],
-}
-thing.multiPointWithSRID = {
-    type: "MultiPoint",
-    coordinates: [
-        [100.0, 0.0],
-        [101.0, 1.0],
-    ],
-}
-```
-
-TypeORM tries to do the right thing, but it's not always possible to determine
-when a value being inserted or the result of a PostGIS function should be
-treated as a geometry. As a result, you may find yourself writing code similar
-to the following, where values are converted into PostGIS `geometry`s from
-GeoJSON and into GeoJSON as `json`:
-
-```typescript
-import { Point } from "typeorm"
-
-const origin: Point = {
-    type: "Point",
-    coordinates: [0, 0],
-}
-
-await dataSource.manager
-    .createQueryBuilder(Thing, "thing")
-    // convert stringified GeoJSON into a geometry with an SRID that matches the
-    // table specification
-    .where(
-        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom))) > 0",
-    )
-    .orderBy(
-        "ST_Distance(geom, ST_SetSRID(ST_GeomFromGeoJSON(:origin), ST_SRID(geom)))",
-        "ASC",
-    )
-    .setParameters({
-        // stringify GeoJSON
-        origin: JSON.stringify(origin),
-    })
-    .getMany()
-
-await dataSource.manager
-    .createQueryBuilder(Thing, "thing")
-    // convert geometry result into GeoJSON, treated as JSON (so that TypeORM
-    // will know to deserialize it)
-    .select("ST_AsGeoJSON(ST_Buffer(geom, 0.1))::json geom")
-    .from("thing")
-    .getMany()
-```
 
 ## Column types
 
@@ -343,71 +212,6 @@ or
 ```
 
 > Note about `bigint` type: `bigint` column type, used in SQL databases, doesn't fit into the regular `number` type and maps property to a `string` instead.
-
-### Column types for `mysql` / `mariadb`
-
-`bit`, `int`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `float`, `double`,
-`double precision`, `dec`, `decimal`, `numeric`, `fixed`, `bool`, `boolean`, `date`, `datetime`,
-`timestamp`, `time`, `year`, `char`, `nchar`, `national char`, `varchar`, `nvarchar`, `national varchar`,
-`text`, `tinytext`, `mediumtext`, `blob`, `longtext`, `tinyblob`, `mediumblob`, `longblob`, `enum`, `set`,
-`json`, `binary`, `varbinary`, `geometry`, `point`, `linestring`, `polygon`, `multipoint`, `multilinestring`,
-`multipolygon`, `geometrycollection`, `uuid`, `inet4`, `inet6`
-
-> Note: UUID, INET4, and INET6 are only available for mariadb and for respective versions that made them available.
-
-### Column types for `postgres`
-
-`int`, `int2`, `int4`, `int8`, `smallint`, `integer`, `bigint`, `decimal`, `numeric`, `real`,
-`float`, `float4`, `float8`, `double precision`, `money`, `character varying`, `varchar`,
-`character`, `char`, `text`, `citext`, `hstore`, `bytea`, `bit`, `varbit`, `bit varying`,
-`timetz`, `timestamptz`, `timestamp`, `timestamp without time zone`, `timestamp with time zone`,
-`date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`,
-`enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`, `macaddr8`,
-`tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `int4range`, `int8range`, `numrange`,
-`tsrange`, `tstzrange`, `daterange`, `int4multirange`, `int8multirange`, `nummultirange`,
-`tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `cube`, `ltree`
-
-### Column types for `cockroachdb`
-
-`array`, `bool`, `boolean`, `bytes`, `bytea`, `blob`, `date`, `numeric`, `decimal`, `dec`, `float`,
-`float4`, `float8`, `double precision`, `real`, `inet`, `int`, `integer`, `int2`, `int8`, `int64`,
-`smallint`, `bigint`, `interval`, `string`, `character varying`, `character`, `char`, `char varying`,
-`varchar`, `text`, `time`, `time without time zone`, `timestamp`, `timestamptz`, `timestamp without time zone`,
-`timestamp with time zone`, `json`, `jsonb`, `uuid`
-
-> Note: CockroachDB returns all numeric data types as `string`. However if you omit column type and define your property as
-> `number` ORM will `parseInt` string into number.
-
-### Column types for `sqlite` / `cordova` / `react-native` / `expo`
-
-`int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`,
-`numeric`, `float`, `double`, `real`, `double precision`, `datetime`, `varying character`,
-`character`, `native character`, `varchar`, `nchar`, `nvarchar2`, `unsigned big int`, `boolean`,
-`blob`, `text`, `clob`, `date`
-
-### Column types for `mssql`
-
-`int`, `bigint`, `bit`, `decimal`, `money`, `numeric`, `smallint`, `smallmoney`, `tinyint`, `float`,
-`real`, `date`, `datetime2`, `datetime`, `datetimeoffset`, `smalldatetime`, `time`, `char`, `varchar`,
-`text`, `nchar`, `nvarchar`, `ntext`, `binary`, `image`, `varbinary`, `hierarchyid`, `sql_variant`,
-`timestamp`, `uniqueidentifier`, `xml`, `geometry`, `geography`, `rowversion`
-
-### Column types for `oracle`
-
-`char`, `nchar`, `nvarchar2`, `varchar2`, `long`, `raw`, `long raw`, `number`, `numeric`, `float`, `dec`,
-`decimal`, `integer`, `int`, `smallint`, `real`, `double precision`, `date`, `timestamp`, `timestamp with time zone`,
-`timestamp with local time zone`, `interval year to month`, `interval day to second`, `bfile`, `blob`, `clob`,
-`nclob`, `rowid`, `urowid`
-
-### Column types for `sap`
-
-`tinyint`, `smallint`, `integer`, `bigint`, `smalldecimal`, `decimal`, `real`, `double`, `date`, `time`, `seconddate`, `timestamp`, `boolean`, `char`, `nchar`, `varchar`, `nvarchar`, `text`, `alphanum`, `shorttext`, `array`, `varbinary`, `blob`, `clob`, `nclob`, `st_geometry`, `st_point`.
-
-> Note: SAP HANA Cloud deprecated or removed some of these data types. TypeORM will convert them to the closest available alternative when connected to a Cloud version.
-
-### Column types for `spanner`
-
-`bool`, `int64`, `float64`, `numeric`, `string`, `json`, `bytes`, `date`, `timestamp`, `array`
 
 ### `enum` column type
 
@@ -455,53 +259,6 @@ export class User {
         default: "ghost"
     })
     role: UserRoleType
-}
-```
-
-### `set` column type
-
-`set` column type is supported by `mariadb` and `mysql`. There are various possible column definitions:
-
-Using typescript enums:
-
-```typescript
-export enum UserRole {
-    ADMIN = "admin",
-    EDITOR = "editor",
-    GHOST = "ghost",
-}
-
-@Entity()
-export class User {
-    @PrimaryGeneratedColumn()
-    id: number
-
-    @Column({
-        type: "set",
-        enum: UserRole,
-        default: [UserRole.GHOST, UserRole.EDITOR],
-    })
-    roles: UserRole[]
-}
-```
-
-Using array with `set` values:
-
-```typescript
-export type UserRoleType = "admin" | "editor" | "ghost",
-
-@Entity()
-export class User {
-
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column({
-        type: "set",
-        enum: ["admin", "editor", "ghost"],
-        default: ["ghost", "editor"]
-    })
-    roles: UserRoleType[]
 }
 ```
 
@@ -580,6 +337,38 @@ export class User {
 Besides "uuid" there is also "increment", "identity" (Postgres 10+ only) and "rowid" (CockroachDB only) generated types, however there are some limitations
 on some database platforms with this type of generation (for example some databases can only have one increment column,
 or some of them require increment to be a primary key).
+
+### Spatial columns
+
+Microsoft SQLServer, MySQL/MariaDB, PostgreSQL/CockroachDB and SAP HANA all support spatial columns. TypeORM's support for each varies slightly between databases, particularly as the column names vary between databases.
+
+MS SQL, MySQL/MariaDB and SAP HANA use geometries in the [well-known text
+(WKT)](https://en.wikipedia.org/wiki/Well-known_text) format, so geometry columns
+should be tagged with the `string` type.
+
+```typescript
+import { Entity, PrimaryColumn, Column } from "typeorm"
+
+@Entity()
+export class Thing {
+    @PrimaryColumn()
+    id: number
+
+    @Column("point")
+    point: string
+
+    @Column("linestring")
+    linestring: string
+}
+
+...
+
+const thing = new Thing()
+thing.point = "POINT(1 1)"
+thing.linestring = "LINESTRING(0 0,1 1,2 2)"
+```
+
+For Postgres/CockroachDB, see [Postgis Data Types](../drivers/postgres.md#spatial-columns)
 
 ## Column options
 

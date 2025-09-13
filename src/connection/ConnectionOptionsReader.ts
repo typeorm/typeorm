@@ -138,7 +138,7 @@ export class ConnectionOptionsReader {
             PlatformTools.getEnvVariable("TYPEORM_CONNECTION") ||
             PlatformTools.getEnvVariable("TYPEORM_URL")
         ) {
-            connectionOptions = await new ConnectionOptionsEnvReader().read()
+            connectionOptions = new ConnectionOptionsEnvReader().read()
         } else if (
             foundFileFormat === "js" ||
             foundFileFormat === "mjs" ||

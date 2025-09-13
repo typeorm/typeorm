@@ -77,7 +77,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
      */
     async query(
         query: string,
-        parameters?: any[],
+        parameters: any[] = [],
         useStructuredResult = false,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
@@ -100,7 +100,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             const result = new QueryResult()
 
             if (stmt.reader) {
-                const raw = stmt.all.apply(stmt, parameters)
+                const raw = stmt.all(...parameters)
 
                 result.raw = raw
 
@@ -108,7 +108,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
                     result.records = raw
                 }
             } else {
-                const raw = stmt.run.apply(stmt, parameters)
+                const raw = stmt.run(...parameters)
                 result.affected = raw.changes
                 result.raw = raw.lastInsertRowid
             }
