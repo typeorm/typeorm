@@ -144,14 +144,15 @@ describe("schema builder > change column", () => {
                     expect(up).to.match(/\bCREATE TABLE\b/i)
                     expect(up).to.match(/\bDROP TABLE\b/i)
                 } else if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner"
-                ) {
-                    expect(up).to.match(
-                        /ALTER TABLE .* ALTER COLUMN .* (TYPE )?.*\(80\)/i,
-                    )
+                } else if (connection.driver.options.type === "cockroachdb") {
+                    expect(up).to.match(/ALTER TABLE .* ALTER COLUMN .* TYPE .*?\(\s*80\s*\)/i)
                     expect(up).to.not.match(/\bDROP COLUMN\b/)
                     expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else if (connection.driver.options.type === "spanner") {
+                    expect(up).to.match(/ALTER TABLE .* ALTER COLUMN .* SET DATA TYPE .*?\(\s*80\s*\)/i)
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else {
                 } else {
                     expect(up).to.not.match(/\bDROP COLUMN\b/)
                     expect(up).to.not.match(/\bADD COLUMN\b/)
