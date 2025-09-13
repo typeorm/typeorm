@@ -160,8 +160,12 @@ describe("columns > vector type > similarity operations", () => {
 
                 expect(results.length).to.equal(2)
                 // [1,1,2,2] should be closest to [1,1,1.5,1.5], then [1,1,1,1]
-                expect(results[0].halfvec_four_dimensions).to.deep.equal("[1,1,2,2]")
-                expect(results[1].halfvec_four_dimensions).to.deep.equal("[1,1,1,1]")
+                expect(results[0].halfvec_four_dimensions).to.deep.equal(
+                    "[1,1,2,2]",
+                )
+                expect(results[1].halfvec_four_dimensions).to.deep.equal(
+                    "[1,1,1,1]",
+                )
             }),
         ))
 

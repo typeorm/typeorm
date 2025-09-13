@@ -52,8 +52,12 @@ describe("columns > vector type", () => {
                 expect(loadedPost!.embedding_three_dimensions).to.deep.equal(
                     embedding_three_dimensions,
                 )
-                expect(loadedPost!.halfvec_embedding).to.deep.equal(halfvec_embedding)
-                expect(loadedPost!.halfvec_four_dimensions).to.deep.equal(halfvec_four_dimensions)
+                expect(loadedPost!.halfvec_embedding).to.deep.equal(
+                    halfvec_embedding,
+                )
+                expect(loadedPost!.halfvec_four_dimensions).to.deep.equal(
+                    halfvec_four_dimensions,
+                )
 
                 table!
                     .findColumnByName("embedding")!

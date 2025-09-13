@@ -1158,8 +1158,7 @@ export class PostgresDriver implements Driver {
             }
         } else if (column.type === "vector" || column.type === "halfvec") {
             type =
-                column.type +
-                (column.length ? "(" + column.length + ")" : "")
+                column.type + (column.length ? "(" + column.length + ")" : "")
         }
 
         if (column.isArray) type += " array"

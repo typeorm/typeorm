@@ -73,7 +73,6 @@ export interface TableColumnOptions {
      */
     width?: number
 
-
     /**
      * Defines column character set.
      */
