@@ -4334,14 +4334,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     }
 
                     if (column.transformer) {
-                        if (parameterValue instanceof FindOperator) {
-                            parameterValue.transformValue(column.transformer)
-                        } else {
-                            parameterValue = ApplyValueTransformers.transformTo(
-                                column.transformer,
-                                parameterValue,
-                            )
-                        }
+                        parameterValue = ApplyValueTransformers.transformTo(
+                            column.transformer,
+                            parameterValue,
+                        )
                     }
 
                     // MSSQL requires parameters to carry extra type information
