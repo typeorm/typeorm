@@ -1,6 +1,14 @@
 # Handling Null and Undefined Values in Where Conditions
 
-TypeORM provides fine-grained control over how `null` and `undefined` values are handled in where conditions through the `invalidWhereValuesBehavior` configuration option in your data source options. This applies to all operations that support where clauses, including find operations, query builders, and repository methods.
+In 'WHERE' conditions the values `null` and `undefined` are not strictly valid values in TypeORM.
+
+Passing a known `null` value is disallowed by TypeScript (when you've enabled `strictNullChecks` in tsconfig.json) at compile time. But the default behavior is for `null` values encountered at runtime to be ignored. Similarly, `undefined` values are allowed by TypeScript and ignored at runtime.
+
+The acceptance of `null` and `undefined` values can sometimes cause unexpected results and requires caution. This is especially a concern when values are passed from user input without adequate validation.
+
+For example, calling `Repository.findOneBy({ id: undefined })` returns the first row from the table, and `Repository.findBy({ userId: null })` is unfiltered and returns all rows.
+
+The way in which `null` and `undefined` values are handled can be customised through the `invalidWhereValuesBehavior` configuration option in your data source options. This applies to all operations that support 'WHERE' conditions, including find operations, query builders, and repository methods.
 
 :::note
 The current behavior will be changing in future versions of TypeORM,
