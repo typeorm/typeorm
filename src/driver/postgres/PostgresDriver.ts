@@ -575,12 +575,9 @@ export class PostgresDriver implements Driver {
         )
         const hasVectorColumns = this.connection.entityMetadatas.some(
             (metadata) => {
-                return (
-                    metadata.columns.filter(
-                        (column) =>
-                            column.type === "vector" ||
-                            column.type === "halfvec",
-                    ).length > 0
+                return metadata.columns.some(
+                    (column) =>
+                        column.type === "vector" || column.type === "halfvec",
                 )
             },
         )
