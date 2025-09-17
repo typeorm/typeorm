@@ -85,10 +85,14 @@ Different RDBMS-es have their own specific options.
     eg. `.where("user.firstName = :search OR user.lastName = :search")` becomes `WHERE (user.firstName = ? OR user.lastName = ?)` instead of `WHERE user.firstName = ? OR user.lastName = ?`
 
 -   `invalidWhereValuesBehavior` - Controls how null and undefined values are handled in where conditions across all TypeORM operations (find operations, query builders, repository methods).
-    Options:
-
-    -   `null`: `'ignore'` (default) - skips null properties, `'sql-null'` - transforms null to SQL NULL, `'throw'` - throws an error
-    -   `undefined`: `'ignore'` (default) - skips undefined properties, `'throw'` - throws an error
+    
+    -   `null` behavior options:
+        -   `'ignore'` (default) - skips null properties
+        -   `'sql-null'` - transforms null to SQL NULL
+        -   `'throw'` - throws an error
+    -   `undefined` behavior options:
+        -   `'ignore'` (default) - skips undefined properties
+        -   `'throw'` - throws an error
 
     Example: `invalidWhereValuesBehavior: { null: 'sql-null', undefined: 'throw' }`.
 
