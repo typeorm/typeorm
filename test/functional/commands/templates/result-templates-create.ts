@@ -13,6 +13,7 @@ export class TestMigration1610975184784 implements MigrationInterface {
 `,
     javascript: `/**
  * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ * @typedef {import('typeorm').QueryRunner} QueryRunner
  */
 
 /**
@@ -21,9 +22,15 @@ export class TestMigration1610975184784 implements MigrationInterface {
  */
 module.exports = class TestMigration1610975184784 {
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async up(queryRunner) {
     }
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async down(queryRunner) {
     }
 
