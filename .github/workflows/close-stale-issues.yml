@@ -14,6 +14,8 @@ jobs:
         with:
           days-before-stale: 180 # 6 months
           days-before-close: 0
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
           stale-issue-message: ""
           close-issue-message: >
             TypeORM has returned to active development after recently transitioning to new leadership ([see related announcement](https://typeorm.io/docs/future-of-typeorm/)).
