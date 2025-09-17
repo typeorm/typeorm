@@ -17,7 +17,7 @@ jobs:
           days-before-pr-stale: -1
           days-before-pr-close: -1
           stale-issue-message: ""
-          close-issue-message: >
+          close-issue-message: |
             TypeORM has returned to active development after recently transitioning to new leadership ([see related announcement](https://typeorm.io/docs/future-of-typeorm/)).
 
             As part of the new team's efforts to prioritise work on the project moving forward, it is necessary to clean up the backlog of stale issues.
