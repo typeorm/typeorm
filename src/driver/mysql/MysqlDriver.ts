@@ -445,8 +445,9 @@ export class MysqlDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.poolCluster && !this.pool)
-            return Promise.reject(new ConnectionIsNotSetError("mysql"))
+        if (!this.poolCluster && !this.pool) {
+            throw new ConnectionIsNotSetError("mysql")
+        }
 
         if (this.poolCluster) {
             return new Promise<void>((ok, fail) => {
@@ -1232,6 +1233,7 @@ export class MysqlDriver implements Driver {
                 trace: options.trace,
                 multipleStatements: options.multipleStatements,
                 flags: options.flags,
+                stringifyObjects: true,
             },
             {
                 host: credentials.host,
@@ -1241,11 +1243,11 @@ export class MysqlDriver implements Driver {
                 port: credentials.port,
                 ssl: options.ssl,
                 socketPath: credentials.socketPath,
+                connectionLimit: options.poolSize,
             },
             options.acquireTimeout === undefined
                 ? {}
                 : { acquireTimeout: options.acquireTimeout },
-            { connectionLimit: options.poolSize },
             options.extra || {},
         )
     }

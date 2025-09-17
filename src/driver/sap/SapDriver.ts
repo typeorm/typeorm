@@ -1,5 +1,7 @@
+import { promisify } from "node:util"
 import {
     ColumnType,
+    ConnectionIsNotSetError,
     DataSource,
     EntityMetadata,
     ObjectLiteral,
@@ -12,21 +14,20 @@ import { TypeORMError } from "../../error/TypeORMError"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
+import { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
+import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Driver } from "../Driver"
+import { DriverUtils } from "../DriverUtils"
 import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { UpsertType } from "../types/UpsertType"
 import { SapConnectionOptions } from "./SapConnectionOptions"
 import { SapQueryRunner } from "./SapQueryRunner"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { DriverUtils } from "../DriverUtils"
-import { View } from "../../schema-builder/view/View"
-import { InstanceChecker } from "../../util/InstanceChecker"
-import { UpsertType } from "../types/UpsertType"
-
 /**
  * Organizes communication with SAP Hana DBMS.
  *
@@ -43,24 +44,24 @@ export class SapDriver implements Driver {
     connection: DataSource
 
     /**
-     * Hana Pool instance.
+     * SAP HANA Client Pool instance.
      */
     client: any
 
     /**
-     * Hana Client streaming extension.
+     * SAP HANA Client streaming extension.
      */
     streamClient: any
+
     /**
      * Pool for master database.
      */
     master: any
 
     /**
-     * Pool for slave databases.
-     * Used in replication.
+     * Function handling errors thrown by drivers pool.
      */
-    slaves: any[] = []
+    poolErrorHandler: (error: any) => void
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -108,36 +109,39 @@ export class SapDriver implements Driver {
      * @see https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/data-types
      */
     supportedDataTypes: ColumnType[] = [
-        "tinyint",
-        "smallint",
-        "int", // typeorm alias for "integer"
-        "integer",
+        "alphanum", // removed in SAP HANA Cloud
+        "array",
         "bigint",
-        "smalldecimal",
-        "decimal",
-        "dec", // typeorm alias for "decimal"
-        "real",
-        "double",
-        "float", // database alias for "real" / "double"
-        "date",
-        "time",
-        "seconddate",
-        "timestamp",
+        "binary",
+        "blob",
         "boolean",
         "char", // not officially supported, in SAP HANA Cloud: alias for "nchar"
-        "nchar", // not officially supported
-        "varchar", // in SAP HANA Cloud: alias for "nvarchar"
-        "nvarchar",
-        "text", // removed in SAP HANA Cloud
-        "alphanum", // removed in SAP HANA Cloud
-        "shorttext", // removed in SAP HANA Cloud
-        "array",
-        "varbinary",
-        "blob",
         "clob", // in SAP HANA Cloud: alias for "nclob"
+        "date",
+        "dec", // typeorm alias for "decimal"
+        "decimal",
+        "double",
+        "float", // database alias for "real" / "double"
+        "half_vector", // only supported in SAP HANA Cloud, not in SAP HANA 2.0
+        "int", // typeorm alias for "integer"
+        "integer",
+        "nchar", // not officially supported
         "nclob",
+        "nvarchar",
+        "real_vector", // only supported in SAP HANA Cloud, not in SAP HANA 2.0
+        "real",
+        "seconddate",
+        "shorttext", // removed in SAP HANA Cloud
+        "smalldecimal",
+        "smallint",
         "st_geometry",
         "st_point",
+        "text", // removed in SAP HANA Cloud
+        "time",
+        "timestamp",
+        "tinyint",
+        "varbinary",
+        "varchar", // in SAP HANA Cloud: alias for "nvarchar"
     ]
 
     /**
@@ -154,11 +158,14 @@ export class SapDriver implements Driver {
      * Gets list of column data types that support length by a driver.
      */
     withLengthColumnTypes: ColumnType[] = [
-        "varchar",
-        "nvarchar",
         "alphanum",
+        "binary",
+        "half_vector",
+        "nvarchar",
+        "real_vector",
         "shorttext",
         "varbinary",
+        "varchar",
     ]
 
     /**
@@ -169,7 +176,7 @@ export class SapDriver implements Driver {
     /**
      * Gets list of column data types that support scale by a driver.
      */
-    withScaleColumnTypes: ColumnType[] = ["decimal"]
+    withScaleColumnTypes: ColumnType[] = ["decimal", "timestamp"]
 
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
@@ -206,18 +213,19 @@ export class SapDriver implements Driver {
      * Used in the cases when length/precision/scale is not specified by user.
      */
     dataTypeDefaults: DataTypeDefaults = {
+        binary: { length: 1 },
         char: { length: 1 },
+        decimal: { precision: 18, scale: 0 },
         nchar: { length: 1 },
-        varchar: { length: 255 },
         nvarchar: { length: 255 },
         shorttext: { length: 255 },
         varbinary: { length: 255 },
-        decimal: { precision: 18, scale: 0 },
+        varchar: { length: 255 },
     }
 
     /**
      * Max length allowed by SAP HANA for aliases (identifiers).
-     * @see https://help.sap.com/viewer/4fe29514fd584807ac9f2a04f6754767/2.0.03/en-US/20a760537519101497e3cfe07b348f3c.html
+     * @see https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/system-limitations
      */
     maxAliasLength = 128
 
@@ -251,54 +259,62 @@ export class SapDriver implements Driver {
      */
     async connect(): Promise<void> {
         // HANA connection info
-        const dbParams = {
-            hostName: this.options.host,
+        const connectionOptions: any = {
+            host: this.options.host,
             port: this.options.port,
-            userName: this.options.username,
+            user: this.options.username,
             password: this.options.password,
-            ...this.options.extra,
+            database: this.options.database,
+            currentSchema: this.options.schema,
+            encrypt: this.options.encrypt,
+            sslValidateCertificate: this.options.sslValidateCertificate,
+            key: this.options.key,
+            cert: this.options.cert,
+            ca: this.options.ca,
         }
-
-        if (this.options.database) dbParams.databaseName = this.options.database
-        if (this.options.schema) dbParams.currentSchema = this.options.schema
-        if (this.options.encrypt) dbParams.encrypt = this.options.encrypt
-        if (this.options.sslValidateCertificate)
-            dbParams.validateCertificate = this.options.sslValidateCertificate
-        if (this.options.key) dbParams.key = this.options.key
-        if (this.options.cert) dbParams.cert = this.options.cert
-        if (this.options.ca) dbParams.ca = this.options.ca
+        Object.keys(connectionOptions).forEach((key) => {
+            if (connectionOptions[key] === undefined) {
+                delete connectionOptions[key]
+            }
+        })
+        Object.assign(connectionOptions, this.options.extra ?? {})
 
         // pool options
-        const options: any = {
-            min:
-                this.options.pool && this.options.pool.min
-                    ? this.options.pool.min
-                    : 1,
-            max:
-                this.options.pool && this.options.pool.max
-                    ? this.options.pool.max
-                    : 10,
+        const poolOptions: any = {
+            maxConnectedOrPooled:
+                this.options.pool?.maxConnectedOrPooled ??
+                this.options.pool?.max ??
+                this.options.poolSize ??
+                10,
+            maxPooledIdleTime:
+                this.options.pool?.maxPooledIdleTime ??
+                (this.options.pool?.idleTimeout
+                    ? this.options.pool.idleTimeout / 1000
+                    : 30),
+        }
+        if (this.options.pool?.pingCheck) {
+            poolOptions.pingCheck = this.options.pool.pingCheck
+        }
+        if (this.options.pool?.poolCapacity) {
+            poolOptions.poolCapacity = this.options.pool.poolCapacity
         }
 
-        if (this.options.pool && this.options.pool.checkInterval)
-            options.checkInterval = this.options.pool.checkInterval
-        if (this.options.pool && this.options.pool.maxWaitingRequests)
-            options.maxWaitingRequests = this.options.pool.maxWaitingRequests
-        if (this.options.pool && this.options.pool.requestTimeout)
-            options.requestTimeout = this.options.pool.requestTimeout
-        if (this.options.pool && this.options.pool.idleTimeout)
-            options.idleTimeout = this.options.pool.idleTimeout
-
-        const { logger } = this.connection
-
-        const poolErrorHandler =
-            options.poolErrorHandler ||
-            ((error: any) =>
-                logger.log("warn", `SAP Hana pool raised an error. ${error}`))
-        this.client.eventEmitter.on("poolError", poolErrorHandler)
+        this.poolErrorHandler =
+            this.options.pool?.poolErrorHandler ??
+            ((error: Error) => {
+                this.connection.logger.log(
+                    "warn",
+                    `SAP HANA pool raised an error: ${error}`,
+                )
+            })
 
         // create the pool
-        this.master = this.client.createPool(dbParams, options)
+        try {
+            this.master = this.client.createPool(connectionOptions, poolOptions)
+        } catch (error) {
+            this.poolErrorHandler(error)
+            throw error
+        }
 
         const queryRunner = this.createQueryRunner("master")
 
@@ -324,9 +340,46 @@ export class SapDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        const promise = this.master.clear()
+        const pool = this.master
+        if (!pool) {
+            throw new ConnectionIsNotSetError("sap")
+        }
+
         this.master = undefined
-        return promise
+        try {
+            await promisify(pool.clear).call(pool)
+        } catch (error) {
+            this.poolErrorHandler(error)
+            throw error
+        }
+    }
+
+    /**
+     * Obtains a new database connection to a master server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    async obtainMasterConnection(): Promise<any> {
+        const pool = this.master
+        if (!pool) {
+            throw new TypeORMError("Driver not Connected")
+        }
+
+        try {
+            return await promisify(pool.getConnection).call(pool)
+        } catch (error) {
+            this.poolErrorHandler(error)
+            throw error
+        }
+    }
+
+    /**
+     * Obtains a new database connection to a slave server.
+     * Used for replication.
+     * If replication is not setup then returns master (default) connection's database connection.
+     */
+    async obtainSlaveConnection(): Promise<any> {
+        return this.obtainMasterConnection()
     }
 
     /**
@@ -488,9 +541,7 @@ export class SapDriver implements Driver {
 
         if (value === null || value === undefined) return value
 
-        if (columnMetadata.type === Boolean) {
-            return value === true ? 1 : 0
-        } else if (columnMetadata.type === "date") {
+        if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedDateToTimeString(value)
@@ -526,9 +577,7 @@ export class SapDriver implements Driver {
                   )
                 : value
 
-        if (columnMetadata.type === Boolean) {
-            value = value ? true : false
-        } else if (
+        if (
             columnMetadata.type === "timestamp" ||
             columnMetadata.type === "seconddate" ||
             columnMetadata.type === Date
@@ -544,9 +593,6 @@ export class SapDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "simple-enum") {
             value = DateUtils.stringToSimpleEnum(value, columnMetadata)
-        } else if (columnMetadata.type === Number) {
-            // convert to number if number
-            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)
@@ -614,6 +660,13 @@ export class SapDriver implements Driver {
                 return "nclob"
             } else if (column.type === "char") {
                 return "nchar"
+            }
+        } else {
+            if (
+                column.type === "real_vector" ||
+                column.type === "half_vector"
+            ) {
+                return "varbinary"
             }
         }
 
@@ -710,28 +763,6 @@ export class SapDriver implements Driver {
         if (column.isArray) type += " array"
 
         return type
-    }
-
-    /**
-     * Obtains a new database connection to a master server.
-     * Used for replication.
-     * If replication is not setup then returns default connection's database connection.
-     */
-    obtainMasterConnection(): Promise<any> {
-        if (!this.master) {
-            throw new TypeORMError("Driver not Connected")
-        }
-
-        return this.master.getConnection()
-    }
-
-    /**
-     * Obtains a new database connection to a slave server.
-     * Used for replication.
-     * If replication is not setup then returns master (default) connection's database connection.
-     */
-    obtainSlaveConnection(): Promise<any> {
-        return this.obtainMasterConnection()
     }
 
     /**
@@ -839,22 +870,19 @@ export class SapDriver implements Driver {
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
-        try {
-            const client = this.options.driver || PlatformTools.load("hdb-pool")
+        const client = this.options.driver ?? this.options.hanaClientDriver
+        if (client) {
             this.client = client
-        } catch (e) {
-            // todo: better error for browser env
-            throw new DriverPackageNotInstalledError("SAP Hana", "hdb-pool")
+
+            return
         }
 
         try {
-            if (!this.options.hanaClientDriver) {
-                PlatformTools.load("@sap/hana-client")
-                this.streamClient = PlatformTools.load(
-                    "@sap/hana-client/extension/Stream",
-                )
-            }
-        } catch (e) {
+            this.client = PlatformTools.load("@sap/hana-client")
+            this.streamClient = PlatformTools.load(
+                "@sap/hana-client/extension/Stream",
+            )
+        } catch {
             // todo: better error for browser env
             throw new DriverPackageNotInstalledError(
                 "SAP Hana",

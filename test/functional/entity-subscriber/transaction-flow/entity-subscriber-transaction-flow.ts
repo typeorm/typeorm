@@ -23,33 +23,33 @@ describe("entity subscriber > transaction flow", () => {
 
     @EventSubscriber()
     class PostSubscriber implements EntitySubscriberInterface {
-        beforeTransactionStart() {
-            if (beforeTransactionStart) beforeTransactionStart(arguments)
+        beforeTransactionStart(...args: any[]) {
+            if (beforeTransactionStart) beforeTransactionStart(...args)
         }
 
-        afterTransactionStart() {
-            if (afterTransactionStart) afterTransactionStart(arguments)
+        afterTransactionStart(...args: any[]) {
+            if (afterTransactionStart) afterTransactionStart(...args)
         }
 
-        afterInsert() {
-            afterInsertQueryRunnerData = arguments[0].queryRunner.data
-            if (afterInsert) afterInsert(arguments)
+        afterInsert(...args: any[]) {
+            afterInsertQueryRunnerData = args[0].queryRunner.data
+            if (afterInsert) afterInsert(...args)
         }
 
-        beforeTransactionCommit() {
-            if (beforeTransactionCommit) beforeTransactionCommit(arguments)
+        beforeTransactionCommit(...args: any[]) {
+            if (beforeTransactionCommit) beforeTransactionCommit(...args)
         }
 
-        afterTransactionCommit() {
-            if (afterTransactionCommit) afterTransactionCommit(arguments)
+        afterTransactionCommit(...args: any[]) {
+            if (afterTransactionCommit) afterTransactionCommit(...args)
         }
 
-        beforeTransactionRollback() {
-            if (beforeTransactionRollback) beforeTransactionRollback(arguments)
+        beforeTransactionRollback(...args: any[]) {
+            if (beforeTransactionRollback) beforeTransactionRollback(...args)
         }
 
-        afterTransactionRollback() {
-            if (afterTransactionRollback) afterTransactionRollback(arguments)
+        afterTransactionRollback(...args: any[]) {
+            if (afterTransactionRollback) afterTransactionRollback(...args)
         }
     }
 

@@ -197,4 +197,70 @@ describe("github issues > #5967 @afterUpdate always says array/json field update
                 expect(updateQueries).to.have.length(1)
             }),
         ))
+
+    it("should update a time array column when it goes from null to a value", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const valueBefore = null
+                const valueAfter = ["12:00"]
+
+                const repository = dataSource.getRepository(User)
+
+                const logger = dataSource.logger as MemoryLogger
+                logger.clear()
+
+                const user = await repository.save({
+                    nullable_times: valueBefore,
+                })
+
+                const insertQueries = logger.queries.filter((q) =>
+                    q.startsWith("INSERT"),
+                )
+                expect(insertQueries).to.have.length(1)
+                logger.clear()
+
+                await repository.save({
+                    id: user.id,
+                    nullable_times: valueAfter,
+                })
+
+                const updateQueries = logger.queries.filter((q) =>
+                    q.startsWith("UPDATE"),
+                )
+                expect(updateQueries).to.have.length(1)
+            }),
+        ))
+
+    it("should update a time array column when it goes from a value to null", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const valueBefore = ["12:00"]
+                const valueAfter = null
+
+                const repository = dataSource.getRepository(User)
+
+                const logger = dataSource.logger as MemoryLogger
+                logger.clear()
+
+                const user = await repository.save({
+                    nullable_times: valueBefore,
+                })
+
+                const insertQueries = logger.queries.filter((q) =>
+                    q.startsWith("INSERT"),
+                )
+                expect(insertQueries).to.have.length(1)
+                logger.clear()
+
+                await repository.save({
+                    id: user.id,
+                    nullable_times: valueAfter,
+                })
+
+                const updateQueries = logger.queries.filter((q) =>
+                    q.startsWith("UPDATE"),
+                )
+                expect(updateQueries).to.have.length(1)
+            }),
+        ))
 })
