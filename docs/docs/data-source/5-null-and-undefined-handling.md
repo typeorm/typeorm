@@ -1,4 +1,4 @@
-# Handling Null and Undefined Values in Where Conditions
+# Handling null and undefined values in where conditions
 
 In 'WHERE' conditions the values `null` and `undefined` are not strictly valid values in TypeORM.
 
@@ -198,7 +198,7 @@ This combination is useful when you want to:
 -   Be explicit about searching for NULL values in the database
 -   Catch potential programming errors where undefined values might slip into your queries
 
-## Works with All Where Operations
+## Works with all where operations
 
 The `invalidWhereValuesBehavior` configuration applies to **all TypeORM operations** that support where conditions, not just repository find methods:
 
@@ -255,4 +255,4 @@ All these operations will consistently apply your configured `invalidWhereValues
 
 TypeScript will not allow you to pass `null` values in where conditions, we believe that this is the recommended behavior
 
-(Note this is only relevant when [strictNullChecks](https://www.typescriptlang.org/tsconfig/#strictNullChecks) is enabled in your tsconfig file, otherwise TypeScript ignores all `null` values.)
+(Note this is only relevant when [strictNullChecks](https://www.typescriptlang.org/tsconfig/#strictNullChecks) is enabled in your tsconfig file, otherwise TypeScript ignores all `null` values)
