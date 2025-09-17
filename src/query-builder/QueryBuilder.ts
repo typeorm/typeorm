@@ -1592,7 +1592,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 }
             } else if (nullBehavior === "throw") {
                 throw new TypeORMError(
-                    `Null value encountered in property '${aliasPath}' of the find operation. ` +
+                    `Null value encountered in property '${aliasPath}' of a where condition. ` +
                         `To match with SQL NULL, the IsNull() operator must be used. ` +
                         `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
                 )
@@ -1603,7 +1603,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 "ignore"
             if (undefinedBehavior === "throw") {
                 throw new TypeORMError(
-                    `Undefined value encountered in property '${aliasPath}' of the find operation. ` +
+                    `Undefined value encountered in property '${aliasPath}' of a where condition. ` +
                         `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
                 )
             }

@@ -120,7 +120,7 @@ const posts = await repository.find({
         text: null,
     },
 })
-// Error: Null value encountered in property 'text' of the find operation.
+// Error: Null value encountered in property 'text' of a where condition.
 // To match with SQL NULL, the IsNull() operator must be used.
 // Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.
 ```
@@ -167,7 +167,7 @@ const posts = await repository.find({
         text: undefined,
     },
 })
-// Error: Undefined value encountered in property 'text' of the find operation.
+// Error: Undefined value encountered in property 'text' of a where condition.
 // Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.
 ```
 
