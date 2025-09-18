@@ -73,8 +73,13 @@ export class LibSqlQueryRunner extends AbstractSqliteQueryRunner {
             this.driver.connection.logger.logQuery(query, parameters, this)
 
             const queryStartTime = Date.now()
-            const args = (parameters ?? []).map((p) => p === undefined ? null : p);
-            const resultSet = await databaseConnection.execute({ sql: query, args })
+            const args = (parameters ?? []).map((p) =>
+                p === undefined ? null : p,
+            )
+            const resultSet = await databaseConnection.execute({
+                sql: query,
+                args,
+            })
 
             // log slow queries if maxQueryExecution time is set
             const queryEndTime = Date.now()
