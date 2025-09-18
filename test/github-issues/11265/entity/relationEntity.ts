@@ -1,4 +1,5 @@
 import {
+    Column,
     DeleteDateColumn,
     Entity,
     ManyToOne,
@@ -15,4 +16,8 @@ export class RelationEntity {
 
     @ManyToOne(() => RelationNestedEntity)
     nested: RelationNestedEntity
+
+    // a dummy field to prevent SAP failure on rows without non-generated values
+    @Column()
+    dummyColumn: number = 0
 }
