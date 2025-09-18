@@ -5,6 +5,6 @@ import { Department } from "./Department"
 
 @ChildEntity()
 export class Accountant extends Employee {
-    @OneToMany((type) => Department, (department) => department.accountant)
+    @OneToMany(() => Department, (department) => department.accountant)
     departments: Department[]
 }

@@ -8,7 +8,7 @@ import { OneToOne } from "../../../../src/index"
 export class Account {
     @PrimaryGeneratedColumn() id: number
 
-    @OneToOne((type) => AccountActivationToken, "account", {
+    @OneToOne(() => AccountActivationToken, "account", {
         cascade: ["insert", "remove"],
     })
     accountActivationToken: AccountActivationToken

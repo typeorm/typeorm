@@ -1,32 +1,32 @@
-import { Driver, ReturningType } from "../Driver"
+import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { DataSource } from "../../data-source/DataSource"
+import { TypeORMError } from "../../error"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { DriverUtils } from "../DriverUtils"
-import { CteCapabilities } from "../types/CteCapabilities"
-import { MysqlQueryRunner } from "./MysqlQueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { DateUtils } from "../../util/DateUtils"
-import { PlatformTools } from "../../platform/PlatformTools"
-import { DataSource } from "../../data-source/DataSource"
-import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { MysqlConnectionOptions } from "./MysqlConnectionOptions"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ColumnType } from "../types/ColumnTypes"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
 import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { OrmUtils } from "../../util/OrmUtils"
-import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { TypeORMError } from "../../error"
+import { PlatformTools } from "../../platform/PlatformTools"
+import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
 import { Table } from "../../schema-builder/table/Table"
-import { View } from "../../schema-builder/view/View"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { VersionUtils } from "../../util/VersionUtils"
+import { View } from "../../schema-builder/view/View"
+import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
+import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import { VersionUtils } from "../../util/VersionUtils"
+import { Driver, ReturningType } from "../Driver"
+import { DriverUtils } from "../DriverUtils"
+import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
+import { CteCapabilities } from "../types/CteCapabilities"
+import { DataTypeDefaults } from "../types/DataTypeDefaults"
+import { MappedColumnTypes } from "../types/MappedColumnTypes"
+import { ReplicationMode } from "../types/ReplicationMode"
 import { UpsertType } from "../types/UpsertType"
+import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
+import { MysqlConnectionOptions } from "./MysqlConnectionOptions"
+import { MysqlQueryRunner } from "./MysqlQueryRunner"
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -189,10 +189,9 @@ export class MysqlDriver implements Driver {
     ]
 
     /**
-     * Gets list of column data types that support length by a driver.
+     * Gets list of column data types that support the unsigned attribute by a driver.
      */
-    withWidthColumnTypes: ColumnType[] = [
-        "bit",
+    unsignedColumnTypes: UnsignedColumnType[] = [
         "tinyint",
         "smallint",
         "mediumint",
@@ -222,26 +221,6 @@ export class MysqlDriver implements Driver {
      * Gets list of column data types that supports scale by a driver.
      */
     withScaleColumnTypes: ColumnType[] = [
-        "decimal",
-        "dec",
-        "numeric",
-        "fixed",
-        "float",
-        "double",
-        "double precision",
-        "real",
-    ]
-
-    /**
-     * Gets list of column data types that supports UNSIGNED and ZEROFILL attributes.
-     */
-    unsignedAndZerofillTypes: ColumnType[] = [
-        "int",
-        "integer",
-        "smallint",
-        "tinyint",
-        "mediumint",
-        "bigint",
         "decimal",
         "dec",
         "numeric",
@@ -403,7 +382,7 @@ export class MysqlDriver implements Driver {
         }
 
         if (!this.database) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
             this.database = await queryRunner.getCurrentDatabase()
 
@@ -411,28 +390,24 @@ export class MysqlDriver implements Driver {
         }
 
         const queryRunner = this.createQueryRunner("master")
-        const result: {
-            version: string
-        }[] = await queryRunner.query(`SELECT VERSION() AS \`version\``)
-        const dbVersion = result[0].version
-        this.version = dbVersion
+        this.version = await queryRunner.getVersion()
         await queryRunner.release()
 
         if (this.options.type === "mariadb") {
-            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.0.5")) {
+            if (VersionUtils.isGreaterOrEqual(this.version, "10.0.5")) {
                 this._isReturningSqlSupported.delete = true
             }
-            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.5.0")) {
+            if (VersionUtils.isGreaterOrEqual(this.version, "10.5.0")) {
                 this._isReturningSqlSupported.insert = true
             }
-            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.2.0")) {
+            if (VersionUtils.isGreaterOrEqual(this.version, "10.2.0")) {
                 this.cteCapabilities.enabled = true
             }
-            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.7.0")) {
+            if (VersionUtils.isGreaterOrEqual(this.version, "10.7.0")) {
                 this.uuidColumnTypeSuported = true
             }
         } else if (this.options.type === "mysql") {
-            if (VersionUtils.isGreaterOrEqual(dbVersion, "8.0.0")) {
+            if (VersionUtils.isGreaterOrEqual(this.version, "8.0.0")) {
                 this.cteCapabilities.enabled = true
             }
         }
@@ -449,8 +424,9 @@ export class MysqlDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.poolCluster && !this.pool)
-            return Promise.reject(new ConnectionIsNotSetError("mysql"))
+        if (!this.poolCluster && !this.pool) {
+            throw new ConnectionIsNotSetError("mysql")
+        }
 
         if (this.poolCluster) {
             return new Promise<void>((ok, fail) => {
@@ -505,7 +481,7 @@ export class MysqlDriver implements Driver {
                     return full
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -546,7 +522,7 @@ export class MysqlDriver implements Driver {
         schema?: string,
         database?: string,
     ): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (database) {
             tablePath.unshift(database)
@@ -735,7 +711,7 @@ export class MysqlDriver implements Driver {
         } else if (
             column.type === "json" &&
             this.options.type === "mariadb" &&
-            !VersionUtils.isGreaterOrEqual(this.version ?? "0.0.0", "10.4.3")
+            !VersionUtils.isGreaterOrEqual(this.version, "10.4.3")
         ) {
             /*
              * MariaDB implements this as a LONGTEXT rather, as the JSON data type contradicts the SQL standard,
@@ -1236,6 +1212,7 @@ export class MysqlDriver implements Driver {
                 trace: options.trace,
                 multipleStatements: options.multipleStatements,
                 flags: options.flags,
+                stringifyObjects: true,
             },
             {
                 host: credentials.host,
@@ -1245,11 +1222,11 @@ export class MysqlDriver implements Driver {
                 port: credentials.port,
                 ssl: options.ssl,
                 socketPath: credentials.socketPath,
+                connectionLimit: options.poolSize,
             },
             options.acquireTimeout === undefined
                 ? {}
                 : { acquireTimeout: options.acquireTimeout },
-            { connectionLimit: options.poolSize },
             options.extra || {},
         )
     }

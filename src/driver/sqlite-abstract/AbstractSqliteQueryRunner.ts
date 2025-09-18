@@ -101,7 +101,6 @@ export abstract class AbstractSqliteQueryRunner
         }
 
         if (this.transactionDepth === 0) {
-            this.transactionDepth += 1
             if (isolationLevel) {
                 if (isolationLevel === "READ UNCOMMITTED") {
                     await this.query("PRAGMA read_uncommitted = true")
@@ -111,9 +110,9 @@ export abstract class AbstractSqliteQueryRunner
             }
             await this.query("BEGIN TRANSACTION")
         } else {
-            this.transactionDepth += 1
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
         }
+        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -128,15 +127,14 @@ export abstract class AbstractSqliteQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
-            this.transactionDepth -= 1
             await this.query("COMMIT")
             this.isTransactionActive = false
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -151,15 +149,14 @@ export abstract class AbstractSqliteQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
-            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.isTransactionActive = false
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -1372,7 +1369,7 @@ export abstract class AbstractSqliteQueryRunner
                 // find column name with auto increment
                 let autoIncrementColumnName: string | undefined = undefined
                 const tableSql: string = dbTable["sql"]
-                let autoIncrementIndex = tableSql
+                const autoIncrementIndex = tableSql
                     .toUpperCase()
                     .indexOf("AUTOINCREMENT")
                 if (autoIncrementIndex !== -1) {
@@ -1463,16 +1460,16 @@ export abstract class AbstractSqliteQueryRunner
                         }
 
                         // parse datatype and attempt to retrieve length, precision and scale
-                        let pos = tableColumn.type.indexOf("(")
+                        const pos = tableColumn.type.indexOf("(")
                         if (pos !== -1) {
                             const fullType = tableColumn.type
-                            let dataType = fullType.substr(0, pos)
+                            const dataType = fullType.substr(0, pos)
                             if (
                                 this.driver.withLengthColumnTypes.find(
                                     (col) => col === dataType,
                                 )
                             ) {
-                                let len = parseInt(
+                                const len = parseInt(
                                     fullType.substring(
                                         pos + 1,
                                         fullType.length - 1,
@@ -1730,7 +1727,7 @@ export abstract class AbstractSqliteQueryRunner
             table.name,
         )} (${columnDefinitions}`
 
-        let [databaseNew, tableName] = this.splitTablePath(table.name)
+        const [databaseNew, tableName] = this.splitTablePath(table.name)
         const newTableName = temporaryTable
             ? `${databaseNew ? `${databaseNew}.` : ""}${tableName.replace(
                   /^temporary_/,
@@ -1936,7 +1933,7 @@ export abstract class AbstractSqliteQueryRunner
      * Builds drop index sql.
      */
     protected dropIndexSql(indexOrName: TableIndex | string): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(`DROP INDEX ${this.escapePath(indexName!)}`)
@@ -2001,7 +1998,7 @@ export abstract class AbstractSqliteQueryRunner
 
         // change table name into 'temporary_table'
         let [databaseNew, tableNameNew] = this.splitTablePath(newTable.name)
-        let [, tableNameOld] = this.splitTablePath(oldTable.name)
+        const [, tableNameOld] = this.splitTablePath(oldTable.name)
         newTable.name = tableNameNew = `${
             databaseNew ? `${databaseNew}.` : ""
         }temporary_${tableNameNew}`

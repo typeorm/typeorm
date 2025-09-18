@@ -242,14 +242,14 @@ export class ColumnMetadata {
     /**
      * Indicates if column is a virtual property. Virtual properties are not mapped to the entity.
      * This property is used in tandem the virtual column decorator.
-     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
+     * @See https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     isVirtualProperty: boolean = false
 
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
-     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
+     * @See https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     query?: (alias: string, context?: any) => string
 
@@ -569,7 +569,7 @@ export class ColumnMetadata {
             const extractEmbeddedColumnValue = (
                 propertyNames: string[],
                 map: ObjectLiteral,
-            ): any => {
+            ) => {
                 const propertyName = propertyNames.shift()
                 if (propertyName) {
                     map[propertyName] = {}
@@ -916,7 +916,7 @@ export class ColumnMetadata {
      */
     compareEntityValue(entity: any, valueToCompareWith: any) {
         const columnValue = this.getEntityValue(entity)
-        if (ObjectUtils.isObject(columnValue)) {
+        if (typeof columnValue?.equals === "function") {
             return columnValue.equals(valueToCompareWith)
         }
         return columnValue === valueToCompareWith

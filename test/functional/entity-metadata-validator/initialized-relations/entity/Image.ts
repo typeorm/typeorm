@@ -12,6 +12,6 @@ export class Image {
     @Column()
     title: string
 
-    @OneToMany((type) => ImageInfo, (imageInfo) => imageInfo.image)
+    @OneToMany(() => ImageInfo, (imageInfo) => imageInfo.image)
     informations: ImageInfo[] = []
 }

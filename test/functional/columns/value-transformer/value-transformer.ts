@@ -69,7 +69,7 @@ describe("columns > value-transformer functionality", () => {
     it("should apply three transformers in the right order", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const userRepository = await connection.getRepository(User)
+                const userRepository = connection.getRepository(User)
                 const email = `${connection.name}@JOHN.doe`
                 const user = new User()
                 user.email = email
@@ -77,16 +77,14 @@ describe("columns > value-transformer functionality", () => {
                 await userRepository.save(user)
 
                 const dbUser = await userRepository.findOneBy({ id: user.id })
-                dbUser && dbUser.email.should.be.eql(email.toLocaleLowerCase())
+                expect(dbUser!.email).to.equal(email.toLocaleLowerCase())
             }),
         ))
 
     it("should apply all the transformers", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const categoryRepository = await connection.getRepository(
-                    Category,
-                )
+                const categoryRepository = connection.getRepository(Category)
                 const description = `  ${connection.name}-DESCRIPTION   `
                 const category = new Category()
                 category.description = description
@@ -96,17 +94,16 @@ describe("columns > value-transformer functionality", () => {
                 const dbCategory = await categoryRepository.findOneBy({
                     id: category.id,
                 })
-                dbCategory &&
-                    dbCategory.description.should.be.eql(
-                        description.toLocaleLowerCase().trim(),
-                    )
+                expect(dbCategory!.description).to.equal(
+                    description.toLocaleLowerCase().trim(),
+                )
             }),
         ))
 
     it("should apply no transformer", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const viewRepository = await connection.getRepository(View)
+                const viewRepository = connection.getRepository(View)
                 const title = `${connection.name}`
                 const view = new View()
                 view.title = title
@@ -114,7 +111,7 @@ describe("columns > value-transformer functionality", () => {
                 await viewRepository.save(view)
 
                 const dbView = await viewRepository.findOneBy({ id: view.id })
-                dbView && dbView.title.should.be.eql(title)
+                expect(dbView!.title).to.equal(title)
             }),
         ))
 
