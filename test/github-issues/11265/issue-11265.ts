@@ -10,7 +10,7 @@ import { RelationNestedEntity } from "./entity/relationNestedEntity"
 import { RelationEntity } from "./entity/relationEntity"
 import { ParentEntity } from "./entity/parent"
 
-describe.only("github issues > #11265 Eager Relations with DeleteDateColumn Overwrite Manual Relations During Query Loading", () => {
+describe("github issues > #11265 Eager Relations with DeleteDateColumn Overwrite Manual Relations During Query Loading", () => {
     let dataSources: DataSource[]
 
     before(
