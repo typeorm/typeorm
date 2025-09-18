@@ -144,7 +144,16 @@ export class DriverUtils {
                 }
             }
 
-            return hash(newAlias, { length: maxAliasLength })
+            const hashedAlias = hash(newAlias, { length: maxAliasLength })
+            const isAliasStartWithNumber: boolean =
+                hashedAlias[0] >= "0" && hashedAlias[0] <= "9"
+            if (isAliasStartWithNumber)
+                return (
+                    String.fromCharCode(
+                        "g".charCodeAt(0) + parseInt(hashedAlias[0]),
+                    ) + hashedAlias.slice(1)
+                )
+            return hashedAlias
         }
 
         return newAlias
