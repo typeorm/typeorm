@@ -250,9 +250,3 @@ await manager.softDelete(Post, { text: null }) // Respects invalidWhereValuesBeh
 ```
 
 All these operations will consistently apply your configured `invalidWhereValuesBehavior` settings.
-
-## TypeScript Considerations
-
-TypeScript will not allow you to pass `null` values in where conditions, we believe that this is the recommended behavior
-
-(Note this is only relevant when [strictNullChecks](https://www.typescriptlang.org/tsconfig/#strictNullChecks) is enabled in your tsconfig file, otherwise TypeScript ignores all `null` values)
