@@ -6,6 +6,6 @@ export class Year {
     @PrimaryColumn()
     public yearNo: number
 
-    @OneToMany((type) => Month, (month) => month.yearNo)
+    @OneToMany(() => Month, (month) => month.yearNo)
     public month: Month[]
 }

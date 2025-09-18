@@ -78,8 +78,8 @@ describe("query runner > change column", () => {
                 table!.findColumnByName("description")!.isPrimary.should.be.true
                 table!.findColumnByName("description")!.default!.should.exist
 
-                let idColumn = table!.findColumnByName("id")!
-                let changedIdColumn = idColumn.clone()
+                const idColumn = table!.findColumnByName("id")!
+                const changedIdColumn = idColumn.clone()
                 changedIdColumn!.isPrimary = false
                 await queryRunner.changeColumn(
                     table!,

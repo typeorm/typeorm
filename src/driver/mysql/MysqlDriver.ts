@@ -403,7 +403,7 @@ export class MysqlDriver implements Driver {
         }
 
         if (!this.database) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
             this.database = await queryRunner.getCurrentDatabase()
 
@@ -411,28 +411,24 @@ export class MysqlDriver implements Driver {
         }
 
         const queryRunner = this.createQueryRunner("master")
-        const result: {
-            version: string
-        }[] = await queryRunner.query(`SELECT VERSION() AS \`version\``)
-        const dbVersion = result[0].version
-        this.version = dbVersion
+        this.version = await queryRunner.getVersion()
         await queryRunner.release()
 
         if (this.options.type === "mariadb") {
-            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.0.5")) {
+            if (VersionUtils.isGreaterOrEqual(this.version, "10.0.5")) {
                 this._isReturningSqlSupported.delete = true
             }
-            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.5.0")) {
+            if (VersionUtils.isGreaterOrEqual(this.version, "10.5.0")) {
                 this._isReturningSqlSupported.insert = true
             }
-            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.2.0")) {
+            if (VersionUtils.isGreaterOrEqual(this.version, "10.2.0")) {
                 this.cteCapabilities.enabled = true
             }
-            if (VersionUtils.isGreaterOrEqual(dbVersion, "10.7.0")) {
+            if (VersionUtils.isGreaterOrEqual(this.version, "10.7.0")) {
                 this.uuidColumnTypeSuported = true
             }
         } else if (this.options.type === "mysql") {
-            if (VersionUtils.isGreaterOrEqual(dbVersion, "8.0.0")) {
+            if (VersionUtils.isGreaterOrEqual(this.version, "8.0.0")) {
                 this.cteCapabilities.enabled = true
             }
         }
@@ -449,8 +445,9 @@ export class MysqlDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.poolCluster && !this.pool)
-            return Promise.reject(new ConnectionIsNotSetError("mysql"))
+        if (!this.poolCluster && !this.pool) {
+            throw new ConnectionIsNotSetError("mysql")
+        }
 
         if (this.poolCluster) {
             return new Promise<void>((ok, fail) => {
@@ -505,7 +502,7 @@ export class MysqlDriver implements Driver {
                     return full
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -546,7 +543,7 @@ export class MysqlDriver implements Driver {
         schema?: string,
         database?: string,
     ): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (database) {
             tablePath.unshift(database)
@@ -735,7 +732,7 @@ export class MysqlDriver implements Driver {
         } else if (
             column.type === "json" &&
             this.options.type === "mariadb" &&
-            !VersionUtils.isGreaterOrEqual(this.version ?? "0.0.0", "10.4.3")
+            !VersionUtils.isGreaterOrEqual(this.version, "10.4.3")
         ) {
             /*
              * MariaDB implements this as a LONGTEXT rather, as the JSON data type contradicts the SQL standard,
@@ -1236,6 +1233,7 @@ export class MysqlDriver implements Driver {
                 trace: options.trace,
                 multipleStatements: options.multipleStatements,
                 flags: options.flags,
+                stringifyObjects: true,
             },
             {
                 host: credentials.host,
@@ -1245,11 +1243,11 @@ export class MysqlDriver implements Driver {
                 port: credentials.port,
                 ssl: options.ssl,
                 socketPath: credentials.socketPath,
+                connectionLimit: options.poolSize,
             },
             options.acquireTimeout === undefined
                 ? {}
                 : { acquireTimeout: options.acquireTimeout },
-            { connectionLimit: options.poolSize },
             options.extra || {},
         )
     }

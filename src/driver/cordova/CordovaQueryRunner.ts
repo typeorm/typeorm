@@ -1,12 +1,12 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { QueryResult } from "../../query-runner/QueryResult"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import { CordovaDriver } from "./CordovaDriver"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import { TypeORMError } from "../../error"
-import { QueryResult } from "../../query-runner/QueryResult"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -53,19 +53,15 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
-        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-        const queryStartTime = +new Date()
+        const broadcasterResult = new BroadcasterResult()
+        const queryStartTime = Date.now()
 
         try {
-            const raw = await new Promise<any>(async (ok, fail) => {
+            const raw = await new Promise<any>((ok, fail) => {
                 databaseConnection.executeSql(
                     query,
                     parameters,
@@ -77,7 +73,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
@@ -107,7 +103,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
             if (query.substr(0, 11) === "INSERT INTO") {
                 result.raw = raw.insertId
             } else {
-                let resultSet = []
+                const resultSet = []
                 for (let i = 0; i < raw.rows.length; i++) {
                     resultSet.push(raw.rows.item(i))
                 }

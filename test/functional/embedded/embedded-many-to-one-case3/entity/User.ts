@@ -12,6 +12,6 @@ export class User {
     @Column()
     name: string
 
-    @OneToMany((type) => Post, (post) => post.counters.likedUser)
+    @OneToMany(() => Post, (post) => post.counters.likedUser)
     likedPosts: Post[]
 }

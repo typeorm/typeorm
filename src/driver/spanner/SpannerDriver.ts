@@ -1,4 +1,4 @@
-import { Driver, ReturningType } from "../Driver"
+import { Driver } from "../Driver"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { SpannerQueryRunner } from "./SpannerQueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
@@ -178,16 +178,6 @@ export class SpannerDriver implements Driver {
         enabled: true,
     }
 
-    /**
-     * Supported returning types
-     */
-    private readonly _isReturningSqlSupported: Record<ReturningType, boolean> =
-        {
-            delete: false,
-            insert: false,
-            update: false,
-        }
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -268,7 +258,7 @@ export class SpannerDriver implements Driver {
                     return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
 
                 if (value === null) {
                     return full
@@ -309,7 +299,7 @@ export class SpannerDriver implements Driver {
                     return full
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
                 if (value === null) {
                     return " IS NULL"
                 }
@@ -336,7 +326,7 @@ export class SpannerDriver implements Driver {
         schema?: string,
         database?: string,
     ): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (database) {
             tablePath.unshift(database)
@@ -352,7 +342,7 @@ export class SpannerDriver implements Driver {
         target: EntityMetadata | Table | View | TableForeignKey | string,
     ): { database?: string; schema?: string; tableName: string } {
         const driverDatabase = this.database
-        const driverSchema = undefined
+        const driverSchema: any = undefined
 
         if (target instanceof Table || target instanceof View) {
             const parsed = this.parseTableName(target.name)
@@ -412,7 +402,7 @@ export class SpannerDriver implements Driver {
 
         if (columnMetadata.type === "numeric") {
             const lib = this.options.driver || PlatformTools.load("spanner")
-            return lib.Spanner.numeric(value)
+            return lib.Spanner.numeric(value.toString())
         } else if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "json") {
@@ -707,15 +697,15 @@ export class SpannerDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(returningType: ReturningType): boolean {
-        return this._isReturningSqlSupported[returningType]
+    isReturningSqlSupported(): boolean {
+        return true
     }
 
     /**
      * Returns true if driver supports uuid values generation on its own.
      */
     isUUIDGenerationSupported(): boolean {
-        return false
+        return true
     }
 
     /**
@@ -742,6 +732,16 @@ export class SpannerDriver implements Driver {
     protected loadDependencies(): void {
         try {
             const lib = this.options.driver || PlatformTools.load("spanner")
+
+            if (this.options.credentials) {
+                this.spanner = new lib.Spanner({
+                    projectId: this.options.projectId,
+                    credentials: this.options.credentials,
+                })
+
+                return
+            }
+
             this.spanner = new lib.Spanner({
                 projectId: this.options.projectId,
             })

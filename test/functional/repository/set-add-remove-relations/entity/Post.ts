@@ -14,7 +14,7 @@ export class Post {
     @Column()
     title: string
 
-    @OneToMany((type) => Category, (category) => category.post)
+    @OneToMany(() => Category, (category) => category.post)
     categories: Category[] | null
 
     @ManyToMany((type) => Category, (category) => category.manyPosts)
