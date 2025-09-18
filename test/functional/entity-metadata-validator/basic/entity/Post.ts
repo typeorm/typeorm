@@ -14,7 +14,7 @@ export class Post {
     @Column()
     title: string
 
-    @OneToOne((type) => Category)
+    @OneToOne(() => Category)
     category: Category
 
     @ManyToMany((type) => Category)

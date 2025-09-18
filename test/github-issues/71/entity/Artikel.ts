@@ -24,7 +24,7 @@ export class Artikel {
     @Column({ name: "artikel_saison" })
     saison: string
 
-    @ManyToOne((type) => Kollektion, { cascade: true })
+    @ManyToOne(() => Kollektion, { cascade: true })
     @JoinColumn({ name: "id_kollektion" })
     kollektion: Kollektion
 }

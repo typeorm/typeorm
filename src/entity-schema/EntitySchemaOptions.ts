@@ -13,6 +13,7 @@ import { EntitySchemaCheckOptions } from "./EntitySchemaCheckOptions"
 import { EntitySchemaExclusionOptions } from "./EntitySchemaExclusionOptions"
 import { EntitySchemaInheritanceOptions } from "./EntitySchemaInheritanceOptions"
 import { EntitySchemaRelationIdOptions } from "./EntitySchemaRelationIdOptions"
+import { EntitySchemaForeignKeyOptions } from "./EntitySchemaForeignKeyOptions"
 
 /**
  * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.
@@ -78,6 +79,11 @@ export class EntitySchemaOptions<T> {
      * Entity indices options.
      */
     indices?: EntitySchemaIndexOptions[]
+
+    /**
+     * Entity foreign keys options.
+     */
+    foreignKeys?: EntitySchemaForeignKeyOptions[]
 
     /**
      * Entity uniques options.

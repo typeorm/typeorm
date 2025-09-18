@@ -3,23 +3,11 @@
     "skip": false,
     "name": "cockroachdb",
     "type": "cockroachdb",
-    "host": "crdb",
+    "host": "localhost",
     "port": 26257,
     "username": "root",
     "password": "",
     "database": "defaultdb",
-    "logging": false
-  },
-
-  {
-    "skip": true,
-    "name": "postgres",
-    "type": "postgres",
-    "host": "postgres",
-    "port": 5432,
-    "username": "postgres",
-    "password": "postgres",
-    "database": "postgres",
     "logging": false
   }
 ]

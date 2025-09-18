@@ -12,7 +12,7 @@ export class Question {
     @Column({ default: "My question" })
     name: string
 
-    @OneToMany((type) => Answer, (answer) => answer.question, {
+    @OneToMany(() => Answer, (answer) => answer.question, {
         cascade: ["insert"],
     })
     answers: Answer[]

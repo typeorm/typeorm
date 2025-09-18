@@ -24,7 +24,7 @@ describe("github issues > #7479 Only first single quote in comments is escaped",
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
-                let table = await queryRunner.getTable("post")
+                const table = await queryRunner.getTable("post")
                 const column1 = table!.findColumnByName("text")!
                 const column2 = table!.findColumnByName("text2")!
                 const column3 = table!.findColumnByName("text3")!

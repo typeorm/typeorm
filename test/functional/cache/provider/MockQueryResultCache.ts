@@ -190,7 +190,7 @@ export class MockQueryResultCache implements QueryResultCache {
                 ? parseInt(savedCache.time as any)
                 : savedCache.time)! +
                 duration <
-            new Date().getTime()
+            Date.now()
         )
     }
 

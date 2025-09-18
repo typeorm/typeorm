@@ -432,9 +432,9 @@ export class RelationIdLoader {
             },
         )
         if (relatedEntities && hasAllJoinColumnsInEntity) {
-            let relationIdMaps: ObjectLiteral[] = []
+            const relationIdMaps: ObjectLiteral[] = []
             entities.forEach((entity) => {
-                let relationIdMap: ObjectLiteral = {}
+                const relationIdMap: ObjectLiteral = {}
                 relation.entityMetadata.primaryColumns.forEach(
                     (primaryColumn) => {
                         const key =
@@ -584,6 +584,7 @@ export class RelationIdLoader {
         entities: ObjectLiteral[],
         relatedEntities?: ObjectLiteral[],
     ) {
+        const originalRelation = relation
         relation = relation.inverseRelation!
 
         if (
@@ -614,7 +615,7 @@ export class RelationIdLoader {
                             const primaryColumnName =
                                 joinColumn.entityMetadata.name +
                                 "_" +
-                                relation.inverseRelation!.propertyPath.replace(
+                                originalRelation.propertyPath.replace(
                                     ".",
                                     "_",
                                 ) +
@@ -639,7 +640,7 @@ export class RelationIdLoader {
                 undefined,
                 primaryColumn.entityMetadata.name +
                     "_" +
-                    relation.inverseRelation!.propertyPath.replace(".", "_") +
+                    originalRelation.propertyPath.replace(".", "_") +
                     "_" +
                     primaryColumn.propertyPath.replace(".", "_"),
             )
