@@ -14,30 +14,35 @@ const options: DataSourceOptions = {
     entities: [Post],
 }
 
-const dataSource = new DataSource(options)
-dataSource.initialize().then(
-    (dataSource) => {
+async function main() {
+    const dataSource = new DataSource(options)
+
+    try {
+        await dataSource.initialize()
+
         const post = new Post()
         post.text = "Hello how are you?"
         post.title = "hello"
 
         const postRepository = dataSource.getRepository(Post)
 
-        postRepository
-            .save(post)
-            .then((post) => {
-                console.log(`Post has been saved: `, post)
-                console.log(
-                    `Post's version is ${post.version}. Lets change post's text and update it:`,
-                )
-                post.title = "updating title"
-                return postRepository.save(post)
-            })
-            .then((post) => {
-                console.log(
-                    `Post has been updated. Post's version is ${post.version}`,
-                )
-            })
-    },
-    (error) => console.log("Cannot connect: ", error),
-)
+        await postRepository.save(post)
+
+        console.log(`Post has been saved: `, post)
+        console.log(
+            `Post's version is ${post.version}. Lets change post's text and update it:`,
+        )
+        post.title = "updating title"
+
+        await postRepository.save(post)
+        console.log(`Post has been updated. Post's version is ${post.version}`)
+    } catch (error) {
+        console.log("Cannot connect: ", error)
+    } finally {
+        if (dataSource.isInitialized) {
+            await dataSource.destroy()
+        }
+    }
+}
+
+void main()

@@ -260,11 +260,13 @@ export class MongoDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.queryRunner) throw new ConnectionIsNotSetError("mongodb")
-        // const handler = (err: any) => (err ? fail(err) : ok())
-        this.queryRunner.databaseConnection.close()
+        const queryRunner = this.queryRunner
+        if (!queryRunner) {
+            throw new ConnectionIsNotSetError("mongodb")
+        }
+
         this.queryRunner = undefined
-        // return ok()
+        await queryRunner.databaseConnection.close()
     }
 
     /**

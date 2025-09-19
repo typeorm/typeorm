@@ -1,13 +1,13 @@
+import { expect } from "chai"
+import { DataSource } from "../../../src"
 import "../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { expect } from "chai"
 import { Car } from "./entity/Car"
 import { Record } from "./entity/Record"
-import { DataSource } from "../../../src"
 
 describe("github issues > #8747 QueryBuilder update handles Date objects wrong on a ManyToOne relationship.", () => {
     let dataSources: DataSource[]
@@ -15,7 +15,7 @@ describe("github issues > #8747 QueryBuilder update handles Date objects wrong o
         async () =>
             (dataSources = await createTestingConnections({
                 enabledDrivers: ["mysql", "postgres", "mariadb"],
-                entities: [__dirname + "/entity/*{.js,.ts}"],
+                entities: [__dirname + "/entity/*.{js,ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
