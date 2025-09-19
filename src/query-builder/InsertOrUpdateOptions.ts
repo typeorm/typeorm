@@ -1,4 +1,6 @@
 import { UpsertType } from "../driver/types/UpsertType"
+import { Brackets } from "./Brackets"
+import { ObjectLiteral } from "../common/ObjectLiteral"
 
 export type InsertOrUpdateOptions = {
     /**
@@ -10,4 +12,8 @@ export type InsertOrUpdateOptions = {
      */
     indexPredicate?: string
     upsertType?: UpsertType
+    overwriteCondition?: {
+        where: string | Brackets | ObjectLiteral | ObjectLiteral[]
+        parameters?: ObjectLiteral
+    }
 }

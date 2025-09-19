@@ -1,10 +1,10 @@
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { QueryResult } from "../../query-runner/QueryResult"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import { ExpoDriver } from "./ExpoDriver"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import { QueryResult } from "../../query-runner/QueryResult"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     driver: ExpoDriver
@@ -35,13 +35,9 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-        const queryStartTime = +new Date()
+        const queryStartTime = Date.now()
 
         const statement = await databaseConnection.prepareAsync(query)
         try {
@@ -49,7 +45,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
@@ -103,6 +99,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
             throw new QueryFailedError(query, parameters, err)
         } finally {
+            await broadcasterResult.wait()
             await statement.finalizeAsync()
         }
     }

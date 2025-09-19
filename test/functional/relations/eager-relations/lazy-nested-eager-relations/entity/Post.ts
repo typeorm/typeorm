@@ -26,9 +26,9 @@ export class Post {
     })
     categories2: Category[]
 
-    @ManyToOne((type) => User, { eager: true })
+    @ManyToOne(() => User, { eager: true })
     author: User
 
-    @OneToMany((type) => Editor, (editor) => editor.post, { eager: true })
+    @OneToMany(() => Editor, (editor) => editor.post, { eager: true })
     editors: Editor[]
 }

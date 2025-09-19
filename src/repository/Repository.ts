@@ -16,6 +16,7 @@ import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import { UpsertOptions } from "./UpsertOptions"
 import { EntityTarget } from "../common/EntityTarget"
 import { PickKeysByType } from "../common/PickKeysByType"
+import { buildSqlTag } from "../util/SqlTagUtils"
 
 /**
  * Repository is supposed to work with your entity objects. Find entities, insert, update, delete, etc.
@@ -355,14 +356,28 @@ export class Repository<Entity extends ObjectLiteral> {
             | Date[]
             | ObjectId
             | ObjectId[]
-            | FindOptionsWhere<Entity>,
+            | FindOptionsWhere<Entity>
+            | FindOptionsWhere<Entity>[],
         partialEntity: QueryDeepPartialEntity<Entity>,
     ): Promise<UpdateResult> {
         return this.manager.update(
-            this.metadata.target as any,
-            criteria as any,
+            this.metadata.target,
+            criteria,
             partialEntity,
         )
+    }
+
+    /**
+     * Updates all entities of target type, setting fields from supplied partial entity.
+     * This is a primitive operation without cascades, relations or other operations included.
+     * Executes fast and efficient UPDATE query without WHERE clause.
+     *
+     * WARNING! This method updates ALL rows in the target table.
+     */
+    updateAll(
+        partialEntity: QueryDeepPartialEntity<Entity>,
+    ): Promise<UpdateResult> {
+        return this.manager.updateAll(this.metadata.target, partialEntity)
     }
 
     /**
@@ -399,15 +414,27 @@ export class Repository<Entity extends ObjectLiteral> {
             | Date[]
             | ObjectId
             | ObjectId[]
-            | FindOptionsWhere<Entity>,
+            | FindOptionsWhere<Entity>
+            | FindOptionsWhere<Entity>[],
     ): Promise<DeleteResult> {
-        return this.manager.delete(this.metadata.target as any, criteria as any)
+        return this.manager.delete(this.metadata.target, criteria)
+    }
+
+    /**
+     * Deletes all entities of target type.
+     * This is a primitive operation without cascades, relations or other operations included.
+     * Executes fast and efficient DELETE query without WHERE clause.
+     *
+     * WARNING! This method deletes ALL rows in the target table.
+     */
+    deleteAll(): Promise<DeleteResult> {
+        return this.manager.deleteAll(this.metadata.target)
     }
 
     /**
      * Records the delete date of entities by a given criteria.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Executes fast and efficient SOFT-DELETE query.
+     * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      */
     softDelete(
@@ -420,7 +447,8 @@ export class Repository<Entity extends ObjectLiteral> {
             | Date[]
             | ObjectId
             | ObjectId[]
-            | FindOptionsWhere<Entity>,
+            | FindOptionsWhere<Entity>
+            | FindOptionsWhere<Entity>[],
     ): Promise<UpdateResult> {
         return this.manager.softDelete(
             this.metadata.target as any,
@@ -431,7 +459,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Restores entities by a given criteria.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Executes fast and efficient SOFT-DELETE query.
+     * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      */
     restore(
@@ -444,7 +472,8 @@ export class Repository<Entity extends ObjectLiteral> {
             | Date[]
             | ObjectId
             | ObjectId[]
-            | FindOptionsWhere<Entity>,
+            | FindOptionsWhere<Entity>
+            | FindOptionsWhere<Entity>[],
     ): Promise<UpdateResult> {
         return this.manager.restore(
             this.metadata.target as any,
@@ -647,8 +676,28 @@ export class Repository<Entity extends ObjectLiteral> {
      *
      * @see [Official docs](https://typeorm.io/repository-api) for examples.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    query<T = any>(query: string, parameters?: any[]): Promise<T> {
         return this.manager.query(query, parameters)
+    }
+
+    /**
+     * Tagged template function that executes raw SQL query and returns raw database results.
+     * Template expressions are automatically transformed into database parameters.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
+     * Example: repository.sql`SELECT * FROM table_name WHERE id = ${id}`
+     */
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
+        const { query, parameters } = buildSqlTag({
+            driver: this.manager.connection.driver,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, parameters)
     }
 
     /**

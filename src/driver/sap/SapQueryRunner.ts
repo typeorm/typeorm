@@ -1,10 +1,13 @@
+import { promisify } from "node:util"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { QueryFailedError, TypeORMError } from "../../error"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionAlreadyStartedError } from "../../error/TransactionAlreadyStartedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ColumnType } from "../types/ColumnTypes"
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryLock } from "../../query-runner/QueryLock"
+import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
@@ -16,18 +19,15 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
+import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
-import { SapDriver } from "./SapDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { QueryFailedError, TypeORMError } from "../../error"
-import { QueryResult } from "../../query-runner/QueryResult"
-import { QueryLock } from "../../query-runner/QueryLock"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { InstanceChecker } from "../../util/InstanceChecker"
-import { promisify } from "util"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { SapDriver } from "./SapDriver"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -85,14 +85,20 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
-    release(): Promise<void> {
+    async release(): Promise<void> {
         this.isReleased = true
 
         if (this.databaseConnection) {
-            return this.driver.master.release(this.databaseConnection)
+            // return the connection back to the pool
+            try {
+                await promisify(this.databaseConnection.disconnect).call(
+                    this.databaseConnection,
+                )
+            } catch (error) {
+                this.driver.poolErrorHandler(error)
+                throw error
+            }
         }
-
-        return Promise.resolve()
     }
 
     /**
@@ -168,14 +174,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async setAutoCommit(options: { status: "on" | "off" }) {
         const connection = await this.connect()
-
-        const execute = promisify(connection.exec.bind(connection))
-
         connection.setAutoCommit(options.status === "on")
 
-        const query = `SET TRANSACTION AUTOCOMMIT DDL ${options.status.toUpperCase()};`
+        const query = `SET TRANSACTION AUTOCOMMIT DDL ${options.status.toUpperCase()}`
+        this.driver.connection.logger.logQuery(query, [], this)
         try {
-            await execute(query)
+            await promisify(connection.exec).call(connection, query)
         } catch (error) {
             throw new QueryFailedError(query, [], error)
         }
@@ -193,38 +197,40 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const release = await this.lock.acquire()
 
+        const databaseConnection = await this.connect()
+
         let statement: any
         const result = new QueryResult()
+
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
         const broadcasterResult = new BroadcasterResult()
 
         try {
-            const databaseConnection = await this.connect()
-
-            this.driver.connection.logger.logQuery(query, parameters, this)
-            this.broadcaster.broadcastBeforeQueryEvent(
-                broadcasterResult,
-                query,
-                parameters,
-            )
-
-            const queryStartTime = +new Date()
+            const queryStartTime = Date.now()
             const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
 
             if (parameters?.some(Array.isArray)) {
-                statement = await promisify(
-                    databaseConnection.prepare.bind(databaseConnection),
-                )(query)
+                statement = await promisify(databaseConnection.prepare).call(
+                    databaseConnection,
+                    query,
+                )
             }
 
             let raw: any
             try {
                 raw = statement
-                    ? await promisify(statement.exec.bind(statement))(
+                    ? await promisify(statement.exec).call(
+                          statement,
                           parameters,
                       )
-                    : await promisify(
-                          databaseConnection.exec.bind(databaseConnection),
-                      )(query, parameters, {})
+                    : await promisify(databaseConnection.exec).call(
+                          databaseConnection,
+                          query,
+                          parameters,
+                          {},
+                      )
             } catch (err) {
                 throw new QueryFailedError(query, parameters, err)
             }
@@ -232,7 +238,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.connection.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
@@ -268,26 +274,20 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (isInsertQuery) {
                 const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`
                 this.driver.connection.logger.logQuery(lastIdQuery, [], this)
-                const identityValueResult = await new Promise<any>(
-                    (ok, fail) => {
-                        databaseConnection.exec(
-                            lastIdQuery,
-                            (err: any, raw: any) =>
-                                err
-                                    ? fail(
-                                          new QueryFailedError(
-                                              lastIdQuery,
-                                              [],
-                                              err,
-                                          ),
-                                      )
-                                    : ok(raw),
-                        )
-                    },
-                )
+                try {
+                    const identityValueResult: [
+                        { "CURRENT_IDENTITY_VALUE()": unknown },
+                    ] = await promisify(databaseConnection.exec).call(
+                        databaseConnection,
+                        lastIdQuery,
+                    )
 
-                result.raw = identityValueResult[0]["CURRENT_IDENTITY_VALUE()"]
-                result.records = identityValueResult
+                    result.raw =
+                        identityValueResult[0]["CURRENT_IDENTITY_VALUE()"]
+                    result.records = identityValueResult
+                } catch (error) {
+                    throw new QueryFailedError(lastIdQuery, [], error)
+                }
             }
         } catch (err) {
             this.driver.connection.logger.logQueryError(
@@ -309,7 +309,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         } finally {
             // Never forget to drop the statement we reserved
             if (statement?.drop) {
-                await new Promise<void>((ok) => statement.drop(() => ok()))
+                await promisify(statement.drop).call(statement)
             }
 
             await broadcasterResult.wait()
@@ -336,20 +336,65 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     ): Promise<ReadStream> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        const databaseConnection = await this.connect()
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        const release = await this.lock.acquire()
+        let statement: any
+        let resultSet: any
 
-        const prepareAsync = promisify(databaseConnection.prepare).bind(
-            databaseConnection,
-        )
-        const statement = await prepareAsync(query)
-        const resultSet = statement.executeQuery(parameters)
-        const stream = this.driver.streamClient.createObjectStream(resultSet)
+        const cleanup = async () => {
+            const originalStatement = statement
+            const originalResultSet = resultSet
+            statement = null
+            resultSet = null
+            if (originalResultSet) {
+                await promisify(originalResultSet.close).call(originalResultSet)
+            }
+            if (originalStatement) {
+                await promisify(originalStatement.drop).call(originalStatement)
+            }
+            release()
+        }
 
-        if (onEnd) stream.on("end", onEnd)
-        if (onError) stream.on("error", onError)
+        try {
+            const databaseConnection = await this.connect()
+            this.driver.connection.logger.logQuery(query, parameters, this)
 
-        return stream
+            statement = await promisify(databaseConnection.prepare).call(
+                databaseConnection,
+                query,
+            )
+            resultSet = await promisify(statement.executeQuery).call(
+                statement,
+                parameters,
+            )
+
+            const stream =
+                this.driver.streamClient.createObjectStream(resultSet)
+
+            if (onEnd) {
+                stream.on("end", onEnd)
+            }
+            stream.on("error", (error: Error) => {
+                this.driver.connection.logger.logQueryError(
+                    error,
+                    query,
+                    parameters,
+                    this,
+                )
+                onError?.(error)
+            })
+            stream.on("close", cleanup)
+
+            return stream
+        } catch (error) {
+            this.driver.connection.logger.logQueryError(
+                error,
+                query,
+                parameters,
+                this,
+            )
+            await cleanup()
+            throw new QueryFailedError(query, parameters, error)
+        }
     }
 
     /**
@@ -1783,7 +1828,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -2577,339 +2622,311 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         ])
 
         // create tables for loaded tables
-        return Promise.all(
-            dbTables.map(async (dbTable) => {
-                const table = new Table()
-                const getSchemaFromKey = (dbObject: any, key: string) => {
-                    return dbObject[key] === currentSchema &&
-                        (!this.driver.options.schema ||
-                            this.driver.options.schema === currentSchema)
-                        ? undefined
-                        : dbObject[key]
-                }
+        return dbTables.map((dbTable) => {
+            const table = new Table()
+            const getSchemaFromKey = (dbObject: any, key: string) => {
+                return dbObject[key] === currentSchema &&
+                    (!this.driver.options.schema ||
+                        this.driver.options.schema === currentSchema)
+                    ? undefined
+                    : dbObject[key]
+            }
 
-                // We do not need to join schema name, when database is by default.
-                const schema = getSchemaFromKey(dbTable, "SCHEMA_NAME")
-                table.database = currentDatabase
-                table.schema = dbTable["SCHEMA_NAME"]
-                table.name = this.driver.buildTableName(
-                    dbTable["TABLE_NAME"],
-                    schema,
+            // We do not need to join schema name, when database is by default.
+            const schema = getSchemaFromKey(dbTable, "SCHEMA_NAME")
+            table.database = currentDatabase
+            table.schema = dbTable["SCHEMA_NAME"]
+            table.name = this.driver.buildTableName(
+                dbTable["TABLE_NAME"],
+                schema,
+            )
+
+            // create columns from the loaded columns
+            table.columns = dbColumns
+                .filter(
+                    (dbColumn) =>
+                        dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                        dbColumn["SCHEMA_NAME"] === dbTable["SCHEMA_NAME"],
                 )
-
-                // create columns from the loaded columns
-                table.columns = await Promise.all(
-                    dbColumns
-                        .filter(
-                            (dbColumn) =>
-                                dbColumn["TABLE_NAME"] ===
-                                    dbTable["TABLE_NAME"] &&
-                                dbColumn["SCHEMA_NAME"] ===
-                                    dbTable["SCHEMA_NAME"],
-                        )
-                        .map(async (dbColumn) => {
-                            const columnConstraints = dbConstraints.filter(
-                                (dbConstraint) =>
-                                    dbConstraint["TABLE_NAME"] ===
-                                        dbColumn["TABLE_NAME"] &&
-                                    dbConstraint["SCHEMA_NAME"] ===
-                                        dbColumn["SCHEMA_NAME"] &&
-                                    dbConstraint["COLUMN_NAME"] ===
-                                        dbColumn["COLUMN_NAME"],
-                            )
-
-                            const columnUniqueIndices = dbIndices.filter(
-                                (dbIndex) => {
-                                    return (
-                                        dbIndex["TABLE_NAME"] ===
-                                            dbTable["TABLE_NAME"] &&
-                                        dbIndex["SCHEMA_NAME"] ===
-                                            dbTable["SCHEMA_NAME"] &&
-                                        dbIndex["COLUMN_NAME"] ===
-                                            dbColumn["COLUMN_NAME"] &&
-                                        dbIndex["CONSTRAINT"] &&
-                                        dbIndex["CONSTRAINT"].indexOf(
-                                            "UNIQUE",
-                                        ) !== -1
-                                    )
-                                },
-                            )
-
-                            const tableMetadata =
-                                this.connection.entityMetadatas.find(
-                                    (metadata) =>
-                                        this.getTablePath(table) ===
-                                        this.getTablePath(metadata),
-                                )
-                            const hasIgnoredIndex =
-                                columnUniqueIndices.length > 0 &&
-                                tableMetadata &&
-                                tableMetadata.indices.some((index) => {
-                                    return columnUniqueIndices.some(
-                                        (uniqueIndex) => {
-                                            return (
-                                                index.name ===
-                                                    uniqueIndex["INDEX_NAME"] &&
-                                                index.synchronize === false
-                                            )
-                                        },
-                                    )
-                                })
-
-                            const isConstraintComposite =
-                                columnUniqueIndices.every((uniqueIndex) => {
-                                    return dbIndices.some(
-                                        (dbIndex) =>
-                                            dbIndex["INDEX_NAME"] ===
-                                                uniqueIndex["INDEX_NAME"] &&
-                                            dbIndex["COLUMN_NAME"] !==
-                                                dbColumn["COLUMN_NAME"],
-                                    )
-                                })
-
-                            const tableColumn = new TableColumn()
-                            tableColumn.name = dbColumn["COLUMN_NAME"]
-                            tableColumn.type =
-                                dbColumn["DATA_TYPE_NAME"].toLowerCase()
-
-                            if (
-                                tableColumn.type === "dec" ||
-                                tableColumn.type === "decimal"
-                            ) {
-                                // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
-                                // we set 'undefined' in to unspecified property to avoid changing column on sync
-                                if (
-                                    dbColumn["LENGTH"] !== null &&
-                                    !this.isDefaultColumnPrecision(
-                                        table,
-                                        tableColumn,
-                                        dbColumn["LENGTH"],
-                                    )
-                                ) {
-                                    tableColumn.precision = dbColumn["LENGTH"]
-                                } else if (
-                                    dbColumn["SCALE"] !== null &&
-                                    !this.isDefaultColumnScale(
-                                        table,
-                                        tableColumn,
-                                        dbColumn["SCALE"],
-                                    )
-                                ) {
-                                    tableColumn.precision = undefined
-                                }
-                                if (
-                                    dbColumn["SCALE"] !== null &&
-                                    !this.isDefaultColumnScale(
-                                        table,
-                                        tableColumn,
-                                        dbColumn["SCALE"],
-                                    )
-                                ) {
-                                    tableColumn.scale = dbColumn["SCALE"]
-                                } else if (
-                                    dbColumn["LENGTH"] !== null &&
-                                    !this.isDefaultColumnPrecision(
-                                        table,
-                                        tableColumn,
-                                        dbColumn["LENGTH"],
-                                    )
-                                ) {
-                                    tableColumn.scale = undefined
-                                }
-                            }
-
-                            if (
-                                dbColumn["DATA_TYPE_NAME"].toLowerCase() ===
-                                "array"
-                            ) {
-                                tableColumn.isArray = true
-                                tableColumn.type =
-                                    dbColumn["CS_DATA_TYPE_NAME"].toLowerCase()
-                            }
-
-                            // check only columns that have length property
-                            if (
-                                this.driver.withLengthColumnTypes.indexOf(
-                                    tableColumn.type as ColumnType,
-                                ) !== -1 &&
-                                dbColumn["LENGTH"]
-                            ) {
-                                const length = dbColumn["LENGTH"].toString()
-                                tableColumn.length =
-                                    !this.isDefaultColumnLength(
-                                        table,
-                                        tableColumn,
-                                        length,
-                                    )
-                                        ? length
-                                        : ""
-                            }
-                            tableColumn.isUnique =
-                                columnUniqueIndices.length > 0 &&
-                                !hasIgnoredIndex &&
-                                !isConstraintComposite
-                            tableColumn.isNullable =
-                                dbColumn["IS_NULLABLE"] === "TRUE"
-                            tableColumn.isPrimary = !!columnConstraints.find(
-                                (constraint) =>
-                                    constraint["IS_PRIMARY_KEY"] === "TRUE",
-                            )
-                            tableColumn.isGenerated =
-                                dbColumn["GENERATION_TYPE"] ===
-                                "ALWAYS AS IDENTITY"
-                            if (tableColumn.isGenerated)
-                                tableColumn.generationStrategy = "increment"
-
-                            if (
-                                dbColumn["DEFAULT_VALUE"] === null ||
-                                dbColumn["DEFAULT_VALUE"] === undefined
-                            ) {
-                                tableColumn.default = undefined
-                            } else {
-                                if (
-                                    tableColumn.type === "char" ||
-                                    tableColumn.type === "nchar" ||
-                                    tableColumn.type === "varchar" ||
-                                    tableColumn.type === "nvarchar" ||
-                                    tableColumn.type === "alphanum" ||
-                                    tableColumn.type === "shorttext"
-                                ) {
-                                    tableColumn.default = `'${dbColumn["DEFAULT_VALUE"]}'`
-                                } else if (tableColumn.type === "boolean") {
-                                    tableColumn.default =
-                                        dbColumn["DEFAULT_VALUE"] === "1"
-                                            ? "true"
-                                            : "false"
-                                } else {
-                                    tableColumn.default =
-                                        dbColumn["DEFAULT_VALUE"]
-                                }
-                            }
-                            if (dbColumn["COMMENTS"]) {
-                                tableColumn.comment = dbColumn["COMMENTS"]
-                            }
-                            return tableColumn
-                        }),
-                )
-
-                // find check constraints of table, group them by constraint name and build TableCheck.
-                const tableCheckConstraints = OrmUtils.uniq(
-                    dbConstraints.filter(
+                .map((dbColumn) => {
+                    const columnConstraints = dbConstraints.filter(
                         (dbConstraint) =>
                             dbConstraint["TABLE_NAME"] ===
-                                dbTable["TABLE_NAME"] &&
+                                dbColumn["TABLE_NAME"] &&
                             dbConstraint["SCHEMA_NAME"] ===
-                                dbTable["SCHEMA_NAME"] &&
-                            dbConstraint["CHECK_CONDITION"] !== null &&
-                            dbConstraint["CHECK_CONDITION"] !== undefined,
-                    ),
-                    (dbConstraint) => dbConstraint["CONSTRAINT_NAME"],
-                )
-
-                table.checks = tableCheckConstraints.map((constraint) => {
-                    const checks = dbConstraints.filter(
-                        (dbC) =>
-                            dbC["CONSTRAINT_NAME"] ===
-                            constraint["CONSTRAINT_NAME"],
+                                dbColumn["SCHEMA_NAME"] &&
+                            dbConstraint["COLUMN_NAME"] ===
+                                dbColumn["COLUMN_NAME"],
                     )
-                    return new TableCheck({
-                        name: constraint["CONSTRAINT_NAME"],
-                        columnNames: checks.map((c) => c["COLUMN_NAME"]),
-                        expression: constraint["CHECK_CONDITION"],
-                    })
-                })
 
-                // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
-                const tableForeignKeyConstraints = OrmUtils.uniq(
-                    dbForeignKeys.filter(
-                        (dbForeignKey) =>
-                            dbForeignKey["TABLE_NAME"] ===
-                                dbTable["TABLE_NAME"] &&
-                            dbForeignKey["SCHEMA_NAME"] ===
-                                dbTable["SCHEMA_NAME"],
-                    ),
-                    (dbForeignKey) => dbForeignKey["CONSTRAINT_NAME"],
-                )
-
-                table.foreignKeys = tableForeignKeyConstraints.map(
-                    (dbForeignKey) => {
-                        const foreignKeys = dbForeignKeys.filter(
-                            (dbFk) =>
-                                dbFk["CONSTRAINT_NAME"] ===
-                                dbForeignKey["CONSTRAINT_NAME"],
-                        )
-
-                        // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                        const schema = getSchemaFromKey(
-                            dbForeignKey,
-                            "REFERENCED_SCHEMA_NAME",
-                        )
-                        const referencedTableName = this.driver.buildTableName(
-                            dbForeignKey["REFERENCED_TABLE_NAME"],
-                            schema,
-                        )
-
-                        return new TableForeignKey({
-                            name: dbForeignKey["CONSTRAINT_NAME"],
-                            columnNames: foreignKeys.map(
-                                (dbFk) => dbFk["COLUMN_NAME"],
-                            ),
-                            referencedDatabase: table.database,
-                            referencedSchema:
-                                dbForeignKey["REFERENCED_SCHEMA_NAME"],
-                            referencedTableName: referencedTableName,
-                            referencedColumnNames: foreignKeys.map(
-                                (dbFk) => dbFk["REFERENCED_COLUMN_NAME"],
-                            ),
-                            onDelete:
-                                dbForeignKey["DELETE_RULE"] === "RESTRICT"
-                                    ? "NO ACTION"
-                                    : dbForeignKey["DELETE_RULE"],
-                            onUpdate:
-                                dbForeignKey["UPDATE_RULE"] === "RESTRICT"
-                                    ? "NO ACTION"
-                                    : dbForeignKey["UPDATE_RULE"],
-                            deferrable: dbForeignKey["CHECK_TIME"].replace(
-                                "_",
-                                " ",
-                            ),
-                        })
-                    },
-                )
-
-                // find index constraints of table, group them by constraint name and build TableIndex.
-                const tableIndexConstraints = OrmUtils.uniq(
-                    dbIndices.filter(
-                        (dbIndex) =>
-                            dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
-                            dbIndex["SCHEMA_NAME"] === dbTable["SCHEMA_NAME"],
-                    ),
-                    (dbIndex) => dbIndex["INDEX_NAME"],
-                )
-
-                table.indices = tableIndexConstraints.map((constraint) => {
-                    const indices = dbIndices.filter((index) => {
+                    const columnUniqueIndices = dbIndices.filter((dbIndex) => {
                         return (
-                            index["SCHEMA_NAME"] ===
-                                constraint["SCHEMA_NAME"] &&
-                            index["TABLE_NAME"] === constraint["TABLE_NAME"] &&
-                            index["INDEX_NAME"] === constraint["INDEX_NAME"]
+                            dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                            dbIndex["SCHEMA_NAME"] === dbTable["SCHEMA_NAME"] &&
+                            dbIndex["COLUMN_NAME"] ===
+                                dbColumn["COLUMN_NAME"] &&
+                            dbIndex["CONSTRAINT"] &&
+                            dbIndex["CONSTRAINT"].indexOf("UNIQUE") !== -1
                         )
                     })
-                    return new TableIndex(<TableIndexOptions>{
-                        table: table,
-                        name: constraint["INDEX_NAME"],
-                        columnNames: indices.map((i) => i["COLUMN_NAME"]),
-                        isUnique:
-                            constraint["CONSTRAINT"] &&
-                            constraint["CONSTRAINT"].indexOf("UNIQUE") !== -1,
-                        isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT",
-                    })
+
+                    const tableMetadata = this.connection.entityMetadatas.find(
+                        (metadata) =>
+                            this.getTablePath(table) ===
+                            this.getTablePath(metadata),
+                    )
+                    const hasIgnoredIndex =
+                        columnUniqueIndices.length > 0 &&
+                        tableMetadata &&
+                        tableMetadata.indices.some((index) => {
+                            return columnUniqueIndices.some((uniqueIndex) => {
+                                return (
+                                    index.name === uniqueIndex["INDEX_NAME"] &&
+                                    index.synchronize === false
+                                )
+                            })
+                        })
+
+                    const isConstraintComposite = columnUniqueIndices.every(
+                        (uniqueIndex) => {
+                            return dbIndices.some(
+                                (dbIndex) =>
+                                    dbIndex["INDEX_NAME"] ===
+                                        uniqueIndex["INDEX_NAME"] &&
+                                    dbIndex["COLUMN_NAME"] !==
+                                        dbColumn["COLUMN_NAME"],
+                            )
+                        },
+                    )
+
+                    const tableColumn = new TableColumn()
+                    tableColumn.name = dbColumn["COLUMN_NAME"]
+                    tableColumn.type = dbColumn["DATA_TYPE_NAME"].toLowerCase()
+
+                    if (
+                        tableColumn.type === "dec" ||
+                        tableColumn.type === "decimal"
+                    ) {
+                        // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
+                        // we set 'undefined' in to unspecified property to avoid changing column on sync
+                        if (
+                            dbColumn["LENGTH"] !== null &&
+                            !this.isDefaultColumnPrecision(
+                                table,
+                                tableColumn,
+                                dbColumn["LENGTH"],
+                            )
+                        ) {
+                            tableColumn.precision = dbColumn["LENGTH"]
+                        } else if (
+                            dbColumn["SCALE"] !== null &&
+                            !this.isDefaultColumnScale(
+                                table,
+                                tableColumn,
+                                dbColumn["SCALE"],
+                            )
+                        ) {
+                            tableColumn.precision = undefined
+                        }
+                        if (
+                            dbColumn["SCALE"] !== null &&
+                            !this.isDefaultColumnScale(
+                                table,
+                                tableColumn,
+                                dbColumn["SCALE"],
+                            )
+                        ) {
+                            tableColumn.scale = dbColumn["SCALE"]
+                        } else if (
+                            dbColumn["LENGTH"] !== null &&
+                            !this.isDefaultColumnPrecision(
+                                table,
+                                tableColumn,
+                                dbColumn["LENGTH"],
+                            )
+                        ) {
+                            tableColumn.scale = undefined
+                        }
+                    }
+
+                    if (dbColumn["DATA_TYPE_NAME"].toLowerCase() === "array") {
+                        tableColumn.isArray = true
+                        tableColumn.type =
+                            dbColumn["CS_DATA_TYPE_NAME"].toLowerCase()
+                    }
+
+                    // check only columns that have length property
+                    if (
+                        this.driver.withLengthColumnTypes.indexOf(
+                            tableColumn.type as ColumnType,
+                        ) !== -1 &&
+                        dbColumn["LENGTH"]
+                    ) {
+                        const length = dbColumn["LENGTH"].toString()
+                        tableColumn.length = !this.isDefaultColumnLength(
+                            table,
+                            tableColumn,
+                            length,
+                        )
+                            ? length
+                            : ""
+                    }
+                    tableColumn.isUnique =
+                        columnUniqueIndices.length > 0 &&
+                        !hasIgnoredIndex &&
+                        !isConstraintComposite
+                    tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "TRUE"
+                    tableColumn.isPrimary = !!columnConstraints.find(
+                        (constraint) => constraint["IS_PRIMARY_KEY"] === "TRUE",
+                    )
+                    tableColumn.isGenerated =
+                        dbColumn["GENERATION_TYPE"] === "ALWAYS AS IDENTITY"
+                    if (tableColumn.isGenerated)
+                        tableColumn.generationStrategy = "increment"
+
+                    if (
+                        dbColumn["DEFAULT_VALUE"] === null ||
+                        dbColumn["DEFAULT_VALUE"] === undefined
+                    ) {
+                        tableColumn.default = undefined
+                    } else {
+                        if (
+                            tableColumn.type === "char" ||
+                            tableColumn.type === "nchar" ||
+                            tableColumn.type === "varchar" ||
+                            tableColumn.type === "nvarchar" ||
+                            tableColumn.type === "alphanum" ||
+                            tableColumn.type === "shorttext"
+                        ) {
+                            tableColumn.default = `'${dbColumn["DEFAULT_VALUE"]}'`
+                        } else if (tableColumn.type === "boolean") {
+                            tableColumn.default =
+                                dbColumn["DEFAULT_VALUE"] === "1"
+                                    ? "true"
+                                    : "false"
+                        } else {
+                            tableColumn.default = dbColumn["DEFAULT_VALUE"]
+                        }
+                    }
+                    if (dbColumn["COMMENTS"]) {
+                        tableColumn.comment = dbColumn["COMMENTS"]
+                    }
+                    return tableColumn
                 })
 
-                return table
-            }),
-        )
+            // find check constraints of table, group them by constraint name and build TableCheck.
+            const tableCheckConstraints = OrmUtils.uniq(
+                dbConstraints.filter(
+                    (dbConstraint) =>
+                        dbConstraint["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                        dbConstraint["SCHEMA_NAME"] ===
+                            dbTable["SCHEMA_NAME"] &&
+                        dbConstraint["CHECK_CONDITION"] !== null &&
+                        dbConstraint["CHECK_CONDITION"] !== undefined,
+                ),
+                (dbConstraint) => dbConstraint["CONSTRAINT_NAME"],
+            )
+
+            table.checks = tableCheckConstraints.map((constraint) => {
+                const checks = dbConstraints.filter(
+                    (dbC) =>
+                        dbC["CONSTRAINT_NAME"] ===
+                        constraint["CONSTRAINT_NAME"],
+                )
+                return new TableCheck({
+                    name: constraint["CONSTRAINT_NAME"],
+                    columnNames: checks.map((c) => c["COLUMN_NAME"]),
+                    expression: constraint["CHECK_CONDITION"],
+                })
+            })
+
+            // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
+            const tableForeignKeyConstraints = OrmUtils.uniq(
+                dbForeignKeys.filter(
+                    (dbForeignKey) =>
+                        dbForeignKey["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                        dbForeignKey["SCHEMA_NAME"] === dbTable["SCHEMA_NAME"],
+                ),
+                (dbForeignKey) => dbForeignKey["CONSTRAINT_NAME"],
+            )
+
+            table.foreignKeys = tableForeignKeyConstraints.map(
+                (dbForeignKey) => {
+                    const foreignKeys = dbForeignKeys.filter(
+                        (dbFk) =>
+                            dbFk["CONSTRAINT_NAME"] ===
+                            dbForeignKey["CONSTRAINT_NAME"],
+                    )
+
+                    // if referenced table located in currently used schema, we don't need to concat schema name to table name.
+                    const schema = getSchemaFromKey(
+                        dbForeignKey,
+                        "REFERENCED_SCHEMA_NAME",
+                    )
+                    const referencedTableName = this.driver.buildTableName(
+                        dbForeignKey["REFERENCED_TABLE_NAME"],
+                        schema,
+                    )
+
+                    return new TableForeignKey({
+                        name: dbForeignKey["CONSTRAINT_NAME"],
+                        columnNames: foreignKeys.map(
+                            (dbFk) => dbFk["COLUMN_NAME"],
+                        ),
+                        referencedDatabase: table.database,
+                        referencedSchema:
+                            dbForeignKey["REFERENCED_SCHEMA_NAME"],
+                        referencedTableName: referencedTableName,
+                        referencedColumnNames: foreignKeys.map(
+                            (dbFk) => dbFk["REFERENCED_COLUMN_NAME"],
+                        ),
+                        onDelete:
+                            dbForeignKey["DELETE_RULE"] === "RESTRICT"
+                                ? "NO ACTION"
+                                : dbForeignKey["DELETE_RULE"],
+                        onUpdate:
+                            dbForeignKey["UPDATE_RULE"] === "RESTRICT"
+                                ? "NO ACTION"
+                                : dbForeignKey["UPDATE_RULE"],
+                        deferrable: dbForeignKey["CHECK_TIME"].replace(
+                            "_",
+                            " ",
+                        ),
+                    })
+                },
+            )
+
+            // find index constraints of table, group them by constraint name and build TableIndex.
+            const tableIndexConstraints = OrmUtils.uniq(
+                dbIndices.filter(
+                    (dbIndex) =>
+                        dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                        dbIndex["SCHEMA_NAME"] === dbTable["SCHEMA_NAME"],
+                ),
+                (dbIndex) => dbIndex["INDEX_NAME"],
+            )
+
+            table.indices = tableIndexConstraints.map((constraint) => {
+                const indices = dbIndices.filter((index) => {
+                    return (
+                        index["SCHEMA_NAME"] === constraint["SCHEMA_NAME"] &&
+                        index["TABLE_NAME"] === constraint["TABLE_NAME"] &&
+                        index["INDEX_NAME"] === constraint["INDEX_NAME"]
+                    )
+                })
+                return new TableIndex(<TableIndexOptions>{
+                    table: table,
+                    name: constraint["INDEX_NAME"],
+                    columnNames: indices.map((i) => i["COLUMN_NAME"]),
+                    isUnique:
+                        constraint["CONSTRAINT"] &&
+                        constraint["CONSTRAINT"].indexOf("UNIQUE") !== -1,
+                    isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT",
+                })
+            })
+
+            return table
+        })
     }
 
     /**
