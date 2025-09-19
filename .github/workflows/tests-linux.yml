@@ -253,13 +253,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        postgis-version:
-          - "14-3.5"
-          - "17-3.5"
+        postgres-version: ["14", "17"]
 
     services:
       postgres:
-        image: postgis/postgis:${{ matrix.postgis-version }}
+        image: ghcr.io/naorpeled/typeorm-postgres:pg${{ matrix.postgres-version }}-postgis3-pgvectorv0.8.0
         ports:
           - "5432:5432"
         env:
@@ -288,7 +286,7 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: postgres:${{ matrix.postgis-version }}-node:${{ inputs.node-version }}
+          flag-name: postgres:${{ matrix.postgres-version }}-node:${{ inputs.node-version }}
           parallel: true
 
   oracle:
