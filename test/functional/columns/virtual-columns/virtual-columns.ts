@@ -68,85 +68,79 @@ describe("column > virtual columns", () => {
     after(() => closeTestingConnections(connections))
 
     it("should generate expected sub-select & select statement", () =>
-        Promise.all(
-            connections.map((connection) => {
-                const options1: FindManyOptions<Company> = {
-                    select: {
-                        name: true,
-                        totalEmployeesCount: true,
-                    },
-                }
+        connections.map((connection) => {
+            const options1: FindManyOptions<Company> = {
+                select: {
+                    name: true,
+                    totalEmployeesCount: true,
+                },
+            }
 
-                const query1 = connection
-                    .createQueryBuilder(Company, "Company")
-                    .setFindOptions(options1)
-                    .getSql()
+            const query1 = connection
+                .createQueryBuilder(Company, "Company")
+                .setFindOptions(options1)
+                .getSql()
 
-                let expectedQuery = `SELECT "Company"."name" AS "Company_name", (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "Company"."name") AS "Company_totalEmployeesCount" FROM "companies" "Company"`
-                if (DriverUtils.isMySQLFamily(connection.driver)) {
-                    expectedQuery = expectedQuery.replaceAll('"', "`")
-                }
-                expect(query1).to.equal(expectedQuery)
-            }),
-        ))
+            let expectedQuery = `SELECT "Company"."name" AS "Company_name", (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "Company"."name") AS "Company_totalEmployeesCount" FROM "companies" "Company"`
+            if (DriverUtils.isMySQLFamily(connection.driver)) {
+                expectedQuery = expectedQuery.replaceAll('"', "`")
+            }
+            expect(query1).to.equal(expectedQuery)
+        }))
 
     it("should generate expected sub-select & nested-subselect statement", () =>
-        Promise.all(
-            connections.map((connection) => {
-                const findOptions: FindManyOptions<Company> = {
-                    select: {
-                        name: true,
-                        totalEmployeesCount: true,
-                        employees: {
-                            timesheets: {
-                                totalActivityHours: true,
-                            },
+        connections.map((connection) => {
+            const findOptions: FindManyOptions<Company> = {
+                select: {
+                    name: true,
+                    totalEmployeesCount: true,
+                    employees: {
+                        timesheets: {
+                            totalActivityHours: true,
                         },
                     },
-                    relations: {
-                        employees: {
-                            timesheets: true,
-                        },
+                },
+                relations: {
+                    employees: {
+                        timesheets: true,
                     },
-                }
+                },
+            }
 
-                const query = connection
-                    .createQueryBuilder(Company, "Company")
-                    .setFindOptions(findOptions)
-                    .getSql()
+            const query = connection
+                .createQueryBuilder(Company, "Company")
+                .setFindOptions(findOptions)
+                .getSql()
 
-                let expectedQuery1 = `SELECT "Company"."name" AS "Company_name"`
-                let expectedQuery2 = `(SELECT COUNT("name") FROM "employees" WHERE "companyName" = "Company"."name") AS "Company_totalEmployeesCount", (SELECT SUM("hours") FROM "activities" WHERE "timesheetId" =`
-                if (DriverUtils.isMySQLFamily(connection.driver)) {
-                    expectedQuery1 = expectedQuery1.replaceAll('"', "`")
-                    expectedQuery2 = expectedQuery2.replaceAll('"', "`")
-                }
-                expect(query).to.include(expectedQuery1)
-                expect(query).to.include(expectedQuery2)
-            }),
-        ))
+            let expectedQuery1 = `SELECT "Company"."name" AS "Company_name"`
+            let expectedQuery2 = `(SELECT COUNT("name") FROM "employees" WHERE "companyName" = "Company"."name") AS "Company_totalEmployeesCount", (SELECT SUM("hours") FROM "activities" WHERE "timesheetId" =`
+            if (DriverUtils.isMySQLFamily(connection.driver)) {
+                expectedQuery1 = expectedQuery1.replaceAll('"', "`")
+                expectedQuery2 = expectedQuery2.replaceAll('"', "`")
+            }
+            expect(query).to.include(expectedQuery1)
+            expect(query).to.include(expectedQuery2)
+        }))
 
     it("should not generate sub-select if column is not selected", () =>
-        Promise.all(
-            connections.map((connection) => {
-                const options: FindManyOptions<Company> = {
-                    select: {
-                        name: true,
-                        totalEmployeesCount: false,
-                    },
-                }
-                const query = connection
-                    .createQueryBuilder(Company, "Company")
-                    .setFindOptions(options)
-                    .getSql()
+        connections.map((connection) => {
+            const options: FindManyOptions<Company> = {
+                select: {
+                    name: true,
+                    totalEmployeesCount: false,
+                },
+            }
+            const query = connection
+                .createQueryBuilder(Company, "Company")
+                .setFindOptions(options)
+                .getSql()
 
-                let expectedQuery = `SELECT "Company"."name" AS "Company_name" FROM "companies" "Company"`
-                if (DriverUtils.isMySQLFamily(connection.driver)) {
-                    expectedQuery = expectedQuery.replaceAll('"', "`")
-                }
-                expect(query).to.equal(expectedQuery)
-            }),
-        ))
+            let expectedQuery = `SELECT "Company"."name" AS "Company_name" FROM "companies" "Company"`
+            if (DriverUtils.isMySQLFamily(connection.driver)) {
+                expectedQuery = expectedQuery.replaceAll('"', "`")
+            }
+            expect(query).to.equal(expectedQuery)
+        }))
 
     it("should be able to save and find sub-select data in the database", () =>
         Promise.all(
