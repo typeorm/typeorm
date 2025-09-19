@@ -1,6 +1,6 @@
 {
   "name": "typeorm",
-  "version": "0.3.26",
+  "version": "0.3.27",
   "description": "Data-Mapper ORM for TypeScript and ES2021+. Supports MySQL/MariaDB, PostgreSQL, MS SQL Server, Oracle, SAP HANA, SQLite, MongoDB databases.",
   "homepage": "https://typeorm.io",
   "bugs": {
@@ -145,7 +145,7 @@
     "mongodb": "^6.15.0",
     "mssql": "^11.0.1",
     "mysql": "^2.18.1",
-    "mysql2": "^3.14.0",
+    "mysql2": "^3.14.2",
     "nyc": "^17.1.0",
     "oracledb": "^6.8.0",
     "pg": "^8.14.1",

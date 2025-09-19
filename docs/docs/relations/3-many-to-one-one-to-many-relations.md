@@ -46,19 +46,19 @@ Where you set `@ManyToOne` - its related entity will have "relation id" and fore
 
 This example will produce following tables:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | url         | varchar(255) |                            |
-| userId      | int(11)      | FOREIGN KEY                |
+| userId      | int          | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 
 +-------------+--------------+----------------------------+
 |                          user                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(255) |                            |
 +-------------+--------------+----------------------------+
 ```

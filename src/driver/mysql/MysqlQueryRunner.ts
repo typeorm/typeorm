@@ -21,8 +21,9 @@ import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
+import { DriverUtils } from "../DriverUtils"
 import { Query } from "../Query"
-import { ColumnType } from "../types/ColumnTypes"
+import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
@@ -2653,17 +2654,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                             }
 
                             tableColumn.zerofill =
-                                dbColumn["COLUMN_TYPE"].indexOf("zerofill") !==
-                                -1
-                            tableColumn.unsigned = tableColumn.zerofill
-                                ? true
-                                : dbColumn["COLUMN_TYPE"].indexOf(
-                                      "unsigned",
-                                  ) !== -1
+                                dbColumn["COLUMN_TYPE"].includes("zerofill")
+                            tableColumn.unsigned =
+                                tableColumn.zerofill ||
+                                dbColumn["COLUMN_TYPE"].includes("unsigned")
                             if (
-                                this.driver.withWidthColumnTypes.indexOf(
-                                    tableColumn.type as ColumnType,
-                                ) !== -1
+                                this.driver.unsignedColumnTypes.includes(
+                                    tableColumn.type as UnsignedColumnType,
+                                )
                             ) {
                                 const width = dbColumn["COLUMN_TYPE"].substring(
                                     dbColumn["COLUMN_TYPE"].indexOf("(") + 1,
@@ -3388,12 +3386,21 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if column display width is by default.
+     * @deprecated MySQL no longer supports column width in newer versions.
      */
     protected isDefaultColumnWidth(
         table: Table,
         column: TableColumn,
         width: number,
     ): boolean {
+        // Skip the whole check on servers that no longer expose width metadata.
+        if (
+            this.driver.options.type === "mysql" &&
+            DriverUtils.isReleaseVersionOrGreater(this.driver, "8.0.0")
+        ) {
+            return true
+        }
+
         // if table have metadata, we check if length is specified in column metadata
         if (this.connection.hasMetadata(table.name)) {
             const metadata = this.connection.getMetadata(table.name)

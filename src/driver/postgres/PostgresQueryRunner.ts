@@ -3495,6 +3495,18 @@ export class PostgresQueryRunner
                             tableColumn.type = dbColumn["regtype"].toLowerCase()
 
                             if (
+                                tableColumn.type === "vector" ||
+                                tableColumn.type === "halfvec"
+                            ) {
+                                const lengthMatch = dbColumn[
+                                    "format_type"
+                                ].match(/^(?:vector|halfvec)\((\d+)\)$/)
+                                if (lengthMatch && lengthMatch[1]) {
+                                    tableColumn.length = lengthMatch[1]
+                                }
+                            }
+
+                            if (
                                 tableColumn.type === "numeric" ||
                                 tableColumn.type === "numeric[]" ||
                                 tableColumn.type === "decimal" ||
