@@ -18,7 +18,7 @@ await dataSource
 This is the most efficient way in terms of performance to insert rows into your database.
 You can also perform bulk insertions this way.
 
-### Raw SQL support
+## Raw SQL support
 
 In some cases when you need to execute SQL queries you need to use function style value:
 
@@ -34,9 +34,9 @@ await dataSource
     .execute()
 ```
 
-This syntax doesn't escape your values, you need to handle escape on your own.
+> Warning: When using raw SQL, ensure that values are properly sanitized to prevent SQL injection.
 
-### Update values ON CONFLICT
+## Update values ON CONFLICT
 
 If the values you are trying to insert conflict due to existing data the `orUpdate` function can be used to update specific values on the conflicted target.
 
@@ -50,14 +50,11 @@ await dataSource
         lastName: "Saw",
         externalId: "abc123",
     })
-    .orUpdate(
-        ["firstName", "lastName"],
-        ["externalId"],
-    )
+    .orUpdate(["firstName", "lastName"], ["externalId"])
     .execute()
 ```
 
-### Update values ON CONFLICT with condition (Postgres, Oracle, MSSQL, SAP HANA)
+## Update values ON CONFLICT with condition (Postgres, Oracle, MSSQL, SAP HANA)
 
 ```typescript
 await dataSource
@@ -69,22 +66,17 @@ await dataSource
         lastName: "Saw",
         externalId: "abc123",
     })
-    .orUpdate(
-        ["firstName", "lastName"],
-        ["externalId"],
-        {
-            overwriteCondition: {
-                where: {
-                    firstName: Equal("Phantom"),
-                }
+    .orUpdate(["firstName", "lastName"], ["externalId"], {
+        overwriteCondition: {
+            where: {
+                firstName: Equal("Phantom"),
             },
-        }
-    )
+        },
+    })
     .execute()
 ```
 
-
-### IGNORE error (MySQL) or DO NOTHING (Postgres, Oracle, MSSQL, SAP HANA) during insert
+## IGNORE error (MySQL) or DO NOTHING (Postgres, Oracle, MSSQL, SAP HANA) during insert
 
 If the values you are trying to insert conflict due to existing data or containing invalid data, the `orIgnore` function can be used to suppress errors and insert only rows that contain valid data.
 
@@ -102,7 +94,7 @@ await dataSource
     .execute()
 ```
 
-### Skip data update if values have not changed (Postgres, Oracle, MSSQL, SAP HANA)
+## Skip data update if values have not changed (Postgres, Oracle, MSSQL, SAP HANA)
 
 ```typescript
 await dataSource
@@ -114,17 +106,13 @@ await dataSource
         lastName: "Saw",
         externalId: "abc123",
     })
-    .orUpdate(
-        ["firstName", "lastName"],
-        ["externalId"],
-        {
-            skipUpdateIfNoValuesChanged: true,
-        }
-    )
+    .orUpdate(["firstName", "lastName"], ["externalId"], {
+        skipUpdateIfNoValuesChanged: true,
+    })
     .execute()
 ```
 
-### Use partial index (Postgres)
+## Use partial index (Postgres)
 
 ```typescript
 await dataSource
@@ -136,13 +124,9 @@ await dataSource
         lastName: "Saw",
         externalId: "abc123",
     })
-    .orUpdate(
-        ["firstName", "lastName"],
-        ["externalId"],
-        {
-            skipUpdateIfNoValuesChanged: true,
-            indexPredicate: "date > 2020-01-01"
-        }
-    )
+    .orUpdate(["firstName", "lastName"], ["externalId"], {
+        skipUpdateIfNoValuesChanged: true,
+        indexPredicate: "date > 2020-01-01",
+    })
     .execute()
 ```

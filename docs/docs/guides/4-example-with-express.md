@@ -8,13 +8,13 @@ within web api.
 
 First, create a directory called "user":
 
-```
+```shell
 mkdir user
 ```
 
 Then switch to the directory and create a new project:
 
-```
+```shell
 cd user
 npm init
 ```
@@ -23,7 +23,7 @@ Finish the init process by filling in all required application information.
 
 Now we need to install and setup a TypeScript compiler. Lets install it first:
 
-```
+```shell
 npm i typescript --save-dev
 ```
 
@@ -45,7 +45,7 @@ compile and run. Create it using your favorite editor and put the following conf
 
 Now let's create a main application endpoint - `app.ts` inside the `src` directory:
 
-```
+```shell
 mkdir src
 cd src
 touch app.ts
@@ -60,14 +60,14 @@ console.log("Application is up and running")
 Now it's time to run our application.
 To run it, you need to compile your typescript project first:
 
-```
+```shell
 tsc
 ```
 
 Once you compile it, you should have a `src/app.js` file generated.
 You can run it using:
 
-```
+```shell
 node src/app.js
 ```
 
@@ -80,8 +80,9 @@ Alternatively, you can set up watcher or install [ts-node](https://github.com/Ty
 
 Let's add Express to our application. First, let's install the packages we need:
 
-```
-npm i express  @types/express --save
+```shell
+npm install express
+npm install @types/express --save-dev
 ```
 
 -   `express` is the express engine itself. It allows us to create a web api
@@ -135,14 +136,13 @@ Setup process for other drivers is similar.
 
 Let's install the required packages first:
 
-```
-npm i typeorm mysql reflect-metadata --save
+```shell
+npm install typeorm reflect-metadata mysql
 ```
 
 -   `typeorm` is the typeorm package itself
--   `mysql` is the underlying database driver.
-    If you are using a different database system, you must install the appropriate package
--   `reflect-metadata` is required to make decorators to work properly
+-   `reflect-metadata` is required to make decorators to work properly. Remember to import it before your TypeORM code.
+-   `mysql` is the underlying database driver. If you are using a different database system, you must install the appropriate package
 
 Let's create `app-data-source.ts` where we set up initial database connection options:
 
@@ -186,20 +186,20 @@ export class User {
 Let's change `src/app.ts` to establish database connection and start using `myDataSource`:
 
 ```typescript
+import "reflect-metadata"
+
 import * as express from "express"
 import { Request, Response } from "express"
 import { User } from "./entity/User"
 import { myDataSource } from "./app-data-source.ts"
 
 // establish database connection
-myDataSource
-    .initialize()
-    .then(() => {
-        console.log("Data Source has been initialized!")
-    })
-    .catch((err) => {
-        console.error("Error during Data Source initialization:", err)
-    })
+try {
+    await myDataSource.initialize()
+    console.log("Data Source has been initialized!")
+} catch (error) {
+    console.error("Error during Data Source initialization:", error)
+}
 
 // create and setup express app
 const app = express()

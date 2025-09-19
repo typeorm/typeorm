@@ -9,17 +9,35 @@ import { DataSource } from "../../../src"
 import { fail } from "assert"
 import { Query } from "../../../src/driver/Query"
 import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions"
+import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #6442 JoinTable does not respect inverseJoinColumns referenced column width", () => {
     let connections: DataSource[]
 
     before(async () => {
-        return (connections = await createTestingConnections({
+        connections = await createTestingConnections({
             entities: [__dirname + "/entity/v1/*{.js,.ts}"],
-            schemaCreate: true,
-            dropSchema: true,
-            enabledDrivers: ["mysql"],
-        }))
+            enabledDrivers: ["mariadb", "mysql"],
+        })
+
+        await Promise.all(
+            connections.map(async (connection) => {
+                // column width no longer supported on Mysql 8.0+
+                if (
+                    connection.driver.options.type === "mysql" &&
+                    DriverUtils.isReleaseVersionOrGreater(
+                        connection.driver,
+                        "8.0",
+                    )
+                ) {
+                    await connection.destroy()
+                }
+            }),
+        )
+
+        connections = connections.filter(
+            (connection) => connection.isInitialized,
+        )
     })
     beforeEach(async () => await reloadTestingDatabases(connections))
     after(async () => await closeTestingConnections(connections))

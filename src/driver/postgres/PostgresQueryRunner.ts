@@ -3355,7 +3355,7 @@ export class PostgresQueryRunner
             .join(" OR ")
         const columnsSql =
             `SELECT columns.*, pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) AS description, ` +
-            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype" AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type" ` +
+            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype"::text AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type" ` +
             `FROM "information_schema"."columns" ` +
             `LEFT JOIN "pg_catalog"."pg_attribute" AS "col_attr" ON "col_attr"."attname" = "columns"."column_name" ` +
             `AND "col_attr"."attrelid" = ( ` +
@@ -3490,6 +3490,18 @@ export class PostgresQueryRunner
                             const tableColumn = new TableColumn()
                             tableColumn.name = dbColumn["column_name"]
                             tableColumn.type = dbColumn["regtype"].toLowerCase()
+
+                            if (
+                                tableColumn.type === "vector" ||
+                                tableColumn.type === "halfvec"
+                            ) {
+                                const lengthMatch = dbColumn[
+                                    "format_type"
+                                ].match(/^(?:vector|halfvec)\((\d+)\)$/)
+                                if (lengthMatch && lengthMatch[1]) {
+                                    tableColumn.length = lengthMatch[1]
+                                }
+                            }
 
                             if (
                                 tableColumn.type === "numeric" ||

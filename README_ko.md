@@ -1,15 +1,31 @@
-<div align="center">   <a href="http://typeorm.io/">     <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">   </a>   <br>   <br> 	<a href="https://app.circleci.com/pipelines/github/typeorm/typeorm"> 		<img src="https://circleci.com/gh/typeorm/typeorm/tree/master.svg?style=shield"> 	</a> 	<a href="https://badge.fury.io/js/typeorm"> 		<img src="https://badge.fury.io/js/typeorm.svg"> 	</a>     <a href="https://codecov.io/gh/typeorm/typeorm">         <img src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg" alt="Codecov">     </a> 		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg"> 	</a>   <br>   <br>
+<div align="center">
+  <a href="http://typeorm.io/">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-light.png">
+        <source  media="(prefers-color-scheme: light)" srcset="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-dark.png">
+        <img height="80" width="auto" alt="TypeORM Logo" src="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-dark.png">
+    </picture>
+  </a>
+  <br>
+  <br>
+    <a href="https://www.npmjs.com/package/typeorm"><img src="https://img.shields.io/npm/v/typeorm" alt="NPM Version" /></a>
+    <a href="https://www.npmjs.com/package/typeorm"><img src="https://img.shields.io/npm/dm/typeorm" alt="NPM Downloads" /></a>
+    <a href="https://github.com/typeorm/typeorm/actions/workflows/commit-validation.yml?query=branch%3Amaster"><img src="https://github.com/typeorm/typeorm/actions/workflows/commit-validation.yml/badge.svg?branch=master" alt="Commit Validation"/></a>
+    <a href="https://coveralls.io/github/typeorm/typeorm?branch=master"><img src="https://coveralls.io/repos/github/typeorm/typeorm/badge.svg?branch=master" alt="Coverage Status" /></a>
+    <a href=""><img src="https://img.shields.io/badge/License-MIT-teal.svg" alt="MIT License" /></a>
+  <br>
+  <br>
 </div>
 
-TypeORM은 NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native, NativeScript, Expo 및 Electron 플랫폼에서 실행할 수 있는 [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)이며 TypeScript 및 JavaScript(ES2021)와 함께 사용할 수 있다. TypeORM의 목표는 항상 최신 JavaScript 기능을 지원하고 몇 개의 테이블이 있는 작은 응용 프로그램에서 여러 데이터베이스가 있는 대규모 엔터프라이즈 응용 프로그램에 이르기까지 데이터베이스를 사용하는 모든 종류의 응용 프로그램을 개발하는 데 도움이 되는 추가 기능을 제공하는 것이다.
+TypeORM은 NodeJS, Browser, Cordova, Ionic, React Native, NativeScript, Expo 및 Electron 플랫폼에서 실행할 수 있는 [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)이며 TypeScript 및 JavaScript(ES2021)와 함께 사용할 수 있다. TypeORM의 목표는 항상 최신 JavaScript 기능을 지원하고 몇 개의 테이블이 있는 작은 응용 프로그램에서 여러 데이터베이스가 있는 대규모 엔터프라이즈 응용 프로그램에 이르기까지 데이터베이스를 사용하는 모든 종류의 응용 프로그램을 개발하는 데 도움이 되는 추가 기능을 제공하는 것이다.
 
-TypeORM은 현재 존재하는 다른 모든 JavaScript ORM과 달리 [Active Record](./docs/docs/Guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) 및 [Data Mapper](./docs/docs/Guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) 패턴을 모두 지원한다. 즉, 고품질의 느슨하게 결합된 확장 가능하고 유지 관리 가능한 애플리케이션을 가장 생산적인 방식으로 작성할 수 있다.
+TypeORM은 현재 존재하는 다른 모든 JavaScript ORM과 달리 [Active Record](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) 및 [Data Mapper](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) 패턴을 모두 지원한다. 즉, 고품질의 느슨하게 결합된 확장 가능하고 유지 관리 가능한 애플리케이션을 가장 생산적인 방식으로 작성할 수 있다.
 
 TypeORM은 [Hibernate](http://hibernate.org/orm/), [Doctrine](http://www.doctrine-project.org/) 및 [Entity Framework](https://www.asp.net/entity-framework)와 같은 다른 ORM의 영향을 많이 받는다.
 
 ## 특징
 
--   [DataMapper](./docs/docs/Guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern)와 [ActiveRecord](./docs/docs/Guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern)을 모두 지원.
+-   [DataMapper](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern)와 [ActiveRecord](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern)을 모두 지원.
 -   항목 및 열.
 -   데이터베이스 별 열 유형.
 -   엔터티 관리자.
@@ -130,11 +146,11 @@ await timber.remove()
 
 1. npm 패키지를 설치한다:
 
-    `npm install typeorm --save`
+    `npm install typeorm`
 
 2. `reflect-metadata` 심(shim)을 설치한다:
 
-    `npm install reflect-metadata --save`
+    `npm install reflect-metadata`
 
     그리고 그것을 app (예: `app.ts`)의 전역 위치에 불러와야 한다:
 
@@ -148,47 +164,47 @@ await timber.remove()
 
     - **MySQL** 또는 **MariaDB**의 경우
 
-        `npm install mysql --save` (you can install `mysql2` instead as well)
+        `npm install mysql` / `npm install mysql2`
 
     - for **PostgreSQL**또는 **CockroachDB**의 경우
 
-        `npm install pg --save`
+        `npm install pg`
 
     - **SQLite**의 경우
 
-        `npm install sqlite3 --save`
+        `npm install sqlite3`
+
+    - **Better SQLite**의 경우
+
+        `npm install better-sqlite3`
 
     - **Microsoft SQL Server**의 경우
 
-        `npm install mssql --save`
+        `npm install mssql`
 
     - **sql.js**의 경우
 
-        `npm install sql.js --save`
+        `npm install sql.js`
 
     - **Oracle**의 경우
 
-        `npm install oracledb --save`
+        `npm install oracledb`
 
         Oracle 드라이버를 작동시키려면 [해당](https://github.com/oracle/node-oracledb) 사이트의 설치 지침을 따라야 한다.
 
     - **SAP Hana**의 경우
 
-        ```
-        npm i @sap/hana-client
-        ```
+        `npm i @sap/hana-client`
 
     - **MongoDB** (experimental)의 경우
 
-        `npm install mongodb@^5.2.0 --save`
+        `npm install mongodb`
 
-    - **NativeScript**, **react-native**, **Cordova**의 경우
+    - **NativeScript**, **React Native**, **Cordova**, **Expo**의 경우
 
-        [지원되는 플랫폼 문서](./docs/docs/Help/2-supported-platforms.md) 확인
+        [지원되는 플랫폼 문서](./docs/docs/help/2-supported-platforms.md) 확인
 
-    사용하는 데이터베이스에 따라*하나*만 설치
-
-##### TypeScript 환경 설정
+### TypeScript 환경 설정
 
 또한 TypeScript 버전 **3.3** 이상을 사용 중이어야 하고, `tsconfig.json`에서 다음 설정을 사용 가능하게 했는지 확인해야 한다:
 
@@ -196,8 +212,6 @@ await timber.remove()
 "emitDecoratorMetadata": true,
 "experimentalDecorators": true,
 ```
-
-컴파일러 옵션의 `lib` 섹션에서 `es6`을 사용 설정하거나, `@types`에서 `es6-shim`을 설치해야 할 수도 있다.
 
 ## 빠른 시작
 
@@ -219,7 +233,7 @@ typeorm init --name MyProject --database mysql
 
 이 명령은 `MyProject` 디렉토리에 다음의 파일들이 있는 새 프로젝트를 생성한다:
 
-```
+```text
 MyProject
 ├── src              // place of your TypeScript code
 │   ├── entity       // place where your entities (database models) are stored
@@ -237,7 +251,7 @@ MyProject
 
 다음 단계는 새 프로젝트 종속성을 설치하는 것이다:
 
-```
+```shell
 cd MyProject
 npm install
 ```
@@ -264,7 +278,7 @@ npm install
 
 설정을 마치고 모든 node 모듈이 설치되면 애플리케이션을 실행할 수 있다:
 
-```
+```shell
 npm start
 ```
 
@@ -441,7 +455,7 @@ export class Photo {
 }
 ```
 
-열 타입은 데이터베이스에 따라 다르다. 데이터베이스가 지원하는 모든 열 타입을 설정할 수 있다. 지원 되는 열 타입에 대한 자세한 정보는 [여기](./docs/docs/Entity/1-entities.md#column-types)에서 찾을 수 있다.
+열 타입은 데이터베이스에 따라 다르다. 데이터베이스가 지원하는 모든 열 타입을 설정할 수 있다. 지원 되는 열 타입에 대한 자세한 정보는 [여기](./docs/docs/entity/1-entities.md#column-types)에서 찾을 수 있다.
 
 ### 데이터 베이스에 대한 연결 생성
 
@@ -504,15 +518,15 @@ createConnection({
 
 이제 `index.ts`를 실행하면 데이터베이스와의 연결이 초기화되고 photo에 대한 데이터베이스 테이블이 생성된다.
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(100) |                            |
 | description | text         |                            |
 | filename    | varchar(255) |                            |
-| views       | int(11)      |                            |
+| views       | int          |                            |
 | isPublished | boolean      |                            |
 +-------------+--------------+----------------------------+
 ```
@@ -585,7 +599,7 @@ createConnection(/*...*/)
 
 `savedPhotos`는 데이터베이스에서 로드된 데이터가 있는 Photo 객체의 배열이다.
 
-[여기](./docs/docs/Working%20with%20Entity%20Manager/2-working-with-repository.md)에서 엔터티 매니저에 대해 자세히 알 수 있다.
+[여기](./docs/docs/working-with-entity-manager/2-working-with-repository.md)에서 엔터티 매니저에 대해 자세히 알 수 있다.
 
 ### 리포지토리 사용
 
@@ -615,7 +629,7 @@ createConnection(/*...*/)
     .catch((error) => console.log(error))
 ```
 
-[여기](./docs/docs/Working%20with%20Entity%20Manager/2-working-with-repository.md)에서 리포지토리에 대해 자세히 알 수 있다.
+[여기](./docs/docs/working-with-entity-manager/2-working-with-repository.md)에서 리포지토리에 대해 자세히 알 수 있다.
 
 ### 데이터베이스에서 로드
 
@@ -739,17 +753,17 @@ export class PhotoMetadata {
 
 앱을 실행하면 새로 생성된 테이블이 표시되며 여기에는 photo 관계에 대한 외래 키가 있는 열이 포함된다:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                     photo_metadata                      |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| height      | int(11)      |                            |
-| width       | int(11)      |                            |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
+| height      | int          |                            |
+| width       | int          |                            |
 | comment     | varchar(255) |                            |
 | compressed  | boolean      |                            |
 | orientation | varchar(255) |                            |
-| photoId     | int(11)      | FOREIGN KEY                |
+| photoId     | int          | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
 
@@ -858,7 +872,7 @@ createConnection(/*...*/)
     .catch((error) => console.log(error))
 ```
 
-여기에서 photos에는 데이터베이스의 photo 배열이 포함되고 각 photo에는 photo metadata가 포함된다. [이 문서](./docs/docs/Working%20with%20Entity%20Manager/3-find-options.md)에서 찾기 옵션에 대해 자세히 알아볼 수 있다.
+여기에서 photos에는 데이터베이스의 photo 배열이 포함되고 각 photo에는 photo metadata가 포함된다. [이 문서](./docs/docs/working-with-entity-manager/3-find-options.md)에서 찾기 옵션에 대해 자세히 알아볼 수 있다.
 
 Using find options is good and dead 찾기 옵션을 사용하는 것은 훌륭하고 간단하지만 더 복잡한 쿼리가 필요한 경우에는 `QueryBuilder`를 대신 사용해야 한다. `QueryBuilder`를 사용하면 보다 복잡한 쿼리를 우아한 방식으로 사용할 수 있다.
 
@@ -980,27 +994,27 @@ N:1/1:N 관계에서 소유자측은 항상 다대일(ManyToOne)이다. 즉 `@Ma
 
 애플리케이션을 실행한 후, ORM은 `author` 테이블을 생성한다:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                          author                         |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(255) |                            |
 +-------------+--------------+----------------------------+
 ```
 
 또한 새 `author` 열을 추가하고 이에 대한 외래 키를 생성하여 `photo` 테이블을 수정한다:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(255) |                            |
 | description | varchar(255) |                            |
 | filename    | varchar(255) |                            |
 | isPublished | boolean      |                            |
-| authorId    | int(11)      | FOREIGN KEY                |
+| authorId    | int          | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
 
@@ -1046,12 +1060,12 @@ export class Photo {
 
 애플리케이션을 실행한 후, ORM은 **album_photos_photo_albums**라는 *접합 테이블(junction table)*을 생성한다.:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                album_photos_photo_albums                |
 +-------------+--------------+----------------------------+
-| album_id    | int(11)      | PRIMARY KEY FOREIGN KEY    |
-| photo_id    | int(11)      | PRIMARY KEY FOREIGN KEY    |
+| album_id    | int          | PRIMARY KEY FOREIGN KEY    |
+| photo_id    | int          | PRIMARY KEY FOREIGN KEY    |
 +-------------+--------------+----------------------------+
 ```
 
@@ -1134,7 +1148,7 @@ let photos = await connection
 
 이 쿼리는 이름이 "My" 또는 "Mishka"인 게시된 모든 photo를 선택한다. 위치 5(pagination 오프셋)에서 결과를 선택하고 10개 결과(pagination 제한)만 선택한다. 선택 결과는 id의 내림차순으로 정렬된다. photo의 album들은 결합된 상태로 유지되고 해당 metadata는 내부 결합(inner join)된다.
 
-애플리케이션에서 쿼리 빌더를 많이 사용할 것이다. [여기](./docs/docs/Query%20Builder/1-select-query-builder.md)에서 쿼리 빌더에 대해 자세히 알 수 있다.
+애플리케이션에서 쿼리 빌더를 많이 사용할 것이다. [여기](./docs/docs/query-builder/1-select-query-builder.md)에서 쿼리 빌더에 대해 자세히 알 수 있다.
 
 ## 샘플들
 
@@ -1150,7 +1164,7 @@ clone하여 시작할 수 있는 몇 가지 리포지토리가 있다:
 -   [Express 및 TypeORM 사용 방법의 예시](https://github.com/typeorm/typescript-express-example)
 -   [Koa 및 TypeORM 사용 예시](https://github.com/typeorm/typescript-koa-example)
 -   [MongoDB에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/mongo-typescript-example)
--   [Cordova/PhoneGap 앱에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/cordova-example)
+-   [Cordova 앱에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/cordova-example)
 -   [Ionic 앱에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/ionic-example)
 -   [React Native에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/react-native-example)
 -   [Nativescript-Vue와 함께 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/nativescript-vue-typeorm-sample)
