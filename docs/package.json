@@ -30,7 +30,8 @@
     "@docusaurus/core": "3.8.1",
     "@docusaurus/plugin-client-redirects": "^3.8.1",
     "@docusaurus/preset-classic": "3.8.1",
-    "@mdx-js/react": "^3.1.0",
+    "@mdx-js/react": "^3.1.1",
+    "@signalwire/docusaurus-plugin-llms-txt": "^1.2.2",
     "clsx": "^2.1.1",
     "docusaurus-theme-search-typesense": "^0.25.0",
     "prism-react-renderer": "^2.4.1",
@@ -41,7 +42,7 @@
     "@docusaurus/module-type-aliases": "3.8.1",
     "@docusaurus/tsconfig": "3.8.1",
     "@docusaurus/types": "3.8.1",
-    "typescript": "~5.8.3"
+    "typescript": "~5.9.2"
   },
   "engines": {
     "node": ">=18.0"

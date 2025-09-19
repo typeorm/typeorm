@@ -133,11 +133,11 @@ export class Student {
 
 All columns defined in the `Name` entity will be merged into `user`, `employee` and `student`:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                          user                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | nameFirst   | varchar(255) |                            |
 | nameLast    | varchar(255) |                            |
 | isActive    | boolean      |                            |
@@ -146,16 +146,16 @@ All columns defined in the `Name` entity will be merged into `user`, `employee` 
 +-------------+--------------+----------------------------+
 |                        employee                         |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | nameFirst   | varchar(255) |                            |
 | nameLast    | varchar(255) |                            |
-| salary      | int(11)      |                            |
+| salary      | int          |                            |
 +-------------+--------------+----------------------------+
 
 +-------------+--------------+----------------------------+
 |                         student                         |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | nameFirst   | varchar(255) |                            |
 | nameLast    | varchar(255) |                            |
 | faculty     | varchar(255) |                            |
