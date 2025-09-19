@@ -522,11 +522,11 @@ createConnection({
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(100) |                            |
 | description | text         |                            |
 | filename    | varchar(255) |                            |
-| views       | int(11)      |                            |
+| views       | int          |                            |
 | isPublished | boolean      |                            |
 +-------------+--------------+----------------------------+
 ```
@@ -757,13 +757,13 @@ export class PhotoMetadata {
 +-------------+--------------+----------------------------+
 |                     photo_metadata                      |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| height      | int(11)      |                            |
-| width       | int(11)      |                            |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
+| height      | int          |                            |
+| width       | int          |                            |
 | comment     | varchar(255) |                            |
 | compressed  | boolean      |                            |
 | orientation | varchar(255) |                            |
-| photoId     | int(11)      | FOREIGN KEY                |
+| photoId     | int          | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
 
@@ -998,7 +998,7 @@ N:1/1:N 관계에서 소유자측은 항상 다대일(ManyToOne)이다. 즉 `@Ma
 +-------------+--------------+----------------------------+
 |                          author                         |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(255) |                            |
 +-------------+--------------+----------------------------+
 ```
@@ -1009,12 +1009,12 @@ N:1/1:N 관계에서 소유자측은 항상 다대일(ManyToOne)이다. 즉 `@Ma
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(255) |                            |
 | description | varchar(255) |                            |
 | filename    | varchar(255) |                            |
 | isPublished | boolean      |                            |
-| authorId    | int(11)      | FOREIGN KEY                |
+| authorId    | int          | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
 
@@ -1064,8 +1064,8 @@ export class Photo {
 +-------------+--------------+----------------------------+
 |                album_photos_photo_albums                |
 +-------------+--------------+----------------------------+
-| album_id    | int(11)      | PRIMARY KEY FOREIGN KEY    |
-| photo_id    | int(11)      | PRIMARY KEY FOREIGN KEY    |
+| album_id    | int          | PRIMARY KEY FOREIGN KEY    |
+| photo_id    | int          | PRIMARY KEY FOREIGN KEY    |
 +-------------+--------------+----------------------------+
 ```
 

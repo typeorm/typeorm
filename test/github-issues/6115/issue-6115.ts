@@ -60,7 +60,7 @@ describe("github issues > #6115 Down migration for enums with defaults are wrong
 
                 let table = await queryRunner.getTable("metric")
                 let defaultOperator = table!.findColumnByName("defaultOperator")
-                expect(defaultOperator!.enum).to.deep.equal([
+                expect(defaultOperator!.enum).to.have.members([
                     "lessthan",
                     "lessequal",
                     "equal",

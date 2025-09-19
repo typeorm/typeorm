@@ -152,6 +152,8 @@ await repository.updateAll({ category: "ADULT" })
 
 -   `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
 
+When an upsert operation results in an update (due to a conflict), special columns like `@UpdateDateColumn` and `@VersionColumn` are automatically updated to their current values.
+
 ```typescript
 await repository.upsert(
     [
@@ -165,7 +167,10 @@ await repository.upsert(
  *  VALUES
  *      (externalId = abc123, firstName = Rizzrak),
  *      (externalId = cba321, firstName = Karzzir),
- *  ON CONFLICT (externalId) DO UPDATE firstName = EXCLUDED.firstName
+ *  ON CONFLICT (externalId) DO UPDATE 
+ *  SET firstName = EXCLUDED.firstName,
+ *      updatedDate = CURRENT_TIMESTAMP,
+ *      version = version + 1
  **/
 ```
 
