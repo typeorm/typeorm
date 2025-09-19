@@ -197,6 +197,7 @@ const config: Config = {
                 redirects,
             },
         ],
+        "@signalwire/docusaurus-plugin-llms-txt",
     ],
 }
 

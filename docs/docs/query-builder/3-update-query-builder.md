@@ -14,7 +14,7 @@ await dataSource
 
 This is the most efficient way in terms of performance to update entities in your database.
 
-### Raw SQL support
+## Raw SQL support
 
 In some cases when you need to execute SQL queries you need to use function style value:
 
@@ -31,4 +31,4 @@ await dataSource
     .execute()
 ```
 
-This syntax doesn't escape your values, you need to handle escape on your own.
+> Warning: When using raw SQL, ensure that values are properly sanitized to prevent SQL injection.

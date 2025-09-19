@@ -285,13 +285,13 @@ const postCategory = await dataSource.manager.findOneBy(PostCategory, { id: 1 })
 
 the result in `postCategories` will be:
 
-```
+```javascript
 [ PostCategory { id: 1, name: 'About BMW', categoryName: 'Cars' },
   PostCategory { id: 2, name: 'About Boeing', categoryName: 'Airplanes' } ]
 ```
 
 and in `postCategory`:
 
-```
+```javascript
 PostCategory { id: 1, name: 'About BMW', categoryName: 'Cars' }
 ```
