@@ -585,6 +585,22 @@ export class MysqlDriver implements Driver {
     }
 
     /**
+     * Checks if the driver is using mysql2 package.
+     */
+    protected isUsingMysql2(): boolean {
+        // mysql2 can be detected by checking for specific properties that are unique to it
+        // mysql2 exports a 'version' property directly on the module
+        // Also mysql2 has different connection promise API
+        return !!(
+            this.mysql &&
+            (this.mysql.version ||
+                this.mysql.createConnectionPromise ||
+                (this.mysql.Connection &&
+                    this.mysql.Connection.prototype.execute))
+        )
+    }
+
+    /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
@@ -655,7 +671,28 @@ export class MysqlDriver implements Driver {
         } else if (columnMetadata.type === "date") {
             value = DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "json") {
-            value = typeof value === "string" ? JSON.parse(value) : value
+            // mysql2 returns JSON values already parsed, but may still be a string
+            // if the JSON value itself is a string (e.g., "\"hello\"")
+            // mysql (classic) always returns JSON as strings that need parsing
+            if (this.isUsingMysql2()) {
+                // With mysql2, only parse if it's a valid JSON string representation
+                // but not if it's already an object or a JSON primitive
+                if (typeof value === "string") {
+                    try {
+                        // Try to parse it - if it fails, it's already a parsed string value
+                        const parsed = JSON.parse(value)
+                        value = parsed
+                    } catch {
+                        // It's a string that's not valid JSON, which means mysql2
+                        // already parsed it and it's just a string value
+                        // Keep value as is
+                    }
+                }
+                // If it's not a string, mysql2 has already parsed it correctly
+            } else {
+                // Classic mysql always returns JSON as strings
+                value = typeof value === "string" ? JSON.parse(value) : value
+            }
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
         } else if (columnMetadata.type === "simple-array") {
