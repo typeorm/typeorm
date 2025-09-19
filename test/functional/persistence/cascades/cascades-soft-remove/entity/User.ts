@@ -20,7 +20,7 @@ export class User {
     @DeleteDateColumn()
     deletedAt: Date
 
-    @OneToMany((type) => Photo, (photo) => photo.user, { cascade: true })
+    @OneToMany(() => Photo, (photo) => photo.user, { cascade: true })
     manyPhotos: Photo[]
 
     @ManyToMany((type) => Photo, { cascade: true })

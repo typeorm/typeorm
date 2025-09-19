@@ -11,7 +11,7 @@ export class Booking {
     @PrimaryGeneratedColumn()
     id: number
 
-    @ManyToOne((type) => Contact, (contact) => contact.bookings, {
+    @ManyToOne(() => Contact, (contact) => contact.bookings, {
         eager: true,
     })
     @JoinColumn({

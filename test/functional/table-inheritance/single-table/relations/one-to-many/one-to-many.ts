@@ -81,7 +81,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                 // Select
                 // -------------------------------------------------------------------------
 
-                let loadedStudent = await connection.manager
+                const loadedStudent = await connection.manager
                     .createQueryBuilder(Student, "student")
                     .leftJoinAndSelect("student.faculties", "faculty")
                     .where("student.name = :name", { name: "Alice" })
@@ -95,7 +95,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                 loadedStudent!.faculties[0].name.should.be.equal("Economics")
                 loadedStudent!.faculties[1].name.should.be.equal("Programming")
 
-                let loadedTeacher = await connection.manager
+                const loadedTeacher = await connection.manager
                     .createQueryBuilder(Teacher, "teacher")
                     .leftJoinAndSelect(
                         "teacher.specializations",
@@ -122,7 +122,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                 )
                 loadedTeacher!.salary.should.equal(2000)
 
-                let loadedAccountant = await connection.manager
+                const loadedAccountant = await connection.manager
                     .createQueryBuilder(Accountant, "accountant")
                     .leftJoinAndSelect("accountant.departments", "department")
                     .where("accountant.name = :name", { name: "Mr. Burns" })

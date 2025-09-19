@@ -21,25 +21,25 @@ const dataSource = new DataSource(options)
 dataSource
     .initialize()
     .then((dataSource) => {
-        let postRepository = dataSource.getRepository(Post)
+        const postRepository = dataSource.getRepository(Post)
 
-        let postCover = new Cover()
+        const postCover = new Cover()
         postCover.url = "http://covers.com/post.jpg"
 
-        let details = new PostDetails()
+        const details = new PostDetails()
         details.meta = "hello"
         details.comment = "wow"
 
-        let category1 = new Category()
+        const category1 = new Category()
         category1.description = "about post1"
 
-        let category2 = new Category()
+        const category2 = new Category()
         category2.description = "about post2"
 
-        let image = new Image()
+        const image = new Image()
         image.name = "post.jpg"
 
-        let post = new Post()
+        const post = new Post()
         post.title = "Hello post"
         post.text = "Hello world of post#1"
         post.cover = postCover

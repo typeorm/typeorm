@@ -11,7 +11,7 @@ import { User } from "./User"
 
 @ChildEntity()
 export class TournamentSquadParticipant extends TournamentParticipant {
-    @OneToOne((type) => User, {
+    @OneToOne(() => User, {
         eager: true,
     })
     @JoinColumn()

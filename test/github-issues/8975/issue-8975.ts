@@ -16,14 +16,10 @@ describe("cli init command", () => {
         "mssql",
         "mongodb",
     ]
-    const testProjectName = Date.now() + "TestProject"
+    const testProjectPath = `temp/${Date.now()}TestProject`
     const builtSrcDirectory = "build/compiled/src"
 
     before(async () => {
-        const chmodCli = async () => {
-            await expect(chmod(cliPath, 0o755)).to.not.be.rejected
-        }
-
         const copyPackageJson = async () => {
             // load package.json from the root of the project
             const packageJson = JSON.parse(
@@ -38,7 +34,7 @@ describe("cli init command", () => {
             )
         }
 
-        await Promise.all([chmodCli(), copyPackageJson()])
+        await Promise.all([chmod(cliPath, 0o755), copyPackageJson()])
     })
 
     after(async () => {
@@ -46,14 +42,14 @@ describe("cli init command", () => {
     })
 
     afterEach(async () => {
-        await rmdir(`./${testProjectName}`, { recursive: true })
+        await rmdir(`./${testProjectPath}`, { recursive: true })
     })
 
     for (const databaseOption of databaseOptions) {
         it(`should work with ${databaseOption} option`, (done) => {
             exec(
-                `${cliPath} init --name ${testProjectName} --database ${databaseOption}`,
-                (error, stdout, stderr) => {
+                `node ${cliPath} init --name ${testProjectPath} --database ${databaseOption}`,
+                (error, _stdout, stderr) => {
                     if (error) console.log(error)
                     expect(error).to.not.exist
                     expect(stderr).to.be.empty
