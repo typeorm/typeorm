@@ -485,6 +485,7 @@ export async function createTestingConnections(
  * Closes testing connections if they are connected.
  */
 export function closeTestingConnections(connections: DataSource[]) {
+    if (!connections || connections.length === 0) return Promise.resolve()
     return Promise.all(
         connections.map((connection) =>
             connection && connection.isInitialized

@@ -31,6 +31,7 @@
     "@docusaurus/plugin-client-redirects": "^3.8.1",
     "@docusaurus/preset-classic": "3.8.1",
     "@mdx-js/react": "^3.1.0",
+    "@signalwire/docusaurus-plugin-llms-txt": "^1.2.2",
     "clsx": "^2.1.1",
     "docusaurus-theme-search-typesense": "^0.25.0",
     "prism-react-renderer": "^2.4.1",
