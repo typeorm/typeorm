@@ -1178,6 +1178,15 @@ export class MysqlDriver implements Driver {
      * Loads all driver dependencies.
      */
     protected loadDependencies(): void {
+        // Warn if driver is provided directly but connectorPackage is not specified
+        if (this.options.driver && !this.options.connectorPackage) {
+            console.warn(
+                "Warning: MySQL driver instance provided directly without specifying connectorPackage. " +
+                    "This may lead to unexpected JSON parsing behavior differences between mysql and mysql2. " +
+                    "Consider explicitly setting connectorPackage: 'mysql' or 'mysql2' in your configuration.",
+            )
+        }
+
         const connectorPackage = this.options.connectorPackage ?? "mysql"
         const fallbackConnectorPackage =
             connectorPackage === "mysql"
@@ -1201,7 +1210,21 @@ export class MysqlDriver implements Driver {
                 )
             }
             // Successfully loaded the requested package
-            this.loadedConnectorPackage = connectorPackage
+            // If driver was provided directly, try to detect which package it is
+            if (this.options.driver && !this.options.connectorPackage) {
+                // Try to detect if it's mysql2 based on unique properties
+                if (
+                    this.mysql.version ||
+                    (this.mysql.Connection &&
+                        this.mysql.Connection.prototype.execute)
+                ) {
+                    this.loadedConnectorPackage = "mysql2"
+                } else {
+                    this.loadedConnectorPackage = "mysql"
+                }
+            } else {
+                this.loadedConnectorPackage = connectorPackage
+            }
         } catch (e) {
             try {
                 this.mysql = PlatformTools.load(fallbackConnectorPackage) // try to load second supported package
