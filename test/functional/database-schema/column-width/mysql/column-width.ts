@@ -7,14 +7,34 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
+import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 
 describe("database schema > column width", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
             entities: [Post],
-            enabledDrivers: ["mysql"],
+            enabledDrivers: ["mariadb", "mysql"],
         })
+
+        await Promise.all(
+            connections.map(async (connection) => {
+                // column width no longer supported on Mysql 8.0+
+                if (
+                    connection.driver.options.type === "mysql" &&
+                    DriverUtils.isReleaseVersionOrGreater(
+                        connection.driver,
+                        "8.0",
+                    )
+                ) {
+                    await connection.destroy()
+                }
+            }),
+        )
+
+        connections = connections.filter(
+            (connection) => connection.isInitialized,
+        )
     })
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))

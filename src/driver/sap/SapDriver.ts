@@ -646,6 +646,10 @@ export class SapDriver implements Driver {
             return "nclob"
         } else if (column.type === "simple-enum") {
             return "nvarchar"
+        } else if (column.type === "vector") {
+            return "real_vector"
+        } else if (column.type === "halfvec") {
+            return "half_vector"
         }
 
         if (DriverUtils.isReleaseVersionOrGreater(this, "4.0")) {
