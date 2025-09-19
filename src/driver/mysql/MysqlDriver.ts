@@ -57,6 +57,11 @@ export class MysqlDriver implements Driver {
      */
     poolCluster: any
 
+    /**
+     * The actual connector package that was loaded ("mysql" or "mysql2").
+     */
+    private loadedConnectorPackage: "mysql" | "mysql2" | undefined
+
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
@@ -588,16 +593,8 @@ export class MysqlDriver implements Driver {
      * Checks if the driver is using mysql2 package.
      */
     protected isUsingMysql2(): boolean {
-        // mysql2 can be detected by checking for specific properties that are unique to it
-        // mysql2 exports a 'version' property directly on the module
-        // Also mysql2 has different connection promise API
-        return !!(
-            this.mysql &&
-            (this.mysql.version ||
-                this.mysql.createConnectionPromise ||
-                (this.mysql.Connection &&
-                    this.mysql.Connection.prototype.execute))
-        )
+        // Check which package was actually loaded during initialization
+        return this.loadedConnectorPackage === "mysql2"
     }
 
     /**
@@ -1203,9 +1200,13 @@ export class MysqlDriver implements Driver {
                     `'${connectorPackage}' was found but it is empty. Falling back to '${fallbackConnectorPackage}'.`,
                 )
             }
+            // Successfully loaded the requested package
+            this.loadedConnectorPackage = connectorPackage
         } catch (e) {
             try {
                 this.mysql = PlatformTools.load(fallbackConnectorPackage) // try to load second supported package
+                // Successfully loaded the fallback package
+                this.loadedConnectorPackage = fallbackConnectorPackage
             } catch (e) {
                 throw new DriverPackageNotInstalledError(
                     "Mysql",
