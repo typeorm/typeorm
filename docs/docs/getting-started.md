@@ -1,35 +1,15 @@
-#
-
-<div align="center" style={{ marginTop: "4rem" }}>
-  <img className="dark-mode-only" src="/img/typeorm-logo-white.svg" width="400" alt="TypeORM Logo Light" />
-  <img className="light-mode-only" src="/img/typeorm-logo-colored-dark.svg" width="400" alt="TypeORM Logo Dark" />
-  <br></br>
-  <br></br>
-
-<div style={{display: "flex", justifyContent: "center", gap: "0.5rem"}}>
-    <a href="https://github.com/typeorm/typeorm/actions/workflows/test.yml">
-        <img src="https://github.com/typeorm/typeorm/actions/workflows/test.yml/badge.svg?branch=master" />
-    </a>
-    <a href="https://badge.fury.io/js/typeorm">
-        <img src="https://badge.fury.io/js/typeorm.svg" />
-    </a>
-    <a href='https://coveralls.io/github/typeorm/typeorm?branch=master'>
-        <img src='https://coveralls.io/repos/github/typeorm/typeorm/badge.svg?branch=master' alt='Coverage Status' />
-    </a>
-</div>
-
-<br></br>
-<br></br>
-
-</div>
+# Getting Started
 
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)
-that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native, NativeScript, Expo, and Electron platforms
+that can run in Node.js, Browser, Cordova, Ionic, React Native, NativeScript, Expo, and Electron platforms
 and can be used with TypeScript and JavaScript (ES2021).
+
 Its goal is to always support the latest JavaScript features and provide additional features
 that help you to develop any kind of application that uses databases - from
 small applications with a few tables to large-scale enterprise applications
 with multiple databases.
+
+TypeORM supports more databases than any other JS/TS ORM: [Google Spanner](./drivers/google-spanner.md), [Microsoft SqlServer](./drivers/microsoft-sqlserver.md), [MongoDB](./drivers/mongodb.md), [MySQL/MariaDB](./drivers/mysql.md), [Oracle](./drivers/oracle.md), [Postgres](./drivers/postgres.md), [SAP HANA](./drivers/sap.md) and [SQLite](./drivers/sqlite.md), as well we derived databases and different drivers.
 
 TypeORM supports both [Active Record](./guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) and [Data Mapper](./guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) patterns,
 unlike all other JavaScript ORMs currently in existence,
@@ -38,13 +18,6 @@ maintainable applications in the most productive way.
 
 TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
 [Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
-
-> **📣 Announcement: The Future of TypeORM**
->
-> We're excited to share our vision for a revitalized TypeORM—a strategy focused on building a stable, robust, and sustainable foundation for the long term. Learn how we're structuring maintenance
-> and bringing together dedicated resources to ensure TypeORM thrives for years to come.
->
-> [Read the full announcement](./future-of-typeorm.md)
 
 ## Features
 
@@ -56,7 +29,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 -   Clean object-relational model.
 -   Associations (relations).
 -   Eager and lazy relations.
--   Uni-directional, bi-directional, and self-referenced relations.
+-   Unidirectional, bidirectional, and self-referenced relations.
 -   Supports multiple inheritance patterns.
 -   Cascades.
 -   Indices.
@@ -78,7 +51,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 -   Schema declaration in models or separate configuration files.
 -   Supports MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js.
 -   Supports MongoDB NoSQL database.
--   Works in NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
+-   Works in Node.js / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron platforms.
 -   TypeScript and JavaScript support.
 -   ESM and CommonJS support.
 -   Produced code is performant, flexible, clean, and maintainable.
@@ -87,7 +60,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 
 And more...
 
-With TypeORM your models look like this:
+With TypeORM, your models look like this:
 
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
@@ -177,11 +150,11 @@ await timber.remove()
 
 1. Install the npm package:
 
-    `npm install typeorm --save`
+    `npm install typeorm`
 
 2. You need to install `reflect-metadata` shim:
 
-    `npm install reflect-metadata --save`
+    `npm install reflect-metadata`
 
     and import it somewhere in the global place of your app (for example in `app.ts`):
 
@@ -191,84 +164,9 @@ await timber.remove()
 
     `npm install @types/node --save-dev`
 
-4. Install a database driver:
+4. Install a database driver: see the documentation for each particular driver: [mongodb](./drivers/mongodb.md#installation), [mssql](./drivers/microsoft-sqlserver.md#installation), [mysql/mariadb](./drivers/mysql.md#installation), [oracle](./drivers/oracle.md#installation), [postgres](./drivers/postgres.md#installation), [sap](./drivers/sap.md#installation), [spanner](./drivers/google-spanner.md#installation), [sqlite](./drivers/sqlite.md#installation).
 
-    - for **MySQL** or **MariaDB**
-
-        `npm install mysql --save` (you can install `mysql2` instead as well)
-
-    - for **PostgreSQL** or **CockroachDB**
-
-        `npm install pg --save`
-
-    - for **SQLite**
-
-        `npm install sqlite3 --save`
-
-    - for **Microsoft SQL Server**
-
-        `npm install mssql --save`
-
-    - for **sql.js**
-
-        `npm install sql.js --save`
-
-    - for **Oracle**
-
-        `npm install oracledb --save`
-
-        To make the Oracle driver work, you need to follow the installation instructions from
-        [their](https://github.com/oracle/node-oracledb) site.
-
-    - for **SAP Hana**
-
-        ```
-        npm install @sap/hana-client
-        npm install hdb-pool
-        ```
-
-        _SAP Hana support made possible by the sponsorship of [Neptune Software](https://www.neptune-software.com/)._
-
-    - for **Google Cloud Spanner**
-
-        ```
-        npm install @google-cloud/spanner --save
-        ```
-
-        Provide authentication credentials to your application code
-        by setting the environment variable `GOOGLE_APPLICATION_CREDENTIALS`:
-
-        ```shell
-        # Linux/macOS
-        export GOOGLE_APPLICATION_CREDENTIALS="KEY_PATH"
-
-        # Windows
-        set GOOGLE_APPLICATION_CREDENTIALS=KEY_PATH
-
-        # Replace KEY_PATH with the path of the JSON file that contains your service account key.
-        ```
-
-        To use Spanner with the emulator you should set `SPANNER_EMULATOR_HOST` environment variable:
-
-        ```shell
-        # Linux/macOS
-        export SPANNER_EMULATOR_HOST=localhost:9010
-
-        # Windows
-        set SPANNER_EMULATOR_HOST=localhost:9010
-        ```
-
-    - for **MongoDB** (experimental)
-
-        `npm install mongodb@^5.2.0 --save`
-
-    - for **NativeScript**, **react-native** and **Cordova**
-
-        Check [documentation of supported platforms](./help/2-supported-platforms.md)
-
-    Install only _one_ of them, depending on which database you use.
-
-##### TypeScript configuration
+### TypeScript configuration
 
 Also, make sure you are using TypeScript version **4.5** or higher,
 and you have enabled the following settings in `tsconfig.json`:
@@ -278,12 +176,10 @@ and you have enabled the following settings in `tsconfig.json`:
 "experimentalDecorators": true,
 ```
 
-You may also need to enable `es6` in the `lib` section of compiler options, or install `es6-shim` from `@types`.
-
 ## Quick Start
 
 The quickest way to get started with TypeORM is to use its CLI commands to generate a starter project.
-Quick start works only if you are using TypeORM in a NodeJS application.
+Quick start works only if you are using TypeORM in a Node.js application.
 If you are using other platforms, proceed to the [step-by-step guide](#step-by-step-guide).
 
 To create a new project using CLI, run the following command:
@@ -298,7 +194,7 @@ Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `co
 
 This command will generate a new project in the `MyProject` directory with the following files:
 
-```
+```text
 MyProject
 ├── src                   // place of your TypeScript code
 │   ├── entity            // place where your entities (database models) are stored
@@ -364,7 +260,7 @@ creating more entities.
 ## Step-by-Step Guide
 
 What are you expecting from ORM?
-First of all, you are expecting it will create database tables for you
+First, you are expecting it will create database tables for you
 and find / insert / update / delete your data without the pain of
 having to write lots of hardly maintainable SQL queries.
 This guide will show you how to set up TypeORM from scratch and make it do what you are expecting from an ORM.
@@ -417,13 +313,13 @@ export class Photo {
 }
 ```
 
-Now, a database table will be created for the `Photo` entity and we'll be able to work with it anywhere in our app.
+Now, a database table will be created for the `Photo` entity, and we'll be able to work with it anywhere in our app.
 We have created a database table, however, what table can exist without columns?
 Let's create a few columns in our database table.
 
 ### Adding table columns
 
-To add database columns, you simply need to decorate an entity's properties you want to make into a column
+To add database columns, you need to decorate an entity's properties you want to make into a column
 with a `@Column` decorator.
 
 ```typescript
@@ -462,7 +358,7 @@ Each database table must have a column with a primary key.
 ### Creating a primary column
 
 Each entity **must** have at least one primary key column.
-This is a requirement and you can't avoid it.
+This is a requirement, and you can't avoid it.
 To make a column a primary key, you need to use the `@PrimaryColumn` decorator.
 
 ```typescript
@@ -524,8 +420,8 @@ export class Photo {
 
 Next, let's fix our data types. By default, the string is mapped to a varchar(255)-like type (depending on the database type).
 The number is mapped to an integer-like type (depending on the database type).
-We don't want all our columns to be limited varchars or integers.
-Let's setup the correct data types:
+We don't want all our columns to be limited to varchars or integers.
+Let's set up the correct data types:
 
 ```typescript
 import { Entity, Column, PrimaryGeneratedColumn } from "typeorm"
@@ -582,15 +478,15 @@ const AppDataSource = new DataSource({
 // to initialize the initial connection with the database, register all entities
 // and "synchronize" database schema, call "initialize()" method of a newly created database
 // once in your application bootstrap
-AppDataSource.initialize()
-    .then(() => {
-        // here you can start to work with your database
-    })
-    .catch((error) => console.log(error))
+try {
+    await AppDataSource.initialize()
+} catch (error) {
+    console.log(error)
+}
 ```
 
 We are using Postgres in this example, but you can use any other supported database.
-To use another database, simply change the `type` in the options to the database type you are using:
+To use another database, change the `type` in the options to the database type you are using:
 `mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `sap`, `spanner`, `cordova`, `nativescript`, `react-native`,
 `expo`, or `mongodb`.
 Also make sure to use your own host, port, username, password, and database settings.
@@ -604,15 +500,15 @@ Setting `synchronize` makes sure your entities will be synced with the database,
 
 Now if you run your `index.ts`, a connection with the database will be initialized and a database table for your photos will be created.
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(100) |                            |
 | description | text         |                            |
 | filename    | varchar(255) |                            |
-| views       | int(11)      |                            |
+| views       | int          |                            |
 | isPublished | boolean      |                            |
 +-------------+--------------+----------------------------+
 ```
@@ -636,7 +532,7 @@ await AppDataSource.manager.save(photo)
 console.log("Photo has been saved. Photo id is", photo.id)
 ```
 
-Once your entity is saved it will get a newly generated id.
+Once your entity is saved, it will get a newly generated id.
 `save` method returns an instance of the same object you pass to it.
 It's not a new copy of the object, it modifies its "id" and returns it.
 
@@ -644,7 +540,7 @@ It's not a new copy of the object, it modifies its "id" and returns it.
 
 We just created a new photo and saved it in the database.
 We used `EntityManager` to save it.
-Using entity manager you can manipulate any entity in your app.
+Using entity manager, you can manipulate any entity in your app.
 For example, let's load our saved entity:
 
 ```typescript
@@ -657,7 +553,7 @@ console.log("All photos from the db: ", savedPhotos)
 
 `savedPhotos` will be an array of Photo objects with the data loaded from the database.
 
-Learn more about EntityManager [here](./working-with-entity-manager/1-working-with-entity-manager.md).
+Learn more about [EntityManager](./working-with-entity-manager/1-working-with-entity-manager.md).
 
 ### Using Repositories
 
@@ -722,7 +618,7 @@ console.log("Photos count: ", photosCount)
 
 ### Updating in the database
 
-Now let's load a single photo from the database, update it and save it:
+Now let's load a single photo from the database, update it, and save it:
 
 ```typescript
 import { Photo } from "./entity/Photo"
@@ -798,34 +694,34 @@ export class PhotoMetadata {
 
 Here, we are using a new decorator called `@OneToOne`. It allows us to create a one-to-one relationship between two entities. We also add a `@JoinColumn` decorator, which indicates that this side of the relationship will own the relationship.
 Relations can be unidirectional or bidirectional.
-Only one side of relational can be owning.
+Only one side of the relation can be the owner.
 Using `@JoinColumn` decorator is required on the owner side of the relationship.
 
 If you run the app, you'll see a newly generated table, and it will contain a column with a foreign key for the photo relation:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                     photo_metadata                      |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| height      | int(11)      |                            |
-| width       | int(11)      |                            |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
+| height      | int          |                            |
+| width       | int          |                            |
 | comment     | varchar(255) |                            |
 | compressed  | boolean      |                            |
 | orientation | varchar(255) |                            |
-| photoId     | int(11)      | FOREIGN KEY                |
+| photoId     | int          | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
 
 ### Save a one-to-one relation
 
-Now let's save a photo, and its metadata and attach them to each other.
+Now let's save a photo and its metadata and attach them to each other.
 
 ```typescript
 import { Photo } from "./entity/Photo"
 import { PhotoMetadata } from "./entity/PhotoMetadata"
 
-// create a photo
+// Create a photo
 const photo = new Photo()
 photo.name = "Me and Bears"
 photo.description = "I am near polar bears"
@@ -833,7 +729,7 @@ photo.filename = "photo-with-bears.jpg"
 photo.views = 1
 photo.isPublished = true
 
-// create a photo metadata
+// Create a photo metadata
 const metadata = new PhotoMetadata()
 metadata.height = 640
 metadata.width = 480
@@ -842,17 +738,17 @@ metadata.comment = "cybershoot"
 metadata.orientation = "portrait"
 metadata.photo = photo // this way we connect them
 
-// get entity repositories
+// Get entity repositories
 const photoRepository = AppDataSource.getRepository(Photo)
 const metadataRepository = AppDataSource.getRepository(PhotoMetadata)
 
-// first we should save a photo
+// First we should save a photo
 await photoRepository.save(photo)
 
-// photo is saved. Now we need to save a photo metadata
+// The Photo is saved. Now we need to save a photo metadata
 await metadataRepository.save(metadata)
 
-// done
+// Done
 console.log(
     "Metadata is saved, and the relation between metadata and photo is created in the database too",
 )
@@ -864,7 +760,7 @@ Relations can be unidirectional or bidirectional.
 Currently, our relation between PhotoMetadata and Photo is unidirectional.
 The owner of the relation is PhotoMetadata, and Photo doesn't know anything about PhotoMetadata.
 This makes it complicated to access PhotoMetadata from the Photo side.
-To fix this issue we should add an inverse relation, and make relations between PhotoMetadata and Photo bidirectional.
+To fix this issue, we should add an inverse relation, and make relations between PhotoMetadata and Photo bidirectional.
 Let's modify our entities:
 
 ```typescript
@@ -902,7 +798,7 @@ export class Photo {
 
 `photo => photo.metadata` is a function that returns the name of the inverse side of the relation.
 Here we show that the metadata property of the Photo class is where we store PhotoMetadata in the Photo class.
-Instead of passing a function that returns a property of the photo, you could alternatively simply pass a string to `@OneToOne` decorator, like `"metadata"`.
+Instead of passing a function that returns a property of the photo, you could alternatively spass a string to `@OneToOne` decorator, like `"metadata"`.
 But we used this function-typed approach to make our refactoring easier.
 
 Note that we should use the `@JoinColumn` decorator only on one side of a relation.
@@ -978,7 +874,7 @@ Here, photos will contain an array of photos from the database, and each photo w
 Learn more about Find Options in [this documentation](./working-with-entity-manager/3-find-options.md).
 
 Using find options is good and dead simple, but if you need a more complex query, you should use `QueryBuilder` instead.
-`QueryBuilder` allows more complex queries to be used in an elegant way:
+`QueryBuilder` allows more complex queries to be used elegantly:
 
 ```typescript
 import { Photo } from "./entity/Photo"
@@ -1099,27 +995,27 @@ It means that the class that uses `@ManyToOne` will store the id of the related 
 
 After you run the application, the ORM will create the `author` table:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                          author                         |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(255) |                            |
 +-------------+--------------+----------------------------+
 ```
 
 It will also modify the `photo` table, adding a new `author` column and creating a foreign key for it:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(255) |                            |
 | description | varchar(255) |                            |
 | filename    | varchar(255) |                            |
 | isPublished | boolean      |                            |
-| authorId    | int(11)      | FOREIGN KEY                |
+| authorId    | int          | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
 
@@ -1165,18 +1061,18 @@ export class Photo {
 }
 ```
 
-After you run the application, the ORM will create a **album_photos_photo_albums** _junction table_:
+After you run the application, the ORM will create an **album_photos_photo_albums** _junction table_:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                album_photos_photo_albums                |
 +-------------+--------------+----------------------------+
-| album_id    | int(11)      | PRIMARY KEY FOREIGN KEY    |
-| photo_id    | int(11)      | PRIMARY KEY FOREIGN KEY    |
+| album_id    | int          | PRIMARY KEY FOREIGN KEY    |
+| photo_id    | int          | PRIMARY KEY FOREIGN KEY    |
 +-------------+--------------+----------------------------+
 ```
 
-Don't forget to register the `Album` class with your connection in the ORM:
+Remember to register the `Album` class with your connection in the ORM:
 
 ```typescript
 const options: DataSourceOptions = {
@@ -1245,7 +1141,7 @@ You can use QueryBuilder to build SQL queries of almost any complexity. For exam
 
 ```typescript
 const photos = await AppDataSource.getRepository(Photo)
-    .createQueryBuilder("photo") // first argument is an alias. Alias is what you are selecting - photos. You must specify it.
+    .createQueryBuilder("photo") // First argument is an alias. Alias is what you are selecting - photos. You must specify it.
     .innerJoinAndSelect("photo.metadata", "metadata")
     .leftJoinAndSelect("photo.albums", "album")
     .where("photo.isPublished = true")
@@ -1261,7 +1157,7 @@ This query selects all published photos with "My" or "Mishka" names.
 It will select results from position 5 (pagination offset)
 and will select only 10 results (pagination limit).
 The selection result will be ordered by id in descending order.
-The photo albums will be left joined and their metadata will be inner joined.
+The photo albums will be left joined and their metadata will be inner-joined.
 
 You'll use the query builder in your application a lot.
 Learn more about QueryBuilder [here](./query-builder/1-select-query-builder.md).
@@ -1280,7 +1176,7 @@ There are a few repositories that you can clone and start with:
 -   [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
 -   [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
 -   [Example how to use TypeORM with MongoDB](https://github.com/typeorm/mongo-typescript-example)
--   [Example how to use TypeORM in a Cordova/PhoneGap app](https://github.com/typeorm/cordova-example)
+-   [Example how to use TypeORM in a Cordova app](https://github.com/typeorm/cordova-example)
 -   [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
 -   [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
 -   [Example how to use TypeORM with Nativescript-Vue](https://github.com/typeorm/nativescript-vue-typeorm-sample)
@@ -1298,7 +1194,7 @@ There are several extensions that simplify working with TypeORM and integrating 
 -   Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
 -   ER Diagram generator - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
 -   another ER Diagram generator - [erdia](https://www.npmjs.com/package/erdia/)
--   Create, drop & seed database - [typeorm-extension](https://github.com/tada5hi/typeorm-extension)
+-   Create, drop and seed database - [typeorm-extension](https://github.com/tada5hi/typeorm-extension)
 -   Automatically update `data-source.ts` after generating migrations/entities - [typeorm-codebase-sync](https://www.npmjs.com/package/typeorm-codebase-sync)
 -   Easy manipulation of `relations` objects - [typeorm-relations](https://npmjs.com/package/typeorm-relations)
 -   Automatically generate `relations` based on a GraphQL query - [typeorm-relations-graphql](https://npmjs.com/package/typeorm-relations-graphql)
@@ -1313,7 +1209,7 @@ This project exists thanks to all the people who contribute:
 
 ## Sponsors
 
-Open source is hard and time-consuming. If you want to invest in TypeORM's future you can become a sponsor and allow our core team to spend more time on TypeORM's improvements and new features. [Become a sponsor](https://opencollective.com/typeorm)
+Open source is hard and time-consuming. If you want to invest in TypeORM's future, you can become a sponsor and allow our core team to spend more time on TypeORM's improvements and new features. [Become a sponsor](https://opencollective.com/typeorm)
 
 <a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/sponsor.svg?width=890"/></a>
 

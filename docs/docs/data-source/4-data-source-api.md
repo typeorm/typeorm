@@ -1,7 +1,7 @@
 # DataSource API
 
 -   `options` - Options used to create this dataSource.
-    Learn more about [DataSourceOptions](./2-data-source-options.md).
+    Learn more about [Data Source Options](./2-data-source-options.md).
 
 ```typescript
 const dataSourceOptions: DataSourceOptions = dataSource.options
@@ -29,7 +29,7 @@ const users = await manager.find()
 ```
 
 -   `mongoManager` - `MongoEntityManager` used to work with entities for mongodb data source.
-    For more information about MongoEntityManager see [MongoDB](../guides/2-mongodb.md) documentation.
+    For more information about MongoEntityManager see [MongoDB](../drivers/mongodb.md) documentation.
 
 ```typescript
 const manager: MongoEntityManager = dataSource.mongoManager
@@ -114,7 +114,7 @@ const categories = await repository.findTrees()
 
 -   `getMongoRepository` - Gets `MongoRepository` of the given entity.
     This repository is used for entities in MongoDB dataSource.
-    Learn more about [MongoDB support](../guides/2-mongodb.md).
+    Learn more about [MongoDB support](../drivers/mongodb.md).
 
 ```typescript
 const repository = dataSource.getMongoRepository(User)
@@ -179,10 +179,11 @@ const rawData = await dataSource.query(
 -   `sql` - Executes a raw SQL query using template literals.
 
 ```typescript
-const rawData = await dataSource.sql`SELECT * FROM USERS WHERE name = ${'John'} and age = ${24}`
+const rawData =
+    await dataSource.sql`SELECT * FROM USERS WHERE name = ${"John"} and age = ${24}`
 ```
 
-Learn more about using the [SQL Tag syntax](sql-tag.md).
+Learn more about using the [SQL Tag syntax](../guides/7-sql-tag.md).
 
 -   `createQueryBuilder` - Creates a query builder, which can be used to build queries.
     Learn more about [QueryBuilder](../query-builder/1-select-query-builder.md).

@@ -1,6 +1,9 @@
 import { expect } from "chai"
 import fs from "fs/promises"
 import path from "path"
+import { strict as assert } from "assert"
+import sinon from "sinon"
+import fsAsync from "fs"
 
 import { importOrRequireFile } from "../../../src/util/ImportUtils"
 
@@ -20,7 +23,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         `
 
         try {
-            await fs.rmdir(testDir, { recursive: true })
+            await fs.rm(testDir, { recursive: true, force: true })
         } catch {
             // no-op
         }
@@ -41,7 +44,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         expect(exports.default).to.be.a("function")
         expect(exports.number).to.be.eq(6)
 
-        await fs.rmdir(testDir, { recursive: true })
+        await fs.rm(testDir, { recursive: true, force: true })
     })
 
     it("should import .js file as CommonJS", async () => {
@@ -61,7 +64,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         `
 
         try {
-            await fs.rmdir(testDir, { recursive: true })
+            await fs.rm(testDir, { recursive: true, force: true })
         } catch {
             // no-op
         }
@@ -82,7 +85,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         expect(exports.test).to.be.a("function")
         expect(exports.number).to.be.eq(6)
 
-        await fs.rmdir(testDir, { recursive: true })
+        await fs.rm(testDir, { recursive: true, force: true })
     })
 
     it("should import .mjs file as ESM", async () => {
@@ -97,7 +100,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         `
 
         try {
-            await fs.rmdir(testDir, { recursive: true })
+            await fs.rm(testDir, { recursive: true, force: true })
         } catch {
             // no-op
         }
@@ -113,7 +116,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         expect(exports.default).to.be.a("function")
         expect(exports.number).to.be.eq(6)
 
-        await fs.rmdir(testDir, { recursive: true })
+        await fs.rm(testDir, { recursive: true, force: true })
     })
 
     it("should import .cjs file as CommonJS", async () => {
@@ -130,7 +133,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         `
 
         try {
-            await fs.rmdir(testDir, { recursive: true })
+            await fs.rm(testDir, { recursive: true, force: true })
         } catch {
             // no-op
         }
@@ -146,7 +149,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         expect(exports.test).to.be.a("function")
         expect(exports.number).to.be.eq(6)
 
-        await fs.rmdir(testDir, { recursive: true })
+        await fs.rm(testDir, { recursive: true, force: true })
     })
 
     it("should import .json file as CommonJS", async () => {
@@ -156,7 +159,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         const jsonFileContent = { test: 6 }
 
         try {
-            await fs.rmdir(testDir, { recursive: true })
+            await fs.rm(testDir, { recursive: true, force: true })
         } catch {
             // no-op
         }
@@ -175,6 +178,87 @@ describe("ImportUtils.importOrRequireFile", () => {
         expect(moduleType).to.be.eq("commonjs")
         expect(exports.test).to.be.eq(6)
 
-        await fs.rmdir(testDir, { recursive: true })
+        await fs.rm(testDir, { recursive: true, force: true })
+    })
+
+    it("Should use cache to find package.json", async () => {
+        // Create package.json if not exists
+        const packageJsonPath = path.join(__dirname, "package.json")
+        const packageJsonAlreadyExisted = fsAsync.existsSync(packageJsonPath)
+        if (!packageJsonAlreadyExisted) {
+            await fs.writeFile(
+                packageJsonPath,
+                JSON.stringify({ name: "test-package" }),
+                "utf8",
+            )
+        }
+
+        const statSpy = sinon.spy(fsAsync.promises, "stat")
+        const readFileSpy = sinon.spy(fsAsync.promises, "readFile")
+
+        assert.equal(
+            statSpy.callCount,
+            0,
+            "stat should not be called before importOrRequireFile",
+        )
+        assert.equal(
+            readFileSpy.callCount,
+            0,
+            "readFile should not be called before importOrRequireFile",
+        )
+
+        const filePath1 = path.join(__dirname, "file1.js")
+        const filePath2 = path.join(__dirname, "file2.js")
+        const filePath3 = path.join(__dirname, "file3.js")
+
+        await fs.writeFile(filePath1, "", "utf8")
+        await fs.writeFile(filePath2, "", "utf8")
+        await fs.writeFile(filePath3, "", "utf8")
+
+        // Trigger the first import to create the cache
+        await importOrRequireFile(filePath1)
+
+        // Get the number of calls to stat and readFile after the first import
+        const numberOfStatCalls = statSpy.callCount
+        const numberOfReadFileCalls = readFileSpy.callCount
+
+        assert.equal(
+            numberOfStatCalls,
+            1,
+            "stat should be called for the first import",
+        )
+
+        assert.equal(
+            numberOfReadFileCalls,
+            1,
+            "readFile should be called for the first import",
+        )
+
+        // Trigger next imports to check if cache is used
+        await importOrRequireFile(filePath2)
+        await importOrRequireFile(filePath3)
+
+        assert.equal(
+            statSpy.callCount,
+            numberOfStatCalls,
+            "stat should be called only during the first import",
+        )
+        assert.equal(
+            readFileSpy.callCount,
+            numberOfReadFileCalls,
+            "readFile should be called only during the first import",
+        )
+
+        // Clean up test files
+        await fs.unlink(filePath1)
+        await fs.unlink(filePath2)
+        await fs.unlink(filePath3)
+
+        // If package.json was created by this test, remove it
+        if (!packageJsonAlreadyExisted) {
+            await fs.unlink(packageJsonPath)
+        }
+
+        sinon.restore()
     })
 })

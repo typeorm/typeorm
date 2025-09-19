@@ -1,9 +1,9 @@
-import { Subject } from "./Subject"
-import { DateUtils } from "../util/DateUtils"
 import { ObjectLiteral } from "../common/ObjectLiteral"
-import { OrmUtils } from "../util/OrmUtils"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
+import { DateUtils } from "../util/DateUtils"
 import { ObjectUtils } from "../util/ObjectUtils"
+import { OrmUtils } from "../util/OrmUtils"
+import { Subject } from "./Subject"
 
 /**
  * Finds what columns are changed in the subject entities.
@@ -81,8 +81,8 @@ export class SubjectChangedColumnsComputer {
                     if (value !== null && value !== undefined) return
                 }
                 let normalizedValue = entityValue
-                // normalize special values to make proper comparision
-                if (entityValue !== null) {
+                // if both values are not null, normalize special values to make proper comparision
+                if (entityValue !== null && databaseValue !== null) {
                     switch (column.type) {
                         case "date":
                             normalizedValue = column.isArray

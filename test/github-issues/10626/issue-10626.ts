@@ -24,7 +24,7 @@ describe("github issues > #10626 Postgres CREATE INDEX CONCURRENTLY bug", () => 
     it("has to create INDEX CONCURRENTLY", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                await dataSource.setOptions({
+                dataSource.setOptions({
                     ...dataSource.options,
                     migrationsTransactionMode: "none",
                 })
@@ -39,7 +39,7 @@ describe("github issues > #10626 Postgres CREATE INDEX CONCURRENTLY bug", () => 
     it("has to drop INDEX CONCURRENTLY", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                await dataSource.setOptions({
+                dataSource.setOptions({
                     ...dataSource.options,
                     migrationsTransactionMode: "none",
                 })
