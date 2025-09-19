@@ -3,22 +3,26 @@
     "skip": false,
     "name": "mysql",
     "type": "mysql",
+    "connectorPackage": "mysql2",
     "host": "localhost",
     "port": 3306,
     "username": "root",
     "password": "admin",
     "database": "test",
+    "legacySpatialSupport": false,
     "logging": false
   },
   {
     "skip": false,
     "name": "mariadb",
     "type": "mariadb",
+    "connectorPackage": "mysql2",
     "host": "localhost",
     "port": 3307,
     "username": "root",
     "password": "admin",
     "database": "test",
+    "legacySpatialSupport": false,
     "logging": false
   },
   {
