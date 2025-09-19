@@ -2716,7 +2716,7 @@ export class SqlServerQueryRunner
                 )
 
                 await Promise.all(
-                    allTablesResults.map((tablesResult) => {
+                    allTablesResults.map(async (tablesResult) => {
                         if (tablesResult["TABLE_NAME"].startsWith("#")) {
                             // don't try to drop temporary tables
                             return
