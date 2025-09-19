@@ -38,6 +38,7 @@ import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
+import { buildSqlTag } from "../util/SqlTagUtils"
 import { OrmUtils } from "../util/OrmUtils"
 
 /**
@@ -171,10 +172,30 @@ export class EntityManager {
     /**
      * Executes raw SQL query and returns raw database results.
      *
-     * @see [Official docs](https://typeorm.io/entity-manager-api) for examples.
+     * @see [Official docs](https://typeorm.io/docs/Working%20with%20Entity%20Manager/entity-manager-api/) for examples.
      */
     async query<T = any>(query: string, parameters?: any[]): Promise<T> {
         return this.connection.query(query, parameters, this.queryRunner)
+    }
+
+    /**
+     * Tagged template function that executes raw SQL query and returns raw database results.
+     * Template expressions are automatically transformed into database parameters.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
+     * Example: entityManager.sql`SELECT * FROM table_name WHERE id = ${id}`
+     */
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
+        const { query, parameters } = buildSqlTag({
+            driver: this.connection.driver,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, parameters)
     }
 
     /**
@@ -786,6 +807,23 @@ export class EntityManager {
     }
 
     /**
+     * Updates all entities of target type, setting fields from supplied partial entity.
+     * This is a primitive operation without cascades, relations or other operations included.
+     * Executes fast and efficient UPDATE query without WHERE clause.
+     *
+     * WARNING! This method updates ALL rows in the target table.
+     */
+    updateAll<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+        partialEntity: QueryDeepPartialEntity<Entity>,
+    ): Promise<UpdateResult> {
+        return this.createQueryBuilder()
+            .update(target)
+            .set(partialEntity)
+            .execute()
+    }
+
+    /**
      * Deletes entities by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient DELETE query.
@@ -830,9 +868,22 @@ export class EntityManager {
     }
 
     /**
+     * Deletes all entities of target type.
+     * This is a primitive operation without cascades, relations or other operations included.
+     * Executes fast and efficient DELETE query without WHERE clause.
+     *
+     * WARNING! This method deletes ALL rows in the target table.
+     */
+    deleteAll<Entity extends ObjectLiteral>(
+        targetOrEntity: EntityTarget<Entity>,
+    ): Promise<DeleteResult> {
+        return this.createQueryBuilder().delete().from(targetOrEntity).execute()
+    }
+
+    /**
      * Records the delete date of entities by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Executes fast and efficient DELETE query.
+     * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
@@ -853,7 +904,7 @@ export class EntityManager {
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
-                    `Empty criteria(s) are not allowed for the delete method.`,
+                    `Empty criteria(s) are not allowed for the softDelete method.`,
                 ),
             )
         }
@@ -876,7 +927,7 @@ export class EntityManager {
     /**
      * Restores entities by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Executes fast and efficient DELETE query.
+     * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
@@ -897,7 +948,7 @@ export class EntityManager {
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
-                    `Empty criteria(s) are not allowed for the delete method.`,
+                    `Empty criteria(s) are not allowed for the restore method.`,
                 ),
             )
         }

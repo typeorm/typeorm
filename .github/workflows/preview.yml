@@ -16,6 +16,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -29,5 +31,10 @@ jobs:
       - name: Build
         run: npm run package
 
+      - name: Prepare pnpm for preview publishing
+        run: |
+          npm install -g corepack@latest
+          corepack prepare pnpm@latest --activate
+
       - name: Release preview version
-        run: npx pkg-pr-new publish './build/package' --template='./sample/playground'
+        run: npm run publish:preview
