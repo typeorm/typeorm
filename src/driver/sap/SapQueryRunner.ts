@@ -1,4 +1,4 @@
-import { promisify } from "util"
+import { promisify } from "node:util"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { QueryFailedError, TypeORMError } from "../../error"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
@@ -85,14 +85,20 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
-    release(): Promise<void> {
+    async release(): Promise<void> {
         this.isReleased = true
 
         if (this.databaseConnection) {
-            return this.driver.master.release(this.databaseConnection)
+            // return the connection back to the pool
+            try {
+                await promisify(this.databaseConnection.disconnect).call(
+                    this.databaseConnection,
+                )
+            } catch (error) {
+                this.driver.poolErrorHandler(error)
+                throw error
+            }
         }
-
-        return Promise.resolve()
     }
 
     /**
@@ -168,14 +174,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async setAutoCommit(options: { status: "on" | "off" }) {
         const connection = await this.connect()
-
-        const execute = promisify(connection.exec.bind(connection))
-
         connection.setAutoCommit(options.status === "on")
 
-        const query = `SET TRANSACTION AUTOCOMMIT DDL ${options.status.toUpperCase()};`
+        const query = `SET TRANSACTION AUTOCOMMIT DDL ${options.status.toUpperCase()}`
+        this.driver.connection.logger.logQuery(query, [], this)
         try {
-            await execute(query)
+            await promisify(connection.exec).call(connection, query)
         } catch (error) {
             throw new QueryFailedError(query, [], error)
         }
@@ -270,26 +274,20 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (isInsertQuery) {
                 const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`
                 this.driver.connection.logger.logQuery(lastIdQuery, [], this)
-                const identityValueResult = await new Promise<any>(
-                    (ok, fail) => {
-                        databaseConnection.exec(
-                            lastIdQuery,
-                            (err: any, raw: any) =>
-                                err
-                                    ? fail(
-                                          new QueryFailedError(
-                                              lastIdQuery,
-                                              [],
-                                              err,
-                                          ),
-                                      )
-                                    : ok(raw),
-                        )
-                    },
-                )
+                try {
+                    const identityValueResult: [
+                        { "CURRENT_IDENTITY_VALUE()": unknown },
+                    ] = await promisify(databaseConnection.exec).call(
+                        databaseConnection,
+                        lastIdQuery,
+                    )
 
-                result.raw = identityValueResult[0]["CURRENT_IDENTITY_VALUE()"]
-                result.records = identityValueResult
+                    result.raw =
+                        identityValueResult[0]["CURRENT_IDENTITY_VALUE()"]
+                    result.records = identityValueResult
+                } catch (error) {
+                    throw new QueryFailedError(lastIdQuery, [], error)
+                }
             }
         } catch (err) {
             this.driver.connection.logger.logQueryError(
@@ -311,7 +309,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         } finally {
             // Never forget to drop the statement we reserved
             if (statement?.drop) {
-                await new Promise<void>((ok) => statement.drop(() => ok()))
+                await promisify(statement.drop).call(statement)
             }
 
             await broadcasterResult.wait()
@@ -343,11 +341,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         let resultSet: any
 
         const cleanup = async () => {
-            if (resultSet) {
-                await promisify(resultSet.close).call(resultSet)
+            const originalStatement = statement
+            const originalResultSet = resultSet
+            statement = null
+            resultSet = null
+            if (originalResultSet) {
+                await promisify(originalResultSet.close).call(originalResultSet)
             }
-            if (statement) {
-                await promisify(statement.drop).call(statement)
+            if (originalStatement) {
+                await promisify(originalStatement.drop).call(originalStatement)
             }
             release()
         }
@@ -367,20 +369,20 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             const stream =
                 this.driver.streamClient.createObjectStream(resultSet)
-            stream.on("end", async () => {
-                await cleanup()
-                onEnd?.()
-            })
-            stream.on("error", async (error: Error) => {
+
+            if (onEnd) {
+                stream.on("end", onEnd)
+            }
+            stream.on("error", (error: Error) => {
                 this.driver.connection.logger.logQueryError(
                     error,
                     query,
                     parameters,
                     this,
                 )
-                await cleanup()
                 onError?.(error)
             })
+            stream.on("close", cleanup)
 
             return stream
         } catch (error) {
@@ -1826,7 +1828,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }

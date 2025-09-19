@@ -11,6 +11,12 @@ export interface VirtualColumnOptions {
     type?: ColumnType
 
     /**
+     * Indicates if column is always selected by QueryBuilder and find operations.
+     * Default value is "true".
+     */
+    select?: boolean
+
+    /**
      * Return type of HSTORE column.
      * Returns value as string or as object.
      */
