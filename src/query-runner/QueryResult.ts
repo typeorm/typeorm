@@ -1,7 +1,7 @@
 /**
  * Result object returned by UpdateQueryBuilder execution.
  */
-export class QueryResult {
+export class QueryResult<T = any> {
     /**
      * Raw SQL result returned by executed query.
      */
@@ -10,7 +10,7 @@ export class QueryResult {
     /**
      * Rows
      */
-    records: any[] = []
+    records: T[] = []
 
     /**
      * Number of affected rows/documents

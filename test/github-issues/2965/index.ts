@@ -26,8 +26,8 @@ describe("github issues > #2965 Reuse preloaded lazy relations", () => {
                 const repoPerson = connection.getRepository(Person)
                 const repoNote = connection.getRepository(Note)
 
-                const personA = await repoPerson.create({ name: "personA" })
-                const personB = await repoPerson.create({ name: "personB" })
+                const personA = repoPerson.create({ name: "personA" })
+                const personB = repoPerson.create({ name: "personB" })
 
                 await repoPerson.save([personA, personB])
 
