@@ -12,7 +12,7 @@ services:
       MYSQL_DATABASE: "test"
 
   mysql-9:
-    image: "mysql:9.4.0"
+    image: "mysql:9.5.0"
     container_name: "typeorm-mysql-9"
     ports:
       - "3306:3306"
@@ -24,7 +24,7 @@ services:
 
   # mariadb
   mariadb-10:
-    image: "mariadb:10.6.22-jammy"
+    image: "mariadb:10.6.24-jammy"
     container_name: "typeorm-mariadb-10"
     ports:
       - "3307:3306"
@@ -35,7 +35,7 @@ services:
       MYSQL_DATABASE: "test"
 
   mariadb-12:
-    image: "mariadb:12.0.1-rc"
+    image: "mariadb:12.1.2"
     container_name: "typeorm-mariadb-12"
     ports:
       - "3307:3306"
