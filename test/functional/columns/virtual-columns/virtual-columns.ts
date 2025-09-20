@@ -347,4 +347,45 @@ describe("column > virtual columns", () => {
                 })
             }),
         ))
+
+    it("should support virtual columns in WHERE clauses", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const companyRepository = connection.getRepository(Company)
+
+                const companyName = "My Company WHERE Test"
+                const company = companyRepository.create({
+                    name: companyName,
+                    employees: [
+                        { name: "John WHERE" },
+                        { name: "Jane WHERE" },
+                        { name: "Bob WHERE" },
+                    ],
+                })
+                await companyRepository.save(company)
+
+                // Create another company with different employee count
+                const otherCompany = companyRepository.create({
+                    name: "Other Company",
+                    employees: [
+                        { name: "Alice OTHER" },
+                    ],
+                })
+                await companyRepository.save(otherCompany)
+
+                // Test: Query using virtual column in WHERE clause should work
+                const foundCompany = await connection
+                    .createQueryBuilder(Company, "company")
+                    .select([
+                        "company.name",
+                        "company.totalEmployeesCount",
+                    ])
+                    .where("company.totalEmployeesCount > :count", { count: 2 })
+                    .getOne()
+
+                expect(foundCompany).to.not.be.null
+                expect(foundCompany!.name).to.equal(companyName)
+                expect(foundCompany!.totalEmployeesCount).to.equal(3)
+            }),
+        ))
 })
