@@ -31,10 +31,5 @@ jobs:
       - name: Build
         run: npm run package
 
-      - name: Prepare pnpm for preview publishing
-        run: |
-          npm install -g corepack@latest
-          corepack prepare pnpm@latest --activate
-
       - name: Release preview version
         run: npm run publish:preview
