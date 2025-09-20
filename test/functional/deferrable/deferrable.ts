@@ -1,28 +1,30 @@
 import "reflect-metadata"
+import { expect } from "chai"
+
+import { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+
 import { Company } from "./entity/Company"
 import { Office } from "./entity/Office"
 import { User } from "./entity/User"
-import { expect } from "chai"
 
-describe("deferrable fk constraints should be check at the end of transaction (#2191)", () => {
+describe("deferrable foreign key constraint", () => {
     let connections: DataSource[]
     before(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
+                enabledDrivers: ["better-sqlite3", "postgres", "sap", "sqlite"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("use initially deferred deferrable fk constraints", () =>
+    it("initially deferred fk should be validated at the end of transaction", () =>
         Promise.all(
             connections.map(async (connection) => {
                 await connection.manager.transaction(async (entityManager) => {
@@ -40,17 +42,15 @@ describe("deferrable fk constraints should be check at the end of transaction (#
                     company.name = "Acme"
 
                     await entityManager.save(company)
-                })
+                }).should.not.be.rejected
 
                 // now check
                 const user = await connection.manager.findOne(User, {
-                    relations: ["company"],
+                    relations: { company: true },
                     where: { id: 1 },
                 })
 
-                expect(user).not.to.be.null
-
-                user!.should.be.eql({
+                expect(user).to.deep.equal({
                     id: 1,
                     name: "Bob",
                     company: {
@@ -61,9 +61,12 @@ describe("deferrable fk constraints should be check at the end of transaction (#
             }),
         ))
 
-    it("use initially immediated deferrable fk constraints", () =>
+    it("initially immediate fk should be validated at the end at transaction with deferred check time", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // changing the constraint check time is only supported on postgres
+                if (connection.driver.options.type !== "postgres") return
+
                 await connection.manager.transaction(async (entityManager) => {
                     // first set constraints deferred manually
                     await entityManager.query("SET CONSTRAINTS ALL DEFERRED")
@@ -82,17 +85,15 @@ describe("deferrable fk constraints should be check at the end of transaction (#
                     company.name = "Emca"
 
                     await entityManager.save(company)
-                })
+                }).should.not.be.rejected
 
                 // now check
                 const office = await connection.manager.findOne(Office, {
-                    relations: ["company"],
+                    relations: { company: true },
                     where: { id: 2 },
                 })
 
-                expect(office).not.to.be.null
-
-                office!.should.be.eql({
+                expect(office).to.deep.equal({
                     id: 2,
                     name: "Barcelona",
                     company: {

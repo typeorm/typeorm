@@ -9,6 +9,7 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { MockQueryResultCache } from "./provider/MockQueryResultCache"
+import { Address } from "./entity/Address"
 
 describe("custom cache provider", () => {
     let connections: DataSource[]
@@ -277,7 +278,61 @@ describe("custom cache provider", () => {
             }),
         ))
 
-    it("should cache results with custom id and duration supplied", () =>
+    it("should cache results with pagination enabled properly and custom id and loaded relations", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (connection.driver.options.type === "spanner") {
+                    return
+                }
+
+                const noUser = await connection.manager
+                    .getRepository(User)
+                    .findOne({
+                        where: { isAdmin: false },
+                        relations: { addresses: true },
+                        cache: { id: "user-address", milliseconds: 2000 },
+                    })
+
+                expect(noUser).to.be.null
+
+                // first prepare data - insert users
+                const user1 = new User()
+                user1.firstName = "Timber"
+                user1.lastName = "Saw"
+                user1.isAdmin = false
+                await connection.manager.save(user1)
+
+                const user1Address = new Address()
+                user1Address.address = "1 random street"
+                user1Address.user = user1
+                await connection.manager.save(user1Address)
+
+                const user1Cached = await connection.manager
+                    .getRepository(User)
+                    .findOne({
+                        relations: { addresses: true },
+                        where: { isAdmin: false },
+                        cache: { id: "user-address", milliseconds: 2000 },
+                    })
+                expect(user1Cached).to.be.null
+
+                const user1WithAddressWithOtherCacheId =
+                    await connection.manager.getRepository(User).findOne({
+                        relations: { addresses: true },
+                        where: { isAdmin: false },
+                        cache: {
+                            id: "user-1-different-cache-id",
+                            milliseconds: 2000,
+                        },
+                    })
+
+                expect(
+                    user1WithAddressWithOtherCacheId?.addresses,
+                ).to.have.length(1)
+            }),
+        ))
+
+    it("should cache results with `true` provided", () =>
         Promise.all(
             connections.map(async (connection) => {
                 if (connection.driver.options.type === "spanner") {

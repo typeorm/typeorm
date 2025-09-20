@@ -35,9 +35,9 @@ describe("github issues > #6552 MongoRepository delete by ObjectId deletes the w
                 post2.title = "Post 2"
                 await connection.manager.save(post2)
 
-                const objectIdInstance = PlatformTools.load("mongodb").ObjectID
+                const objectIdInstance = PlatformTools.load("mongodb").ObjectId
 
-                // double check that post2._id is actually an ObjectID
+                // double check that post2._id is actually an ObjectId
                 expect(post2._id).to.be.not.null
                 expect(post2._id).to.be.not.undefined
                 expect(post2._id).to.be.instanceof(objectIdInstance)
@@ -75,9 +75,9 @@ describe("github issues > #6552 MongoRepository delete by ObjectId deletes the w
                 post2.title = "Post 2"
                 await postV2Repository.save(post2)
 
-                const objectIdInstance = PlatformTools.load("mongodb").ObjectID
+                const objectIdInstance = PlatformTools.load("mongodb").ObjectId
 
-                // double check that post2.postId is actually an ObjectID
+                // double check that post2.postId is actually an ObjectId
                 expect(post2.postId).to.be.not.null
                 expect(post2.postId).to.be.not.undefined
                 expect(post2.postId).to.be.instanceof(objectIdInstance)
@@ -113,9 +113,9 @@ describe("github issues > #6552 MongoRepository delete by ObjectId deletes the w
                 post2.title = "Post 2"
                 await connection.manager.save(post2)
 
-                const objectIdInstance = PlatformTools.load("mongodb").ObjectID
+                const objectIdInstance = PlatformTools.load("mongodb").ObjectId
 
-                // double check that post2._id is actually an ObjectID
+                // double check that post2._id is actually an ObjectId
                 expect(post2._id).to.be.not.null
                 expect(post2._id).to.be.not.undefined
                 expect(post2._id).to.be.instanceof(objectIdInstance)

@@ -142,7 +142,7 @@ export class Post {
     // -------------------------------------------------------------------------
 
     @Column("point")
-    point: string | Object
+    point: string | object
 
     @Column("line")
     line: string
@@ -151,7 +151,7 @@ export class Post {
     lseg: string | string[]
 
     @Column("box")
-    box: string | Object
+    box: string | object
 
     @Column("path")
     path: string
@@ -160,7 +160,7 @@ export class Post {
     polygon: string
 
     @Column("circle")
-    circle: string | Object
+    circle: string | object
 
     // -------------------------------------------------------------------------
     // Network Address Type
@@ -174,6 +174,9 @@ export class Post {
 
     @Column("macaddr")
     macaddr: string
+
+    @Column("macaddr8")
+    macaddr8: string
 
     // -------------------------------------------------------------------------
     // Bit String Type
@@ -207,10 +210,10 @@ export class Post {
     // -------------------------------------------------------------------------
 
     @Column("json")
-    json: Object
+    json: object
 
     @Column("jsonb")
-    jsonb: Object
+    jsonb: object
 
     // -------------------------------------------------------------------------
     // Range Type
@@ -233,6 +236,28 @@ export class Post {
 
     @Column("daterange")
     daterange: string
+
+    // -------------------------------------------------------------------------
+    // Multirange Type
+    // -------------------------------------------------------------------------
+
+    @Column("int4multirange")
+    int4multirange: string
+
+    @Column("int8multirange")
+    int8multirange: string
+
+    @Column("nummultirange")
+    nummultirange: string
+
+    @Column("tsmultirange")
+    tsmultirange: string
+
+    @Column("tstzmultirange")
+    tstzmultirange: string
+
+    @Column("datemultirange")
+    datemultirange: string
 
     // -------------------------------------------------------------------------
     // Array Type

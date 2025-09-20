@@ -1,10 +1,11 @@
+import { expect } from "chai"
 import "reflect-metadata"
+import { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
 import { ActivityEntity } from "./entity/ActivityEntity"
 
 describe("github issues > #320 Bug in getManyAndCount", () => {
@@ -22,7 +23,7 @@ describe("github issues > #320 Bug in getManyAndCount", () => {
     it("should correctly parse type from PrimaryGeneratedColumn options", () =>
         Promise.all(
             connections.map(async (connection) => {
-                let tiles = [2, 3]
+                const tiles = [2, 3]
 
                 let query = connection
                     .createQueryBuilder(ActivityEntity, "activity")
@@ -51,7 +52,7 @@ describe("github issues > #320 Bug in getManyAndCount", () => {
                     .setParameter("tiles", tiles)
                     .setParameter("tileCount", tiles.length)
 
-                await query.getMany
+                await expect(query.getMany()).to.eventually.be.fulfilled
             }),
         ))
 })

@@ -26,6 +26,8 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TypeORMError } from "../../error"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { UpsertType } from "../types/UpsertType"
+import { FindOperator } from "../../find-options/FindOperator"
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -143,6 +145,11 @@ export class SqlServerDriver implements Driver {
     ]
 
     /**
+     * Returns type of upsert supported by driver if any
+     */
+    supportedUpsertTypes: UpsertType[] = ["merge-into"]
+
+    /**
      * Gets list of spatial column data types.
      */
     spatialTypes: ColumnType[] = ["geometry", "geography"]
@@ -204,6 +211,11 @@ export class SqlServerDriver implements Driver {
         metadataName: "varchar",
         metadataValue: "nvarchar(MAX)" as any,
     }
+
+    /**
+     * The prefix used for the parameters
+     */
+    parametersPrefix: string = "@"
 
     /**
      * Default values of length, precision and scale depends on column data type.
@@ -289,7 +301,7 @@ export class SqlServerDriver implements Driver {
         }
 
         if (!this.database || !this.searchSchema) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
             if (!this.database) {
                 this.database = await queryRunner.getCurrentDatabase()
@@ -318,9 +330,9 @@ export class SqlServerDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("mssql"))
-
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("mssql")
+        }
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
         this.master = undefined
@@ -365,6 +377,7 @@ export class SqlServerDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
+        const parameterIndexMap = new Map<string, number>()
         sql = sql.replace(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
@@ -372,7 +385,11 @@ export class SqlServerDriver implements Driver {
                     return full
                 }
 
-                let value: any = parameters[key]
+                if (parameterIndexMap.has(key)) {
+                    return this.parametersPrefix + parameterIndexMap.get(key)
+                }
+
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -391,6 +408,7 @@ export class SqlServerDriver implements Driver {
                 }
 
                 escapedParameters.push(value)
+                parameterIndexMap.set(key, escapedParameters.length - 1)
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems
@@ -413,7 +431,7 @@ export class SqlServerDriver implements Driver {
         schema?: string,
         database?: string,
     ): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)
@@ -789,7 +807,14 @@ export class SqlServerDriver implements Driver {
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
-                tableColumn.isUnique !== this.normalizeIsUnique(columnMetadata)
+                tableColumn.isUnique !==
+                    this.normalizeIsUnique(columnMetadata) ||
+                (tableColumn.enum &&
+                    columnMetadata.enum &&
+                    !OrmUtils.isArraysEqual(
+                        tableColumn.enum,
+                        columnMetadata.enum.map((val) => val + ""),
+                    ))
 
             // DEBUG SECTION
             // if (isColumnChanged) {
@@ -895,7 +920,7 @@ export class SqlServerDriver implements Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return "@" + index
+        return this.parametersPrefix + index
     }
 
     // -------------------------------------------------------------------------
@@ -947,6 +972,32 @@ export class SqlServerDriver implements Driver {
         }
 
         return new MssqlParameter(value, normalizedType as any)
+    }
+
+    /**
+     * Recursively wraps values (including those inside FindOperators) into MssqlParameter instances,
+     * ensuring correct type metadata is passed to the SQL Server driver.
+     *
+     * - If the value is a FindOperator containing an array, all elements are individually parametrized.
+     * - If the value is a non-raw FindOperator, a transformation is applied to its internal value.
+     * - Otherwise, the value is passed directly to parametrizeValue for wrapping.
+     *
+     * This ensures SQL Server receives properly typed parameters for queries involving operators like
+     * In, MoreThan, Between, etc.
+     */
+    parametrizeValues(column: ColumnMetadata, value: any) {
+        if (value instanceof FindOperator) {
+            if (value.type !== "raw") {
+                value.transformValue({
+                    to: (v) => this.parametrizeValues(column, v),
+                    from: (v) => v,
+                })
+            }
+
+            return value
+        }
+
+        return this.parametrizeValue(column, value)
     }
 
     /**
@@ -1029,7 +1080,10 @@ export class SqlServerDriver implements Driver {
         // of data type precedence to the expressions specified in the formula.
         if (columnMetadata.asExpression) return false
 
-        return tableColumn.length !== this.getColumnLength(columnMetadata)
+        return (
+            tableColumn.length.toUpperCase() !==
+            this.getColumnLength(columnMetadata).toUpperCase()
+        )
     }
 
     protected lowerDefaultValueIfNecessary(value: string | undefined) {

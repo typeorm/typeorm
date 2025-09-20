@@ -1,6 +1,8 @@
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { FindOperatorType } from "./FindOperatorType"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { ValueTransformer } from "../decorator/options/ValueTransformer"
+import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 
 type SqlGeneratorType = (aliasPath: string) => string
 
@@ -134,5 +136,26 @@ export class FindOperator<T> {
             return this._value.getSql
 
         return this._getSql
+    }
+
+    transformValue(transformer: ValueTransformer | ValueTransformer[]) {
+        if (this._value instanceof FindOperator) {
+            this._value.transformValue(transformer)
+        } else {
+            this._value =
+                Array.isArray(this._value) && this._multipleParameters
+                    ? this._value.map(
+                          (v: any) =>
+                              transformer &&
+                              ApplyValueTransformers.transformTo(
+                                  transformer,
+                                  v,
+                              ),
+                      )
+                    : ApplyValueTransformers.transformTo(
+                          transformer,
+                          this._value,
+                      )
+        }
     }
 }

@@ -18,7 +18,7 @@ describe("database schema > enums", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["postgres", "mysql", "mariadb"],
+            enabledDrivers: ["postgres", "mysql", "mariadb", "cockroachdb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
@@ -32,7 +32,7 @@ describe("database schema > enums", () => {
 
                 const enumEntity = new EnumEntity()
                 enumEntity.id = 1
-                enumEntity.enumWithoutdefault = StringEnum.EDITOR
+                enumEntity.enumWithoutDefault = StringEnum.EDITOR
                 await enumEntityRepository.save(enumEntity)
 
                 const loadedEnumEntity = await enumEntityRepository.findOneBy({
@@ -67,7 +67,7 @@ describe("database schema > enums", () => {
                 enumEntity.heterogeneousEnum = HeterogeneousEnum.YES
                 enumEntity.arrayDefinedStringEnum = "editor"
                 enumEntity.arrayDefinedNumericEnum = 13
-                enumEntity.enumWithoutdefault = StringEnum.ADMIN
+                enumEntity.enumWithoutDefault = StringEnum.ADMIN
                 await enumEntityRepository.save(enumEntity)
 
                 const loadedEnumEntity = await enumEntityRepository.findOneBy({
@@ -94,6 +94,8 @@ describe("database schema > enums", () => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
+
+                console.log(sqlInMemory.upQueries)
 
                 sqlInMemory.upQueries.length.should.be.equal(0)
                 sqlInMemory.downQueries.length.should.be.equal(0)

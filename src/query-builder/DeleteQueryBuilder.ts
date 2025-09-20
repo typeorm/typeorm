@@ -41,7 +41,7 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
         let sql = this.createComment()
         sql += this.createCteExpression()
         sql += this.createDeleteExpression()
-        return sql.trim()
+        return this.replacePropertyNamesForTheWholeQuery(sql.trim())
     }
 
     /**
@@ -288,6 +288,9 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
         }
         if (this.connection.driver.options.type === "mssql") {
             return `DELETE FROM ${tableName} OUTPUT ${returningExpression}${whereExpression}`
+        }
+        if (this.connection.driver.options.type === "spanner") {
+            return `DELETE FROM ${tableName}${whereExpression} THEN RETURN ${returningExpression}`
         }
         return `DELETE FROM ${tableName}${whereExpression} RETURNING ${returningExpression}`
     }

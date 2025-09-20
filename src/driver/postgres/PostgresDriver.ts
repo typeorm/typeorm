@@ -27,6 +27,7 @@ import { Table } from "../../schema-builder/table/Table"
 import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -167,6 +168,7 @@ export class PostgresDriver implements Driver {
         "cidr",
         "inet",
         "macaddr",
+        "macaddr8",
         "tsvector",
         "tsquery",
         "uuid",
@@ -179,16 +181,24 @@ export class PostgresDriver implements Driver {
         "tsrange",
         "tstzrange",
         "daterange",
+        "int4multirange",
+        "int8multirange",
+        "nummultirange",
+        "tsmultirange",
+        "tstzmultirange",
+        "datemultirange",
         "geometry",
         "geography",
         "cube",
         "ltree",
+        "vector",
+        "halfvec",
     ]
 
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertType = "on-conflict-do-update"
+    supportedUpsertTypes: UpsertType[] = ["on-conflict-do-update"]
 
     /**
      * Gets list of spatial column data types.
@@ -206,6 +216,8 @@ export class PostgresDriver implements Driver {
         "bit",
         "varbit",
         "bit varying",
+        "vector",
+        "halfvec",
     ]
 
     /**
@@ -255,6 +267,11 @@ export class PostgresDriver implements Driver {
         metadataName: "varchar",
         metadataValue: "text",
     }
+
+    /**
+     * The prefix used for the parameters
+     */
+    parametersPrefix: string = "$"
 
     /**
      * Default values of length, precision and scale depends on column data type.
@@ -345,19 +362,19 @@ export class PostgresDriver implements Driver {
             this.master = await this.createPool(this.options, this.options)
         }
 
-        if (!this.database || !this.searchSchema) {
-            const queryRunner = await this.createQueryRunner("master")
+        const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+        this.version = await queryRunner.getVersion()
 
-            if (!this.searchSchema) {
-                this.searchSchema = await queryRunner.getCurrentSchema()
-            }
-
-            await queryRunner.release()
+        if (!this.database) {
+            this.database = await queryRunner.getCurrentDatabase()
         }
+
+        if (!this.searchSchema) {
+            this.searchSchema = await queryRunner.getCurrentSchema()
+        }
+
+        await queryRunner.release()
 
         if (!this.schema) {
             this.schema = this.searchSchema
@@ -378,21 +395,8 @@ export class PostgresDriver implements Driver {
             await this.enableExtensions(extensionsMetadata, connection)
         }
 
-        const results = (await this.executeQuery(
-            connection,
-            "SELECT version();",
-        )) as {
-            rows: {
-                version: string
-            }[]
-        }
-        const versionString = results.rows[0].version.replace(
-            /^PostgreSQL ([\d\.]+) .*$/,
-            "$1",
-        )
-        this.version = versionString
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
-            versionString,
+            this.version,
             "12.0",
         )
 
@@ -409,6 +413,7 @@ export class PostgresDriver implements Driver {
             hasCubeColumns,
             hasGeometryColumns,
             hasLtreeColumns,
+            hasVectorColumns,
             hasExclusionConstraints,
         } = extensionsMetadata
 
@@ -485,7 +490,19 @@ export class PostgresDriver implements Driver {
             } catch (_) {
                 logger.log(
                     "warn",
-                    "At least one of the entities has a cube column, but the 'ltree' extension cannot be installed automatically. Please install it manually using superuser rights",
+                    "At least one of the entities has a ltree column, but the 'ltree' extension cannot be installed automatically. Please install it manually using superuser rights",
+                )
+            }
+        if (hasVectorColumns)
+            try {
+                await this.executeQuery(
+                    connection,
+                    `CREATE EXTENSION IF NOT EXISTS "vector"`,
+                )
+            } catch (_) {
+                logger.log(
+                    "warn",
+                    "At least one of the entities has a vector column, but the 'vector' extension (pgvector) cannot be installed automatically. Please install it manually using superuser rights",
                 )
             }
         if (hasExclusionConstraints)
@@ -556,6 +573,14 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
+        const hasVectorColumns = this.connection.entityMetadatas.some(
+            (metadata) => {
+                return metadata.columns.some(
+                    (column) =>
+                        column.type === "vector" || column.type === "halfvec",
+                )
+            },
+        )
         const hasExclusionConstraints = this.connection.entityMetadatas.some(
             (metadata) => {
                 return metadata.exclusions.length > 0
@@ -569,6 +594,7 @@ export class PostgresDriver implements Driver {
             hasCubeColumns,
             hasGeometryColumns,
             hasLtreeColumns,
+            hasVectorColumns,
             hasExclusionConstraints,
             hasExtensions:
                 hasUuidColumns ||
@@ -577,6 +603,7 @@ export class PostgresDriver implements Driver {
                 hasGeometryColumns ||
                 hasCubeColumns ||
                 hasLtreeColumns ||
+                hasVectorColumns ||
                 hasExclusionConstraints,
         }
     }
@@ -585,8 +612,9 @@ export class PostgresDriver implements Driver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("postgres"))
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("postgres")
+        }
 
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
@@ -604,7 +632,7 @@ export class PostgresDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: ReplicationMode): QueryRunner {
+    createQueryRunner(mode: ReplicationMode): PostgresQueryRunner {
         return new PostgresQueryRunner(this, mode)
     }
 
@@ -640,6 +668,15 @@ export class PostgresDriver implements Driver {
             ) >= 0
         ) {
             return JSON.stringify(value)
+        } else if (
+            columnMetadata.type === "vector" ||
+            columnMetadata.type === "halfvec"
+        ) {
+            if (Array.isArray(value)) {
+                return `[${value.join(",")}]`
+            } else {
+                return value
+            }
         } else if (columnMetadata.type === "hstore") {
             if (typeof value === "string") {
                 return value
@@ -716,6 +753,18 @@ export class PostgresDriver implements Driver {
             value = DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
+        } else if (
+            columnMetadata.type === "vector" ||
+            columnMetadata.type === "halfvec"
+        ) {
+            if (
+                typeof value === "string" &&
+                value.startsWith("[") &&
+                value.endsWith("]")
+            ) {
+                if (value === "[]") return []
+                return value.slice(1, -1).split(",").map(Number)
+            }
         } else if (columnMetadata.type === "hstore") {
             if (columnMetadata.hstoreType === "object") {
                 const unescapeString = (str: string) =>
@@ -739,7 +788,7 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "cube") {
-            value = value.replace(/[\(\)\s]+/g, "") // remove whitespace
+            value = value.replace(/[()\s]+/g, "") // remove whitespace
             if (columnMetadata.isArray) {
                 /**
                  * Strips these groups from `{"1,2,3","",NULL}`:
@@ -747,7 +796,7 @@ export class PostgresDriver implements Driver {
                  * 2. ["", undefined]         <- cube of arity 0
                  * 3. [undefined, "NULL"]     <- NULL
                  */
-                const regexp = /(?:\"((?:[\d\s\.,])*)\")|(?:(NULL))/g
+                const regexp = /(?:"((?:[\d\s.,])*)")|(?:(NULL))/g
                 const unparsedArrayString = value
 
                 value = []
@@ -774,16 +823,14 @@ export class PostgresDriver implements Driver {
 
                 // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
                 value = (value as string)
-                    .substr(1, (value as string).length - 2)
+                    .slice(1, -1)
                     .split(",")
                     .map((val) => {
                         // replace double quotes from the beginning and from the end
                         if (val.startsWith(`"`) && val.endsWith(`"`))
                             val = val.slice(1, -1)
-                        // replace double escaped backslash to single escaped e.g. \\\\ -> \\
-                        val = val.replace(/(\\\\)/g, "\\")
-                        // replace escaped double quotes to non-escaped e.g. \"asd\" -> "asd"
-                        return val.replace(/(\\")/g, '"')
+                        // replace escaped backslash and double quotes
+                        return val.replace(/\\(\\|")/g, "$1")
                     })
 
                 // convert to number if that exists in possible enum options
@@ -829,6 +876,7 @@ export class PostgresDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
+        const parameterIndexMap = new Map<string, number>()
         sql = sql.replace(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
@@ -836,7 +884,11 @@ export class PostgresDriver implements Driver {
                     return full
                 }
 
-                let value: any = parameters[key]
+                if (parameterIndexMap.has(key)) {
+                    return this.parametersPrefix + parameterIndexMap.get(key)
+                }
+
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -855,6 +907,7 @@ export class PostgresDriver implements Driver {
                 }
 
                 escapedParameters.push(value)
+                parameterIndexMap.set(key, escapedParameters.length)
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems
@@ -873,7 +926,7 @@ export class PostgresDriver implements Driver {
      * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)
@@ -993,14 +1046,12 @@ export class PostgresDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
 
-        if (defaultValue === null) {
+        if (defaultValue === null || defaultValue === undefined) {
             return undefined
         }
 
         if (columnMetadata.isArray && Array.isArray(defaultValue)) {
-            return `'{${defaultValue
-                .map((val: string) => `${val}`)
-                .join(",")}}'`
+            return `'{${defaultValue.map((val) => String(val)).join(",")}}'`
         }
 
         if (
@@ -1025,10 +1076,6 @@ export class PostgresDriver implements Driver {
 
         if (typeof defaultValue === "object") {
             return `'${JSON.stringify(defaultValue)}'`
-        }
-
-        if (defaultValue === undefined) {
-            return undefined
         }
 
         return `${defaultValue}`
@@ -1140,6 +1187,9 @@ export class PostgresDriver implements Driver {
             } else {
                 type = column.type
             }
+        } else if (column.type === "vector" || column.type === "halfvec") {
+            type =
+                column.type + (column.length ? "(" + column.length + ")" : "")
         }
 
         if (column.isArray) type += " array"
@@ -1249,7 +1299,8 @@ export class PostgresDriver implements Driver {
                 tableColumn.srid !== columnMetadata.srid ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
                 (tableColumn.asExpression || "").trim() !==
-                    (columnMetadata.asExpression || "").trim()
+                    (columnMetadata.asExpression || "").trim() ||
+                tableColumn.collation !== columnMetadata.collation
 
             // DEBUG SECTION
             // if (isColumnChanged) {
@@ -1398,7 +1449,7 @@ export class PostgresDriver implements Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return "$" + (index + 1)
+        return this.parametersPrefix + (index + 1)
     }
 
     // -------------------------------------------------------------------------
@@ -1411,10 +1462,10 @@ export class PostgresDriver implements Driver {
     loadStreamDependency() {
         try {
             return PlatformTools.load("pg-query-stream")
-        } catch (e) {
+        } catch {
             // todo: better error for browser env
             throw new TypeORMError(
-                `To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`,
+                `To use streams you should install pg-query-stream package. Please run "npm i pg-query-stream".`,
             )
         }
     }
@@ -1449,6 +1500,7 @@ export class PostgresDriver implements Driver {
         options: PostgresConnectionOptions,
         credentials: PostgresConnectionCredentialsOptions,
     ): Promise<any> {
+        const { logger } = this.connection
         credentials = Object.assign({}, credentials)
 
         // build connection options for the driver
@@ -1464,15 +1516,32 @@ export class PostgresDriver implements Driver {
                 port: credentials.port,
                 ssl: credentials.ssl,
                 connectionTimeoutMillis: options.connectTimeoutMS,
-                application_name: options.applicationName,
+                application_name:
+                    options.applicationName ?? credentials.applicationName,
                 max: options.poolSize,
             },
             options.extra || {},
         )
 
+        if (options.parseInt8 !== undefined) {
+            if (
+                this.postgres.defaults &&
+                Object.getOwnPropertyDescriptor(
+                    this.postgres.defaults,
+                    "parseInt8",
+                )?.set
+            ) {
+                this.postgres.defaults.parseInt8 = options.parseInt8
+            } else {
+                logger.log(
+                    "warn",
+                    "Attempted to set parseInt8 option, but the postgres driver does not support setting defaults.parseInt8. This option will be ignored.",
+                )
+            }
+        }
+
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions)
-        const { logger } = this.connection
 
         const poolErrorHandler =
             options.poolErrorHandler ||

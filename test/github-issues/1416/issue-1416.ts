@@ -41,7 +41,7 @@ describe("github issue > #1416 Wrong behavior when fetching an entity that has a
                 photo.metadata = metadata
                 await connection.manager.save(photo)
 
-                let photoAuthor = new Author()
+                const photoAuthor = new Author()
                 photoAuthor.name = "John Doe"
                 photoAuthor.photos = [photo]
                 await connection.manager.save(photoAuthor)
@@ -50,7 +50,7 @@ describe("github issue > #1416 Wrong behavior when fetching an entity that has a
                     where: {
                         name: photoAuthor.name,
                     },
-                    relations: ["photos"],
+                    relations: { photos: true },
                 })) as Author
                 expect(author).not.to.be.null
                 expect(author.photos[0]).not.to.be.undefined

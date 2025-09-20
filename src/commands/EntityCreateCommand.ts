@@ -1,8 +1,8 @@
-import { CommandUtils } from "./CommandUtils"
-import * as yargs from "yargs"
-import chalk from "chalk"
-import { PlatformTools } from "../platform/PlatformTools"
+import ansi from "ansis"
 import path from "path"
+import yargs from "yargs"
+import { PlatformTools } from "../platform/PlatformTools"
+import { CommandUtils } from "./CommandUtils"
 
 /**
  * Generates a new entity.
@@ -10,6 +10,14 @@ import path from "path"
 export class EntityCreateCommand implements yargs.CommandModule {
     command = "entity:create <path>"
     describe = "Generates a new entity."
+
+    builder(args: yargs.Argv) {
+        return args.positional("path", {
+            type: "string",
+            describe: "Path of the entity file",
+            demandOption: true,
+        })
+    }
 
     async handler(args: yargs.Arguments) {
         try {
@@ -20,18 +28,14 @@ export class EntityCreateCommand implements yargs.CommandModule {
             const fileContent = EntityCreateCommand.getTemplate(filename)
             const fileExists = await CommandUtils.fileExists(fullPath + ".ts")
             if (fileExists) {
-                throw `File ${chalk.blue(fullPath + ".ts")} already exists`
+                throw new Error(`File "${fullPath}.ts" already exists`)
             }
             await CommandUtils.createFile(fullPath + ".ts", fileContent)
             console.log(
-                chalk.green(
-                    `Entity ${chalk.blue(
-                        fullPath + ".ts",
-                    )} has been created successfully.`,
-                ),
+                ansi.green`Entity ${ansi.blue`${fullPath}.ts`} has been created successfully.`,
             )
-        } catch (err) {
-            PlatformTools.logCmdErr("Error during entity creation:", err)
+        } catch (error) {
+            PlatformTools.logCmdErr("Error during entity creation:", error)
             process.exit(1)
         }
     }

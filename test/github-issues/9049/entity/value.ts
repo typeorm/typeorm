@@ -1,8 +1,8 @@
-import { Column, ObjectID, ObjectIdColumn } from "../../../../src"
+import { Column, ObjectId, ObjectIdColumn } from "../../../../src"
 
 export class Value {
     @ObjectIdColumn()
-    _id?: ObjectID
+    _id?: ObjectId
 
     @Column({ type: "string" })
     description: string

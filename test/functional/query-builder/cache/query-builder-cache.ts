@@ -249,7 +249,7 @@ describe("query builder > cache", () => {
             }),
         ))
 
-    it("should cache results with custom id and duration supplied", () =>
+    it("should cache results with `true` provided", () =>
         Promise.all(
             connections.map(async (connection) => {
                 // first prepare data - insert users

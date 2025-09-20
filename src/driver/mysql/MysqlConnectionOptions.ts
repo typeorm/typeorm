@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { ReplicationMode } from "../types/ReplicationMode"
 import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
 
 /**
@@ -109,6 +110,13 @@ export interface MysqlConnectionOptions
     readonly connectorPackage?: "mysql" | "mysql2"
 
     /**
+     * If a value is specified for maxQueryExecutionTime, in addition to generating a warning log when a query exceeds this time limit,
+     * the specified maxQueryExecutionTime value is also used as the timeout for the query.
+     * For more information, check https://github.com/mysqljs/mysql?tab=readme-ov-file#timeouts
+     */
+    readonly enableQueryTimeout?: boolean
+
+    /**
      * Replication setup.
      */
     readonly replication?: {
@@ -118,7 +126,7 @@ export interface MysqlConnectionOptions
         readonly master: MysqlConnectionCredentialsOptions
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from servers (slaves).
          */
         readonly slaves: MysqlConnectionCredentialsOptions[]
 
@@ -146,5 +154,11 @@ export interface MysqlConnectionOptions
          * ORDER: Select the first node available unconditionally.
          */
         readonly selector?: "RR" | "RANDOM" | "ORDER"
+
+        /**
+         * Default connection pool to use for SELECT queries
+         * @default "slave"
+         */
+        readonly defaultMode?: ReplicationMode
     }
 }

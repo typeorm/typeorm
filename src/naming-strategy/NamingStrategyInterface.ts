@@ -1,4 +1,5 @@
 import { Table } from "../schema-builder/table/Table"
+import { View } from "../schema-builder/view/View"
 
 /**
  * Naming strategy defines how auto-generated names for such things like table name, or table column gonna be
@@ -84,7 +85,7 @@ export interface NamingStrategyInterface {
      * Gets the name of the index - simple and compose index.
      */
     indexName(
-        tableOrName: Table | string,
+        tableOrName: Table | View | string,
         columns: string[],
         where?: string,
     ): string
@@ -160,11 +161,6 @@ export interface NamingStrategyInterface {
      * Note that table name comes here already normalized by #tableName method.
      */
     prefixTableName(prefix: string, tableName: string): string
-
-    /**
-     * Gets the name of the alias used for relation joins.
-     */
-    eagerJoinRelationAlias(alias: string, propertyPath: string): string
 
     /**
      * Column names for nested sets.

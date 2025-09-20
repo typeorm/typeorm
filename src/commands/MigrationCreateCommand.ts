@@ -1,9 +1,9 @@
-import { CommandUtils } from "./CommandUtils"
-import { camelCase } from "../util/StringUtils"
-import * as yargs from "yargs"
-import chalk from "chalk"
-import { PlatformTools } from "../platform/PlatformTools"
+import ansi from "ansis"
 import path from "path"
+import yargs from "yargs"
+import { PlatformTools } from "../platform/PlatformTools"
+import { camelCase } from "../util/StringUtils"
+import { CommandUtils } from "./CommandUtils"
 
 /**
  * Creates a new migration file.
@@ -14,12 +14,23 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
     builder(args: yargs.Argv) {
         return args
+            .positional("path", {
+                type: "string",
+                describe: "Path of the migration file",
+                demandOption: true,
+            })
             .option("o", {
                 alias: "outputJs",
                 type: "boolean",
                 default: false,
                 describe:
                     "Generate a migration file on Javascript instead of Typescript",
+            })
+            .option("esm", {
+                type: "boolean",
+                default: false,
+                describe:
+                    "Generate a migration file on ESM instead of CommonJS",
             })
             .option("t", {
                 alias: "timestamp",
@@ -29,12 +40,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
             })
     }
 
-    async handler(args: yargs.Arguments) {
+    async handler(args: yargs.Arguments<any & { path: string }>) {
         try {
             const timestamp = CommandUtils.getTimestamp(args.timestamp)
-            const inputPath = (args.path as string).startsWith("/")
-                ? (args.path as string)
-                : path.resolve(process.cwd(), args.path as string)
+            const inputPath = args.path.startsWith("/")
+                ? args.path
+                : path.resolve(process.cwd(), args.path)
             const filename = path.basename(inputPath)
             const fullPath =
                 path.dirname(inputPath) + "/" + timestamp + "-" + filename
@@ -43,6 +54,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                 ? MigrationCreateCommand.getJavascriptTemplate(
                       filename,
                       timestamp,
+                      args.esm,
                   )
                 : MigrationCreateCommand.getTemplate(filename, timestamp)
 
@@ -51,7 +63,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                 fileContent,
             )
             console.log(
-                `Migration ${chalk.blue(
+                `Migration ${ansi.blue(
                     fullPath + (args.outputJs ? ".js" : ".ts"),
                 )} has been generated successfully.`,
             )
@@ -69,7 +81,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
      * Gets contents of the migration file.
      */
     protected static getTemplate(name: string, timestamp: number): string {
-        return `import { MigrationInterface, QueryRunner } from "typeorm"
+        return `import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class ${camelCase(
             name,
@@ -92,14 +104,29 @@ export class ${camelCase(
     protected static getJavascriptTemplate(
         name: string,
         timestamp: number,
+        esm: boolean,
     ): string {
-        return `const { MigrationInterface, QueryRunner } = require("typeorm");
+        const exportMethod = esm ? "export" : "module.exports ="
+        return `/**
+ * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ * @typedef {import('typeorm').QueryRunner} QueryRunner
+ */
 
-module.exports = class ${camelCase(name, true)}${timestamp} {
+/**
+ * @class
+ * @implements {MigrationInterface}
+ */
+${exportMethod} class ${camelCase(name, true)}${timestamp} {
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async up(queryRunner) {
     }
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async down(queryRunner) {
     }
 

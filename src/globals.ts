@@ -84,7 +84,7 @@ export async function createConnection(
  * Creates a new connection and registers it in the manager.
  *
  * If connection options were not specified, then it will try to create connection automatically,
- * based on content of ormconfig (json/js/yml/xml/env) file or environment variables.
+ * based on content of ormconfig (json/js/env) file or environment variables.
  * Only one connection from ormconfig will be created (name "default" or connection without name).
  *
  * @deprecated
@@ -104,7 +104,7 @@ export async function createConnection(
  * Creates new connections and registers them in the manager.
  *
  * If connection options were not specified, then it will try to create connection automatically,
- * based on content of ormconfig (json/js/yml/xml/env) file or environment variables.
+ * based on content of ormconfig (json/js/env) file or environment variables.
  * All connections from the ormconfig will be created.
  *
  * @deprecated

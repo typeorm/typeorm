@@ -1257,7 +1257,7 @@ export abstract class AbstractSqliteQueryRunner
             database =
                 this.driver.getAttachedDatabasePathRelativeByHandle(schema)
         }
-        const res = await this.query(
+        return this.query(
             `SELECT ${database ? `'${database}'` : null} as database, ${
                 schema ? `'${schema}'` : null
             } as schema, * FROM ${
@@ -1268,12 +1268,11 @@ export abstract class AbstractSqliteQueryRunner
                 tableOrIndex === "table" ? "name" : "tbl_name"
             }" IN ('${tableName}')`,
         )
-        return res
     }
+
     protected async loadPragmaRecords(tablePath: string, pragma: string) {
         const [, tableName] = this.splitTablePath(tablePath)
-        const res = await this.query(`PRAGMA ${pragma}("${tableName}")`)
-        return res
+        return this.query(`PRAGMA ${pragma}("${tableName}")`)
     }
 
     /**
@@ -1299,22 +1298,39 @@ export abstract class AbstractSqliteQueryRunner
                 `SELECT * FROM "sqlite_master" WHERE "type" = 'index' AND "tbl_name" IN (${tableNamesString})`,
             )
         } else {
-            dbTables = (
-                await Promise.all(
-                    tableNames.map((tableName) =>
-                        this.loadTableRecords(tableName, "table"),
+            const tableNamesWithoutDot = tableNames
+                .filter((tableName) => {
+                    return tableName.split(".").length === 1
+                })
+                .map((tableName) => `'${tableName}'`)
+
+            const tableNamesWithDot = tableNames.filter((tableName) => {
+                return tableName.split(".").length > 1
+            })
+
+            const queryPromises = (type: "table" | "index") => {
+                const promises = [
+                    ...tableNamesWithDot.map((tableName) =>
+                        this.loadTableRecords(tableName, type),
                     ),
-                )
-            )
+                ]
+
+                if (tableNamesWithoutDot.length) {
+                    promises.push(
+                        this.query(
+                            `SELECT * FROM "sqlite_master" WHERE "type" = '${type}' AND "${
+                                type === "table" ? "name" : "tbl_name"
+                            }" IN (${tableNamesWithoutDot})`,
+                        ),
+                    )
+                }
+
+                return promises
+            }
+            dbTables = (await Promise.all(queryPromises("table")))
                 .reduce((acc, res) => [...acc, ...res], [])
                 .filter(Boolean)
-            dbIndicesDef = (
-                await Promise.all(
-                    (tableNames ?? []).map((tableName) =>
-                        this.loadTableRecords(tableName, "index"),
-                    ),
-                )
-            )
+            dbIndicesDef = (await Promise.all(queryPromises("index")))
                 .reduce((acc, res) => [...acc, ...res], [])
                 .filter(Boolean)
         }
@@ -1353,7 +1369,7 @@ export abstract class AbstractSqliteQueryRunner
                 // find column name with auto increment
                 let autoIncrementColumnName: string | undefined = undefined
                 const tableSql: string = dbTable["sql"]
-                let autoIncrementIndex = tableSql
+                const autoIncrementIndex = tableSql
                     .toUpperCase()
                     .indexOf("AUTOINCREMENT")
                 if (autoIncrementIndex !== -1) {
@@ -1419,7 +1435,7 @@ export abstract class AbstractSqliteQueryRunner
                                 dbColumn["hidden"] === 2 ? "VIRTUAL" : "STORED"
 
                             const asExpressionQuery =
-                                await this.selectTypeormMetadataSql({
+                                this.selectTypeormMetadataSql({
                                     table: table.name,
                                     type: MetadataTableType.GENERATED_COLUMN,
                                     name: tableColumn.name,
@@ -1437,33 +1453,23 @@ export abstract class AbstractSqliteQueryRunner
                         }
 
                         if (tableColumn.type === "varchar") {
-                            // Check if this is an enum
-                            const enumMatch = sql.match(
-                                new RegExp(
-                                    '"(' +
-                                        tableColumn.name +
-                                        ")\" varchar CHECK\\s*\\(\\s*\"\\1\"\\s+IN\\s*\\(('[^']+'(?:\\s*,\\s*'[^']+')+)\\s*\\)\\s*\\)",
-                                ),
+                            tableColumn.enum = OrmUtils.parseSqlCheckExpression(
+                                sql,
+                                tableColumn.name,
                             )
-                            if (enumMatch) {
-                                // This is an enum
-                                tableColumn.enum = enumMatch[2]
-                                    .substr(1, enumMatch[2].length - 2)
-                                    .split("','")
-                            }
                         }
 
                         // parse datatype and attempt to retrieve length, precision and scale
-                        let pos = tableColumn.type.indexOf("(")
+                        const pos = tableColumn.type.indexOf("(")
                         if (pos !== -1) {
                             const fullType = tableColumn.type
-                            let dataType = fullType.substr(0, pos)
+                            const dataType = fullType.substr(0, pos)
                             if (
-                                !!this.driver.withLengthColumnTypes.find(
+                                this.driver.withLengthColumnTypes.find(
                                     (col) => col === dataType,
                                 )
                             ) {
-                                let len = parseInt(
+                                const len = parseInt(
                                     fullType.substring(
                                         pos + 1,
                                         fullType.length - 1,
@@ -1475,7 +1481,7 @@ export abstract class AbstractSqliteQueryRunner
                                 }
                             }
                             if (
-                                !!this.driver.withPrecisionColumnTypes.find(
+                                this.driver.withPrecisionColumnTypes.find(
                                     (col) => col === dataType,
                                 )
                             ) {
@@ -1487,7 +1493,7 @@ export abstract class AbstractSqliteQueryRunner
                                     tableColumn.precision = +matches[1]
                                 }
                                 if (
-                                    !!this.driver.withScaleColumnTypes.find(
+                                    this.driver.withScaleColumnTypes.find(
                                         (col) => col === dataType,
                                     )
                                 ) {
@@ -1554,7 +1560,7 @@ export abstract class AbstractSqliteQueryRunner
                         )
 
                         return new TableForeignKey({
-                            name: fkMapping!.name,
+                            name: fkMapping?.name,
                             columnNames: columnNames,
                             referencedTableName: foreignKey["table"],
                             referencedColumnNames: referencedColumnNames,
@@ -1721,7 +1727,7 @@ export abstract class AbstractSqliteQueryRunner
             table.name,
         )} (${columnDefinitions}`
 
-        let [databaseNew, tableName] = this.splitTablePath(table.name)
+        const [databaseNew, tableName] = this.splitTablePath(table.name)
         const newTableName = temporaryTable
             ? `${databaseNew ? `${databaseNew}.` : ""}${tableName.replace(
                   /^temporary_/,
@@ -1927,7 +1933,7 @@ export abstract class AbstractSqliteQueryRunner
      * Builds drop index sql.
      */
     protected dropIndexSql(indexOrName: TableIndex | string): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(`DROP INDEX ${this.escapePath(indexName!)}`)
@@ -1992,7 +1998,7 @@ export abstract class AbstractSqliteQueryRunner
 
         // change table name into 'temporary_table'
         let [databaseNew, tableNameNew] = this.splitTablePath(newTable.name)
-        let [, tableNameOld] = this.splitTablePath(oldTable.name)
+        const [, tableNameOld] = this.splitTablePath(oldTable.name)
         newTable.name = tableNameNew = `${
             databaseNew ? `${databaseNew}.` : ""
         }temporary_${tableNameNew}`
@@ -2232,5 +2238,15 @@ export abstract class AbstractSqliteQueryRunner
             .split(".")
             .map((i) => (disableEscape ? i : `"${i}"`))
             .join(".")
+    }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(`sqlit driver does not support change comment.`)
     }
 }

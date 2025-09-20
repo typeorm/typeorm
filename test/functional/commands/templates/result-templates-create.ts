@@ -1,7 +1,7 @@
 export const resultsTemplates: Record<string, any> = {
-    control: `import {MigrationInterface, QueryRunner} from "typeorm";
+    control: `import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class testMigration1610975184784 implements MigrationInterface {
+export class TestMigration1610975184784 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
     }
@@ -9,20 +9,36 @@ export class testMigration1610975184784 implements MigrationInterface {
     public async down(queryRunner: QueryRunner): Promise<void> {
     }
 
-}`,
-    javascript: `const { MigrationInterface, QueryRunner } = require("typeorm");
+}
+`,
+    javascript: `/**
+ * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ * @typedef {import('typeorm').QueryRunner} QueryRunner
+ */
 
-module.exports = class testMigration1610975184784 {
+/**
+ * @class
+ * @implements {MigrationInterface}
+ */
+module.exports = class TestMigration1610975184784 {
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async up(queryRunner) {
     }
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async down(queryRunner) {
     }
-}`,
-    timestamp: `import {MigrationInterface, QueryRunner} from "typeorm";
 
-export class testMigration1641163894670 implements MigrationInterface {
+}
+`,
+    timestamp: `import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class TestMigration1641163894670 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
     }
@@ -30,5 +46,6 @@ export class testMigration1641163894670 implements MigrationInterface {
     public async down(queryRunner: QueryRunner): Promise<void> {
     }
 
-}`,
+}
+`,
 }

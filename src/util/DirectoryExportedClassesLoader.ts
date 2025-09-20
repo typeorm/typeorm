@@ -1,4 +1,4 @@
-import glob from "glob"
+import * as glob from "glob"
 import { PlatformTools } from "../platform/PlatformTools"
 import { Logger } from "../logger/Logger"
 import { importOrRequireFile } from "./ImportUtils"
@@ -24,10 +24,10 @@ export async function importClassesFromDirectories(
         ) {
             allLoaded.push(exported)
         } else if (Array.isArray(exported)) {
-            exported.forEach((i: any) => loadFileClasses(i, allLoaded))
+            exported.forEach((value) => loadFileClasses(value, allLoaded))
         } else if (ObjectUtils.isObject(exported)) {
-            Object.keys(exported).forEach((key) =>
-                loadFileClasses(exported[key], allLoaded),
+            Object.values(exported).forEach((value) =>
+                loadFileClasses(value, allLoaded),
             )
         }
         return allLoaded

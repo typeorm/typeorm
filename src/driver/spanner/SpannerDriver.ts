@@ -1,4 +1,4 @@
-import { Driver, ReturningType } from "../Driver"
+import { Driver } from "../Driver"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { SpannerQueryRunner } from "./SpannerQueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
@@ -20,6 +20,7 @@ import { Table } from "../../schema-builder/table/Table"
 import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { CteCapabilities } from "../types/CteCapabilities"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with Spanner DBMS.
@@ -99,7 +100,7 @@ export class SpannerDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertType = undefined
+    supportedUpsertTypes: UpsertType[] = []
 
     /**
      * Gets list of spatial column data types.
@@ -110,11 +111,6 @@ export class SpannerDriver implements Driver {
      * Gets list of column data types that support length by a driver.
      */
     withLengthColumnTypes: ColumnType[] = ["string", "bytes"]
-
-    /**
-     * Gets list of column data types that support length by a driver.
-     */
-    withWidthColumnTypes: ColumnType[] = []
 
     /**
      * Gets list of column data types that support precision by a driver.
@@ -157,6 +153,11 @@ export class SpannerDriver implements Driver {
     }
 
     /**
+     * The prefix used for the parameters
+     */
+    parametersPrefix: string = "@param"
+
+    /**
      * Default values of length, precision and scale depends on column data type.
      * Used in the cases when length/precision/scale is not specified by user.
      */
@@ -171,16 +172,6 @@ export class SpannerDriver implements Driver {
     cteCapabilities: CteCapabilities = {
         enabled: true,
     }
-
-    /**
-     * Supported returning types
-     */
-    private readonly _isReturningSqlSupported: Record<ReturningType, boolean> =
-        {
-            delete: false,
-            insert: false,
-            update: false,
-        }
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -250,6 +241,7 @@ export class SpannerDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
+        const parameterIndexMap = new Map<string, number>()
         sql = sql.replace(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
@@ -257,7 +249,11 @@ export class SpannerDriver implements Driver {
                     return full
                 }
 
-                let value: any = parameters[key]
+                if (parameterIndexMap.has(key)) {
+                    return this.parametersPrefix + parameterIndexMap.get(key)
+                }
+
+                const value: any = parameters[key]
 
                 if (value === null) {
                     return full
@@ -278,7 +274,9 @@ export class SpannerDriver implements Driver {
                 if (value instanceof Function) {
                     return value()
                 }
+
                 escapedParameters.push(value)
+                parameterIndexMap.set(key, escapedParameters.length - 1)
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems
@@ -296,7 +294,7 @@ export class SpannerDriver implements Driver {
                     return full
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
                 if (value === null) {
                     return " IS NULL"
                 }
@@ -323,7 +321,7 @@ export class SpannerDriver implements Driver {
         schema?: string,
         database?: string,
     ): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (database) {
             tablePath.unshift(database)
@@ -339,7 +337,7 @@ export class SpannerDriver implements Driver {
         target: EntityMetadata | Table | View | TableForeignKey | string,
     ): { database?: string; schema?: string; tableName: string } {
         const driverDatabase = this.database
-        const driverSchema = undefined
+        const driverSchema: any = undefined
 
         if (target instanceof Table || target instanceof View) {
             const parsed = this.parseTableName(target.name)
@@ -399,7 +397,7 @@ export class SpannerDriver implements Driver {
 
         if (columnMetadata.type === "numeric") {
             const lib = this.options.driver || PlatformTools.load("spanner")
-            return lib.Spanner.numeric(value)
+            return lib.Spanner.numeric(value.toString())
         } else if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "json") {
@@ -694,15 +692,15 @@ export class SpannerDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(returningType: ReturningType): boolean {
-        return this._isReturningSqlSupported[returningType]
+    isReturningSqlSupported(): boolean {
+        return true
     }
 
     /**
      * Returns true if driver supports uuid values generation on its own.
      */
     isUUIDGenerationSupported(): boolean {
-        return false
+        return true
     }
 
     /**
@@ -716,7 +714,7 @@ export class SpannerDriver implements Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return "@param" + index
+        return this.parametersPrefix + index
     }
 
     // -------------------------------------------------------------------------
@@ -729,6 +727,16 @@ export class SpannerDriver implements Driver {
     protected loadDependencies(): void {
         try {
             const lib = this.options.driver || PlatformTools.load("spanner")
+
+            if (this.options.credentials) {
+                this.spanner = new lib.Spanner({
+                    projectId: this.options.projectId,
+                    credentials: this.options.credentials,
+                })
+
+                return
+            }
+
             this.spanner = new lib.Spanner({
                 projectId: this.options.projectId,
             })

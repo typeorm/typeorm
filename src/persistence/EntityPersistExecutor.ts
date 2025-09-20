@@ -53,7 +53,7 @@ export class EntityPersistExecutor {
 
         // save data in the query runner - this is useful functionality to share data from outside of the world
         // with third classes - like subscribers and listener methods
-        let oldQueryRunnerData = queryRunner.data
+        const oldQueryRunnerData = queryRunner.data
         if (this.options && this.options.data) {
             queryRunner.data = this.options.data
         }
@@ -81,24 +81,9 @@ export class EntityPersistExecutor {
                         if (entityTarget === Object)
                             throw new CannotDetermineEntityError(this.mode)
 
-                        let metadata = this.connection.getMetadata(entityTarget)
-
-                        // Check for single table inheritance and find the correct metadata in that case.
-                        // Goal is to use the correct discriminator as we could have a repository
-                        // for an (abstract) base class and thus the target would not match.
-                        if (
-                            metadata.inheritancePattern === "STI" &&
-                            metadata.childEntityMetadatas.length > 0
-                        ) {
-                            const matchingChildMetadata =
-                                metadata.childEntityMetadatas.find(
-                                    (meta) =>
-                                        entity.constructor === meta.target,
-                                )
-                            if (matchingChildMetadata) {
-                                metadata = matchingChildMetadata
-                            }
-                        }
+                        const metadata = this.connection
+                            .getMetadata(entityTarget)
+                            .findInheritanceMetadata(entity)
 
                         subjects.push(
                             new Subject({
@@ -181,7 +166,10 @@ export class EntityPersistExecutor {
             try {
                 // open transaction if its not opened yet
                 if (!queryRunner.isTransactionActive) {
-                    if (!this.options || this.options.transaction !== false) {
+                    if (
+                        this.connection.driver.transactionSupport !== "none" &&
+                        (!this.options || this.options.transaction !== false)
+                    ) {
                         // start transaction until it was not explicitly disabled
                         isTransactionStartedByUs = true
                         await queryRunner.startTransaction()

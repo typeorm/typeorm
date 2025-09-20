@@ -1,17 +1,15 @@
 import appRootPath from "app-root-path"
 import path from "path"
+
 import { DataSourceOptions } from "../data-source/DataSourceOptions"
-import { PlatformTools } from "../platform/PlatformTools"
-import { ConnectionOptionsEnvReader } from "./options-reader/ConnectionOptionsEnvReader"
-import { ConnectionOptionsYmlReader } from "./options-reader/ConnectionOptionsYmlReader"
-import { ConnectionOptionsXmlReader } from "./options-reader/ConnectionOptionsXmlReader"
 import { TypeORMError } from "../error"
-import { isAbsolute } from "../util/PathUtils"
+import { PlatformTools } from "../platform/PlatformTools"
 import { importOrRequireFile } from "../util/ImportUtils"
+import { isAbsolute } from "../util/PathUtils"
+import { ConnectionOptionsEnvReader } from "./options-reader/ConnectionOptionsEnvReader"
 
 /**
  * Reads connection options from the ormconfig.
- * Can read from multiple file extensions including env, json, js, xml and yml.
  */
 export class ConnectionOptionsReader {
     // -------------------------------------------------------------------------
@@ -106,9 +104,6 @@ export class ConnectionOptionsReader {
             "mts",
             "cts",
             "json",
-            "yml",
-            "yaml",
-            "xml",
         ]
 
         // Detect if baseFilePath contains file extension
@@ -143,7 +138,7 @@ export class ConnectionOptionsReader {
             PlatformTools.getEnvVariable("TYPEORM_CONNECTION") ||
             PlatformTools.getEnvVariable("TYPEORM_URL")
         ) {
-            connectionOptions = await new ConnectionOptionsEnvReader().read()
+            connectionOptions = new ConnectionOptionsEnvReader().read()
         } else if (
             foundFileFormat === "js" ||
             foundFileFormat === "mjs" ||
@@ -168,18 +163,6 @@ export class ConnectionOptionsReader {
             }
         } else if (foundFileFormat === "json") {
             connectionOptions = require(configFile)
-        } else if (foundFileFormat === "yml") {
-            connectionOptions = await new ConnectionOptionsYmlReader().read(
-                configFile,
-            )
-        } else if (foundFileFormat === "yaml") {
-            connectionOptions = await new ConnectionOptionsYmlReader().read(
-                configFile,
-            )
-        } else if (foundFileFormat === "xml") {
-            connectionOptions = await new ConnectionOptionsXmlReader().read(
-                configFile,
-            )
         }
 
         // normalize and return connection options
@@ -275,18 +258,13 @@ export class ConnectionOptionsReader {
      * Gets directory where configuration file should be located.
      */
     protected get baseDirectory(): string {
-        if (this.options && this.options.root) return this.options.root
-
-        return appRootPath.path
+        return this.options?.root ?? appRootPath.path
     }
 
     /**
      * Gets configuration file name.
      */
     protected get baseConfigName(): string {
-        if (this.options && this.options.configName)
-            return this.options.configName
-
-        return "ormconfig"
+        return this.options?.configName ?? "ormconfig"
     }
 }

@@ -1,7 +1,6 @@
-import mkdirp from "mkdirp"
+import fs from "fs/promises"
 import path from "path"
 import { DriverPackageNotInstalledError } from "../../error"
-import { DriverOptionNotSetError } from "../../error"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { DataSource } from "../../data-source"
 import { ColumnType } from "../types/ColumnTypes"
@@ -40,10 +39,6 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         this.connection = connection
         this.options = connection.options as BetterSqlite3ConnectionOptions
         this.database = this.options.database
-
-        // validate options to make sure everything is set
-        if (!this.options.database)
-            throw new DriverOptionNotSetError("database")
 
         // load sqlite package
         this.loadDependencies()
@@ -160,7 +155,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
         // function to run before a database is used in typeorm.
         if (typeof prepareDatabase === "function") {
-            prepareDatabase(databaseConnection)
+            await prepareDatabase(databaseConnection)
         }
 
         // we need to enable foreign keys in sqlite to make sure all foreign key related features
@@ -168,7 +163,9 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         databaseConnection.exec(`PRAGMA foreign_keys = ON`)
 
         // turn on WAL mode to enhance performance
-        databaseConnection.exec(`PRAGMA journal_mode = WAL`)
+        if (this.options.enableWAL) {
+            databaseConnection.exec(`PRAGMA journal_mode = WAL`)
+        }
 
         return databaseConnection
     }
@@ -190,7 +187,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      * Auto creates database directory if it does not exist.
      */
     protected async createDatabaseDirectory(dbPath: string): Promise<void> {
-        await mkdirp(dbPath)
+        await fs.mkdir(dbPath, { recursive: true })
     }
 
     /**
@@ -201,10 +198,9 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      */
     protected async attachDatabases() {
         // @todo - possibly check number of databases (but unqueriable at runtime sadly) - https://www.sqlite.org/limits.html#max_attached
-        for await (const {
-            attachHandle,
-            attachFilepathAbsolute,
-        } of Object.values(this.attachedDatabases)) {
+        for (const { attachHandle, attachFilepathAbsolute } of Object.values(
+            this.attachedDatabases,
+        )) {
             await this.createDatabaseDirectory(
                 path.dirname(attachFilepathAbsolute),
             )

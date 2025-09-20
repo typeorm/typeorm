@@ -27,6 +27,8 @@ describe("database schema > column types > oracle", () => {
                 const postRepository = connection.getRepository(Post)
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post")
+                const simpleJson = { id: 1, name: "simple-json" }
+                const json = { id: 1, name: "json" }
                 await queryRunner.release()
 
                 const post = new Post()
@@ -60,12 +62,14 @@ describe("database schema > column types > oracle", () => {
                 post.clob = "This is clob"
                 post.nclob = "This is nclob"
                 post.simpleArray = ["A", "B", "C"]
+                post.simpleJson = simpleJson
+                post.json = json
+
                 await postRepository.save(post)
 
                 const loadedPost = (await postRepository.findOneBy({
                     id: 1,
                 }))!
-                loadedPost.id.should.be.equal(post.id)
                 loadedPost.name.should.be.equal(post.name)
                 loadedPost.number.should.be.equal(post.number)
                 loadedPost.numeric.should.be.equal(post.numeric)
@@ -105,6 +109,8 @@ describe("database schema > column types > oracle", () => {
                 loadedPost.simpleArray[1].should.be.equal(post.simpleArray[1])
                 loadedPost.simpleArray[2].should.be.equal(post.simpleArray[2])
 
+                loadedPost.simpleJson.should.be.deep.equal(simpleJson)
+                loadedPost.json.should.be.deep.equal(json)
                 table!.findColumnByName("id")!.type.should.be.equal("number")
                 table!
                     .findColumnByName("name")!
@@ -158,6 +164,10 @@ describe("database schema > column types > oracle", () => {
                 table!
                     .findColumnByName("simpleArray")!
                     .type.should.be.equal("clob")
+                table!
+                    .findColumnByName("simpleJson")!
+                    .type.should.be.equal("clob")
+                table!.findColumnByName("json")!.type.should.be.equal("json")
             }),
         ))
 

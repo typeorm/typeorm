@@ -1,13 +1,13 @@
 import "reflect-metadata"
+import { DataSource } from "../../../src"
 import "../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
-import { Person } from "./entity/person"
 import { Note } from "./entity/note"
+import { Person } from "./entity/person"
 
 describe("github issues > #2965 Reuse preloaded lazy relations", () => {
     let connections: DataSource[]
@@ -15,8 +15,6 @@ describe("github issues > #2965 Reuse preloaded lazy relations", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                // use for manual validation
-                // logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -28,15 +26,17 @@ describe("github issues > #2965 Reuse preloaded lazy relations", () => {
                 const repoPerson = connection.getRepository(Person)
                 const repoNote = connection.getRepository(Note)
 
-                const personA = await repoPerson.create({ name: "personA" })
-                const personB = await repoPerson.create({ name: "personB" })
+                const personA = repoPerson.create({ name: "personA" })
+                const personB = repoPerson.create({ name: "personB" })
 
                 await repoPerson.save([personA, personB])
 
                 await repoNote.insert({ label: "note1", owner: personA })
                 await repoNote.insert({ label: "note2", owner: personB })
 
-                const res1 = await repoPerson.find({ relations: ["notes"] })
+                const res1 = await repoPerson.find({
+                    relations: { notes: true },
+                })
 
                 const originalLoad: (...args: any[]) => Promise<any[]> =
                     connection.relationLoader.load

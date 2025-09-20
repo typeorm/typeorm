@@ -1,4 +1,4 @@
-import { ObjectID } from "../driver/mongodb/typings"
+import { ObjectId } from "../driver/mongodb/typings"
 
 /**
  * A single property handler for FindOptionsSelect.
@@ -21,10 +21,10 @@ export type FindOptionsSelectProperty<Property> = Property extends Promise<
     ? boolean
     : Property extends Date
     ? boolean
-    : Property extends ObjectID
+    : Property extends ObjectId
     ? boolean
     : Property extends object
-    ? FindOptionsSelect<Property>
+    ? FindOptionsSelect<Property> | boolean
     : boolean
 
 /**

@@ -1,4 +1,5 @@
 import "reflect-metadata"
+
 import { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
@@ -7,9 +8,10 @@ import {
 } from "../../../utils/test-utils"
 import {
     EnumArrayEntity,
+    EscapeCharEnum,
+    HeterogeneousEnum,
     NumericEnum,
     StringEnum,
-    HeterogeneousEnum,
     StringNumericEnum,
 } from "./entity/EnumArrayEntity"
 
@@ -18,7 +20,7 @@ describe("database schema > enum arrays", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["postgres"],
+            enabledDrivers: ["postgres", "cockroachdb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
@@ -72,6 +74,11 @@ describe("database schema > enum arrays", () => {
                     NumericEnum.EDITOR,
                 ]
                 enumEntity.stringEnums = [StringEnum.MODERATOR]
+                enumEntity.escapeCharEnums = [
+                    EscapeCharEnum.Backslash,
+                    EscapeCharEnum.DoubleQuote,
+                    EscapeCharEnum.AllEscapeChars,
+                ]
                 enumEntity.stringNumericEnums = [StringNumericEnum.FOUR]
                 enumEntity.heterogeneousEnums = [HeterogeneousEnum.NO]
                 enumEntity.arrayDefinedStringEnums = ["editor"]
@@ -88,6 +95,11 @@ describe("database schema > enum arrays", () => {
                 ])
                 loadedEnumEntity!.stringEnums.should.be.eql([
                     StringEnum.MODERATOR,
+                ])
+                loadedEnumEntity!.escapeCharEnums.should.be.eql([
+                    EscapeCharEnum.Backslash,
+                    EscapeCharEnum.DoubleQuote,
+                    EscapeCharEnum.AllEscapeChars,
                 ])
                 loadedEnumEntity!.stringNumericEnums.should.be.eql([
                     StringNumericEnum.FOUR,

@@ -1,6 +1,7 @@
 import { ColumnType } from "../driver/types/ColumnTypes"
 import { ValueTransformer } from "../decorator/options/ValueTransformer"
 import { SpatialColumnOptions } from "../decorator/options/SpatialColumnOptions"
+import { EntitySchemaColumnForeignKeyOptions } from "./EntitySchemaColumnForeignKeyOptions"
 
 export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     /**
@@ -9,7 +10,7 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     primary?: boolean
 
     /**
-     * Indicates if this column is of type ObjectID
+     * Indicates if this column is of type ObjectId
      */
     objectId?: boolean
 
@@ -42,6 +43,11 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
      * Indicates if this column is a treeLevel column.
      */
     treeLevel?: boolean
+
+    /**
+     * Indicates if this column is a virtualProperty column.
+     */
+    virtualProperty?: boolean
 
     /**
      * Column type. Must be one of the value from the ColumnTypes class.
@@ -208,4 +214,16 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
      * Name of the primary key constraint.
      */
     primaryKeyConstraintName?: string
+
+    /**
+     * Foreign key options of this column.
+     */
+    foreignKey?: EntitySchemaColumnForeignKeyOptions
+
+    /**
+     * Query to be used to populate the column data. This query is used when generating the relational db script.
+     * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
+     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
+     */
+    query?: (alias: string) => string
 }

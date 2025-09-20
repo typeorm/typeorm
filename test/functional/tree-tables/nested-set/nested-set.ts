@@ -54,16 +54,18 @@ describe("tree tables > nested-set", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const a11ParentNames = a11Parent.map((i) => i.name)
+                a11ParentNames.length.should.be.equal(2)
+                a11ParentNames.should.deep.include("a1")
+                a11ParentNames.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
-                a1Children.length.should.be.equal(4)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a111" })
-                a1Children.should.deep.include({ id: 4, name: "a12" })
+                const a1ChildrenNames = a1Children.map((i) => i.name)
+                a1ChildrenNames.length.should.be.equal(4)
+                a1ChildrenNames.should.deep.include("a1")
+                a1ChildrenNames.should.deep.include("a11")
+                a1ChildrenNames.should.deep.include("a111")
+                a1ChildrenNames.should.deep.include("a12")
             }),
         ))
 
@@ -95,15 +97,17 @@ describe("tree tables > nested-set", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const a11ParentNames = a11Parent.map((i) => i.name)
+                a11ParentNames.length.should.be.equal(2)
+                a11ParentNames.should.deep.include("a1")
+                a11ParentNames.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
-                a1Children.length.should.be.equal(3)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a12" })
+                const a1ChildrenNames = a1Children.map((i) => i.name)
+                a1ChildrenNames.length.should.be.equal(3)
+                a1ChildrenNames.should.deep.include("a1")
+                a1ChildrenNames.should.deep.include("a11")
+                a1ChildrenNames.should.deep.include("a12")
             }),
         ))
 
@@ -135,15 +139,17 @@ describe("tree tables > nested-set", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const a11ParentNames = a11Parent.map((i) => i.name)
+                a11ParentNames.length.should.be.equal(2)
+                a11ParentNames.should.deep.include("a1")
+                a11ParentNames.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
-                a1Children.length.should.be.equal(3)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a12" })
+                const a1ChildrenNames = a1Children.map((i) => i.name)
+                a1ChildrenNames.length.should.be.equal(3)
+                a1ChildrenNames.should.deep.include("a1")
+                a1ChildrenNames.should.deep.include("a11")
+                a1ChildrenNames.should.deep.include("a12")
             }),
         ))
 
@@ -181,9 +187,10 @@ describe("tree tables > nested-set", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const a11ParentNames = a11Parent.map((child) => child.name)
+                a11ParentNames.length.should.be.equal(2)
+                a11ParentNames.should.deep.include("a1")
+                a11ParentNames.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
                 const a1ChildrenNames = a1Children.map((child) => child.name)

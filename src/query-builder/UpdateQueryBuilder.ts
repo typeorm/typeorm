@@ -53,7 +53,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         sql += this.createUpdateExpression()
         sql += this.createOrderByExpression()
         sql += this.createLimitExpression()
-        return sql.trim()
+        return this.replacePropertyNamesForTheWholeQuery(sql.trim())
     }
 
     /**
@@ -480,7 +480,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
         // it doesn't make sense to update undefined properties, so just skip them
         const valuesSetNormalized: ObjectLiteral = {}
-        for (let key in valuesSet) {
+        for (const key in valuesSet) {
             if (valuesSet[key] !== undefined) {
                 valuesSetNormalized[key] = valuesSet[key]
             }
@@ -585,8 +585,9 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     expression = `${geomFromText}(${paramName})`
                                 }
                             } else if (
-                                this.connection.driver.options.type ===
-                                    "postgres" &&
+                                DriverUtils.isPostgresFamily(
+                                    this.connection.driver,
+                                ) &&
                                 this.connection.driver.spatialTypes.indexOf(
                                     column.type,
                                 ) !== -1
@@ -649,7 +650,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             }
         } else {
             Object.keys(valuesSetNormalized).map((key) => {
-                let value = valuesSetNormalized[key]
+                const value = valuesSetNormalized[key]
 
                 // todo: duplication zone
                 if (typeof value === "function") {
@@ -696,6 +697,14 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 ", ",
             )} OUTPUT ${returningExpression}${whereExpression}`
         }
+        if (this.connection.driver.options.type === "spanner") {
+            return `UPDATE ${this.getTableName(
+                this.getMainTableName(),
+            )} SET ${updateColumnAndValues.join(
+                ", ",
+            )}${whereExpression} THEN RETURN ${returningExpression}`
+        }
+
         return `UPDATE ${this.getTableName(
             this.getMainTableName(),
         )} SET ${updateColumnAndValues.join(
@@ -739,7 +748,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * Creates "LIMIT" parts of SQL query.
      */
     protected createLimitExpression(): string {
-        let limit: number | undefined = this.expressionMap.limit
+        const limit: number | undefined = this.expressionMap.limit
 
         if (limit) {
             if (

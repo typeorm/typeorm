@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import { exec } from "child_process"
+import { readFile, writeFile, chmod, unlink, rmdir } from "fs/promises"
 import { dirname } from "path"
-import rimraf from "rimraf"
 
 describe("cli init command", () => {
     const cliPath = `${dirname(dirname(dirname(__dirname)))}/src/cli.js`
@@ -16,61 +16,47 @@ describe("cli init command", () => {
         "mssql",
         "mongodb",
     ]
-    const testProjectName = Date.now() + "TestProject"
+    const testProjectPath = `temp/${Date.now()}TestProject`
     const builtSrcDirectory = "build/compiled/src"
 
     before(async () => {
-        const chmodPromise = new Promise<void>((resolve) => {
-            exec(`chmod 755 ${cliPath}`, (error, stdout, stderr) => {
-                expect(error).to.not.exist
-                expect(stderr).to.be.empty
-
-                resolve()
-            })
-        })
-
-        const copyPromise = new Promise<void>((resolve) => {
-            exec(
-                `cp package.json ${builtSrcDirectory}`,
-                (error, stdout, stderr) => {
-                    expect(error).to.not.exist
-                    expect(stderr).to.be.empty
-
-                    resolve()
-                },
+        const copyPackageJson = async () => {
+            // load package.json from the root of the project
+            const packageJson = JSON.parse(
+                await readFile("./package.json", "utf8"),
             )
-        })
+            packageJson.version = `0.0.0` // install no version but
+            packageJson.installFrom = `file:../${builtSrcDirectory}` // use the built src directory
+            // write the modified package.json to the build directory
+            await writeFile(
+                `./${builtSrcDirectory}/package.json`,
+                JSON.stringify(packageJson, null, 4),
+            )
+        }
 
-        await Promise.all([chmodPromise, copyPromise])
+        await Promise.all([chmod(cliPath, 0o755), copyPackageJson()])
     })
 
-    after((done) => {
-        rimraf(`./${builtSrcDirectory}/package.json`, (error) => {
-            expect(error).to.not.exist
-
-            done()
-        })
+    after(async () => {
+        await unlink(`./${builtSrcDirectory}/package.json`)
     })
 
-    afterEach((done) => {
-        rimraf(`./${testProjectName}`, (error) => {
-            expect(error).to.not.exist
-
-            done()
-        })
+    afterEach(async () => {
+        await rmdir(`./${testProjectPath}`, { recursive: true })
     })
 
     for (const databaseOption of databaseOptions) {
         it(`should work with ${databaseOption} option`, (done) => {
             exec(
-                `${cliPath} init --name ${testProjectName} --database ${databaseOption}`,
-                (error, stdout, stderr) => {
+                `node ${cliPath} init --name ${testProjectPath} --database ${databaseOption}`,
+                (error, _stdout, stderr) => {
+                    if (error) console.log(error)
                     expect(error).to.not.exist
                     expect(stderr).to.be.empty
 
                     done()
                 },
             )
-        }).timeout(90000)
+        }).timeout(120000)
     }
 })

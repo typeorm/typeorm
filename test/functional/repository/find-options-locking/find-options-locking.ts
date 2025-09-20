@@ -1,9 +1,4 @@
-import "../../../utils/test-setup"
-import {
-    closeTestingConnections,
-    createTestingConnections,
-    reloadTestingDatabases,
-} from "../../../utils/test-utils"
+import { expect } from "chai"
 import {
     DataSource,
     LockNotSupportedOnGivenDriverError,
@@ -11,14 +6,20 @@ import {
     OptimisticLockCanNotBeUsedError,
     OptimisticLockVersionMismatchError,
     PessimisticLockTransactionRequiredError,
+    QueryRunner,
 } from "../../../../src"
-import { PostWithVersion } from "./entity/PostWithVersion"
-import { expect } from "chai"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import "../../../utils/test-setup"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import { Post } from "./entity/Post"
 import { PostWithoutVersionAndUpdateDate } from "./entity/PostWithoutVersionAndUpdateDate"
 import { PostWithUpdateDate } from "./entity/PostWithUpdateDate"
+import { PostWithVersion } from "./entity/PostWithVersion"
 import { PostWithVersionAndUpdatedDate } from "./entity/PostWithVersionAndUpdatedDate"
-import { Post } from "./entity/Post"
-import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("repository > find options > locking", () => {
     let connections: DataSource[]
@@ -38,21 +39,22 @@ describe("repository > find options > locking", () => {
                     DriverUtils.isSQLiteFamily(connection.driver) ||
                     connection.driver.options.type === "sap" ||
                     connection.driver.options.type === "spanner"
-                )
+                ) {
                     return
+                }
 
                 if (connection.driver.options.type === "cockroachdb") {
-                    return Promise.all([
-                        connection
-                            .getRepository(PostWithVersion)
-                            .findOne({
-                                where: { id: 1 },
-                                lock: { mode: "pessimistic_write" },
-                            })
-                            .should.be.rejectedWith(
-                                PessimisticLockTransactionRequiredError,
-                            ),
-                    ])
+                    await connection
+                        .getRepository(PostWithVersion)
+                        .findOne({
+                            where: { id: 1 },
+                            lock: { mode: "pessimistic_write" },
+                        })
+                        .should.be.rejectedWith(
+                            PessimisticLockTransactionRequiredError,
+                        )
+
+                    return
                 }
 
                 return Promise.all([
@@ -90,20 +92,16 @@ describe("repository > find options > locking", () => {
                     return
 
                 if (connection.driver.options.type === "cockroachdb") {
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .getRepository(PostWithVersion)
-                                .findOne({
-                                    where: { id: 1 },
-                                    lock: { mode: "pessimistic_write" },
-                                }).should.not.be.rejected,
-                        ])
-                    })
+                    return connection.manager.transaction((entityManager) =>
+                        entityManager.getRepository(PostWithVersion).findOne({
+                            where: { id: 1 },
+                            lock: { mode: "pessimistic_write" },
+                        }),
+                    ).should.not.be.rejected
                 }
 
-                return connection.manager.transaction((entityManager) => {
-                    return Promise.all([
+                return connection.manager.transaction((entityManager) =>
+                    Promise.all([
                         entityManager.getRepository(PostWithVersion).find({
                             where: { id: 1 },
                             lock: { mode: "pessimistic_read" },
@@ -113,8 +111,8 @@ describe("repository > find options > locking", () => {
                             where: { id: 1 },
                             lock: { mode: "pessimistic_write" },
                         }).should.not.be.rejected,
-                    ])
-                })
+                    ]),
+                )
             }),
         ))
 
@@ -135,7 +133,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: any[]) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }
@@ -147,19 +147,25 @@ describe("repository > find options > locking", () => {
                 })
 
                 if (DriverUtils.isMySQLFamily(connection.driver)) {
-                    expect(executedSql[0].indexOf("LOCK IN SHARE MODE") !== -1)
-                        .to.be.true
+                    if (
+                        connection.driver.options.type === "mysql" &&
+                        DriverUtils.isReleaseVersionOrGreater(
+                            connection.driver,
+                            "8.0",
+                        )
+                    ) {
+                        expect(executedSql[0]).to.contain("FOR SHARE")
+                    } else {
+                        expect(executedSql[0]).to.contain("LOCK IN SHARE MODE")
+                    }
                 } else if (connection.driver.options.type === "postgres") {
-                    expect(executedSql[0].indexOf("FOR SHARE") !== -1).to.be
-                        .true
+                    expect(executedSql[0]).to.contain("FOR SHARE")
                 } else if (connection.driver.options.type === "oracle") {
-                    expect(executedSql[0].indexOf("FOR UPDATE") !== -1).to.be
-                        .true
+                    expect(executedSql[0]).to.contain("FOR UPDATE")
                 } else if (connection.driver.options.type === "mssql") {
-                    expect(
-                        executedSql[0].indexOf("WITH (HOLDLOCK, ROWLOCK)") !==
-                            -1,
-                    ).to.be.true
+                    expect(executedSql[0]).to.contain(
+                        "WITH (HOLDLOCK, ROWLOCK)",
+                    )
                 }
             }),
         ))
@@ -167,7 +173,9 @@ describe("repository > find options > locking", () => {
     it("should attach for no key update lock statement on query if locking enabled", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (!(connection.driver.options.type === "postgres")) return
+                if (connection.driver.options.type !== "postgres") {
+                    return
+                }
 
                 const executedSql: string[] = []
 
@@ -175,7 +183,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: any[]) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }
@@ -188,8 +198,7 @@ describe("repository > find options > locking", () => {
                         })
                 })
 
-                expect(executedSql.join(" ").includes("FOR NO KEY UPDATE")).to
-                    .be.true
+                expect(executedSql.join(" ")).to.contain("FOR NO KEY UPDATE")
             }),
         ))
 
@@ -204,7 +213,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: any[]) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }
@@ -217,8 +228,7 @@ describe("repository > find options > locking", () => {
                         })
                 })
 
-                expect(executedSql.join(" ").includes("FOR KEY SHARE")).to.be
-                    .true
+                expect(executedSql.join(" ")).to.contain("FOR KEY SHARE")
             }),
         ))
 
@@ -234,8 +244,9 @@ describe("repository > find options > locking", () => {
                                 "8.0.0",
                             ))
                     )
-                )
+                ) {
                     return
+                }
 
                 const executedSql: string[] = []
 
@@ -243,7 +254,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: any[]) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }
@@ -259,8 +272,9 @@ describe("repository > find options > locking", () => {
                         })
                 })
 
-                expect(executedSql.join(" ").includes("FOR SHARE SKIP LOCKED"))
-                    .to.be.true
+                expect(executedSql.join(" ")).to.contain(
+                    "FOR SHARE SKIP LOCKED",
+                )
             }),
         ))
 
@@ -276,8 +290,9 @@ describe("repository > find options > locking", () => {
                                 "8.0.0",
                             ))
                     )
-                )
+                ) {
                     return
+                }
 
                 const executedSql: string[] = []
 
@@ -285,7 +300,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: any[]) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }
@@ -301,8 +318,7 @@ describe("repository > find options > locking", () => {
                         })
                 })
 
-                expect(executedSql.join(" ").includes("FOR UPDATE NOWAIT")).to
-                    .be.true
+                expect(executedSql.join(" ")).to.contain("FOR UPDATE NOWAIT")
             }),
         ))
 
@@ -313,8 +329,9 @@ describe("repository > find options > locking", () => {
                     DriverUtils.isSQLiteFamily(connection.driver) ||
                     connection.driver.options.type === "sap" ||
                     connection.driver.options.type === "spanner"
-                )
+                ) {
                     return
+                }
 
                 const executedSql: string[] = []
 
@@ -322,7 +339,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: any[]) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }
@@ -338,13 +357,9 @@ describe("repository > find options > locking", () => {
                     connection.driver.options.type === "postgres" ||
                     connection.driver.options.type === "oracle"
                 ) {
-                    expect(executedSql[0].indexOf("FOR UPDATE") !== -1).to.be
-                        .true
+                    expect(executedSql[0]).to.contain("FOR UPDATE")
                 } else if (connection.driver.options.type === "mssql") {
-                    expect(
-                        executedSql[0].indexOf("WITH (UPDLOCK, ROWLOCK)") !==
-                            -1,
-                    ).to.be.true
+                    expect(executedSql[0]).to.contain("WITH (UPDLOCK, ROWLOCK)")
                 }
             }),
         ))
@@ -360,7 +375,9 @@ describe("repository > find options > locking", () => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
-                    entityManager.queryRunner!.query = (...args: any[]) => {
+                    entityManager.queryRunner!.query = (
+                        ...args: Parameters<QueryRunner["query"]>
+                    ) => {
                         executedSql.push(args[0])
                         return originalQuery(...args)
                     }
@@ -373,15 +390,14 @@ describe("repository > find options > locking", () => {
                         })
                 })
 
-                expect(executedSql[0].indexOf("WITH (NOLOCK)") !== -1).to.be
-                    .true
+                expect(executedSql[0]).to.contain("WITH (NOLOCK)")
             }),
         ))
 
     it("should throw error if optimistic lock used with `find` method", () =>
         Promise.all(
             connections.map(async (connection) => {
-                return connection
+                await connection
                     .getRepository(PostWithVersion)
                     .find({ lock: { mode: "optimistic", version: 1 } })
                     .should.be.rejectedWith(OptimisticLockCanNotBeUsedError)
@@ -391,7 +407,7 @@ describe("repository > find options > locking", () => {
     it("should not throw error if optimistic lock used with `findOne` method", () =>
         Promise.all(
             connections.map(async (connection) => {
-                return connection.getRepository(PostWithVersion).findOne({
+                await connection.getRepository(PostWithVersion).findOne({
                     where: { id: 1 },
                     lock: { mode: "optimistic", version: 1 },
                 }).should.not.be.rejected
@@ -405,7 +421,7 @@ describe("repository > find options > locking", () => {
                 post.title = "New post"
                 await connection.manager.save(post)
 
-                return connection
+                await connection
                     .getRepository(PostWithoutVersionAndUpdateDate)
                     .findOne({
                         where: { id: 1 },
@@ -422,7 +438,7 @@ describe("repository > find options > locking", () => {
                 post.title = "New post"
                 await connection.manager.save(post)
 
-                return connection
+                await connection
                     .getRepository(PostWithVersion)
                     .findOne({
                         where: { id: 1 },
@@ -439,7 +455,7 @@ describe("repository > find options > locking", () => {
                 post.title = "New post"
                 await connection.manager.save(post)
 
-                return connection.getRepository(PostWithVersion).findOne({
+                await connection.getRepository(PostWithVersion).findOne({
                     where: { id: 1 },
                     lock: { mode: "optimistic", version: 1 },
                 }).should.not.be.rejected
@@ -450,13 +466,15 @@ describe("repository > find options > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 // skipped because inserted milliseconds are not always equal to what we say it to insert, unskip when needed
-                if (connection.driver.options.type === "mssql") return
+                if (connection.driver.options.type === "mssql") {
+                    return
+                }
 
                 const post = new PostWithUpdateDate()
                 post.title = "New post"
                 await connection.manager.save(post)
 
-                return connection
+                await connection
                     .getRepository(PostWithUpdateDate)
                     .findOne({
                         where: { id: 1 },
@@ -473,13 +491,15 @@ describe("repository > find options > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 // skipped because inserted milliseconds are not always equal to what we say it to insert, unskip when needed
-                if (connection.driver.options.type === "mssql") return
+                if (connection.driver.options.type === "mssql") {
+                    return
+                }
 
                 const post = new PostWithUpdateDate()
                 post.title = "New post"
                 await connection.manager.save(post)
 
-                return connection.getRepository(PostWithUpdateDate).findOne({
+                await connection.getRepository(PostWithUpdateDate).findOne({
                     where: { id: 1 },
                     lock: { mode: "optimistic", version: post.updateDate },
                 }).should.not.be.rejected
@@ -490,13 +510,15 @@ describe("repository > find options > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 // skipped because inserted milliseconds are not always equal to what we say it to insert, unskip when needed
-                if (connection.driver.options.type === "mssql") return
+                if (connection.driver.options.type === "mssql") {
+                    return
+                }
 
                 const post = new PostWithVersionAndUpdatedDate()
                 post.title = "New post"
                 await connection.manager.save(post)
 
-                return Promise.all([
+                await Promise.all([
                     connection
                         .getRepository(PostWithVersionAndUpdatedDate)
                         .findOne({
@@ -523,44 +545,26 @@ describe("repository > find options > locking", () => {
                     DriverUtils.isSQLiteFamily(connection.driver) ||
                     connection.driver.options.type === "sap"
                 )
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .getRepository(PostWithVersion)
-                                .findOne({
-                                    where: { id: 1 },
-                                    lock: { mode: "pessimistic_read" },
-                                })
-                                .should.be.rejectedWith(
-                                    LockNotSupportedOnGivenDriverError,
-                                ),
-
-                            entityManager
-                                .getRepository(PostWithVersion)
-                                .findOne({
-                                    where: { id: 1 },
-                                    lock: { mode: "pessimistic_write" },
-                                })
-                                .should.be.rejectedWith(
-                                    LockNotSupportedOnGivenDriverError,
-                                ),
-                        ])
-                    })
-
-                if (connection.driver.options.type === "cockroachdb")
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager
-                                .getRepository(PostWithVersion)
-                                .findOne({
-                                    where: { id: 1 },
-                                    lock: { mode: "pessimistic_read" },
-                                })
-                                .should.be.rejectedWith(
-                                    LockNotSupportedOnGivenDriverError,
-                                ),
-                        ])
-                    })
+                    await connection.manager
+                        .transaction((entityManager) =>
+                            Promise.all([
+                                entityManager
+                                    .getRepository(PostWithVersion)
+                                    .findOne({
+                                        where: { id: 1 },
+                                        lock: { mode: "pessimistic_read" },
+                                    }),
+                                entityManager
+                                    .getRepository(PostWithVersion)
+                                    .findOne({
+                                        where: { id: 1 },
+                                        lock: { mode: "pessimistic_write" },
+                                    }),
+                            ]),
+                        )
+                        .should.be.rejectedWith(
+                            LockNotSupportedOnGivenDriverError,
+                        )
 
                 return
             }),
@@ -570,26 +574,22 @@ describe("repository > find options > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    !(
-                        connection.driver.options.type === "postgres" ||
-                        connection.driver.options.type === "cockroachdb"
-                    )
-                )
+                    connection.driver.options.type !== "postgres" &&
+                    connection.driver.options.type !== "cockroachdb"
+                ) {
                     return
+                }
 
-                return connection.manager.transaction((entityManager) => {
-                    return Promise.all([
-                        entityManager
-                            .getRepository(Post)
-                            .findOne({
-                                where: { id: 1 },
-                                lock: { mode: "pessimistic_write", tables: [] },
-                            })
-                            .should.be.rejectedWith(
-                                "lockTables cannot be an empty array",
-                            ),
-                    ])
-                })
+                await connection.manager
+                    .transaction((entityManager) =>
+                        entityManager.getRepository(Post).findOne({
+                            where: { id: 1 },
+                            lock: { mode: "pessimistic_write", tables: [] },
+                        }),
+                    )
+                    .should.be.rejectedWith(
+                        "lockTables cannot be an empty array",
+                    )
             }),
         ))
 
@@ -597,42 +597,43 @@ describe("repository > find options > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    !(
-                        connection.driver.options.type === "postgres" ||
-                        connection.driver.options.type === "cockroachdb"
-                    )
-                )
+                    connection.driver.options.type !== "postgres" &&
+                    connection.driver.options.type !== "cockroachdb"
+                ) {
                     return
+                }
 
-                return connection.manager.transaction((entityManager) => {
-                    return Promise.all([
-                        entityManager
-                            .getRepository(Post)
-                            .findOne({
-                                where: { id: 1 },
-                                relations: ["author"],
-                                lock: {
-                                    mode: "pessimistic_write",
-                                    tables: ["img"],
-                                },
-                            })
-                            .should.be.rejectedWith(
-                                '"img" is not part of this query',
-                            ),
-                    ])
-                })
+                await connection.manager
+                    .transaction((entityManager) =>
+                        entityManager.getRepository(Post).findOne({
+                            where: { id: 1 },
+                            relations: { author: true },
+                            lock: {
+                                mode: "pessimistic_write",
+                                tables: ["img"],
+                            },
+                        }),
+                    )
+                    .should.be.rejectedWith('"img" is not part of this query')
             }),
         ))
 
     it("should allow on a left join", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.driver.options.type === "cockroachdb") {
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
+                if (
+                    connection.driver.options.type !== "postgres" &&
+                    connection.driver.options.type !== "cockroachdb"
+                ) {
+                    return
+                }
+
+                await connection.manager
+                    .transaction((entityManager) =>
+                        Promise.all([
                             entityManager.getRepository(Post).findOne({
                                 where: { id: 1 },
-                                relations: ["author"],
+                                relations: { author: true },
                                 lock: {
                                     mode: "pessimistic_write",
                                     tables: ["post"],
@@ -640,52 +641,29 @@ describe("repository > find options > locking", () => {
                             }),
                             entityManager.getRepository(Post).findOne({
                                 where: { id: 1 },
-                                relations: ["author"],
+                                relations: { author: true },
                                 lock: { mode: "pessimistic_write" },
                             }),
-                        ])
-                    })
-                }
-
-                if (connection.driver.options.type === "postgres") {
-                    return connection.manager.transaction((entityManager) => {
-                        return Promise.all([
-                            entityManager.getRepository(Post).findOne({
-                                where: { id: 1 },
-                                relations: ["author"],
-                                lock: {
-                                    mode: "pessimistic_write",
-                                    tables: ["post"],
-                                },
-                            }),
-                            entityManager
-                                .getRepository(Post)
-                                .findOne({
-                                    where: { id: 1 },
-                                    relations: ["author"],
-                                    lock: { mode: "pessimistic_write" },
-                                })
-                                .should.be.rejectedWith(
-                                    "FOR UPDATE cannot be applied to the nullable side of an outer join",
-                                ),
-                        ])
-                    })
-                }
-
-                return
+                        ]),
+                    )
+                    .should.be.rejectedWith(
+                        "FOR UPDATE cannot be applied to the nullable side of an outer join",
+                    )
             }),
         ))
 
     it("should allow using lockTables on all types of locking", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (!(connection.driver.options.type === "postgres")) return
+                if (connection.driver.options.type !== "postgres") {
+                    return
+                }
 
-                return connection.manager.transaction((entityManager) => {
-                    return Promise.all([
+                await connection.manager.transaction((entityManager) =>
+                    Promise.all([
                         entityManager.getRepository(Post).findOne({
                             where: { id: 1 },
-                            relations: ["author"],
+                            relations: { author: true },
                             lock: {
                                 mode: "pessimistic_read",
                                 tables: ["post"],
@@ -693,7 +671,7 @@ describe("repository > find options > locking", () => {
                         }),
                         entityManager.getRepository(Post).findOne({
                             where: { id: 1 },
-                            relations: ["author"],
+                            relations: { author: true },
                             lock: {
                                 mode: "pessimistic_write",
                                 tables: ["post"],
@@ -701,7 +679,7 @@ describe("repository > find options > locking", () => {
                         }),
                         entityManager.getRepository(Post).findOne({
                             where: { id: 1 },
-                            relations: ["author"],
+                            relations: { author: true },
                             lock: {
                                 mode: "pessimistic_partial_write",
                                 tables: ["post"],
@@ -709,7 +687,7 @@ describe("repository > find options > locking", () => {
                         }),
                         entityManager.getRepository(Post).findOne({
                             where: { id: 1 },
-                            relations: ["author"],
+                            relations: { author: true },
                             lock: {
                                 mode: "pessimistic_write_or_fail",
                                 tables: ["post"],
@@ -717,7 +695,7 @@ describe("repository > find options > locking", () => {
                         }),
                         entityManager.getRepository(Post).findOne({
                             where: { id: 1 },
-                            relations: ["author"],
+                            relations: { author: true },
                             lock: {
                                 mode: "for_no_key_update",
                                 tables: ["post"],
@@ -725,14 +703,14 @@ describe("repository > find options > locking", () => {
                         }),
                         entityManager.getRepository(Post).findOne({
                             where: { id: 1 },
-                            relations: ["author"],
+                            relations: { author: true },
                             lock: {
                                 mode: "for_key_share",
                                 tables: ["post"],
                             },
                         }),
-                    ])
-                })
+                    ]),
+                )
             }),
         ))
 
@@ -740,31 +718,28 @@ describe("repository > find options > locking", () => {
         Promise.all(
             connections.map(async (connection) => {
                 if (
-                    !(
-                        connection.driver.options.type === "postgres" ||
-                        connection.driver.options.type === "cockroachdb"
-                    )
-                )
+                    connection.driver.options.type !== "postgres" &&
+                    connection.driver.options.type !== "cockroachdb"
+                ) {
                     return
+                }
 
-                return connection.manager.transaction((entityManager) => {
-                    return Promise.all([
-                        entityManager.getRepository(Post).findOne({
-                            where: { id: 1 },
-                            join: {
-                                alias: "post",
-                                innerJoinAndSelect: {
-                                    categorys: "post.categories",
-                                    images: "categorys.images",
-                                },
+                await connection.manager.transaction((entityManager) =>
+                    entityManager.getRepository(Post).findOne({
+                        where: { id: 1 },
+                        join: {
+                            alias: "post",
+                            innerJoinAndSelect: {
+                                categorys: "post.categories",
+                                images: "categorys.images",
                             },
-                            lock: {
-                                mode: "pessimistic_write",
-                                tables: ["image"],
-                            },
-                        }),
-                    ])
-                })
+                        },
+                        lock: {
+                            mode: "pessimistic_write",
+                            tables: ["image"],
+                        },
+                    }),
+                )
             }),
         ))
 })

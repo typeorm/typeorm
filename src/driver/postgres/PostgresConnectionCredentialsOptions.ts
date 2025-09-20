@@ -5,7 +5,7 @@ import { TlsOptions } from "tls"
  */
 export interface PostgresConnectionCredentialsOptions {
     /**
-     * Connection url where perform connection to.
+     * Connection url where the connection is performed.
      */
     readonly url?: string
 
@@ -38,4 +38,10 @@ export interface PostgresConnectionCredentialsOptions {
      * Object with ssl parameters
      */
     readonly ssl?: boolean | TlsOptions
+
+    /**
+     * sets the application_name var to help db administrators identify
+     * the service using this connection. Defaults to 'undefined'
+     */
+    readonly applicationName?: string
 }

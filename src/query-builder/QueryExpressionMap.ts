@@ -14,6 +14,8 @@ import { RelationMetadata } from "../metadata/RelationMetadata"
 import { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
 import { TypeORMError } from "../error"
 import { WhereClause } from "./WhereClause"
+import { UpsertType } from "../driver/types/UpsertType"
+import { CockroachConnectionOptions } from "../driver/cockroachdb/CockroachConnectionOptions"
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -114,6 +116,9 @@ export class QueryExpressionMap {
         columns?: string[]
         overwrite?: string[]
         skipUpdateIfNoValuesChanged?: boolean
+        indexPredicate?: string
+        upsertType?: UpsertType
+        overwriteCondition?: WhereClause[]
     }
 
     /**
@@ -257,8 +262,9 @@ export class QueryExpressionMap {
 
     /**
      * Indicates if query result cache is enabled or not.
+     * It is undefined by default to avoid overriding the `alwaysEnabled` config
      */
-    cache: boolean = false
+    cache?: boolean
 
     /**
      * Time in milliseconds in which cache will expire.
@@ -316,6 +322,12 @@ export class QueryExpressionMap {
     useTransaction: boolean = false
 
     /**
+     * Indicates if query should be time travel query
+     * https://www.cockroachlabs.com/docs/stable/as-of-system-time.html
+     */
+    timeTravel?: boolean | string
+
+    /**
      * Extra parameters.
      *
      * @deprecated Use standard parameters instead
@@ -348,6 +360,10 @@ export class QueryExpressionMap {
         if (connection.options.relationLoadStrategy) {
             this.relationLoadStrategy = connection.options.relationLoadStrategy
         }
+
+        this.timeTravel =
+            (connection.options as CockroachConnectionOptions)
+                ?.timeTravelQueries || false
     }
 
     // -------------------------------------------------------------------------
@@ -502,6 +518,7 @@ export class QueryExpressionMap {
         map.offset = this.offset
         map.skip = this.skip
         map.take = this.take
+        map.useIndex = this.useIndex
         map.lockMode = this.lockMode
         map.onLocked = this.onLocked
         map.lockVersion = this.lockVersion
@@ -523,6 +540,7 @@ export class QueryExpressionMap {
         map.updateEntity = this.updateEntity
         map.callListeners = this.callListeners
         map.useTransaction = this.useTransaction
+        map.timeTravel = this.timeTravel
         map.nativeParameters = Object.assign({}, this.nativeParameters)
         map.comment = this.comment
         map.commonTableExpressions = this.commonTableExpressions.map(

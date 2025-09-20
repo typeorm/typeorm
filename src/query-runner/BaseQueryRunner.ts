@@ -16,6 +16,7 @@ import { TableForeignKey } from "../schema-builder/table/TableForeignKey"
 import { OrmUtils } from "../util/OrmUtils"
 import { MetadataTableType } from "../driver/types/MetadataTableType"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { buildSqlTag } from "../util/SqlTagUtils"
 
 export abstract class BaseQueryRunner {
     // -------------------------------------------------------------------------
@@ -110,6 +111,26 @@ export abstract class BaseQueryRunner {
         parameters?: any[],
         useStructuredResult?: boolean,
     ): Promise<any>
+
+    /**
+     * Tagged template function that executes raw SQL query and returns raw database results.
+     * Template expressions are automatically transformed into database parameters.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
+     * Example: queryRunner.sql`SELECT * FROM table_name WHERE id = ${id}`
+     */
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
+        const { query, parameters } = buildSqlTag({
+            driver: this.connection.driver,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, parameters)
+    }
 
     // -------------------------------------------------------------------------
     // Protected Abstract Methods
@@ -320,6 +341,7 @@ export abstract class BaseQueryRunner {
             foundTable.checks = changedTable.checks
             foundTable.justCreated = changedTable.justCreated
             foundTable.engine = changedTable.engine
+            foundTable.comment = changedTable.comment
         }
     }
 
@@ -472,6 +494,7 @@ export abstract class BaseQueryRunner {
         newColumn: TableColumn,
         checkDefault?: boolean,
         checkComment?: boolean,
+        checkEnum = true,
     ): boolean {
         // this logs need to debug issues in column change detection. Do not delete it!
 
@@ -513,7 +536,14 @@ export abstract class BaseQueryRunner {
             oldColumn.onUpdate !== newColumn.onUpdate || // MySQL only
             oldColumn.isNullable !== newColumn.isNullable ||
             (checkComment && oldColumn.comment !== newColumn.comment) ||
-            !OrmUtils.isArraysEqual(oldColumn.enum || [], newColumn.enum || [])
+            (checkEnum && this.isEnumChanged(oldColumn, newColumn))
+        )
+    }
+
+    protected isEnumChanged(oldColumn: TableColumn, newColumn: TableColumn) {
+        return !OrmUtils.isArraysEqual(
+            oldColumn.enum || [],
+            newColumn.enum || [],
         )
     }
 
@@ -655,7 +685,10 @@ export abstract class BaseQueryRunner {
     /**
      * Generated an index name for a table and index
      */
-    protected generateIndexName(table: Table, index: TableIndex): string {
+    protected generateIndexName(
+        table: Table | View,
+        index: TableIndex,
+    ): string {
         // new index may be passed without name. In this case we generate index name manually.
         return this.connection.namingStrategy.indexName(
             table,

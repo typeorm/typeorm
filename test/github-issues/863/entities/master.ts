@@ -18,6 +18,6 @@ export class Master {
     })
     description: string
 
-    @OneToMany((type) => Detail, (detail) => detail.master)
+    @OneToMany(() => Detail, (detail) => detail.master)
     details: Detail[]
 }
