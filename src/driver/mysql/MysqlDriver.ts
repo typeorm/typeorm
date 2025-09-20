@@ -157,6 +157,8 @@ export class MysqlDriver implements Driver {
         "multilinestring",
         "multipolygon",
         "geometrycollection",
+        // vector data types
+        "vector",
         // additional data types for mariadb
         "uuid",
         "inet4",
@@ -191,6 +193,7 @@ export class MysqlDriver implements Driver {
         "nvarchar",
         "binary",
         "varbinary",
+        "vector",
     ]
 
     /**
@@ -280,6 +283,7 @@ export class MysqlDriver implements Driver {
         char: { length: 1 },
         binary: { length: 1 },
         varbinary: { length: 255 },
+        vector: { length: 2048 }, // default length MySQL uses if not provided a value
         decimal: { precision: 10, scale: 0 },
         dec: { precision: 10, scale: 0 },
         numeric: { precision: 10, scale: 0 },
