@@ -1259,7 +1259,6 @@ export class SqlServerQueryRunner
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
             newColumn.asExpression !== oldColumn.asExpression ||
             newColumn.generatedType !== oldColumn.generatedType
         ) {

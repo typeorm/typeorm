@@ -1233,7 +1233,6 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1523,9 +1522,13 @@ export class PostgresQueryRunner
                 oldColumn.name = newColumn.name
             }
 
+            // Handle length, scale and precision changes without recreating the column, e.g.:
+            // varchar(n) -> varchar(m)
+            // numeric(x, y) -> numeric(v, w)
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.length !== oldColumn.length
             ) {
                 upQueries.push(
                     new Query(

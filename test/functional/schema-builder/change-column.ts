@@ -22,6 +22,162 @@ describe("schema builder > change column", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
+    it("uses ALTER COLUMN when increasing varchar length", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                // use the same entity set as the rest of this file
+                const postMetadata = connection.getMetadata(Post)
+                const nameCol = postMetadata.findColumnWithPropertyName("name")!
+                const originalLen = nameCol.length
+
+                // 1) ensure starting point length=50 and create schema
+                nameCol.length = "50"
+                nameCol.build(connection)
+                await connection.synchronize()
+
+                // request length=51 and inspect the generated diff
+                nameCol.length = "51"
+                nameCol.build(connection)
+
+                const { upQueries } = await connection.driver
+                    .createSchemaBuilder()
+                    .log()
+                const up = upQueries.map((q) => q.query).join("\n")
+
+                // driver-aware assertion: when increasing varchar length, prefer ALTER ... not drop/add,
+                // except for engines that rebuild tables (SQLite family)
+                if (connection.driver.options.type === "postgres") {
+                    // ALTER TYPE character varying(51)
+                    expect(up).to.match(
+                        /ALTER TABLE .* ALTER COLUMN "name" TYPE character varying\(51\)/,
+                    )
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else if (connection.driver.options.type === "mssql") {
+                    // ALTER COLUMN NVARCHAR(51)
+                    expect(up).to.match(
+                        /ALTER TABLE .* ALTER COLUMN .*N?VARCHAR\(\s*51\s*\)/i,
+                    )
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else if (
+                    DriverUtils.isMySQLFamily(connection.driver) ||
+                    connection.driver.options.type === "aurora-mysql"
+                ) {
+                    // MySQL/MariaDB/Aurora: CHANGE/MODIFY `name` ... varchar(51)
+                    expect(up).to.match(
+                        /ALTER TABLE .* (CHANGE|MODIFY) .*`name`.*varchar\(\s*51\s*\)/i,
+                    )
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else if (connection.driver.options.type === "sap") {
+                    // SAP HANA: NVARCHAR(51); statement form can vary, so check essentials
+                    expect(up).to.match(/ALTER TABLE .*NVARCHAR\(51\)/i)
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                    // SQLite typically rebuilds the table for this change
+                    expect(up).to.match(/\bCREATE TABLE\b/i)
+                    expect(up).to.match(/\bDROP TABLE\b/i)
+                } else if (connection.driver.options.type === "cockroachdb") {
+                    // CockroachDB: Postgres-style TYPE
+                    expect(up).to.match(
+                        /ALTER TABLE .* ALTER COLUMN .* TYPE .*?\(\s*51\s*\)/i,
+                    )
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else if (connection.driver.options.type === "spanner") {
+                    // Spanner: SET DATA TYPE
+                    expect(up).to.match(
+                        /ALTER TABLE .* ALTER COLUMN .* SET DATA TYPE .*?\(\s*51\s*\)/i,
+                    )
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else {
+                    // Fallback: ensure we didn't drop/add the column
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                }
+
+                // cleanup: restore metadata and schema
+                nameCol.length = originalLen
+                nameCol.build(connection)
+                await connection.synchronize()
+            }),
+        ))
+    it("uses ALTER COLUMN when reducing varchar length", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postMetadata = connection.getMetadata(Post)
+                const nameCol = postMetadata.findColumnWithPropertyName("name")!
+                const originalLen = nameCol.length
+
+                // start larger
+                nameCol.length = "100"
+                nameCol.build(connection)
+                await connection.synchronize()
+
+                // reduce
+                nameCol.length = "80"
+                nameCol.build(connection)
+
+                const { upQueries } = await connection.driver
+                    .createSchemaBuilder()
+                    .log()
+                const up = upQueries.map((q) => q.query).join("\n")
+
+                if (connection.driver.options.type === "postgres") {
+                    expect(up).to.match(
+                        /ALTER TABLE .* ALTER COLUMN "name" TYPE character varying\(80\)/,
+                    )
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else if (connection.driver.options.type === "mssql") {
+                    expect(up).to.match(
+                        /ALTER TABLE .* ALTER COLUMN .*N?VARCHAR\(\s*80\s*\)/i,
+                    )
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else if (
+                    DriverUtils.isMySQLFamily(connection.driver) ||
+                    connection.driver.options.type === "aurora-mysql"
+                ) {
+                    expect(up).to.match(
+                        /ALTER TABLE .* (CHANGE|MODIFY) .*`name`.*varchar\(\s*80\s*\)/i,
+                    )
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else if (connection.driver.options.type === "sap") {
+                    expect(up).to.match(/ALTER TABLE .*NVARCHAR\(80\)/i)
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                    expect(up).to.match(/\bCREATE TABLE\b/i)
+                    expect(up).to.match(/\bDROP TABLE\b/i)
+                } else if (connection.driver.options.type === "cockroachdb") {
+                    expect(up).to.match(
+                        /ALTER TABLE .* ALTER COLUMN .* TYPE .*?\(\s*80\s*\)/i,
+                    )
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else if (connection.driver.options.type === "spanner") {
+                    expect(up).to.match(
+                        /ALTER TABLE .* ALTER COLUMN .* SET DATA TYPE .*?\(\s*80\s*\)/i,
+                    )
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                } else {
+                    expect(up).to.not.match(/\bDROP COLUMN\b/)
+                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                }
+
+                // cleanup
+                nameCol.length = originalLen
+                nameCol.build(connection)
+                await connection.synchronize()
+            }),
+        ))
+
     it("should correctly change column name", () =>
         Promise.all(
             connections.map(async (connection) => {
