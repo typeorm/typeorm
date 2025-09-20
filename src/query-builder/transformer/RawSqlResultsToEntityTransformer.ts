@@ -113,22 +113,43 @@ export class RawSqlResultsToEntityTransformer {
                 ),
             )
         }
+
+        // Check if primary key columns are actually selected in the raw results
+        const hasValidKeys =
+            keys.length > 0 &&
+            rawResults.length > 0 &&
+            keys.some(
+                (key) =>
+                    rawResults[0].hasOwnProperty(key) &&
+                    rawResults[0][key] !== undefined,
+            )
+
         for (const rawResult of rawResults) {
-            const id = keys
-                .map((key) => {
-                    const keyValue = rawResult[key]
+            let id: string
 
-                    if (Buffer.isBuffer(keyValue)) {
-                        return keyValue.toString("hex")
-                    }
+            if (hasValidKeys) {
+                // Use primary key based grouping when available
+                id = keys
+                    .map((key) => {
+                        const keyValue = rawResult[key]
 
-                    if (ObjectUtils.isObject(keyValue)) {
-                        return JSON.stringify(keyValue)
-                    }
+                        if (Buffer.isBuffer(keyValue)) {
+                            return keyValue.toString("hex")
+                        }
 
-                    return keyValue
-                })
-                .join("_") // todo: check partial
+                        if (ObjectUtils.isObject(keyValue)) {
+                            return JSON.stringify(keyValue)
+                        }
+
+                        return keyValue
+                    })
+                    .join("_")
+            } else {
+                // Fallback: use row index when primary keys are not available
+                // This ensures each row gets its own group for proper entity mapping
+                const rowIndex = rawResults.indexOf(rawResult)
+                id = `row_${rowIndex}`
+            }
 
             const items = map.get(id)
             if (!items) {

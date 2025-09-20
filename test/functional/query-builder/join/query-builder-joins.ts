@@ -1305,4 +1305,151 @@ describe("query builder > joins", () => {
                 }),
             ))
     })
+
+    describe("leftJoin with skip/take pagination", () => {
+        it("should work correctly when leftJoin used with addSelect and pagination without primary key", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const user = new User()
+                    user.name = "Test User"
+                    await connection.manager.save(user)
+
+                    const category1 = new Category()
+                    category1.name = "Category 1"
+                    await connection.manager.save(category1)
+
+                    const category2 = new Category()
+                    category2.name = "Category 2"
+                    await connection.manager.save(category2)
+
+                    const post1 = new Post()
+                    post1.title = "Post 1"
+                    post1.author = user
+                    post1.categories = [category1, category2]
+                    await connection.manager.save(post1)
+
+                    const post2 = new Post()
+                    post2.title = "Post 2"
+                    post2.author = user
+                    post2.categories = [category1]
+                    await connection.manager.save(post2)
+
+                    // This is the problematic query that was fixed
+                    const result = await connection
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .leftJoin("post.categories", "category")
+                        .select([
+                            "post.id",
+                            "post.title",
+                            "category.name", // Note: category.id is NOT selected
+                        ])
+                        .skip(0)
+                        .take(2)
+                        .getMany()
+
+                    expect(result).to.have.lengthOf(2)
+                    result.forEach((post) => {
+                        expect(post.categories).to.not.be.undefined
+                        expect(post.categories.length).to.be.greaterThan(0)
+                        post.categories.forEach((category) => {
+                            expect(category.name).to.be.a("string")
+                        })
+                    })
+
+                    // Verify that post1 still has 2 categories and post2 has 1
+                    const post1Result = result.find((p) => p.title === "Post 1")
+                    const post2Result = result.find((p) => p.title === "Post 2")
+
+                    expect(post1Result).to.not.be.undefined
+                    expect(post2Result).to.not.be.undefined
+                    expect(post1Result!.categories).to.have.lengthOf(2)
+                    expect(post2Result!.categories).to.have.lengthOf(1)
+                }),
+            ))
+
+        it("should work correctly with leftJoinAndSelect as comparison", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const user = new User()
+                    user.name = "Test User"
+                    await connection.manager.save(user)
+
+                    const category1 = new Category()
+                    category1.name = "Category 1"
+                    await connection.manager.save(category1)
+
+                    const category2 = new Category()
+                    category2.name = "Category 2"
+                    await connection.manager.save(category2)
+
+                    const post = new Post()
+                    post.title = "Test Post"
+                    post.author = user
+                    post.categories = [category1, category2]
+                    await connection.manager.save(post)
+
+                    // This should work without issues
+                    const result = await connection
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .leftJoinAndSelect("post.categories", "category")
+                        .skip(0)
+                        .take(1)
+                        .getMany()
+
+                    expect(result).to.have.lengthOf(1)
+                    expect(result[0].categories).to.have.lengthOf(2)
+                    result[0].categories.forEach((category) => {
+                        expect(category.id).to.be.a("number")
+                        expect(category.name).to.be.a("string")
+                    })
+                }),
+            ))
+
+        it("should work correctly with explicit primary key selection", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const user = new User()
+                    user.name = "Test User"
+                    await connection.manager.save(user)
+
+                    const category1 = new Category()
+                    category1.name = "Category 1"
+                    await connection.manager.save(category1)
+
+                    const category2 = new Category()
+                    category2.name = "Category 2"
+                    await connection.manager.save(category2)
+
+                    const post = new Post()
+                    post.title = "Test Post"
+                    post.author = user
+                    post.categories = [category1, category2]
+                    await connection.manager.save(post)
+
+                    // This works because primary key is explicitly selected
+                    const result = await connection
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .leftJoin("post.categories", "category")
+                        .select([
+                            "post.id",
+                            "post.title",
+                            "category.id", // Primary key explicitly selected
+                            "category.name",
+                        ])
+                        .skip(0)
+                        .take(1)
+                        .getMany()
+
+                    expect(result).to.have.lengthOf(1)
+                    expect(result[0].categories).to.have.lengthOf(2)
+                    result[0].categories.forEach((category) => {
+                        expect(category.id).to.be.a("number")
+                        expect(category.name).to.be.a("string")
+                    })
+                }),
+            ))
+    })
 })
