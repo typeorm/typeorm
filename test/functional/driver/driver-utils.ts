@@ -1,5 +1,12 @@
 import { expect } from "chai"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { DataSource, Raw } from "../../../src"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../utils/test-utils"
+import { FirstElement } from "./entity/entities"
 
 describe("DriverUtils", () => {
     describe("parse mongo url", () => {
@@ -35,6 +42,39 @@ describe("DriverUtils", () => {
                 url,
                 username: "username",
             })
+        })
+    })
+    describe("Generated hash aliases", () => {
+        let connections: DataSource[]
+        before(
+            async () =>
+                (connections = await createTestingConnections({
+                    entities: [__dirname + "/entity/*{.js,.ts}"],
+                })),
+        )
+        beforeEach(() => reloadTestingDatabases(connections))
+        after(() => closeTestingConnections(connections))
+
+        it("should not cause SQL syntax errors in raw queries by generating hash aliases starting with digits", async () => {
+            return Promise.all(
+                connections.map(async (connection) => {
+                    await connection.manager.findOne(FirstElement, {
+                        where: {
+                            second: {
+                                third: {
+                                    id: Raw(
+                                        (alias) => `EXISTS (
+                                            SELECT 1 
+                                            FROM third_element te
+                                            WHERE te.id= ${alias}
+                                          )`,
+                                    ),
+                                },
+                            },
+                        },
+                    })
+                }),
+            )
         })
     })
 })
