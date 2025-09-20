@@ -356,7 +356,7 @@ export class InsertQueryBuilder<
     }): this
 
     orUpdate(
-        overwrite: string[],
+        overwrite: (string & keyof Entity)[],
         conflictTarget?: string | string[],
         orUpdateOptions?: InsertOrUpdateOptions,
     ): this
