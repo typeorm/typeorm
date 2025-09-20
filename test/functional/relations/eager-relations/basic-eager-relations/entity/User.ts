@@ -4,6 +4,7 @@ import { Column } from "../../../../../../src/decorator/columns/Column"
 import { OneToOne } from "../../../../../../src/decorator/relations/OneToOne"
 import { JoinColumn } from "../../../../../../src/decorator/relations/JoinColumn"
 import { Profile } from "./Profile"
+import { DeleteDateColumn, ManyToOne } from "../../../../../../src"
 
 @Entity()
 export class User {
@@ -19,4 +20,10 @@ export class User {
     @OneToOne(() => Profile, { eager: true })
     @JoinColumn()
     profile: Profile
+
+    @DeleteDateColumn()
+    deletedAt?: Date
+
+    @ManyToOne(() => Profile)
+    nestedProfile: Profile
 }
