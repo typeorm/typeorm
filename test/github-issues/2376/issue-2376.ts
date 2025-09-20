@@ -37,6 +37,7 @@ describe("github issues > #2376 Naming single column unique constraint with deco
 
                 if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
+                    connection.driver.options.type === "sap" ||
                     connection.driver.options.type === "spanner"
                 ) {
                     unique1 = table!.indices.find(

@@ -1,4 +1,6 @@
+import { expect } from "chai"
 import "reflect-metadata"
+
 import { DataSource } from "../../../src"
 import { ForeignKeyMetadata } from "../../../src/metadata/ForeignKeyMetadata"
 import {
@@ -47,7 +49,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                     await connection.synchronize()
 
                     // create foreign key
-                    let albumTable = await queryRunner.getTable(
+                    const albumTable = await queryRunner.getTable(
                         albumMetadata.tablePath,
                     )
                     let photoTable = await queryRunner.getTable(
@@ -137,14 +139,14 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                     await connection.synchronize()
 
                     // create foreign key
-                    let albumTable = await queryRunner.getTable(
+                    const albumTable = await queryRunner.getTable(
                         albumMetadata.tablePath,
                     )
                     let photoTable = await queryRunner.getTable(
                         photoMetadata.tablePath,
                     )
-                    albumTable!.should.be.exist
-                    photoTable!.should.be.exist
+                    expect(albumTable).to.exist
+                    expect(photoTable).to.exist
 
                     const columns = photoMetadata.columns.filter(
                         (column) => column.propertyName === "albumId",
@@ -203,10 +205,10 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                     albumMetadata.synchronize = true
 
                     photoMetadata.schema = "public"
-                    photoMetadata.tablePath = "photo"
+                    photoMetadata.tablePath = "public.photo"
 
                     albumMetadata.schema = "public"
-                    albumMetadata.tablePath = "album"
+                    albumMetadata.tablePath = "public.album"
 
                     await queryRunner.createSchema(photoMetadata.schema, true)
                     await queryRunner.createSchema(albumMetadata.schema, true)
@@ -214,15 +216,15 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                     await connection.synchronize()
 
                     // create foreign key
-                    let albumTable = await queryRunner.getTable(
+                    const albumTable = await queryRunner.getTable(
                         albumMetadata.tablePath,
                     )
                     let photoTable = await queryRunner.getTable(
                         photoMetadata.tablePath,
                     )
 
-                    albumTable!.should.be.exist
-                    photoTable!.should.be.exist
+                    expect(albumTable).to.exist
+                    expect(photoTable).to.exist
 
                     photoTable!.foreignKeys.length.should.be.equal(0)
 
@@ -321,14 +323,14 @@ describe("schema builder > custom-db-and-schema-sync", () => {
                     await connection.synchronize()
 
                     // create foreign key
-                    let albumTable = await queryRunner.getTable(
+                    const albumTable = await queryRunner.getTable(
                         albumMetadata.tablePath,
                     )
                     let photoTable = await queryRunner.getTable(
                         photoMetadata.tablePath,
                     )
-                    albumTable!.should.be.exist
-                    photoTable!.should.be.exist
+                    expect(albumTable).to.exist
+                    expect(photoTable).to.exist
 
                     const columns = photoMetadata.columns.filter(
                         (column) => column.propertyName === "albumId",

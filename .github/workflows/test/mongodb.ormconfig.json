@@ -1,0 +1,14 @@
+[
+  {
+    "skip": false,
+    "disabledIfNotEnabledImplicitly": true,
+    "name": "mongodb",
+    "type": "mongodb",
+    "host": "localhost",
+    "port": 27017,
+    "database": "test",
+    "logging": false,
+    "useNewUrlParser": true,
+    "useUnifiedTopology": true
+  }
+]

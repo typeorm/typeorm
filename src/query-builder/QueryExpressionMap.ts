@@ -118,6 +118,7 @@ export class QueryExpressionMap {
         skipUpdateIfNoValuesChanged?: boolean
         indexPredicate?: string
         upsertType?: UpsertType
+        overwriteCondition?: WhereClause[]
     }
 
     /**
@@ -517,6 +518,7 @@ export class QueryExpressionMap {
         map.offset = this.offset
         map.skip = this.skip
         map.take = this.take
+        map.useIndex = this.useIndex
         map.lockMode = this.lockMode
         map.onLocked = this.onLocked
         map.lockVersion = this.lockVersion
