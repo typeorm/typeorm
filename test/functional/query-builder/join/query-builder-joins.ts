@@ -1310,9 +1310,13 @@ describe("query builder > joins", () => {
         it("should work correctly when leftJoin used with addSelect and pagination without primary key", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    const user = new User()
-                    user.name = "Test User"
-                    await connection.manager.save(user)
+                    const user1 = new User()
+                    user1.name = "Test User 1"
+                    await connection.manager.save(user1)
+
+                    const user2 = new User()
+                    user2.name = "Test User 2"
+                    await connection.manager.save(user2)
 
                     const category1 = new Category()
                     category1.name = "Category 1"
@@ -1324,13 +1328,13 @@ describe("query builder > joins", () => {
 
                     const post1 = new Post()
                     post1.title = "Post 1"
-                    post1.author = user
+                    post1.author = user1
                     post1.categories = [category1, category2]
                     await connection.manager.save(post1)
 
                     const post2 = new Post()
                     post2.title = "Post 2"
-                    post2.author = user
+                    post2.author = user2
                     post2.categories = [category1]
                     await connection.manager.save(post2)
 
