@@ -17,10 +17,10 @@ export class Category {
     @Column()
     isRemoved: boolean = false
 
-    @ManyToOne((type) => Post, (post) => post.categories)
+    @ManyToOne(() => Post, (post) => post.categories)
     post: Post
 
-    @OneToMany((type) => Image, (image) => image.category)
+    @OneToMany(() => Image, (image) => image.category)
     images: Image[]
 
     imageCount: number

@@ -14,6 +14,6 @@ export class User {
     @Column()
     email: string
 
-    @OneToOne((type) => AccessToken, (token) => token.user)
+    @OneToOne(() => AccessToken, (token) => token.user)
     access_token: AccessToken
 }
