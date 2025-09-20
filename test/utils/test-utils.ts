@@ -2,18 +2,20 @@ import {
     DatabaseType,
     DataSource,
     DataSourceOptions,
+    Driver,
     EntitySchema,
     EntitySubscriberInterface,
     getMetadataArgsStorage,
     InsertEvent,
     Logger,
     NamingStrategyInterface,
+    QueryRunner,
+    Table,
 } from "../../src"
 import { QueryResultCache } from "../../src/cache/QueryResultCache"
 import path from "path"
 import { ObjectUtils } from "../../src/util/ObjectUtils"
 import { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
-import { v4 as uuidv4 } from "uuid"
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -59,7 +61,7 @@ export interface TestingOptions {
     /**
      * Migrations needs to be included in connection for the given test suite.
      */
-    migrations?: string[]
+    migrations?: (string | Function)[]
 
     /**
      * Subscribers needs to be included in the connection for the given test suite.
@@ -144,7 +146,7 @@ export interface TestingOptions {
      * Options that may be specific to a driver.
      * They are passed down to the enabled drivers.
      */
-    driverSpecific?: Object
+    driverSpecific?: object
 
     /**
      * Factory to create a logger for each test connection.
@@ -152,11 +154,17 @@ export interface TestingOptions {
     createLogger?: () =>
         | "advanced-console"
         | "simple-console"
+        | "formatted-console"
         | "file"
         | "debug"
         | Logger
 
     relationLoadStrategy?: "join" | "query"
+
+    /**
+     * Allows automatic isolation of where clauses
+     */
+    isolateWhereStatements?: boolean
 }
 
 /**
@@ -201,7 +209,7 @@ function getOrmFilepath(): string {
     } catch (err) {
         throw new Error(
             `Cannot find ormconfig.json file in the root of the project. To run tests please create ormconfig.json file` +
-                ` in the root of the project (near ormconfig.json.dist, you need to copy ormconfig.json.dist into ormconfig.json` +
+                ` in the root of the project (near ormconfig.sample.json, you need to copy ormconfig.sample.json into ormconfig.json` +
                 ` and change all database settings to match your local environment settings).`,
         )
     }
@@ -293,6 +301,9 @@ export function setupTestingConnections(
                 newOptions.metadataTableName = options.metadataTableName
             if (options && options.relationLoadStrategy)
                 newOptions.relationLoadStrategy = options.relationLoadStrategy
+            if (options && options.isolateWhereStatements)
+                newOptions.isolateWhereStatements =
+                    options.isolateWhereStatements
 
             newOptions.baseDirectory = path.dirname(getOrmFilepath())
 
@@ -300,45 +311,56 @@ export function setupTestingConnections(
         })
 }
 
-export function createDataSource(options: DataSourceOptions): DataSource {
-    class GeneratedColumnReplacerSubscriber
-        implements EntitySubscriberInterface
-    {
-        static globalIncrementValues: { [entityName: string]: number } = {}
-        beforeInsert(event: InsertEvent<any>): Promise<any> | void {
-            event.metadata.generatedColumns.map((column) => {
-                if (column.generationStrategy === "increment") {
-                    if (
-                        !GeneratedColumnReplacerSubscriber
-                            .globalIncrementValues[event.metadata.tableName]
-                    ) {
-                        GeneratedColumnReplacerSubscriber.globalIncrementValues[
-                            event.metadata.tableName
-                        ] = 0
-                    }
+class GeneratedColumnReplacerSubscriber implements EntitySubscriberInterface {
+    static globalIncrementValues: { [entityName: string]: number } = {}
+    beforeInsert(event: InsertEvent<any>): Promise<any> | void {
+        event.metadata.columns.map((column) => {
+            if (column.generationStrategy === "increment") {
+                if (
+                    !GeneratedColumnReplacerSubscriber.globalIncrementValues[
+                        event.metadata.tableName
+                    ]
+                ) {
                     GeneratedColumnReplacerSubscriber.globalIncrementValues[
                         event.metadata.tableName
-                    ] += 1
-
-                    column.setEntityValue(
-                        event.entity,
-                        GeneratedColumnReplacerSubscriber.globalIncrementValues[
-                            event.metadata.tableName
-                        ],
-                    )
-                } else if (column.generationStrategy === "uuid") {
-                    column.setEntityValue(event.entity, uuidv4())
+                    ] = 0
                 }
-            })
-        }
+                GeneratedColumnReplacerSubscriber.globalIncrementValues[
+                    event.metadata.tableName
+                ] += 1
+
+                column.setEntityValue(
+                    event.entity,
+                    GeneratedColumnReplacerSubscriber.globalIncrementValues[
+                        event.metadata.tableName
+                    ],
+                )
+            } else if (
+                (column.isCreateDate || column.isUpdateDate) &&
+                !column.getEntityValue(event.entity)
+            ) {
+                column.setEntityValue(event.entity, new Date())
+            } else if (
+                !column.isCreateDate &&
+                !column.isUpdateDate &&
+                !column.isVirtual &&
+                column.default !== undefined &&
+                column.getEntityValue(event.entity) === undefined
+            ) {
+                column.setEntityValue(event.entity, column.default)
+            }
+        })
     }
+}
+getMetadataArgsStorage().entitySubscribers.push({
+    target: GeneratedColumnReplacerSubscriber,
+} as EntitySubscriberMetadataArgs)
 
-    // todo: uncomment later
-    if (options.type === ("spanner" as any)) {
-        getMetadataArgsStorage().entitySubscribers.push({
-            target: GeneratedColumnReplacerSubscriber,
-        } as EntitySubscriberMetadataArgs)
-
+export function createDataSource(options: DataSourceOptions): DataSource {
+    if (options.type === "spanner") {
+        process.env.SPANNER_EMULATOR_HOST = "localhost:9010"
+        // process.env.GOOGLE_APPLICATION_CREDENTIALS =
+        //     "/Users/messer/Documents/google/typeorm-spanner-3b57e071cbf0.json"
         if (Array.isArray(options.subscribers)) {
             options.subscribers.push(
                 GeneratedColumnReplacerSubscriber as Function,
@@ -368,7 +390,7 @@ export async function createTestingConnections(
 ): Promise<DataSource[]> {
     const dataSourceOptions = setupTestingConnections(options)
     const dataSources: DataSource[] = []
-    for (let options of dataSourceOptions) {
+    for (const options of dataSourceOptions) {
         const dataSource = createDataSource(options)
         await dataSource.initialize()
         dataSources.push(dataSource)
@@ -418,9 +440,6 @@ export async function createTestingConnections(
                     `SET CLUSTER SETTING kv.range_merge.queue_interval = '200ms'`,
                 )
                 await queryRunner.query(
-                    `SET CLUSTER SETTING kv.raft_log.disable_synchronization_unsafe = 'true'`,
-                )
-                await queryRunner.query(
                     `SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`,
                 )
             }
@@ -465,21 +484,26 @@ export async function createTestingConnections(
 /**
  * Closes testing connections if they are connected.
  */
-export function closeTestingConnections(connections: DataSource[]) {
-    return Promise.all(
-        connections.map((connection) =>
-            connection && connection.isInitialized
-                ? connection.close()
-                : undefined,
-        ),
+export async function closeTestingConnections(connections: DataSource[]) {
+    if (!connections || connections.length === 0) {
+        return
+    }
+
+    await Promise.all(
+        connections.map(async (connection) => {
+            if (connection?.isInitialized) {
+                await connection.destroy()
+            }
+        }),
     )
 }
 
 /**
  * Reloads all databases for all given connections.
  */
-export function reloadTestingDatabases(connections: DataSource[]) {
-    return Promise.all(
+export async function reloadTestingDatabases(connections: DataSource[]) {
+    GeneratedColumnReplacerSubscriber.globalIncrementValues = {}
+    await Promise.all(
         connections.map((connection) => connection.synchronize(true)),
     )
 }
@@ -502,4 +526,91 @@ export function sleep(ms: number): Promise<void> {
     return new Promise<void>((ok) => {
         setTimeout(ok, ms)
     })
+}
+
+/**
+ * Creates typeorm service table for storing user defined Views and generate columns.
+ */
+export async function createTypeormMetadataTable(
+    driver: Driver,
+    queryRunner: QueryRunner,
+) {
+    const schema = driver.schema
+    const database = driver.database
+    const typeormMetadataTable = driver.buildTableName(
+        "typeorm_metadata",
+        schema,
+        database,
+    )
+
+    await queryRunner.createTable(
+        new Table({
+            database: database,
+            schema: schema,
+            name: typeormMetadataTable,
+            columns: [
+                {
+                    name: "type",
+                    type: driver.normalizeType({
+                        type: driver.mappedDataTypes.metadataType,
+                    }),
+                    isNullable: false,
+                },
+                {
+                    name: "database",
+                    type: driver.normalizeType({
+                        type: driver.mappedDataTypes.metadataDatabase,
+                    }),
+                    isNullable: true,
+                },
+                {
+                    name: "schema",
+                    type: driver.normalizeType({
+                        type: driver.mappedDataTypes.metadataSchema,
+                    }),
+                    isNullable: true,
+                },
+                {
+                    name: "table",
+                    type: driver.normalizeType({
+                        type: driver.mappedDataTypes.metadataTable,
+                    }),
+                    isNullable: true,
+                },
+                {
+                    name: "name",
+                    type: driver.normalizeType({
+                        type: driver.mappedDataTypes.metadataName,
+                    }),
+                    isNullable: true,
+                },
+                {
+                    name: "value",
+                    type: driver.normalizeType({
+                        type: driver.mappedDataTypes.metadataValue,
+                    }),
+                    isNullable: true,
+                },
+            ],
+        }),
+        true,
+    )
+}
+
+export function withPlatform<R>(platform: string, fn: () => R): R {
+    const realPlatform = process.platform
+
+    Object.defineProperty(process, `platform`, {
+        configurable: true,
+        value: platform,
+    })
+
+    const result = fn()
+
+    Object.defineProperty(process, `platform`, {
+        configurable: true,
+        value: realPlatform,
+    })
+
+    return result
 }

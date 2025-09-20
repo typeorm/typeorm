@@ -8,7 +8,7 @@ import { Generated } from "../../../../src/decorator/Generated"
 
 @Entity("artikel")
 export class Artikel {
-    @PrimaryColumn("int", { name: "artikel_id" })
+    @PrimaryColumn({ name: "artikel_id" })
     @Generated()
     id: number
 
@@ -24,7 +24,7 @@ export class Artikel {
     @Column({ name: "artikel_saison" })
     saison: string
 
-    @ManyToOne((type) => Kollektion, { cascade: true })
+    @ManyToOne(() => Kollektion, { cascade: true })
     @JoinColumn({ name: "id_kollektion" })
     kollektion: Kollektion
 }

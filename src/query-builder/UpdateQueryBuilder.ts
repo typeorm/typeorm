@@ -22,7 +22,7 @@ import { DriverUtils } from "../driver/DriverUtils"
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
-export class UpdateQueryBuilder<Entity>
+export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     extends QueryBuilder<Entity>
     implements WhereExpressionBuilder
 {
@@ -53,7 +53,7 @@ export class UpdateQueryBuilder<Entity>
         sql += this.createUpdateExpression()
         sql += this.createOrderByExpression()
         sql += this.createLimitExpression()
-        return sql.trim()
+        return this.replacePropertyNamesForTheWholeQuery(sql.trim())
     }
 
     /**
@@ -478,11 +478,19 @@ export class UpdateQueryBuilder<Entity>
             ? this.expressionMap.mainAlias!.metadata
             : undefined
 
+        // it doesn't make sense to update undefined properties, so just skip them
+        const valuesSetNormalized: ObjectLiteral = {}
+        for (const key in valuesSet) {
+            if (valuesSet[key] !== undefined) {
+                valuesSetNormalized[key] = valuesSet[key]
+            }
+        }
+
         // prepare columns and values to be updated
         const updateColumnAndValues: string[] = []
         const updatedColumns: ColumnMetadata[] = []
         if (metadata) {
-            this.createPropertyPath(metadata, valuesSet).forEach(
+            this.createPropertyPath(metadata, valuesSetNormalized).forEach(
                 (propertyPath) => {
                     // todo: make this and other query builder to work with properly with tables without metadata
                     const columns =
@@ -506,10 +514,12 @@ export class UpdateQueryBuilder<Entity>
                         updatedColumns.push(column)
 
                         //
-                        let value = column.getEntityValue(valuesSet)
+                        let value = column.getEntityValue(valuesSetNormalized)
                         if (
                             column.referencedColumn &&
                             typeof value === "object" &&
+                            !(value instanceof Date) &&
+                            value !== null &&
                             !Buffer.isBuffer(value)
                         ) {
                             value =
@@ -531,7 +541,9 @@ export class UpdateQueryBuilder<Entity>
                                     value(),
                             )
                         } else if (
-                            this.connection.driver.options.type === "sap" &&
+                            (this.connection.driver.options.type === "sap" ||
+                                this.connection.driver.options.type ===
+                                    "spanner") &&
                             value === null
                         ) {
                             updateColumnAndValues.push(
@@ -573,8 +585,9 @@ export class UpdateQueryBuilder<Entity>
                                     expression = `${geomFromText}(${paramName})`
                                 }
                             } else if (
-                                this.connection.driver.options.type ===
-                                    "postgres" &&
+                                DriverUtils.isPostgresFamily(
+                                    this.connection.driver,
+                                ) &&
                                 this.connection.driver.spatialTypes.indexOf(
                                     column.type,
                                 ) !== -1
@@ -614,7 +627,7 @@ export class UpdateQueryBuilder<Entity>
             // Don't allow calling update only with columns that are `update: false`
             if (
                 updateColumnAndValues.length > 0 ||
-                Object.keys(valuesSet).length === 0
+                Object.keys(valuesSetNormalized).length === 0
             ) {
                 if (
                     metadata.versionColumn &&
@@ -636,8 +649,8 @@ export class UpdateQueryBuilder<Entity>
                     ) // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
             }
         } else {
-            Object.keys(valuesSet).map((key) => {
-                let value = valuesSet[key]
+            Object.keys(valuesSetNormalized).map((key) => {
+                const value = valuesSetNormalized[key]
 
                 // todo: duplication zone
                 if (typeof value === "function") {
@@ -646,7 +659,8 @@ export class UpdateQueryBuilder<Entity>
                         this.escape(key) + " = " + value(),
                     )
                 } else if (
-                    this.connection.driver.options.type === "sap" &&
+                    (this.connection.driver.options.type === "sap" ||
+                        this.connection.driver.options.type === "spanner") &&
                     value === null
                 ) {
                     updateColumnAndValues.push(this.escape(key) + " = NULL")
@@ -683,6 +697,14 @@ export class UpdateQueryBuilder<Entity>
                 ", ",
             )} OUTPUT ${returningExpression}${whereExpression}`
         }
+        if (this.connection.driver.options.type === "spanner") {
+            return `UPDATE ${this.getTableName(
+                this.getMainTableName(),
+            )} SET ${updateColumnAndValues.join(
+                ", ",
+            )}${whereExpression} THEN RETURN ${returningExpression}`
+        }
+
         return `UPDATE ${this.getTableName(
             this.getMainTableName(),
         )} SET ${updateColumnAndValues.join(
@@ -726,7 +748,7 @@ export class UpdateQueryBuilder<Entity>
      * Creates "LIMIT" parts of SQL query.
      */
     protected createLimitExpression(): string {
-        let limit: number | undefined = this.expressionMap.limit
+        const limit: number | undefined = this.expressionMap.limit
 
         if (limit) {
             if (

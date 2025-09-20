@@ -15,11 +15,11 @@ export const PostSchema: EntitySchemaOptions<Post> = {
             type: Number,
         },
         name: {
-            type: "varchar",
+            type: String,
             unique: true,
         },
         title: {
-            type: "varchar",
+            type: String,
         },
     },
 }

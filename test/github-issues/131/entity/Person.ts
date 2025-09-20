@@ -4,9 +4,9 @@ import { Entity } from "../../../../src/decorator/entity/Entity"
 import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
 
 @Entity()
-@TableInheritance({ column: { name: "type", type: "varchar" } })
+@TableInheritance({ column: { name: "type", type: String } })
 export class Person {
-    @PrimaryColumn("int")
+    @PrimaryColumn()
     id: number
 
     @Column()

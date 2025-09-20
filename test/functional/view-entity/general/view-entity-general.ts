@@ -12,7 +12,6 @@ import { Photo } from "./entity/Photo"
 import { PhotoAlbumCategory } from "./entity/PhotoAlbumCategory"
 import { Post } from "./entity/Post"
 import { PostCategory } from "./entity/PostCategory"
-import { CockroachDriver } from "../../../../src/driver/cockroachdb/CockroachDriver"
 import { PhotoAlbum } from "./entity/PhotoAlbum"
 
 describe("view entity > general", () => {
@@ -119,14 +118,14 @@ describe("view entity > general", () => {
                 photoAlbumCategories[0].categoryName.should.be.equal("Cars")
 
                 const photoId2 =
-                    connection.driver instanceof CockroachDriver ? "2" : 2
+                    connection.driver.options.type === "cockroachdb" ? "2" : 2
                 photoAlbumCategories[1].id.should.be.equal(photoId2)
                 photoAlbumCategories[1].name.should.be.equal("BMW E60")
                 photoAlbumCategories[1].albumName.should.be.equal("BMW photos")
                 photoAlbumCategories[1].categoryName.should.be.equal("Cars")
 
                 const albumId =
-                    connection.driver instanceof CockroachDriver ? "1" : 1
+                    connection.driver.options.type === "cockroachdb" ? "1" : 1
                 const photoAlbumCategory = await connection.manager.findOneBy(
                     PhotoAlbumCategory,
                     { id: 1 },
@@ -139,7 +138,7 @@ describe("view entity > general", () => {
 
                 const photoAlbums = await connection.manager.find(PhotoAlbum)
                 const photoId3 =
-                    connection.driver instanceof CockroachDriver ? "3" : 3
+                    connection.driver.options.type === "cockroachdb" ? "3" : 3
                 photoAlbums[0].id.should.be.equal(photoId3)
                 photoAlbums[0].name.should.be.equal("boeing737")
                 photoAlbums[0].albumName.should.be.equal("BOEING PHOTOS")

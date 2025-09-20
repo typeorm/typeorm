@@ -7,14 +7,14 @@ import { User } from "./User"
 
 @Entity()
 export class AccessToken {
-    @PrimaryColumn("int")
+    @PrimaryColumn()
     @Generated()
     primaryKey: number
 
     @Column()
     expireTime: number
 
-    @OneToOne((type) => User, (user) => user.access_token, {
+    @OneToOne(() => User, (user) => user.access_token, {
         cascade: true,
     })
     user: User

@@ -22,8 +22,10 @@ describe("github issues > #1623 NOT NULL constraint failed after a new column is
     it("should correctly add new column", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const userMetadata = connection.getMetadata(User)
+                // Spanner does not support adding new NOT NULL column to existing table
+                if (connection.driver.options.type === "spanner") return
 
+                const userMetadata = connection.getMetadata(User)
                 const columnMetadata = new ColumnMetadata({
                     connection: connection,
                     entityMetadata: userMetadata,

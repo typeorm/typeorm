@@ -23,4 +23,9 @@ export interface PrimaryGeneratedColumnIdentityOptions {
      * Identity column type. Supports only in Postgres 10+.
      */
     generatedIdentity?: "ALWAYS" | "BY DEFAULT"
+
+    /**
+     * Name of the primary key constraint.
+     */
+    primaryKeyConstraintName?: string
 }

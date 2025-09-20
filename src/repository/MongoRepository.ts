@@ -1,43 +1,51 @@
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { Repository } from "./Repository"
 import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
-import {
-    AggregationCursor,
-    BulkWriteOpResultObject,
-    Code,
-    Collection,
-    CollectionAggregationOptions,
-    CollectionBulkWriteOptions,
-    CollectionInsertManyOptions,
-    CollectionInsertOneOptions,
-    CollectionOptions,
-    CollStats,
-    CommandCursor,
-    Cursor,
-    DeleteWriteOpResultObject,
-    FindAndModifyWriteOpResultObject,
-    FindOneAndReplaceOption,
-    GeoHaystackSearchOptions,
-    GeoNearOptions,
-    InsertOneWriteOpResult,
-    InsertWriteOpResult,
-    MapReduceOptions,
-    MongoCountPreferences,
-    MongodbIndexOptions,
-    ObjectID,
-    OrderedBulkOperation,
-    ParallelCollectionScanOptions,
-    ReadPreference,
-    ReplaceOneOptions,
-    UnorderedBulkOperation,
-    UpdateWriteOpResult,
-} from "../driver/mongodb/typings"
 import { MongoEntityManager } from "../entity-manager/MongoEntityManager"
 import { QueryRunner } from "../query-runner/QueryRunner"
 import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { TypeORMError } from "../error/TypeORMError"
 import { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
 import { FindOneOptions } from "../find-options/FindOneOptions"
+
+import {
+    CreateIndexesOptions,
+    ObjectId,
+    ReplaceOptions,
+    //
+    AggregateOptions,
+    AggregationCursor,
+    AnyBulkWriteOperation,
+    BulkWriteOptions,
+    BulkWriteResult,
+    Collection,
+    CollStats,
+    CollStatsOptions,
+    CommandOperationOptions,
+    CountOptions,
+    DeleteOptions,
+    DeleteResult,
+    Document,
+    Filter,
+    FilterOperators,
+    FindCursor,
+    FindOneAndDeleteOptions,
+    FindOneAndReplaceOptions,
+    FindOneAndUpdateOptions,
+    IndexDescription,
+    InsertManyResult,
+    InsertOneOptions,
+    InsertOneResult,
+    ListIndexesCursor,
+    ListIndexesOptions,
+    OrderedBulkOperation,
+    UnorderedBulkOperation,
+    UpdateFilter,
+    UpdateOptions,
+    UpdateResult,
+    CountDocumentsOptions,
+} from "../driver/mongodb/typings"
+import { FindManyOptions } from "../find-options/FindManyOptions"
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
@@ -80,7 +88,12 @@ export class MongoRepository<
     /**
      * Finds entities that match given find options or conditions.
      */
-    find(options?: MongoFindManyOptions<Entity>): Promise<Entity[]> {
+    find(
+        options?:
+            | FindManyOptions<Entity>
+            | Partial<Entity>
+            | FilterOperators<Entity>,
+    ): Promise<Entity[]> {
         return this.manager.find(this.metadata.target, options)
     }
 
@@ -151,15 +164,7 @@ export class MongoRepository<
      * })
      */
     async findOneById(
-        id:
-            | string
-            | string[]
-            | number
-            | number[]
-            | Date
-            | Date[]
-            | ObjectID
-            | ObjectID[],
+        id: string | number | Date | ObjectId,
     ): Promise<Entity | null> {
         return this.manager.findOneById(this.metadata.target, id)
     }
@@ -183,7 +188,7 @@ export class MongoRepository<
     /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      */
-    createCursor<T = any>(query?: ObjectLiteral): Cursor<T> {
+    createCursor<T = any>(query?: Filter<Entity>): FindCursor<T> {
         return this.manager.createCursor(this.metadata.target, query)
     }
 
@@ -191,7 +196,7 @@ export class MongoRepository<
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      * This returns modified version of cursor that transforms each result into Entity model.
      */
-    createEntityCursor(query?: ObjectLiteral): Cursor<Entity> {
+    createEntityCursor(query?: Filter<Entity>): FindCursor<Entity> {
         return this.manager.createEntityCursor(this.metadata.target, query)
     }
 
@@ -200,7 +205,7 @@ export class MongoRepository<
      */
     aggregate<R = any>(
         pipeline: ObjectLiteral[],
-        options?: CollectionAggregationOptions,
+        options?: AggregateOptions,
     ): AggregationCursor<R> {
         return this.manager.aggregate<R>(
             this.metadata.target,
@@ -215,7 +220,7 @@ export class MongoRepository<
      */
     aggregateEntity(
         pipeline: ObjectLiteral[],
-        options?: CollectionAggregationOptions,
+        options?: AggregateOptions,
     ): AggregationCursor<Entity> {
         return this.manager.aggregateEntity(
             this.metadata.target,
@@ -227,30 +232,38 @@ export class MongoRepository<
      * Perform a bulkWrite operation without a fluent API.
      */
     bulkWrite(
-        operations: ObjectLiteral[],
-        options?: CollectionBulkWriteOptions,
-    ): Promise<BulkWriteOpResultObject> {
+        operations: AnyBulkWriteOperation[],
+        options?: BulkWriteOptions,
+    ): Promise<BulkWriteResult> {
         return this.manager.bulkWrite(this.metadata.target, operations, options)
     }
 
     /**
      * Count number of matching documents in the db to a query.
      */
-    count(
-        query?: ObjectLiteral,
-        options?: MongoCountPreferences,
-    ): Promise<number> {
+    count(query?: ObjectLiteral, options?: CountOptions): Promise<number> {
         return this.manager.count(this.metadata.target, query || {}, options)
     }
 
     /**
      * Count number of matching documents in the db to a query.
      */
-    countBy(
+    countDocuments(
         query?: ObjectLiteral,
-        options?: MongoCountPreferences,
+        options?: CountDocumentsOptions,
     ): Promise<number> {
-        return this.manager.countBy(this.metadata.target, query || {}, options)
+        return this.manager.countDocuments(
+            this.metadata.target,
+            query || {},
+            options,
+        )
+    }
+
+    /**
+     * Count number of matching documents in the db to a query.
+     */
+    countBy(query?: ObjectLiteral, options?: CountOptions): Promise<number> {
+        return this.manager.countBy(this.metadata.target, query, options)
     }
 
     /**
@@ -258,7 +271,7 @@ export class MongoRepository<
      */
     createCollectionIndex(
         fieldOrSpec: string | any,
-        options?: MongodbIndexOptions,
+        options?: CreateIndexesOptions,
     ): Promise<string> {
         return this.manager.createCollectionIndex(
             this.metadata.target,
@@ -272,7 +285,7 @@ export class MongoRepository<
      * Earlier version of MongoDB will throw a command not supported error.
      * Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
      */
-    createCollectionIndexes(indexSpecs: ObjectLiteral[]): Promise<void> {
+    createCollectionIndexes(indexSpecs: IndexDescription[]): Promise<string[]> {
         return this.manager.createCollectionIndexes(
             this.metadata.target,
             indexSpecs,
@@ -284,8 +297,8 @@ export class MongoRepository<
      */
     deleteMany(
         query: ObjectLiteral,
-        options?: CollectionOptions,
-    ): Promise<DeleteWriteOpResultObject> {
+        options?: DeleteOptions,
+    ): Promise<DeleteResult> {
         return this.manager.deleteMany(this.metadata.tableName, query, options)
     }
 
@@ -294,8 +307,8 @@ export class MongoRepository<
      */
     deleteOne(
         query: ObjectLiteral,
-        options?: CollectionOptions,
-    ): Promise<DeleteWriteOpResultObject> {
+        options?: DeleteOptions,
+    ): Promise<DeleteResult> {
         return this.manager.deleteOne(this.metadata.tableName, query, options)
     }
 
@@ -305,7 +318,7 @@ export class MongoRepository<
     distinct(
         key: string,
         query: ObjectLiteral,
-        options?: { readPreference?: ReadPreference | string },
+        options?: CommandOperationOptions,
     ): Promise<any> {
         return this.manager.distinct(
             this.metadata.tableName,
@@ -320,7 +333,7 @@ export class MongoRepository<
      */
     dropCollectionIndex(
         indexName: string,
-        options?: CollectionOptions,
+        options?: CommandOperationOptions,
     ): Promise<any> {
         return this.manager.dropCollectionIndex(
             this.metadata.tableName,
@@ -341,8 +354,8 @@ export class MongoRepository<
      */
     findOneAndDelete(
         query: ObjectLiteral,
-        options?: { projection?: Object; sort?: Object; maxTimeMS?: number },
-    ): Promise<FindAndModifyWriteOpResultObject> {
+        options?: FindOneAndDeleteOptions,
+    ): Promise<Document | null> {
         return this.manager.findOneAndDelete(
             this.metadata.tableName,
             query,
@@ -356,8 +369,8 @@ export class MongoRepository<
     findOneAndReplace(
         query: ObjectLiteral,
         replacement: Object,
-        options?: FindOneAndReplaceOption,
-    ): Promise<FindAndModifyWriteOpResultObject> {
+        options?: FindOneAndReplaceOptions,
+    ): Promise<Document | null> {
         return this.manager.findOneAndReplace(
             this.metadata.tableName,
             query,
@@ -372,59 +385,12 @@ export class MongoRepository<
     findOneAndUpdate(
         query: ObjectLiteral,
         update: Object,
-        options?: FindOneAndReplaceOption,
-    ): Promise<FindAndModifyWriteOpResultObject> {
+        options?: FindOneAndUpdateOptions,
+    ): Promise<Document | null> {
         return this.manager.findOneAndUpdate(
             this.metadata.tableName,
             query,
             update,
-            options,
-        )
-    }
-
-    /**
-     * Execute a geo search using a geo haystack index on a collection.
-     */
-    geoHaystackSearch(
-        x: number,
-        y: number,
-        options?: GeoHaystackSearchOptions,
-    ): Promise<any> {
-        return this.manager.geoHaystackSearch(
-            this.metadata.tableName,
-            x,
-            y,
-            options,
-        )
-    }
-
-    /**
-     * Execute the geoNear command to search for items in the collection.
-     */
-    geoNear(x: number, y: number, options?: GeoNearOptions): Promise<any> {
-        return this.manager.geoNear(this.metadata.tableName, x, y, options)
-    }
-
-    /**
-     * Run a group command across a collection.
-     */
-    group(
-        keys: Object | Array<any> | Function | Code,
-        condition: Object,
-        initial: Object,
-        reduce: Function | Code,
-        finalize: Function | Code,
-        command: boolean,
-        options?: { readPreference?: ReadPreference | string },
-    ): Promise<any> {
-        return this.manager.group(
-            this.metadata.tableName,
-            keys,
-            condition,
-            initial,
-            reduce,
-            finalize,
-            command,
             options,
         )
     }
@@ -459,7 +425,7 @@ export class MongoRepository<
     /**
      * Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
      */
-    initializeOrderedBulkOp(options?: CollectionOptions): OrderedBulkOperation {
+    initializeOrderedBulkOp(options?: BulkWriteOptions): OrderedBulkOperation {
         return this.manager.initializeOrderedBulkOp(
             this.metadata.tableName,
             options,
@@ -470,7 +436,7 @@ export class MongoRepository<
      * Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
      */
     initializeUnorderedBulkOp(
-        options?: CollectionOptions,
+        options?: BulkWriteOptions,
     ): UnorderedBulkOperation {
         return this.manager.initializeUnorderedBulkOp(
             this.metadata.tableName,
@@ -483,8 +449,8 @@ export class MongoRepository<
      */
     insertMany(
         docs: ObjectLiteral[],
-        options?: CollectionInsertManyOptions,
-    ): Promise<InsertWriteOpResult> {
+        options?: BulkWriteOptions,
+    ): Promise<InsertManyResult<Document>> {
         return this.manager.insertMany(this.metadata.tableName, docs, options)
     }
 
@@ -493,8 +459,8 @@ export class MongoRepository<
      */
     insertOne(
         doc: ObjectLiteral,
-        options?: CollectionInsertOneOptions,
-    ): Promise<InsertOneWriteOpResult> {
+        options?: InsertOneOptions,
+    ): Promise<InsertOneResult> {
         return this.manager.insertOne(this.metadata.tableName, doc, options)
     }
 
@@ -508,50 +474,11 @@ export class MongoRepository<
     /**
      * Get the list of all indexes information for the collection.
      */
-    listCollectionIndexes(options?: {
-        batchSize?: number
-        readPreference?: ReadPreference | string
-    }): CommandCursor {
+    listCollectionIndexes(options?: ListIndexesOptions): ListIndexesCursor {
         return this.manager.listCollectionIndexes(
             this.metadata.tableName,
             options,
         )
-    }
-
-    /**
-     * Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
-     */
-    mapReduce(
-        map: Function | string,
-        reduce: Function | string,
-        options?: MapReduceOptions,
-    ): Promise<any> {
-        return this.manager.mapReduce(
-            this.metadata.tableName,
-            map,
-            reduce,
-            options,
-        )
-    }
-
-    /**
-     * Return N number of parallel cursors for a collection allowing parallel reading of entire collection.
-     * There are no ordering guarantees for returned results.
-     */
-    parallelCollectionScan(
-        options?: ParallelCollectionScanOptions,
-    ): Promise<Cursor<Entity>[]> {
-        return this.manager.parallelCollectionScan(
-            this.metadata.tableName,
-            options,
-        )
-    }
-
-    /**
-     * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
-     */
-    reIndex(): Promise<any> {
-        return this.manager.reIndex(this.metadata.tableName)
     }
 
     /**
@@ -560,7 +487,7 @@ export class MongoRepository<
     rename(
         newName: string,
         options?: { dropTarget?: boolean },
-    ): Promise<Collection<any>> {
+    ): Promise<Collection<Document>> {
         return this.manager.rename(this.metadata.tableName, newName, options)
     }
 
@@ -570,8 +497,8 @@ export class MongoRepository<
     replaceOne(
         query: ObjectLiteral,
         doc: ObjectLiteral,
-        options?: ReplaceOneOptions,
-    ): Promise<UpdateWriteOpResult> {
+        options?: ReplaceOptions,
+    ): Promise<Document | UpdateResult> {
         return this.manager.replaceOne(
             this.metadata.tableName,
             query,
@@ -583,7 +510,7 @@ export class MongoRepository<
     /**
      * Get all the collection statistics.
      */
-    stats(options?: { scale: number }): Promise<CollStats> {
+    stats(options?: CollStatsOptions): Promise<CollStats> {
         return this.manager.stats(this.metadata.tableName, options)
     }
 
@@ -592,9 +519,9 @@ export class MongoRepository<
      */
     updateMany(
         query: ObjectLiteral,
-        update: ObjectLiteral,
-        options?: { upsert?: boolean; w?: any; wtimeout?: number; j?: boolean },
-    ): Promise<UpdateWriteOpResult> {
+        update: UpdateFilter<Document>,
+        options?: UpdateOptions,
+    ): Promise<Document | UpdateResult> {
         return this.manager.updateMany(
             this.metadata.tableName,
             query,
@@ -608,9 +535,9 @@ export class MongoRepository<
      */
     updateOne(
         query: ObjectLiteral,
-        update: ObjectLiteral,
-        options?: ReplaceOneOptions,
-    ): Promise<UpdateWriteOpResult> {
+        update: UpdateFilter<Document>,
+        options?: UpdateOptions,
+    ): Promise<Document | UpdateResult> {
         return this.manager.updateOne(
             this.metadata.tableName,
             query,

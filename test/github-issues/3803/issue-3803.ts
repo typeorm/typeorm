@@ -30,7 +30,8 @@ describe("github issues > #3803 column option unique sqlite error", () => {
                 // MySQL stores unique constraints as unique indices
                 if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 ) {
                     expect(table!.indices.length).to.be.equal(1)
                     expect(table!.indices[0].isUnique).to.be.true

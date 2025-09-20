@@ -14,11 +14,13 @@ describe("query runner > stream", () => {
         connections = await createTestingConnections({
             entities: [Book],
             enabledDrivers: [
-                "mysql",
                 "cockroachdb",
-                "postgres",
                 "mssql",
+                "mysql",
                 "oracle",
+                "postgres",
+                "sap",
+                "spanner",
             ],
         })
     })
@@ -38,17 +40,22 @@ describe("query runner > stream", () => {
                 const query = connection
                     .createQueryBuilder(Book, "book")
                     .select()
+                    .orderBy("book.ean")
                     .getQuery()
 
                 const readStream = await queryRunner.stream(query)
 
-                await new Promise((ok) => readStream.once("readable", ok))
+                if (!(connection.driver.options.type === "spanner"))
+                    await new Promise((ok) => readStream.once("readable", ok))
 
                 const data: any[] = []
 
                 readStream.on("data", (row) => data.push(row))
 
-                await new Promise((ok) => readStream.once("end", ok))
+                await new Promise((ok, fail) => {
+                    readStream.once("end", ok)
+                    readStream.once("error", fail)
+                })
 
                 expect(data).to.have.length(4)
 

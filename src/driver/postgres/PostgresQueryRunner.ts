@@ -1,10 +1,11 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ColumnType } from "../types/ColumnTypes"
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
@@ -16,16 +17,16 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
-import { OrmUtils } from "../../util/OrmUtils"
-import { Query } from "../Query"
-import { IsolationLevel } from "../types/IsolationLevel"
-import { PostgresDriver } from "./PostgresDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { VersionUtils } from "../../util/VersionUtils"
-import { TypeORMError } from "../../error"
-import { QueryResult } from "../../query-runner/QueryResult"
-import { MetadataTableType } from "../types/MetadataTableType"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import { DriverUtils } from "../DriverUtils"
+import { Query } from "../Query"
+import { ColumnType } from "../types/ColumnTypes"
+import { IsolationLevel } from "../types/IsolationLevel"
+import { MetadataTableType } from "../types/MetadataTableType"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { PostgresDriver } from "./PostgresDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -93,12 +94,12 @@ export class PostgresQueryRunner
 
                     const onErrorCallback = (err: Error) =>
                         this.releasePostgresConnection(err)
-                    this.releaseCallback = () => {
+                    this.releaseCallback = (err?: Error) => {
                         this.databaseConnection.removeListener(
                             "error",
                             onErrorCallback,
                         )
-                        release()
+                        release(err)
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
@@ -114,12 +115,12 @@ export class PostgresQueryRunner
 
                     const onErrorCallback = (err: Error) =>
                         this.releasePostgresConnection(err)
-                    this.releaseCallback = () => {
+                    this.releaseCallback = (err?: Error) => {
                         this.databaseConnection.removeListener(
                             "error",
                             onErrorCallback,
                         )
-                        release()
+                        release(err)
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
@@ -244,14 +245,29 @@ export class PostgresQueryRunner
         const databaseConnection = await this.connect()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const broadcasterResult = new BroadcasterResult()
+
         try {
-            const queryStartTime = +new Date()
+            const queryStartTime = Date.now()
             const raw = await databaseConnection.query(query, parameters)
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
+
             if (
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
@@ -296,7 +312,19 @@ export class PostgresQueryRunner
                 parameters,
                 this,
             )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
             throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
         }
     }
 
@@ -540,7 +568,6 @@ export class PostgresQueryRunner
                 name: column.name,
             })
 
-            upQueries.push(deleteQuery)
             upQueries.push(insertQuery)
             downQueries.push(deleteQuery)
         }
@@ -567,6 +594,23 @@ export class PostgresQueryRunner
                 upQueries.push(this.createIndexSql(table, index))
                 downQueries.push(this.dropIndexSql(table, index))
             })
+        }
+
+        if (table.comment) {
+            upQueries.push(
+                new Query(
+                    "COMMENT ON TABLE " +
+                        this.escapePath(table) +
+                        " IS '" +
+                        table.comment +
+                        "'",
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    "COMMENT ON TABLE " + this.escapePath(table) + " IS NULL",
+                ),
+            )
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -610,19 +654,56 @@ export class PostgresQueryRunner
         upQueries.push(this.dropTableSql(table))
         downQueries.push(this.createTableSql(table, createForeignKeys))
 
+        // if table had columns with generated type, we must remove the expression from the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+        for (const column of generatedColumns) {
+            const tableNameWithSchema = (
+                await this.getTableNameWithSchema(table.name)
+            ).split(".")
+            const tableName = tableNameWithSchema[1]
+            const schema = tableNameWithSchema[0]
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                database: this.driver.database,
+                schema,
+                table: tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                database: this.driver.database,
+                schema,
+                table: tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
     /**
      * Creates a new view.
      */
-    async createView(view: View): Promise<void> {
+    async createView(
+        view: View,
+        syncWithMetadata: boolean = false,
+    ): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
         upQueries.push(this.createViewSql(view))
-        upQueries.push(await this.insertViewDefinitionSql(view))
+        if (syncWithMetadata)
+            upQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
-        downQueries.push(await this.deleteViewDefinitionSql(view))
+        if (syncWithMetadata)
+            downQueries.push(await this.deleteViewDefinitionSql(view))
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -678,8 +759,11 @@ export class PostgresQueryRunner
             ),
         )
 
-        // rename column primary key constraint
-        if (newTable.primaryColumns.length > 0) {
+        // rename column primary key constraint if it has default constraint name
+        if (
+            newTable.primaryColumns.length > 0 &&
+            !newTable.primaryColumns[0].primaryKeyConstraintName
+        ) {
             const columnNames = newTable.primaryColumns.map(
                 (column) => column.name,
             )
@@ -688,6 +772,7 @@ export class PostgresQueryRunner
                 oldTable,
                 columnNames,
             )
+
             const newPkName = this.connection.namingStrategy.primaryKeyName(
                 newTable,
                 columnNames,
@@ -738,6 +823,15 @@ export class PostgresQueryRunner
 
         // rename unique constraints
         newTable.uniques.forEach((unique) => {
+            const oldUniqueName =
+                this.connection.namingStrategy.uniqueConstraintName(
+                    oldTable,
+                    unique.columnNames,
+                )
+
+            // Skip renaming if Unique has user defined constraint name
+            if (unique.name !== oldUniqueName) return
+
             // build new constraint name
             const newUniqueName =
                 this.connection.namingStrategy.uniqueConstraintName(
@@ -771,6 +865,15 @@ export class PostgresQueryRunner
 
         // rename index constraints
         newTable.indices.forEach((index) => {
+            const oldIndexName = this.connection.namingStrategy.indexName(
+                oldTable,
+                index.columnNames,
+                index.where,
+            )
+
+            // Skip renaming if Index has user defined constraint name
+            if (index.name !== oldIndexName) return
+
             // build new constraint name
             const { schema } = this.driver.parseTableName(newTable)
             const newIndexName = this.connection.namingStrategy.indexName(
@@ -795,6 +898,17 @@ export class PostgresQueryRunner
 
         // rename foreign key constraints
         newTable.foreignKeys.forEach((foreignKey) => {
+            const oldForeignKeyName =
+                this.connection.namingStrategy.foreignKeyName(
+                    oldTable,
+                    foreignKey.columnNames,
+                    this.getTablePath(foreignKey),
+                    foreignKey.referencedColumnNames,
+                )
+
+            // Skip renaming if foreign key has user defined constraint name
+            if (foreignKey.name !== oldForeignKeyName) return
+
             // build new constraint name
             const newForeignKeyName =
                 this.connection.namingStrategy.foreignKeyName(
@@ -832,7 +946,7 @@ export class PostgresQueryRunner
         const enumColumns = newTable.columns.filter(
             (column) => column.type === "enum" || column.type === "simple-enum",
         )
-        for (let column of enumColumns) {
+        for (const column of enumColumns) {
             // skip renaming for user-defined enum name
             if (column.enumName) continue
 
@@ -905,13 +1019,17 @@ export class PostgresQueryRunner
             const primaryColumns = clonedTable.primaryColumns
             // if table already have primary key, me must drop it and recreate again
             if (primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(
-                    clonedTable,
-                    primaryColumns.map((column) => column.name),
-                )
+                const pkName = primaryColumns[0].primaryKeyConstraintName
+                    ? primaryColumns[0].primaryKeyConstraintName
+                    : this.connection.namingStrategy.primaryKeyName(
+                          clonedTable,
+                          primaryColumns.map((column) => column.name),
+                      )
+
                 const columnNames = primaryColumns
                     .map((column) => `"${column.name}"`)
                     .join(", ")
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -929,13 +1047,17 @@ export class PostgresQueryRunner
             }
 
             primaryColumns.push(column)
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                primaryColumns.map((column) => column.name),
-            )
+            const pkName = primaryColumns[0].primaryKeyConstraintName
+                ? primaryColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      clonedTable,
+                      primaryColumns.map((column) => column.name),
+                  )
+
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
+
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
@@ -1013,7 +1135,6 @@ export class PostgresQueryRunner
                 name: column.name,
             })
 
-            upQueries.push(deleteQuery)
             upQueries.push(insertQuery)
             downQueries.push(deleteQuery)
         }
@@ -1174,7 +1295,10 @@ export class PostgresQueryRunner
                 }
 
                 // rename column primary key constraint
-                if (oldColumn.isPrimary === true) {
+                if (
+                    oldColumn.isPrimary === true &&
+                    !oldColumn.primaryKeyConstraintName
+                ) {
                     const primaryColumns = clonedTable.primaryColumns
 
                     // build old primary constraint name
@@ -1243,12 +1367,22 @@ export class PostgresQueryRunner
                     const down = `ALTER SEQUENCE ${this.escapePath(
                         newSequencePath,
                     )} RENAME TO "${sequenceName}"`
+
                     upQueries.push(new Query(up))
                     downQueries.push(new Query(down))
                 }
 
                 // rename unique constraints
                 clonedTable.findColumnUniques(oldColumn).forEach((unique) => {
+                    const oldUniqueName =
+                        this.connection.namingStrategy.uniqueConstraintName(
+                            clonedTable,
+                            unique.columnNames,
+                        )
+
+                    // Skip renaming if Unique has user defined constraint name
+                    if (unique.name !== oldUniqueName) return
+
                     // build new constraint name
                     unique.columnNames.splice(
                         unique.columnNames.indexOf(oldColumn.name),
@@ -1287,6 +1421,16 @@ export class PostgresQueryRunner
 
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach((index) => {
+                    const oldIndexName =
+                        this.connection.namingStrategy.indexName(
+                            clonedTable,
+                            index.columnNames,
+                            index.where,
+                        )
+
+                    // Skip renaming if Index has user defined constraint name
+                    if (index.name !== oldIndexName) return
+
                     // build new constraint name
                     index.columnNames.splice(
                         index.columnNames.indexOf(oldColumn.name),
@@ -1308,6 +1452,7 @@ export class PostgresQueryRunner
                     const down = schema
                         ? `ALTER INDEX "${schema}"."${newIndexName}" RENAME TO "${index.name}"`
                         : `ALTER INDEX "${newIndexName}" RENAME TO "${index.name}"`
+
                     upQueries.push(new Query(up))
                     downQueries.push(new Query(down))
 
@@ -1319,6 +1464,17 @@ export class PostgresQueryRunner
                 clonedTable
                     .findColumnForeignKeys(oldColumn)
                     .forEach((foreignKey) => {
+                        const foreignKeyName =
+                            this.connection.namingStrategy.foreignKeyName(
+                                clonedTable,
+                                foreignKey.columnNames,
+                                this.getTablePath(foreignKey),
+                                foreignKey.referencedColumnNames,
+                            )
+
+                        // Skip renaming if foreign key has user defined constraint name
+                        if (foreignKey.name !== foreignKeyName) return
+
                         // build new constraint name
                         foreignKey.columnNames.splice(
                             foreignKey.columnNames.indexOf(oldColumn.name),
@@ -1589,14 +1745,17 @@ export class PostgresQueryRunner
 
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
-                    const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            primaryColumns.map((column) => column.name),
-                        )
+                    const pkName = primaryColumns[0].primaryKeyConstraintName
+                        ? primaryColumns[0].primaryKeyConstraintName
+                        : this.connection.namingStrategy.primaryKeyName(
+                              clonedTable,
+                              primaryColumns.map((column) => column.name),
+                          )
+
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
                         .join(", ")
+
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
@@ -1620,14 +1779,17 @@ export class PostgresQueryRunner
                         (column) => column.name === newColumn.name,
                     )
                     column!.isPrimary = true
-                    const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            primaryColumns.map((column) => column.name),
-                        )
+                    const pkName = primaryColumns[0].primaryKeyConstraintName
+                        ? primaryColumns[0].primaryKeyConstraintName
+                        : this.connection.namingStrategy.primaryKeyName(
+                              clonedTable,
+                              primaryColumns.map((column) => column.name),
+                          )
+
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
                         .join(", ")
+
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
@@ -1659,14 +1821,18 @@ export class PostgresQueryRunner
 
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
-                        const pkName =
-                            this.connection.namingStrategy.primaryKeyName(
-                                clonedTable,
-                                primaryColumns.map((column) => column.name),
-                            )
+                        const pkName = primaryColumns[0]
+                            .primaryKeyConstraintName
+                            ? primaryColumns[0].primaryKeyConstraintName
+                            : this.connection.namingStrategy.primaryKeyName(
+                                  clonedTable,
+                                  primaryColumns.map((column) => column.name),
+                              )
+
                         const columnNames = primaryColumns
                             .map((column) => `"${column.name}"`)
                             .join(", ")
+
                         upQueries.push(
                             new Query(
                                 `ALTER TABLE ${this.escapePath(
@@ -2017,6 +2183,31 @@ export class PostgresQueryRunner
                 )
             }
 
+            // update column collation
+            if (newColumn.collation !== oldColumn.collation) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${newColumn.type} COLLATE "${
+                            newColumn.collation
+                        }"`,
+                    ),
+                )
+
+                const oldCollation = oldColumn.collation
+                    ? `"${oldColumn.collation}"`
+                    : `pg_catalog."default"` // if there's no old collation, use default
+
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                    ),
+                )
+            }
+
             if (newColumn.generatedType !== oldColumn.generatedType) {
                 // Convert generated column data to normal column
                 if (
@@ -2074,11 +2265,14 @@ export class PostgresQueryRunner
                     )
                     // However, we can't copy it back on downgrade. It needs to regenerate.
                     downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP COLUMN "${newColumn.name}"`,
-                        ),
+                        this.insertTypeormMetadataSql({
+                            database: this.driver.database,
+                            schema,
+                            table: tableName,
+                            type: MetadataTableType.GENERATED_COLUMN,
+                            name: oldColumn.name,
+                            value: oldColumn.asExpression,
+                        }),
                     )
                     downQueries.push(
                         new Query(
@@ -2091,24 +2285,21 @@ export class PostgresQueryRunner
                         ),
                     )
                     downQueries.push(
-                        this.deleteTypeormMetadataSql({
-                            database: this.driver.database,
-                            schema,
-                            table: tableName,
-                            type: MetadataTableType.GENERATED_COLUMN,
-                            name: newColumn.name,
-                        }),
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} DROP COLUMN "${newColumn.name}"`,
+                        ),
                     )
-                    downQueries.push(
-                        this.insertTypeormMetadataSql({
-                            database: this.driver.database,
-                            schema,
-                            table: tableName,
-                            type: MetadataTableType.GENERATED_COLUMN,
-                            name: oldColumn.name,
-                            value: oldColumn.asExpression,
-                        }),
-                    )
+                    // downQueries.push(
+                    //     this.deleteTypeormMetadataSql({
+                    //         database: this.driver.database,
+                    //         schema,
+                    //         table: tableName,
+                    //         type: MetadataTableType.GENERATED_COLUMN,
+                    //         name: newColumn.name,
+                    //     }),
+                    // )
                 }
             }
         }
@@ -2153,13 +2344,17 @@ export class PostgresQueryRunner
 
         // drop primary key constraint
         if (column.isPrimary) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                clonedTable.primaryColumns.map((column) => column.name),
-            )
+            const pkName = column.primaryKeyConstraintName
+                ? column.primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      clonedTable,
+                      clonedTable.primaryColumns.map((column) => column.name),
+                  )
+
             const columnNames = clonedTable.primaryColumns
                 .map((primaryColumn) => `"${primaryColumn.name}"`)
                 .join(", ")
+
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
@@ -2181,13 +2376,20 @@ export class PostgresQueryRunner
 
             // if primary key have multiple columns, we must recreate it without dropped column
             if (clonedTable.primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(
-                    clonedTable,
-                    clonedTable.primaryColumns.map((column) => column.name),
-                )
+                const pkName = clonedTable.primaryColumns[0]
+                    .primaryKeyConstraintName
+                    ? clonedTable.primaryColumns[0].primaryKeyConstraintName
+                    : this.connection.namingStrategy.primaryKeyName(
+                          clonedTable,
+                          clonedTable.primaryColumns.map(
+                              (column) => column.name,
+                          ),
+                      )
+
                 const columnNames = clonedTable.primaryColumns
                     .map((primaryColumn) => `"${primaryColumn.name}"`)
                     .join(", ")
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -2292,14 +2494,14 @@ export class PostgresQueryRunner
             ).split(".")
             const tableName = tableNameWithSchema[1]
             const schema = tableNameWithSchema[0]
-            const insertQuery = this.deleteTypeormMetadataSql({
+            const deleteQuery = this.deleteTypeormMetadataSql({
                 database: this.driver.database,
                 schema,
                 table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-            const deleteQuery = this.insertTypeormMetadataSql({
+            const insertQuery = this.insertTypeormMetadataSql({
                 database: this.driver.database,
                 schema,
                 table: tableName,
@@ -2308,8 +2510,8 @@ export class PostgresQueryRunner
                 value: column.asExpression,
             })
 
-            upQueries.push(insertQuery)
-            downQueries.push(deleteQuery)
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -2325,7 +2527,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -2336,13 +2538,14 @@ export class PostgresQueryRunner
     async createPrimaryKey(
         tableOrName: Table | string,
         columnNames: string[],
+        constraintName?: string,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
         const clonedTable = table.clone()
 
-        const up = this.createPrimaryKeySql(table, columnNames)
+        const up = this.createPrimaryKeySql(table, columnNames, constraintName)
 
         // mark columns as primary, because dropPrimaryKeySql build constraint name from table primary column names.
         clonedTable.columns.forEach((column) => {
@@ -2373,13 +2576,17 @@ export class PostgresQueryRunner
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns
         if (primaryColumns.length > 0) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                primaryColumns.map((column) => column.name),
-            )
+            const pkName = primaryColumns[0].primaryKeyConstraintName
+                ? primaryColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      clonedTable,
+                      primaryColumns.map((column) => column.name),
+                  )
+
             const columnNamesString = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
+
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
@@ -2401,13 +2608,17 @@ export class PostgresQueryRunner
             .filter((column) => columnNames.indexOf(column.name) !== -1)
             .forEach((column) => (column.isPrimary = true))
 
-        const pkName = this.connection.namingStrategy.primaryKeyName(
-            clonedTable,
-            columnNames,
-        )
+        const pkName = primaryColumns[0]?.primaryKeyConstraintName
+            ? primaryColumns[0].primaryKeyConstraintName
+            : this.connection.namingStrategy.primaryKeyName(
+                  clonedTable,
+                  columnNames,
+              )
+
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
+
         upQueries.push(
             new Query(
                 `ALTER TABLE ${this.escapePath(
@@ -2430,7 +2641,10 @@ export class PostgresQueryRunner
     /**
      * Drops a primary key.
      */
-    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
+    async dropPrimaryKey(
+        tableOrName: Table | string,
+        constraintName?: string,
+    ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
@@ -2438,6 +2652,7 @@ export class PostgresQueryRunner
         const down = this.createPrimaryKeySql(
             table,
             table.primaryColumns.map((column) => column.name),
+            constraintName,
         )
         await this.executeQueries(up, down)
         table.primaryColumns.forEach((column) => {
@@ -2513,7 +2728,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
     ): Promise<void> {
-        for (const uniqueConstraint of uniqueConstraints) {
+        for (const uniqueConstraint of [...uniqueConstraints]) {
             await this.dropUniqueConstraint(tableOrName, uniqueConstraint)
         }
     }
@@ -2729,6 +2944,15 @@ export class PostgresQueryRunner
                 `Supplied foreign key was not found in table ${table.name}`,
             )
 
+        if (!foreignKey.name) {
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+                table,
+                foreignKey.columnNames,
+                this.getTablePath(foreignKey),
+                foreignKey.referencedColumnNames,
+            )
+        }
+
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
         await this.executeQueries(up, down)
@@ -2742,7 +2966,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
     ): Promise<void> {
-        for (const foreignKey of foreignKeys) {
+        for (const foreignKey of [...foreignKeys]) {
             await this.dropForeignKey(tableOrName, foreignKey)
         }
     }
@@ -2759,17 +2983,32 @@ export class PostgresQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(
-                table,
-                index.columnNames,
-                index.where,
-            )
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
         await this.executeQueries(up, down)
         table.addIndex(index)
+    }
+
+    /**
+     * Create a new view index.
+     */
+    async createViewIndex(
+        viewOrName: View | string,
+        index: TableIndex,
+    ): Promise<void> {
+        const view = InstanceChecker.isView(viewOrName)
+            ? viewOrName
+            : await this.getCachedView(viewOrName)
+
+        // new index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(view, index)
+
+        const up = this.createViewIndexSql(view, index)
+        const down = this.dropIndexSql(view, index)
+        await this.executeQueries(up, down)
+        view.addIndex(index)
     }
 
     /**
@@ -2781,6 +3020,18 @@ export class PostgresQueryRunner
     ): Promise<void> {
         for (const index of indices) {
             await this.createIndex(tableOrName, index)
+        }
+    }
+
+    /**
+     * Creates new view indices
+     */
+    async createViewIndices(
+        viewOrName: View | string,
+        indices: TableIndex[],
+    ): Promise<void> {
+        for (const index of indices) {
+            await this.createViewIndex(viewOrName, index)
         }
     }
 
@@ -2801,11 +3052,39 @@ export class PostgresQueryRunner
             throw new TypeORMError(
                 `Supplied index ${indexOrName} was not found in table ${table.name}`,
             )
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
         await this.executeQueries(up, down)
         table.removeIndex(index)
+    }
+
+    /**
+     * Drops an index from a view.
+     */
+    async dropViewIndex(
+        viewOrName: View | string,
+        indexOrName: TableIndex | string,
+    ): Promise<void> {
+        const view = InstanceChecker.isView(viewOrName)
+            ? viewOrName
+            : await this.getCachedView(viewOrName)
+        const index = InstanceChecker.isTableIndex(indexOrName)
+            ? indexOrName
+            : view.indices.find((i) => i.name === indexOrName)
+        if (!index)
+            throw new TypeORMError(
+                `Supplied index ${indexOrName} was not found in view ${view.name}`,
+            )
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(view, index)
+
+        const up = this.dropIndexSql(view, index)
+        const down = this.createViewIndexSql(view, index)
+        await this.executeQueries(up, down)
+        view.removeIndex(index)
     }
 
     /**
@@ -2815,7 +3094,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         indices: TableIndex[],
     ): Promise<void> {
-        for (const index of indices) {
+        for (const index of [...indices]) {
             await this.dropIndex(tableOrName, index)
         }
     }
@@ -2851,7 +3130,6 @@ export class PostgresQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            const version = await this.getVersion()
             // drop views
             const selectViewDropsQuery =
                 `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
@@ -2865,7 +3143,7 @@ export class PostgresQueryRunner
 
             // drop materialized views
             // Note: materialized views introduced in Postgres 9.3
-            if (VersionUtils.isGreaterOrEqual(version, "9.3")) {
+            if (DriverUtils.isReleaseVersionOrGreater(this.driver, "9.3")) {
                 const selectMatViewDropsQuery =
                     `SELECT 'DROP MATERIALIZED VIEW IF EXISTS "' || schemaname || '"."' || matviewname || '" CASCADE;' as "query" ` +
                     `FROM "pg_matviews" WHERE "schemaname" IN (${schemaNamesString})`
@@ -2901,7 +3179,9 @@ export class PostgresQueryRunner
                 if (!isAnotherTransactionActive) {
                     await this.rollbackTransaction()
                 }
-            } catch (rollbackError) {}
+            } catch {
+                // no-op
+            }
             throw error
         }
     }
@@ -2936,6 +3216,34 @@ export class PostgresQueryRunner
                       })
                       .join(" OR ")
 
+        const constraintsCondition =
+            viewNames.length === 0
+                ? "1=1"
+                : viewNames
+                      .map((tableName) => this.driver.parseTableName(tableName))
+                      .map(({ schema, tableName }) => {
+                          if (!schema) {
+                              schema =
+                                  this.driver.options.schema || currentSchema
+                          }
+
+                          return `("ns"."nspname" = '${schema}' AND "t"."relname" = '${tableName}')`
+                      })
+                      .join(" OR ")
+
+        const indicesSql =
+            `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
+            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
+            `"types"."typname" AS "type_name" ` +
+            `FROM "pg_class" "t" ` +
+            `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
+            `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
+            `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
+            `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
+            `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
+            `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
+            `WHERE "t"."relkind" IN ('m') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`
+
         const query =
             `SELECT "t".* FROM ${this.escapePath(
                 this.getTypeormMetadataTableName(),
@@ -2947,7 +3255,18 @@ export class PostgresQueryRunner
             }') ${viewsCondition ? `AND (${viewsCondition})` : ""}`
 
         const dbViews = await this.query(query)
+        const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
         return dbViews.map((dbView: any) => {
+            // find index constraints of table, group them by constraint name and build TableIndex.
+            const tableIndexConstraints = OrmUtils.uniq(
+                dbIndices.filter((dbIndex) => {
+                    return (
+                        dbIndex["table_name"] === dbView["name"] &&
+                        dbIndex["table_schema"] === dbView["schema"]
+                    )
+                }),
+                (dbIndex) => dbIndex["constraint_name"],
+            )
             const view = new View()
             const schema =
                 dbView["schema"] === currentSchema &&
@@ -2960,6 +3279,24 @@ export class PostgresQueryRunner
             view.expression = dbView["value"]
             view.materialized =
                 dbView["type"] === MetadataTableType.MATERIALIZED_VIEW
+            view.indices = tableIndexConstraints.map((constraint) => {
+                const indices = dbIndices.filter((index) => {
+                    return (
+                        index["table_schema"] === constraint["table_schema"] &&
+                        index["table_name"] === constraint["table_name"] &&
+                        index["constraint_name"] ===
+                            constraint["constraint_name"]
+                    )
+                })
+                return new TableIndex(<TableIndexOptions>{
+                    view: view,
+                    name: constraint["constraint_name"],
+                    columnNames: indices.map((i) => i["column_name"]),
+                    isUnique: constraint["is_unique"] === "TRUE",
+                    where: constraint["condition"],
+                    isFulltext: false,
+                })
+            })
             return view
         })
     }
@@ -2976,10 +3313,14 @@ export class PostgresQueryRunner
         const currentSchema = await this.getCurrentSchema()
         const currentDatabase = await this.getCurrentDatabase()
 
-        const dbTables: { table_schema: string; table_name: string }[] = []
+        const dbTables: {
+            table_schema: string
+            table_name: string
+            table_comment: string
+        }[] = []
 
         if (!tableNames) {
-            const tablesSql = `SELECT "table_schema", "table_name" FROM "information_schema"."tables"`
+            const tablesSql = `SELECT "table_schema", "table_name", obj_description(('"' || "table_schema" || '"."' || "table_name" || '"')::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables"`
             dbTables.push(...(await this.query(tablesSql)))
         } else {
             const tablesCondition = tableNames
@@ -2992,7 +3333,7 @@ export class PostgresQueryRunner
                 .join(" OR ")
 
             const tablesSql =
-                `SELECT "table_schema", "table_name" FROM "information_schema"."tables" WHERE ` +
+                `SELECT "table_schema", "table_name", obj_description(('"' || "table_schema" || '"."' || "table_name" || '"')::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables" WHERE ` +
                 tablesCondition
             dbTables.push(...(await this.query(tablesSql)))
         }
@@ -3014,7 +3355,7 @@ export class PostgresQueryRunner
             .join(" OR ")
         const columnsSql =
             `SELECT columns.*, pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) AS description, ` +
-            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype" AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type" ` +
+            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype"::text AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type" ` +
             `FROM "information_schema"."columns" ` +
             `LEFT JOIN "pg_catalog"."pg_attribute" AS "col_attr" ON "col_attr"."attname" = "columns"."column_name" ` +
             `AND "col_attr"."attrelid" = ( ` +
@@ -3045,13 +3386,14 @@ export class PostgresQueryRunner
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
-            `"types"."typname" AS "type_name" ` +
+            `"types"."typname" AS "type_name", "am"."amname" AS "index_type" ` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
             `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
             `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
             `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
             `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
+            `INNER JOIN "pg_am" "am" ON "i"."relam" = "am"."oid" ` +
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
             `WHERE "t"."relkind" IN ('r', 'p') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`
 
@@ -3115,6 +3457,7 @@ export class PostgresQueryRunner
                 const schema = getSchemaFromKey(dbTable, "table_schema")
                 table.database = currentDatabase
                 table.schema = dbTable["table_schema"]
+                table.comment = dbTable["table_comment"]
                 table.name = this.driver.buildTableName(
                     dbTable["table_name"],
                     schema,
@@ -3149,48 +3492,73 @@ export class PostgresQueryRunner
                             tableColumn.type = dbColumn["regtype"].toLowerCase()
 
                             if (
+                                tableColumn.type === "vector" ||
+                                tableColumn.type === "halfvec"
+                            ) {
+                                const lengthMatch = dbColumn[
+                                    "format_type"
+                                ].match(/^(?:vector|halfvec)\((\d+)\)$/)
+                                if (lengthMatch && lengthMatch[1]) {
+                                    tableColumn.length = lengthMatch[1]
+                                }
+                            }
+
+                            if (
                                 tableColumn.type === "numeric" ||
+                                tableColumn.type === "numeric[]" ||
                                 tableColumn.type === "decimal" ||
                                 tableColumn.type === "float"
                             ) {
+                                let numericPrecision =
+                                    dbColumn["numeric_precision"]
+                                let numericScale = dbColumn["numeric_scale"]
+                                if (dbColumn["data_type"] === "ARRAY") {
+                                    const numericSize = dbColumn[
+                                        "format_type"
+                                    ].match(
+                                        /^numeric\(([0-9]+),([0-9]+)\)\[\]$/,
+                                    )
+                                    if (numericSize) {
+                                        numericPrecision = +numericSize[1]
+                                        numericScale = +numericSize[2]
+                                    }
+                                }
                                 // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
                                 // we set 'undefined' in to unspecified property to avoid changing column on sync
                                 if (
-                                    dbColumn["numeric_precision"] !== null &&
+                                    numericPrecision !== null &&
                                     !this.isDefaultColumnPrecision(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_precision"],
+                                        numericPrecision,
                                     )
                                 ) {
-                                    tableColumn.precision =
-                                        dbColumn["numeric_precision"]
+                                    tableColumn.precision = numericPrecision
                                 } else if (
-                                    dbColumn["numeric_scale"] !== null &&
+                                    numericScale !== null &&
                                     !this.isDefaultColumnScale(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_scale"],
+                                        numericScale,
                                     )
                                 ) {
                                     tableColumn.precision = undefined
                                 }
                                 if (
-                                    dbColumn["numeric_scale"] !== null &&
+                                    numericScale !== null &&
                                     !this.isDefaultColumnScale(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_scale"],
+                                        numericScale,
                                     )
                                 ) {
-                                    tableColumn.scale =
-                                        dbColumn["numeric_scale"]
+                                    tableColumn.scale = numericScale
                                 } else if (
-                                    dbColumn["numeric_precision"] !== null &&
+                                    numericPrecision !== null &&
                                     !this.isDefaultColumnPrecision(
                                         table,
                                         tableColumn,
-                                        dbColumn["numeric_precision"],
+                                        numericPrecision,
                                     )
                                 ) {
                                     tableColumn.scale = undefined
@@ -3271,48 +3639,22 @@ export class PostgresQueryRunner
                                 }
                             }
 
-                            if (tableColumn.type === "geometry") {
-                                const geometryColumnSql = `SELECT * FROM (
-                        SELECT
-                          "f_table_schema" "table_schema",
-                          "f_table_name" "table_name",
-                          "f_geometry_column" "column_name",
-                          "srid",
-                          "type"
-                        FROM "geometry_columns"
-                      ) AS _
-                      WHERE
-                          "column_name" = '${dbColumn["column_name"]}' AND
-                          "table_schema" = '${dbColumn["table_schema"]}' AND
-                          "table_name" = '${dbColumn["table_name"]}'`
+                            if (
+                                tableColumn.type === "geometry" ||
+                                tableColumn.type === "geography"
+                            ) {
+                                const sql =
+                                    `SELECT * FROM (` +
+                                    `SELECT "f_table_schema" "table_schema", "f_table_name" "table_name", ` +
+                                    `"f_${tableColumn.type}_column" "column_name", "srid", "type" ` +
+                                    `FROM "${tableColumn.type}_columns"` +
+                                    `) AS _ ` +
+                                    `WHERE "column_name" = '${dbColumn["column_name"]}' AND ` +
+                                    `"table_schema" = '${dbColumn["table_schema"]}' AND ` +
+                                    `"table_name" = '${dbColumn["table_name"]}'`
 
                                 const results: ObjectLiteral[] =
-                                    await this.query(geometryColumnSql)
-
-                                if (results.length > 0) {
-                                    tableColumn.spatialFeatureType =
-                                        results[0].type
-                                    tableColumn.srid = results[0].srid
-                                }
-                            }
-
-                            if (tableColumn.type === "geography") {
-                                const geographyColumnSql = `SELECT * FROM (
-                        SELECT
-                          "f_table_schema" "table_schema",
-                          "f_table_name" "table_name",
-                          "f_geography_column" "column_name",
-                          "srid",
-                          "type"
-                        FROM "geography_columns"
-                      ) AS _
-                      WHERE
-                          "column_name" = '${dbColumn["column_name"]}' AND
-                          "table_schema" = '${dbColumn["table_schema"]}' AND
-                          "table_name" = '${dbColumn["table_name"]}'`
-
-                                const results: ObjectLiteral[] =
-                                    await this.query(geographyColumnSql)
+                                    await this.query(sql)
 
                                 if (results.length > 0) {
                                     tableColumn.spatialFeatureType =
@@ -3354,10 +3696,51 @@ export class PostgresQueryRunner
                             }
                             tableColumn.isNullable =
                                 dbColumn["is_nullable"] === "YES"
-                            tableColumn.isPrimary = !!columnConstraints.find(
+
+                            const primaryConstraint = columnConstraints.find(
                                 (constraint) =>
                                     constraint["constraint_type"] === "PRIMARY",
                             )
+                            if (primaryConstraint) {
+                                tableColumn.isPrimary = true
+                                // find another columns involved in primary key constraint
+                                const anotherPrimaryConstraints =
+                                    dbConstraints.filter(
+                                        (constraint) =>
+                                            constraint["table_name"] ===
+                                                dbColumn["table_name"] &&
+                                            constraint["table_schema"] ===
+                                                dbColumn["table_schema"] &&
+                                            constraint["column_name"] !==
+                                                dbColumn["column_name"] &&
+                                            constraint["constraint_type"] ===
+                                                "PRIMARY",
+                                    )
+
+                                // collect all column names
+                                const columnNames =
+                                    anotherPrimaryConstraints.map(
+                                        (constraint) =>
+                                            constraint["column_name"],
+                                    )
+                                columnNames.push(dbColumn["column_name"])
+
+                                // build default primary key constraint name
+                                const pkName =
+                                    this.connection.namingStrategy.primaryKeyName(
+                                        table,
+                                        columnNames,
+                                    )
+
+                                // if primary key has user-defined constraint name, write it in table column
+                                if (
+                                    primaryConstraint["constraint_name"] !==
+                                    pkName
+                                ) {
+                                    tableColumn.primaryKeyConstraintName =
+                                        primaryConstraint["constraint_name"]
+                                }
+                            }
 
                             const uniqueConstraints = columnConstraints.filter(
                                 (constraint) =>
@@ -3418,8 +3801,13 @@ export class PostgresQueryRunner
                                         dbColumn["column_default"],
                                     )
                                 ) {
-                                    tableColumn.isGenerated = true
-                                    tableColumn.generationStrategy = "uuid"
+                                    if (tableColumn.type === "uuid") {
+                                        tableColumn.isGenerated = true
+                                        tableColumn.generationStrategy = "uuid"
+                                    } else {
+                                        tableColumn.default =
+                                            dbColumn["column_default"]
+                                    }
                                 } else if (
                                     dbColumn["column_default"] === "now()" ||
                                     dbColumn["column_default"].indexOf(
@@ -3431,7 +3819,7 @@ export class PostgresQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                    ].replace(/::[\w\s\.\[\]\"]+/g, "")
+                                    ].replace(/::[\w\s.[\]\-"]+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
                                             /^(-?\d+)$/,
@@ -3448,15 +3836,18 @@ export class PostgresQueryRunner
                                 tableColumn.generatedType = "STORED"
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
-                                    `SELECT * FROM "${this.connection.metadataTableName}" ` +
-                                    ` WHERE "table" = '${dbTable["table_name"]}'` +
-                                    ` AND "name" = '${tableColumn.name}'` +
-                                    ` AND "schema" = '${dbTable["table_schema"]}'` +
-                                    ` AND "database" = '${this.driver.database}'` +
-                                    ` AND "type" = '${MetadataTableType.GENERATED_COLUMN}'`
+                                    this.selectTypeormMetadataSql({
+                                        database: currentDatabase,
+                                        schema: dbTable["table_schema"],
+                                        table: dbTable["table_name"],
+                                        type: MetadataTableType.GENERATED_COLUMN,
+                                        name: tableColumn.name,
+                                    })
 
-                                const results: ObjectLiteral[] =
-                                    await this.query(asExpressionQuery)
+                                const results = await this.query(
+                                    asExpressionQuery.query,
+                                    asExpressionQuery.parameters,
+                                )
                                 if (results[0] && results[0].value) {
                                     tableColumn.asExpression = results[0].value
                                 } else {
@@ -3637,12 +4028,7 @@ export class PostgresQueryRunner
                         columnNames: indices.map((i) => i["column_name"]),
                         isUnique: constraint["is_unique"] === "TRUE",
                         where: constraint["condition"],
-                        isSpatial: indices.every(
-                            (i) =>
-                                this.driver.spatialTypes.indexOf(
-                                    i["type_name"],
-                                ) >= 0,
-                        ),
+                        isSpatial: constraint["index_type"] === "gist",
                         isFulltext: false,
                     })
                 })
@@ -3774,11 +4160,13 @@ export class PostgresQueryRunner
             (column) => column.isPrimary,
         )
         if (primaryColumns.length > 0) {
-            const primaryKeyName =
-                this.connection.namingStrategy.primaryKeyName(
-                    table,
-                    primaryColumns.map((column) => column.name),
-                )
+            const primaryKeyName = primaryColumns[0].primaryKeyConstraintName
+                ? primaryColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      table,
+                      primaryColumns.map((column) => column.name),
+                  )
+
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
@@ -3802,9 +4190,21 @@ export class PostgresQueryRunner
     /**
      * Loads Postgres version.
      */
-    protected async getVersion(): Promise<string> {
-        const result = await this.query(`SHOW SERVER_VERSION`)
-        return result[0]["server_version"]
+    async getVersion(): Promise<string> {
+        // we use `SELECT version()` instead of `SHOW server_version` or `SHOW server_version_num`
+        // to maintain compatability with Amazon Redshift.
+        //
+        // see:
+        //  - https://github.com/typeorm/typeorm/pull/9319
+        //  - https://docs.aws.amazon.com/redshift/latest/dg/c_unsupported-postgresql-functions.html
+        const result: [{ version: string }] = await this.query(
+            `SELECT version()`,
+        )
+
+        // Examples:
+        // Postgres: "PostgreSQL 14.10 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 8.5.0 20210514 (Red Hat 8.5.0-20), 64-bit"
+        // Yugabyte: "PostgreSQL 11.2-YB-2.18.1.0-b0 on x86_64-pc-linux-gnu, compiled by clang version 15.0.3 (https://github.com/yugabyte/llvm-project.git 0b8d1183745fd3998d8beffeec8cbe99c1b20529), 64-bit"
+        return result[0].version.replace(/^PostgreSQL ([\d.]+).*$/, "$1")
     }
 
     /**
@@ -3928,7 +4328,7 @@ export class PostgresQueryRunner
     ): Query {
         if (!enumName) enumName = this.buildEnumName(table, column)
         const enumValues = column
-            .enum!.map((value) => `'${value.replace("'", "''")}'`)
+            .enum!.map((value) => `'${value.replaceAll("'", "''")}'`)
             .join(", ")
         return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`)
     }
@@ -3953,11 +4353,27 @@ export class PostgresQueryRunner
             .map((columnName) => `"${columnName}"`)
             .join(", ")
         return new Query(
-            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
-                index.name
-            }" ON ${this.escapePath(table)} ${
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX${
+                index.isConcurrent ? " CONCURRENTLY" : ""
+            } "${index.name}" ON ${this.escapePath(table)} ${
                 index.isSpatial ? "USING GiST " : ""
             }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
+        )
+    }
+
+    /**
+     * Builds create view index sql.
+     */
+    protected createViewIndexSql(view: View, index: TableIndex): Query {
+        const columns = index.columnNames
+            .map((columnName) => `"${columnName}"`)
+            .join(", ")
+        return new Query(
+            `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
+                index.name
+            }" ON ${this.escapePath(view)} (${columns}) ${
+                index.where ? "WHERE " + index.where : ""
+            }`,
         )
     }
 
@@ -3965,29 +4381,45 @@ export class PostgresQueryRunner
      * Builds drop index sql.
      */
     protected dropIndexSql(
-        table: Table,
+        table: Table | View,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
+        const concurrent = InstanceChecker.isTableIndex(indexOrName)
+            ? indexOrName.isConcurrent
+            : false
         const { schema } = this.driver.parseTableName(table)
         return schema
-            ? new Query(`DROP INDEX "${schema}"."${indexName}"`)
-            : new Query(`DROP INDEX "${indexName}"`)
+            ? new Query(
+                  `DROP INDEX ${
+                      concurrent ? "CONCURRENTLY " : ""
+                  }"${schema}"."${indexName}"`,
+              )
+            : new Query(
+                  `DROP INDEX ${
+                      concurrent ? "CONCURRENTLY " : ""
+                  }"${indexName}"`,
+              )
     }
 
     /**
      * Builds create primary key sql.
      */
-    protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
-            table,
-            columnNames,
-        )
+    protected createPrimaryKeySql(
+        table: Table,
+        columnNames: string[],
+        constraintName?: string,
+    ): Query {
+        const primaryKeyName = constraintName
+            ? constraintName
+            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
+
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
+
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
@@ -3999,11 +4431,15 @@ export class PostgresQueryRunner
      * Builds drop primary key sql.
      */
     protected dropPrimaryKeySql(table: Table): Query {
+        if (!table.primaryColumns.length)
+            throw new TypeORMError(`Table ${table} has no primary keys.`)
+
         const columnNames = table.primaryColumns.map((column) => column.name)
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
-            table,
-            columnNames,
-        )
+        const constraintName = table.primaryColumns[0].primaryKeyConstraintName
+        const primaryKeyName = constraintName
+            ? constraintName
+            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
+
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
@@ -4317,23 +4753,23 @@ export class PostgresQueryRunner
         } else if (!column.isGenerated || column.type === "uuid") {
             c += " " + this.connection.driver.createFullType(column)
         }
-        // CHARACTER SET, COLLATE, NOT NULL and DEFAULT do not exist on generated (virtual) columns
-        // Also, postgres only supports the stored generated column type
+
+        // Postgres only supports the stored generated column type
         if (column.generatedType === "STORED" && column.asExpression) {
             c += ` GENERATED ALWAYS AS (${column.asExpression}) STORED`
-        } else {
-            if (column.charset) c += ' CHARACTER SET "' + column.charset + '"'
-            if (column.collation) c += ' COLLATE "' + column.collation + '"'
-            if (column.isNullable !== true) c += " NOT NULL"
-            if (column.default !== undefined && column.default !== null)
-                c += " DEFAULT " + column.default
-            if (
-                column.isGenerated &&
-                column.generationStrategy === "uuid" &&
-                !column.default
-            )
-                c += ` DEFAULT ${this.driver.uuidGenerator}`
         }
+
+        if (column.charset) c += ' CHARACTER SET "' + column.charset + '"'
+        if (column.collation) c += ' COLLATE "' + column.collation + '"'
+        if (column.isNullable !== true) c += " NOT NULL"
+        if (column.default !== undefined && column.default !== null)
+            c += " DEFAULT " + column.default
+        if (
+            column.isGenerated &&
+            column.generationStrategy === "uuid" &&
+            !column.default
+        )
+            c += ` DEFAULT ${this.driver.uuidGenerator}`
 
         return c
     }
@@ -4346,5 +4782,48 @@ export class PostgresQueryRunner
             `SELECT TRUE FROM information_schema.columns WHERE table_name = 'pg_class' and column_name = 'relispartition'`,
         )
         return result.length ? true : false
+    }
+
+    /**
+     * Change table comment.
+     */
+    async changeTableComment(
+        tableOrName: Table | string,
+        newComment?: string,
+    ): Promise<void> {
+        const upQueries: Query[] = []
+        const downQueries: Query[] = []
+
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+
+        newComment = this.escapeComment(newComment)
+        const comment = this.escapeComment(table.comment)
+
+        if (newComment === comment) {
+            return
+        }
+
+        const newTable = table.clone()
+
+        upQueries.push(
+            new Query(
+                `COMMENT ON TABLE ${this.escapePath(
+                    newTable,
+                )} IS ${newComment}`,
+            ),
+        )
+
+        downQueries.push(
+            new Query(
+                `COMMENT ON TABLE ${this.escapePath(table)} IS ${comment}`,
+            ),
+        )
+
+        await this.executeQueries(upQueries, downQueries)
+
+        table.comment = newTable.comment
+        this.replaceCachedTable(table, newTable)
     }
 }

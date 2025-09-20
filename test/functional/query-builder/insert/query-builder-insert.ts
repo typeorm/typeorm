@@ -51,11 +51,15 @@ describe("query builder > insert", () => {
                     .values({ name: "Muhammad Mirzoev" })
                     .execute()
 
-                const users = await connection.getRepository(User).find()
+                const users = await connection.getRepository(User).find({
+                    order: {
+                        id: "ASC",
+                    },
+                })
                 users.should.be.eql([
-                    { id: 1, name: "Alex Messer" },
-                    { id: 2, name: "Dima Zotov" },
-                    { id: 3, name: "Muhammad Mirzoev" },
+                    { id: 1, name: "Alex Messer", memberId: null },
+                    { id: 2, name: "Dima Zotov", memberId: null },
+                    { id: 3, name: "Muhammad Mirzoev", memberId: null },
                 ])
             }),
         ))
@@ -63,29 +67,40 @@ describe("query builder > insert", () => {
     it("should perform bulk insertion correctly", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // it is skipped for Oracle and SAP because it does not support bulk insertion
-                if (
-                    connection.driver.options.type === "oracle" ||
-                    connection.driver.options.type === "sap"
-                )
+                // it is skipped for SAP because it does not support bulk insertion
+                if (connection.driver.options.type === "sap") {
                     return
+                }
+
+                // Oracle does not support automatic ID generation for bulk inserts, so we manually assign IDs to avoid issues.
+                const isOracle = connection.driver.options.type === "oracle"
+                const values: Partial<User>[] = [
+                    { name: "Umed Khudoiberdiev", memberId: 1 },
+                    {
+                        name: "Bakhrom Baubekov",
+                        memberId: null,
+                    } as unknown as Partial<User>, // try setting something NULL (see issue #11362)
+                    { name: "Bakhodur Kandikov", memberId: 3 },
+                ].map((user, index) =>
+                    isOracle ? { id: index + 1, ...user } : user,
+                )
 
                 await connection
                     .createQueryBuilder()
                     .insert()
                     .into(User)
-                    .values([
-                        { name: "Umed Khudoiberdiev" },
-                        { name: "Bakhrom Baubekov" },
-                        { name: "Bakhodur Kandikov" },
-                    ])
+                    .values(values)
                     .execute()
 
-                const users = await connection.getRepository(User).find()
+                const users = await connection.getRepository(User).find({
+                    order: {
+                        id: "ASC",
+                    },
+                })
                 users.should.be.eql([
-                    { id: 1, name: "Umed Khudoiberdiev" },
-                    { id: 2, name: "Bakhrom Baubekov" },
-                    { id: 3, name: "Bakhodur Kandikov" },
+                    { id: 1, name: "Umed Khudoiberdiev", memberId: 1 },
+                    { id: 2, name: "Bakhrom Baubekov", memberId: null },
+                    { id: 3, name: "Bakhodur Kandikov", memberId: 3 },
                 ])
             }),
         ))
@@ -117,31 +132,37 @@ describe("query builder > insert", () => {
         Promise.all(
             connections.map(async (connection) => {
                 // this test is skipped for sqlite based drivers because it does not support DEFAULT values in insertions,
-                // also it is skipped for Oracle and SAP because it does not support bulk insertion
+                // also it is skipped for SAP because it does not support bulk insertion
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
-                    connection.driver.options.type === "oracle" ||
                     connection.driver.options.type === "sap"
-                )
+                ) {
                     return
+                }
+
+                // Oracle does not support automatic ID generation for bulk inserts, so we manually assign IDs to avoid issues.
+                const isOracle = connection.driver.options.type === "oracle"
+                const values: Partial<Photo>[] = [
+                    {
+                        url: "1.jpg",
+                        counters: {
+                            likes: 1,
+                            favorites: 1,
+                            comments: 1,
+                        },
+                    },
+                    {
+                        url: "2.jpg",
+                    },
+                ].map((photo, index) =>
+                    isOracle ? { id: index + 1, ...photo } : photo,
+                )
 
                 await connection
                     .createQueryBuilder()
                     .insert()
                     .into(Photo)
-                    .values([
-                        {
-                            url: "1.jpg",
-                            counters: {
-                                likes: 1,
-                                favorites: 1,
-                                comments: 1,
-                            },
-                        },
-                        {
-                            url: "2.jpg",
-                        },
-                    ])
+                    .values(values)
                     .execute()
 
                 const loadedPhoto1 = await connection

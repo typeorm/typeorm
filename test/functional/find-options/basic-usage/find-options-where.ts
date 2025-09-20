@@ -1,6 +1,15 @@
 import "reflect-metadata"
 import "../../../utils/test-setup"
-import { DataSource, LessThan, MoreThan } from "../../../../src"
+import {
+    And,
+    DataSource,
+    In,
+    IsNull,
+    LessThan,
+    MoreThan,
+    Not,
+    Or,
+} from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -16,7 +25,9 @@ describe("find options > where", () => {
     let connections: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({ __dirname })),
+            (connections = await createTestingConnections({
+                __dirname,
+            })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
@@ -141,6 +152,12 @@ describe("find options > where", () => {
                         text: "About post #2",
                         counters: { likes: 2 },
                     },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
                 ])
 
                 const posts2 = await connection
@@ -207,6 +224,9 @@ describe("find options > where", () => {
                                 },
                             },
                         },
+                        order: {
+                            id: "asc",
+                        },
                     })
                     .getMany()
                 posts.should.be.eql([
@@ -221,6 +241,12 @@ describe("find options > where", () => {
                         title: "Post #2",
                         text: "About post #2",
                         counters: { likes: 2 },
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
                     },
                 ])
             }),
@@ -258,6 +284,60 @@ describe("find options > where", () => {
             }),
         ))
 
+    it("where or + optional relations", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await prepareData(connection.manager)
+
+                const posts = await connection
+                    .createQueryBuilder(Post, "post")
+                    .setFindOptions({
+                        where: [
+                            {
+                                author: {
+                                    id: 1,
+                                },
+                            },
+                            {
+                                tags: {
+                                    name: "category #1",
+                                },
+                            },
+                        ],
+                        order: {
+                            id: "asc",
+                        },
+                    })
+                    .getMany()
+                posts.should.be.eql([
+                    {
+                        id: 1,
+                        title: "Post #1",
+                        text: "About post #1",
+                        counters: { likes: 1 },
+                    },
+                    {
+                        id: 2,
+                        title: "Post #2",
+                        text: "About post #2",
+                        counters: { likes: 2 },
+                    },
+                    {
+                        id: 3,
+                        title: "Post #3",
+                        text: "About post #3",
+                        counters: { likes: 1 },
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
+                ])
+            }),
+        ))
+
     it("where column in embed", () =>
         Promise.all(
             connections.map(async (connection) => {
@@ -270,6 +350,9 @@ describe("find options > where", () => {
                             counters: {
                                 likes: 1,
                             },
+                        },
+                        order: {
+                            id: "asc",
                         },
                     })
                     .getMany()
@@ -284,6 +367,12 @@ describe("find options > where", () => {
                         id: 3,
                         title: "Post #3",
                         text: "About post #3",
+                        counters: { likes: 1 },
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
                         counters: { likes: 1 },
                     },
                 ])
@@ -304,6 +393,9 @@ describe("find options > where", () => {
                                     firstName: "Gyro",
                                 },
                             },
+                        },
+                        order: {
+                            id: "asc",
                         },
                     })
                     .getMany()
@@ -351,6 +443,9 @@ describe("find options > where", () => {
                                 },
                             },
                         ],
+                        order: {
+                            id: "asc",
+                        },
                     })
                     .getMany()
                 posts.should.be.eql([
@@ -370,6 +465,64 @@ describe("find options > where", () => {
                         id: 3,
                         title: "Post #3",
                         text: "About post #3",
+                        counters: { likes: 1 },
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
+                ])
+            }),
+        ))
+
+    it("where with or + and find operator", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await prepareData(connection.manager)
+
+                const posts = await connection
+                    .createQueryBuilder(Post, "post")
+                    .setFindOptions({
+                        where: {
+                            counters: {
+                                likedUsers: {
+                                    firstName: And(
+                                        In(["Gyro", "Timber"]),
+                                        Not(Or(IsNull(), In(["Foo", "Bar"]))),
+                                    ),
+                                },
+                            },
+                        },
+                        order: {
+                            id: "asc",
+                        },
+                    })
+                    .getMany()
+                posts.should.be.eql([
+                    {
+                        id: 1,
+                        title: "Post #1",
+                        text: "About post #1",
+                        counters: { likes: 1 },
+                    },
+                    {
+                        id: 2,
+                        title: "Post #2",
+                        text: "About post #2",
+                        counters: { likes: 2 },
+                    },
+                    {
+                        id: 3,
+                        title: "Post #3",
+                        text: "About post #3",
+                        counters: { likes: 1 },
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
                         counters: { likes: 1 },
                     },
                 ])
@@ -426,6 +579,9 @@ describe("find options > where", () => {
                                 photos: MoreThan(1),
                             },
                         },
+                        order: {
+                            id: "asc",
+                        },
                     })
                     .getMany()
                 posts3.should.be.eql([
@@ -440,6 +596,12 @@ describe("find options > where", () => {
                         title: "Post #2",
                         text: "About post #2",
                         counters: { likes: 2 },
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
                     },
                 ])
 
@@ -460,6 +622,9 @@ describe("find options > where", () => {
                     .setFindOptions({
                         where: {
                             posts: MoreThan(1),
+                        },
+                        order: {
+                            id: "asc",
                         },
                     })
                     .getMany()
@@ -486,6 +651,7 @@ describe("find options > where", () => {
                 await prepareData(connection.manager)
 
                 const post4 = new Post()
+                post4.id = 4
                 post4.title = "Post #4"
                 post4.text = "About post #4"
                 post4.counters = new Counters()
@@ -500,6 +666,9 @@ describe("find options > where", () => {
                                 id: undefined,
                                 firstName: undefined,
                             },
+                        },
+                        order: {
+                            id: "asc",
                         },
                     })
                     .getMany()
@@ -538,6 +707,7 @@ describe("find options > where", () => {
                 await prepareData(connection.manager)
 
                 const post4 = new Post()
+                post4.id = 4
                 post4.title = "Post #4"
                 post4.text = "About post #4"
                 post4.counters = new Counters()
@@ -549,6 +719,9 @@ describe("find options > where", () => {
                     .setFindOptions({
                         where: {
                             author: true,
+                        },
+                        order: {
+                            id: "asc",
                         },
                     })
                     .getMany()
@@ -569,6 +742,12 @@ describe("find options > where", () => {
                         id: 3,
                         title: "Post #3",
                         text: "About post #3",
+                        counters: { likes: 1 },
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
                         counters: { likes: 1 },
                     },
                 ])

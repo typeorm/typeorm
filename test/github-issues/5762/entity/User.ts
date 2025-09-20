@@ -7,7 +7,8 @@ export class User {
     @PrimaryColumn()
     id: number
 
-    @Column("varchar", {
+    @Column({
+        type: String,
         // marshall
         transformer: {
             from(value: string): URL {

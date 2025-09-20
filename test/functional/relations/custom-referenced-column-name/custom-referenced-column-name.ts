@@ -45,6 +45,7 @@ describe("relations > custom-referenced-column-name", () => {
 
                     const loadedPosts = await connection.manager
                         .createQueryBuilder(Post, "post")
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts![0].categoryName).to.not.be.undefined
@@ -91,6 +92,7 @@ describe("relations > custom-referenced-column-name", () => {
                             "post.categoryWithEmptyJoinCol",
                             "categoryWithEmptyJoinCol",
                         )
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(
@@ -138,6 +140,7 @@ describe("relations > custom-referenced-column-name", () => {
 
                     const loadedPosts = await connection.manager
                         .createQueryBuilder(Post, "post")
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts![0].categoryId).to.be.equal(1)
@@ -179,6 +182,7 @@ describe("relations > custom-referenced-column-name", () => {
                             "post.categoryWithoutColName",
                             "categoryWithoutColName",
                         )
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(
@@ -228,6 +232,7 @@ describe("relations > custom-referenced-column-name", () => {
                             "post.categoryWithoutRefColName2",
                             "categoryWithoutRefColName2",
                         )
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts![0].categoryWithoutRefColName2).to.not.be
@@ -282,6 +287,7 @@ describe("relations > custom-referenced-column-name", () => {
                     const loadedPosts = await connection.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect("post.category", "category")
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts![0].category).to.not.be.undefined
@@ -325,6 +331,7 @@ describe("relations > custom-referenced-column-name", () => {
 
                     const loadedPosts = await connection.manager
                         .createQueryBuilder(Post, "post")
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts![0].tagName).to.not.be.undefined
@@ -369,6 +376,7 @@ describe("relations > custom-referenced-column-name", () => {
                             "post.tagWithEmptyJoinCol",
                             "tagWithEmptyJoinCol",
                         )
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts![0].tagWithEmptyJoinCol.id).to.be.equal(
@@ -414,6 +422,7 @@ describe("relations > custom-referenced-column-name", () => {
 
                     const loadedPosts = await connection.manager
                         .createQueryBuilder(Post, "post")
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts![0].tagId).to.be.equal(1)
@@ -455,6 +464,7 @@ describe("relations > custom-referenced-column-name", () => {
                             "post.tagWithoutColName",
                             "tagWithoutColName",
                         )
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts![0].tagWithoutColName.id).to.be.equal(1)
@@ -500,6 +510,7 @@ describe("relations > custom-referenced-column-name", () => {
                             "post.tagWithoutRefColName2",
                             "tagWithoutRefColName2",
                         )
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts![0].tagWithoutRefColName2).to.not.be
@@ -552,6 +563,7 @@ describe("relations > custom-referenced-column-name", () => {
                     const loadedPosts = await connection.manager
                         .createQueryBuilder(Post, "post")
                         .leftJoinAndSelect("post.tag", "tag")
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts![0].tag).to.not.be.undefined

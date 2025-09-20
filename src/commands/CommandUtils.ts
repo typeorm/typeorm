@@ -1,6 +1,5 @@
-import * as fs from "fs"
-import * as path from "path"
-import mkdirp from "mkdirp"
+import fs from "fs/promises"
+import path from "path"
 import { TypeORMError } from "../error"
 import { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
@@ -20,7 +19,7 @@ export class CommandUtils {
             )
         } catch (err) {
             throw new Error(
-                `Invalid file path given: "${dataSourceFilePath}". File must contain a TypeScript / JavaScript code and export a DataSource instance.`,
+                `Unable to open file: "${dataSourceFilePath}". ${err.message}`,
             )
         }
 
@@ -33,12 +32,20 @@ export class CommandUtils {
             )
         }
 
+        if (InstanceChecker.isDataSource(dataSourceFileExports)) {
+            return dataSourceFileExports
+        }
+
         const dataSourceExports = []
-        for (let fileExport in dataSourceFileExports) {
-            if (
-                InstanceChecker.isDataSource(dataSourceFileExports[fileExport])
-            ) {
-                dataSourceExports.push(dataSourceFileExports[fileExport])
+        for (const fileExportKey in dataSourceFileExports) {
+            const fileExport = dataSourceFileExports[fileExportKey]
+            // It is necessary to await here in case of the exported async value (Promise<DataSource>).
+            // e.g. the DataSource is instantiated with an async factory in the source file
+            // It is safe to await regardless of the export being async or not due to `awaits` definition:
+            // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await#return_value
+            const awaitedFileExport = await fileExport
+            if (InstanceChecker.isDataSource(awaitedFileExport)) {
+                dataSourceExports.push(awaitedFileExport)
             }
         }
 
@@ -58,8 +65,8 @@ export class CommandUtils {
     /**
      * Creates directories recursively.
      */
-    static createDirectories(directory: string) {
-        return mkdirp(directory)
+    static async createDirectories(directory: string): Promise<void> {
+        await fs.mkdir(directory, { recursive: true })
     }
 
     /**
@@ -71,26 +78,28 @@ export class CommandUtils {
         override: boolean = true,
     ): Promise<void> {
         await CommandUtils.createDirectories(path.dirname(filePath))
-        return new Promise<void>((ok, fail) => {
-            if (override === false && fs.existsSync(filePath)) return ok()
-
-            fs.writeFile(filePath, content, (err) => (err ? fail(err) : ok()))
-        })
+        if (override === false && (await CommandUtils.fileExists(filePath))) {
+            return
+        }
+        await fs.writeFile(filePath, content)
     }
 
     /**
      * Reads everything from a given file and returns its content as a string.
      */
     static async readFile(filePath: string): Promise<string> {
-        return new Promise<string>((ok, fail) => {
-            fs.readFile(filePath, (err, data) =>
-                err ? fail(err) : ok(data.toString()),
-            )
-        })
+        const file = await fs.readFile(filePath)
+
+        return file.toString()
     }
 
     static async fileExists(filePath: string) {
-        return fs.existsSync(filePath)
+        try {
+            await fs.access(filePath, fs.constants.F_OK)
+            return true
+        } catch {
+            return false
+        }
     }
 
     /**

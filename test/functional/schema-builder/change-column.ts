@@ -73,7 +73,8 @@ describe("schema builder > change column", () => {
                 if (
                     DriverUtils.isMySQLFamily(connection.driver) ||
                     connection.driver.options.type === "aurora-mysql" ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
                 ) {
                     postTable!.indices.length.should.be.equal(2)
                 } else {
@@ -92,13 +93,19 @@ describe("schema builder > change column", () => {
                 const postMetadata = connection.getMetadata(Post)
                 const versionColumn =
                     postMetadata.findColumnWithPropertyName("version")!
-                versionColumn.type = "int"
+                versionColumn.type =
+                    connection.driver.options.type === "spanner"
+                        ? "int64"
+                        : "int"
 
                 // in test we must manually change referenced column too, but in real sync, it changes automatically
                 const postVersionMetadata = connection.getMetadata(PostVersion)
                 const postVersionColumn =
                     postVersionMetadata.findColumnWithPropertyName("post")!
-                postVersionColumn.type = "int"
+                postVersionColumn.type =
+                    connection.driver.options.type === "spanner"
+                        ? "int64"
+                        : "int"
 
                 await connection.synchronize()
 
@@ -111,14 +118,25 @@ describe("schema builder > change column", () => {
                 postVersionTable!.foreignKeys.length.should.be.equal(1)
 
                 // revert changes
-                versionColumn.type = "varchar"
-                postVersionColumn.type = "varchar"
+                if (connection.driver.options.type === "spanner") {
+                    versionColumn.type = "string"
+                    postVersionColumn.type = "string"
+                } else if (connection.driver.options.type === "sap") {
+                    versionColumn.type = "nvarchar"
+                    postVersionColumn.type = "nvarchar"
+                } else {
+                    versionColumn.type = "varchar"
+                    postVersionColumn.type = "varchar"
+                }
             }),
         ))
 
     it("should correctly change column default value", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // Spanner does not support DEFAULT
+                if (connection.driver.options.type === "spanner") return
+
                 const postMetadata = connection.getMetadata(Post)
                 const nameColumn =
                     postMetadata.findColumnWithPropertyName("name")!
@@ -142,7 +160,11 @@ describe("schema builder > change column", () => {
         Promise.all(
             connections.map(async (connection) => {
                 // CockroachDB does not allow changing PK
-                if (connection.driver.options.type === "cockroachdb") return
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const postMetadata = connection.getMetadata(Post)
                 const idColumn = postMetadata.findColumnWithPropertyName("id")!
@@ -214,8 +236,12 @@ describe("schema builder > change column", () => {
     it("should correctly change non-generated column on to uuid-generated column", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // CockroachDB does not allow changing PK
-                if (connection.driver.options.type === "cockroachdb") return
+                // CockroachDB and Spanner does not allow changing PK
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
 
@@ -234,6 +260,8 @@ describe("schema builder > change column", () => {
                     idColumn.type = "uuid"
                 } else if (connection.driver.options.type === "mssql") {
                     idColumn.type = "uniqueidentifier"
+                } else if (connection.driver.options.type === "sap") {
+                    idColumn.type = "nvarchar"
                 } else {
                     idColumn.type = "varchar"
                 }
@@ -276,8 +304,12 @@ describe("schema builder > change column", () => {
     it("should correctly change generated column generation strategy", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // CockroachDB does not allow changing PK
-                if (connection.driver.options.type === "cockroachdb") return
+                // CockroachDB and Spanner does not allow changing PK
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const teacherMetadata = connection.getMetadata("teacher")
                 const studentMetadata = connection.getMetadata("student")
@@ -294,6 +326,9 @@ describe("schema builder > change column", () => {
                 } else if (connection.driver.options.type === "mssql") {
                     idColumn.type = "uniqueidentifier"
                     teacherColumn.type = "uniqueidentifier"
+                } else if (connection.driver.options.type === "sap") {
+                    idColumn.type = "nvarchar"
+                    teacherColumn.type = "nvarchar"
                 } else {
                     idColumn.type = "varchar"
                     teacherColumn.type = "varchar"
@@ -335,42 +370,64 @@ describe("schema builder > change column", () => {
     it("should correctly change column comment", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // Skip thie contents of this test if not one of the drivers that support comments
+                // Skip the contents of this test if not one of the drivers that support comments
                 if (
                     !(
                         connection.driver.options.type === "cockroachdb" ||
                         connection.driver.options.type === "postgres" ||
+                        connection.driver.options.type === "sap" ||
                         DriverUtils.isMySQLFamily(connection.driver)
                     )
                 ) {
                     return
                 }
 
+                const postMetadata = connection.getMetadata("post")
                 const teacherMetadata = connection.getMetadata("teacher")
                 const idColumn =
                     teacherMetadata.findColumnWithPropertyName("id")!
+                const tagColumn =
+                    postMetadata.findColumnWithPropertyName("tag")!
 
+                tagColumn.comment = ""
+                tagColumn.isNullable = true // check changing the comment in combination with another option
                 idColumn.comment = "The Teacher's Key"
 
                 await connection.synchronize()
 
                 const queryRunnerA = connection.createQueryRunner()
+                const postTableA = await queryRunnerA.getTable("post")
+                const persistedTagColumnA = postTableA!.findColumnByName("tag")!
                 const teacherTableA = await queryRunnerA.getTable("teacher")
                 await queryRunnerA.release()
 
+                expect(persistedTagColumnA.comment).to.be.equal(
+                    undefined,
+                    connection.name,
+                )
+                expect(persistedTagColumnA.isNullable).to.be.equal(
+                    true,
+                    connection.name,
+                )
                 expect(
                     teacherTableA!.findColumnByName("id")!.comment,
                 ).to.be.equal("The Teacher's Key", connection.name)
 
                 // revert changes
+                tagColumn.comment = "Tag"
+                tagColumn.isNullable = false
                 idColumn.comment = ""
 
                 await connection.synchronize()
 
                 const queryRunnerB = connection.createQueryRunner()
+                const postTableB = await queryRunnerB.getTable("post")
+                const persistedTagColumnB = postTableB!.findColumnByName("tag")!
                 const teacherTableB = await queryRunnerB.getTable("teacher")
                 await queryRunnerB.release()
 
+                expect(persistedTagColumnB.comment).to.be.equal("Tag")
+                expect(persistedTagColumnB.isNullable).to.be.false
                 expect(teacherTableB!.findColumnByName("id")!.comment).to.be
                     .undefined
             }),

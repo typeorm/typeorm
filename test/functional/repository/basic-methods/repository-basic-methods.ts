@@ -11,6 +11,7 @@ import { Post } from "./entity/Post"
 import { QueryBuilder } from "../../../../src/query-builder/QueryBuilder"
 import { User } from "./model/User"
 import questionSchema from "./model-schema/QuestionSchema"
+import userSchema from "./model-schema/UserSchema"
 import { Question } from "./model/Question"
 import { Blog } from "./entity/Blog"
 import { Category } from "./entity/Category"
@@ -24,17 +25,7 @@ import { OneToOneRelationEntity } from "./entity/OneToOneRelation"
 import { UpsertOptions } from "../../../../src/repository/UpsertOptions"
 
 describe("repository > basic methods", () => {
-    let userSchema: any
-    try {
-        const resourceDir =
-            __dirname +
-            "/../../../../../../test/functional/repository/basic-methods/"
-        userSchema = require(resourceDir + "schema/user.json")
-    } catch (err) {
-        const resourceDir = __dirname + "/"
-        userSchema = require(resourceDir + "schema/user.json")
-    }
-    const UserEntity = new EntitySchema<any>(userSchema)
+    const UserEntity = new EntitySchema<any>(userSchema as any)
     const QuestionEntity = new EntitySchema<any>(questionSchema as any)
 
     let connections: DataSource[]
@@ -449,7 +440,7 @@ describe("repository > basic methods", () => {
         it("should first create then update an entity", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes.length) return
                     const externalIdObjects = connection.getRepository(
                         ExternalIdPrimaryKeyEntity,
                     )
@@ -550,7 +541,7 @@ describe("repository > basic methods", () => {
         it("should bulk upsert", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes.length) return
 
                     const externalIdObjects = connection.getRepository(
                         ExternalIdPrimaryKeyEntity,
@@ -598,7 +589,7 @@ describe("repository > basic methods", () => {
         it("should not overwrite unspecified properties", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes.length) return
 
                     const postObjects = connection.getRepository(Post)
                     const externalId = "external-no-overwrite-unrelated"
@@ -697,7 +688,7 @@ describe("repository > basic methods", () => {
         it("should upsert with embedded columns", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes.length) return
 
                     const externalIdObjects = connection.getRepository(
                         ExternalIdPrimaryKeyEntity,
@@ -755,7 +746,7 @@ describe("repository > basic methods", () => {
         it("should upsert on one-to-one relation", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes.length) return
 
                     const oneToOneRepository = connection.getRepository(
                         OneToOneRelationEntity,
@@ -793,7 +784,7 @@ describe("repository > basic methods", () => {
         it("should bulk upsert with embedded columns", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType == null) return
+                    if (!connection.driver.supportedUpsertTypes.length) return
 
                     const embeddedConstraintObjects =
                         connection.getRepository(EmbeddedUQEntity)
@@ -846,7 +837,7 @@ describe("repository > basic methods", () => {
         it("should throw if using an unsupported driver", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    if (connection.driver.supportedUpsertType != null) return
+                    if (connection.driver.supportedUpsertTypes.length) return
 
                     const postRepository = connection.getRepository(Post)
                     const externalId = "external-2"
@@ -854,6 +845,31 @@ describe("repository > basic methods", () => {
                         .upsert({ externalId, title: "Post title initial" }, [
                             "externalId",
                         ])
+                        .should.be.rejectedWith(TypeORMError)
+                }),
+            ))
+        it("should throw if using indexPredicate with an unsupported driver", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    // does not throw for cockroachdb, just returns a result
+                    if (connection.driver.options.type === "cockroachdb") return
+                    if (
+                        !connection.driver.supportedUpsertTypes.includes(
+                            "on-conflict-do-update",
+                        )
+                    )
+                        return
+
+                    const postRepository = connection.getRepository(Post)
+                    const externalId = "external-2"
+                    await postRepository
+                        .upsert(
+                            { externalId, title: "Post title initial" },
+                            {
+                                conflictPaths: ["externalId"],
+                                indexPredicate: "dateAdded > 2020-01-01",
+                            },
+                        )
                         .should.be.rejectedWith(TypeORMError)
                 }),
             ))

@@ -127,6 +127,18 @@ export interface QueryRunner {
     query(query: string, parameters?: any[]): Promise<any>
 
     /**
+     * Tagged template function that executes raw SQL query and returns raw database results.
+     * Template expressions are automatically transformed into database parameters.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
+     * Example: queryRunner.sql`SELECT * FROM table_name WHERE id = ${id}`
+     */
+    sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T>
+
+    /**
      * Returns raw data stream.
      */
     stream(
@@ -252,7 +264,11 @@ export interface QueryRunner {
     /**
      * Creates a new view.
      */
-    createView(view: View, oldView?: View): Promise<void>
+    createView(
+        view: View,
+        syncWithMetadata?: boolean,
+        oldView?: View,
+    ): Promise<void>
 
     /**
      * Drops a view.
@@ -265,6 +281,14 @@ export interface QueryRunner {
     renameTable(
         oldTableOrName: Table | string,
         newTableName: string,
+    ): Promise<void>
+
+    /**
+     * Change table comment. Only supports MySQL and MariaDB
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
     ): Promise<void>
 
     /**
@@ -325,6 +349,7 @@ export interface QueryRunner {
     createPrimaryKey(
         table: Table | string,
         columnNames: string[],
+        constraintName?: string,
     ): Promise<void>
 
     /**
@@ -338,7 +363,10 @@ export interface QueryRunner {
     /**
      * Drops a primary key.
      */
-    dropPrimaryKey(table: Table | string): Promise<void>
+    dropPrimaryKey(
+        table: Table | string,
+        constraintName?: string,
+    ): Promise<void>
 
     /**
      * Creates a new unique constraint.

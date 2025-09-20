@@ -21,6 +21,7 @@ import { Table } from "../../schema-builder/table/Table"
 import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { UpsertType } from "../types/UpsertType"
 
 type DatabasesMap = Record<
     string,
@@ -126,12 +127,13 @@ export abstract class AbstractSqliteDriver implements Driver {
         "date",
         "time",
         "datetime",
+        "json",
     ]
 
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertType = "on-conflict-do-update"
+    supportedUpsertTypes: UpsertType[] = ["on-conflict-do-update"]
 
     /**
      * Gets list of column data types that support length by a driver.
@@ -339,10 +341,13 @@ export abstract class AbstractSqliteDriver implements Driver {
             // to string conversation needs because SQLite stores date as integer number, when date came as Object
             // TODO: think about `toUTC` conversion
             return DateUtils.mixedDateToUtcDatetimeString(value)
+        } else if (
+            columnMetadata.type === "json" ||
+            columnMetadata.type === "simple-json"
+        ) {
+            return DateUtils.simpleJsonToString(value)
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value)
-        } else if (columnMetadata.type === "simple-json") {
-            return DateUtils.simpleJsonToString(value)
         } else if (columnMetadata.type === "simple-enum") {
             return DateUtils.simpleEnumToString(value)
         }
@@ -404,12 +409,18 @@ export abstract class AbstractSqliteDriver implements Driver {
             value = DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
+        } else if (
+            columnMetadata.type === "json" ||
+            columnMetadata.type === "simple-json"
+        ) {
+            value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value)
-        } else if (columnMetadata.type === "simple-json") {
-            value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "simple-enum") {
             value = DateUtils.stringToSimpleEnum(value, columnMetadata)
+        } else if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)
@@ -457,7 +468,7 @@ export abstract class AbstractSqliteDriver implements Driver {
                     return full
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -475,6 +486,16 @@ export abstract class AbstractSqliteDriver implements Driver {
                     return value()
                 } else if (typeof value === "number") {
                     return String(value)
+                }
+
+                // Sqlite does not have a boolean data type so we have to transform
+                // it to 1 or 0
+                if (typeof value === "boolean") {
+                    escapedParameters.push(+value)
+                    return this.createParameter(
+                        key,
+                        escapedParameters.length - 1,
+                    )
                 }
 
                 if (value instanceof Date) {
@@ -759,35 +780,99 @@ export abstract class AbstractSqliteDriver implements Driver {
             )
             if (!tableColumn) return false // we don't need new columns, we only need exist and changed
 
-            // console.log("table:", columnMetadata.entityMetadata.tableName);
-            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            // console.log("length:", tableColumn.length, columnMetadata.length);
-            // console.log("precision:", tableColumn.precision, columnMetadata.precision);
-            // console.log("scale:", tableColumn.scale, columnMetadata.scale);
-            // console.log("comment:", tableColumn.comment, columnMetadata.comment);
-            // console.log("default:", this.normalizeDefault(columnMetadata), columnMetadata.default);
-            // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
-            // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
-            // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
-            // console.log("==========================================");
-
-            return (
+            const isColumnChanged =
                 tableColumn.name !== columnMetadata.databaseName ||
                 tableColumn.type !== this.normalizeType(columnMetadata) ||
                 tableColumn.length !== columnMetadata.length ||
                 tableColumn.precision !== columnMetadata.precision ||
                 tableColumn.scale !== columnMetadata.scale ||
-                //  || tableColumn.comment !== columnMetadata.comment || // todo
                 this.normalizeDefault(columnMetadata) !== tableColumn.default ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
+                tableColumn.generatedType !== columnMetadata.generatedType ||
+                tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
+                (tableColumn.enum &&
+                    columnMetadata.enum &&
+                    !OrmUtils.isArraysEqual(
+                        tableColumn.enum,
+                        columnMetadata.enum.map((val) => val + ""),
+                    )) ||
                 (columnMetadata.generationStrategy !== "uuid" &&
                     tableColumn.isGenerated !== columnMetadata.isGenerated)
-            )
+
+            // DEBUG SECTION
+            // if (isColumnChanged) {
+            //     console.log("table:", columnMetadata.entityMetadata.tableName)
+            //     console.log(
+            //         "name:",
+            //         tableColumn.name,
+            //         columnMetadata.databaseName,
+            //     )
+            //     console.log(
+            //         "type:",
+            //         tableColumn.type,
+            //         this.normalizeType(columnMetadata),
+            //     )
+            //     console.log(
+            //         "length:",
+            //         tableColumn.length,
+            //         columnMetadata.length,
+            //     )
+            //     console.log(
+            //         "precision:",
+            //         tableColumn.precision,
+            //         columnMetadata.precision,
+            //     )
+            //     console.log("scale:", tableColumn.scale, columnMetadata.scale)
+            //     console.log(
+            //         "default:",
+            //         this.normalizeDefault(columnMetadata),
+            //         columnMetadata.default,
+            //     )
+            //     console.log(
+            //         "isPrimary:",
+            //         tableColumn.isPrimary,
+            //         columnMetadata.isPrimary,
+            //     )
+            //     console.log(
+            //         "isNullable:",
+            //         tableColumn.isNullable,
+            //         columnMetadata.isNullable,
+            //     )
+            //     console.log(
+            //         "generatedType:",
+            //         tableColumn.generatedType,
+            //         columnMetadata.generatedType,
+            //     )
+            //     console.log(
+            //         "asExpression:",
+            //         tableColumn.asExpression,
+            //         columnMetadata.asExpression,
+            //     )
+            //     console.log(
+            //         "isUnique:",
+            //         tableColumn.isUnique,
+            //         this.normalizeIsUnique(columnMetadata),
+            //     )
+            //     console.log(
+            //         "enum:",
+            //         tableColumn.enum &&
+            //             columnMetadata.enum &&
+            //             !OrmUtils.isArraysEqual(
+            //                 tableColumn.enum,
+            //                 columnMetadata.enum.map((val) => val + ""),
+            //             ),
+            //     )
+            //     console.log(
+            //         "isGenerated:",
+            //         tableColumn.isGenerated,
+            //         columnMetadata.isGenerated,
+            //     )
+            // }
+
+            return isColumnChanged
         })
     }
 
@@ -828,7 +913,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Creates connection with the database.
      */
-    protected createDatabaseConnection() {
+    protected async createDatabaseConnection(): Promise<any> {
         throw new TypeORMError(
             "Do not use AbstractSqlite directly, it has to be used with one of the sqlite drivers",
         )

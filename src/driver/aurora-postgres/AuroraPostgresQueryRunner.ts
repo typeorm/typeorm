@@ -6,6 +6,8 @@ import { AuroraPostgresDriver } from "./AuroraPostgresDriver"
 import { PostgresQueryRunner } from "../postgres/PostgresQueryRunner"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { Table } from "../../schema-builder/table/Table"
+import { TypeORMError } from "../../error"
 
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
     driver: any
@@ -190,5 +192,17 @@ export class AuroraPostgresQueryRunner
         }
 
         return result
+    }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `aurora-postgres driver does not support change comment.`,
+        )
     }
 }

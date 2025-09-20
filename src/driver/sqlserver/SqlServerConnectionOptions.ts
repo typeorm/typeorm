@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { ReplicationMode } from "../types/ReplicationMode"
 import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
 
 /**
@@ -62,12 +63,6 @@ export interface SqlServerConnectionOptions
         readonly maxWaitingClients?: number
 
         /**
-         * Should the pool validate resources before giving them to clients. Requires that either factory.validate or
-         * factory.validateAsync to be specified
-         */
-        readonly testOnBorrow?: boolean
-
-        /**
          * Max milliseconds an acquire call will wait for a resource before timing out. (default no limit), if supplied should non-zero positive integer.
          */
         readonly acquireTimeoutMillis?: number
@@ -120,6 +115,11 @@ export interface SqlServerConnectionOptions
      */
     readonly options?: {
         /**
+         * The named instance to connect to
+         */
+        readonly instanceName?: string
+
+        /**
          * By default, if the database requestion by options.database cannot be accessed, the connection will fail with
          * an error. However, if options.fallbackToDefaultDb is set to true, then the user's default database will
          * be used instead (Default: false).
@@ -148,7 +148,7 @@ export interface SqlServerConnectionOptions
         readonly packetSize?: number
 
         /**
-         * A boolean determining whether to pass time values in UTC or local time. (default: true).
+         * A boolean determining whether to pass time values in UTC or local time. (default: false).
          */
         readonly useUTC?: boolean
 
@@ -179,6 +179,12 @@ export interface SqlServerConnectionOptions
          * A boolean, controlling whatever to disable RETURNING / OUTPUT statements.
          */
         readonly disableOutputReturning?: boolean
+
+        /**
+         * A boolean, controlling whether MssqlParameter types char, varchar, and text are converted to their unicode equivalents, nchar, nvarchar, and ntext.
+         * (default: false, meaning that char/varchar/text parameters will be converted to nchar/nvarchar/ntext)
+         */
+        readonly disableAsciiToUnicodeParamConversion?: boolean
 
         /**
          * Debug options
@@ -239,7 +245,7 @@ export interface SqlServerConnectionOptions
 
         /**
          * A boolean determining whether or not the connection will be encrypted. Set to true if you're on
-         * Windows Azure. (default: false).
+         * Windows Azure. (default: true).
          */
         readonly encrypt?: boolean
 
@@ -272,6 +278,18 @@ export interface SqlServerConnectionOptions
          * A boolean, that when true will abort a query when an overflow or divide-by-zero error occurs during query execution.
          */
         readonly enableArithAbort?: boolean
+
+        /**
+         * Application name used for identifying a specific application in profiling, logging or tracing tools of SQL Server.
+         * (default: node-mssql)
+         */
+        readonly appName?: string
+
+        /**
+         * A boolean, controlling whether encryption occurs if there is no verifiable server certificate.
+         * (default: false)
+         */
+        readonly trustServerCertificate?: boolean
     }
 
     /**
@@ -284,8 +302,16 @@ export interface SqlServerConnectionOptions
         readonly master: SqlServerConnectionCredentialsOptions
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from servers (slaves).
          */
         readonly slaves: SqlServerConnectionCredentialsOptions[]
+
+        /**
+         * Default connection pool to use for SELECT queries
+         * @default "slave"
+         */
+        readonly defaultMode?: ReplicationMode
     }
+
+    readonly poolSize?: never
 }

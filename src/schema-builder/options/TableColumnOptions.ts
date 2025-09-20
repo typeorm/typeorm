@@ -117,12 +117,22 @@ export interface TableColumnOptions {
     enumName?: string
 
     /**
-     * Generated column expression. Supports only in MySQL.
+     * If this column is primary key then this specifies the name for it.
+     */
+    primaryKeyConstraintName?: string
+
+    /**
+     * If this column is foreign key then this specifies the name for it.
+     */
+    foreignKeyConstraintName?: string
+
+    /**
+     * Generated column expression.
      */
     asExpression?: string
 
     /**
-     * Generated column type. Supports only in MySQL.
+     * Generated column type.
      */
     generatedType?: "VIRTUAL" | "STORED"
 

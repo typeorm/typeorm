@@ -10,7 +10,7 @@ import { ReadStream } from "fs"
 import { expect } from "chai"
 
 function ingestStream(stream: ReadStream): Promise<any[]> {
-    let chunks: any[] = []
+    const chunks: any[] = []
     return new Promise((ok, fail) => {
         stream.on("data", (chunk) => chunks.push(chunk))
         stream.on("error", fail)
@@ -26,7 +26,13 @@ describe("github issues > #7109 stream() bug from 0.2.25 to 0.2.26 with postgres
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
-                enabledDrivers: ["postgres", "mysql", "mariadb", "cockroachdb"],
+                enabledDrivers: [
+                    "postgres",
+                    "mysql",
+                    "mariadb",
+                    "cockroachdb",
+                    "spanner",
+                ],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

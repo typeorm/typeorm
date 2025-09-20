@@ -7,41 +7,49 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../../utils/test-utils"
+import { Example } from "../query-data/entity/Example"
 import sinon from "sinon"
 import { expect } from "chai"
 
 describe("entity subscriber > transaction flow", () => {
-    let beforeTransactionStart = sinon.spy()
-    let afterTransactionStart = sinon.spy()
-    let beforeTransactionCommit = sinon.spy()
-    let afterTransactionCommit = sinon.spy()
-    let beforeTransactionRollback = sinon.spy()
-    let afterTransactionRollback = sinon.spy()
+    const beforeTransactionStart = sinon.spy()
+    const afterTransactionStart = sinon.spy()
+    const afterInsert = sinon.spy()
+    const beforeTransactionCommit = sinon.spy()
+    const afterTransactionCommit = sinon.spy()
+    const beforeTransactionRollback = sinon.spy()
+    const afterTransactionRollback = sinon.spy()
+    let afterInsertQueryRunnerData: any = undefined
 
     @EventSubscriber()
     class PostSubscriber implements EntitySubscriberInterface {
-        beforeTransactionStart() {
-            if (beforeTransactionStart) beforeTransactionStart()
+        beforeTransactionStart(...args: any[]) {
+            if (beforeTransactionStart) beforeTransactionStart(...args)
         }
 
-        afterTransactionStart() {
-            if (afterTransactionStart) afterTransactionStart()
+        afterTransactionStart(...args: any[]) {
+            if (afterTransactionStart) afterTransactionStart(...args)
         }
 
-        beforeTransactionCommit() {
-            if (beforeTransactionCommit) beforeTransactionCommit()
+        afterInsert(...args: any[]) {
+            afterInsertQueryRunnerData = args[0].queryRunner.data
+            if (afterInsert) afterInsert(...args)
         }
 
-        afterTransactionCommit() {
-            if (afterTransactionCommit) afterTransactionCommit()
+        beforeTransactionCommit(...args: any[]) {
+            if (beforeTransactionCommit) beforeTransactionCommit(...args)
         }
 
-        beforeTransactionRollback() {
-            if (beforeTransactionRollback) beforeTransactionRollback()
+        afterTransactionCommit(...args: any[]) {
+            if (afterTransactionCommit) afterTransactionCommit(...args)
         }
 
-        afterTransactionRollback() {
-            if (afterTransactionRollback) afterTransactionRollback()
+        beforeTransactionRollback(...args: any[]) {
+            if (beforeTransactionRollback) beforeTransactionRollback(...args)
+        }
+
+        afterTransactionRollback(...args: any[]) {
+            if (afterTransactionRollback) afterTransactionRollback(...args)
         }
     }
 
@@ -49,6 +57,7 @@ describe("entity subscriber > transaction flow", () => {
     before(
         async () =>
             (connections = await createTestingConnections({
+                entities: [Example],
                 subscribers: [PostSubscriber],
                 dropSchema: true,
                 schemaCreate: true,
@@ -57,8 +66,13 @@ describe("entity subscriber > transaction flow", () => {
     after(() => closeTestingConnections(connections))
 
     it("transactionStart", async () => {
-        for (let connection of connections) {
-            if (connection.driver.options.type === "mssql") return
+        for (const connection of connections) {
+            if (
+                connection.driver.options.type === "mssql" ||
+                connection.driver.options.type === "spanner"
+            ) {
+                continue
+            }
 
             beforeTransactionStart.resetHistory()
             afterTransactionStart.resetHistory()
@@ -71,7 +85,7 @@ describe("entity subscriber > transaction flow", () => {
                 isolationLevel = "READ COMMITTED"
             }
 
-            const queryRunner = await connection.createQueryRunner()
+            const queryRunner = connection.createQueryRunner()
 
             if (
                 connection.driver.options.type === "aurora-postgres" ||
@@ -139,13 +153,18 @@ describe("entity subscriber > transaction flow", () => {
     })
 
     it("transactionCommit", async () => {
-        for (let connection of connections) {
-            if (connection.driver.options.type === "mssql") return
+        for (const connection of connections) {
+            if (
+                connection.driver.options.type === "mssql" ||
+                connection.driver.options.type === "spanner"
+            ) {
+                continue
+            }
 
             beforeTransactionCommit.resetHistory()
             afterTransactionCommit.resetHistory()
 
-            const queryRunner = await connection.createQueryRunner()
+            const queryRunner = connection.createQueryRunner()
             await queryRunner.startTransaction()
 
             if (
@@ -203,13 +222,18 @@ describe("entity subscriber > transaction flow", () => {
     })
 
     it("transactionRollback", async () => {
-        for (let connection of connections) {
-            if (connection.driver.options.type === "mssql") return
+        for (const connection of connections) {
+            if (
+                connection.driver.options.type === "mssql" ||
+                connection.driver.options.type === "spanner"
+            ) {
+                continue
+            }
 
             beforeTransactionRollback.resetHistory()
             afterTransactionRollback.resetHistory()
 
-            const queryRunner = await connection.createQueryRunner()
+            const queryRunner = connection.createQueryRunner()
             await queryRunner.startTransaction()
 
             if (
@@ -265,6 +289,30 @@ describe("entity subscriber > transaction flow", () => {
                 rollbackTransactionFn.restore()
             }
 
+            await queryRunner.release()
+        }
+    })
+
+    it("query data in subscribers", async () => {
+        const example = new Example()
+        const data = { hello: ["world"] }
+
+        for (const connection of connections) {
+            beforeTransactionCommit.resetHistory()
+            afterTransactionCommit.resetHistory()
+            afterInsert.resetHistory()
+
+            afterInsertQueryRunnerData = undefined
+            const queryRunner = connection.createQueryRunner()
+            await queryRunner.startTransaction()
+
+            await queryRunner.manager.save(example, { data })
+
+            await queryRunner.commitTransaction()
+
+            expect(afterInsertQueryRunnerData).to.eql(data)
+
+            afterInsertQueryRunnerData = undefined
             await queryRunner.release()
         }
     })

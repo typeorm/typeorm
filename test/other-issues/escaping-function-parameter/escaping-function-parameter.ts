@@ -70,6 +70,7 @@ describe("other issues > escaping function parameter", () => {
                     .set({
                         title: () => "'super title'",
                     })
+                    .where("id = :id", { id: post.id })
                     .execute()
 
                 const loadedPost = await connection.manager.findOneBy(Post, {

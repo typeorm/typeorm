@@ -117,6 +117,7 @@ describe("query builder > joins", () => {
                         .leftJoinAndSelect("post.categories", "categories")
                         .leftJoinAndSelect("categories.images", "images")
                         .where("post.id = :id", { id: 1 })
+                        .orderBy("post.id, categories.id")
                         .getOne()
 
                     expect(loadedPost!.tag).to.not.be.undefined
@@ -539,6 +540,36 @@ describe("query builder > joins", () => {
                 }),
             ))
 
+        it("should load and map selected data when query builder used as join argument", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const tag = new Tag()
+                    tag.name = "audi"
+                    await connection.manager.save(tag)
+
+                    const post = new Post()
+                    post.title = "about China"
+                    post.tag = tag
+                    await connection.manager.save(post)
+
+                    const loadedPost = await connection.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndMapOne(
+                            "post.tag",
+                            (qb) => qb.from(Tag, "tag"),
+                            "tag",
+                            "tag.id = post.tagId",
+                            undefined,
+                            Tag,
+                        )
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost!.tag).to.not.be.undefined
+                    expect(loadedPost!.tag.id).to.be.equal(1)
+                }),
+            ))
+
         it("should load and map selected data when data will given from same entity but with different conditions", () =>
             Promise.all(
                 connections.map(async (connection) => {
@@ -957,6 +988,36 @@ describe("query builder > joins", () => {
                     ).to.have.members([1, 2])
                     expect(loadedPost!.author).to.not.be.undefined
                     expect(loadedPost!.author.id).to.be.equal(1)
+                }),
+            ))
+
+        it("should load and map selected data when query builder used as join argument", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const tag = new Tag()
+                    tag.name = "audi"
+                    await connection.manager.save(tag)
+
+                    const post = new Post()
+                    post.title = "about China"
+                    post.tag = tag
+                    await connection.manager.save(post)
+
+                    const loadedPost = await connection.manager
+                        .createQueryBuilder(Post, "post")
+                        .innerJoinAndMapOne(
+                            "post.tag",
+                            (qb) => qb.from(Tag, "tag"),
+                            "tag",
+                            "tag.id = post.tagId",
+                            undefined,
+                            Tag,
+                        )
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost!.tag).to.not.be.undefined
+                    expect(loadedPost!.tag.id).to.be.equal(1)
                 }),
             ))
 

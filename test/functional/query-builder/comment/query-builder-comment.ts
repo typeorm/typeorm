@@ -24,10 +24,10 @@ describe("query builder > comment", () => {
             connections.map(async (connection) => {
                 const sql = connection.manager
                     .createQueryBuilder(Test, "test")
-                    .comment("Hello World */")
+                    .comment("Hello World */ */")
                     .getSql()
 
-                expect(sql).to.match(/^\/\* Hello World  \*\/ /)
+                expect(sql).to.match(/^\/\* Hello World {3}\*\/ /)
             }),
         ))
 
@@ -39,7 +39,7 @@ describe("query builder > comment", () => {
                     .comment("")
                     .getSql()
 
-                expect(sql).to.not.match(/^\/\* Hello World  \*\/ /)
+                expect(sql).to.not.match(/^\/\* Hello World {2}\*\/ /)
             }),
         ))
 
@@ -51,7 +51,7 @@ describe("query builder > comment", () => {
                     .comment(" ")
                     .getSql()
 
-                expect(sql).to.match(/^\/\*   \*\/ /)
+                expect(sql).to.match(/^\/\* {3}\*\/ /)
             }),
         ))
 

@@ -8,12 +8,12 @@ import {
 import { Faculty } from "./Faculty"
 
 @Entity()
-@TableInheritance({ column: { name: "type", type: "varchar" } })
+@TableInheritance({ column: { name: "type", type: String } })
 export class Staff {
     @PrimaryGeneratedColumn()
     id: number
 
-    @ManyToOne((type) => Faculty, (faculty) => faculty.staff)
+    @ManyToOne(() => Faculty, (faculty) => faculty.staff)
     faculty: Faculty
 
     @Column()

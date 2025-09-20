@@ -1,18 +1,18 @@
 import { Column } from "../../../../../../src/decorator/columns/Column"
 import { Entity } from "../../../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
 import { Profile } from "./Profile"
 import { OneToOne } from "../../../../../../src/decorator/relations/OneToOne"
+import { PrimaryColumn } from "../../../../../../src"
 
 @Entity()
 export class User {
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number
 
     @Column()
     name: string
 
-    @OneToOne((type) => Profile, (profile) => profile.user, {
+    @OneToOne(() => Profile, (profile) => profile.user, {
         cascade: ["insert"],
     })
     profile: Profile

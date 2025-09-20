@@ -252,6 +252,9 @@ describe("persistence > many-to-one uni-directional relation", function () {
     it("should set category's post to NULL when post is removed from the database (database ON DELETE)", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // Spanner does not support ON DELETE clause
+                if (connection.driver.options.type === "spanner") return
+
                 const post = new Post(1, "Hello Post")
                 await connection.manager.save(post)
 

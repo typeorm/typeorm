@@ -4,6 +4,7 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
+    createTypeormMetadataTable,
 } from "../../utils/test-utils"
 import { TableColumn } from "../../../src"
 import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
@@ -23,15 +24,20 @@ describe("query runner > change column", () => {
     it("should correctly change column and revert change", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // CockroachDB does not allow changing primary columns and renaming constraints
-                if (connection.driver.options.type === "cockroachdb") return
+                // CockroachDB and Spanner does not allow changing primary columns and renaming constraints
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
                 let table = await queryRunner.getTable("post")
 
                 const nameColumn = table!.findColumnByName("name")!
-                nameColumn!.default!.should.exist
+
                 nameColumn!.isUnique.should.be.false
+                nameColumn!.default!.should.exist
 
                 const changedNameColumn = nameColumn.clone()
                 changedNameColumn.default = undefined
@@ -50,10 +56,11 @@ describe("query runner > change column", () => {
                 table!.findColumnByName("name")!.isNullable.should.be.true
 
                 // SQLite does not impose any length restrictions
-                if (!DriverUtils.isSQLiteFamily(connection.driver))
+                if (!DriverUtils.isSQLiteFamily(connection.driver)) {
                     table!
                         .findColumnByName("name")!
                         .length!.should.be.equal("500")
+                }
 
                 const textColumn = table!.findColumnByName("text")!
                 const changedTextColumn = textColumn.clone()
@@ -71,8 +78,8 @@ describe("query runner > change column", () => {
                 table!.findColumnByName("description")!.isPrimary.should.be.true
                 table!.findColumnByName("description")!.default!.should.exist
 
-                let idColumn = table!.findColumnByName("id")!
-                let changedIdColumn = idColumn.clone()
+                const idColumn = table!.findColumnByName("id")!
+                const changedIdColumn = idColumn.clone()
                 changedIdColumn!.isPrimary = false
                 await queryRunner.changeColumn(
                     table!,
@@ -100,8 +107,12 @@ describe("query runner > change column", () => {
     it("should correctly change column 'isGenerated' property and revert change", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // CockroachDB does not allow changing generated columns in existent tables
-                if (connection.driver.options.type === "cockroachdb") return
+                // CockroachDB and Spanner does not allow changing generated columns in existent tables
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
                 let table = await queryRunner.getTable("post")
@@ -174,10 +185,18 @@ describe("query runner > change column", () => {
     it("should correctly change generated as expression", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // Only works on postgres
-                if (!(connection.driver.options.type === "postgres")) return
+                const isPostgres = connection.driver.options.type === "postgres"
+                const isSpanner = connection.driver.options.type === "spanner"
+                const shouldRun =
+                    (isPostgres &&
+                        (connection.driver as PostgresDriver)
+                            .isGeneratedColumnsSupported) ||
+                    isSpanner
+                if (!shouldRun) return
 
                 const queryRunner = connection.createQueryRunner()
+
+                await createTypeormMetadataTable(connection.driver, queryRunner)
 
                 // Database is running < postgres 12
                 if (
@@ -188,7 +207,7 @@ describe("query runner > change column", () => {
 
                 let generatedColumn = new TableColumn({
                     name: "generated",
-                    type: "character varying",
+                    type: isSpanner ? "string" : "varchar",
                     generatedType: "STORED",
                     asExpression: "text || tag",
                 })

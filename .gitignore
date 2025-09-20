@@ -1,15 +1,29 @@
-.nyc_output/
+### macOS ###
 .DS_Store
-.vscode/
-.idea/
+._*
+
+### Node ###
+npm-debug.log*
 build/
 coverage/
+*.lcov
+.nyc_output/
 node_modules/
+
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+### Other IDEs ###
+.idea/
+*.iml
+
+### Custom ###
 /ormconfig.json
 ormlogs.log
-npm-debug.log
-/test/github-issues/799/tmp/*
-# ignore yarn2 artifacts but allow yarn.lock (forces yarn1 compat which is node_modules)
-.yarn/
-.yarn*
 
+/test/github-issues/799/tmp/*

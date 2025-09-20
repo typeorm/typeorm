@@ -10,7 +10,7 @@ import { NativescriptDriver } from "./nativescript/NativescriptDriver"
 import { SqljsDriver } from "./sqljs/SqljsDriver"
 import { MysqlDriver } from "./mysql/MysqlDriver"
 import { PostgresDriver } from "./postgres/PostgresDriver"
-import { ExpoDriver } from "./expo/ExpoDriver"
+import { ExpoDriverFactory } from "./expo/ExpoDriverFactory"
 import { AuroraMysqlDriver } from "./aurora-mysql/AuroraMysqlDriver"
 import { AuroraPostgresDriver } from "./aurora-postgres/AuroraPostgresDriver"
 import { Driver } from "./Driver"
@@ -18,6 +18,7 @@ import { DataSource } from "../data-source/DataSource"
 import { SapDriver } from "./sap/SapDriver"
 import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver"
 import { CapacitorDriver } from "./capacitor/CapacitorDriver"
+import { SpannerDriver } from "./spanner/SpannerDriver"
 
 /**
  * Helps to create drivers.
@@ -58,13 +59,15 @@ export class DriverFactory {
             case "mongodb":
                 return new MongoDriver(connection)
             case "expo":
-                return new ExpoDriver(connection)
+                return new ExpoDriverFactory(connection).create()
             case "aurora-mysql":
                 return new AuroraMysqlDriver(connection)
             case "aurora-postgres":
                 return new AuroraPostgresDriver(connection)
             case "capacitor":
                 return new CapacitorDriver(connection)
+            case "spanner":
+                return new SpannerDriver(connection)
             default:
                 throw new MissingDriverError(type, [
                     "aurora-mysql",
@@ -85,6 +88,7 @@ export class DriverFactory {
                     "sap",
                     "sqlite",
                     "sqljs",
+                    "spanner",
                 ])
         }
     }

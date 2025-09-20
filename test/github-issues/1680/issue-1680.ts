@@ -65,16 +65,18 @@ describe("github issues > #1680 Delete & Update applies to all entities in table
                 })
 
                 // All users should still exist except for User C
-                await connection.manager.find(User).should.eventually.eql([
-                    {
-                        id: 1,
-                        name: "User A",
-                    },
-                    {
-                        id: 2,
-                        name: "User B Updated",
-                    },
-                ])
+                await connection.manager
+                    .find(User, { order: { id: "asc" } })
+                    .should.eventually.eql([
+                        {
+                            id: 1,
+                            name: "User A",
+                        },
+                        {
+                            id: 2,
+                            name: "User B Updated",
+                        },
+                    ])
             }),
         ))
 })

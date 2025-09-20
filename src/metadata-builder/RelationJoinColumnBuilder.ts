@@ -6,6 +6,7 @@ import { JoinColumnMetadataArgs } from "../metadata-args/JoinColumnMetadataArgs"
 import { DataSource } from "../data-source/DataSource"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
+import { OrmUtils } from "../util/OrmUtils"
 
 /**
  * Builds join column for the many-to-one and one-to-one owner relations.
@@ -34,7 +35,7 @@ import { DriverUtils } from "../driver/DriverUtils"
  * ])
  *
  * Since for many-to-one relations having JoinColumn decorator is not required,
- * we need to go thought each many-to-one relation without join column decorator set
+ * we need to go through each many-to-one relation without join column decorator set
  * and create join column metadata args for them.
  */
 export class RelationJoinColumnBuilder {
@@ -76,42 +77,43 @@ export class RelationJoinColumnBuilder {
             } // this case is possible for one-to-one non owning side and relations with createForeignKeyConstraints = false
 
         const foreignKey = new ForeignKeyMetadata({
+            name: joinColumns[0]?.foreignKeyConstraintName,
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
             namingStrategy: this.connection.namingStrategy,
-            columns: columns,
-            referencedColumns: referencedColumns,
+            columns,
+            referencedColumns,
             onDelete: relation.onDelete,
             onUpdate: relation.onUpdate,
             deferrable: relation.deferrable,
         })
 
-        // Oracle does not allow both primary and unique constraints on the same column
+        // SQL requires UNIQUE/PK constraints on columns referenced by a FK
+        // Skip creating the unique constraint for the referenced columns if
+        // they are already contained in the PK of the referenced entity
         if (
-            this.connection.driver.options.type === "oracle" &&
-            columns.every((column) => column.isPrimary)
-        )
+            columns.every((column) => column.isPrimary) ||
+            !relation.isOneToOne
+        ) {
             return { foreignKey, columns, uniqueConstraint: undefined }
-
-        // CockroachDB requires UNIQUE constraints on referenced columns
-        if (referencedColumns.length > 0 && relation.isOneToOne) {
-            const uniqueConstraint = new UniqueMetadata({
-                entityMetadata: relation.entityMetadata,
-                columns: foreignKey.columns,
-                args: {
-                    name: this.connection.namingStrategy.relationConstraintName(
-                        relation.entityMetadata.tableName,
-                        foreignKey.columns.map((c) => c.databaseName),
-                    ),
-                    target: relation.entityMetadata.target,
-                },
-            })
-            uniqueConstraint.build(this.connection.namingStrategy)
-            return { foreignKey, columns, uniqueConstraint }
         }
 
-        return { foreignKey, columns, uniqueConstraint: undefined }
+        const uniqueConstraint = new UniqueMetadata({
+            entityMetadata: relation.entityMetadata,
+            columns: foreignKey.columns,
+            args: {
+                name: this.connection.namingStrategy.relationConstraintName(
+                    relation.entityMetadata.tableName,
+                    foreignKey.columns.map((column) => column.databaseName),
+                ),
+                target: relation.entityMetadata.target,
+            },
+        })
+        uniqueConstraint.build(this.connection.namingStrategy)
+
+        return { foreignKey, columns, uniqueConstraint }
     }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
@@ -207,6 +209,10 @@ export class RelationJoinColumnBuilder {
                                 ) ||
                                     this.connection.driver.options.type ===
                                         "aurora-mysql") &&
+                                // some versions of mariadb support the column type and should not try to provide the length property
+                                this.connection.driver.normalizeType(
+                                    referencedColumn,
+                                ) !== "uuid" &&
                                 (referencedColumn.generationStrategy ===
                                     "uuid" ||
                                     referencedColumn.type === "uuid")
@@ -228,6 +234,11 @@ export class RelationJoinColumnBuilder {
                     },
                 })
                 relation.entityMetadata.registerColumn(relationalColumn)
+            } else if (relationalColumn.referencedColumn) {
+                // Clone the relational column to prevent modifying the original when multiple
+                // relations reference the same column. This ensures each relation gets its own
+                // copy with independent referencedColumn and type properties.
+                relationalColumn = OrmUtils.cloneObject(relationalColumn)
             }
             relationalColumn.referencedColumn = referencedColumn // its important to set it here because we need to set referenced column for user defined join column
             relationalColumn.type = referencedColumn.type // also since types of relational column and join column must be equal we override user defined column type

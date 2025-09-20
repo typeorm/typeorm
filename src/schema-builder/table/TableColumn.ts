@@ -122,12 +122,17 @@ export class TableColumn {
     enumName?: string
 
     /**
-     * Generated column expression. Supports only in MySQL.
+     * Name of the primary key constraint for primary column.
+     */
+    primaryKeyConstraintName?: string
+
+    /**
+     * Generated column expression.
      */
     asExpression?: string
 
     /**
-     * Generated column type. Supports only in MySQL.
+     * Generated column type.
      */
     generatedType?: "VIRTUAL" | "STORED"
 
@@ -174,6 +179,7 @@ export class TableColumn {
             this.comment = options.comment
             this.enum = options.enum
             this.enumName = options.enumName
+            this.primaryKeyConstraintName = options.primaryKeyConstraintName
             this.asExpression = options.asExpression
             this.generatedType = options.generatedType
             this.spatialFeatureType = options.spatialFeatureType
@@ -202,6 +208,7 @@ export class TableColumn {
             unsigned: this.unsigned,
             enum: this.enum,
             enumName: this.enumName,
+            primaryKeyConstraintName: this.primaryKeyConstraintName,
             asExpression: this.asExpression,
             generatedType: this.generatedType,
             default: this.default,

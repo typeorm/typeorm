@@ -1,6 +1,8 @@
-import "reflect-metadata"
 import { expect } from "chai"
+import "reflect-metadata"
+
 import { DataSource } from "../../../../src/data-source/DataSource"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -109,11 +111,12 @@ describe("cube-postgres", () => {
                 // Get Postgres version because zero-length cubes are not legal
                 // on all Postgres versions. Zero-length cubes are only tested
                 // to be working on Postgres version >=10.6.
-                const [{ server_version }] = await connection.query(
-                    "SHOW server_version",
-                )
-                const semverArray = server_version.split(".").map(Number)
-                if (!(semverArray[0] >= 10 && semverArray[1] >= 6)) {
+                if (
+                    !DriverUtils.isReleaseVersionOrGreater(
+                        connection.driver,
+                        "10.6",
+                    )
+                ) {
                     return
                 }
 

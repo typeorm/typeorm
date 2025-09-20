@@ -6,11 +6,12 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 
-describe("query runner > rename column", () => {
+describe("github issues > #4658 Renaming a column with current_timestamp(6) results in broken SQL", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "mariadb"],
             schemaCreate: true,
             dropSchema: true,
         })

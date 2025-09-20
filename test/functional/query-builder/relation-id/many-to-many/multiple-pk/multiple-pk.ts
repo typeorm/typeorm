@@ -69,6 +69,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                             "post.categoryIds",
                             "post.categories",
                         )
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts[0].categoryIds).to.not.be.eql([])
@@ -151,6 +152,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                             "category.imageIds",
                             "category.images",
                         )
+                        .addOrderBy("category.id")
                         .getMany()
 
                     expect(loadedCategories[0].imageIds).to.not.be.eql([])
@@ -231,6 +233,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                                     { id: 1, code: 1 },
                                 ),
                         )
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts[0].categoryIds).to.not.be.eql([])
@@ -251,6 +254,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                                     code: 1,
                                 }),
                         )
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts[0].categoryIds).to.not.be.eql([])
@@ -279,6 +283,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                                     isRemoved: true,
                                 }),
                         )
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts[0].categoryIds).to.not.be.eql([])
@@ -362,6 +367,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                             "post.categoryIds",
                             "post.subcategories",
                         )
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts[0].categoryIds).to.not.be.eql([])
@@ -474,6 +480,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                             "category.imageIds",
                             "category.images",
                         )
+                        .addOrderBy("post.id, category.id")
                         .getMany()
 
                     expect(loadedPosts[0].categoryIds).to.not.be.eql([])
@@ -612,6 +619,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                             "category.postIds",
                             "category.posts",
                         )
+                        .addOrderBy("category.id")
                         .getMany()
 
                     expect(loadedCategories[0].postIds).to.not.be.eql([])
@@ -698,6 +706,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                             "image.categoryIds",
                             "image.categories",
                         )
+                        .addOrderBy("image.id")
                         .getMany()
 
                     expect(loadedImages[0].categoryIds).to.not.be.eql([])
@@ -795,6 +804,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                                     { id: 1, authorId: 1 },
                                 ),
                         )
+                        .addOrderBy("category.id")
                         .getMany()
 
                     expect(loadedCategories[0].postIds).to.not.be.eql([])
@@ -815,6 +825,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                                     authorId: 1,
                                 }),
                         )
+                        .addOrderBy("category.id")
                         .getMany()
 
                     expect(loadedCategories[0].postIds).to.not.be.eql([])
@@ -843,6 +854,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
                                     isRemoved: true,
                                 }),
                         )
+                        .addOrderBy("category.id")
                         .getMany()
 
                     expect(loadedCategories[0].postIds).to.not.be.eql([])

@@ -20,6 +20,8 @@ import { CheckMetadata } from "../metadata/CheckMetadata"
 import { ExclusionMetadata } from "../metadata/ExclusionMetadata"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
+import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
+import { InstanceChecker } from "../util/InstanceChecker"
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -197,7 +199,9 @@ export class EntityMetadataBuilder {
                                     "aurora-mysql" ||
                                 this.connection.driver.options.type ===
                                     "mssql" ||
-                                this.connection.driver.options.type === "sap"
+                                this.connection.driver.options.type === "sap" ||
+                                this.connection.driver.options.type ===
+                                    "spanner"
                             ) {
                                 const index = new IndexMetadata({
                                     entityMetadata:
@@ -222,6 +226,13 @@ export class EntityMetadataBuilder {
                                             )} IS NOT NULL`
                                         })
                                         .join(" AND ")
+                                }
+
+                                if (
+                                    this.connection.driver.options.type ===
+                                    "spanner"
+                                ) {
+                                    index.isNullFiltered = true
                                 }
 
                                 if (relation.embeddedMetadata) {
@@ -376,6 +387,11 @@ export class EntityMetadataBuilder {
                 exclusion.build(this.connection.namingStrategy),
             )
         })
+
+        // generate foreign keys for tables
+        entityMetadatas.forEach((entityMetadata) =>
+            this.createForeignKeys(entityMetadata, entityMetadatas),
+        )
 
         // add lazy initializer for entity relations
         entityMetadatas
@@ -533,6 +549,21 @@ export class EntityMetadataBuilder {
                         (column) => column.propertyName === args.propertyName,
                     )!
 
+                // for multiple table inheritance we can override default column values
+                if (
+                    entityMetadata.tableType === "regular" &&
+                    args.target !== entityMetadata.target
+                ) {
+                    const childArgs = this.metadataArgsStorage.columns.find(
+                        (c) =>
+                            c.propertyName === args.propertyName &&
+                            c.target === entityMetadata.target,
+                    )
+                    if (childArgs && childArgs.options.default) {
+                        args.options.default = childArgs.options.default
+                    }
+                }
+
                 const column = new ColumnMetadata({
                     connection: this.connection,
                     entityMetadata,
@@ -598,6 +629,23 @@ export class EntityMetadataBuilder {
             ) {
                 entityMetadata.ownColumns.push(discriminatorColumn)
             }
+            // also copy the inheritance pattern & tree metadata
+            // this comes in handy when inheritance and trees are used together
+            entityMetadata.inheritancePattern =
+                entityMetadata.parentEntityMetadata.inheritancePattern
+            if (
+                !entityMetadata.treeType &&
+                !!entityMetadata.parentEntityMetadata.treeType
+            ) {
+                entityMetadata.treeType =
+                    entityMetadata.parentEntityMetadata.treeType
+                entityMetadata.treeOptions =
+                    entityMetadata.parentEntityMetadata.treeOptions
+                entityMetadata.treeParentRelation =
+                    entityMetadata.parentEntityMetadata.treeParentRelation
+                entityMetadata.treeLevelColumn =
+                    entityMetadata.parentEntityMetadata.treeLevelColumn
+            }
         }
 
         const { namingStrategy } = this.connection
@@ -615,7 +663,7 @@ export class EntityMetadataBuilder {
                         propertyName: "mpath",
                         options: /*tree.column || */ {
                             name: namingStrategy.materializedPathColumnName,
-                            type: "varchar",
+                            type: String,
                             nullable: true,
                             default: "",
                         },
@@ -635,7 +683,7 @@ export class EntityMetadataBuilder {
                         propertyName: left,
                         options: /*tree.column || */ {
                             name: left,
-                            type: "integer",
+                            type: Number,
                             nullable: false,
                             default: 1,
                         },
@@ -653,7 +701,7 @@ export class EntityMetadataBuilder {
                         propertyName: right,
                         options: /*tree.column || */ {
                             name: right,
-                            type: "integer",
+                            type: Number,
                             nullable: false,
                             default: 2,
                         },
@@ -764,11 +812,12 @@ export class EntityMetadataBuilder {
                 })
         }
 
-        // Mysql and SAP HANA stores unique constraints as unique indices.
+        // This drivers stores unique constraints as unique indices.
         if (
             DriverUtils.isMySQLFamily(this.connection.driver) ||
             this.connection.driver.options.type === "aurora-mysql" ||
-            this.connection.driver.options.type === "sap"
+            this.connection.driver.options.type === "sap" ||
+            this.connection.driver.options.type === "spanner"
         ) {
             const indices = this.metadataArgsStorage
                 .filterUniques(entityMetadata.inheritanceTree)
@@ -1101,6 +1150,21 @@ export class EntityMetadataBuilder {
      * Creates indices for the table of single table inheritance.
      */
     protected createKeysForTableInheritance(entityMetadata: EntityMetadata) {
+        const isDiscriminatorColumnAlreadyIndexed = entityMetadata.indices.some(
+            ({ givenColumnNames }) =>
+                !!givenColumnNames &&
+                Array.isArray(givenColumnNames) &&
+                givenColumnNames.length === 1 &&
+                givenColumnNames[0] ===
+                    entityMetadata.discriminatorColumn?.databaseName,
+        )
+
+        // If the discriminator column is already indexed, there is no need to
+        // add another index on top of it.
+        if (isDiscriminatorColumnAlreadyIndexed) {
+            return
+        }
+
         entityMetadata.indices.push(
             new IndexMetadata({
                 entityMetadata: entityMetadata,
@@ -1111,5 +1175,121 @@ export class EntityMetadataBuilder {
                 },
             }),
         )
+    }
+
+    /**
+     * Creates from the given foreign key metadata args real foreign key metadatas.
+     */
+    protected createForeignKeys(
+        entityMetadata: EntityMetadata,
+        entityMetadatas: EntityMetadata[],
+    ) {
+        this.metadataArgsStorage
+            .filterForeignKeys(entityMetadata.inheritanceTree)
+            .forEach((foreignKeyArgs) => {
+                const foreignKeyType =
+                    typeof foreignKeyArgs.type === "function"
+                        ? (foreignKeyArgs.type as () => any)()
+                        : foreignKeyArgs.type
+
+                const referencedEntityMetadata = entityMetadatas.find((m) =>
+                    typeof foreignKeyType === "string"
+                        ? m.targetName === foreignKeyType ||
+                          m.givenTableName === foreignKeyType
+                        : InstanceChecker.isEntitySchema(foreignKeyType)
+                        ? m.target === foreignKeyType.options.name ||
+                          m.target === foreignKeyType.options.target
+                        : m.target === foreignKeyType,
+                )
+
+                if (!referencedEntityMetadata) {
+                    throw new TypeORMError(
+                        "Entity metadata for " +
+                            entityMetadata.name +
+                            (foreignKeyArgs.propertyName
+                                ? "#" + foreignKeyArgs.propertyName
+                                : "") +
+                            " was not found. Check if you specified a correct entity object and if it's connected in the connection options.",
+                    )
+                }
+
+                const columnNames = foreignKeyArgs.columnNames ?? []
+                const referencedColumnNames =
+                    foreignKeyArgs.referencedColumnNames ?? []
+
+                const columns: ColumnMetadata[] = []
+                const referencedColumns: ColumnMetadata[] = []
+
+                if (foreignKeyArgs.propertyName) {
+                    columnNames.push(foreignKeyArgs.propertyName)
+
+                    if (foreignKeyArgs.inverseSide) {
+                        if (typeof foreignKeyArgs.inverseSide === "function") {
+                            referencedColumnNames.push(
+                                foreignKeyArgs.inverseSide(
+                                    referencedEntityMetadata.propertiesMap,
+                                ),
+                            )
+                        } else {
+                            referencedColumnNames.push(
+                                foreignKeyArgs.inverseSide,
+                            )
+                        }
+                    }
+                }
+
+                if (!referencedColumnNames.length) {
+                    referencedColumns.push(
+                        ...referencedEntityMetadata.primaryColumns,
+                    )
+                }
+
+                const columnNameToColumn = (
+                    columnName: string,
+                    entityMetadata: EntityMetadata,
+                ): ColumnMetadata => {
+                    const column = entityMetadata.columns.find(
+                        (column) =>
+                            column.propertyName === columnName ||
+                            column.databaseName === columnName,
+                    )
+
+                    if (column) return column
+
+                    const foreignKeyName = foreignKeyArgs.name
+                        ? '"' + foreignKeyArgs.name + '" '
+                        : ""
+                    const entityName = entityMetadata.targetName
+                    throw new TypeORMError(
+                        `Foreign key constraint ${foreignKeyName}contains column that is missing in the entity (${entityName}): ${columnName}`,
+                    )
+                }
+
+                columns.push(
+                    ...columnNames.map((columnName) =>
+                        columnNameToColumn(columnName, entityMetadata),
+                    ),
+                )
+
+                referencedColumns.push(
+                    ...referencedColumnNames.map((columnName) =>
+                        columnNameToColumn(
+                            columnName,
+                            referencedEntityMetadata,
+                        ),
+                    ),
+                )
+
+                entityMetadata.foreignKeys.push(
+                    new ForeignKeyMetadata({
+                        entityMetadata,
+                        referencedEntityMetadata,
+                        namingStrategy: this.connection.namingStrategy,
+                        columns,
+                        referencedColumns,
+                        ...foreignKeyArgs,
+                    }),
+                )
+            })
     }
 }

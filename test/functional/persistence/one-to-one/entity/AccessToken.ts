@@ -7,11 +7,11 @@ import { Generated } from "../../../../../src/decorator/Generated"
 
 @Entity()
 export class AccessToken {
-    @PrimaryColumn("int")
+    @PrimaryColumn()
     @Generated()
     primaryKey: number
 
-    @OneToOne((type) => User, (user) => user.access_token)
+    @OneToOne(() => User, (user) => user.access_token)
     @JoinColumn()
     user: User
 }

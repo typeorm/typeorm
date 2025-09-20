@@ -1,11 +1,12 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { QueryResult } from "../../query-runner/QueryResult"
+import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ColumnType } from "../types/ColumnTypes"
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryLock } from "../../query-runner/QueryLock"
+import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
@@ -17,16 +18,16 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
+import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
+import { MetadataTableType } from "../types/MetadataTableType"
+import { ReplicationMode } from "../types/ReplicationMode"
 import { MssqlParameter } from "./MssqlParameter"
 import { SqlServerDriver } from "./SqlServerDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { TypeORMError } from "../../error"
-import { QueryLock } from "../../query-runner/QueryLock"
-import { MetadataTableType } from "../types/MetadataTableType"
-import { InstanceChecker } from "../../util/InstanceChecker"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -208,8 +209,12 @@ export class SqlServerQueryRunner
 
         const release = await this.lock.acquire()
 
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const broadcasterResult = new BroadcasterResult()
+
         try {
-            this.driver.connection.logger.logQuery(query, parameters, this)
             const pool = await (this.mode === "slave"
                 ? this.driver.obtainSlaveConnection()
                 : this.driver.obtainMasterConnection())
@@ -236,15 +241,26 @@ export class SqlServerQueryRunner
                     }
                 })
             }
-            const queryStartTime = +new Date()
+            const queryStartTime = Date.now()
 
             const raw = await new Promise<any>((ok, fail) => {
                 request.query(query, (err: any, raw: any) => {
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime =
                         this.driver.options.maxQueryExecutionTime
-                    const queryEndTime = +new Date()
+                    const queryEndTime = Date.now()
                     const queryExecutionTime = queryEndTime - queryStartTime
+
+                    this.broadcaster.broadcastAfterQueryEvent(
+                        broadcasterResult,
+                        query,
+                        parameters,
+                        true,
+                        queryExecutionTime,
+                        raw,
+                        undefined,
+                    )
+
                     if (
                         maxQueryExecutionTime &&
                         queryExecutionTime > maxQueryExecutionTime
@@ -297,8 +313,20 @@ export class SqlServerQueryRunner
                 parameters,
                 this,
             )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
             throw err
         } finally {
+            await broadcasterResult.wait()
+
             release()
         }
     }
@@ -604,6 +632,39 @@ export class SqlServerQueryRunner
             })
         }
 
+        // if table have column with generated type, we must add the expression to the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const parsedTableName = this.driver.parseTableName(table)
+
+            if (!parsedTableName.schema) {
+                parsedTableName.schema = await this.getCurrentSchema()
+            }
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -649,19 +710,57 @@ export class SqlServerQueryRunner
         upQueries.push(this.dropTableSql(table))
         downQueries.push(this.createTableSql(table, createForeignKeys))
 
+        // if table had columns with generated type, we must remove the expression from the metadata table
+        const generatedColumns = table.columns.filter(
+            (column) => column.generatedType && column.asExpression,
+        )
+
+        for (const column of generatedColumns) {
+            const parsedTableName = this.driver.parseTableName(table)
+
+            if (!parsedTableName.schema) {
+                parsedTableName.schema = await this.getCurrentSchema()
+            }
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
     /**
      * Creates a new view.
      */
-    async createView(view: View): Promise<void> {
+    async createView(
+        view: View,
+        syncWithMetadata: boolean = false,
+    ): Promise<void> {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
         upQueries.push(this.createViewSql(view))
-        upQueries.push(await this.insertViewDefinitionSql(view))
+        if (syncWithMetadata)
+            upQueries.push(await this.insertViewDefinitionSql(view))
         downQueries.push(this.dropViewSql(view))
-        downQueries.push(await this.deleteViewDefinitionSql(view))
+        if (syncWithMetadata)
+            downQueries.push(await this.deleteViewDefinitionSql(view))
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -693,7 +792,7 @@ export class SqlServerQueryRunner
         const oldTable = InstanceChecker.isTable(oldTableOrName)
             ? oldTableOrName
             : await this.getCachedTable(oldTableOrName)
-        let newTable = oldTable.clone()
+        const newTable = oldTable.clone()
 
         // we need database name and schema name to rename FK constraints
         let dbName: string | undefined = undefined
@@ -740,7 +839,10 @@ export class SqlServerQueryRunner
         )
 
         // rename primary key constraint
-        if (newTable.primaryColumns.length > 0) {
+        if (
+            newTable.primaryColumns.length > 0 &&
+            !newTable.primaryColumns[0].primaryKeyConstraintName
+        ) {
             const columnNames = newTable.primaryColumns.map(
                 (column) => column.name,
             )
@@ -773,6 +875,15 @@ export class SqlServerQueryRunner
 
         // rename unique constraints
         newTable.uniques.forEach((unique) => {
+            const oldUniqueName =
+                this.connection.namingStrategy.uniqueConstraintName(
+                    oldTable,
+                    unique.columnNames,
+                )
+
+            // Skip renaming if Unique has user defined constraint name
+            if (unique.name !== oldUniqueName) return
+
             // build new constraint name
             const newUniqueName =
                 this.connection.namingStrategy.uniqueConstraintName(
@@ -802,6 +913,15 @@ export class SqlServerQueryRunner
 
         // rename index constraints
         newTable.indices.forEach((index) => {
+            const oldIndexName = this.connection.namingStrategy.indexName(
+                oldTable,
+                index.columnNames,
+                index.where,
+            )
+
+            // Skip renaming if Index has user defined constraint name
+            if (index.name !== oldIndexName) return
+
             // build new constraint name
             const newIndexName = this.connection.namingStrategy.indexName(
                 newTable,
@@ -831,6 +951,17 @@ export class SqlServerQueryRunner
 
         // rename foreign key constraints
         newTable.foreignKeys.forEach((foreignKey) => {
+            const oldForeignKeyName =
+                this.connection.namingStrategy.foreignKeyName(
+                    oldTable,
+                    foreignKey.columnNames,
+                    this.getTablePath(foreignKey),
+                    foreignKey.referencedColumnNames,
+                )
+
+            // Skip renaming if foreign key has user defined constraint name
+            if (foreignKey.name !== oldForeignKeyName) return
+
             // build new constraint name
             const newForeignKeyName =
                 this.connection.namingStrategy.foreignKeyName(
@@ -916,13 +1047,17 @@ export class SqlServerQueryRunner
             const primaryColumns = clonedTable.primaryColumns
             // if table already have primary key, me must drop it and recreate again
             if (primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(
-                    clonedTable,
-                    primaryColumns.map((column) => column.name),
-                )
+                const pkName = primaryColumns[0].primaryKeyConstraintName
+                    ? primaryColumns[0].primaryKeyConstraintName
+                    : this.connection.namingStrategy.primaryKeyName(
+                          clonedTable,
+                          primaryColumns.map((column) => column.name),
+                      )
+
                 const columnNames = primaryColumns
                     .map((column) => `"${column.name}"`)
                     .join(", ")
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -940,10 +1075,13 @@ export class SqlServerQueryRunner
             }
 
             primaryColumns.push(column)
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                primaryColumns.map((column) => column.name),
-            )
+            const pkName = primaryColumns[0].primaryKeyConstraintName
+                ? primaryColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      clonedTable,
+                      primaryColumns.map((column) => column.name),
+                  )
+
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
@@ -1014,6 +1152,34 @@ export class SqlServerQueryRunner
                     )} DROP CONSTRAINT "${defaultName}"`,
                 ),
             )
+        }
+
+        if (column.generatedType && column.asExpression) {
+            const parsedTableName = this.driver.parseTableName(table)
+
+            if (!parsedTableName.schema) {
+                parsedTableName.schema = await this.getCurrentSchema()
+            }
+
+            const insertQuery = this.insertTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+
+            upQueries.push(insertQuery)
+            downQueries.push(deleteQuery)
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -1093,7 +1259,9 @@ export class SqlServerQueryRunner
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length
+            newColumn.length !== oldColumn.length ||
+            newColumn.asExpression !== oldColumn.asExpression ||
+            newColumn.generatedType !== oldColumn.generatedType
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed
@@ -1139,7 +1307,11 @@ export class SqlServerQueryRunner
                     ),
                 )
 
-                if (oldColumn.isPrimary === true) {
+                // rename column primary key constraint
+                if (
+                    oldColumn.isPrimary === true &&
+                    !oldColumn.primaryKeyConstraintName
+                ) {
                     const primaryColumns = clonedTable.primaryColumns
 
                     // build old primary constraint name
@@ -1182,6 +1354,16 @@ export class SqlServerQueryRunner
 
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach((index) => {
+                    const oldIndexName =
+                        this.connection.namingStrategy.indexName(
+                            clonedTable,
+                            index.columnNames,
+                            index.where,
+                        )
+
+                    // Skip renaming if Index has user defined constraint name
+                    if (index.name !== oldIndexName) return
+
                     // build new constraint name
                     index.columnNames.splice(
                         index.columnNames.indexOf(oldColumn.name),
@@ -1219,6 +1401,17 @@ export class SqlServerQueryRunner
                 clonedTable
                     .findColumnForeignKeys(oldColumn)
                     .forEach((foreignKey) => {
+                        const foreignKeyName =
+                            this.connection.namingStrategy.foreignKeyName(
+                                clonedTable,
+                                foreignKey.columnNames,
+                                this.getTablePath(foreignKey),
+                                foreignKey.referencedColumnNames,
+                            )
+
+                        // Skip renaming if foreign key has user defined constraint name
+                        if (foreignKey.name !== foreignKeyName) return
+
                         // build new constraint name
                         foreignKey.columnNames.splice(
                             foreignKey.columnNames.indexOf(oldColumn.name),
@@ -1293,6 +1486,15 @@ export class SqlServerQueryRunner
 
                 // rename unique constraints
                 clonedTable.findColumnUniques(oldColumn).forEach((unique) => {
+                    const oldUniqueName =
+                        this.connection.namingStrategy.uniqueConstraintName(
+                            clonedTable,
+                            unique.columnNames,
+                        )
+
+                    // Skip renaming if Unique has user defined constraint name
+                    if (unique.name !== oldUniqueName) return
+
                     // build new constraint name
                     unique.columnNames.splice(
                         unique.columnNames.indexOf(oldColumn.name),
@@ -1392,7 +1594,9 @@ export class SqlServerQueryRunner
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, false)) {
+            if (
+                this.isColumnChanged(oldColumn, newColumn, false, false, false)
+            ) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1402,6 +1606,7 @@ export class SqlServerQueryRunner
                             newColumn,
                             true,
                             false,
+                            true,
                         )}`,
                     ),
                 )
@@ -1414,9 +1619,38 @@ export class SqlServerQueryRunner
                             oldColumn,
                             true,
                             false,
+                            true,
                         )}`,
                     ),
                 )
+            }
+
+            if (this.isEnumChanged(oldColumn, newColumn)) {
+                const oldExpression = this.getEnumExpression(oldColumn)
+                const oldCheck = new TableCheck({
+                    name: this.connection.namingStrategy.checkConstraintName(
+                        table,
+                        oldExpression,
+                        true,
+                    ),
+                    expression: oldExpression,
+                })
+
+                const newExpression = this.getEnumExpression(newColumn)
+                const newCheck = new TableCheck({
+                    name: this.connection.namingStrategy.checkConstraintName(
+                        table,
+                        newExpression,
+                        true,
+                    ),
+                    expression: newExpression,
+                })
+
+                upQueries.push(this.dropCheckConstraintSql(table, oldCheck))
+                upQueries.push(this.createCheckConstraintSql(table, newCheck))
+
+                downQueries.push(this.dropCheckConstraintSql(table, newCheck))
+                downQueries.push(this.createCheckConstraintSql(table, oldCheck))
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
@@ -1424,11 +1658,13 @@ export class SqlServerQueryRunner
 
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
-                    const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            primaryColumns.map((column) => column.name),
-                        )
+                    const pkName = primaryColumns[0].primaryKeyConstraintName
+                        ? primaryColumns[0].primaryKeyConstraintName
+                        : this.connection.namingStrategy.primaryKeyName(
+                              clonedTable,
+                              primaryColumns.map((column) => column.name),
+                          )
+
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
                         .join(", ")
@@ -1455,11 +1691,13 @@ export class SqlServerQueryRunner
                         (column) => column.name === newColumn.name,
                     )
                     column!.isPrimary = true
-                    const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
-                            clonedTable,
-                            primaryColumns.map((column) => column.name),
-                        )
+                    const pkName = primaryColumns[0].primaryKeyConstraintName
+                        ? primaryColumns[0].primaryKeyConstraintName
+                        : this.connection.namingStrategy.primaryKeyName(
+                              clonedTable,
+                              primaryColumns.map((column) => column.name),
+                          )
+
                     const columnNames = primaryColumns
                         .map((column) => `"${column.name}"`)
                         .join(", ")
@@ -1494,11 +1732,14 @@ export class SqlServerQueryRunner
 
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
-                        const pkName =
-                            this.connection.namingStrategy.primaryKeyName(
-                                clonedTable,
-                                primaryColumns.map((column) => column.name),
-                            )
+                        const pkName = primaryColumns[0]
+                            .primaryKeyConstraintName
+                            ? primaryColumns[0].primaryKeyConstraintName
+                            : this.connection.namingStrategy.primaryKeyName(
+                                  clonedTable,
+                                  primaryColumns.map((column) => column.name),
+                              )
+
                         const columnNames = primaryColumns
                             .map((column) => `"${column.name}"`)
                             .join(", ")
@@ -1679,13 +1920,17 @@ export class SqlServerQueryRunner
 
         // drop primary key constraint
         if (column.isPrimary) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                clonedTable.primaryColumns.map((column) => column.name),
-            )
+            const pkName = column.primaryKeyConstraintName
+                ? column.primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      clonedTable,
+                      clonedTable.primaryColumns.map((column) => column.name),
+                  )
+
             const columnNames = clonedTable.primaryColumns
                 .map((primaryColumn) => `"${primaryColumn.name}"`)
                 .join(", ")
+
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
@@ -1707,10 +1952,16 @@ export class SqlServerQueryRunner
 
             // if primary key have multiple columns, we must recreate it without dropped column
             if (clonedTable.primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(
-                    clonedTable,
-                    clonedTable.primaryColumns.map((column) => column.name),
-                )
+                const pkName = clonedTable.primaryColumns[0]
+                    .primaryKeyConstraintName
+                    ? clonedTable.primaryColumns[0].primaryKeyConstraintName
+                    : this.connection.namingStrategy.primaryKeyName(
+                          clonedTable,
+                          clonedTable.primaryColumns.map(
+                              (column) => column.name,
+                          ),
+                      )
+
                 const columnNames = clonedTable.primaryColumns
                     .map((primaryColumn) => `"${primaryColumn.name}"`)
                     .join(", ")
@@ -1804,6 +2055,33 @@ export class SqlServerQueryRunner
             )
         }
 
+        if (column.generatedType && column.asExpression) {
+            const parsedTableName = this.driver.parseTableName(table)
+
+            if (!parsedTableName.schema) {
+                parsedTableName.schema = await this.getCurrentSchema()
+            }
+
+            const deleteQuery = this.deleteTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+            })
+            const insertQuery = this.insertTypeormMetadataSql({
+                database: parsedTableName.database,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                name: column.name,
+                value: column.asExpression,
+            })
+
+            upQueries.push(deleteQuery)
+            downQueries.push(insertQuery)
+        }
+
         upQueries.push(
             new Query(
                 `ALTER TABLE ${this.escapePath(table)} DROP COLUMN "${
@@ -1837,7 +2115,7 @@ export class SqlServerQueryRunner
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -1848,13 +2126,14 @@ export class SqlServerQueryRunner
     async createPrimaryKey(
         tableOrName: Table | string,
         columnNames: string[],
+        constraintName?: string,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
         const clonedTable = table.clone()
 
-        const up = this.createPrimaryKeySql(table, columnNames)
+        const up = this.createPrimaryKeySql(table, columnNames, constraintName)
 
         // mark columns as primary, because dropPrimaryKeySql build constraint name from table primary column names.
         clonedTable.columns.forEach((column) => {
@@ -1885,13 +2164,17 @@ export class SqlServerQueryRunner
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns
         if (primaryColumns.length > 0) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(
-                clonedTable,
-                primaryColumns.map((column) => column.name),
-            )
+            const pkName = primaryColumns[0].primaryKeyConstraintName
+                ? primaryColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      clonedTable,
+                      primaryColumns.map((column) => column.name),
+                  )
+
             const columnNamesString = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
+
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
@@ -1913,13 +2196,17 @@ export class SqlServerQueryRunner
             .filter((column) => columnNames.indexOf(column.name) !== -1)
             .forEach((column) => (column.isPrimary = true))
 
-        const pkName = this.connection.namingStrategy.primaryKeyName(
-            clonedTable,
-            columnNames,
-        )
+        const pkName = primaryColumns[0].primaryKeyConstraintName
+            ? primaryColumns[0].primaryKeyConstraintName
+            : this.connection.namingStrategy.primaryKeyName(
+                  clonedTable,
+                  columnNames,
+              )
+
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
+
         upQueries.push(
             new Query(
                 `ALTER TABLE ${this.escapePath(
@@ -1942,7 +2229,10 @@ export class SqlServerQueryRunner
     /**
      * Drops a primary key.
      */
-    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
+    async dropPrimaryKey(
+        tableOrName: Table | string,
+        constraintName?: string,
+    ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
@@ -1950,6 +2240,7 @@ export class SqlServerQueryRunner
         const down = this.createPrimaryKeySql(
             table,
             table.primaryColumns.map((column) => column.name),
+            constraintName,
         )
         await this.executeQueries(up, down)
         table.primaryColumns.forEach((column) => {
@@ -2258,12 +2549,7 @@ export class SqlServerQueryRunner
             : await this.getCachedTable(tableOrName)
 
         // new index may be passed without name. In this case we generate index name manually.
-        if (!index.name)
-            index.name = this.connection.namingStrategy.indexName(
-                table,
-                index.columnNames,
-                index.where,
-            )
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.createIndexSql(table, index)
         const down = this.dropIndexSql(table, index)
@@ -2301,6 +2587,9 @@ export class SqlServerQueryRunner
             throw new TypeORMError(
                 `Supplied index was not found in table ${table.name}`,
             )
+
+        // old index may be passed without name. In this case we generate index name manually.
+        if (!index.name) index.name = this.generateIndexName(table, index)
 
         const up = this.dropIndexSql(table, index)
         const down = this.createIndexSql(table, index)
@@ -2341,7 +2630,7 @@ export class SqlServerQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            let allViewsSql = database
+            const allViewsSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."VIEWS"`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."VIEWS"`
             const allViewsResults: ObjectLiteral[] = await this.query(
@@ -2356,7 +2645,7 @@ export class SqlServerQueryRunner
                 }),
             )
 
-            let allTablesSql = database
+            const allTablesSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
             const allTablesResults: ObjectLiteral[] = await this.query(
@@ -2428,7 +2717,7 @@ export class SqlServerQueryRunner
                 )
 
                 await Promise.all(
-                    allTablesResults.map((tablesResult) => {
+                    allTablesResults.map(async (tablesResult) => {
                         if (tablesResult["TABLE_NAME"].startsWith("#")) {
                             // don't try to drop temporary tables
                             return
@@ -2542,12 +2831,10 @@ export class SqlServerQueryRunner
         }[] = []
 
         if (!tableNames) {
-            const databasesSql = `
-                SELECT DISTINCT
-                    "name"
-                FROM "master"."dbo"."sysdatabases"
-                WHERE "name" NOT IN ('master', 'model', 'msdb')
-            `
+            const databasesSql =
+                `SELECT DISTINCT "name" ` +
+                `FROM "master"."dbo"."sysdatabases" ` +
+                `WHERE "name" NOT IN ('master', 'model', 'msdb')`
             const dbDatabases: { name: string }[] = await this.query(
                 databasesSql,
             )
@@ -2630,7 +2917,12 @@ export class SqlServerQueryRunner
                     )
                     .join("OR")
 
-                return `SELECT * FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" WHERE (${condition})`
+                return (
+                    `SELECT "COLUMNS".*, "cc"."is_persisted", "cc"."definition" ` +
+                    `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" ` +
+                    `LEFT JOIN "sys"."computed_columns" "cc" ON COL_NAME("cc"."object_id", "cc"."column_id") = "column_name" ` +
+                    `WHERE (${condition})`
+                )
             })
             .join(" UNION ALL ")
 
@@ -2781,207 +3073,292 @@ export class SqlServerQueryRunner
                 )!
 
                 // create columns from the loaded columns
-                table.columns = dbColumns
-                    .filter(
-                        (dbColumn) =>
-                            dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
-                            dbColumn["TABLE_SCHEMA"] ===
-                                dbTable["TABLE_SCHEMA"] &&
-                            dbColumn["TABLE_CATALOG"] ===
-                                dbTable["TABLE_CATALOG"],
-                    )
-                    .map((dbColumn) => {
-                        const columnConstraints = dbConstraints.filter(
-                            (dbConstraint) =>
-                                dbConstraint["TABLE_NAME"] ===
-                                    dbColumn["TABLE_NAME"] &&
-                                dbConstraint["TABLE_SCHEMA"] ===
-                                    dbColumn["TABLE_SCHEMA"] &&
-                                dbConstraint["TABLE_CATALOG"] ===
-                                    dbColumn["TABLE_CATALOG"] &&
-                                dbConstraint["COLUMN_NAME"] ===
-                                    dbColumn["COLUMN_NAME"],
+                table.columns = await Promise.all(
+                    dbColumns
+                        .filter(
+                            (dbColumn) =>
+                                dbColumn["TABLE_NAME"] ===
+                                    dbTable["TABLE_NAME"] &&
+                                dbColumn["TABLE_SCHEMA"] ===
+                                    dbTable["TABLE_SCHEMA"] &&
+                                dbColumn["TABLE_CATALOG"] ===
+                                    dbTable["TABLE_CATALOG"],
                         )
+                        .map(async (dbColumn) => {
+                            const columnConstraints = dbConstraints.filter(
+                                (dbConstraint) =>
+                                    dbConstraint["TABLE_NAME"] ===
+                                        dbColumn["TABLE_NAME"] &&
+                                    dbConstraint["TABLE_SCHEMA"] ===
+                                        dbColumn["TABLE_SCHEMA"] &&
+                                    dbConstraint["TABLE_CATALOG"] ===
+                                        dbColumn["TABLE_CATALOG"] &&
+                                    dbConstraint["COLUMN_NAME"] ===
+                                        dbColumn["COLUMN_NAME"],
+                            )
 
-                        const uniqueConstraints = columnConstraints.filter(
-                            (constraint) =>
-                                constraint["CONSTRAINT_TYPE"] === "UNIQUE",
-                        )
-                        const isConstraintComposite = uniqueConstraints.every(
-                            (uniqueConstraint) => {
-                                return dbConstraints.some(
-                                    (dbConstraint) =>
-                                        dbConstraint["CONSTRAINT_TYPE"] ===
-                                            "UNIQUE" &&
-                                        dbConstraint["CONSTRAINT_NAME"] ===
-                                            uniqueConstraint[
-                                                "CONSTRAINT_NAME"
-                                            ] &&
-                                        dbConstraint["TABLE_SCHEMA"] ===
-                                            dbColumn["TABLE_SCHEMA"] &&
-                                        dbConstraint["TABLE_CATALOG"] ===
-                                            dbColumn["TABLE_CATALOG"] &&
-                                        dbConstraint["COLUMN_NAME"] !==
-                                            dbColumn["COLUMN_NAME"],
-                                )
-                            },
-                        )
+                            const uniqueConstraints = columnConstraints.filter(
+                                (constraint) =>
+                                    constraint["CONSTRAINT_TYPE"] === "UNIQUE",
+                            )
+                            const isConstraintComposite =
+                                uniqueConstraints.every((uniqueConstraint) => {
+                                    return dbConstraints.some(
+                                        (dbConstraint) =>
+                                            dbConstraint["CONSTRAINT_TYPE"] ===
+                                                "UNIQUE" &&
+                                            dbConstraint["CONSTRAINT_NAME"] ===
+                                                uniqueConstraint[
+                                                    "CONSTRAINT_NAME"
+                                                ] &&
+                                            dbConstraint["TABLE_SCHEMA"] ===
+                                                dbColumn["TABLE_SCHEMA"] &&
+                                            dbConstraint["TABLE_CATALOG"] ===
+                                                dbColumn["TABLE_CATALOG"] &&
+                                            dbConstraint["COLUMN_NAME"] !==
+                                                dbColumn["COLUMN_NAME"],
+                                    )
+                                })
 
-                        const isPrimary = !!columnConstraints.find(
-                            (constraint) =>
-                                constraint["CONSTRAINT_TYPE"] === "PRIMARY KEY",
-                        )
-                        const isGenerated = !!dbIdentityColumns.find(
-                            (column) =>
-                                column["TABLE_NAME"] ===
-                                    dbColumn["TABLE_NAME"] &&
-                                column["TABLE_SCHEMA"] ===
-                                    dbColumn["TABLE_SCHEMA"] &&
-                                column["TABLE_CATALOG"] ===
-                                    dbColumn["TABLE_CATALOG"] &&
-                                column["COLUMN_NAME"] ===
-                                    dbColumn["COLUMN_NAME"],
-                        )
+                            const isGenerated = !!dbIdentityColumns.find(
+                                (column) =>
+                                    column["TABLE_NAME"] ===
+                                        dbColumn["TABLE_NAME"] &&
+                                    column["TABLE_SCHEMA"] ===
+                                        dbColumn["TABLE_SCHEMA"] &&
+                                    column["TABLE_CATALOG"] ===
+                                        dbColumn["TABLE_CATALOG"] &&
+                                    column["COLUMN_NAME"] ===
+                                        dbColumn["COLUMN_NAME"],
+                            )
 
-                        const tableColumn = new TableColumn()
-                        tableColumn.name = dbColumn["COLUMN_NAME"]
-                        tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase()
+                            const tableColumn = new TableColumn()
+                            tableColumn.name = dbColumn["COLUMN_NAME"]
+                            tableColumn.type =
+                                dbColumn["DATA_TYPE"].toLowerCase()
 
-                        // check only columns that have length property
-                        if (
-                            this.driver.withLengthColumnTypes.indexOf(
-                                tableColumn.type as ColumnType,
-                            ) !== -1 &&
-                            dbColumn["CHARACTER_MAXIMUM_LENGTH"]
-                        ) {
-                            const length =
-                                dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString()
-                            if (length === "-1") {
-                                tableColumn.length = "MAX"
-                            } else {
-                                tableColumn.length =
-                                    !this.isDefaultColumnLength(
+                            // check only columns that have length property
+                            if (
+                                this.driver.withLengthColumnTypes.indexOf(
+                                    tableColumn.type as ColumnType,
+                                ) !== -1 &&
+                                dbColumn["CHARACTER_MAXIMUM_LENGTH"]
+                            ) {
+                                const length =
+                                    dbColumn[
+                                        "CHARACTER_MAXIMUM_LENGTH"
+                                    ].toString()
+                                if (length === "-1") {
+                                    tableColumn.length = "MAX"
+                                } else {
+                                    tableColumn.length =
+                                        !this.isDefaultColumnLength(
+                                            table,
+                                            tableColumn,
+                                            length,
+                                        )
+                                            ? length
+                                            : ""
+                                }
+                            }
+
+                            if (
+                                tableColumn.type === "decimal" ||
+                                tableColumn.type === "numeric"
+                            ) {
+                                if (
+                                    dbColumn["NUMERIC_PRECISION"] !== null &&
+                                    !this.isDefaultColumnPrecision(
                                         table,
                                         tableColumn,
-                                        length,
+                                        dbColumn["NUMERIC_PRECISION"],
                                     )
-                                        ? length
-                                        : ""
+                                )
+                                    tableColumn.precision =
+                                        dbColumn["NUMERIC_PRECISION"]
+                                if (
+                                    dbColumn["NUMERIC_SCALE"] !== null &&
+                                    !this.isDefaultColumnScale(
+                                        table,
+                                        tableColumn,
+                                        dbColumn["NUMERIC_SCALE"],
+                                    )
+                                )
+                                    tableColumn.scale =
+                                        dbColumn["NUMERIC_SCALE"]
                             }
-                        }
 
-                        if (
-                            tableColumn.type === "decimal" ||
-                            tableColumn.type === "numeric"
-                        ) {
-                            if (
-                                dbColumn["NUMERIC_PRECISION"] !== null &&
-                                !this.isDefaultColumnPrecision(
-                                    table,
-                                    tableColumn,
-                                    dbColumn["NUMERIC_PRECISION"],
-                                )
-                            )
-                                tableColumn.precision =
-                                    dbColumn["NUMERIC_PRECISION"]
-                            if (
-                                dbColumn["NUMERIC_SCALE"] !== null &&
-                                !this.isDefaultColumnScale(
-                                    table,
-                                    tableColumn,
-                                    dbColumn["NUMERIC_SCALE"],
-                                )
-                            )
-                                tableColumn.scale = dbColumn["NUMERIC_SCALE"]
-                        }
-
-                        if (tableColumn.type === "nvarchar") {
-                            // Check if this is an enum
-                            const columnCheckConstraints =
-                                columnConstraints.filter(
-                                    (constraint) =>
-                                        constraint["CONSTRAINT_TYPE"] ===
-                                        "CHECK",
-                                )
-                            if (columnCheckConstraints.length) {
-                                // const isEnumRegexp = new RegExp("^\\(\\[" + tableColumn.name + "\\]='[^']+'(?: OR \\[" + tableColumn.name + "\\]='[^']+')*\\)$");
-                                for (const checkConstraint of columnCheckConstraints) {
-                                    if (
-                                        this.isEnumCheckConstraint(
-                                            checkConstraint["CONSTRAINT_NAME"],
-                                        )
-                                    ) {
-                                        // This is an enum constraint, make column into an enum
-                                        tableColumn.enum = []
-                                        const enumValueRegexp = new RegExp(
-                                            "\\[" +
-                                                tableColumn.name +
-                                                "\\]='([^']+)'",
-                                            "g",
-                                        )
-                                        let result
-                                        while (
-                                            (result = enumValueRegexp.exec(
-                                                checkConstraint["definition"],
-                                            )) !== null
+                            if (tableColumn.type === "nvarchar") {
+                                // Check if this is an enum
+                                const columnCheckConstraints =
+                                    columnConstraints.filter(
+                                        (constraint) =>
+                                            constraint["CONSTRAINT_TYPE"] ===
+                                            "CHECK",
+                                    )
+                                if (columnCheckConstraints.length) {
+                                    // const isEnumRegexp = new RegExp("^\\(\\[" + tableColumn.name + "\\]='[^']+'(?: OR \\[" + tableColumn.name + "\\]='[^']+')*\\)$");
+                                    for (const checkConstraint of columnCheckConstraints) {
+                                        if (
+                                            this.isEnumCheckConstraint(
+                                                checkConstraint[
+                                                    "CONSTRAINT_NAME"
+                                                ],
+                                            )
                                         ) {
-                                            tableColumn.enum.unshift(result[1])
+                                            // This is an enum constraint, make column into an enum
+                                            tableColumn.enum = []
+                                            const enumValueRegexp = new RegExp(
+                                                "\\[" +
+                                                    tableColumn.name +
+                                                    "\\]='([^']+)'",
+                                                "g",
+                                            )
+                                            let result
+                                            while (
+                                                (result = enumValueRegexp.exec(
+                                                    checkConstraint[
+                                                        "definition"
+                                                    ],
+                                                )) !== null
+                                            ) {
+                                                tableColumn.enum.unshift(
+                                                    result[1],
+                                                )
+                                            }
+                                            // Skip other column constraints
+                                            break
                                         }
-                                        // Skip other column constraints
-                                        break
                                     }
                                 }
                             }
-                        }
 
-                        tableColumn.default =
-                            dbColumn["COLUMN_DEFAULT"] !== null &&
-                            dbColumn["COLUMN_DEFAULT"] !== undefined
-                                ? this.removeParenthesisFromDefault(
-                                      dbColumn["COLUMN_DEFAULT"],
-                                  )
-                                : undefined
-                        tableColumn.isNullable =
-                            dbColumn["IS_NULLABLE"] === "YES"
-                        tableColumn.isPrimary = isPrimary
-                        tableColumn.isUnique =
-                            uniqueConstraints.length > 0 &&
-                            !isConstraintComposite
-                        tableColumn.isGenerated = isGenerated
-                        if (isGenerated)
-                            tableColumn.generationStrategy = "increment"
-                        if (tableColumn.default === "newsequentialid()") {
-                            tableColumn.isGenerated = true
-                            tableColumn.generationStrategy = "uuid"
-                            tableColumn.default = undefined
-                        }
+                            const primaryConstraint = columnConstraints.find(
+                                (constraint) =>
+                                    constraint["CONSTRAINT_TYPE"] ===
+                                    "PRIMARY KEY",
+                            )
+                            if (primaryConstraint) {
+                                tableColumn.isPrimary = true
+                                // find another columns involved in primary key constraint
+                                const anotherPrimaryConstraints =
+                                    dbConstraints.filter(
+                                        (constraint) =>
+                                            constraint["TABLE_NAME"] ===
+                                                dbColumn["TABLE_NAME"] &&
+                                            constraint["TABLE_SCHEMA"] ===
+                                                dbColumn["TABLE_SCHEMA"] &&
+                                            constraint["TABLE_CATALOG"] ===
+                                                dbColumn["TABLE_CATALOG"] &&
+                                            constraint["COLUMN_NAME"] !==
+                                                dbColumn["COLUMN_NAME"] &&
+                                            constraint["CONSTRAINT_TYPE"] ===
+                                                "PRIMARY KEY",
+                                    )
 
-                        // todo: unable to get default charset
-                        // tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
-                        if (dbColumn["COLLATION_NAME"])
-                            tableColumn.collation =
-                                dbColumn["COLLATION_NAME"] ===
-                                defaultCollation["COLLATION_NAME"]
-                                    ? undefined
-                                    : dbColumn["COLLATION_NAME"]
+                                // collect all column names
+                                const columnNames =
+                                    anotherPrimaryConstraints.map(
+                                        (constraint) =>
+                                            constraint["COLUMN_NAME"],
+                                    )
+                                columnNames.push(dbColumn["COLUMN_NAME"])
 
-                        if (
-                            tableColumn.type === "datetime2" ||
-                            tableColumn.type === "time" ||
-                            tableColumn.type === "datetimeoffset"
-                        ) {
-                            tableColumn.precision =
-                                !this.isDefaultColumnPrecision(
-                                    table,
-                                    tableColumn,
-                                    dbColumn["DATETIME_PRECISION"],
-                                )
-                                    ? dbColumn["DATETIME_PRECISION"]
+                                // build default primary key constraint name
+                                const pkName =
+                                    this.connection.namingStrategy.primaryKeyName(
+                                        table,
+                                        columnNames,
+                                    )
+
+                                // if primary key has user-defined constraint name, write it in table column
+                                if (
+                                    primaryConstraint["CONSTRAINT_NAME"] !==
+                                    pkName
+                                ) {
+                                    tableColumn.primaryKeyConstraintName =
+                                        primaryConstraint["CONSTRAINT_NAME"]
+                                }
+                            }
+
+                            tableColumn.default =
+                                dbColumn["COLUMN_DEFAULT"] !== null &&
+                                dbColumn["COLUMN_DEFAULT"] !== undefined
+                                    ? this.removeParenthesisFromDefault(
+                                          dbColumn["COLUMN_DEFAULT"],
+                                      )
                                     : undefined
-                        }
+                            tableColumn.isNullable =
+                                dbColumn["IS_NULLABLE"] === "YES"
+                            tableColumn.isUnique =
+                                uniqueConstraints.length > 0 &&
+                                !isConstraintComposite
+                            tableColumn.isGenerated = isGenerated
+                            if (isGenerated)
+                                tableColumn.generationStrategy = "increment"
+                            if (tableColumn.default === "newsequentialid()") {
+                                tableColumn.isGenerated = true
+                                tableColumn.generationStrategy = "uuid"
+                                tableColumn.default = undefined
+                            }
 
-                        return tableColumn
-                    })
+                            // todo: unable to get default charset
+                            // tableColumn.charset = dbColumn["CHARACTER_SET_NAME"];
+                            if (dbColumn["COLLATION_NAME"])
+                                tableColumn.collation =
+                                    dbColumn["COLLATION_NAME"] ===
+                                    defaultCollation["COLLATION_NAME"]
+                                        ? undefined
+                                        : dbColumn["COLLATION_NAME"]
+
+                            if (
+                                tableColumn.type === "datetime2" ||
+                                tableColumn.type === "time" ||
+                                tableColumn.type === "datetimeoffset"
+                            ) {
+                                tableColumn.precision =
+                                    !this.isDefaultColumnPrecision(
+                                        table,
+                                        tableColumn,
+                                        dbColumn["DATETIME_PRECISION"],
+                                    )
+                                        ? dbColumn["DATETIME_PRECISION"]
+                                        : undefined
+                            }
+
+                            if (
+                                dbColumn["is_persisted"] !== null &&
+                                dbColumn["is_persisted"] !== undefined &&
+                                dbColumn["definition"]
+                            ) {
+                                tableColumn.generatedType =
+                                    dbColumn["is_persisted"] === true
+                                        ? "STORED"
+                                        : "VIRTUAL"
+                                // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
+                                const asExpressionQuery =
+                                    this.selectTypeormMetadataSql({
+                                        database: dbTable["TABLE_CATALOG"],
+                                        schema: dbTable["TABLE_SCHEMA"],
+                                        table: dbTable["TABLE_NAME"],
+                                        type: MetadataTableType.GENERATED_COLUMN,
+                                        name: tableColumn.name,
+                                    })
+
+                                const results = await this.query(
+                                    asExpressionQuery.query,
+                                    asExpressionQuery.parameters,
+                                )
+                                if (results[0] && results[0].value) {
+                                    tableColumn.asExpression = results[0].value
+                                } else {
+                                    tableColumn.asExpression = ""
+                                }
+                            }
+
+                            return tableColumn
+                        }),
+                )
 
                 // find unique constraints of table, group them by constraint name and build TableUnique.
                 const tableUniqueConstraints = OrmUtils.uniq(
@@ -3244,11 +3621,13 @@ export class SqlServerQueryRunner
             (column) => column.isPrimary,
         )
         if (primaryColumns.length > 0) {
-            const primaryKeyName =
-                this.connection.namingStrategy.primaryKeyName(
-                    table,
-                    primaryColumns.map((column) => column.name),
-                )
+            const primaryKeyName = primaryColumns[0].primaryKeyConstraintName
+                ? primaryColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      table,
+                      primaryColumns.map((column) => column.name),
+                  )
+
             const columnNames = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
@@ -3364,7 +3743,7 @@ export class SqlServerQueryRunner
         table: Table,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(
@@ -3375,11 +3754,15 @@ export class SqlServerQueryRunner
     /**
      * Builds create primary key sql.
      */
-    protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
-            table,
-            columnNames,
-        )
+    protected createPrimaryKeySql(
+        table: Table,
+        columnNames: string[],
+        constraintName?: string,
+    ): Query {
+        const primaryKeyName = constraintName
+            ? constraintName
+            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
+
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
@@ -3395,10 +3778,11 @@ export class SqlServerQueryRunner
      */
     protected dropPrimaryKeySql(table: Table): Query {
         const columnNames = table.primaryColumns.map((column) => column.name)
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
-            table,
-            columnNames,
-        )
+        const constraintName = table.primaryColumns[0].primaryKeyConstraintName
+        const primaryKeyName = constraintName
+            ? constraintName
+            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
+
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
@@ -3580,17 +3964,14 @@ export class SqlServerQueryRunner
         column: TableColumn,
         skipIdentity: boolean,
         createDefault: boolean,
+        skipEnum?: boolean,
     ) {
         let c = `"${column.name}" ${this.connection.driver.createFullType(
             column,
         )}`
 
-        if (column.enum) {
-            const expression =
-                column.name +
-                " IN (" +
-                column.enum.map((val) => "'" + val + "'").join(",") +
-                ")"
+        if (!skipEnum && column.enum) {
+            const expression = this.getEnumExpression(column)
             const checkName =
                 this.connection.namingStrategy.checkConstraintName(
                     table,
@@ -3602,7 +3983,17 @@ export class SqlServerQueryRunner
 
         if (column.collation) c += " COLLATE " + column.collation
 
-        if (column.isNullable !== true) c += " NOT NULL"
+        if (column.asExpression) {
+            c += ` AS (${column.asExpression})`
+            if (column.generatedType === "STORED") {
+                c += ` PERSISTED`
+
+                // NOT NULL can be specified for computed columns only if PERSISTED is also specified
+                if (column.isNullable !== true) c += " NOT NULL"
+            }
+        } else {
+            if (column.isNullable !== true) c += " NOT NULL"
+        }
 
         if (
             column.isGenerated === true &&
@@ -3642,6 +4033,18 @@ export class SqlServerQueryRunner
         return c
     }
 
+    private getEnumExpression(column: TableColumn) {
+        if (!column.enum) {
+            throw new Error(`Enum is not defined in column ${column.name}`)
+        }
+        return (
+            column.name +
+            " IN (" +
+            column.enum.map((val) => "'" + val + "'").join(",") +
+            ")"
+        )
+    }
+
     protected isEnumCheckConstraint(name: string): boolean {
         return name.indexOf("CHK_") !== -1 && name.indexOf("_ENUM") !== -1
     }
@@ -3674,12 +4077,33 @@ export class SqlServerQueryRunner
             case "tinyint":
                 return this.driver.mssql.TinyInt
             case "char":
+                if (
+                    this.driver.options.options
+                        ?.disableAsciiToUnicodeParamConversion
+                ) {
+                    return this.driver.mssql.Char(...parameter.params)
+                }
+                return this.driver.mssql.NChar(...parameter.params)
             case "nchar":
                 return this.driver.mssql.NChar(...parameter.params)
             case "text":
+                if (
+                    this.driver.options.options
+                        ?.disableAsciiToUnicodeParamConversion
+                ) {
+                    return this.driver.mssql.Text
+                }
+                return this.driver.mssql.Ntext
             case "ntext":
                 return this.driver.mssql.Ntext
             case "varchar":
+                if (
+                    this.driver.options.options
+                        ?.disableAsciiToUnicodeParamConversion
+                ) {
+                    return this.driver.mssql.VarChar(...parameter.params)
+                }
+                return this.driver.mssql.NVarChar(...parameter.params)
             case "nvarchar":
                 return this.driver.mssql.NVarChar(...parameter.params)
             case "xml":
@@ -3731,5 +4155,17 @@ export class SqlServerQueryRunner
             default:
                 return ISOLATION_LEVEL.READ_COMMITTED
         }
+    }
+
+    /**
+     * Change table comment.
+     */
+    changeTableComment(
+        tableOrName: Table | string,
+        comment?: string,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `sqlserver driver does not support change table comment.`,
+        )
     }
 }

@@ -15,7 +15,7 @@ export type PrimaryGeneratedColumnType =
     | "decimal" // mysql, postgres, mssql, sqlite, sap
     | "smalldecimal" // sap
     | "fixed" // mysql
-    | "numeric" // postgres, mssql, sqlite
+    | "numeric" // postgres, mssql, sqlite, spanner
     | "number" // oracle
 
 /**
@@ -47,7 +47,7 @@ export type WithPrecisionColumnType =
     | "time" // mysql, postgres, mssql, cockroachdb
     | "time with time zone" // postgres, cockroachdb
     | "time without time zone" // postgres
-    | "timestamp" // mysql, postgres, mssql, oracle, cockroachdb
+    | "timestamp" // mysql, postgres, mssql, oracle, cockroachdb, sap, spanner
     | "timestamp without time zone" // postgres, cockroachdb
     | "timestamp with time zone" // postgres, oracle, cockroachdb
     | "timestamp with local time zone" // oracle
@@ -74,13 +74,18 @@ export type WithLengthColumnType =
     | "raw" // oracle
     | "binary" // mssql
     | "varbinary" // mssql, sap
-    | "string" // cockroachdb
+    | "string" // cockroachdb, spanner
+    | "vector" // postgres, sap
+    | "halfvec" // postgres, sap
+    | "half_vector" // sap
+    | "real_vector" // sap
 
-export type WithWidthColumnType =
+export type UnsignedColumnType =
     | "tinyint" // mysql
     | "smallint" // mysql
     | "mediumint" // mysql
     | "int" // mysql
+    | "integer" // mysql
     | "bigint" // mysql
 
 /**
@@ -97,17 +102,18 @@ export type SimpleColumnType =
     | "integer" // postgres, oracle, sqlite, cockroachdb
     | "int4" // postgres, cockroachdb
     | "int8" // postgres, sqlite, cockroachdb
-    | "int64" // cockroachdb
+    | "int64" // cockroachdb, spanner
     | "unsigned big int" // sqlite
     | "float" // mysql, mssql, oracle, sqlite, sap
     | "float4" // postgres, cockroachdb
     | "float8" // postgres, cockroachdb
+    | "float64" // spanner
     | "smallmoney" // mssql
     | "money" // postgres, mssql
 
     // boolean types
     | "boolean" // postgres, sqlite, mysql, cockroachdb
-    | "bool" // postgres, mysql, cockroachdb
+    | "bool" // postgres, mysql, cockroachdb, spanner
 
     // text/binary types
     | "tinyblob" // mysql
@@ -123,7 +129,7 @@ export type SimpleColumnType =
     | "longtext" // mysql
     | "alphanum" // sap
     | "shorttext" // sap
-    | "bytes" // cockroachdb
+    | "bytes" // cockroachdb, spanner
     | "bytea" // postgres, cockroachdb
     | "long" // oracle
     | "raw" // oracle
@@ -138,7 +144,7 @@ export type SimpleColumnType =
     | "timestamptz" // postgres, cockroachdb
     | "timestamp with local time zone" // oracle
     | "smalldatetime" // mssql
-    | "date" // mysql, postgres, mssql, oracle, sqlite
+    | "date" // mysql, postgres, mssql, oracle, sqlite, spanner
     | "interval year to month" // oracle
     | "interval day to second" // oracle
     | "interval" // postgres, cockroachdb
@@ -171,20 +177,31 @@ export type SimpleColumnType =
     | "tstzrange" // postgres
     | "daterange" // postgres
 
+    // multirange types
+    | "int4multirange" // postgres
+    | "int8multirange" // postgres
+    | "nummultirange" // postgres
+    | "tsmultirange" // postgres
+    | "tstzmultirange" // postgres
+    | "datemultirange" // postgres
+
     // other types
     | "enum" // mysql, postgres
     | "set" // mysql
     | "cidr" // postgres
     | "inet" // postgres, cockroachdb
+    | "inet4" // mariadb
+    | "inet6" // mariadb
     | "macaddr" // postgres
+    | "macaddr8" // postgres
     | "bit" // postgres, mssql
     | "bit varying" // postgres
     | "varbit" // postgres
     | "tsvector" // postgres
     | "tsquery" // postgres
-    | "uuid" // postgres, cockroachdb
+    | "uuid" // postgres, cockroachdb, mariadb
     | "xml" // mssql, postgres
-    | "json" // mysql, postgres, cockroachdb
+    | "json" // mysql, postgres, cockroachdb, spanner
     | "jsonb" // postgres, cockroachdb
     | "varbinary" // mssql, sap
     | "hierarchyid" // mssql
@@ -193,7 +210,7 @@ export type SimpleColumnType =
     | "urowid" // oracle
     | "uniqueidentifier" // mssql
     | "rowversion" // mssql
-    | "array" // cockroachdb, sap
+    | "array" // cockroachdb, sap, spanner
     | "cube" // postgres
     | "ltree" // postgres
 
@@ -203,7 +220,7 @@ export type SimpleColumnType =
 export type ColumnType =
     | WithPrecisionColumnType
     | WithLengthColumnType
-    | WithWidthColumnType
+    | UnsignedColumnType
     | SpatialColumnType
     | SimpleColumnType
     | BooleanConstructor

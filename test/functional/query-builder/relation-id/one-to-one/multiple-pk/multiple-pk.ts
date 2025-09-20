@@ -57,6 +57,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                             "post.categoryId",
                             "post.category",
                         )
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts[0].categoryId).to.be.eql({
@@ -86,10 +87,12 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
             Promise.all(
                 connections.map(async (connection) => {
                     const image1 = new Image()
+                    image1.id = 1
                     image1.name = "Image #1"
                     await connection.manager.save(image1)
 
                     const image2 = new Image()
+                    image2.id = 2
                     image2.name = "Image #2"
                     await connection.manager.save(image2)
 
@@ -113,6 +116,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                             "category.imageId",
                             "category.image",
                         )
+                        .addOrderBy("category.id")
                         .getMany()
 
                     expect(loadedCategories[0].imageId).to.be.equal(1)
@@ -167,6 +171,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                             "post.categoryId",
                             "post.subcategory",
                         )
+                        .addOrderBy("post.id")
                         .getMany()
 
                     expect(loadedPosts[0].categoryId).to.be.eql({
@@ -196,10 +201,12 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
             Promise.all(
                 connections.map(async (connection) => {
                     const image1 = new Image()
+                    image1.id = 1
                     image1.name = "Image #1"
                     await connection.manager.save(image1)
 
                     const image2 = new Image()
+                    image2.id = 2
                     image2.name = "Image #2"
                     await connection.manager.save(image2)
 
@@ -242,6 +249,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                             "category.imageId",
                             "category.image",
                         )
+                        .addOrderBy("category.imageId")
                         .getMany()
 
                     expect(loadedPosts[0].categoryId).to.be.eql({
@@ -312,6 +320,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                             "category.postId",
                             "category.post",
                         )
+                        .addOrderBy("category.id")
                         .getMany()
 
                     expect(loadedCategories[0].postId).to.be.eql({
@@ -356,11 +365,13 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                     await connection.manager.save(category2)
 
                     const image1 = new Image()
+                    image1.id = 1
                     image1.name = "Image #1"
                     image1.category = category1
                     await connection.manager.save(image1)
 
                     const image2 = new Image()
+                    image2.id = 2
                     image2.name = "Image #2"
                     image2.category = category2
                     await connection.manager.save(image2)
@@ -371,6 +382,7 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                             "image.categoryId",
                             "image.category",
                         )
+                        .addOrderBy("image.id")
                         .getMany()
 
                     expect(loadedImages[0].categoryId).to.be.eql({
@@ -428,11 +440,13 @@ describe("query builder > relation-id > one-to-one > multiple-pk", () => {
                     await connection.manager.save(category2)
 
                     const image1 = new Image()
+                    image1.id = 1
                     image1.name = "Image #1"
                     image1.category = category1
                     await connection.manager.save(image1)
 
                     const image2 = new Image()
+                    image2.id = 2
                     image2.name = "Image #2"
                     image2.category = category2
                     await connection.manager.save(image2)

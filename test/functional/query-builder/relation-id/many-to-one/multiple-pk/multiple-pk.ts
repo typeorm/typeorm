@@ -105,6 +105,7 @@ describe("query builder > relation-id > many-to-one > multiple-pk", () => {
                 const loadedCategories = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationIdAndMap("category.imageId", "category.image")
+                    .addOrderBy("category.id")
                     .getMany()
 
                 expect(loadedCategories[0].imageId).to.be.equal(1)

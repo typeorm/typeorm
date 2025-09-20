@@ -2,7 +2,7 @@ import * as TypeOrm from "../../../../../../src"
 import { Person } from "./Person"
 
 @TypeOrm.Entity()
-@TypeOrm.TableInheritance({ column: { type: "varchar", name: "type" } })
+@TypeOrm.TableInheritance({ column: { type: String, name: "type" } })
 export class Note {
     @TypeOrm.PrimaryGeneratedColumn()
     public id: number

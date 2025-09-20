@@ -26,6 +26,12 @@ export enum HeterogeneousEnum {
     YES = "YES",
 }
 
+export enum EscapeCharEnum {
+    Backslash = "\\",
+    DoubleQuote = '"',
+    AllEscapeChars = `\\"`,
+}
+
 export type ArrayDefinedStringEnumType = "admin" | "editor" | "ghost"
 
 export type ArrayDefinedNumericEnumType = 11 | 12 | 13
@@ -50,6 +56,14 @@ export class EnumArrayEntity {
         default: [],
     })
     stringEnums: StringEnum[]
+
+    @Column({
+        type: "enum",
+        enum: EscapeCharEnum,
+        array: true,
+        default: [],
+    })
+    escapeCharEnums: EscapeCharEnum[]
 
     @Column({
         type: "enum",
@@ -90,6 +104,14 @@ export class EnumArrayEntity {
         nullable: true,
     })
     enumWithoutDefault: StringEnum[]
+
+    @Column({
+        type: "enum",
+        enum: StringEnum,
+        array: true,
+        default: "{a,e}",
+    })
+    defaultArrayAsString: StringEnum[]
 
     @Column({
         type: "enum",

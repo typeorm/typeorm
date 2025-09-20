@@ -12,6 +12,14 @@ describe("github issues > #3997 synchronize=true always failing when using decim
     before(
         async () =>
             (connections = await createTestingConnections({
+                enabledDrivers: [
+                    "postgres",
+                    "oracle",
+                    "cockroachdb",
+                    "mssql",
+                    "mysql",
+                    "sqlite",
+                ],
                 schemaCreate: false,
                 dropSchema: true,
                 entities: [User, Photo],

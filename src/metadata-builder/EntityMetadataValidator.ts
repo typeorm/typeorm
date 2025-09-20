@@ -58,6 +58,21 @@ export class EntityMetadataValidator {
         if (!entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
             throw new MissingPrimaryColumnError(entityMetadata)
 
+        // if entity has multiple primary keys and uses custom constraint name,
+        // then all primary keys should have the same constraint name
+        if (entityMetadata.primaryColumns.length > 1) {
+            const areConstraintNamesEqual = entityMetadata.primaryColumns.every(
+                (columnMetadata, i, columnMetadatas) =>
+                    columnMetadata.primaryKeyConstraintName ===
+                    columnMetadatas[0].primaryKeyConstraintName,
+            )
+            if (!areConstraintNamesEqual) {
+                throw new TypeORMError(
+                    `Entity ${entityMetadata.name} has multiple primary columns with different constraint names. Constraint names should be the equal.`,
+                )
+            }
+        }
+
         // validate if table is using inheritance it has a discriminator
         // also validate if discriminator values are not empty and not repeated
         if (
@@ -108,29 +123,34 @@ export class EntityMetadataValidator {
         })
 
         if (!(driver.options.type === "mongodb")) {
-            entityMetadata.columns.forEach((column) => {
-                const normalizedColumn = driver.normalizeType(
-                    column,
-                ) as ColumnType
-                if (driver.supportedDataTypes.indexOf(normalizedColumn) === -1)
-                    throw new DataTypeNotSupportedError(
+            entityMetadata.columns
+                .filter((column) => !column.isVirtualProperty)
+                .forEach((column) => {
+                    const normalizedColumn = driver.normalizeType(
                         column,
-                        normalizedColumn,
-                        driver.options.type,
+                    ) as ColumnType
+                    if (!driver.supportedDataTypes.includes(normalizedColumn))
+                        throw new DataTypeNotSupportedError(
+                            column,
+                            normalizedColumn,
+                            driver.options.type,
+                        )
+                    if (
+                        column.length &&
+                        !driver.withLengthColumnTypes.includes(normalizedColumn)
                     )
-                if (
-                    column.length &&
-                    driver.withLengthColumnTypes.indexOf(normalizedColumn) ===
-                        -1
-                )
-                    throw new TypeORMError(
-                        `Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`,
+                        throw new TypeORMError(
+                            `Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`,
+                        )
+                    if (
+                        column.type === "enum" &&
+                        !column.enum &&
+                        !column.enumName
                     )
-                if (column.type === "enum" && !column.enum && !column.enumName)
-                    throw new TypeORMError(
-                        `Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`,
-                    )
-            })
+                        throw new TypeORMError(
+                            `Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`,
+                        )
+                })
         }
 
         if (
@@ -168,6 +188,20 @@ export class EntityMetadataValidator {
                 )
         }
 
+        // Postgres supports only STORED generated columns.
+        if (driver.options.type === "postgres") {
+            const virtualColumn = entityMetadata.columns.find(
+                (column) =>
+                    column.asExpression &&
+                    (!column.generatedType ||
+                        column.generatedType === "VIRTUAL"),
+            )
+            if (virtualColumn)
+                throw new TypeORMError(
+                    `Column "${virtualColumn.propertyName}" of Entity "${entityMetadata.name}" is defined as VIRTUAL, but Postgres supports only STORED generated columns.`,
+                )
+        }
+
         // check if relations are all without initialized properties
         const entityInstance = entityMetadata.create(undefined, {
             fromDeserializer: true,
@@ -187,6 +221,28 @@ export class EntityMetadataValidator {
 
         // validate relations
         entityMetadata.relations.forEach((relation) => {
+            // check OnDeleteTypes
+            if (
+                driver.supportedOnDeleteTypes &&
+                relation.onDelete &&
+                !driver.supportedOnDeleteTypes.includes(relation.onDelete)
+            ) {
+                throw new TypeORMError(
+                    `OnDeleteType "${relation.onDelete}" is not supported for ${driver.options.type}!`,
+                )
+            }
+
+            // check OnUpdateTypes
+            if (
+                driver.supportedOnUpdateTypes &&
+                relation.onUpdate &&
+                !driver.supportedOnUpdateTypes.includes(relation.onUpdate)
+            ) {
+                throw new TypeORMError(
+                    `OnUpdateType "${relation.onUpdate}" is not valid for ${driver.options.type}!`,
+                )
+            }
+
             // check join tables:
             // using JoinTable is possible only on one side of the many-to-many relation
             // todo(dima): fix
@@ -255,8 +311,6 @@ export class EntityMetadataValidator {
                         `This may lead to unexpected circular removals. Please set cascade remove only from one side of relationship.`,
                 )
         }) // todo: maybe better just deny removal from one to one relation without join column?
-
-        entityMetadata.eagerRelations.forEach((relation) => {})
     }
 
     /**

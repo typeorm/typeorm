@@ -13,7 +13,7 @@ export class BaseObject extends BasePost {
     @Column()
     title: string
 
-    @ManyToOne((type) => PostAuthor, (post) => post.posts, {
+    @ManyToOne(() => PostAuthor, (post) => post.posts, {
         cascade: true,
     })
     author: PostAuthor

@@ -8,14 +8,14 @@ import { Generated } from "../../../../src/decorator/Generated"
 
 @Entity()
 export class User {
-    @PrimaryColumn("int")
+    @PrimaryColumn()
     @Generated()
     primaryKey: number
 
     @Column()
     email: string
 
-    @OneToOne((type) => AccessToken, (token) => token.user)
+    @OneToOne(() => AccessToken, (token) => token.user)
     @JoinColumn()
     access_token: AccessToken
 }

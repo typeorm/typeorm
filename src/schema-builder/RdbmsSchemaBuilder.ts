@@ -15,8 +15,8 @@ import { TableCheck } from "./table/TableCheck"
 import { TableExclusion } from "./table/TableExclusion"
 import { View } from "./view/View"
 import { ViewUtils } from "./util/ViewUtils"
-import { PostgresDriver } from "../driver/postgres/PostgresDriver"
 import { DriverUtils } from "../driver/DriverUtils"
+import { PostgresQueryRunner } from "../driver/postgres/PostgresQueryRunner"
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -66,8 +66,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
         // CockroachDB implements asynchronous schema sync operations which can not been executed in transaction.
         // E.g. if you try to DROP column and ADD it again in the same transaction, crdb throws error.
+        // In Spanner queries against the INFORMATION_SCHEMA can be used in a read-only transaction,
+        // but not in a read-write transaction.
         const isUsingTransactions =
             !(this.connection.driver.options.type === "cockroachdb") &&
+            !(this.connection.driver.options.type === "spanner") &&
             this.connection.options.migrationsTransactionMode !== "none"
 
         await this.queryRunner.beforeMigration()
@@ -82,9 +85,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const tablePaths = this.entityToSyncMetadatas.map((metadata) =>
                 this.getTablePath(metadata),
             )
+            const viewPaths = this.viewEntityToSyncMetadatas.map((metadata) =>
+                this.getTablePath(metadata),
+            )
 
             await this.queryRunner.getTables(tablePaths)
-            await this.queryRunner.getViews([])
+            await this.queryRunner.getViews(viewPaths)
 
             await this.executeSchemaSyncOperationsInProperOrder()
 
@@ -113,16 +119,14 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * If the schema contains views, create the typeorm_metadata table if it doesn't exist yet
+     * Create the typeorm_metadata table if necessary.
      */
     async createMetadataTableIfNecessary(
         queryRunner: QueryRunner,
     ): Promise<void> {
         if (
             this.viewEntityToSyncMetadatas.length > 0 ||
-            (this.connection.driver.options.type === "postgres" &&
-                (this.connection.driver as PostgresDriver)
-                    .isGeneratedColumnsSupported)
+            this.hasGeneratedColumns()
         ) {
             await this.createTypeormMetadataTable(queryRunner)
         }
@@ -138,8 +142,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const tablePaths = this.entityToSyncMetadatas.map((metadata) =>
                 this.getTablePath(metadata),
             )
+            const viewPaths = this.viewEntityToSyncMetadatas.map((metadata) =>
+                this.getTablePath(metadata),
+            )
             await this.queryRunner.getTables(tablePaths)
-            await this.queryRunner.getViews([])
+            await this.queryRunner.getViews(viewPaths)
 
             this.queryRunner.enableSqlMemory()
             await this.executeSchemaSyncOperationsInProperOrder()
@@ -193,6 +200,15 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
+     * Checks if there are at least one generated column.
+     */
+    protected hasGeneratedColumns(): boolean {
+        return this.connection.entityMetadatas.some((entityMetadata) => {
+            return entityMetadata.columns.some((column) => column.generatedType)
+        })
+    }
+
+    /**
      * Executes schema sync operations in a proper order.
      * Order of operations matter here.
      */
@@ -205,6 +221,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.dropCompositeUniqueConstraints()
         // await this.renameTables();
         await this.renameColumns()
+        await this.changeTableComment()
         await this.createNewTables()
         await this.dropRemovedColumns()
         await this.addNewColumns()
@@ -216,6 +233,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.createCompositeUniqueConstraints()
         await this.createForeignKeys()
         await this.createViews()
+        await this.createNewViewIndices()
     }
 
     private getTablePath(
@@ -303,18 +321,20 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             if (metadata.columns.length !== table.columns.length) continue
 
-            const renamedMetadataColumns = metadata.columns.filter((column) => {
-                return !table.columns.find((tableColumn) => {
-                    return (
-                        tableColumn.name === column.databaseName &&
-                        tableColumn.type ===
-                            this.connection.driver.normalizeType(column) &&
-                        tableColumn.isNullable === column.isNullable &&
-                        tableColumn.isUnique ===
-                            this.connection.driver.normalizeIsUnique(column)
-                    )
+            const renamedMetadataColumns = metadata.columns
+                .filter((c) => !c.isVirtualProperty)
+                .filter((column) => {
+                    return !table.columns.find((tableColumn) => {
+                        return (
+                            tableColumn.name === column.databaseName &&
+                            tableColumn.type ===
+                                this.connection.driver.normalizeType(column) &&
+                            tableColumn.isNullable === column.isNullable &&
+                            tableColumn.isUnique ===
+                                this.connection.driver.normalizeIsUnique(column)
+                        )
+                    })
                 })
-            })
 
             if (
                 renamedMetadataColumns.length === 0 ||
@@ -325,6 +345,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const renamedTableColumns = table.columns.filter((tableColumn) => {
                 return !metadata.columns.find((column) => {
                     return (
+                        !column.isVirtualProperty &&
                         column.databaseName === tableColumn.name &&
                         this.connection.driver.normalizeType(column) ===
                             tableColumn.type &&
@@ -345,7 +366,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             renamedColumn.name = renamedMetadataColumns[0].databaseName
 
             this.connection.logger.logSchemaBuild(
-                `renaming column "${renamedTableColumns[0].name}" in to "${renamedColumn.name}"`,
+                `renaming column "${renamedTableColumns[0].name}" in "${table.name}" to "${renamedColumn.name}"`,
             )
             await this.queryRunner.renameColumn(
                 table,
@@ -407,6 +428,70 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 })
 
             await Promise.all(dropQueries)
+        }
+        if (this.connection.options.type === "postgres") {
+            const postgresQueryRunner: PostgresQueryRunner = <
+                PostgresQueryRunner
+            >this.queryRunner
+            for (const metadata of this.viewEntityToSyncMetadatas) {
+                const view = this.queryRunner.loadedViews.find(
+                    (view) =>
+                        this.getTablePath(view) === this.getTablePath(metadata),
+                )
+                if (!view) continue
+
+                const dropQueries = view.indices
+                    .filter((tableIndex) => {
+                        const indexMetadata = metadata.indices.find(
+                            (index) => index.name === tableIndex.name,
+                        )
+                        if (indexMetadata) {
+                            if (indexMetadata.synchronize === false)
+                                return false
+
+                            if (indexMetadata.isUnique !== tableIndex.isUnique)
+                                return true
+
+                            if (
+                                indexMetadata.isSpatial !== tableIndex.isSpatial
+                            )
+                                return true
+
+                            if (
+                                this.connection.driver.isFullTextColumnTypeSupported() &&
+                                indexMetadata.isFulltext !==
+                                    tableIndex.isFulltext
+                            )
+                                return true
+
+                            if (
+                                indexMetadata.columns.length !==
+                                tableIndex.columnNames.length
+                            )
+                                return true
+
+                            return !indexMetadata.columns.every(
+                                (column) =>
+                                    tableIndex.columnNames.indexOf(
+                                        column.databaseName,
+                                    ) !== -1,
+                            )
+                        }
+
+                        return true
+                    })
+                    .map(async (tableIndex) => {
+                        this.connection.logger.logSchemaBuild(
+                            `dropping an index: "${tableIndex.name}" from view ${view.name}`,
+                        )
+                        await postgresQueryRunner.dropViewIndex(
+                            view,
+                            tableIndex,
+                        )
+                    })
+
+                await Promise.all(dropQueries)
+            }
         }
     }
 
@@ -507,6 +592,27 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
+     * change table comment
+     */
+    protected async changeTableComment(): Promise<void> {
+        for (const metadata of this.entityToSyncMetadatas) {
+            const table = this.queryRunner.loadedTables.find(
+                (table) =>
+                    this.getTablePath(table) === this.getTablePath(metadata),
+            )
+            if (!table) continue
+
+            if (
+                DriverUtils.isMySQLFamily(this.connection.driver) ||
+                this.connection.driver.options.type === "postgres"
+            ) {
+                const newComment = metadata.comment
+                await this.queryRunner.changeTableComment(table, newComment)
+            }
+        }
+    }
+
+    /**
      * Creates tables that do not exist in the database yet.
      * New tables are created without foreign and primary keys.
      * Primary key only can be created in conclusion with auto generated column.
@@ -556,7 +662,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // create a new view and sync it in the database
             const view = View.create(metadata, this.connection.driver)
-            await this.queryRunner.createView(view)
+            await this.queryRunner.createView(view, true)
             this.queryRunner.loadedViews.push(view)
         }
     }
@@ -678,6 +784,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const droppedTableColumns = table.columns.filter((tableColumn) => {
                 return !metadata.columns.find(
                     (columnMetadata) =>
+                        columnMetadata.isVirtualProperty ||
                         columnMetadata.databaseName === tableColumn.name,
                 )
             })
@@ -708,9 +815,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             // find which columns are new
             const newColumnMetadatas = metadata.columns.filter(
                 (columnMetadata) => {
-                    return !table.columns.find(
-                        (tableColumn) =>
-                            tableColumn.name === columnMetadata.databaseName,
+                    return (
+                        !columnMetadata.isVirtualProperty &&
+                        !table.columns.find(
+                            (tableColumn) =>
+                                tableColumn.name ===
+                                columnMetadata.databaseName,
+                        )
                     )
                 },
             )
@@ -813,7 +924,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (
                 !(
                     DriverUtils.isMySQLFamily(this.connection.driver) ||
-                    this.connection.driver.options.type === "aurora-mysql"
+                    this.connection.driver.options.type === "aurora-mysql" ||
+                    this.connection.driver.options.type === "spanner"
                 )
             ) {
                 for (const changedColumn of changedColumns) {
@@ -887,6 +999,59 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     .join(", ")} in table "${table.name}"`,
             )
             await this.queryRunner.createIndices(table, newIndices)
+        }
+    }
+
+    /**
+     * Creates indices for materialized views.
+     */
+    protected async createNewViewIndices(): Promise<void> {
+        // Only PostgreSQL supports indices for materialized views.
+        if (
+            this.connection.options.type !== "postgres" ||
+            !DriverUtils.isPostgresFamily(this.connection.driver)
+        ) {
+            return
+        }
+        const postgresQueryRunner: PostgresQueryRunner = <PostgresQueryRunner>(
+            this.queryRunner
+        )
+        for (const metadata of this.viewEntityToSyncMetadatas) {
+            // check if view does not exist yet
+            const view = this.queryRunner.loadedViews.find((view) => {
+                const viewExpression =
+                    typeof view.expression === "string"
+                        ? view.expression.trim()
+                        : view.expression(this.connection).getQuery()
+                const metadataExpression =
+                    typeof metadata.expression === "string"
+                        ? metadata.expression.trim()
+                        : metadata.expression!(this.connection).getQuery()
+                return (
+                    this.getTablePath(view) === this.getTablePath(metadata) &&
+                    viewExpression === metadataExpression
+                )
+            })
+            if (!view || !view.materialized) continue
+
+            const newIndices = metadata.indices
+                .filter(
+                    (indexMetadata) =>
+                        !view.indices.find(
+                            (tableIndex) =>
+                                tableIndex.name === indexMetadata.name,
+                        ) && indexMetadata.synchronize === true,
+                )
+                .map((indexMetadata) => TableIndex.create(indexMetadata))
+
+            if (newIndices.length === 0) continue
+
+            this.connection.logger.logSchemaBuild(
+                `adding new indices ${newIndices
+                    .map((index) => `"${index.name}"`)
+                    .join(", ")} in view "${view.name}"`,
+            )
+            await postgresQueryRunner.createViewIndices(view, newIndices)
         }
     }
 
@@ -1170,7 +1335,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * Creates typeorm service table for storing user defined Views.
+     * Creates typeorm service table for storing user defined Views and generate columns.
      */
     protected async createTypeormMetadataTable(queryRunner: QueryRunner) {
         const schema = this.currentSchema
@@ -1181,6 +1346,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             database,
         )
 
+        // Spanner requires at least one primary key in a table.
+        // Since we don't have unique column in "typeorm_metadata" table
+        // and we should avoid breaking changes, we mark all columns as primary for Spanner driver.
+        const isPrimary = this.connection.driver.options.type === "spanner"
         await queryRunner.createTable(
             new Table({
                 database: database,
@@ -1194,6 +1363,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataType,
                         }),
                         isNullable: false,
+                        isPrimary,
                     },
                     {
                         name: "database",
@@ -1202,6 +1372,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataDatabase,
                         }),
                         isNullable: true,
+                        isPrimary,
                     },
                     {
                         name: "schema",
@@ -1210,6 +1381,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataSchema,
                         }),
                         isNullable: true,
+                        isPrimary,
                     },
                     {
                         name: "table",
@@ -1218,6 +1390,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataTable,
                         }),
                         isNullable: true,
+                        isPrimary,
                     },
                     {
                         name: "name",
@@ -1226,6 +1399,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataName,
                         }),
                         isNullable: true,
+                        isPrimary,
                     },
                     {
                         name: "value",
@@ -1234,6 +1408,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                                 .metadataValue,
                         }),
                         isNullable: true,
+                        isPrimary,
                     },
                 ],
             }),

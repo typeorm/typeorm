@@ -7,10 +7,10 @@ import { Index } from "../../../../src/decorator/Index"
 export class User {
     @PrimaryGeneratedColumn()
     id: number
-    @Column({ type: "varchar", length: 100 })
+    @Column({ length: 100 })
     first_name: string
-    @Column({ type: "varchar", length: 100 })
+    @Column({ length: 100 })
     last_name: string
-    @Column({ type: "varchar", length: 100 })
+    @Column({ length: 100 })
     is_updated: string
 }

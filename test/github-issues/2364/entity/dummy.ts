@@ -3,7 +3,7 @@ import { Entity } from "../../../../src/decorator/entity/Entity"
 
 @Entity()
 export class Dummy {
-    @Column("integer", {
+    @Column({
         generated: true,
         nullable: false,
         primary: true,

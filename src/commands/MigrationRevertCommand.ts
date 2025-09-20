@@ -26,6 +26,12 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                 describe:
                     "Indicates if transaction should be used or not for migration revert. Enabled by default.",
             })
+            .option("fake", {
+                alias: "f",
+                type: "boolean",
+                default: false,
+                describe: "Fakes reverting the migration",
+            })
     }
 
     async handler(args: yargs.Arguments) {
@@ -47,6 +53,7 @@ export class MigrationRevertCommand implements yargs.CommandModule {
                 transaction:
                     dataSource.options.migrationsTransactionMode ??
                     ("all" as "all" | "none" | "each"),
+                fake: !!args.f,
             }
 
             switch (args.t) {
@@ -67,9 +74,11 @@ export class MigrationRevertCommand implements yargs.CommandModule {
             await dataSource.undoLastMigration(options)
             await dataSource.destroy()
         } catch (err) {
-            if (dataSource) await dataSource.destroy()
-
             PlatformTools.logCmdErr("Error during migration revert:", err)
+
+            if (dataSource && dataSource.isInitialized)
+                await dataSource.destroy()
+
             process.exit(1)
         }
     }

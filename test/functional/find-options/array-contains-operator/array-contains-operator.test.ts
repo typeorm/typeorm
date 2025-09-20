@@ -1,12 +1,12 @@
-import "../../../utils/test-setup"
 import { DataSource, EntityManager } from "../../../../src"
+import { ArrayContains } from "../../../../src/find-options/operator/ArrayContains"
+import "../../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Post, PostStatus } from "./entity/Post"
-import { ArrayContains } from "../../../../src/find-options/operator/ArrayContains"
 
 describe("find options > find operators > ArrayContains", () => {
     let connections: DataSource[]
@@ -14,8 +14,7 @@ describe("find options > find operators > ArrayContains", () => {
         async () =>
             (connections = await createTestingConnections({
                 __dirname,
-                enabledDrivers: ["postgres"],
-                logging: true,
+                enabledDrivers: ["postgres", "cockroachdb"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

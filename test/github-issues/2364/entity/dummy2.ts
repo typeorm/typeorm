@@ -3,7 +3,7 @@ import { Column, PrimaryColumn } from "../../../../src"
 
 @Entity()
 export class Dummy2 {
-    @PrimaryColumn("integer", {
+    @PrimaryColumn({
         generated: true,
         nullable: false,
         primary: true,

@@ -104,6 +104,10 @@ describe("query builder > relation-id > one-to-many > embedded-with-multiple-pk"
                     .orderBy("post.id")
                     .getMany()
 
+                // sort arrays because some drivers returns arrays in wrong order, e.g. categoryIds: [2, 1]
+                loadedPosts[0].counters.categoryIds.sort((a, b) => a.id - b.id)
+                loadedPosts[1].counters.categoryIds.sort((a, b) => a.id - b.id)
+
                 expect(
                     loadedPosts[0].should.be.eql({
                         id: 1,

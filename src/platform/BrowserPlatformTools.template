@@ -5,6 +5,8 @@
  * For node.js environment this class is not getting packaged.
  * Don't use methods of this class in the code, use PlatformTools methods instead.
  */
+import { Buffer } from "buffer";
+
 export class PlatformTools {
 
     /**
@@ -18,10 +20,12 @@ export class PlatformTools {
     static getGlobalVariable(): any {
         if (typeof window !== "undefined") {
             return window
-        } else {
-            // NativeScript uses global, not window
-            return global
         }
+        if (typeof globalThis !== "undefined") {
+            return globalThis
+        }
+        // NativeScript uses global, not window
+        return global
     }
 
     /**
@@ -107,21 +111,14 @@ export class PlatformTools {
     }
 
     /**
-     * Highlights sql string to be print in the console.
+     * Highlights sql string to be printed in the console.
      */
     static highlightSql(sql: string) {
         return sql;
     }
 
     /**
-     * Highlights json string to be print in the console.
-     */
-    static highlightJson(json: string) {
-        return json;
-    }
-
-    /**
-     * Logging functions needed by AdvancedConsoleLogger (but here without chalk)
+     * Logging functions needed by AdvancedConsoleLogger (but here without ANSI colors)
      */
     static logInfo(prefix: string, info: any) {
         console.info(prefix + " ", info);
@@ -165,9 +162,12 @@ interface Window {
 
 declare var window: Window;
 if (typeof window !== "undefined") {
-    window.Buffer = require("buffer/").Buffer;
+    window.Buffer = Buffer;
+}
+if (typeof globalThis !== "undefined") {
+    globalThis.Buffer = Buffer;
 }
 // NativeScript uses global, not window
-if (typeof global !== "undefined") {
+if (typeof global !== "undefined" && typeof require !== "undefined") {
     global.Buffer = require("buffer/").Buffer;
 }

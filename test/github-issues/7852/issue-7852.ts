@@ -39,9 +39,9 @@ describe("github issues > #7852 saving a ManyToMany relation tries to insert (DE
                 await userRepository.save(userEntity)
 
                 // Save on object
-                const objectId = 1
+                const ObjectId = 1
                 const objectEntity = new UsersObject()
-                objectEntity.id = objectId
+                objectEntity.id = ObjectId
                 await usersObjectRepository.save(objectEntity)
 
                 // Updating using save method
@@ -59,7 +59,7 @@ describe("github issues > #7852 saving a ManyToMany relation tries to insert (DE
 
                 expect(savedUser.objects.length).to.be.eql(1)
                 expect(savedUser.objects[0]).to.be.instanceOf(UsersObject)
-                expect(savedUser.objects[0].id).to.be.eql(objectId)
+                expect(savedUser.objects[0].id).to.be.eql(ObjectId)
             }),
         ))
 })

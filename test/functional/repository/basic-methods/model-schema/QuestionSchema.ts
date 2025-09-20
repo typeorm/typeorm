@@ -5,16 +5,16 @@ export default {
     },
     columns: {
         id: {
-            type: "int",
+            type: Number,
             primary: true,
             generated: true,
         },
         title: {
-            type: "varchar",
+            type: String,
             nullable: false,
         },
     },
-    target: function Question() {
+    target: function Question(this: any) {
         this.type = "question"
     },
 }

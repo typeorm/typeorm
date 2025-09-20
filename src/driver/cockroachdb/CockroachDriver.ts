@@ -1,32 +1,33 @@
-import { Driver } from "../Driver"
-import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { DataSource } from "../../data-source/DataSource"
+import { TypeORMError } from "../../error"
+import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { DriverUtils } from "../DriverUtils"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
+import { PlatformTools } from "../../platform/PlatformTools"
+import { QueryRunner } from "../../query-runner/QueryRunner"
+import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
+import { Table } from "../../schema-builder/table/Table"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import { View } from "../../schema-builder/view/View"
+import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
+import { DateUtils } from "../../util/DateUtils"
+import { InstanceChecker } from "../../util/InstanceChecker"
+import { ObjectUtils } from "../../util/ObjectUtils"
+import { OrmUtils } from "../../util/OrmUtils"
+import { Driver } from "../Driver"
+import { DriverUtils } from "../DriverUtils"
+import { ColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
+import { DataTypeDefaults } from "../types/DataTypeDefaults"
+import { MappedColumnTypes } from "../types/MappedColumnTypes"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { UpsertType } from "../types/UpsertType"
 import { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 import { CockroachConnectionOptions } from "./CockroachConnectionOptions"
-import { DateUtils } from "../../util/DateUtils"
-import { PlatformTools } from "../../platform/PlatformTools"
-import { DataSource } from "../../data-source/DataSource"
-import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ColumnType } from "../types/ColumnTypes"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { OrmUtils } from "../../util/OrmUtils"
 import { CockroachQueryRunner } from "./CockroachQueryRunner"
-import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { TypeORMError } from "../../error"
-import { Table } from "../../schema-builder/table/Table"
-import { View } from "../../schema-builder/view/View"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { ObjectUtils } from "../../util/ObjectUtils"
-import { InstanceChecker } from "../../util/InstanceChecker"
 
 /**
  * Organizes communication with Cockroach DBMS.
@@ -119,6 +120,9 @@ export class CockroachDriver implements Driver {
         "bytea",
         "blob",
         "date",
+        "enum",
+        "geometry",
+        "geography",
         "numeric",
         "decimal",
         "dec",
@@ -158,12 +162,15 @@ export class CockroachDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    readonly supportedUpsertType = "on-conflict-do-update"
+    supportedUpsertTypes: UpsertType[] = [
+        "on-conflict-do-update",
+        "primary-key",
+    ]
 
     /**
      * Gets list of spatial column data types.
      */
-    spatialTypes: ColumnType[] = []
+    spatialTypes: ColumnType[] = ["geometry", "geography"]
 
     /**
      * Gets list of column data types that support length by a driver.
@@ -216,6 +223,11 @@ export class CockroachDriver implements Driver {
         metadataName: "varchar",
         metadataValue: "string",
     }
+
+    /**
+     * The prefix used for the parameters
+     */
+    parametersPrefix: string = "$"
 
     /**
      * Default values of length, precision and scale depends on column data type.
@@ -293,7 +305,7 @@ export class CockroachDriver implements Driver {
         }
 
         if (!this.database || !this.searchSchema) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
             if (!this.database) {
                 this.database = await queryRunner.getCurrentDatabase()
@@ -315,6 +327,18 @@ export class CockroachDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
+        // enable time travel queries
+        if (this.options.timeTravelQueries) {
+            await this.connection.query(
+                `SET default_transaction_use_follower_reads = 'on';`,
+            )
+        }
+
+        // enable experimental alter column type support (we need it to alter enum types)
+        await this.connection.query(
+            "SET enable_experimental_alter_column_type_general = true",
+        )
+
         return Promise.resolve()
     }
 
@@ -322,8 +346,9 @@ export class CockroachDriver implements Driver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("cockroachdb"))
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("cockroachdb")
+        }
 
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
@@ -427,6 +452,41 @@ export class CockroachDriver implements Driver {
             value = DateUtils.stringToSimpleArray(value)
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value)
+        } else if (
+            columnMetadata.type === "enum" ||
+            columnMetadata.type === "simple-enum"
+        ) {
+            if (columnMetadata.isArray) {
+                if (value === "{}") return []
+                if (Array.isArray(value)) return value
+
+                // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
+                value = (value as string)
+                    .slice(1, -1)
+                    .split(",")
+                    .map((val) => {
+                        // replace double quotes from the beginning and from the end
+                        if (val.startsWith(`"`) && val.endsWith(`"`))
+                            val = val.slice(1, -1)
+                        // replace escaped backslash and double quotes
+                        return val.replace(/\\(\\|")/g, "$1")
+                    })
+
+                // convert to number if that exists in possible enum options
+                value = value.map((val: string) => {
+                    return !isNaN(+val) &&
+                        columnMetadata.enum!.indexOf(parseInt(val)) >= 0
+                        ? parseInt(val)
+                        : val
+                })
+            } else {
+                // convert to number if that exists in possible enum options
+                value =
+                    !isNaN(+value) &&
+                    columnMetadata.enum!.indexOf(parseInt(value)) >= 0
+                        ? parseInt(value)
+                        : value
+            }
         }
 
         if (columnMetadata.transformer)
@@ -453,6 +513,7 @@ export class CockroachDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
+        const parameterIndexMap = new Map<string, number>()
         sql = sql.replace(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
@@ -460,7 +521,11 @@ export class CockroachDriver implements Driver {
                     return full
                 }
 
-                let value: any = parameters[key]
+                if (parameterIndexMap.has(key)) {
+                    return this.parametersPrefix + parameterIndexMap.get(key)
+                }
+
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -479,6 +544,7 @@ export class CockroachDriver implements Driver {
                 }
 
                 escapedParameters.push(value)
+                parameterIndexMap.set(key, escapedParameters.length)
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems
@@ -497,7 +563,7 @@ export class CockroachDriver implements Driver {
      * E.g. myDB.mySchema.myTable
      */
     buildTableName(tableName: string, schema?: string): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)
@@ -618,6 +684,8 @@ export class CockroachDriver implements Driver {
             return "float4"
         } else if (column.type === "character") {
             return "char"
+        } else if (column.type === "simple-enum") {
+            return "enum"
         } else if (column.type === "json") {
             return "jsonb"
         } else {
@@ -630,11 +698,36 @@ export class CockroachDriver implements Driver {
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
-        const arrayCast = columnMetadata.isArray
-            ? `::${columnMetadata.type}[]`
-            : ""
 
-        if (typeof defaultValue === "number") {
+        if (defaultValue === undefined || defaultValue === null) {
+            return undefined
+        }
+
+        if (
+            (columnMetadata.type === "enum" ||
+                columnMetadata.type === "simple-enum") &&
+            defaultValue !== undefined
+        ) {
+            if (columnMetadata.isArray) {
+                const enumName = this.buildEnumName(columnMetadata)
+                let arrayValue = defaultValue
+                if (typeof defaultValue === "string") {
+                    if (defaultValue === "{}") return `ARRAY[]::${enumName}[]`
+                    arrayValue = defaultValue
+                        .replace("{", "")
+                        .replace("}", "")
+                        .split(",")
+                }
+                if (Array.isArray(arrayValue)) {
+                    const expr = `ARRAY[${arrayValue
+                        .map((it) => `'${it}'`)
+                        .join(",")}]`
+                    return `${expr}::${enumName}[]`
+                }
+            } else {
+                return `'${defaultValue}'`
+            }
+        } else if (typeof defaultValue === "number") {
             return `(${defaultValue})`
         }
 
@@ -653,15 +746,14 @@ export class CockroachDriver implements Driver {
         }
 
         if (typeof defaultValue === "string") {
+            const arrayCast = columnMetadata.isArray
+                ? `::${columnMetadata.type}[]`
+                : ""
             return `'${defaultValue}'${arrayCast}`
         }
 
         if (ObjectUtils.isObject(defaultValue) && defaultValue !== null) {
             return `'${JSON.stringify(defaultValue)}'`
-        }
-
-        if (defaultValue === undefined || defaultValue === null) {
-            return undefined
         }
 
         return `${defaultValue}`
@@ -703,6 +795,14 @@ export class CockroachDriver implements Driver {
             column.precision !== undefined
         ) {
             type += "(" + column.precision + ")"
+        } else if (this.spatialTypes.indexOf(column.type as ColumnType) >= 0) {
+            if (column.spatialFeatureType != null && column.srid != null) {
+                type = `${column.type}(${column.spatialFeatureType},${column.srid})`
+            } else if (column.spatialFeatureType != null) {
+                type = `${column.type}(${column.spatialFeatureType})`
+            } else {
+                type = column.type
+            }
         }
 
         if (column.isArray) type += " array"
@@ -782,10 +882,19 @@ export class CockroachDriver implements Driver {
             )
             if (!tableColumn) return false // we don't need new columns, we only need exist and changed
 
-            // console.log("table:", columnMetadata.entityMetadata.tableName);
-            // console.log("name:", tableColumn.name, columnMetadata.databaseName);
-            // console.log("type:", tableColumn.type, this.normalizeType(columnMetadata));
-            // console.log("length:", tableColumn.length, columnMetadata.length);
+            // console.log("table:", columnMetadata.entityMetadata.tableName)
+            // console.log("name:", {
+            //     tableColumn: tableColumn.name,
+            //     columnMetadata: columnMetadata.databaseName,
+            // })
+            // console.log("type:", {
+            //     tableColumn: tableColumn.type,
+            //     columnMetadata: this.normalizeType(columnMetadata),
+            // })
+            // console.log("length:", {
+            //     tableColumn: tableColumn.length,
+            //     columnMetadata: columnMetadata.length,
+            // })
             // console.log("width:", tableColumn.width, columnMetadata.width);
             // console.log("precision:", tableColumn.precision, columnMetadata.precision);
             // console.log("scale:", tableColumn.scale, columnMetadata.scale);
@@ -795,13 +904,17 @@ export class CockroachDriver implements Driver {
             // console.log("isPrimary:", tableColumn.isPrimary, columnMetadata.isPrimary);
             // console.log("isNullable:", tableColumn.isNullable, columnMetadata.isNullable);
             // console.log("isUnique:", tableColumn.isUnique, this.normalizeIsUnique(columnMetadata));
-            // console.log("isGenerated:", tableColumn.isGenerated, columnMetadata.isGenerated);
+            // console.log("asExpression:", {
+            //     tableColumn: (tableColumn.asExpression || "").trim(),
+            //     columnMetadata: (columnMetadata.asExpression || "").trim(),
+            // })
             // console.log("==========================================");
 
             return (
                 tableColumn.name !== columnMetadata.databaseName ||
                 tableColumn.type !== this.normalizeType(columnMetadata) ||
                 tableColumn.length !== columnMetadata.length ||
+                tableColumn.isArray !== columnMetadata.isArray ||
                 tableColumn.precision !== columnMetadata.precision ||
                 (columnMetadata.scale !== undefined &&
                     tableColumn.scale !== columnMetadata.scale) ||
@@ -815,7 +928,20 @@ export class CockroachDriver implements Driver {
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
-                tableColumn.isGenerated !== columnMetadata.isGenerated
+                tableColumn.enumName !== columnMetadata.enumName ||
+                (tableColumn.enum &&
+                    columnMetadata.enum &&
+                    !OrmUtils.isArraysEqual(
+                        tableColumn.enum,
+                        columnMetadata.enum.map((val) => val + ""),
+                    )) || // enums in postgres are always strings
+                tableColumn.isGenerated !== columnMetadata.isGenerated ||
+                tableColumn.generatedType !== columnMetadata.generatedType ||
+                (tableColumn.asExpression || "").trim() !==
+                    (columnMetadata.asExpression || "").trim() ||
+                (tableColumn.spatialFeatureType || "").toLowerCase() !==
+                    (columnMetadata.spatialFeatureType || "").toLowerCase() ||
+                tableColumn.srid !== columnMetadata.srid
             )
         })
     }
@@ -856,7 +982,7 @@ export class CockroachDriver implements Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string {
-        return "$" + (index + 1)
+        return this.parametersPrefix + (index + 1)
     }
 
     // -------------------------------------------------------------------------
@@ -869,10 +995,10 @@ export class CockroachDriver implements Driver {
     loadStreamDependency() {
         try {
             return PlatformTools.load("pg-query-stream")
-        } catch (e) {
+        } catch {
             // todo: better error for browser env
             throw new TypeORMError(
-                `To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`,
+                `To use streams you should install pg-query-stream package. Please run "npm i pg-query-stream".`,
             )
         }
     }
@@ -924,6 +1050,7 @@ export class CockroachDriver implements Driver {
                 port: credentials.port,
                 ssl: credentials.ssl,
                 application_name: options.applicationName,
+                max: options.poolSize,
             },
             options.extra || {},
         )
@@ -975,5 +1102,22 @@ export class CockroachDriver implements Driver {
         comment = comment.replace(/'/g, "''").replace(/\u0000/g, "") // Null bytes aren't allowed in comments
 
         return comment
+    }
+
+    /**
+     * Builds ENUM type name from given table and column.
+     */
+    protected buildEnumName(column: ColumnMetadata): string {
+        const { schema, tableName } = this.parseTableName(column.entityMetadata)
+        let enumName = column.enumName
+            ? column.enumName
+            : `${tableName}_${column.databaseName.toLowerCase()}_enum`
+        if (schema) enumName = `${schema}.${enumName}`
+        return enumName
+            .split(".")
+            .map((i) => {
+                return `"${i}"`
+            })
+            .join(".")
     }
 }

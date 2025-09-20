@@ -199,9 +199,10 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * If a custom autoSaveCallback is specified, it get's called with the database as Uint8Array,
      * otherwise the save method is called which saves it to file (Node.js), local storage (browser)
      * or indexedDB (browser with enabled useLocalForage option).
+     * Don't auto-save when in transaction as the call to export will end the current transaction
      */
     async autoSave() {
-        if (this.options.autoSave) {
+        if (this.options.autoSave && !this.queryRunner?.isTransactionActive) {
             if (this.options.autoSaveCallback) {
                 await this.options.autoSaveCallback(this.export())
             } else {
@@ -230,7 +231,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                 ) {
                     const query = "SELECT last_insert_rowid()"
                     try {
-                        let result = this.databaseConnection.exec(query)
+                        const result = this.databaseConnection.exec(query)
                         this.connection.logger.logQuery(query)
                         return OrmUtils.mergeDeep(
                             map,

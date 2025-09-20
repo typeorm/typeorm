@@ -22,8 +22,12 @@ describe("schema builder > update primary keys", () => {
     it("should correctly update composite primary keys", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // CockroachDB does not support changing primary key constraint
-                if (connection.driver.options.type === "cockroachdb") return
+                // CockroachDB and Spanner does not support changing primary key constraint
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const metadata = connection.getMetadata(Category)
                 const nameColumn = metadata.findColumnWithPropertyName("name")
@@ -46,8 +50,12 @@ describe("schema builder > update primary keys", () => {
                 // Sqlite does not support AUTOINCREMENT on composite primary key
                 if (DriverUtils.isSQLiteFamily(connection.driver)) return
 
-                // CockroachDB does not support changing primary key constraint
-                if (connection.driver.options.type === "cockroachdb") return
+                // CockroachDB and Spanner does not support changing primary key constraint
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
 
                 const metadata = connection.getMetadata(Question)
                 const nameColumn = metadata.findColumnWithPropertyName("name")

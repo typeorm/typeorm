@@ -9,6 +9,7 @@ import { Exclusion } from "../../../../src/decorator/Exclusion"
 @Unique(["text", "tag"])
 @Exclusion(`USING gist ("text" WITH =)`)
 @Check(`"likesCount" < 1000`)
+// @Check(`\`likesCount\` < 1000`) // should be properly escaped for each driver.
 export class Post {
     @PrimaryColumn()
     id: number
@@ -16,13 +17,13 @@ export class Post {
     @Column({ unique: true })
     version: string
 
-    @Column({ default: "My post" })
+    @Column({ nullable: true, default: "My post" })
     name: string
 
     @Column({ nullable: true })
     text: string
 
-    @Column()
+    @Column({ comment: "Tag" })
     tag: string
 
     @Column()

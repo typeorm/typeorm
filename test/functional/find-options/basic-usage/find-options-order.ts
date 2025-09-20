@@ -53,6 +53,12 @@ describe("find options > order", () => {
                         text: "About post #3",
                         counters: { likes: 1 },
                     },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
                 ])
 
                 const posts2 = await connection
@@ -82,6 +88,12 @@ describe("find options > order", () => {
                         text: "About post #3",
                         counters: { likes: 1 },
                     },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
                 ])
 
                 const posts3 = await connection
@@ -109,6 +121,12 @@ describe("find options > order", () => {
                         id: 3,
                         title: "Post #3",
                         text: "About post #3",
+                        counters: { likes: 1 },
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
                         counters: { likes: 1 },
                     },
                 ])
@@ -142,6 +160,12 @@ describe("find options > order", () => {
                         text: "About post #3",
                         counters: { likes: 1 },
                     },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
                 ])
 
                 const posts5 = await connection
@@ -153,6 +177,12 @@ describe("find options > order", () => {
                     })
                     .getMany()
                 posts5.should.be.eql([
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
                     {
                         id: 3,
                         title: "Post #3",
@@ -183,6 +213,12 @@ describe("find options > order", () => {
                     .getMany()
                 posts6.should.be.eql([
                     {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
+                    {
                         id: 3,
                         title: "Post #3",
                         text: "About post #3",
@@ -211,6 +247,12 @@ describe("find options > order", () => {
                     })
                     .getMany()
                 posts7.should.be.eql([
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
                     {
                         id: 3,
                         title: "Post #3",
@@ -242,6 +284,12 @@ describe("find options > order", () => {
                     })
                     .getMany()
                 posts8.should.be.eql([
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
                     {
                         id: 3,
                         title: "Post #3",
@@ -279,6 +327,12 @@ describe("find options > order", () => {
                     .getMany()
                 posts.should.be.eql([
                     {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
+                    {
                         id: 3,
                         title: "Post #3",
                         text: "About post #3",
@@ -315,6 +369,12 @@ describe("find options > order", () => {
                     })
                     .getMany()
                 posts.should.be.eql([
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
                     {
                         id: 3,
                         title: "Post #3",
@@ -360,6 +420,12 @@ describe("find options > order", () => {
                         counters: { likes: 1 },
                     },
                     {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
+                    {
                         id: 1,
                         title: "Post #1",
                         text: "About post #1",
@@ -373,8 +439,8 @@ describe("find options > order", () => {
                     },
                 ])
                 expect(posts[0].id).to.be.eql(3)
-                expect(posts[1].id).to.be.oneOf([1, 2])
-                expect(posts[2].id).to.be.oneOf([1, 2])
+                expect(posts[1].id).to.be.oneOf([1, 2, 4])
+                expect(posts[2].id).to.be.oneOf([1, 2, 4])
                 expect(posts[1].id).to.not.be.eql(posts[2].id)
             }),
         ))
@@ -393,6 +459,7 @@ describe("find options > order", () => {
                             },
                         },
                         order: {
+                            id: "asc",
                             author: {
                                 id: "desc",
                             },
@@ -411,6 +478,12 @@ describe("find options > order", () => {
                         title: "Post #2",
                         text: "About post #2",
                         counters: { likes: 2 },
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
                     },
                 ])
             }),
@@ -450,6 +523,12 @@ describe("find options > order", () => {
                         text: "About post #2",
                         counters: { likes: 2 },
                     },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
                 ])
             }),
         ))
@@ -477,6 +556,12 @@ describe("find options > order", () => {
                 // exact row order depends of settings like NULLS FIRST and NULLS LAST
                 posts.should.have.deep.members([
                     {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
+                    {
                         id: 1,
                         title: "Post #1",
                         text: "About post #1",
@@ -495,9 +580,10 @@ describe("find options > order", () => {
                         counters: { likes: 1 },
                     },
                 ])
-                expect(posts[0].id).to.be.oneOf([1, 3])
+                expect(posts[0].id).to.be.oneOf([4, 3])
                 expect(posts[1].id).to.be.oneOf([2, 1])
-                expect(posts[2].id).to.be.oneOf([3, 2])
+                expect(posts[2].id).to.be.oneOf([2, 1])
+                expect(posts[3].id).to.be.oneOf([3, 4])
             }),
         ))
 
@@ -536,6 +622,12 @@ describe("find options > order", () => {
                         text: "About post #3",
                         counters: { likes: 1 },
                     },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
                 ])
             }),
         ))
@@ -560,7 +652,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.have.deep.members([
                     {
                         id: 3,
                         title: "Post #3",
@@ -573,7 +665,17 @@ describe("find options > order", () => {
                         text: "About post #1",
                         counters: { likes: 1 },
                     },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
                 ])
+                expect(posts[0].id).to.be.eql(3)
+                expect(posts[1].id).to.be.oneOf([1, 4])
+                expect(posts[2].id).to.be.oneOf([1, 4])
+                expect(posts[1].id).to.not.be.eql(posts[2].id)
             }),
         ))
 })

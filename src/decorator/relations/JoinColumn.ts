@@ -41,6 +41,7 @@ export function JoinColumn(
                 propertyName: propertyName,
                 name: options.name,
                 referencedColumnName: options.referencedColumnName,
+                foreignKeyConstraintName: options.foreignKeyConstraintName,
             } as JoinColumnMetadataArgs)
         })
     }

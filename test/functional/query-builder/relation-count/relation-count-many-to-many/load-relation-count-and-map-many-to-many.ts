@@ -54,18 +54,19 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
                 post2.categories = [category4, category5]
                 await connection.manager.save(post2)
 
-                let loadedPosts = await connection.manager
+                const loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationCountAndMap(
                         "post.categoryCount",
                         "post.categories",
                     )
+                    .addOrderBy("post.id")
                     .getMany()
 
                 expect(loadedPosts![0].categoryCount).to.be.equal(3)
                 expect(loadedPosts![1].categoryCount).to.be.equal(2)
 
-                let loadedPost = await connection.manager
+                const loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationCountAndMap(
                         "post.categoryCount",
@@ -120,7 +121,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
                 post4.title = "about Airbus"
                 await connection.manager.save(post4)
 
-                let loadedPosts = await connection.manager
+                const loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .loadRelationCountAndMap(
                         "post.categoryCount",
@@ -185,7 +186,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
                 post2.categories = [category4, category5]
                 await connection.manager.save(post2)
 
-                let loadedPosts = await connection.manager
+                const loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .loadRelationCountAndMap(
@@ -230,7 +231,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
                 expect(loadedPosts![1].categoryCount).to.be.equal(2)
                 expect(loadedPosts![1].categories[0].imageCount).to.be.equal(1)
 
-                let loadedPost = await connection.manager
+                const loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .loadRelationCountAndMap(
@@ -299,7 +300,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
                 post2.categories = [category1, category3]
                 await connection.manager.save(post2)
 
-                let loadedPosts = await connection.manager
+                const loadedPosts = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .loadRelationCountAndMap(
@@ -321,7 +322,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
                 expect(loadedPosts![1].categories[0].postCount).to.be.equal(2)
                 expect(loadedPosts![1].categories[1].postCount).to.be.equal(2)
 
-                let loadedPost = await connection.manager
+                const loadedPost = await connection.manager
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.categories", "categories")
                     .loadRelationCountAndMap(
@@ -379,18 +380,19 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
                 post5.categories = [category2]
                 await connection.manager.save(post5)
 
-                let loadedCategories = await connection.manager
+                const loadedCategories = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationCountAndMap(
                         "category.postCount",
                         "category.posts",
                     )
+                    .addOrderBy("category.id")
                     .getMany()
 
                 expect(loadedCategories![0].postCount).to.be.equal(3)
                 expect(loadedCategories![1].postCount).to.be.equal(2)
 
-                let loadedCategory = await connection.manager
+                const loadedCategory = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationCountAndMap(
                         "category.postCount",
@@ -447,7 +449,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
                 post5.categories = [category2]
                 await connection.manager.save(post5)
 
-                let loadedCategories = await connection.manager
+                const loadedCategories = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationCountAndMap(
                         "category.postCount",
@@ -501,7 +503,7 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
                 post5.categories = [category2]
                 await connection.manager.save(post5)
 
-                let loadedCategories = await connection.manager
+                const loadedCategories = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationCountAndMap(
                         "category.postCount",
@@ -516,13 +518,14 @@ describe("query builder > load-relation-count-and-map > many-to-many", () => {
                                 isRemoved: true,
                             }),
                     )
+                    .addOrderBy("category.id")
                     .getMany()
 
                 expect(loadedCategories![0].postCount).to.be.equal(3)
                 expect(loadedCategories![0].removedPostCount).to.be.equal(2)
                 expect(loadedCategories![1].postCount).to.be.equal(2)
 
-                let loadedCategory = await connection.manager
+                const loadedCategory = await connection.manager
                     .createQueryBuilder(Category, "category")
                     .loadRelationCountAndMap(
                         "category.postCount",

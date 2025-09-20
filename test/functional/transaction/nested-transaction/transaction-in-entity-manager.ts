@@ -28,35 +28,37 @@ describe("transaction > nested transaction", () => {
                     shouldExist: boolean
                 }[] = []
 
+                // SAP HANA, Spanner etc. do not support nested transactions
+                if (connection.driver.transactionSupport !== "nested") return
+
                 await connection.manager.transaction(async (em0) => {
                     const post = new Post()
                     post.title = "Post #1"
                     await em0.save(post)
                     conditions.push({ ...post, shouldExist: true })
 
-                    try {
-                        await em0.transaction(async (em1) => {
-                            const post = new Post()
-                            post.title = "Post #2"
-                            await em1.save(post)
-                            conditions.push({ ...post, shouldExist: false })
+                    await em0.transaction(async (em1) => {
+                        const post = new Post()
+                        post.title = "Post #2"
+                        await em1.save(post)
+                        conditions.push({ ...post, shouldExist: false })
 
-                            await em1.transaction(async (em2) => {
-                                const post = new Post()
-                                post.title = "Post #3"
-                                await em2.save(post)
-                                conditions.push({ ...post, shouldExist: false })
-                            })
-                            throw new Error("")
-                        })
-                    } catch (_) {}
+                        await em1.transaction(async (em2) => {
+                            const post = new Post()
+                            post.title = "Post #3"
+                            await em2.save(post)
+                            conditions.push({ ...post, shouldExist: false })
+                        }).should.not.be.rejected
+
+                        throw new Error("")
+                    }).should.be.rejected
 
                     await em0.transaction(async (em1) => {
                         const post = new Post()
                         post.title = "Post #4"
                         await em1.save(post)
                         conditions.push({ ...post, shouldExist: true })
-                    })
+                    }).should.not.be.rejected
 
                     await em0.transaction(async (em1) => {
                         const post = new Post()
@@ -64,32 +66,31 @@ describe("transaction > nested transaction", () => {
                         await em1.save(post)
                         conditions.push({ ...post, shouldExist: true })
 
-                        try {
-                            await em1.transaction(async (em2) => {
-                                const post = new Post()
-                                post.title = "Post #6"
-                                await em2.save(post)
-                                conditions.push({ ...post, shouldExist: false })
+                        await em1.transaction(async (em2) => {
+                            const post = new Post()
+                            post.title = "Post #6"
+                            await em2.save(post)
+                            conditions.push({ ...post, shouldExist: false })
 
-                                await em2.transaction(async (em3) => {
-                                    const post = new Post()
-                                    post.title = "Post #7"
-                                    await em3.save(post)
-                                    conditions.push({
-                                        ...post,
-                                        shouldExist: false,
-                                    })
+                            await em2.transaction(async (em3) => {
+                                const post = new Post()
+                                post.title = "Post #7"
+                                await em3.save(post)
+                                conditions.push({
+                                    ...post,
+                                    shouldExist: false,
                                 })
-                                throw new Error("")
-                            })
-                        } catch (_) {}
+                            }).should.not.be.rejected
+
+                            throw new Error("")
+                        }).should.be.rejected
 
                         await em1.transaction(async (em2) => {
                             const post = new Post()
                             post.title = "Post #8"
                             await em2.save(post)
                             conditions.push({ ...post, shouldExist: true })
-                        })
+                        }).should.not.be.rejected
 
                         await em1.transaction(async (em2) => {
                             const post = new Post()
@@ -97,38 +98,37 @@ describe("transaction > nested transaction", () => {
                             await em2.save(post)
                             conditions.push({ ...post, shouldExist: true })
 
-                            try {
-                                await em2.transaction(async (em3) => {
+                            await em2.transaction(async (em3) => {
+                                const post = new Post()
+                                post.title = "Post #10"
+                                await em3.save(post)
+                                conditions.push({
+                                    ...post,
+                                    shouldExist: false,
+                                })
+
+                                await em3.transaction(async (em4) => {
                                     const post = new Post()
-                                    post.title = "Post #10"
-                                    await em3.save(post)
+                                    post.title = "Post #11"
+                                    await em4.save(post)
                                     conditions.push({
                                         ...post,
                                         shouldExist: false,
                                     })
+                                }).should.not.be.rejected
 
-                                    await em3.transaction(async (em4) => {
-                                        const post = new Post()
-                                        post.title = "Post #11"
-                                        await em4.save(post)
-                                        conditions.push({
-                                            ...post,
-                                            shouldExist: false,
-                                        })
-                                    })
-                                    throw new Error("")
-                                })
-                            } catch (_) {}
+                                throw new Error("")
+                            }).should.be.rejected
 
                             await em2.transaction(async (em3) => {
                                 const post = new Post()
                                 post.title = "Post #12"
                                 await em3.save(post)
                                 conditions.push({ ...post, shouldExist: true })
-                            })
-                        })
-                    })
-                })
+                            }).should.not.be.rejected
+                        }).should.not.be.rejected
+                    }).should.not.be.rejected
+                }).should.not.be.rejected
 
                 for (const condition of conditions) {
                     const post = await connection.manager.findOne(Post, {
@@ -152,59 +152,55 @@ describe("transaction > nested transaction", () => {
             connections.map(async (connection) => {
                 const conditions: { id: number; title: string }[] = []
 
-                try {
-                    await connection.manager.transaction(async (em0) => {
+                await connection.manager.transaction(async (em0) => {
+                    const post = new Post()
+                    post.title = "Post #1"
+                    await em0.save(post)
+                    conditions.push({ ...post })
+
+                    await em0.transaction(async (em1) => {
                         const post = new Post()
-                        post.title = "Post #1"
-                        await em0.save(post)
+                        post.title = "Post #2"
+                        await em1.save(post)
                         conditions.push({ ...post })
 
-                        try {
-                            await em0.transaction(async (em1) => {
-                                const post = new Post()
-                                post.title = "Post #2"
-                                await em1.save(post)
-                                conditions.push({ ...post })
-                                throw new Error("")
-                            })
-                        } catch (_) {}
+                        throw new Error("")
+                    }).should.be.rejected
 
-                        await em0.transaction(async (em1) => {
+                    await em0.transaction(async (em1) => {
+                        const post = new Post()
+                        post.title = "Post #3"
+                        await em1.save(post)
+                        conditions.push({ ...post })
+
+                        await em1.transaction(async (em2) => {
                             const post = new Post()
-                            post.title = "Post #3"
-                            await em1.save(post)
+                            post.title = "Post #4"
+                            await em2.save(post)
                             conditions.push({ ...post })
 
-                            try {
-                                await em1.transaction(async (em2) => {
-                                    const post = new Post()
-                                    post.title = "Post #4"
-                                    await em2.save(post)
-                                    conditions.push({ ...post })
-                                    throw new Error("")
-                                })
-                            } catch (_) {}
+                            throw new Error("")
+                        }).should.be.rejected
 
-                            await em1.transaction(async (em2) => {
+                        await em1.transaction(async (em2) => {
+                            const post = new Post()
+                            post.title = "Post #5"
+                            await em2.save(post)
+                            conditions.push({ ...post })
+
+                            await em2.transaction(async (em3) => {
                                 const post = new Post()
-                                post.title = "Post #5"
-                                await em2.save(post)
+                                post.title = "Post #6"
+                                await em3.save(post)
                                 conditions.push({ ...post })
 
-                                try {
-                                    await em2.transaction(async (em3) => {
-                                        const post = new Post()
-                                        post.title = "Post #6"
-                                        await em3.save(post)
-                                        conditions.push({ ...post })
-                                        throw new Error("")
-                                    })
-                                } catch (_) {}
-                            })
-                        })
-                        throw new Error("")
-                    })
-                } catch (_) {}
+                                throw new Error("")
+                            }).should.be.rejected
+                        }).should.not.be.rejected
+                    }).should.not.be.rejected
+
+                    throw new Error("")
+                }).should.be.rejected
 
                 for (const condition of conditions) {
                     const post = await connection.manager.findOne(Post, {

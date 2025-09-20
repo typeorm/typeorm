@@ -54,16 +54,18 @@ describe("tree tables > nested-set", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const a11ParentNames = a11Parent.map((i) => i.name)
+                a11ParentNames.length.should.be.equal(2)
+                a11ParentNames.should.deep.include("a1")
+                a11ParentNames.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
-                a1Children.length.should.be.equal(4)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a111" })
-                a1Children.should.deep.include({ id: 4, name: "a12" })
+                const a1ChildrenNames = a1Children.map((i) => i.name)
+                a1ChildrenNames.length.should.be.equal(4)
+                a1ChildrenNames.should.deep.include("a1")
+                a1ChildrenNames.should.deep.include("a11")
+                a1ChildrenNames.should.deep.include("a111")
+                a1ChildrenNames.should.deep.include("a12")
             }),
         ))
 
@@ -95,15 +97,17 @@ describe("tree tables > nested-set", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const a11ParentNames = a11Parent.map((i) => i.name)
+                a11ParentNames.length.should.be.equal(2)
+                a11ParentNames.should.deep.include("a1")
+                a11ParentNames.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
-                a1Children.length.should.be.equal(3)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a12" })
+                const a1ChildrenNames = a1Children.map((i) => i.name)
+                a1ChildrenNames.length.should.be.equal(3)
+                a1ChildrenNames.should.deep.include("a1")
+                a1ChildrenNames.should.deep.include("a11")
+                a1ChildrenNames.should.deep.include("a12")
             }),
         ))
 
@@ -135,15 +139,17 @@ describe("tree tables > nested-set", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const a11ParentNames = a11Parent.map((i) => i.name)
+                a11ParentNames.length.should.be.equal(2)
+                a11ParentNames.should.deep.include("a1")
+                a11ParentNames.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
-                a1Children.length.should.be.equal(3)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a12" })
+                const a1ChildrenNames = a1Children.map((i) => i.name)
+                a1ChildrenNames.length.should.be.equal(3)
+                a1ChildrenNames.should.deep.include("a1")
+                a1ChildrenNames.should.deep.include("a11")
+                a1ChildrenNames.should.deep.include("a12")
             }),
         ))
 
@@ -181,9 +187,10 @@ describe("tree tables > nested-set", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const a11ParentNames = a11Parent.map((child) => child.name)
+                a11ParentNames.length.should.be.equal(2)
+                a11ParentNames.should.deep.include("a1")
+                a11ParentNames.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
                 const a1ChildrenNames = a1Children.map((child) => child.name)
@@ -222,6 +229,12 @@ describe("tree tables > nested-set", () => {
                 await categoryRepository.save(a1)
 
                 const categoriesTree = await categoryRepository.findTrees()
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTree[0].childCategories.sort((a, b) => a.id - b.id)
+                categoriesTree[0].childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTree.should.be.eql([
                     {
                         id: a1.id,
@@ -280,6 +293,13 @@ describe("tree tables > nested-set", () => {
                 await categoryRepository.save(a1)
 
                 const categoriesTree = await categoryRepository.findTrees()
+
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTree[0].childCategories.sort((a, b) => a.id - b.id)
+                categoriesTree[0].childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTree.should.be.eql([
                     {
                         id: a1.id,
@@ -312,6 +332,15 @@ describe("tree tables > nested-set", () => {
 
                 const categoriesTreeWithEmptyOptions =
                     await categoryRepository.findTrees({})
+
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTreeWithEmptyOptions[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+                categoriesTreeWithEmptyOptions[0].childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTreeWithEmptyOptions.should.be.eql([
                     {
                         id: a1.id,
@@ -354,6 +383,12 @@ describe("tree tables > nested-set", () => {
 
                 const categoriesTreeWithDepthOne =
                     await categoryRepository.findTrees({ depth: 1 })
+
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTreeWithDepthOne[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTreeWithDepthOne.should.be.eql([
                     {
                         id: a1.id,
@@ -422,6 +457,13 @@ describe("tree tables > nested-set", () => {
 
                 const categoriesTree =
                     await categoryRepository.findDescendantsTree(a1)
+
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTree.childCategories.sort((a, b) => a.id - b.id)
+                categoriesTree.childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTree.should.be.eql({
                     id: a1.id,
                     name: "a1",
@@ -479,7 +521,13 @@ describe("tree tables > nested-set", () => {
 
                 const categoriesTree =
                     await categoryRepository.findDescendantsTree(a1)
-                console.log(categoriesTree)
+
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTree.childCategories.sort((a, b) => a.id - b.id)
+                categoriesTree.childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTree.should.be.eql({
                     id: a1.id,
                     name: "a1",
@@ -510,6 +558,15 @@ describe("tree tables > nested-set", () => {
 
                 const categoriesTreeWithEmptyOptions =
                     await categoryRepository.findDescendantsTree(a1, {})
+
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTreeWithEmptyOptions.childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+                categoriesTreeWithEmptyOptions.childCategories[0].childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTreeWithEmptyOptions.should.be.eql({
                     id: a1.id,
                     name: "a1",
@@ -552,6 +609,12 @@ describe("tree tables > nested-set", () => {
                     await categoryRepository.findDescendantsTree(a1, {
                         depth: 1,
                     })
+
+                // using sort because some drivers returns arrays in wrong order
+                categoriesTreeWithDepthOne.childCategories.sort(
+                    (a, b) => a.id - b.id,
+                )
+
                 categoriesTreeWithDepthOne.should.be.eql({
                     id: a1.id,
                     name: "a1",

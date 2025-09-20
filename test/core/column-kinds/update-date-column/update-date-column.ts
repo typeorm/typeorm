@@ -103,24 +103,26 @@ describe("column kinds > update date column", () => {
                 await postRepository.save(post)
 
                 // load to get updated date we had after first save
-                const loadedPostBeforeUpdate = await postRepository.findOneBy({
-                    id: post.id,
-                })
+                const loadedPostBeforeUpdate =
+                    await postRepository.findOneByOrFail({
+                        id: post.id,
+                    })
 
                 // wait a second
-                await sleep(1000)
+                await sleep(2000)
 
                 // update post once again
                 post.title = "Updated Title"
                 await postRepository.save(post)
 
                 // check if date was updated
-                const loadedPostAfterUpdate = await postRepository.findOneBy({
-                    id: post.id,
-                })
-                expect(
-                    loadedPostAfterUpdate!.updatedAt.toString(),
-                ).to.be.not.eql(loadedPostBeforeUpdate!.updatedAt.toString())
+                const loadedPostAfterUpdate =
+                    await postRepository.findOneByOrFail({
+                        id: post.id,
+                    })
+                expect(loadedPostAfterUpdate.updatedAt.getTime()).to.be.not.eql(
+                    loadedPostBeforeUpdate.updatedAt.getTime(),
+                )
             }),
         ))
 

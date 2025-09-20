@@ -24,6 +24,7 @@ import { Table } from "../../schema-builder/table/Table"
 import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { UpsertType } from "../types/UpsertType"
 
 /**
  * Organizes communication with MongoDB.
@@ -77,6 +78,11 @@ export class MongoDriver implements Driver {
      * Mongodb does not need to have column types because they are not used in schema sync.
      */
     supportedDataTypes: ColumnType[] = []
+
+    /**
+     * Returns type of upsert supported by driver if any
+     */
+    supportedUpsertTypes: UpsertType[]
 
     /**
      * Gets list of spatial column data types.
@@ -139,83 +145,73 @@ export class MongoDriver implements Driver {
      */
     maxAliasLength?: number
 
+    cteCapabilities: CteCapabilities = {
+        enabled: false,
+    }
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
 
     /**
      * Valid mongo connection options
-     * NOTE: Keep sync with MongoConnectionOptions
-     * Sync with http://mongodb.github.io/node-mongodb-native/3.5/api/MongoClient.html
+     * NOTE: Keep in sync with MongoConnectionOptions
      */
     protected validOptionNames: string[] = [
-        "poolSize",
+        "appName",
+        "authMechanism",
+        "authSource",
+        "autoEncryption",
+        "checkServerIdentity",
+        "compressors",
+        "connectTimeoutMS",
+        "directConnection",
+        "family",
+        "forceServerObjectId",
+        "ignoreUndefined",
+        "keepAlive",
+        "keepAliveInitialDelay",
+        "localThresholdMS",
+        "maxStalenessSeconds",
+        "minPoolSize",
+        "monitorCommands",
+        "noDelay",
+        "pkFactory",
+        "promoteBuffers",
+        "promoteLongs",
+        "promoteValues",
+        "raw",
+        "readConcern",
+        "readPreference",
+        "readPreferenceTags",
+        "replicaSet",
+        "retryWrites",
+        "serializeFunctions",
+        "socketTimeoutMS",
         "ssl",
-        "sslValidate",
         "sslCA",
+        "sslCRL",
         "sslCert",
         "sslKey",
         "sslPass",
-        "sslCRL",
-        "autoReconnect",
-        "noDelay",
-        "keepAlive",
-        "keepAliveInitialDelay",
-        "connectTimeoutMS",
-        "family",
-        "socketTimeoutMS",
-        "reconnectTries",
-        "reconnectInterval",
-        "ha",
-        "haInterval",
-        "replicaSet",
-        "secondaryAcceptableLatencyMS",
-        "acceptableLatencyMS",
-        "connectWithNoPrimary",
-        "authSource",
+        "sslValidate",
+        "tls",
+        "tlsAllowInvalidCertificates",
+        "tlsCAFile",
+        "tlsCertificateKeyFile",
+        "tlsCertificateKeyFilePassword",
         "w",
-        "wtimeout",
-        "j",
         "writeConcern",
-        "forceServerObjectId",
-        "serializeFunctions",
-        "ignoreUndefined",
-        "raw",
-        "bufferMaxEntries",
-        "readPreference",
-        "pkFactory",
-        "promiseLibrary",
-        "readConcern",
-        "maxStalenessSeconds",
-        "loggerLevel",
-        // Do not overwrite BaseDataSourceOptions.logger
-        // "logger",
-        "promoteValues",
-        "promoteBuffers",
-        "promoteLongs",
-        "domainsEnabled",
-        "checkServerIdentity",
-        "validateOptions",
+        "wtimeoutMS",
+        // Undocumented deprecated options
+        // todo: remove next major version
         "appname",
-        // omit auth - we are building url from username and password
-        // "auth"
-        "authMechanism",
-        "compression",
         "fsync",
-        "readPreferenceTags",
-        "numberOfRetries",
-        "auto_reconnect",
-        "minSize",
-        "monitorCommands",
+        "j",
         "useNewUrlParser",
         "useUnifiedTopology",
-        "autoEncryption",
-        "retryWrites",
+        "wtimeout",
     ]
-
-    cteCapabilities: CteCapabilities = {
-        enabled: false,
-    }
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -242,26 +238,17 @@ export class MongoDriver implements Driver {
     /**
      * Performs connection to the database.
      */
-    connect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            const options = DriverUtils.buildMongoDBDriverOptions(this.options)
+    async connect(): Promise<void> {
+        const options = DriverUtils.buildMongoDBDriverOptions(this.options)
 
-            this.mongodb.MongoClient.connect(
-                this.buildConnectionUrl(options),
-                this.buildConnectionOptions(options),
-                (err: any, client: any) => {
-                    if (err) return fail(err)
+        const client = await this.mongodb.MongoClient.connect(
+            this.buildConnectionUrl(options),
+            this.buildConnectionOptions(options),
+        )
 
-                    this.queryRunner = new MongoQueryRunner(
-                        this.connection,
-                        client,
-                    )
-                    ObjectUtils.assign(this.queryRunner, {
-                        manager: this.connection.manager,
-                    })
-                    ok()
-                },
-            )
+        this.queryRunner = new MongoQueryRunner(this.connection, client)
+        ObjectUtils.assign(this.queryRunner, {
+            manager: this.connection.manager,
         })
     }
 
@@ -273,14 +260,13 @@ export class MongoDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            if (!this.queryRunner)
-                return fail(new ConnectionIsNotSetError("mongodb"))
+        const queryRunner = this.queryRunner
+        if (!queryRunner) {
+            throw new ConnectionIsNotSetError("mongodb")
+        }
 
-            const handler = (err: any) => (err ? fail(err) : ok())
-            this.queryRunner.databaseConnection.close(handler)
-            this.queryRunner = undefined
-        })
+        this.queryRunner = undefined
+        await queryRunner.databaseConnection.close()
     }
 
     /**
@@ -533,7 +519,9 @@ export class MongoDriver implements Driver {
         const schemaUrlPart = options.type.toLowerCase()
         const credentialsUrlPart =
             options.username && options.password
-                ? `${options.username}:${options.password}@`
+                ? `${encodeURIComponent(options.username)}:${encodeURIComponent(
+                      options.password,
+                  )}@`
                 : ""
 
         const portUrlPart =
@@ -545,15 +533,11 @@ export class MongoDriver implements Driver {
                 options.hostReplicaSet ||
                 options.host + portUrlPart ||
                 "127.0.0.1" + portUrlPart
-            }/${options.database || ""}?replicaSet=${options.replicaSet}${
-                options.tls ? "&tls=true" : ""
-            }`
+            }/${options.database || ""}`
         } else {
             connectionString = `${schemaUrlPart}://${credentialsUrlPart}${
                 options.host || "127.0.0.1"
-            }${portUrlPart}/${options.database || ""}${
-                options.tls ? "?tls=true" : ""
-            }`
+            }${portUrlPart}/${options.database || ""}`
         }
 
         return connectionString
@@ -565,15 +549,21 @@ export class MongoDriver implements Driver {
     protected buildConnectionOptions(options: { [key: string]: any }): any {
         const mongoOptions: any = {}
 
-        for (let index = 0; index < this.validOptionNames.length; index++) {
-            const optionName = this.validOptionNames[index]
-
-            if (options.extra && optionName in options.extra) {
-                mongoOptions[optionName] = options.extra[optionName]
-            } else if (optionName in options) {
+        for (const optionName of this.validOptionNames) {
+            if (optionName in options) {
                 mongoOptions[optionName] = options[optionName]
             }
         }
+
+        mongoOptions.driverInfo = {
+            name: "TypeORM",
+        }
+
+        if ("poolSize" in options) {
+            mongoOptions["maxPoolSize"] = options["poolSize"]
+        }
+
+        Object.assign(mongoOptions, options.extra)
 
         return mongoOptions
     }

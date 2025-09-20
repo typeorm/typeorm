@@ -13,6 +13,7 @@ describe("entity-schema > exclusions", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [<any>MeetingSchema],
+                enabledDrivers: ["postgres"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -21,9 +22,6 @@ describe("entity-schema > exclusions", () => {
     it("should create an exclusion constraint", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // Only PostgreSQL supports exclusion constraints.
-                if (!(connection.driver.options.type === "postgres")) return
-
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("meeting")
                 await queryRunner.release()

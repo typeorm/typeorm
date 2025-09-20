@@ -9,7 +9,7 @@ import { User } from "./User"
 
 @Entity()
 export class Photo {
-    @PrimaryColumn({ type: "int", nullable: false })
+    @PrimaryColumn({ nullable: false })
     id: number
 
     @OneToOne(() => User, { nullable: true })

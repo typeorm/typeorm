@@ -4,7 +4,7 @@ import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColum
 
 @Entity()
 export class Post {
-    @PrimaryColumn("int")
+    @PrimaryColumn()
     id: number
 
     @Column()

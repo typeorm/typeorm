@@ -39,4 +39,6 @@ export interface CapacitorConnectionOptions extends BaseDataSourceOptions {
         | "MEMORY"
         | "WAL"
         | "OFF"
+
+    readonly poolSize?: never
 }

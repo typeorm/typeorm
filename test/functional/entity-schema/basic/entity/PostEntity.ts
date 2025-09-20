@@ -7,7 +7,6 @@ export const PostEntity = new EntitySchema<Post>({
         id: {
             type: Number,
             primary: true,
-            generated: true,
         },
         title: {
             type: String,
@@ -20,6 +19,7 @@ export const PostEntity = new EntitySchema<Post>({
         categories: {
             type: "many-to-many",
             target: "category", // CategoryEntity
+            joinTable: true,
         },
     },
 })

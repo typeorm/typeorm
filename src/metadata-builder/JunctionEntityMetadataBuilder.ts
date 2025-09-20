@@ -59,6 +59,7 @@ export class JunctionEntityMetadataBuilder {
                 database:
                     joinTable.database || relation.entityMetadata.database,
                 schema: joinTable.schema || relation.entityMetadata.schema,
+                synchronize: joinTable.synchronize,
             },
         })
         entityMetadata.build()
@@ -101,6 +102,10 @@ export class JunctionEntityMetadataBuilder {
                             ) ||
                                 this.connection.driver.options.type ===
                                     "aurora-mysql") &&
+                            // some versions of mariadb support the column type and should not try to provide the length property
+                            this.connection.driver.normalizeType(
+                                referencedColumn,
+                            ) !== "uuid" &&
                             (referencedColumn.generationStrategy === "uuid" ||
                                 referencedColumn.type === "uuid")
                                 ? "36"
@@ -117,6 +122,8 @@ export class JunctionEntityMetadataBuilder {
                             : referencedColumn.unsigned,
                         enum: referencedColumn.enum,
                         enumName: referencedColumn.enumName,
+                        foreignKeyConstraintName:
+                            joinColumn?.foreignKeyConstraintName,
                         nullable: false,
                         primary: true,
                     },
@@ -163,6 +170,10 @@ export class JunctionEntityMetadataBuilder {
                                 ) ||
                                     this.connection.driver.options.type ===
                                         "aurora-mysql") &&
+                                // some versions of mariadb support the column type and should not try to provide the length property
+                                this.connection.driver.normalizeType(
+                                    inverseReferencedColumn,
+                                ) !== "uuid" &&
                                 (inverseReferencedColumn.generationStrategy ===
                                     "uuid" ||
                                     inverseReferencedColumn.type === "uuid")
@@ -180,6 +191,8 @@ export class JunctionEntityMetadataBuilder {
                                 : inverseReferencedColumn.unsigned,
                             enum: inverseReferencedColumn.enum,
                             enumName: inverseReferencedColumn.enumName,
+                            foreignKeyConstraintName:
+                                joinColumn?.foreignKeyConstraintName,
                             name: columnName,
                             nullable: false,
                             primary: true,
@@ -207,6 +220,7 @@ export class JunctionEntityMetadataBuilder {
 
         // create junction table foreign keys
         // Note: UPDATE CASCADE clause is not supported in Oracle.
+        // Note: UPDATE/DELETE CASCADE clauses are not supported in Spanner.
         entityMetadata.foreignKeys = relation.createForeignKeyConstraints
             ? [
                   new ForeignKeyMetadata({
@@ -214,9 +228,14 @@ export class JunctionEntityMetadataBuilder {
                       referencedEntityMetadata: relation.entityMetadata,
                       columns: junctionColumns,
                       referencedColumns: referencedColumns,
-                      onDelete: relation.onDelete || "CASCADE",
+                      name: junctionColumns[0]?.foreignKeyConstraintName,
+                      onDelete:
+                          this.connection.driver.options.type === "spanner"
+                              ? "NO ACTION"
+                              : relation.onDelete || "CASCADE",
                       onUpdate:
-                          this.connection.driver.options.type === "oracle"
+                          this.connection.driver.options.type === "oracle" ||
+                          this.connection.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : relation.onUpdate || "CASCADE",
                   }),
@@ -225,11 +244,16 @@ export class JunctionEntityMetadataBuilder {
                       referencedEntityMetadata: relation.inverseEntityMetadata,
                       columns: inverseJunctionColumns,
                       referencedColumns: inverseReferencedColumns,
-                      onDelete: relation.inverseRelation
-                          ? relation.inverseRelation.onDelete
-                          : "CASCADE",
+                      name: inverseJunctionColumns[0]?.foreignKeyConstraintName,
+                      onDelete:
+                          this.connection.driver.options.type === "spanner"
+                              ? "NO ACTION"
+                              : relation.inverseRelation
+                              ? relation.inverseRelation.onDelete
+                              : "CASCADE",
                       onUpdate:
-                          this.connection.driver.options.type === "oracle"
+                          this.connection.driver.options.type === "oracle" ||
+                          this.connection.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : relation.inverseRelation
                               ? relation.inverseRelation.onUpdate

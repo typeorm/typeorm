@@ -16,7 +16,7 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
         async () =>
             (connections = await createTestingConnections({
                 __dirname,
-                enabledDrivers: ["mysql"],
+                // enabledDrivers: ["mysql"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -290,7 +290,7 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
 
                 let recipients = await connection.manager.find(Recipient)
 
-                for (let recipient of recipients) {
+                for (const recipient of recipients) {
                     await connection.getRepository(Recipient).remove(recipient)
                 }
 

@@ -10,12 +10,12 @@ export class Tag {
     @Column()
     code: number
 
-    @PrimaryColumn("varchar", {
+    @PrimaryColumn(String, {
         length: 31,
     })
     title: string
 
-    @PrimaryColumn("varchar", {
+    @PrimaryColumn(String, {
         length: 31,
     })
     description: string

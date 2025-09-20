@@ -7,7 +7,6 @@ export const CategoryEntity = new EntitySchema<Category>({
         id: {
             type: Number,
             primary: true,
-            generated: true,
         },
         name: {
             type: String,

@@ -23,6 +23,9 @@ describe("github issues > #70 cascade deleting works incorrect", () => {
     it("should persist successfully and return persisted entity", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // Spanner support only NO ACTION clause
+                if (connection.driver.options.type === "spanner") return
+
                 // create objects to save
                 const category1 = new Category()
                 category1.name = "category #1"

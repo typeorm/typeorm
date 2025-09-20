@@ -1,5 +1,5 @@
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { parseISO } from "date-fns"
+import dayjs from "dayjs"
 
 /**
  * Provides utilities to transform hydrated and persisted data.
@@ -26,14 +26,15 @@ export class DateUtils {
      * Converts given value into date string in a "YYYY-MM-DD" format.
      */
     static mixedDateToDateString(value: string | Date): string {
-        if (value instanceof Date)
+        if (value instanceof Date) {
             return (
-                this.formatZerolessValue(value.getFullYear()) +
+                this.formatZerolessValue(value.getFullYear(), 4) +
                 "-" +
                 this.formatZerolessValue(value.getMonth() + 1) +
                 "-" +
                 this.formatZerolessValue(value.getDate())
             )
+        }
 
         return value
     }
@@ -61,7 +62,9 @@ export class DateUtils {
          * https://stackoverflow.com/a/2587398
          */
         let date =
-            typeof mixedDate === "string" ? parseISO(mixedDate) : mixedDate
+            typeof mixedDate === "string"
+                ? dayjs(mixedDate).toDate()
+                : mixedDate
 
         if (toUtc)
             date = new Date(
@@ -151,7 +154,7 @@ export class DateUtils {
         }
         if (value instanceof Date) {
             let finalValue =
-                this.formatZerolessValue(value.getFullYear()) +
+                this.formatZerolessValue(value.getFullYear(), 4) +
                 "-" +
                 this.formatZerolessValue(value.getMonth() + 1) +
                 "-" +
@@ -183,7 +186,7 @@ export class DateUtils {
         }
         if (value instanceof Date) {
             return (
-                this.formatZerolessValue(value.getUTCFullYear()) +
+                this.formatZerolessValue(value.getUTCFullYear(), 4) +
                 "-" +
                 this.formatZerolessValue(value.getUTCMonth() + 1) +
                 "-" +
@@ -258,12 +261,12 @@ export class DateUtils {
     // -------------------------------------------------------------------------
 
     /**
-     * Formats given number to "0x" format, e.g. if it is 1 then it will return "01".
+     * Formats given number to "0x" format, e.g. if the totalLength = 2 and the value is 1 then it will return "01".
      */
-    private static formatZerolessValue(value: number): string {
-        if (value < 10) return "0" + value
+    private static formatZerolessValue(value: number, totalLength = 2): string {
+        const pad = "0".repeat(totalLength)
 
-        return String(value)
+        return String(`${pad}${value}`).slice(-totalLength)
     }
 
     /**

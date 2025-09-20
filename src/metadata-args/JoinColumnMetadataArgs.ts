@@ -22,4 +22,9 @@ export interface JoinColumnMetadataArgs {
      * This is column property name, not a column database name.
      */
     referencedColumnName?: string
+
+    /**
+     * Name of the foreign key constraint.
+     */
+    foreignKeyConstraintName?: string
 }

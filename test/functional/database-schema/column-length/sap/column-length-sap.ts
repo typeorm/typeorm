@@ -1,12 +1,13 @@
-import "reflect-metadata"
 import { expect } from "chai"
-import { Post } from "./entity/Post"
+import "reflect-metadata"
+
 import { DataSource } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
+import { Post } from "./entity/Post"
 
 describe("database schema > column length > sap", () => {
     let connections: DataSource[]
@@ -47,7 +48,7 @@ describe("database schema > column length > sap", () => {
     it("all types should update their size", () =>
         Promise.all(
             connections.map(async (connection) => {
-                let metadata = connection.getMetadata(Post)
+                const metadata = connection.getMetadata(Post)
                 metadata.findColumnWithPropertyName("varchar")!.length = "100"
                 metadata.findColumnWithPropertyName("nvarchar")!.length = "100"
                 metadata.findColumnWithPropertyName("alphanum")!.length = "100"

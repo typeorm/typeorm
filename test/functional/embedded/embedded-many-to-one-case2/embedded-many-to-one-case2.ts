@@ -184,7 +184,9 @@ describe("embedded > embedded-many-to-one-case2", () => {
 
                     await connection.getRepository(User).remove(loadedUser!)
 
-                    loadedUsers = (await connection.getRepository(User).find())!
+                    loadedUsers = (await connection
+                        .getRepository(User)
+                        .find({ order: { name: "ASC" } }))!
                     expect(loadedUsers.length).to.be.equal(1)
                     expect(loadedUsers[0].name).to.be.equal("Bob")
                 }),

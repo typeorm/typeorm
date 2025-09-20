@@ -4,7 +4,7 @@ import { Generated } from "../../../src/decorator/Generated"
 
 @Entity("sample01_post")
 export class Post {
-    @PrimaryColumn("integer")
+    @PrimaryColumn()
     @Generated()
     id: number
 

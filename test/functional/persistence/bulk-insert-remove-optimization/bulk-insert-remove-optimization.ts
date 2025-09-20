@@ -7,7 +7,6 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-// import {expect} from "chai";
 
 describe("persistence > bulk-insert-remove-optimization", function () {
     // -------------------------------------------------------------------------
@@ -32,12 +31,15 @@ describe("persistence > bulk-insert-remove-optimization", function () {
         Promise.all(
             connections.map(async (connection) => {
                 const category1 = new Category()
+                category1.id = 1
                 category1.name = "cat#1"
 
                 const category2 = new Category()
+                category2.id = 2
                 category2.name = "cat#2"
 
                 const post = new Post()
+                post.id = 1
                 post.title = "about post"
                 post.categories = [category1, category2]
 

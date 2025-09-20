@@ -7,6 +7,6 @@ export class Foo {
     @PrimaryColumn()
     id: number
 
-    @Column("varchar")
+    @Column()
     bar: string
 }

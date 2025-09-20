@@ -35,6 +35,15 @@ export interface IndexMetadataArgs {
     fulltext?: boolean
 
     /**
+     * NULL_FILTERED indexes are particularly useful for indexing sparse columns, where most rows contain a NULL value.
+     * In these cases, the NULL_FILTERED index can be considerably smaller and more efficient to maintain than
+     * a normal index that includes NULL values.
+     *
+     * Works only in Spanner.
+     */
+    nullFiltered?: boolean
+
+    /**
      * Fulltext parser.
      * Works only in MySQL.
      */
@@ -62,6 +71,12 @@ export interface IndexMetadataArgs {
      * This option is only supported for mongodb database.
      */
     background?: boolean
+
+    /**
+     * Builds the index using the concurrently option.
+     * This option is only supported for postgres database.
+     */
+    concurrent?: boolean
 
     /**
      * Specifies a time to live, in seconds.

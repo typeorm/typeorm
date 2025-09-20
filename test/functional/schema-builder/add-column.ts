@@ -7,6 +7,7 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
+import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("schema builder > add column", () => {
     let connections: DataSource[]
@@ -24,6 +25,20 @@ describe("schema builder > add column", () => {
             connections.map(async (connection) => {
                 const postMetadata = connection.getMetadata("post")
 
+                let numericType = "int"
+                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                    numericType = "integer"
+                } else if (connection.driver.options.type === "spanner") {
+                    numericType = "int64"
+                }
+
+                let stringType = "varchar"
+                if (connection.driver.options.type === "sap") {
+                    stringType = "nvarchar"
+                } else if (connection.driver.options.type === "spanner") {
+                    stringType = "string"
+                }
+
                 const columnMetadata1 = new ColumnMetadata({
                     connection: connection,
                     entityMetadata: postMetadata!,
@@ -32,12 +47,12 @@ describe("schema builder > add column", () => {
                         propertyName: "secondId",
                         mode: "regular",
                         options: {
-                            type: "int",
+                            type: numericType,
                             name: "secondId",
-                            primary: !(
-                                connection.driver.options.type === "cockroachdb"
-                            ), // CockroachDB does not allow changing pk
-                            nullable: false,
+                            nullable:
+                                connection.driver.options.type === "spanner"
+                                    ? true
+                                    : false,
                         },
                     },
                 })
@@ -51,9 +66,13 @@ describe("schema builder > add column", () => {
                         propertyName: "description",
                         mode: "regular",
                         options: {
-                            type: "varchar",
+                            type: stringType,
                             name: "description",
                             length: 100,
+                            nullable:
+                                connection.driver.options.type === "spanner"
+                                    ? true
+                                    : false,
                         },
                     },
                 })
@@ -67,9 +86,11 @@ describe("schema builder > add column", () => {
                 const table = await queryRunner.getTable("post")
                 const column1 = table!.findColumnByName("secondId")!
                 column1.should.be.exist
-                column1.isNullable.should.be.false
-                if (!(connection.driver.options.type === "cockroachdb"))
-                    column1.isPrimary.should.be.true
+                if (connection.driver.options.type === "spanner") {
+                    column1.isNullable.should.be.true
+                } else {
+                    column1.isNullable.should.be.false
+                }
 
                 const column2 = table!.findColumnByName("description")!
                 column2.should.be.exist

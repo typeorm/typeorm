@@ -178,43 +178,45 @@ export class OneToManySubjectBuilder {
         })
 
         // find what related entities were added and what were removed based on difference between what we save and what database has
-        EntityMetadata.difference(
-            relatedEntityDatabaseRelationIds,
-            relatedPersistedEntityRelationIds,
-        ).forEach((removedRelatedEntityRelationId) => {
-            // by example: removedRelatedEntityRelationId is category that was bind in the database before, but now its unbind
+        if (relation.inverseRelation?.orphanedRowAction !== "disable") {
+            EntityMetadata.difference(
+                relatedEntityDatabaseRelationIds,
+                relatedPersistedEntityRelationIds,
+            ).forEach((removedRelatedEntityRelationId) => {
+                // by example: removedRelatedEntityRelationId is category that was bind in the database before, but now its unbind
 
-            // todo: probably we can improve this in the future by finding entity with column those values,
-            // todo: maybe it was already in persistence process. This is possible due to unique requirements of join columns
-            // we create a new subject which operations will be executed in subject operation executor
-            const removedRelatedEntitySubject = new Subject({
-                metadata: relation.inverseEntityMetadata,
-                parentSubject: subject,
-                identifier: removedRelatedEntityRelationId,
+                // todo: probably we can improve this in the future by finding entity with column those values,
+                // todo: maybe it was already in persistence process. This is possible due to unique requirements of join columns
+                // we create a new subject which operations will be executed in subject operation executor
+                const removedRelatedEntitySubject = new Subject({
+                    metadata: relation.inverseEntityMetadata,
+                    parentSubject: subject,
+                    identifier: removedRelatedEntityRelationId,
+                })
+
+                if (
+                    !relation.inverseRelation ||
+                    relation.inverseRelation.orphanedRowAction === "nullify"
+                ) {
+                    removedRelatedEntitySubject.canBeUpdated = true
+                    removedRelatedEntitySubject.changeMaps = [
+                        {
+                            relation: relation.inverseRelation!,
+                            value: null,
+                        },
+                    ]
+                } else if (
+                    relation.inverseRelation.orphanedRowAction === "delete"
+                ) {
+                    removedRelatedEntitySubject.mustBeRemoved = true
+                } else if (
+                    relation.inverseRelation.orphanedRowAction === "soft-delete"
+                ) {
+                    removedRelatedEntitySubject.canBeSoftRemoved = true
+                }
+
+                this.subjects.push(removedRelatedEntitySubject)
             })
-
-            if (
-                !relation.inverseRelation ||
-                relation.inverseRelation.orphanedRowAction === "nullify"
-            ) {
-                removedRelatedEntitySubject.canBeUpdated = true
-                removedRelatedEntitySubject.changeMaps = [
-                    {
-                        relation: relation.inverseRelation!,
-                        value: null,
-                    },
-                ]
-            } else if (
-                relation.inverseRelation.orphanedRowAction === "delete"
-            ) {
-                removedRelatedEntitySubject.mustBeRemoved = true
-            } else if (
-                relation.inverseRelation.orphanedRowAction === "soft-delete"
-            ) {
-                removedRelatedEntitySubject.canBeSoftRemoved = true
-            }
-
-            this.subjects.push(removedRelatedEntitySubject)
-        })
+        }
     }
 }

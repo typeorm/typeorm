@@ -14,6 +14,8 @@ import { RelationMetadata } from "../metadata/RelationMetadata"
 import { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
 import { TypeORMError } from "../error"
 import { WhereClause } from "./WhereClause"
+import { UpsertType } from "../driver/types/UpsertType"
+import { CockroachConnectionOptions } from "../driver/cockroachdb/CockroachConnectionOptions"
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -114,6 +116,9 @@ export class QueryExpressionMap {
         columns?: string[]
         overwrite?: string[]
         skipUpdateIfNoValuesChanged?: boolean
+        indexPredicate?: string
+        upsertType?: UpsertType
+        overwriteCondition?: WhereClause[]
     }
 
     /**
@@ -186,9 +191,16 @@ export class QueryExpressionMap {
         | "pessimistic_read"
         | "pessimistic_write"
         | "dirty_read"
+        /*
+            "pessimistic_partial_write" and "pessimistic_write_or_fail" are deprecated and
+            will be removed in a future version.
+
+            Use onLocked instead.
+         */
         | "pessimistic_partial_write"
         | "pessimistic_write_or_fail"
         | "for_no_key_update"
+        | "for_key_share"
 
     /**
      * Current version of the entity, used for locking.
@@ -199,6 +211,11 @@ export class QueryExpressionMap {
      * Tables to be specified in the "FOR UPDATE OF" clause, referred by their alias
      */
     lockTables?: string[]
+
+    /**
+     * Modify behavior when encountering locked rows. NOWAIT or SKIP LOCKED
+     */
+    onLocked?: "nowait" | "skip_locked"
 
     /**
      * Indicates if soft-deleted rows should be included in entity result.
@@ -212,7 +229,7 @@ export class QueryExpressionMap {
     parameters: ObjectLiteral = {}
 
     /**
-     * Indicates if alias, table names and column names will be ecaped by driver, or not.
+     * Indicates if alias, table names and column names will be escaped by driver, or not.
      *
      * todo: rename to isQuotingDisabled, also think if it should be named "escaping"
      */
@@ -245,8 +262,9 @@ export class QueryExpressionMap {
 
     /**
      * Indicates if query result cache is enabled or not.
+     * It is undefined by default to avoid overriding the `alwaysEnabled` config
      */
-    cache: boolean = false
+    cache?: boolean
 
     /**
      * Time in milliseconds in which cache will expire.
@@ -304,6 +322,12 @@ export class QueryExpressionMap {
     useTransaction: boolean = false
 
     /**
+     * Indicates if query should be time travel query
+     * https://www.cockroachlabs.com/docs/stable/as-of-system-time.html
+     */
+    timeTravel?: boolean | string
+
+    /**
      * Extra parameters.
      *
      * @deprecated Use standard parameters instead
@@ -336,6 +360,10 @@ export class QueryExpressionMap {
         if (connection.options.relationLoadStrategy) {
             this.relationLoadStrategy = connection.options.relationLoadStrategy
         }
+
+        this.timeTravel =
+            (connection.options as CockroachConnectionOptions)
+                ?.timeTravelQueries || false
     }
 
     // -------------------------------------------------------------------------
@@ -490,7 +518,9 @@ export class QueryExpressionMap {
         map.offset = this.offset
         map.skip = this.skip
         map.take = this.take
+        map.useIndex = this.useIndex
         map.lockMode = this.lockMode
+        map.onLocked = this.onLocked
         map.lockVersion = this.lockVersion
         map.lockTables = this.lockTables
         map.withDeleted = this.withDeleted
@@ -510,6 +540,7 @@ export class QueryExpressionMap {
         map.updateEntity = this.updateEntity
         map.callListeners = this.callListeners
         map.useTransaction = this.useTransaction
+        map.timeTravel = this.timeTravel
         map.nativeParameters = Object.assign({}, this.nativeParameters)
         map.comment = this.comment
         map.commonTableExpressions = this.commonTableExpressions.map(

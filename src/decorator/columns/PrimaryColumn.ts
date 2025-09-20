@@ -41,8 +41,13 @@ export function PrimaryColumn(
     return function (object: Object, propertyName: string) {
         // normalize parameters
         let type: ColumnType | undefined
-        if (typeof typeOrOptions === "string") {
-            type = typeOrOptions
+        if (
+            typeof typeOrOptions === "string" ||
+            typeOrOptions === String ||
+            typeOrOptions === Boolean ||
+            typeOrOptions === Number
+        ) {
+            type = typeOrOptions as ColumnType
         } else {
             options = Object.assign({}, <PrimaryColumnOptions>typeOrOptions)
         }

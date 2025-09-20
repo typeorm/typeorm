@@ -7,7 +7,7 @@ import {
 export abstract class Engine {}
 
 @Entity()
-@TableInheritance({ column: { name: "type", type: "varchar" } })
+@TableInheritance({ column: { name: "type", type: String } })
 export abstract class Vehicle {
     @PrimaryGeneratedColumn()
     public id?: number

@@ -1,5 +1,7 @@
 import "reflect-metadata"
+import fs from "fs/promises"
 import { expect } from "chai"
+import sinon from "sinon"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,10 +13,7 @@ import { User } from "./entity/User"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Photo } from "./entity/Photo"
-import sinon from "sinon"
 import { FileLogger } from "../../../../src"
-import { promisify } from "util"
-import { readFile, unlink } from "fs"
 
 describe("repository > find options", () => {
     let connections: DataSource[]
@@ -45,7 +44,7 @@ describe("repository > find options", () => {
                 await connection.manager.save(post)
 
                 const [loadedPost] = await connection.getRepository(Post).find({
-                    relations: ["author", "categories"],
+                    relations: { author: true, categories: true },
                 })
                 expect(loadedPost).to.be.eql({
                     id: 1,
@@ -71,7 +70,7 @@ describe("repository > find options", () => {
                 user.name = "Alex Messer"
                 await connection.manager.save(user)
 
-                const queryRunner = await connection.createQueryRunner()
+                const queryRunner = connection.createQueryRunner()
 
                 const startTransactionFn = sinon.spy(
                     queryRunner,
@@ -126,7 +125,7 @@ describe("repository > find options", () => {
                 const loadedPhoto = await connection
                     .getRepository(Photo)
                     .findOne({
-                        select: ["name"],
+                        select: { name: true },
                         where: {
                             id: 5,
                         },
@@ -135,14 +134,14 @@ describe("repository > find options", () => {
                 const loadedPhotos1 = await connection
                     .getRepository(Photo)
                     .find({
-                        select: ["filename", "views"],
+                        select: { filename: true, views: true },
                     })
 
                 const loadedPhotos2 = await connection
                     .getRepository(Photo)
                     .find({
-                        select: ["id", "name", "description"],
-                        relations: ["categories"],
+                        select: { id: true, name: true, description: true },
+                        relations: { categories: true },
                     })
 
                 // const loadedPhotos3 = await connection.getRepository(Photo).createQueryBuilder("photo")
@@ -222,6 +221,7 @@ describe("repository > find options", () => {
                                 name: "Cats",
                             },
                         ],
+                        order: { id: "ASC" },
                     })
 
                 expect(loadedCategories2).to.be.eql([
@@ -254,7 +254,9 @@ describe("repository > find options > comment", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(async () => {
         await closeTestingConnections(connections)
-        await promisify(unlink)(logPath)
+        try {
+            await fs.unlink(logPath)
+        } catch {}
     })
 
     it("repository should insert comment", () =>
@@ -264,11 +266,11 @@ describe("repository > find options > comment", () => {
                     .getRepository(User)
                     .find({ comment: "This is a query comment." })
 
-                const logs = await promisify(readFile)(logPath)
+                const logs = await fs.readFile(logPath)
                 const lines = logs.toString().split("\n")
                 const lastLine = lines[lines.length - 2] // last line is blank after newline
                 // remove timestamp and prefix
-                const sql = lastLine.replace(/^.*\[QUERY\]\: /, "")
+                const sql = lastLine.replace(/^.*\[QUERY\]: /, "")
                 expect(sql).to.match(/^\/\* This is a query comment. \*\//)
             }),
         ))

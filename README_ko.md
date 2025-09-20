@@ -1,142 +1,156 @@
-<div align="center">   <a href="http://typeorm.io/">     <img src="https://github.com/typeorm/typeorm/raw/master/resources/logo_big.png" width="492" height="228">   </a>   <br>   <br> 	<a href="https://app.circleci.com/pipelines/github/typeorm/typeorm"> 		<img src="https://circleci.com/gh/typeorm/typeorm/tree/master.svg?style=shield"> 	</a> 	<a href="https://badge.fury.io/js/typeorm"> 		<img src="https://badge.fury.io/js/typeorm.svg"> 	</a>     <a href="https://codecov.io/gh/typeorm/typeorm">         <img src="https://img.shields.io/codecov/c/github/typeorm/typeorm.svg" alt="Codecov">     </a> 	<a href="https://join.slack.com/t/typeorm/shared_invite/zt-uu12ljeb-OH_0086I379fUDApYJHNuw"> 		<img src="https://img.shields.io/badge/chat-on%20slack-blue.svg"> 	</a>   <br>   <br>
+<div align="center">
+  <a href="http://typeorm.io/">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-light.png">
+        <source  media="(prefers-color-scheme: light)" srcset="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-dark.png">
+        <img height="80" width="auto" alt="TypeORM Logo" src="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-dark.png">
+    </picture>
+  </a>
+  <br>
+  <br>
+    <a href="https://www.npmjs.com/package/typeorm"><img src="https://img.shields.io/npm/v/typeorm" alt="NPM Version" /></a>
+    <a href="https://www.npmjs.com/package/typeorm"><img src="https://img.shields.io/npm/dm/typeorm" alt="NPM Downloads" /></a>
+    <a href="https://github.com/typeorm/typeorm/actions/workflows/commit-validation.yml?query=branch%3Amaster"><img src="https://github.com/typeorm/typeorm/actions/workflows/commit-validation.yml/badge.svg?branch=master" alt="Commit Validation"/></a>
+    <a href="https://coveralls.io/github/typeorm/typeorm?branch=master"><img src="https://coveralls.io/repos/github/typeorm/typeorm/badge.svg?branch=master" alt="Coverage Status" /></a>
+    <a href=""><img src="https://img.shields.io/badge/License-MIT-teal.svg" alt="MIT License" /></a>
+  <br>
+  <br>
 </div>
 
-TypeORM은 NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native, NativeScript, Expo 및 Electron 플랫폼에서 실행할 수 있는 [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)이며 TypeScript 및 JavaScript(ES5, ES6, ES7, ES8)와 함께 사용할 수 있다. TypeORM의 목표는 항상 최신 JavaScript 기능을 지원하고 몇 개의 테이블이 있는 작은 응용 프로그램에서 여러 데이터베이스가 있는 대규모 엔터프라이즈 응용 프로그램에 이르기까지 데이터베이스를 사용하는 모든 종류의 응용 프로그램을 개발하는 데 도움이 되는 추가 기능을 제공하는 것이다.
+TypeORM은 NodeJS, Browser, Cordova, Ionic, React Native, NativeScript, Expo 및 Electron 플랫폼에서 실행할 수 있는 [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)이며 TypeScript 및 JavaScript(ES2021)와 함께 사용할 수 있다. TypeORM의 목표는 항상 최신 JavaScript 기능을 지원하고 몇 개의 테이블이 있는 작은 응용 프로그램에서 여러 데이터베이스가 있는 대규모 엔터프라이즈 응용 프로그램에 이르기까지 데이터베이스를 사용하는 모든 종류의 응용 프로그램을 개발하는 데 도움이 되는 추가 기능을 제공하는 것이다.
 
-TypeORM은 현재 존재하는 다른 모든 JavaScript ORM과 달리 [Active Record](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern) 및 [Data Mapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern) 패턴을 모두 지원한다. 즉, 고품질의 느슨하게 결합된 확장 가능하고 유지 관리 가능한 애플리케이션을 가장 생산적인 방식으로 작성할 수 있다.
+TypeORM은 현재 존재하는 다른 모든 JavaScript ORM과 달리 [Active Record](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) 및 [Data Mapper](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) 패턴을 모두 지원한다. 즉, 고품질의 느슨하게 결합된 확장 가능하고 유지 관리 가능한 애플리케이션을 가장 생산적인 방식으로 작성할 수 있다.
 
 TypeORM은 [Hibernate](http://hibernate.org/orm/), [Doctrine](http://www.doctrine-project.org/) 및 [Entity Framework](https://www.asp.net/entity-framework)와 같은 다른 ORM의 영향을 많이 받는다.
 
 ## 특징
 
-- [DataMapper](./docs/active-record-data-mapper.md#what-is-the-data-mapper-pattern)와 [ActiveRecord](./docs/active-record-data-mapper.md#what-is-the-active-record-pattern)을 모두 지원.
-- 항목 및 열.
-- 데이터베이스 별 열 유형.
-- 엔터티 관리자.
-- 리포지토리 및 사용자 지정 리포지토리.
-- 명확한 객체 관계형 모델.
-- 연관(관계).
-- Eager&amp;lazy 관계.
-- 단방향, 양방향 및 자체 참조 관계.
-- 다중 상속 패턴을 지원.
-- 캐스케이드.
-- 색인.
-- 트랜잭션.
-- 마이그레이션 및 자동 마이크레이션 생성.
-- 연결 풀링.
-- 복제.
-- 다중 데이터베이스 연결 사용.
-- 여러 데이터베이스 유형 작업.
-- 데이터베이스 간, 스키마 간의 쿼리.
-- 우아한 문법과 유연하고 강력한 쿼리 빌더.
-- 왼쪽 join과 내부 join.
-- join을 사용하는 쿼리에 대한 적절한 페이지네이션
-- 쿼리 캐싱.
-- 원시 결과 스트리밍
-- 로깅.
-- 리스너 및 구독자(hooks).
-- 클로저 테이블 패턴 지원.
-- 모델 또는 별도의 설정 파일에서 스키마 선언
-- json / xml / yml / env 형식의 연결 구성.
-- MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js를 지원.
-- MongoDB NoSQL 데이터베이스 지원
-- NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron 플랫폼에서 작동.
-- TypeScript 및 JavaScript 지원.
-- 생성된 코드는 우수한 성능과 유연함을 가지며, 클린하고 유지 관리가 용이.
-- 가능한 모든 모범 예시를 따름.
-- CLI.
+-   [DataMapper](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern)와 [ActiveRecord](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern)을 모두 지원.
+-   항목 및 열.
+-   데이터베이스 별 열 유형.
+-   엔터티 관리자.
+-   레포지토리 및 사용자 지정 레포지토리.
+-   명확한 객체 관계형 모델.
+-   연관(관계).
+-   Eager&amp;lazy 관계.
+-   단방향, 양방향 및 자체 참조 관계.
+-   다중 상속 패턴을 지원.
+-   cascade.
+-   색인.
+-   transaction.
+-   마이그레이션 및 자동 마이그레이션 생성.
+-   연결 풀링.
+-   복제.
+-   다중 데이터베이스 연결 사용.
+-   여러 데이터베이스 유형 작업.
+-   데이터베이스 간, 스키마 간의 쿼리.
+-   우아한 문법과 유연하고 강력한 쿼리 빌더.
+-   left join과 inner join.
+-   join을 사용하는 쿼리에 대한 적절한 페이지네이션.
+-   쿼리 캐싱.
+-   원상태의 결과 스트리밍.
+-   로깅.
+-   리스너 및 구독자(hooks).
+-   클로저 테이블 패턴 지원.
+-   모델 또는 별도의 설정 파일에서 스키마 선언.
+-   MySQL / MariaDB / Postgres / CockroachDB / SQLite / Microsoft SQL Server / Oracle / SAP Hana / sql.js를 지원.
+-   MongoDB NoSQL 데이터베이스 지원.
+-   NodeJS / Browser / Ionic / Cordova / React Native / NativeScript / Expo / Electron 플랫폼에서 작동.
+-   TypeScript 및 JavaScript 지원.
+-   생성된 코드는 우수한 성능과 유연함을 가지며, 클린하고 유지 관리가 용이.
+-   가능한 모든 모범 예시를 따름.
+-   CLI.
 
 게다가...
 
 TypeORM을 사용하면 당신의 모델은 다음과 같이 보인다.
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 
 @Entity()
 export class User {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    firstName: string;
+    firstName: string
 
     @Column()
-    lastName: string;
+    lastName: string
 
     @Column()
-    age: number;
-
+    age: number
 }
 ```
 
 당신의 도메인 로직은 다음과 같다:
 
 ```typescript
-const repository = connection.getRepository(User);
+const repository = connection.getRepository(User)
 
-const user = new User();
-user.firstName = "Timber";
-user.lastName = "Saw";
-user.age = 25;
-await repository.save(user);
+const user = new User()
+user.firstName = "Timber"
+user.lastName = "Saw"
+user.age = 25
+await repository.save(user)
 
-const allUsers = await repository.find();
-const firstUser = await repository.findOne(1); // find by id
-const timber = await repository.findOne({ firstName: "Timber", lastName: "Saw" });
+const allUsers = await repository.find()
+const firstUser = await repository.findOne(1) // find by id
+const timber = await repository.findOne({
+    firstName: "Timber",
+    lastName: "Saw",
+})
 
-await repository.remove(timber);
+await repository.remove(timber)
 ```
 
 또한 `ActiveRecord`구현을 사용하는걸 선호하는 경우, 당신은 다음과 같이 사용할 수도 있다.
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from "typeorm"
 
 @Entity()
 export class User extends BaseEntity {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    firstName: string;
+    firstName: string
 
     @Column()
-    lastName: string;
+    lastName: string
 
     @Column()
-    age: number;
-
+    age: number
 }
 ```
 
 당신의 도메인 로직은 다음과 같다:
 
 ```typescript
-const user = new User();
-user.firstName = "Timber";
-user.lastName = "Saw";
-user.age = 25;
-await user.save();
+const user = new User()
+user.firstName = "Timber"
+user.lastName = "Saw"
+user.age = 25
+await user.save()
 
-const allUsers = await User.find();
-const firstUser = await User.findOne(1);
-const timber = await User.findOne({ firstName: "Timber", lastName: "Saw" });
+const allUsers = await User.find()
+const firstUser = await User.findOne(1)
+const timber = await User.findOne({ firstName: "Timber", lastName: "Saw" })
 
-await timber.remove();
+await timber.remove()
 ```
 
 ## 설치
 
 1. npm 패키지를 설치한다:
 
-    `npm install typeorm --save`
+    `npm install typeorm`
 
 2. `reflect-metadata` 심(shim)을 설치한다:
 
-    `npm install reflect-metadata --save`
+    `npm install reflect-metadata`
 
     그리고 그것을 app (예: `app.ts`)의 전역 위치에 불러와야 한다:
 
@@ -150,50 +164,47 @@ await timber.remove();
 
     - **MySQL** 또는 **MariaDB**의 경우
 
-        `npm install mysql --save` (you can install `mysql2` instead as well)
+        `npm install mysql` / `npm install mysql2`
 
     - for **PostgreSQL**또는 **CockroachDB**의 경우
 
-        `npm install pg --save`
+        `npm install pg`
 
     - **SQLite**의 경우
 
-        `npm install sqlite3 --save`
+        `npm install sqlite3`
+
+    - **Better SQLite**의 경우
+
+        `npm install better-sqlite3`
 
     - **Microsoft SQL Server**의 경우
 
-        `npm install mssql --save`
+        `npm install mssql`
 
     - **sql.js**의 경우
 
-        `npm install sql.js --save`
+        `npm install sql.js`
 
     - **Oracle**의 경우
 
-        `npm install oracledb --save`
+        `npm install oracledb`
 
         Oracle 드라이버를 작동시키려면 [해당](https://github.com/oracle/node-oracledb) 사이트의 설치 지침을 따라야 한다.
 
     - **SAP Hana**의 경우
 
-        ```
-        npm i @sap/hana-client
-        npm i hdb-pool
-        ```
-
-        *[Neptune Software](https://www.neptune-software.com/)의 후원으로 SAP Hana 지원이 가능해졌다.*
+        `npm i @sap/hana-client`
 
     - **MongoDB** (experimental)의 경우
 
-        `npm install mongodb@^3.6.0 --save`
+        `npm install mongodb`
 
-    - **NativeScript**, **react-native**, **Cordova**의 경우
+    - **NativeScript**, **React Native**, **Cordova**, **Expo**의 경우
 
-        [지원되는 플랫폼 문서](./docs/supported-platforms.md) 확인
+        [지원되는 플랫폼 문서](./docs/docs/help/2-supported-platforms.md) 확인
 
-    사용하는 데이터베이스에 따라*하나*만 설치
-
-##### TypeScript 환경 설정
+### TypeScript 환경 설정
 
 또한 TypeScript 버전 **3.3** 이상을 사용 중이어야 하고, `tsconfig.json`에서 다음 설정을 사용 가능하게 했는지 확인해야 한다:
 
@@ -201,8 +212,6 @@ await timber.remove();
 "emitDecoratorMetadata": true,
 "experimentalDecorators": true,
 ```
-
-컴파일러 옵션의 `lib` 섹션에서 `es6`을 사용 설정하거나, `@types`에서 `es6-shim`을 설치해야 할 수도 있다.
 
 ## 빠른 시작
 
@@ -224,7 +233,7 @@ typeorm init --name MyProject --database mysql
 
 이 명령은 `MyProject` 디렉토리에 다음의 파일들이 있는 새 프로젝트를 생성한다:
 
-```
+```text
 MyProject
 ├── src              // place of your TypeScript code
 │   ├── entity       // place where your entities (database models) are stored
@@ -242,7 +251,7 @@ MyProject
 
 다음 단계는 새 프로젝트 종속성을 설치하는 것이다:
 
-```
+```shell
 cd MyProject
 npm install
 ```
@@ -251,23 +260,17 @@ npm install
 
 ```json
 {
-   "type": "mysql",
-   "host": "localhost",
-   "port": 3306,
-   "username": "test",
-   "password": "test",
-   "database": "test",
-   "synchronize": true,
-   "logging": false,
-   "entities": [
-      "src/entity/**/*.ts"
-   ],
-   "migrations": [
-      "src/migration/**/*.ts"
-   ],
-   "subscribers": [
-      "src/subscriber/**/*.ts"
-   ]
+    "type": "mysql",
+    "host": "localhost",
+    "port": 3306,
+    "username": "test",
+    "password": "test",
+    "database": "test",
+    "synchronize": true,
+    "logging": false,
+    "entities": ["src/entity/**/*.ts"],
+    "migrations": ["src/migration/**/*.ts"],
+    "subscribers": ["src/subscriber/**/*.ts"]
 }
 ```
 
@@ -275,7 +278,7 @@ npm install
 
 설정을 마치고 모든 node 모듈이 설치되면 애플리케이션을 실행할 수 있다:
 
-```
+```shell
 npm start
 ```
 
@@ -283,7 +286,7 @@ npm start
 
 > `typeorm init --name MyProject --database mysql --express` 명령을 실행하여 Express가 설치된 고급 프로젝트를 생성할 수 있다.
 
->  `typeorm init --name MyProject --database postgres --docker` 명령을 실행하여 docker 작성 파일을 생성할 수 있다.
+> `typeorm init --name MyProject --database postgres --docker` 명령을 실행하여 docker 작성 파일을 생성할 수 있다.
 
 ## 단계별 가이드
 
@@ -297,12 +300,12 @@ ORM에서 무엇을 기대하는가? 우선, 유지 관리가 어려운 SQL 쿼�
 
 ```typescript
 export class Photo {
-    id: number;
-    name: string;
-    description: string;
-    filename: string;
-    views: number;
-    isPublished: boolean;
+    id: number
+    name: string
+    description: string
+    filename: string
+    views: number
+    isPublished: boolean
 }
 ```
 
@@ -315,48 +318,47 @@ export class Photo {
 `Photo` 모델을 엔터티로 만들어 보자.
 
 ```typescript
-import { Entity } from "typeorm";
+import { Entity } from "typeorm"
 
 @Entity()
 export class Photo {
-    id: number;
-    name: string;
-    description: string;
-    filename: string;
-    views: number;
-    isPublished: boolean;
+    id: number
+    name: string
+    description: string
+    filename: string
+    views: number
+    isPublished: boolean
 }
 ```
 
-이제  `Photo` 엔터티에 대한 데이터베이스 테이블이 생성되고 앱의 어디에서나 이 테이블로 작업할 수 있다. 우리는 데이터베이스 테이블을 만들었다. 그런데 어떤 테이블이 열(columns) 없이 존재할 수 있을까? 데이터베이스 테이블에 몇 개의 열을 생성해 보자.
+이제 `Photo` 엔터티에 대한 데이터베이스 테이블이 생성되고 앱의 어디에서나 이 테이블로 작업할 수 있다. 우리는 데이터베이스 테이블을 만들었다. 그런데 어떤 테이블이 열(columns) 없이 존재할 수 있을까? 데이터베이스 테이블에 몇 개의 열을 생성해 보자.
 
 ### 테이블 열 추가
 
 데이터베이스에 열을 추가하려면 `@Column` 데코레이터를 사용하여 열로 만들고자 하는 엔터티의 속성을 장식하기만 하면 된다.
 
 ```typescript
-import { Entity, Column } from "typeorm";
+import { Entity, Column } from "typeorm"
 
 @Entity()
 export class Photo {
+    @Column()
+    id: number
 
     @Column()
-    id: number;
+    name: string
 
     @Column()
-    name: string;
+    description: string
 
     @Column()
-    description: string;
+    filename: string
 
     @Column()
-    filename: string;
+    views: number
 
     @Column()
-    views: number;
-
-    @Column()
-    isPublished: boolean;
+    isPublished: boolean
 }
 ```
 
@@ -369,28 +371,27 @@ export class Photo {
 각 엔터티에는 **무조건** 하나 이상 의 기본 키 열이 있어야 한다. 이것은 필수 요구 사항이다. 열을 기본 키로 만드려면 `@PrimaryColumn` 데코레이터를 사용해야 한다.
 
 ```typescript
-import { Entity, Column, PrimaryColumn } from "typeorm";
+import { Entity, Column, PrimaryColumn } from "typeorm"
 
 @Entity()
 export class Photo {
-
     @PrimaryColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    description: string;
+    description: string
 
     @Column()
-    filename: string;
+    filename: string
 
     @Column()
-    views: number;
+    views: number
 
     @Column()
-    isPublished: boolean;
+    isPublished: boolean
 }
 ```
 
@@ -399,28 +400,27 @@ export class Photo {
 이제 id 열이 자동 생성(이를 자동 증가 열, auto-increment generated identity column 이라고 함)되기를 원한다고 가정해보자. 그렇게 하려면 `@PrimaryColumn` 데코레이터를 `@PrimaryGeneratedColumn`로 변경해야 한다.
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 export class Photo {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
     @Column()
-    description: string;
+    description: string
 
     @Column()
-    filename: string;
+    filename: string
 
     @Column()
-    views: number;
+    views: number
 
     @Column()
-    isPublished: boolean;
+    isPublished: boolean
 }
 ```
 
@@ -429,43 +429,42 @@ export class Photo {
 다음으로 데이터 유형을 수정해보자. 기본적으로 문자열은 varchar(255)와 유사한 유형(데이터베이스 유형에 따라 다름)에 매핑되고, 숫자는 정수와 같은 유형으로 매핑된다(데이터베이스 유형에 따라 다름). 우리는 모든 열이 varchar 또는 정수로 제한되기를 원하지 않는다. 올바른 데이터 유형을 설정해보자:
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 export class Photo {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column({
-        length: 100
+        length: 100,
     })
-    name: string;
+    name: string
 
     @Column("text")
-    description: string;
+    description: string
 
     @Column()
-    filename: string;
+    filename: string
 
     @Column("double")
-    views: number;
+    views: number
 
     @Column()
-    isPublished: boolean;
+    isPublished: boolean
 }
 ```
 
-열 타입은 데이터베이스에 따라 다르다. 데이터베이스가 지원하는 모든 열 타입을 설정할 수 있다. 지원 되는 열 타입에 대한 자세한 정보는 [여기](./docs/entities.md#column-types)에서 찾을 수 있다.
+열 타입은 데이터베이스에 따라 다르다. 데이터베이스가 지원하는 모든 열 타입을 설정할 수 있다. 지원 되는 열 타입에 대한 자세한 정보는 [여기](./docs/docs/entity/1-entities.md#column-types)에서 찾을 수 있다.
 
 ### 데이터 베이스에 대한 연결 생성
 
 이제 엔티티가 생성되면 `index.ts`(또는 `app.ts`처럼 원하는 것으로 부를 수 있음) 파일을 만들고 그곳에서 연결을 설정해 보자.
 
 ```typescript
-import "reflect-metadata";
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import "reflect-metadata"
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
 createConnection({
     type: "mysql",
@@ -474,14 +473,14 @@ createConnection({
     username: "root",
     password: "admin",
     database: "test",
-    entities: [
-        Photo
-    ],
+    entities: [Photo],
     synchronize: true,
-    logging: false
-}).then(connection => {
-    // here you can start to work with your entities
-}).catch(error => console.log(error));
+    logging: false,
+})
+    .then((connection) => {
+        // here you can start to work with your entities
+    })
+    .catch((error) => console.log(error))
 ```
 
 이 예시에서는 MySQL을 사용하고 있지만 지원되는 다른 데이터베이스를 사용할 수도 있다. 다른 데이터 베이스를 사용하려면 옵션의 `type`을 사용 중인 데이터베이스 타입으로 변경하기만 하면 된다(`mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `cordova`, `nativescript`, `react-native`, `expo`, or `mongodb`). 또한 호스트, 포트, 사용자 이름, 암호 및 데이터베이스 설정을 사용해야 한다.
@@ -495,7 +494,7 @@ createConnection({
 나중에 더 많은 엔터티를 만들 때 그것들을 설정에 추가해야 한다. 이것은 그다지 편리하지 않기 때문에 대신 모든 엔터티가 연결되고 연결에 사용될 전체 디렉토리를 설정할 수 있다:
 
 ```typescript
-import { createConnection } from "typeorm";
+import { createConnection } from "typeorm"
 
 createConnection({
     type: "mysql",
@@ -504,13 +503,13 @@ createConnection({
     username: "root",
     password: "admin",
     database: "test",
-    entities: [
-        __dirname + "/entity/*.js"
-    ],
+    entities: [__dirname + "/entity/*.js"],
     synchronize: true,
-}).then(connection => {
-    // here you can start to work with your entities
-}).catch(error => console.log(error));
+})
+    .then((connection) => {
+        // here you can start to work with your entities
+    })
+    .catch((error) => console.log(error))
 ```
 
 그러나 이러한 접근 방식에는 주의가 필요하다. `ts-node`를 사용하는 경우에는, `.ts` 파일에 대한 경로를 지정해야 하고`outDir`을 사용하는 경우에는, outDir 디렉토리 내의 `.js` 파일에 대한 경로를 지정해야 한다. `outDir`을 사용 중이고 엔터티를 제거하거나 이름을 변경할 때 `outDir` 디렉토리를 지우고 프로젝트를 다시 컴파일해야 한다. 왜냐하면 소스 `.ts` 파일을 제거할 때 컴파일된 `.js` 버전은 출력 디렉토리에서 제거되지 않고 여전히 `outDir` 디렉토리에 존재하여 TypeORM에 의해 로드되기 때문이다.
@@ -519,15 +518,15 @@ createConnection({
 
 이제 `index.ts`를 실행하면 데이터베이스와의 연결이 초기화되고 photo에 대한 데이터베이스 테이블이 생성된다.
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(100) |                            |
 | description | text         |                            |
 | filename    | varchar(255) |                            |
-| views       | int(11)      |                            |
+| views       | int          |                            |
 | isPublished | boolean      |                            |
 +-------------+--------------+----------------------------+
 ```
@@ -537,25 +536,23 @@ createConnection({
 이제 새 photo를 만들어 데이터베이스에 저장해 보자:
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
-createConnection(/*...*/).then(connection => {
+createConnection(/*...*/)
+    .then((connection) => {
+        let photo = new Photo()
+        photo.name = "Me and Bears"
+        photo.description = "I am near polar bears"
+        photo.filename = "photo-with-bears.jpg"
+        photo.views = 1
+        photo.isPublished = true
 
-    let photo = new Photo();
-    photo.name = "Me and Bears";
-    photo.description = "I am near polar bears";
-    photo.filename = "photo-with-bears.jpg";
-    photo.views = 1;
-    photo.isPublished = true;
-
-    return connection.manager
-            .save(photo)
-            .then(photo => {
-                console.log("Photo has been saved. Photo id is", photo.id);
-            });
-
-}).catch(error => console.log(error));
+        return connection.manager.save(photo).then((photo) => {
+            console.log("Photo has been saved. Photo id is", photo.id)
+        })
+    })
+    .catch((error) => console.log(error))
 ```
 
 엔터티가 저장되면 새로 생성된 ID를 갖게 된다. `save` 메소드는 전달한 것과 동일한 객체의 인스턴스를 반환한다. 이는 객체의 새 복사본이 아니며 "id"를 수정하고 반환한다.
@@ -565,22 +562,22 @@ createConnection(/*...*/).then(connection => {
 최신 ES8(ES2017) 기능을 활용하고 async/await 구문을 대신 사용해보자.
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
-createConnection(/*...*/).then(async connection => {
+createConnection(/*...*/)
+    .then(async (connection) => {
+        let photo = new Photo()
+        photo.name = "Me and Bears"
+        photo.description = "I am near polar bears"
+        photo.filename = "photo-with-bears.jpg"
+        photo.views = 1
+        photo.isPublished = true
 
-    let photo = new Photo();
-    photo.name = "Me and Bears";
-    photo.description = "I am near polar bears";
-    photo.filename = "photo-with-bears.jpg";
-    photo.views = 1;
-    photo.isPublished = true;
-
-    await connection.manager.save(photo);
-    console.log("Photo has been saved");
-
-}).catch(error => console.log(error));
+        await connection.manager.save(photo)
+        console.log("Photo has been saved")
+    })
+    .catch((error) => console.log(error))
 ```
 
 ### 엔터티 매니저 사용
@@ -588,83 +585,87 @@ createConnection(/*...*/).then(async connection => {
 방금 새 photo를 만들어 데이터베이스에 저장했었다. 이를 저장하기 위해 EntityManager를 사용하였다. 이처럼 엔터티 매니저를 사용하여 앱의 모든 엔터티를 조작할 수 있다. 예를 들어 저장된 엔터티를 로드해보자:
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
-createConnection(/*...*/).then(async connection => {
-
-    /*...*/
-    let savedPhotos = await connection.manager.find(Photo);
-    console.log("All photos from the db: ", savedPhotos);
-
-}).catch(error => console.log(error));
+createConnection(/*...*/)
+    .then(async (connection) => {
+        /*...*/
+        let savedPhotos = await connection.manager.find(Photo)
+        console.log("All photos from the db: ", savedPhotos)
+    })
+    .catch((error) => console.log(error))
 ```
 
 `savedPhotos`는 데이터베이스에서 로드된 데이터가 있는 Photo 객체의 배열이다.
 
-[여기](./docs/working-with-entity-manager.md)에서 엔터티 매니저에 대해 자세히 알 수 있다.
+[여기](./docs/docs/working-with-entity-manager/2-working-with-repository.md)에서 엔터티 매니저에 대해 자세히 알 수 있다.
 
 ### 리포지토리 사용
 
 이제 코드를 리팩토링하여 `EntityManager` 대신 `Repository`를 사용해보자. 각 엔터티에는 엔터티에 대한 모든 작업을 처리하는 자체 리포지토리가 있다. 엔터티를 많이 다룰 때는 EntityManager보다 Repositories를 사용하는 것이 더 편리하다.
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
-createConnection(/*...*/).then(async connection => {
+createConnection(/*...*/)
+    .then(async (connection) => {
+        let photo = new Photo()
+        photo.name = "Me and Bears"
+        photo.description = "I am near polar bears"
+        photo.filename = "photo-with-bears.jpg"
+        photo.views = 1
+        photo.isPublished = true
 
-    let photo = new Photo();
-    photo.name = "Me and Bears";
-    photo.description = "I am near polar bears";
-    photo.filename = "photo-with-bears.jpg";
-    photo.views = 1;
-    photo.isPublished = true;
+        let photoRepository = connection.getRepository(Photo)
 
-    let photoRepository = connection.getRepository(Photo);
+        await photoRepository.save(photo)
+        console.log("Photo has been saved")
 
-    await photoRepository.save(photo);
-    console.log("Photo has been saved");
-
-    let savedPhotos = await photoRepository.find();
-    console.log("All photos from the db: ", savedPhotos);
-
-}).catch(error => console.log(error));
+        let savedPhotos = await photoRepository.find()
+        console.log("All photos from the db: ", savedPhotos)
+    })
+    .catch((error) => console.log(error))
 ```
 
-[여기](./docs/working-with-repository.md)에서 리포지토리에 대해 자세히 알 수 있다.
+[여기](./docs/docs/working-with-entity-manager/2-working-with-repository.md)에서 리포지토리에 대해 자세히 알 수 있다.
 
 ### 데이터베이스에서 로드
 
 리포지토리를 사용하여 더 많은 로드 작업을 시도해보자:
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
-createConnection(/*...*/).then(async connection => {
+createConnection(/*...*/)
+    .then(async (connection) => {
+        /*...*/
+        let allPhotos = await photoRepository.find()
+        console.log("All photos from the db: ", allPhotos)
 
-    /*...*/
-    let allPhotos = await photoRepository.find();
-    console.log("All photos from the db: ", allPhotos);
+        let firstPhoto = await photoRepository.findOne(1)
+        console.log("First photo from the db: ", firstPhoto)
 
-    let firstPhoto = await photoRepository.findOne(1);
-    console.log("First photo from the db: ", firstPhoto);
+        let meAndBearsPhoto = await photoRepository.findOne({
+            name: "Me and Bears",
+        })
+        console.log("Me and Bears photo from the db: ", meAndBearsPhoto)
 
-    let meAndBearsPhoto = await photoRepository.findOne({ name: "Me and Bears" });
-    console.log("Me and Bears photo from the db: ", meAndBearsPhoto);
+        let allViewedPhotos = await photoRepository.find({ views: 1 })
+        console.log("All viewed photos: ", allViewedPhotos)
 
-    let allViewedPhotos = await photoRepository.find({ views: 1 });
-    console.log("All viewed photos: ", allViewedPhotos);
+        let allPublishedPhotos = await photoRepository.find({
+            isPublished: true,
+        })
+        console.log("All published photos: ", allPublishedPhotos)
 
-    let allPublishedPhotos = await photoRepository.find({ isPublished: true });
-    console.log("All published photos: ", allPublishedPhotos);
-
-    let [allPhotos, photosCount] = await photoRepository.findAndCount();
-    console.log("All photos: ", allPhotos);
-    console.log("Photos count: ", photosCount);
-
-}).catch(error => console.log(error));
+        let [allPhotos, photosCount] = await photoRepository.findAndCount()
+        console.log("All photos: ", allPhotos)
+        console.log("Photos count: ", photosCount)
+    })
+    .catch((error) => console.log(error))
 ```
 
 ### 데이터베이스에서 업데이트
@@ -672,17 +673,17 @@ createConnection(/*...*/).then(async connection => {
 이제 데이터베이스에서 단일 photo를 로드하고 업데이트하고 저장해보자:
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
-createConnection(/*...*/).then(async connection => {
-
-    /*...*/
-    let photoToUpdate = await photoRepository.findOne(1);
-    photoToUpdate.name = "Me, my friends and polar bears";
-    await photoRepository.save(photoToUpdate);
-
-}).catch(error => console.log(error));
+createConnection(/*...*/)
+    .then(async (connection) => {
+        /*...*/
+        let photoToUpdate = await photoRepository.findOne(1)
+        photoToUpdate.name = "Me, my friends and polar bears"
+        await photoRepository.save(photoToUpdate)
+    })
+    .catch((error) => console.log(error))
 ```
 
 이제 `id = 1`인 photo가 데이터베이스에서 업데이트 될 것이다.
@@ -692,16 +693,16 @@ createConnection(/*...*/).then(async connection => {
 이제 데이터베이스에서 photo를 제거해보자:
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
 
-createConnection(/*...*/).then(async connection => {
-
-    /*...*/
-    let photoToRemove = await photoRepository.findOne(1);
-    await photoRepository.remove(photoToRemove);
-
-}).catch(error => console.log(error));
+createConnection(/*...*/)
+    .then(async (connection) => {
+        /*...*/
+        let photoToRemove = await photoRepository.findOne(1)
+        await photoRepository.remove(photoToRemove)
+    })
+    .catch((error) => console.log(error))
 ```
 
 이제 `id = 1`인 photo가 데이터베이스에서 제거된다.
@@ -711,33 +712,38 @@ createConnection(/*...*/).then(async connection => {
 다른 클래스와 1:1 관계를 만들어 보자. `PhotoMetadata.ts`에 새 클래스를 생성해 보겠다. 이 PhotoMetadata 클래스에는 photo의 추가 메타 정보가 포함되어야 한다.
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "typeorm";
-import { Photo } from "./Photo";
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    OneToOne,
+    JoinColumn,
+} from "typeorm"
+import { Photo } from "./Photo"
 
 @Entity()
 export class PhotoMetadata {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column("int")
-    height: number;
+    height: number
 
     @Column("int")
-    width: number;
+    width: number
 
     @Column()
-    orientation: string;
+    orientation: string
 
     @Column()
-    compressed: boolean;
+    compressed: boolean
 
     @Column()
-    comment: string;
+    comment: string
 
-    @OneToOne(type => Photo)
+    @OneToOne((type) => Photo)
     @JoinColumn()
-    photo: Photo;
+    photo: Photo
 }
 ```
 
@@ -747,17 +753,17 @@ export class PhotoMetadata {
 
 앱을 실행하면 새로 생성된 테이블이 표시되며 여기에는 photo 관계에 대한 외래 키가 있는 열이 포함된다:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                     photo_metadata                      |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| height      | int(11)      |                            |
-| width       | int(11)      |                            |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
+| height      | int          |                            |
+| width       | int          |                            |
 | comment     | varchar(255) |                            |
 | compressed  | boolean      |                            |
 | orientation | varchar(255) |                            |
-| photoId     | int(11)      | FOREIGN KEY                |
+| photoId     | int          | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
 
@@ -766,43 +772,45 @@ export class PhotoMetadata {
 이제 photo와 해당 metadata를 저장하고 서로 첨부해보자.
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
-import { PhotoMetadata } from "./entity/PhotoMetadata";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
+import { PhotoMetadata } from "./entity/PhotoMetadata"
 
-createConnection(/*...*/).then(async connection => {
+createConnection(/*...*/)
+    .then(async (connection) => {
+        // create a photo
+        let photo = new Photo()
+        photo.name = "Me and Bears"
+        photo.description = "I am near polar bears"
+        photo.filename = "photo-with-bears.jpg"
+        photo.views = 1
+        photo.isPublished = true
 
-    // create a photo
-    let photo = new Photo();
-    photo.name = "Me and Bears";
-    photo.description = "I am near polar bears";
-    photo.filename = "photo-with-bears.jpg";
-    photo.views = 1;
-    photo.isPublished = true;
+        // create a photo metadata
+        let metadata = new PhotoMetadata()
+        metadata.height = 640
+        metadata.width = 480
+        metadata.compressed = true
+        metadata.comment = "cybershoot"
+        metadata.orientation = "portrait"
+        metadata.photo = photo // this way we connect them
 
-    // create a photo metadata
-    let metadata = new PhotoMetadata();
-    metadata.height = 640;
-    metadata.width = 480;
-    metadata.compressed = true;
-    metadata.comment = "cybershoot";
-    metadata.orientation = "portrait";
-    metadata.photo = photo; // this way we connect them
+        // get entity repositories
+        let photoRepository = connection.getRepository(Photo)
+        let metadataRepository = connection.getRepository(PhotoMetadata)
 
-    // get entity repositories
-    let photoRepository = connection.getRepository(Photo);
-    let metadataRepository = connection.getRepository(PhotoMetadata);
+        // first we should save a photo
+        await photoRepository.save(photo)
 
-    // first we should save a photo
-    await photoRepository.save(photo);
+        // photo is saved. Now we need to save a photo metadata
+        await metadataRepository.save(metadata)
 
-    // photo is saved. Now we need to save a photo metadata
-    await metadataRepository.save(metadata);
-
-    // done
-    console.log("Metadata is saved, and the relation between metadata and photo is created in the database too");
-
-}).catch(error => console.log(error));
+        // done
+        console.log(
+            "Metadata is saved, and the relation between metadata and photo is created in the database too",
+        )
+    })
+    .catch((error) => console.log(error))
 ```
 
 ### 관계의 반대측
@@ -810,31 +818,35 @@ createConnection(/*...*/).then(async connection => {
 관계는 단방향 또는 양방향일 수 있다. 현재 PhotoMetadata와 Photo 간의 관계는 단방향이다. 관계의 소유자는 PhotoMetadata이고 Photo는 PhotoMetadata에 대해 아무것도 모르는 상태다. 이로 인해 photo 측에서 PhotoMetadata에 액세스하는 것이 복잡해진다. 이 문제를 해결하려면 역 관계를 추가하여 PhotoMetadata와 Photo 간의 관계를 양방향으로 만들어야 한다. 엔터티를 수정해보자.
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "typeorm";
-import { Photo } from "./Photo";
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    OneToOne,
+    JoinColumn,
+} from "typeorm"
+import { Photo } from "./Photo"
 
 @Entity()
 export class PhotoMetadata {
-
     /* ... other columns */
 
-    @OneToOne(type => Photo, photo => photo.metadata)
+    @OneToOne((type) => Photo, (photo) => photo.metadata)
     @JoinColumn()
-    photo: Photo;
+    photo: Photo
 }
 ```
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne } from "typeorm";
-import { PhotoMetadata } from "./PhotoMetadata";
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne } from "typeorm"
+import { PhotoMetadata } from "./PhotoMetadata"
 
 @Entity()
 export class Photo {
-
     /* ... other columns */
 
-    @OneToOne(type => PhotoMetadata, photoMetadata => photoMetadata.photo)
-    metadata: PhotoMetadata;
+    @OneToOne((type) => PhotoMetadata, (photoMetadata) => photoMetadata.photo)
+    metadata: PhotoMetadata
 }
 ```
 
@@ -847,39 +859,38 @@ export class Photo {
 이제 단일 쿼리에서 photo와 phto metadata를 로드해보자. `find*` 메소드를 사용하거나 `QueryBuilder` 기능을 사용하는 두 가지 방법이 있다. 먼저 `find*` 메소드를 사용해보자. `find*` 메서드를 사용하면 `FindOneOptions` / `FindManyOptions` 인터페이스로 개체를 지정할 수 있게 된다.
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
-import { PhotoMetadata } from "./entity/PhotoMetadata";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
+import { PhotoMetadata } from "./entity/PhotoMetadata"
 
-createConnection(/*...*/).then(async connection => {
-
-    /*...*/
-    let photoRepository = connection.getRepository(Photo);
-    let photos = await photoRepository.find({ relations: ["metadata"] });
-
-}).catch(error => console.log(error));
+createConnection(/*...*/)
+    .then(async (connection) => {
+        /*...*/
+        let photoRepository = connection.getRepository(Photo)
+        let photos = await photoRepository.find({ relations: ["metadata"] })
+    })
+    .catch((error) => console.log(error))
 ```
 
-여기에서 photos에는 데이터베이스의 photo 배열이 포함되고 각 photo에는 photo metadata가 포함된다. [이 문서](./docs/find-options.md)에서 찾기 옵션에 대해 자세히 알아볼 수 있다.
+여기에서 photos에는 데이터베이스의 photo 배열이 포함되고 각 photo에는 photo metadata가 포함된다. [이 문서](./docs/docs/working-with-entity-manager/3-find-options.md)에서 찾기 옵션에 대해 자세히 알아볼 수 있다.
 
 Using find options is good and dead 찾기 옵션을 사용하는 것은 훌륭하고 간단하지만 더 복잡한 쿼리가 필요한 경우에는 `QueryBuilder`를 대신 사용해야 한다. `QueryBuilder`를 사용하면 보다 복잡한 쿼리를 우아한 방식으로 사용할 수 있다.
 
 ```typescript
-import { createConnection } from "typeorm";
-import { Photo } from "./entity/Photo";
-import { PhotoMetadata } from "./entity/PhotoMetadata";
+import { createConnection } from "typeorm"
+import { Photo } from "./entity/Photo"
+import { PhotoMetadata } from "./entity/PhotoMetadata"
 
-createConnection(/*...*/).then(async connection => {
-
-    /*...*/
-    let photos = await connection
+createConnection(/*...*/)
+    .then(async (connection) => {
+        /*...*/
+        let photos = await connection
             .getRepository(Photo)
             .createQueryBuilder("photo")
             .innerJoinAndSelect("photo.metadata", "metadata")
-            .getMany();
-
-
-}).catch(error => console.log(error));
+            .getMany()
+    })
+    .catch((error) => console.log(error))
 ```
 
 `QueryBuilder`를 사용하면 거의 모든 복잡한 SQL 쿼리를 만들고 실행할 수 있게 된다. `QueryBuilder`로 작업할 때 SQL 쿼리를 생성하는 것처럼 생각하자. 이 예에서 "photo" 및 "metadata"는 선택한 photo에 적용된 별칭이다. 별칭을 사용하여 선택한 데이터의 열 및 속성에 액세스한다.
@@ -892,44 +903,44 @@ createConnection(/*...*/).then(async connection => {
 export class Photo {
     /// ... other columns
 
-    @OneToOne(type => PhotoMetadata, metadata => metadata.photo, {
+    @OneToOne((type) => PhotoMetadata, (metadata) => metadata.photo, {
         cascade: true,
     })
-    metadata: PhotoMetadata;
+    metadata: PhotoMetadata
 }
 ```
 
 `cascade`를 사용하면 photo를 따로 저장하지 않고도 metadata 객체를 따로 저장할 수 있게 된다. 이제 photo 객체를 간단히 저장할 수 있으며 metadata 객체는 cascade 옵션으로 인해 자동으로 저장된다.
 
 ```typescript
-createConnection(options).then(async connection => {
+createConnection(options)
+    .then(async (connection) => {
+        // create photo object
+        let photo = new Photo()
+        photo.name = "Me and Bears"
+        photo.description = "I am near polar bears"
+        photo.filename = "photo-with-bears.jpg"
+        photo.isPublished = true
 
-    // create photo object
-    let photo = new Photo();
-    photo.name = "Me and Bears";
-    photo.description = "I am near polar bears";
-    photo.filename = "photo-with-bears.jpg";
-    photo.isPublished = true;
+        // create photo metadata object
+        let metadata = new PhotoMetadata()
+        metadata.height = 640
+        metadata.width = 480
+        metadata.compressed = true
+        metadata.comment = "cybershoot"
+        metadata.orientation = "portrait"
 
-    // create photo metadata object
-    let metadata = new PhotoMetadata();
-    metadata.height = 640;
-    metadata.width = 480;
-    metadata.compressed = true;
-    metadata.comment = "cybershoot";
-    metadata.orientation = "portrait";
+        photo.metadata = metadata // this way we connect them
 
-    photo.metadata = metadata; // this way we connect them
+        // get repository
+        let photoRepository = connection.getRepository(Photo)
 
-    // get repository
-    let photoRepository = connection.getRepository(Photo);
+        // saving a photo also save the metadata
+        await photoRepository.save(photo)
 
-    // saving a photo also save the metadata
-    await photoRepository.save(photo);
-
-    console.log("Photo is saved, photo metadata is saved too.")
-
-}).catch(error => console.log(error));
+        console.log("Photo is saved, photo metadata is saved too.")
+    })
+    .catch((error) => console.log(error))
 ```
 
 이제 이전과 같이 metadata의 `photo` 속성 대신 photo의 `metadata` 속성을 설정한다. `cascade` 기능은 photo를 photo 측면에서 metadata에 연결하는 경우에만 작동한다. metadata 측면을 설정하면 metadata가 자동으로 저장되지 않는다.
@@ -939,20 +950,25 @@ createConnection(options).then(async connection => {
 N:1/1:N 관계를 만들어 보자. photo에는 한 명의 author가 있고 각 author는 많은 photo를 가질 수 있다고 가정하고 우선 Author 클래스를 생성해 보자:
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, JoinColumn } from "typeorm";
-import { Photo } from "./Photo";
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    OneToMany,
+    JoinColumn,
+} from "typeorm"
+import { Photo } from "./Photo"
 
 @Entity()
 export class Author {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @OneToMany(type => Photo, photo => photo.author) // note: we will create author property in the Photo class below
-    photos: Photo[];
+    @OneToMany((type) => Photo, (photo) => photo.author) // note: we will create author property in the Photo class below
+    photos: Photo[]
 }
 ```
 
@@ -961,17 +977,16 @@ export class Author {
 이제 관계의 소유자 측을 Photo 엔터티에 추가해보자:
 
 ```typescript
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
-import { PhotoMetadata } from "./PhotoMetadata";
-import { Author } from "./Author";
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from "typeorm"
+import { PhotoMetadata } from "./PhotoMetadata"
+import { Author } from "./Author"
 
 @Entity()
 export class Photo {
-
     /* ... other columns */
 
-    @ManyToOne(type => Author, author => author.photos)
-    author: Author;
+    @ManyToOne((type) => Author, (author) => author.photos)
+    author: Author
 }
 ```
 
@@ -979,27 +994,27 @@ N:1/1:N 관계에서 소유자측은 항상 다대일(ManyToOne)이다. 즉 `@Ma
 
 애플리케이션을 실행한 후, ORM은 `author` 테이블을 생성한다:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                          author                         |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(255) |                            |
 +-------------+--------------+----------------------------+
 ```
 
 또한 새 `author` 열을 추가하고 이에 대한 외래 키를 생성하여 `photo` 테이블을 수정한다:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(255) |                            |
 | description | varchar(255) |                            |
 | filename    | varchar(255) |                            |
 | isPublished | boolean      |                            |
-| authorId    | int(11)      | FOREIGN KEY                |
+| authorId    | int          | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
 
@@ -1008,20 +1023,25 @@ N:1/1:N 관계에서 소유자측은 항상 다대일(ManyToOne)이다. 즉 `@Ma
 M:N 관계를 만들어 보자. 사진이 여러 album에 포함될 수 있고 각 album들에 많은 photo들이 포함될 수 있다고 가정하여 `Album` 클래스를 만들어 보자:
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    ManyToMany,
+    JoinTable,
+} from "typeorm"
 
 @Entity()
 export class Album {
-
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number
 
     @Column()
-    name: string;
+    name: string
 
-    @ManyToMany(type => Photo, photo => photo.albums)
+    @ManyToMany((type) => Photo, (photo) => photo.albums)
     @JoinTable()
-    photos: Photo[];
+    photos: Photo[]
 }
 ```
 
@@ -1033,19 +1053,19 @@ export class Album {
 export class Photo {
     /// ... other columns
 
-    @ManyToMany(type => Album, album => album.photos)
-    albums: Album[];
+    @ManyToMany((type) => Album, (album) => album.photos)
+    albums: Album[]
 }
 ```
 
 애플리케이션을 실행한 후, ORM은 **album_photos_photo_albums**라는 *접합 테이블(junction table)*을 생성한다.:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                album_photos_photo_albums                |
 +-------------+--------------+----------------------------+
-| album_id    | int(11)      | PRIMARY KEY FOREIGN KEY    |
-| photo_id    | int(11)      | PRIMARY KEY FOREIGN KEY    |
+| album_id    | int          | PRIMARY KEY FOREIGN KEY    |
+| photo_id    | int          | PRIMARY KEY FOREIGN KEY    |
 +-------------+--------------+----------------------------+
 ```
 
@@ -1054,39 +1074,39 @@ ORM의 연결에서 `Album` 클래스를 등록하는 것을 잊으면 안된다
 ```typescript
 const options: ConnectionOptions = {
     // ... other options
-    entities: [Photo, PhotoMetadata, Author, Album]
-};
+    entities: [Photo, PhotoMetadata, Author, Album],
+}
 ```
 
 이제 데이터베이스에 album과 photo를 삽입해 보자:
 
 ```typescript
-let connection = await createConnection(options);
+let connection = await createConnection(options)
 
 // create a few albums
-let album1 = new Album();
-album1.name = "Bears";
-await connection.manager.save(album1);
+let album1 = new Album()
+album1.name = "Bears"
+await connection.manager.save(album1)
 
-let album2 = new Album();
-album2.name = "Me";
-await connection.manager.save(album2);
+let album2 = new Album()
+album2.name = "Me"
+await connection.manager.save(album2)
 
 // create a few photos
-let photo = new Photo();
-photo.name = "Me and Bears";
-photo.description = "I am near polar bears";
-photo.filename = "photo-with-bears.jpg";
+let photo = new Photo()
+photo.name = "Me and Bears"
+photo.description = "I am near polar bears"
+photo.filename = "photo-with-bears.jpg"
 photo.views = 1
 photo.isPublished = true
-photo.albums = [album1, album2];
-await connection.manager.save(photo);
+photo.albums = [album1, album2]
+await connection.manager.save(photo)
 
 // now our photo is saved and albums are attached to it
 // now lets load them:
 const loadedPhoto = await connection
     .getRepository(Photo)
-    .findOne(1, { relations: ["albums"] });
+    .findOne(1, { relations: ["albums"] })
 ```
 
 `loadedPhoto`는 다음과 같다:
@@ -1123,12 +1143,12 @@ let photos = await connection
     .skip(5)
     .take(10)
     .setParameters({ photoName: "My", bearName: "Mishka" })
-    .getMany();
+    .getMany()
 ```
 
 이 쿼리는 이름이 "My" 또는 "Mishka"인 게시된 모든 photo를 선택한다. 위치 5(pagination 오프셋)에서 결과를 선택하고 10개 결과(pagination 제한)만 선택한다. 선택 결과는 id의 내림차순으로 정렬된다. photo의 album들은 결합된 상태로 유지되고 해당 metadata는 내부 결합(inner join)된다.
 
-애플리케이션에서 쿼리 빌더를 많이 사용할 것이다. [여기](./docs/select-query-builder.md)에서 쿼리 빌더에 대해 자세히 알 수 있다.
+애플리케이션에서 쿼리 빌더를 많이 사용할 것이다. [여기](./docs/docs/query-builder/1-select-query-builder.md)에서 쿼리 빌더에 대해 자세히 알 수 있다.
 
 ## 샘플들
 
@@ -1136,34 +1156,33 @@ let photos = await connection
 
 clone하여 시작할 수 있는 몇 가지 리포지토리가 있다:
 
-- [TypeScript와 함께 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/typescript-example)
-- [JavaScript에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/javascript-example)
-- [JavaScript 및 Babel과 함께 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/babel-example)
-- [브라우저에서 TypeScript 및 SystemJS와 함께 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/browser-example)
-- [브라우저에서 TypeScript 및 React와 함께 TypeORM을 사용하는 방법의 예시](https://github.com/ItayGarin/typeorm-react-swc)
-- [Express 및 TypeORM 사용 방법의 예시](https://github.com/typeorm/typescript-express-example)
-- [Koa 및 TypeORM 사용 예시](https://github.com/typeorm/typescript-koa-example)
-- [MongoDB에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/mongo-typescript-example)
-- [Cordova/PhoneGap 앱에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/cordova-example)
-- [Ionic 앱에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/ionic-example)
-- [React Native에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/react-native-example)
-- [Nativescript-Vue와 함께 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/nativescript-vue-typeorm-sample)
-- [Nativescript-Angular와 함께 TypeORM을 사용하는 방법의 예시](https://github.com/betov18x/nativescript-angular-typeorm-example)
-- [JavaScript를 사용하여 Electron에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/electron-javascript-example)
-- [TypeScript를 사용하여 Electron과 함께 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/electron-typescript-example)
+-   [TypeScript와 함께 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/typescript-example)
+-   [JavaScript에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/javascript-example)
+-   [JavaScript 및 Babel과 함께 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/babel-example)
+-   [브라우저에서 TypeScript 및 SystemJS와 함께 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/browser-example)
+-   [브라우저에서 TypeScript 및 React와 함께 TypeORM을 사용하는 방법의 예시](https://github.com/ItayGarin/typeorm-react-swc)
+-   [Express 및 TypeORM 사용 방법의 예시](https://github.com/typeorm/typescript-express-example)
+-   [Koa 및 TypeORM 사용 예시](https://github.com/typeorm/typescript-koa-example)
+-   [MongoDB에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/mongo-typescript-example)
+-   [Cordova 앱에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/cordova-example)
+-   [Ionic 앱에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/ionic-example)
+-   [React Native에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/react-native-example)
+-   [Nativescript-Vue와 함께 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/nativescript-vue-typeorm-sample)
+-   [Nativescript-Angular와 함께 TypeORM을 사용하는 방법의 예시](https://github.com/betov18x/nativescript-angular-typeorm-example)
+-   [JavaScript를 사용하여 Electron에서 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/electron-javascript-example)
+-   [TypeScript를 사용하여 Electron과 함께 TypeORM을 사용하는 방법의 예시](https://github.com/typeorm/electron-typescript-example)
 
 ## 확장
 
 TypeORM 작업을 단순화하고 다른 모듈과 통합하는 몇 가지 확장 방법이 있다:
 
-- [TypeORM + GraphQL 프레임워크](http://vesper-framework.com)
-- [TypeORM](https://github.com/typeorm/typeorm-typedi-extensions)과 [TypeDI](https://github.com/pleerock/typedi) 통합
-- [라우팅 컨트롤러](https://github.com/typeorm/typeorm-routing-controllers-extensions)와 [TypeORM 통합](https://github.com/pleerock/routing-controllers)
-- 기존 데이터베이스에서 모델 생성 - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
-- Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
-- ER 다이어그램 생성기 - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
-- 다른 ER 다이어그램 생성기 - [erdia](https://www.npmjs.com/package/erdia/)
-- 데이터베이스 생성(create)/삭제(drop) - [typeorm-extension](https://github.com/Tada5hi/typeorm-extension)
+-   [TypeORM](https://github.com/typeorm/typeorm-typedi-extensions)과 [TypeDI](https://github.com/pleerock/typedi) 통합
+-   [라우팅 컨트롤러](https://github.com/typeorm/typeorm-routing-controllers-extensions)와 [TypeORM 통합](https://github.com/pleerock/routing-controllers)
+-   기존 데이터베이스에서 모델 생성 - [typeorm-model-generator](https://github.com/Kononnable/typeorm-model-generator)
+-   Fixtures loader - [typeorm-fixtures-cli](https://github.com/RobinCK/typeorm-fixtures)
+-   ER 다이어그램 생성기 - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
+-   다른 ER 다이어그램 생성기 - [erdia](https://www.npmjs.com/package/erdia/)
+-   데이터베이스 생성(create)/삭제(drop) - [typeorm-extension](https://github.com/Tada5hi/typeorm-extension)
 
 ## 기여
 

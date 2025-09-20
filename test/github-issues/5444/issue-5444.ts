@@ -7,7 +7,7 @@ import { Author, AuthorSchema } from "./entity/Author"
 import { EntitySchema } from "../../../src"
 
 describe("github issues > #5444 EntitySchema missing support for multiple joinColumns in relations", () => {
-    it("Update query returns the number of affected rows", async () => {
+    it("Update query returns the number of affected rows", () => {
         const transformer = new EntitySchemaTransformer()
 
         const actual = transformer.transform([
@@ -24,12 +24,14 @@ describe("github issues > #5444 EntitySchema missing support for multiple joinCo
                 propertyName: "author",
                 name: "authorPublisherId",
                 referencedColumnName: "publisherId",
+                foreignKeyConstraintName: undefined,
             },
             {
                 target: Post,
                 propertyName: "author",
                 name: "authorId",
                 referencedColumnName: "id",
+                foreignKeyConstraintName: undefined,
             },
         ])
     })

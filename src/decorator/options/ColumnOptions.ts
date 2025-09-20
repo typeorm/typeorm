@@ -25,11 +25,15 @@ export interface ColumnOptions extends ColumnCommonOptions {
     /**
      * Column type's display width. Used only on some column types in MySQL.
      * For example, INT(4) specifies an INT with a display width of four digits.
+     * @deprecated No longer supported in newer MySQL versions, will be removed
+     * from TypeORM in an upcoming version. Use a character column and the
+     * `LPAD` function as suggested by MySQL
      */
     width?: number
 
     /**
      * Indicates if column's value can be set to NULL.
+     * Default value is "false".
      */
     nullable?: boolean
 
@@ -104,6 +108,9 @@ export interface ColumnOptions extends ColumnCommonOptions {
     /**
      * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
      * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to this column
+     * @deprecated No longer supported in newer MySQL versions, will be removed
+     * from TypeORM in an upcoming version. Use a character column and the
+     * `LPAD` function as suggested by MySQL
      */
     zerofill?: boolean
 
@@ -127,18 +134,29 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * Array of possible enumerated values.
      */
     enum?: (string | number)[] | Object
+
     /**
      * Exact name of enum
      */
     enumName?: string
 
     /**
-     * Generated column expression. Supports only in MySQL.
+     * If this column is primary key then this specifies the name for it.
+     */
+    primaryKeyConstraintName?: string
+
+    /**
+     * If this column is foreign key then this specifies the name for it.
+     */
+    foreignKeyConstraintName?: string
+
+    /**
+     * Generated column expression.
      */
     asExpression?: string
 
     /**
-     * Generated column type. Supports only in MySQL.
+     * Generated column type.
      */
     generatedType?: "VIRTUAL" | "STORED"
 
@@ -175,4 +193,11 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * SRID (Spatial Reference ID (EPSG code))
      */
     srid?: number
+
+    /**
+     * Query to be used to populate the column data. This query is used when generating the relational db script.
+     * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
+     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
+     */
+    query?: (alias: string) => string
 }

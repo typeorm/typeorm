@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { Connection } from "../../../../src"
+import { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,40 +8,65 @@ import {
 import { filterByCteCapabilities } from "./helpers"
 
 describe("query builder > cte > recursive", () => {
-    let connections: Connection[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work with simple recursive query", () =>
         Promise.all(
-            connections
+            dataSources
                 .filter(filterByCteCapabilities("enabled"))
-                .map(async (connection) => {
-                    const qb = await connection
-                        .createQueryBuilder()
-                        .select([])
-                        .from("cte", "cte")
-                        .addCommonTableExpression(
-                            `
-                    SELECT 1
-                    UNION ALL
-                    SELECT cte.foo + 1
-                    FROM cte
-                    WHERE cte.foo < 10
-                `,
-                            "cte",
-                            { recursive: true, columnNames: ["foo"] },
-                        )
-                        .addSelect("cte.foo", "foo")
-                        .getRawMany<{ foo: number }>()
+                .map(async (dataSource) => {
+                    if (
+                        dataSource.options.type === "sap" ||
+                        dataSource.options.type === "spanner"
+                    ) {
+                        // CTE cannot reference itself in SAP HANA / Spanner
+                        return
+                    }
+
+                    let qb: { foo: number }[]
+                    if (dataSource.options.type === "oracle") {
+                        qb = await dataSource
+                            .createQueryBuilder()
+                            .select([])
+                            .from("cte", "cte")
+                            .addCommonTableExpression(
+                                `SELECT 1 FROM "DUAL"` +
+                                    ` UNION ALL` +
+                                    ` SELECT "cte"."foo" + 1` +
+                                    ` FROM "cte"` +
+                                    ` WHERE "cte"."foo" < 10`,
+                                "cte",
+                                { recursive: true, columnNames: ["foo"] },
+                            )
+                            .addSelect(`"cte"."foo"`, "foo")
+                            .getRawMany<{ foo: number }>()
+                    } else {
+                        qb = await dataSource
+                            .createQueryBuilder()
+                            .select([])
+                            .from("cte", "cte")
+                            .addCommonTableExpression(
+                                `SELECT 1` +
+                                    ` UNION ALL` +
+                                    ` SELECT cte.foo + 1` +
+                                    ` FROM cte` +
+                                    ` WHERE cte.foo < 10`,
+                                "cte",
+                                { recursive: true, columnNames: ["foo"] },
+                            )
+                            .addSelect("cte.foo", "foo")
+                            .getRawMany<{ foo: number }>()
+                    }
 
                     expect(qb).to.have.length(10)
                 }),

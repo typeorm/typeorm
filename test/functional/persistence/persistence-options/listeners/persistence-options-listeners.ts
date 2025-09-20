@@ -7,7 +7,6 @@ import {
 import { Post } from "./entity/Post"
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import { PostWithDeleteDateColumn } from "./entity/PostWithDeleteDateColumn"
-// import {expect} from "chai";
 
 describe("persistence > persistence options > listeners", () => {
     // -------------------------------------------------------------------------
@@ -30,6 +29,7 @@ describe("persistence > persistence options > listeners", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const post = new Post()
+                post.id = 1
                 post.title = "Bakhrom"
                 post.description = "Hello"
                 await connection.manager.save(post)
@@ -41,6 +41,7 @@ describe("persistence > persistence options > listeners", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const post = new Post()
+                post.id = 1
                 post.title = "Bakhrom"
                 post.description = "Hello"
                 await connection.manager.save(post, { listeners: false })
@@ -52,6 +53,7 @@ describe("persistence > persistence options > listeners", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const post = new Post()
+                post.id = 1
                 post.title = "Bakhrom"
                 post.description = "Hello"
                 await connection.manager.save(post)
@@ -64,6 +66,7 @@ describe("persistence > persistence options > listeners", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const post = new Post()
+                post.id = 1
                 post.title = "Bakhrom"
                 post.description = "Hello"
                 await connection.manager.save(post)

@@ -11,6 +11,6 @@ export class Cat {
     // @Column()
     // dogDogID: string; // Need to do this to allow the Foreign Key to work
 
-    @ManyToOne((type) => Dog, (dog) => dog.cats)
+    @ManyToOne(() => Dog, (dog) => dog.cats)
     dog: Dog
 }
