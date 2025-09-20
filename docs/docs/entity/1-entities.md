@@ -26,11 +26,11 @@ export class User {
 
 This will create following database table:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                          user                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | firstName   | varchar(255) |                            |
 | lastName    | varchar(255) |                            |
 | isActive    | boolean      |                            |
@@ -180,6 +180,67 @@ There are several special column types with additional functionality available:
     each time you call `save` of entity manager or repository, or during `upsert` operations when an update occurs.
     You don't need to set this column - it will be automatically set.
 
+### Vector columns
+
+Vector columns are supported on both PostgreSQL (via [`pgvector`](https://github.com/pgvector/pgvector) extension) and SAP HANA Cloud, enabling storing and querying vector embeddings for similarity search and machine learning applications.
+
+TypeORM supports both `vector` and `halfvec` column types across databases:
+
+- `vector` - stores vectors as 4-byte floats (single precision)
+  - PostgreSQL: native `vector` type via pgvector extension
+  - SAP HANA: alias for `real_vector` type
+- `halfvec` - stores vectors as 2-byte floats (half precision) for memory efficiency
+  - PostgreSQL: native `halfvec` type via pgvector extension  
+  - SAP HANA: alias for `half_vector` type
+
+You can specify the vector dimensions using the `length` option:
+
+```typescript
+@Entity()
+export class Post {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    // Vector without specified dimensions (works on PostgreSQL and SAP HANA)
+    @Column("vector")
+    embedding: number[] | Buffer
+
+    // Vector with 3 dimensions: vector(3) (works on PostgreSQL and SAP HANA)
+    @Column("vector", { length: 3 })
+    embedding_3d: number[] | Buffer
+
+    // Half-precision vector with 4 dimensions: halfvec(4) (works on PostgreSQL and SAP HANA)
+    @Column("halfvec", { length: 4 })
+    halfvec_embedding: number[] | Buffer
+}
+```
+
+Vector columns can be used for similarity searches using PostgreSQL's vector operators:
+
+```typescript
+// L2 distance (Euclidean) - <->
+const results = await dataSource.query(
+    `SELECT id, embedding FROM post ORDER BY embedding <-> $1 LIMIT 5`,
+    ["[1,2,3]"]
+)
+
+// Cosine distance - <=>
+const results = await dataSource.query(
+    `SELECT id, embedding FROM post ORDER BY embedding <=> $1 LIMIT 5`,
+    ["[1,2,3]"]
+)
+
+// Inner product - <#>
+const results = await dataSource.query(
+    `SELECT id, embedding FROM post ORDER BY embedding <#> $1 LIMIT 5`,
+    ["[1,2,3]"]
+)
+```
+
+> **Note**: 
+> - **PostgreSQL**: Vector columns require the `pgvector` extension to be installed. The extension provides the vector data types and similarity operators.
+> - **SAP HANA**: Vector columns require SAP HANA Cloud (2024Q1+) and a supported version of `@sap/hana-client`. Use the appropriate [vector similarity functions](https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/vector-functions) for similarity searches.
+
 ## Column types
 
 TypeORM supports all of the most commonly used database-supported column types.
@@ -203,12 +264,6 @@ For example:
 
 ```typescript
 @Column("varchar", { length: 200 })
-```
-
-or
-
-```typescript
-@Column({ type: "int", width: 200 })
 ```
 
 > Note about `bigint` type: `bigint` column type, used in SQL databases, doesn't fit into the regular `number` type and maps property to a `string` instead.
@@ -393,7 +448,6 @@ List of available options in `ColumnOptions`:
     You can change it by specifying your own name.
 
 -   `length: number` - Column type's length. For example if you want to create `varchar(150)` type you specify column type and length options.
--   `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
 -   `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
 -   `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. By default column is `nullable: false`.
 -   `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object. Default value is `true`.
@@ -406,7 +460,6 @@ List of available options in `ColumnOptions`:
 -   `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
     number of digits that are stored for the values. Used in some column types.
 -   `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), which represents the number of digits to the right of the decimal point and must not be greater than precision. Used in some column types.
--   `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
 -   `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
 -   `charset: string` - Defines a column character set. Not supported by all database types.
 -   `collation: string` - Defines a column collation.
