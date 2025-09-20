@@ -19,7 +19,7 @@ If you have a question or want community support:
 ## <a name="issue"></a> Found a security vulnerability?
 
 If you find a security vulnerability or something that should be discussed personally,
-please contact me within my [email](https://github.com/typeorm/typeorm/blob/master/package.json#L10).
+please contact me within my [email](https://github.com/typeorm/typeorm/blob/master/package.json#L17).
 
 ## <a name="issue"></a> Found a Bug?
 
