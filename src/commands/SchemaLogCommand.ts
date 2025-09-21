@@ -1,10 +1,9 @@
-import { DataSource } from "../data-source/DataSource"
-import { highlight } from "cli-highlight"
-import * as yargs from "yargs"
-import chalk from "chalk"
-import { PlatformTools } from "../platform/PlatformTools"
+import ansi from "ansis"
 import path from "path"
 import process from "process"
+import yargs from "yargs"
+import { DataSource } from "../data-source/DataSource"
+import { PlatformTools } from "../platform/PlatformTools"
 import { CommandUtils } from "./CommandUtils"
 
 /**
@@ -45,43 +44,29 @@ export class SchemaLogCommand implements yargs.CommandModule {
 
             if (sqlInMemory.upQueries.length === 0) {
                 console.log(
-                    chalk.yellow(
-                        "Your schema is up to date - there are no queries to be executed by schema synchronization.",
-                    ),
+                    ansi.yellow`Your schema is up to date - there are no queries to be executed by schema synchronization.`,
                 )
             } else {
-                const lengthSeparators = String(sqlInMemory.upQueries.length)
-                    .split("")
-                    .map((char) => "-")
-                    .join("")
-                console.log(
-                    chalk.yellow(
-                        "---------------------------------------------------------------" +
-                            lengthSeparators,
-                    ),
+                const lineSeparator = "".padStart(
+                    63 + String(sqlInMemory.upQueries.length).length,
+                    "-",
                 )
+                console.log(ansi.yellow(lineSeparator))
                 console.log(
-                    chalk.yellow.bold(
-                        `-- Schema synchronization will execute following sql queries (${chalk.white(
-                            sqlInMemory.upQueries.length.toString(),
-                        )}):`,
-                    ),
+                    ansi.yellow
+                        .bold`-- Schema synchronization will execute following sql queries (${ansi.white(
+                        sqlInMemory.upQueries.length.toString(),
+                    )}):`,
                 )
-                console.log(
-                    chalk.yellow(
-                        "---------------------------------------------------------------" +
-                            lengthSeparators,
-                    ),
-                )
+                console.log(ansi.yellow(lineSeparator))
 
                 sqlInMemory.upQueries.forEach((upQuery) => {
                     let sqlString = upQuery.query
                     sqlString = sqlString.trim()
-                    sqlString =
-                        sqlString.substr(-1) === ";"
-                            ? sqlString
-                            : sqlString + ";"
-                    console.log(highlight(sqlString))
+                    sqlString = sqlString.endsWith(";")
+                        ? sqlString
+                        : sqlString + ";"
+                    console.log(PlatformTools.highlightSql(sqlString))
                 })
             }
             await dataSource.destroy()

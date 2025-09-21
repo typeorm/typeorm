@@ -18,12 +18,12 @@ describe("github issues > #9381 The column option 《transformer》 affects the 
 
         await Promise.all(
             dataSources.map(async (dataSource) => {
-                let repository = dataSource.getRepository(ExampleEntity)
-                await repository.save(new ExampleEntity())
-                await repository.save(new ExampleEntity())
-                await repository.save(new ExampleEntity())
-                await repository.save(new ExampleEntity())
-                await repository.save(new ExampleEntity())
+                const repository = dataSource.getRepository(ExampleEntity)
+                await repository.save(new ExampleEntity(15))
+                await repository.save(new ExampleEntity(31))
+                await repository.save(new ExampleEntity(32))
+                await repository.save(new ExampleEntity(63))
+                await repository.save(new ExampleEntity(64))
                 const resultFindAll = await repository.find()
                 expect(resultFindAll.length).to.be.eql(5)
 
@@ -33,9 +33,11 @@ describe("github issues > #9381 The column option 《transformer》 affects the 
                 expect(resultTransformer).to.be.eql([
                     {
                         id: "2",
+                        value: 31,
                     },
                     {
                         id: "4",
+                        value: 63,
                     },
                 ])
                 const findEqualsTransformer = await repository.findOne({
@@ -43,7 +45,7 @@ describe("github issues > #9381 The column option 《transformer》 affects the 
                         id: "1",
                     },
                 })
-                expect(findEqualsTransformer).to.be.eql({ id: "1" })
+                expect(findEqualsTransformer).to.be.eql({ id: "1", value: 15 })
             }),
         )
 
@@ -60,7 +62,7 @@ describe("github issues > #9381 The column option 《transformer》 affects the 
 
         await Promise.all(
             dataSources.map(async (dataSource) => {
-                let repository = dataSource.getRepository(JsonExampleEntity)
+                const repository = dataSource.getRepository(JsonExampleEntity)
                 await repository.save(new JsonExampleEntity({ foo: "bar1" }))
                 await repository.save(new JsonExampleEntity({ foo: "bar2" }))
                 await repository.save(new JsonExampleEntity({ foo: "bar3" }))

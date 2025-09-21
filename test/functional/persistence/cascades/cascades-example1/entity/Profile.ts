@@ -10,13 +10,13 @@ export class Profile {
     @PrimaryColumn()
     id: number
 
-    @OneToOne((type) => User, (user) => user.profile, {
+    @OneToOne(() => User, (user) => user.profile, {
         nullable: false,
     })
     @JoinColumn()
     user: User
 
-    @OneToOne((type) => Photo, {
+    @OneToOne(() => Photo, {
         nullable: false,
         cascade: ["insert"],
     })

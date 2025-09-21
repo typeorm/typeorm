@@ -3,7 +3,7 @@
     "skip": false,
     "name": "mssql",
     "type": "mssql",
-    "host": "mssql",
+    "host": "localhost",
     "port": 1433,
     "username": "sa",
     "password": "Admin12345",
@@ -12,17 +12,5 @@
     "extra": {
       "trustServerCertificate": true
     }
-  },
-
-  {
-    "skip": true,
-    "name": "postgres",
-    "type": "postgres",
-    "host": "postgres",
-    "port": 5432,
-    "username": "postgres",
-    "password": "postgres",
-    "database": "postgres",
-    "logging": false
   }
 ]

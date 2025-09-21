@@ -36,7 +36,7 @@ describe("database schema > generated columns > sqlite", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
-                let table = await queryRunner.getTable("post")
+                const table = await queryRunner.getTable("post")
                 const virtualFullName =
                     table!.findColumnByName("virtualFullName")!
                 const storedFullName =
