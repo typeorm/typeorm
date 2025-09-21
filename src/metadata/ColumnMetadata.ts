@@ -817,7 +817,7 @@ export class ColumnMetadata {
             if (this.relationMetadata && this.referencedColumn) {
                 const relatedEntity = this.relationMetadata.getEntityValue(
                     entity,
-                    this.relationMetadata.isLazy,
+                    true,
                 )
                 if (
                     relatedEntity &&
