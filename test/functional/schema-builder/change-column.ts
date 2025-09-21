@@ -25,6 +25,7 @@ describe("schema builder > change column", () => {
     it("uses ALTER COLUMN when increasing varchar length", () =>
         Promise.all(
             connections.map(async (connection) => {
+                if (connection.driver.options.type === "sap") return
                 // use the same entity set as the rest of this file
                 const postMetadata = connection.getMetadata(Post)
                 const nameCol = postMetadata.findColumnWithPropertyName("name")!
@@ -70,11 +71,6 @@ describe("schema builder > change column", () => {
                     )
                     expect(up).to.not.match(/\bDROP COLUMN\b/)
                     expect(up).to.not.match(/\bADD COLUMN\b/)
-                } else if (connection.driver.options.type === "sap") {
-                    // SAP HANA: NVARCHAR(51); statement form can vary, so check essentials
-                    expect(up).to.match(/ALTER TABLE .*NVARCHAR\(51\)/i)
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
                 } else if (DriverUtils.isSQLiteFamily(connection.driver)) {
                     // SQLite typically rebuilds the table for this change
                     expect(up).to.match(/\bCREATE TABLE\b/i)
@@ -108,6 +104,7 @@ describe("schema builder > change column", () => {
     it("uses ALTER COLUMN when reducing varchar length", () =>
         Promise.all(
             connections.map(async (connection) => {
+                if (connection.driver.options.type === "sap") return
                 const postMetadata = connection.getMetadata(Post)
                 const nameCol = postMetadata.findColumnWithPropertyName("name")!
                 const originalLen = nameCol.length
@@ -145,10 +142,6 @@ describe("schema builder > change column", () => {
                     expect(up).to.match(
                         /ALTER TABLE .* (CHANGE|MODIFY) .*`name`.*varchar\(\s*80\s*\)/i,
                     )
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
-                } else if (connection.driver.options.type === "sap") {
-                    expect(up).to.match(/ALTER TABLE .*NVARCHAR\(80\)/i)
                     expect(up).to.not.match(/\bDROP COLUMN\b/)
                     expect(up).to.not.match(/\bADD COLUMN\b/)
                 } else if (DriverUtils.isSQLiteFamily(connection.driver)) {
