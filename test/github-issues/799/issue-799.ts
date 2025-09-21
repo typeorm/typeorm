@@ -13,9 +13,9 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
     before(() => rimraf(dirname(path)))
     after(() => rimraf(dirname(path)))
 
-    afterEach(() => {
-        if (dataSource && dataSource.isInitialized) {
-            dataSource.close()
+    afterEach(async () => {
+        if (dataSource?.isInitialized) {
+            await dataSource.destroy()
         }
     })
 

@@ -17,16 +17,16 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
-import { VersionUtils } from "../../util/VersionUtils"
+import { DriverUtils } from "../DriverUtils"
 import { Query } from "../Query"
 import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { PostgresDriver } from "./PostgresDriver"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -243,22 +243,19 @@ export class PostgresQueryRunner
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
-        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const broadcasterResult = new BroadcasterResult()
 
         try {
-            const queryStartTime = +new Date()
+            const queryStartTime = Date.now()
             const raw = await databaseConnection.query(query, parameters)
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
@@ -2186,6 +2183,31 @@ export class PostgresQueryRunner
                 )
             }
 
+            // update column collation
+            if (newColumn.collation !== oldColumn.collation) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${newColumn.type} COLLATE "${
+                            newColumn.collation
+                        }"`,
+                    ),
+                )
+
+                const oldCollation = oldColumn.collation
+                    ? `"${oldColumn.collation}"`
+                    : `pg_catalog."default"` // if there's no old collation, use default
+
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                    ),
+                )
+            }
+
             if (newColumn.generatedType !== oldColumn.generatedType) {
                 // Convert generated column data to normal column
                 if (
@@ -2505,7 +2527,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -2706,7 +2728,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
     ): Promise<void> {
-        for (const uniqueConstraint of uniqueConstraints) {
+        for (const uniqueConstraint of [...uniqueConstraints]) {
             await this.dropUniqueConstraint(tableOrName, uniqueConstraint)
         }
     }
@@ -2944,7 +2966,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
     ): Promise<void> {
-        for (const foreignKey of foreignKeys) {
+        for (const foreignKey of [...foreignKeys]) {
             await this.dropForeignKey(tableOrName, foreignKey)
         }
     }
@@ -3072,7 +3094,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         indices: TableIndex[],
     ): Promise<void> {
-        for (const index of indices) {
+        for (const index of [...indices]) {
             await this.dropIndex(tableOrName, index)
         }
     }
@@ -3108,7 +3130,6 @@ export class PostgresQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            const version = await this.getVersion()
             // drop views
             const selectViewDropsQuery =
                 `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
@@ -3122,7 +3143,7 @@ export class PostgresQueryRunner
 
             // drop materialized views
             // Note: materialized views introduced in Postgres 9.3
-            if (VersionUtils.isGreaterOrEqual(version, "9.3")) {
+            if (DriverUtils.isReleaseVersionOrGreater(this.driver, "9.3")) {
                 const selectMatViewDropsQuery =
                     `SELECT 'DROP MATERIALIZED VIEW IF EXISTS "' || schemaname || '"."' || matviewname || '" CASCADE;' as "query" ` +
                     `FROM "pg_matviews" WHERE "schemaname" IN (${schemaNamesString})`
@@ -3158,7 +3179,9 @@ export class PostgresQueryRunner
                 if (!isAnotherTransactionActive) {
                     await this.rollbackTransaction()
                 }
-            } catch (rollbackError) {}
+            } catch {
+                // no-op
+            }
             throw error
         }
     }
@@ -3332,7 +3355,7 @@ export class PostgresQueryRunner
             .join(" OR ")
         const columnsSql =
             `SELECT columns.*, pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) AS description, ` +
-            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype" AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type" ` +
+            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype"::text AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type" ` +
             `FROM "information_schema"."columns" ` +
             `LEFT JOIN "pg_catalog"."pg_attribute" AS "col_attr" ON "col_attr"."attname" = "columns"."column_name" ` +
             `AND "col_attr"."attrelid" = ( ` +
@@ -3467,6 +3490,18 @@ export class PostgresQueryRunner
                             const tableColumn = new TableColumn()
                             tableColumn.name = dbColumn["column_name"]
                             tableColumn.type = dbColumn["regtype"].toLowerCase()
+
+                            if (
+                                tableColumn.type === "vector" ||
+                                tableColumn.type === "halfvec"
+                            ) {
+                                const lengthMatch = dbColumn[
+                                    "format_type"
+                                ].match(/^(?:vector|halfvec)\((\d+)\)$/)
+                                if (lengthMatch && lengthMatch[1]) {
+                                    tableColumn.length = lengthMatch[1]
+                                }
+                            }
 
                             if (
                                 tableColumn.type === "numeric" ||
@@ -4155,9 +4190,21 @@ export class PostgresQueryRunner
     /**
      * Loads Postgres version.
      */
-    protected async getVersion(): Promise<string> {
-        const result = await this.query(`SELECT version()`)
-        return result[0]["version"].replace(/^PostgreSQL ([\d.]+) .*$/, "$1")
+    async getVersion(): Promise<string> {
+        // we use `SELECT version()` instead of `SHOW server_version` or `SHOW server_version_num`
+        // to maintain compatability with Amazon Redshift.
+        //
+        // see:
+        //  - https://github.com/typeorm/typeorm/pull/9319
+        //  - https://docs.aws.amazon.com/redshift/latest/dg/c_unsupported-postgresql-functions.html
+        const result: [{ version: string }] = await this.query(
+            `SELECT version()`,
+        )
+
+        // Examples:
+        // Postgres: "PostgreSQL 14.10 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 8.5.0 20210514 (Red Hat 8.5.0-20), 64-bit"
+        // Yugabyte: "PostgreSQL 11.2-YB-2.18.1.0-b0 on x86_64-pc-linux-gnu, compiled by clang version 15.0.3 (https://github.com/yugabyte/llvm-project.git 0b8d1183745fd3998d8beffeec8cbe99c1b20529), 64-bit"
+        return result[0].version.replace(/^PostgreSQL ([\d.]+).*$/, "$1")
     }
 
     /**
@@ -4281,7 +4328,7 @@ export class PostgresQueryRunner
     ): Query {
         if (!enumName) enumName = this.buildEnumName(table, column)
         const enumValues = column
-            .enum!.map((value) => `'${value.replace("'", "''")}'`)
+            .enum!.map((value) => `'${value.replaceAll("'", "''")}'`)
             .join(", ")
         return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`)
     }

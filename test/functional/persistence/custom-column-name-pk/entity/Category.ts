@@ -14,7 +14,7 @@ export class Category {
     @Column()
     name: string
 
-    @OneToMany((type) => Post, (post) => post.category, {
+    @OneToMany(() => Post, (post) => post.category, {
         cascade: ["insert"],
     })
     posts: Post[]

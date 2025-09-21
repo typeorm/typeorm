@@ -305,7 +305,7 @@ export class CockroachDriver implements Driver {
         }
 
         if (!this.database || !this.searchSchema) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
             if (!this.database) {
                 this.database = await queryRunner.getCurrentDatabase()
@@ -346,8 +346,9 @@ export class CockroachDriver implements Driver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("cockroachdb"))
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("cockroachdb")
+        }
 
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
@@ -461,16 +462,14 @@ export class CockroachDriver implements Driver {
 
                 // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
                 value = (value as string)
-                    .substr(1, (value as string).length - 2)
+                    .slice(1, -1)
                     .split(",")
                     .map((val) => {
                         // replace double quotes from the beginning and from the end
                         if (val.startsWith(`"`) && val.endsWith(`"`))
                             val = val.slice(1, -1)
-                        // replace double escaped backslash to single escaped e.g. \\\\ -> \\
-                        val = val.replace(/(\\\\)/g, "\\")
-                        // replace escaped double quotes to non-escaped e.g. \"asd\" -> "asd"
-                        return val.replace(/(\\")/g, '"')
+                        // replace escaped backslash and double quotes
+                        return val.replace(/\\(\\|")/g, "$1")
                     })
 
                 // convert to number if that exists in possible enum options
@@ -996,10 +995,10 @@ export class CockroachDriver implements Driver {
     loadStreamDependency() {
         try {
             return PlatformTools.load("pg-query-stream")
-        } catch (e) {
+        } catch {
             // todo: better error for browser env
             throw new TypeORMError(
-                `To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`,
+                `To use streams you should install pg-query-stream package. Please run "npm i pg-query-stream".`,
             )
         }
     }

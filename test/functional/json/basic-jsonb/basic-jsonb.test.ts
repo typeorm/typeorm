@@ -1,12 +1,12 @@
-import "../../../utils/test-setup"
 import { expect } from "chai"
-import { Record } from "./entity/Record"
 import { DataSource } from "../../../../src"
+import "../../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
+import { Record } from "./entity/Record"
 
 describe("jsonb type", () => {
     let connections: DataSource[]
@@ -15,7 +15,6 @@ describe("jsonb type", () => {
             (connections = await createTestingConnections({
                 entities: [Record],
                 enabledDrivers: ["postgres"], // because only postgres supports jsonb type
-                // logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

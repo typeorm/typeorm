@@ -135,7 +135,7 @@ export class OracleDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    supportedUpsertTypes: UpsertType[] = []
+    supportedUpsertTypes: UpsertType[] = ["merge-into"]
 
     /**
      * Returns list of supported onDelete types by driver.
@@ -318,7 +318,7 @@ export class OracleDriver implements Driver {
         }
 
         if (!this.database || !this.schema) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
             if (!this.database) {
                 this.database = await queryRunner.getCurrentDatabase()
@@ -343,8 +343,9 @@ export class OracleDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("oracle"))
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("oracle")
+        }
 
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
@@ -385,16 +386,11 @@ export class OracleDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
-        const parameterIndexMap = new Map<string, number>()
         sql = sql.replace(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
                     return full
-                }
-
-                if (parameterIndexMap.has(key)) {
-                    return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
                 const value: any = parameters[key]
@@ -420,7 +416,7 @@ export class OracleDriver implements Driver {
                 }
 
                 escapedParameters.push(value)
-                parameterIndexMap.set(key, escapedParameters.length)
+
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems

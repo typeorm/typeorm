@@ -359,8 +359,8 @@ export class MigrationExecutor {
                         successMigrations.push(migration)
                         this.connection.logger.logSchemaBuild(
                             `Migration ${migration.name} has been ${
-                                this.fake ? "(fake)" : ""
-                            } executed successfully.`,
+                                this.fake ? "(fake) " : ""
+                            }executed successfully.`,
                         )
                     })
             }
@@ -466,8 +466,8 @@ export class MigrationExecutor {
             await this.deleteExecutedMigration(queryRunner, migrationToRevert)
             this.connection.logger.logSchemaBuild(
                 `Migration ${migrationToRevert.name} has been ${
-                    this.fake ? "(fake)" : ""
-                } reverted successfully.`,
+                    this.fake ? "(fake) " : ""
+                }reverted successfully.`,
             )
 
             // commit transaction if we started it
