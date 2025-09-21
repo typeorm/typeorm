@@ -11,8 +11,7 @@ import { Session as changedEntity } from "./entity/sessionchanged"
 
 describe("github issues > #6714 Migration:generate issue with onUpdate using mariadb 10.4", () => {
     it("dont change anything", async () => {
-        let connections: DataSource[]
-        connections = await createTestingConnections({
+        const connections: DataSource[] = await createTestingConnections({
             entities: [baseEntity],
             schemaCreate: false,
             dropSchema: true,

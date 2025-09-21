@@ -62,7 +62,7 @@ export class Message {
     @PrimaryGeneratedColumn()
     id: number
 
-    @ManyToOne((type) => User, (user) => user.senderMessages, { eager: true })
+    @ManyToOne(() => User, (user) => user.senderMessages, { eager: true })
     sender: User
 
     @Column()
@@ -74,7 +74,7 @@ export class Message {
     @Column({ nullable: true })
     type: MessageType
 
-    @OneToMany((type) => Recipient, (recipient) => recipient.message, {
+    @OneToMany(() => Recipient, (recipient) => recipient.message, {
         cascade: true,
         eager: true,
     })
@@ -84,6 +84,6 @@ export class Message {
     @JoinTable()
     holders: User[]
 
-    @ManyToOne((type) => Chat, (chat) => chat.messages)
+    @ManyToOne(() => Chat, (chat) => chat.messages)
     chat: Chat
 }

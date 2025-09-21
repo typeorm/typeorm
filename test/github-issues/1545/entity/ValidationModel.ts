@@ -9,6 +9,6 @@ export class ValidationModel {
     })
     validation: number
 
-    @OneToMany((type) => DataModel, (dataModel) => dataModel.validations)
+    @OneToMany(() => DataModel, (dataModel) => dataModel.validations)
     dataModel: DataModel[]
 }

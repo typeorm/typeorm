@@ -13,10 +13,10 @@ export class RecordContext extends BaseEntity {
     @PrimaryColumn()
     userId: string
 
-    @ManyToOne((type) => Record, (record) => record.contexts)
+    @ManyToOne(() => Record, (record) => record.contexts)
     public readonly record: Record
 
-    @ManyToOne((type) => User, (user) => user.contexts)
+    @ManyToOne(() => User, (user) => user.contexts)
     public readonly user: User
 
     @Column()

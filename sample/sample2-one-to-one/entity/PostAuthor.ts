@@ -14,6 +14,6 @@ export class PostAuthor {
     @Column()
     name: string
 
-    @OneToOne((type) => Post, (post) => post.author)
+    @OneToOne(() => Post, (post) => post.author)
     post: Post
 }

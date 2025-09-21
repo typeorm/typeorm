@@ -262,7 +262,7 @@ export class EmbeddedMetadata {
         if (connection.driver.options.type === "mongodb")
             return this.propertyName
 
-        let prefixes: string[] = []
+        const prefixes: string[] = []
         if (this.parentEmbeddedMetadata)
             prefixes.push(this.parentEmbeddedMetadata.buildPrefix(connection))
 

@@ -20,7 +20,7 @@ export class PostDetails {
     @Column()
     metadata: string
 
-    @OneToOne((type) => Post, (post) => post.details, {
+    @OneToOne(() => Post, (post) => post.details, {
         cascade: true,
     })
     post: Post

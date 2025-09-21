@@ -32,9 +32,9 @@ describe("github issues > #2588 - createQueryBuilder always does left joins on r
                 post.title = "My blog post"
                 post = await postRepo.save(post)
 
-                let reviews: PostReview[] = []
+                const reviews: PostReview[] = []
                 for (let i = 1; i <= 5; i++) {
-                    let review = new PostReview()
+                    const review = new PostReview()
                     review.comment = `I give it a ${i}`
                     review.rating = i
                     review.post = post

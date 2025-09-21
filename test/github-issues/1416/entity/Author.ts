@@ -14,6 +14,6 @@ export class Author {
     @Column()
     name: string
 
-    @OneToMany((type) => Photo, (photo) => photo.author)
+    @OneToMany(() => Photo, (photo) => photo.author)
     photos: Photo[]
 }
