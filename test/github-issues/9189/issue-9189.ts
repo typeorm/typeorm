@@ -14,14 +14,12 @@ describe("github issues > #9189 check invalid constraint options", () => {
     it("should throw an exception, when invalid option is configured", async () => {
         let err
         try {
-            await Promise.all(
-                (dataSources = await createTestingConnections({
-                    entities: [__dirname + "/entity/*{.js,.ts}"],
-                    schemaCreate: false,
-                    dropSchema: true,
-                    enabledDrivers: ["oracle"],
-                })),
-            )
+            dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                schemaCreate: false,
+                dropSchema: true,
+                enabledDrivers: ["oracle"],
+            })
         } catch (e) {
             err = e
         }
