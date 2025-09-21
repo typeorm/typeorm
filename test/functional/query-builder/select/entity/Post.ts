@@ -34,7 +34,7 @@ export class Post {
     @JoinColumn()
     heroImage: HeroImage
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     category: Category
 
     @ManyToMany(() => Tag, (tag) => tag.posts)

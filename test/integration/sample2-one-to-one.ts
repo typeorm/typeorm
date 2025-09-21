@@ -211,14 +211,15 @@ describe("one-to-one", function () {
             expectedPost.details!.comment = savedPost.details!.comment
             expectedPost.details!.metadata = savedPost.details!.metadata
 
-            const findOne = () => postRepository.findOne({
+            const findOne = () =>
+                postRepository.findOne({
                     where: {
-                        id: savedPost.id
+                        id: savedPost.id,
                     },
                     relations: {
-                        details: true
+                        details: true,
                     },
-                    relationLoadStrategy: "query"
+                    relationLoadStrategy: "query",
                 })
 
             const posts = await Promise.all([
@@ -234,7 +235,7 @@ describe("one-to-one", function () {
                 findOne(),
             ])
 
-            posts.forEach(post => {
+            posts.forEach((post) => {
                 expect(post).not.to.be.null
                 post!.should.eql(expectedPost)
             })

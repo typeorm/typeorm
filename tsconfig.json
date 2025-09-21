@@ -1,36 +1,26 @@
 {
-    "extends": "@tsconfig/node16/tsconfig.json",
-    "compilerOptions": {
-        "allowSyntheticDefaultImports": true,
-        "declaration": true,
-        "downlevelIteration": true,
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "importHelpers": true,
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "noFallthroughCasesInSwitch": true,
-        "noImplicitAny": true,
-        "noImplicitReturns": true,
-        "noUnusedLocals": true,
-        "outDir": "build/compiled",
-        "pretty": true,
-        "sourceMap": true,
-        "strictFunctionTypes": false,
-        "strictPropertyInitialization": false,
-        "stripInternal": true,
-        "useUnknownInCatchVariables": false
-    },
-    "include": [
-      "sample",
-      "src",
-      "test",
-      "*.ts"
-    ],
-    "exclude": [
-        "build",
-        "node_modules",
-        "temp",
-        "tmp"
-    ]
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "downlevelIteration": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "outDir": "build/compiled",
+    "pretty": true,
+    "sourceMap": true,
+    "strictFunctionTypes": false,
+    "strictPropertyInitialization": false,
+    "stripInternal": true,
+    "useUnknownInCatchVariables": false
+  },
+  "exclude": ["build", "node_modules", "temp", "tmp", "sample/playground"],
+  "extends": "@tsconfig/node16/tsconfig.json",
+  "include": ["sample", "src", "test", "*.ts"]
 }

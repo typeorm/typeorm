@@ -12,44 +12,44 @@ import sinon from "sinon"
 import { expect } from "chai"
 
 describe("entity subscriber > transaction flow", () => {
-    let beforeTransactionStart = sinon.spy()
-    let afterTransactionStart = sinon.spy()
-    let afterInsert = sinon.spy()
-    let beforeTransactionCommit = sinon.spy()
-    let afterTransactionCommit = sinon.spy()
-    let beforeTransactionRollback = sinon.spy()
-    let afterTransactionRollback = sinon.spy()
+    const beforeTransactionStart = sinon.spy()
+    const afterTransactionStart = sinon.spy()
+    const afterInsert = sinon.spy()
+    const beforeTransactionCommit = sinon.spy()
+    const afterTransactionCommit = sinon.spy()
+    const beforeTransactionRollback = sinon.spy()
+    const afterTransactionRollback = sinon.spy()
     let afterInsertQueryRunnerData: any = undefined
 
     @EventSubscriber()
     class PostSubscriber implements EntitySubscriberInterface {
-        beforeTransactionStart() {
-            if (beforeTransactionStart) beforeTransactionStart(arguments)
+        beforeTransactionStart(...args: any[]) {
+            if (beforeTransactionStart) beforeTransactionStart(...args)
         }
 
-        afterTransactionStart() {
-            if (afterTransactionStart) afterTransactionStart(arguments)
+        afterTransactionStart(...args: any[]) {
+            if (afterTransactionStart) afterTransactionStart(...args)
         }
 
-        afterInsert() {
-            afterInsertQueryRunnerData = arguments[0].queryRunner.data
-            if (afterInsert) afterInsert(arguments)
+        afterInsert(...args: any[]) {
+            afterInsertQueryRunnerData = args[0].queryRunner.data
+            if (afterInsert) afterInsert(...args)
         }
 
-        beforeTransactionCommit() {
-            if (beforeTransactionCommit) beforeTransactionCommit(arguments)
+        beforeTransactionCommit(...args: any[]) {
+            if (beforeTransactionCommit) beforeTransactionCommit(...args)
         }
 
-        afterTransactionCommit() {
-            if (afterTransactionCommit) afterTransactionCommit(arguments)
+        afterTransactionCommit(...args: any[]) {
+            if (afterTransactionCommit) afterTransactionCommit(...args)
         }
 
-        beforeTransactionRollback() {
-            if (beforeTransactionRollback) beforeTransactionRollback(arguments)
+        beforeTransactionRollback(...args: any[]) {
+            if (beforeTransactionRollback) beforeTransactionRollback(...args)
         }
 
-        afterTransactionRollback() {
-            if (afterTransactionRollback) afterTransactionRollback(arguments)
+        afterTransactionRollback(...args: any[]) {
+            if (afterTransactionRollback) afterTransactionRollback(...args)
         }
     }
 
@@ -66,7 +66,7 @@ describe("entity subscriber > transaction flow", () => {
     after(() => closeTestingConnections(connections))
 
     it("transactionStart", async () => {
-        for (let connection of connections) {
+        for (const connection of connections) {
             if (
                 connection.driver.options.type === "mssql" ||
                 connection.driver.options.type === "spanner"
@@ -153,7 +153,7 @@ describe("entity subscriber > transaction flow", () => {
     })
 
     it("transactionCommit", async () => {
-        for (let connection of connections) {
+        for (const connection of connections) {
             if (
                 connection.driver.options.type === "mssql" ||
                 connection.driver.options.type === "spanner"
@@ -222,7 +222,7 @@ describe("entity subscriber > transaction flow", () => {
     })
 
     it("transactionRollback", async () => {
-        for (let connection of connections) {
+        for (const connection of connections) {
             if (
                 connection.driver.options.type === "mssql" ||
                 connection.driver.options.type === "spanner"
@@ -297,7 +297,7 @@ describe("entity subscriber > transaction flow", () => {
         const example = new Example()
         const data = { hello: ["world"] }
 
-        for (let connection of connections) {
+        for (const connection of connections) {
             beforeTransactionCommit.resetHistory()
             afterTransactionCommit.resetHistory()
             afterInsert.resetHistory()
