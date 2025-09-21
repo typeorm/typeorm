@@ -1,9 +1,17 @@
-import { Entity, ManyToOne, PrimaryGeneratedColumn } from "../../../../src"
+import {
+    Column,
+    Entity,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+} from "../../../../src"
 
 @Entity()
 export class ThirdElement {
     @PrimaryGeneratedColumn()
     id: number
+    // a dummy field to prevent SAP failure on rows without non-generated values
+    @Column()
+    dummyColumn: number = 0
 }
 
 @Entity()
@@ -13,6 +21,9 @@ export class SecondElement {
 
     @ManyToOne(() => ThirdElement)
     third: ThirdElement
+    // a dummy field to prevent SAP failure on rows without non-generated values
+    @Column()
+    dummyColumn: number = 0
 }
 @Entity()
 export class FirstElement {
@@ -21,4 +32,7 @@ export class FirstElement {
 
     @ManyToOne(() => SecondElement, { eager: true })
     second: SecondElement
+    // a dummy field to prevent SAP failure on rows without non-generated values
+    @Column()
+    dummyColumn: number = 0
 }

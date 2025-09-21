@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { FirstElement } from "./entity/entities"
+import { FirstElement, SecondElement, ThirdElement } from "./entity/entities"
 
 describe("DriverUtils", () => {
     describe("parse mongo url", () => {
@@ -58,6 +58,14 @@ describe("DriverUtils", () => {
         it("should not cause SQL syntax errors in raw queries by generating hash aliases starting with digits", async () => {
             return Promise.all(
                 connections.map(async (connection) => {
+                    const thirdElement: ThirdElement = new ThirdElement()
+                    const secondElement: SecondElement = new SecondElement()
+                    const firstElement: FirstElement = new FirstElement()
+                    secondElement.third = thirdElement
+                    firstElement.second = secondElement
+                    await connection.manager.save(thirdElement)
+                    await connection.manager.save(secondElement)
+                    await connection.manager.save(firstElement)
                     await connection.manager.findOne(FirstElement, {
                         where: {
                             second: {
