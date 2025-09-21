@@ -15,7 +15,6 @@ describe("find options > find operators > ArrayContainedBy", () => {
             (connections = await createTestingConnections({
                 __dirname,
                 enabledDrivers: ["postgres", "cockroachdb"],
-                // logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

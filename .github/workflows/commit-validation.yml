@@ -1,0 +1,76 @@
+name: Commit Validation
+on:
+  push:
+    branches:
+      - "**"
+    paths-ignore:
+      - "docs/**"
+  pull_request:
+    branches:
+      - "**"
+    paths-ignore:
+      - "docs/**"
+  workflow_dispatch:
+
+jobs:
+  formatting:
+    if: ${{ (github.event_name != 'pull_request') || (github.event.pull_request.head.repo.fork) }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:ci
+
+  build:
+    if: ${{ (github.event_name != 'pull_request') || (github.event.pull_request.head.repo.fork) }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm run compile
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: build/
+          retention-days: 1
+
+  tests-linux:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18, 20]
+    uses: ./.github/workflows/tests-linux.yml
+    with:
+      node-version: ${{matrix.node-version}}
+
+  tests-windows:
+    needs: build
+    uses: ./.github/workflows/tests-windows.yml
+    with:
+      node-version: 20
+
+  # Run with most databases possible to provide the coverage of the tests
+  coverage:
+    runs-on: ubuntu-latest
+    needs: [tests-linux, tests-windows]
+    steps:
+      - name: Coveralls Finished
+        uses: coverallsapp/github-action@v2
+        with:
+          parallel-finished: true

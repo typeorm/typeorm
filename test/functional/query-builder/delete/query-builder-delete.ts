@@ -120,9 +120,6 @@ describe("query builder > delete", () => {
     it("should return correct delete result", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // don't run test for SAP Hana as it won't return these
-                if (connection.name === "sap") return
-
                 // save some users
                 const user1 = new User()
                 user1.name = "John Doe"

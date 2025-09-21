@@ -22,24 +22,23 @@ describe("github issues > #8026 Inserting a value for a column that has a relati
 
     after(() => closeTestingConnections(connections))
 
-    it("it should include a related date column in the constructed query", async () =>
-        await Promise.all(
-            connections.map(async (connection) => {
-                let queryBuilder = await connection.createQueryBuilder()
+    it("it should include a related date column in the constructed query", () => {
+        for (const connection of connections) {
+            const queryBuilder = connection.createQueryBuilder()
 
-                const insertValue = {
-                    scheduled_departure_time: new Date(),
-                    scheduled_arrival_time: new Date(),
-                }
+            const insertValue = {
+                scheduled_departure_time: new Date(),
+                scheduled_arrival_time: new Date(),
+            }
 
-                const [query, params] = await queryBuilder
-                    .insert()
-                    .into(ScheduledSailing)
-                    .values([insertValue])
-                    .getQueryAndParameters()
+            const [query, params] = queryBuilder
+                .insert()
+                .into(ScheduledSailing)
+                .values([insertValue])
+                .getQueryAndParameters()
 
-                expect(query.includes("DEFAULT")).to.be.false
-                expect(params).length(2)
-            }),
-        ))
+            expect(query).not.to.contain("DEFAULT")
+            expect(params).length(2)
+        }
+    })
 })

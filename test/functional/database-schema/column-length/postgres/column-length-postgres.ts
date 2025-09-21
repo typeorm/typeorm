@@ -44,7 +44,7 @@ describe("database schema > column length > postgres", () => {
     it("all types should update their size", () =>
         Promise.all(
             connections.map(async (connection) => {
-                let metadata = connection.getMetadata(Post)
+                const metadata = connection.getMetadata(Post)
                 metadata.findColumnWithPropertyName(
                     "characterVarying",
                 )!.length = "100"

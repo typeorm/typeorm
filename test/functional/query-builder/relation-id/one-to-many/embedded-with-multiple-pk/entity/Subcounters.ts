@@ -10,7 +10,7 @@ export class Subcounters {
     @Column()
     watches: number
 
-    @OneToMany((type) => User, (user) => user.post)
+    @OneToMany(() => User, (user) => user.post)
     watchedUsers: User[]
 
     watchedUserIds: number[]

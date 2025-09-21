@@ -21,14 +21,14 @@ export class Post {
     @Column()
     text: string
 
-    @OneToOne((type) => PostAuthor, (author) => author.post, {
+    @OneToOne(() => PostAuthor, (author) => author.post, {
         cascade: true,
     })
     @JoinColumn() // comment this and you'll get an error because JoinColumn must be at least on one side of the one-to-one relationship
     // @JoinTable() // uncomment this and you'll get an error because JoinTable is not allowed here (only many-to-many)
     author: PostAuthor
 
-    @OneToMany((type) => PostAuthor, (author) => author.editedPost, {
+    @OneToMany(() => PostAuthor, (author) => author.editedPost, {
         cascade: true,
     })
     // @JoinColumn() // uncomment this and you'll get an error, because JoinColumn is not allowed here (only many-to-one/one-to-one)

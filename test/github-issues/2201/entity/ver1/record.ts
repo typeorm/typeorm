@@ -9,6 +9,6 @@ export class Record extends BaseEntity {
     @PrimaryColumn()
     public id: string
 
-    @OneToMany((type) => RecordContext, (context) => context.record)
+    @OneToMany(() => RecordContext, (context) => context.record)
     public contexts: RecordContext[]
 }
