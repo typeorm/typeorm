@@ -10,6 +10,6 @@ export class Account {
     @PrimaryGeneratedColumn()
     id: number
 
-    @ManyToOne((type) => User)
+    @ManyToOne(() => User)
     user: User
 }

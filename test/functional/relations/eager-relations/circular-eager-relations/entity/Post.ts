@@ -12,6 +12,6 @@ export class Post {
     @Column()
     title: string
 
-    @ManyToOne((type) => User, { eager: true })
+    @ManyToOne(() => User, { eager: true })
     author: User
 }

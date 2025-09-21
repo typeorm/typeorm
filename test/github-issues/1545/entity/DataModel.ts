@@ -27,7 +27,7 @@ export class DataModel {
     })
     validations: ValidationModel
 
-    @ManyToOne((type) => MainModel, (main) => main.dataModel)
+    @ManyToOne(() => MainModel, (main) => main.dataModel)
     @JoinColumn({
         name: "mainId",
         referencedColumnName: "id",

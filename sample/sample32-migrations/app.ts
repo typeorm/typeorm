@@ -20,15 +20,15 @@ dataSource
     .initialize()
     .then(async (dataSource) => {
         // first insert all the data
-        let author = new Author()
+        const author = new Author()
         author.firstName = "Umed"
         author.lastName = "Khudoiberdiev"
 
-        let post = new Post()
+        const post = new Post()
         post.title = "hello"
         post.author = author
 
-        let postRepository = dataSource.getRepository(Post)
+        const postRepository = dataSource.getRepository(Post)
 
         await postRepository.save(post)
         console.log(
