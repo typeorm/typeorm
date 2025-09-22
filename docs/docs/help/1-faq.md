@@ -178,7 +178,7 @@ module.exports = {
 
 ### Bundling Migration Files
 
-By default Webpack tries to bundle everything into one file. This can be problematic when your project has migration files which are meant to be executed after bundled code is deployed to production. To make sure all your migrations can be recognized and executed by TypeORM, you may need to use "Object Syntax" for the `entry` configuration for the migration files only.
+By default Webpack tries to bundle everything into one file. This can be problematic when your project has migration files which are meant to be executed after bundled code is deployed to production. To make sure all your [migrations](../migrations/01-why.md) can be recognized and executed by TypeORM, you may need to use "Object Syntax" for the `entry` configuration for the migration files only.
 
 ```javascript
 const glob = require("glob")
@@ -210,7 +210,7 @@ module.exports = {
 }
 ```
 
-Also, since Webpack 4, when using `mode: 'production'`, files are optimized by default which includes mangling your code in order to minimize file sizes. This breaks the migrations because TypeORM relies on their names to determine which has already been executed. You may disable minimization completely by adding:
+Also, since Webpack 4, when using `mode: 'production'`, files are optimized by default which includes mangling your code in order to minimize file sizes. This breaks the [migrations](../migrations/01-why.md) because TypeORM relies on their names to determine which has already been executed. You may disable minimization completely by adding:
 
 ```javascript
 module.exports = {
@@ -258,7 +258,7 @@ module.exports = {
 
 ## How to use Vite for the backend?
 
-Using TypeORM in a Vite project is pretty straight forward. However, when you use migrations, you will run into "...migration name is wrong. Migration class name should have a
+Using TypeORM in a Vite project is pretty straight forward. However, when you use [migrations](../migrations/01-why.md), you will run into "...migration name is wrong. Migration class name should have a
 JavaScript timestamp appended." errors when running the production build.
 On production builds, files are [optimized by default](https://vite.dev/config/build-options#build-minify) which includes mangling your code in order to minimize file sizes.
 
