@@ -1,4 +1,4 @@
-## Vite
+# Vite
 
 Using TypeORM in a Vite project is pretty straight forward. However, when you use [migrations](../migrations/01-why.md), you will run into "...migration name is wrong. Migration class name should have a
 JavaScript timestamp appended." errors when running the production build.
