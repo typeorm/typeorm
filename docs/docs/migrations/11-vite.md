@@ -1,6 +1,6 @@
 # Vite
 
-Using TypeORM in a Vite project is pretty straight forward. However, when you use [migrations](../migrations/01-why.md), you will run into "...migration name is wrong. Migration class name should have a
+Using TypeORM in a [Vite](https://vite.dev) project is pretty straight forward. However, when you use [migrations](../migrations/01-why.md), you will run into "...migration name is wrong. Migration class name should have a
 JavaScript timestamp appended." errors when running the production build.
 On production builds, files are [optimized by default](https://vite.dev/config/build-options#build-minify) which includes mangling your code in order to minimize file sizes.
 
