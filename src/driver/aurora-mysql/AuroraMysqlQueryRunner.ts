@@ -1,28 +1,28 @@
+import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { TypeORMError } from "../../error"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { ReadStream } from "../../platform/PlatformTools"
+import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
+import { TableCheck } from "../../schema-builder/table/TableCheck"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
-import { View } from "../../schema-builder/view/View"
-import { Query } from "../Query"
-import { AuroraMysqlDriver } from "./AuroraMysqlDriver"
-import { ReadStream } from "../../platform/PlatformTools"
-import { OrmUtils } from "../../util/OrmUtils"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
-import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
-import { ColumnType } from "../types/ColumnTypes"
-import { TableCheck } from "../../schema-builder/table/TableCheck"
-import { IsolationLevel } from "../types/IsolationLevel"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
-import { TypeORMError } from "../../error"
-import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import { Query } from "../Query"
+import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
+import { IsolationLevel } from "../types/IsolationLevel"
+import { MetadataTableType } from "../types/MetadataTableType"
+import { AuroraMysqlDriver } from "./AuroraMysqlDriver"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -1414,7 +1414,7 @@ export class AuroraMysqlQueryRunner
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -2062,357 +2062,341 @@ export class AuroraMysqlQueryRunner
         ])
 
         // create tables for loaded tables
-        return Promise.all(
-            dbTables.map(async (dbTable) => {
-                const table = new Table()
+        return dbTables.map((dbTable) => {
+            const table = new Table()
 
-                const dbCollation = dbCollations.find(
-                    (coll) => coll["SCHEMA_NAME"] === dbTable["TABLE_SCHEMA"],
-                )!
-                const defaultCollation = dbCollation["COLLATION"]
-                const defaultCharset = dbCollation["CHARSET"]
+            const dbCollation = dbCollations.find(
+                (coll) => coll["SCHEMA_NAME"] === dbTable["TABLE_SCHEMA"],
+            )!
+            const defaultCollation = dbCollation["COLLATION"]
+            const defaultCharset = dbCollation["CHARSET"]
 
-                // We do not need to join database name, when database is by default.
-                const db =
-                    dbTable["TABLE_SCHEMA"] === currentDatabase
-                        ? undefined
-                        : dbTable["TABLE_SCHEMA"]
-                table.database = dbTable["TABLE_SCHEMA"]
-                table.name = this.driver.buildTableName(
-                    dbTable["TABLE_NAME"],
-                    undefined,
-                    db,
+            // We do not need to join database name, when database is by default.
+            const db =
+                dbTable["TABLE_SCHEMA"] === currentDatabase
+                    ? undefined
+                    : dbTable["TABLE_SCHEMA"]
+            table.database = dbTable["TABLE_SCHEMA"]
+            table.name = this.driver.buildTableName(
+                dbTable["TABLE_NAME"],
+                undefined,
+                db,
+            )
+
+            // create columns from the loaded columns
+            table.columns = dbColumns
+                .filter(
+                    (dbColumn) =>
+                        dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                        dbColumn["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"],
                 )
-
-                // create columns from the loaded columns
-                table.columns = dbColumns
-                    .filter(
-                        (dbColumn) =>
-                            dbColumn["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
-                            dbColumn["TABLE_SCHEMA"] ===
-                                dbTable["TABLE_SCHEMA"],
-                    )
-                    .map((dbColumn) => {
-                        const columnUniqueIndices = dbIndices.filter(
-                            (dbIndex) => {
-                                return (
-                                    dbIndex["TABLE_NAME"] ===
-                                        dbTable["TABLE_NAME"] &&
-                                    dbIndex["TABLE_SCHEMA"] ===
-                                        dbTable["TABLE_SCHEMA"] &&
-                                    dbIndex["COLUMN_NAME"] ===
-                                        dbColumn["COLUMN_NAME"] &&
-                                    parseInt(dbIndex["NON_UNIQUE"], 10) === 0
-                                )
-                            },
+                .map((dbColumn) => {
+                    const columnUniqueIndices = dbIndices.filter((dbIndex) => {
+                        return (
+                            dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                            dbIndex["TABLE_SCHEMA"] ===
+                                dbTable["TABLE_SCHEMA"] &&
+                            dbIndex["COLUMN_NAME"] ===
+                                dbColumn["COLUMN_NAME"] &&
+                            parseInt(dbIndex["NON_UNIQUE"], 10) === 0
                         )
+                    })
 
-                        const tableMetadata =
-                            this.connection.entityMetadatas.find(
-                                (metadata) =>
-                                    this.getTablePath(table) ===
-                                    this.getTablePath(metadata),
-                            )
-                        const hasIgnoredIndex =
-                            columnUniqueIndices.length > 0 &&
-                            tableMetadata &&
-                            tableMetadata.indices.some((index) => {
-                                return columnUniqueIndices.some(
-                                    (uniqueIndex) => {
-                                        return (
-                                            index.name ===
-                                                uniqueIndex["INDEX_NAME"] &&
-                                            index.synchronize === false
-                                        )
-                                    },
+                    const tableMetadata = this.connection.entityMetadatas.find(
+                        (metadata) =>
+                            this.getTablePath(table) ===
+                            this.getTablePath(metadata),
+                    )
+                    const hasIgnoredIndex =
+                        columnUniqueIndices.length > 0 &&
+                        tableMetadata &&
+                        tableMetadata.indices.some((index) => {
+                            return columnUniqueIndices.some((uniqueIndex) => {
+                                return (
+                                    index.name === uniqueIndex["INDEX_NAME"] &&
+                                    index.synchronize === false
                                 )
                             })
+                        })
 
-                        const isConstraintComposite = columnUniqueIndices.every(
-                            (uniqueIndex) => {
-                                return dbIndices.some(
-                                    (dbIndex) =>
-                                        dbIndex["INDEX_NAME"] ===
-                                            uniqueIndex["INDEX_NAME"] &&
-                                        dbIndex["COLUMN_NAME"] !==
-                                            dbColumn["COLUMN_NAME"],
-                                )
-                            },
-                        )
-
-                        const tableColumn = new TableColumn()
-                        tableColumn.name = dbColumn["COLUMN_NAME"]
-                        tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase()
-
-                        // Unsigned columns are handled differently when it comes to width.
-                        // Hence, we need to set the unsigned attribute before we check the width.
-                        tableColumn.unsigned = tableColumn.zerofill
-                            ? true
-                            : dbColumn["COLUMN_TYPE"].indexOf("unsigned") !== -1
-
-                        if (
-                            this.driver.withWidthColumnTypes.indexOf(
-                                tableColumn.type as ColumnType,
-                            ) !== -1
-                        ) {
-                            const width = dbColumn["COLUMN_TYPE"].substring(
-                                dbColumn["COLUMN_TYPE"].indexOf("(") + 1,
-                                dbColumn["COLUMN_TYPE"].indexOf(")"),
+                    const isConstraintComposite = columnUniqueIndices.every(
+                        (uniqueIndex) => {
+                            return dbIndices.some(
+                                (dbIndex) =>
+                                    dbIndex["INDEX_NAME"] ===
+                                        uniqueIndex["INDEX_NAME"] &&
+                                    dbIndex["COLUMN_NAME"] !==
+                                        dbColumn["COLUMN_NAME"],
                             )
-                            tableColumn.width =
-                                width &&
-                                !this.isDefaultColumnWidth(
-                                    table,
-                                    tableColumn,
-                                    parseInt(width),
-                                )
-                                    ? parseInt(width)
-                                    : undefined
-                        }
+                        },
+                    )
 
-                        if (
-                            dbColumn["COLUMN_DEFAULT"] === null ||
-                            dbColumn["COLUMN_DEFAULT"] === undefined
-                        ) {
-                            tableColumn.default = undefined
-                        } else {
-                            tableColumn.default =
-                                dbColumn["COLUMN_DEFAULT"] ===
-                                "CURRENT_TIMESTAMP"
-                                    ? dbColumn["COLUMN_DEFAULT"]
-                                    : `'${dbColumn["COLUMN_DEFAULT"]}'`
-                        }
+                    const tableColumn = new TableColumn()
+                    tableColumn.name = dbColumn["COLUMN_NAME"]
+                    tableColumn.type = dbColumn["DATA_TYPE"].toLowerCase()
 
-                        if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
-                            tableColumn.onUpdate = dbColumn["EXTRA"].substring(
-                                dbColumn["EXTRA"].indexOf("on update") + 10,
-                            )
-                        }
+                    // Unsigned columns are handled differently when it comes to width.
+                    // Hence, we need to set the unsigned attribute before we check the width.
+                    tableColumn.zerofill =
+                        dbColumn["COLUMN_TYPE"].includes("zerofill")
+                    tableColumn.unsigned =
+                        tableColumn.zerofill ||
+                        dbColumn["COLUMN_TYPE"].includes("unsigned")
 
-                        if (dbColumn["GENERATION_EXPRESSION"]) {
-                            tableColumn.asExpression =
-                                dbColumn["GENERATION_EXPRESSION"]
-                            tableColumn.generatedType =
-                                dbColumn["EXTRA"].indexOf("VIRTUAL") !== -1
-                                    ? "VIRTUAL"
-                                    : "STORED"
-                        }
-
-                        tableColumn.isUnique =
-                            columnUniqueIndices.length > 0 &&
-                            !hasIgnoredIndex &&
-                            !isConstraintComposite
-                        tableColumn.isNullable =
-                            dbColumn["IS_NULLABLE"] === "YES"
-                        tableColumn.isPrimary = dbPrimaryKeys.some(
-                            (dbPrimaryKey) => {
-                                return (
-                                    dbPrimaryKey["TABLE_NAME"] ===
-                                        dbColumn["TABLE_NAME"] &&
-                                    dbPrimaryKey["TABLE_SCHEMA"] ===
-                                        dbColumn["TABLE_SCHEMA"] &&
-                                    dbPrimaryKey["COLUMN_NAME"] ===
-                                        dbColumn["COLUMN_NAME"]
-                                )
-                            },
+                    if (
+                        this.driver.unsignedColumnTypes.includes(
+                            tableColumn.type as UnsignedColumnType,
                         )
-                        tableColumn.zerofill =
-                            dbColumn["COLUMN_TYPE"].indexOf("zerofill") !== -1
-                        tableColumn.isGenerated =
-                            dbColumn["EXTRA"].indexOf("auto_increment") !== -1
-                        if (tableColumn.isGenerated)
-                            tableColumn.generationStrategy = "increment"
-
-                        tableColumn.comment =
-                            typeof dbColumn["COLUMN_COMMENT"] === "string" &&
-                            dbColumn["COLUMN_COMMENT"].length === 0
-                                ? undefined
-                                : dbColumn["COLUMN_COMMENT"]
-                        if (dbColumn["CHARACTER_SET_NAME"])
-                            tableColumn.charset =
-                                dbColumn["CHARACTER_SET_NAME"] ===
-                                defaultCharset
-                                    ? undefined
-                                    : dbColumn["CHARACTER_SET_NAME"]
-                        if (dbColumn["COLLATION_NAME"])
-                            tableColumn.collation =
-                                dbColumn["COLLATION_NAME"] === defaultCollation
-                                    ? undefined
-                                    : dbColumn["COLLATION_NAME"]
-
-                        // check only columns that have length property
-                        if (
-                            this.driver.withLengthColumnTypes.indexOf(
-                                tableColumn.type as ColumnType,
-                            ) !== -1 &&
-                            dbColumn["CHARACTER_MAXIMUM_LENGTH"]
-                        ) {
-                            const length =
-                                dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString()
-                            tableColumn.length = !this.isDefaultColumnLength(
+                    ) {
+                        const width = dbColumn["COLUMN_TYPE"].substring(
+                            dbColumn["COLUMN_TYPE"].indexOf("(") + 1,
+                            dbColumn["COLUMN_TYPE"].indexOf(")"),
+                        )
+                        tableColumn.width =
+                            width &&
+                            !this.isDefaultColumnWidth(
                                 table,
                                 tableColumn,
-                                length,
+                                parseInt(width),
                             )
-                                ? length
-                                : ""
-                        }
+                                ? parseInt(width)
+                                : undefined
+                    }
 
-                        if (
-                            tableColumn.type === "decimal" ||
-                            tableColumn.type === "double" ||
-                            tableColumn.type === "float"
-                        ) {
-                            if (
-                                dbColumn["NUMERIC_PRECISION"] !== null &&
-                                !this.isDefaultColumnPrecision(
-                                    table,
-                                    tableColumn,
-                                    dbColumn["NUMERIC_PRECISION"],
-                                )
-                            )
-                                tableColumn.precision = parseInt(
-                                    dbColumn["NUMERIC_PRECISION"],
-                                )
-                            if (
-                                dbColumn["NUMERIC_SCALE"] !== null &&
-                                !this.isDefaultColumnScale(
-                                    table,
-                                    tableColumn,
-                                    dbColumn["NUMERIC_SCALE"],
-                                )
-                            )
-                                tableColumn.scale = parseInt(
-                                    dbColumn["NUMERIC_SCALE"],
-                                )
-                        }
+                    if (
+                        dbColumn["COLUMN_DEFAULT"] === null ||
+                        dbColumn["COLUMN_DEFAULT"] === undefined
+                    ) {
+                        tableColumn.default = undefined
+                    } else {
+                        tableColumn.default =
+                            dbColumn["COLUMN_DEFAULT"] === "CURRENT_TIMESTAMP"
+                                ? dbColumn["COLUMN_DEFAULT"]
+                                : `'${dbColumn["COLUMN_DEFAULT"]}'`
+                    }
 
-                        if (
-                            tableColumn.type === "enum" ||
-                            tableColumn.type === "simple-enum" ||
-                            tableColumn.type === "set"
-                        ) {
-                            const colType = dbColumn["COLUMN_TYPE"]
-                            const items = colType
-                                .substring(
-                                    colType.indexOf("(") + 1,
-                                    colType.lastIndexOf(")"),
-                                )
-                                .split(",")
-                            tableColumn.enum = (items as string[]).map(
-                                (item) => {
-                                    return item.substring(1, item.length - 1)
-                                },
-                            )
-                            tableColumn.length = ""
-                        }
+                    if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
+                        tableColumn.onUpdate = dbColumn["EXTRA"].substring(
+                            dbColumn["EXTRA"].indexOf("on update") + 10,
+                        )
+                    }
 
+                    if (dbColumn["GENERATION_EXPRESSION"]) {
+                        tableColumn.asExpression =
+                            dbColumn["GENERATION_EXPRESSION"]
+                        tableColumn.generatedType =
+                            dbColumn["EXTRA"].indexOf("VIRTUAL") !== -1
+                                ? "VIRTUAL"
+                                : "STORED"
+                    }
+
+                    tableColumn.isUnique =
+                        columnUniqueIndices.length > 0 &&
+                        !hasIgnoredIndex &&
+                        !isConstraintComposite
+                    tableColumn.isNullable = dbColumn["IS_NULLABLE"] === "YES"
+                    tableColumn.isPrimary = dbPrimaryKeys.some(
+                        (dbPrimaryKey) => {
+                            return (
+                                dbPrimaryKey["TABLE_NAME"] ===
+                                    dbColumn["TABLE_NAME"] &&
+                                dbPrimaryKey["TABLE_SCHEMA"] ===
+                                    dbColumn["TABLE_SCHEMA"] &&
+                                dbPrimaryKey["COLUMN_NAME"] ===
+                                    dbColumn["COLUMN_NAME"]
+                            )
+                        },
+                    )
+                    tableColumn.zerofill =
+                        dbColumn["COLUMN_TYPE"].indexOf("zerofill") !== -1
+                    tableColumn.isGenerated =
+                        dbColumn["EXTRA"].indexOf("auto_increment") !== -1
+                    if (tableColumn.isGenerated)
+                        tableColumn.generationStrategy = "increment"
+
+                    tableColumn.comment =
+                        typeof dbColumn["COLUMN_COMMENT"] === "string" &&
+                        dbColumn["COLUMN_COMMENT"].length === 0
+                            ? undefined
+                            : dbColumn["COLUMN_COMMENT"]
+                    if (dbColumn["CHARACTER_SET_NAME"])
+                        tableColumn.charset =
+                            dbColumn["CHARACTER_SET_NAME"] === defaultCharset
+                                ? undefined
+                                : dbColumn["CHARACTER_SET_NAME"]
+                    if (dbColumn["COLLATION_NAME"])
+                        tableColumn.collation =
+                            dbColumn["COLLATION_NAME"] === defaultCollation
+                                ? undefined
+                                : dbColumn["COLLATION_NAME"]
+
+                    // check only columns that have length property
+                    if (
+                        this.driver.withLengthColumnTypes.indexOf(
+                            tableColumn.type as ColumnType,
+                        ) !== -1 &&
+                        dbColumn["CHARACTER_MAXIMUM_LENGTH"]
+                    ) {
+                        const length =
+                            dbColumn["CHARACTER_MAXIMUM_LENGTH"].toString()
+                        tableColumn.length = !this.isDefaultColumnLength(
+                            table,
+                            tableColumn,
+                            length,
+                        )
+                            ? length
+                            : ""
+                    }
+
+                    if (
+                        tableColumn.type === "decimal" ||
+                        tableColumn.type === "double" ||
+                        tableColumn.type === "float"
+                    ) {
                         if (
-                            (tableColumn.type === "datetime" ||
-                                tableColumn.type === "time" ||
-                                tableColumn.type === "timestamp") &&
-                            dbColumn["DATETIME_PRECISION"] !== null &&
-                            dbColumn["DATETIME_PRECISION"] !== undefined &&
+                            dbColumn["NUMERIC_PRECISION"] !== null &&
                             !this.isDefaultColumnPrecision(
                                 table,
                                 tableColumn,
-                                parseInt(dbColumn["DATETIME_PRECISION"]),
+                                dbColumn["NUMERIC_PRECISION"],
                             )
-                        ) {
+                        )
                             tableColumn.precision = parseInt(
-                                dbColumn["DATETIME_PRECISION"],
+                                dbColumn["NUMERIC_PRECISION"],
                             )
-                        }
-
-                        return tableColumn
-                    })
-
-                // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
-                const tableForeignKeyConstraints = OrmUtils.uniq(
-                    dbForeignKeys.filter((dbForeignKey) => {
-                        return (
-                            dbForeignKey["TABLE_NAME"] ===
-                                dbTable["TABLE_NAME"] &&
-                            dbForeignKey["TABLE_SCHEMA"] ===
-                                dbTable["TABLE_SCHEMA"]
+                        if (
+                            dbColumn["NUMERIC_SCALE"] !== null &&
+                            !this.isDefaultColumnScale(
+                                table,
+                                tableColumn,
+                                dbColumn["NUMERIC_SCALE"],
+                            )
                         )
-                    }),
-                    (dbForeignKey) => dbForeignKey["CONSTRAINT_NAME"],
-                )
+                            tableColumn.scale = parseInt(
+                                dbColumn["NUMERIC_SCALE"],
+                            )
+                    }
 
-                table.foreignKeys = tableForeignKeyConstraints.map(
-                    (dbForeignKey) => {
-                        const foreignKeys = dbForeignKeys.filter(
-                            (dbFk) =>
-                                dbFk["CONSTRAINT_NAME"] ===
-                                dbForeignKey["CONSTRAINT_NAME"],
-                        )
-
-                        // if referenced table located in currently used db, we don't need to concat db name to table name.
-                        const database =
-                            dbForeignKey["REFERENCED_TABLE_SCHEMA"] ===
-                            currentDatabase
-                                ? undefined
-                                : dbForeignKey["REFERENCED_TABLE_SCHEMA"]
-                        const referencedTableName = this.driver.buildTableName(
-                            dbForeignKey["REFERENCED_TABLE_NAME"],
-                            undefined,
-                            database,
-                        )
-
-                        return new TableForeignKey({
-                            name: dbForeignKey["CONSTRAINT_NAME"],
-                            columnNames: foreignKeys.map(
-                                (dbFk) => dbFk["COLUMN_NAME"],
-                            ),
-                            referencedDatabase:
-                                dbForeignKey["REFERENCED_TABLE_SCHEMA"],
-                            referencedTableName: referencedTableName,
-                            referencedColumnNames: foreignKeys.map(
-                                (dbFk) => dbFk["REFERENCED_COLUMN_NAME"],
-                            ),
-                            onDelete: dbForeignKey["ON_DELETE"],
-                            onUpdate: dbForeignKey["ON_UPDATE"],
+                    if (
+                        tableColumn.type === "enum" ||
+                        tableColumn.type === "simple-enum" ||
+                        tableColumn.type === "set"
+                    ) {
+                        const colType = dbColumn["COLUMN_TYPE"]
+                        const items = colType
+                            .substring(
+                                colType.indexOf("(") + 1,
+                                colType.lastIndexOf(")"),
+                            )
+                            .split(",")
+                        tableColumn.enum = (items as string[]).map((item) => {
+                            return item.substring(1, item.length - 1)
                         })
-                    },
-                )
+                        tableColumn.length = ""
+                    }
 
-                // find index constraints of table, group them by constraint name and build TableIndex.
-                const tableIndexConstraints = OrmUtils.uniq(
-                    dbIndices.filter((dbIndex) => {
-                        return (
-                            dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
-                            dbIndex["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"]
+                    if (
+                        (tableColumn.type === "datetime" ||
+                            tableColumn.type === "time" ||
+                            tableColumn.type === "timestamp") &&
+                        dbColumn["DATETIME_PRECISION"] !== null &&
+                        dbColumn["DATETIME_PRECISION"] !== undefined &&
+                        !this.isDefaultColumnPrecision(
+                            table,
+                            tableColumn,
+                            parseInt(dbColumn["DATETIME_PRECISION"]),
                         )
-                    }),
-                    (dbIndex) => dbIndex["INDEX_NAME"],
-                )
-
-                table.indices = tableIndexConstraints.map((constraint) => {
-                    const indices = dbIndices.filter((index) => {
-                        return (
-                            index["TABLE_SCHEMA"] ===
-                                constraint["TABLE_SCHEMA"] &&
-                            index["TABLE_NAME"] === constraint["TABLE_NAME"] &&
-                            index["INDEX_NAME"] === constraint["INDEX_NAME"]
+                    ) {
+                        tableColumn.precision = parseInt(
+                            dbColumn["DATETIME_PRECISION"],
                         )
-                    })
+                    }
 
-                    const nonUnique = parseInt(constraint["NON_UNIQUE"], 10)
-
-                    return new TableIndex(<TableIndexOptions>{
-                        table: table,
-                        name: constraint["INDEX_NAME"],
-                        columnNames: indices.map((i) => i["COLUMN_NAME"]),
-                        isUnique: nonUnique === 0,
-                        isSpatial: constraint["INDEX_TYPE"] === "SPATIAL",
-                        isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT",
-                    })
+                    return tableColumn
                 })
 
-                return table
-            }),
-        )
+            // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
+            const tableForeignKeyConstraints = OrmUtils.uniq(
+                dbForeignKeys.filter((dbForeignKey) => {
+                    return (
+                        dbForeignKey["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                        dbForeignKey["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"]
+                    )
+                }),
+                (dbForeignKey) => dbForeignKey["CONSTRAINT_NAME"],
+            )
+
+            table.foreignKeys = tableForeignKeyConstraints.map(
+                (dbForeignKey) => {
+                    const foreignKeys = dbForeignKeys.filter(
+                        (dbFk) =>
+                            dbFk["CONSTRAINT_NAME"] ===
+                            dbForeignKey["CONSTRAINT_NAME"],
+                    )
+
+                    // if referenced table located in currently used db, we don't need to concat db name to table name.
+                    const database =
+                        dbForeignKey["REFERENCED_TABLE_SCHEMA"] ===
+                        currentDatabase
+                            ? undefined
+                            : dbForeignKey["REFERENCED_TABLE_SCHEMA"]
+                    const referencedTableName = this.driver.buildTableName(
+                        dbForeignKey["REFERENCED_TABLE_NAME"],
+                        undefined,
+                        database,
+                    )
+
+                    return new TableForeignKey({
+                        name: dbForeignKey["CONSTRAINT_NAME"],
+                        columnNames: foreignKeys.map(
+                            (dbFk) => dbFk["COLUMN_NAME"],
+                        ),
+                        referencedDatabase:
+                            dbForeignKey["REFERENCED_TABLE_SCHEMA"],
+                        referencedTableName: referencedTableName,
+                        referencedColumnNames: foreignKeys.map(
+                            (dbFk) => dbFk["REFERENCED_COLUMN_NAME"],
+                        ),
+                        onDelete: dbForeignKey["ON_DELETE"],
+                        onUpdate: dbForeignKey["ON_UPDATE"],
+                    })
+                },
+            )
+
+            // find index constraints of table, group them by constraint name and build TableIndex.
+            const tableIndexConstraints = OrmUtils.uniq(
+                dbIndices.filter((dbIndex) => {
+                    return (
+                        dbIndex["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                        dbIndex["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"]
+                    )
+                }),
+                (dbIndex) => dbIndex["INDEX_NAME"],
+            )
+
+            table.indices = tableIndexConstraints.map((constraint) => {
+                const indices = dbIndices.filter((index) => {
+                    return (
+                        index["TABLE_SCHEMA"] === constraint["TABLE_SCHEMA"] &&
+                        index["TABLE_NAME"] === constraint["TABLE_NAME"] &&
+                        index["INDEX_NAME"] === constraint["INDEX_NAME"]
+                    )
+                })
+
+                const nonUnique = parseInt(constraint["NON_UNIQUE"], 10)
+
+                return new TableIndex({
+                    table: table,
+                    name: constraint["INDEX_NAME"],
+                    columnNames: indices.map((i) => i["COLUMN_NAME"]),
+                    isUnique: nonUnique === 0,
+                    isSpatial: constraint["INDEX_TYPE"] === "SPATIAL",
+                    isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT",
+                } as TableIndexOptions)
+            })
+
+            return table
+        })
     }
 
     /**

@@ -24,20 +24,14 @@ describe("github issues > #9318 Change version query from SHOW server_version to
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should have proper isGeneratedColumnsSupported value for postgres version", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const { isGeneratedColumnsSupported } =
-                    connection.driver as PostgresDriver
-                const versionGreaterOfEqualTo12 =
-                    DriverUtils.isReleaseVersionOrGreater(
-                        connection.driver,
-                        "12.0",
-                    )
+    it("should have proper isGeneratedColumnsSupported value for postgres version", () => {
+        connections.forEach((connection) => {
+            const { isGeneratedColumnsSupported } =
+                connection.driver as PostgresDriver
+            const versionGreaterOfEqualTo12 =
+                DriverUtils.isReleaseVersionOrGreater(connection.driver, "12.0")
 
-                expect(isGeneratedColumnsSupported).to.eq(
-                    versionGreaterOfEqualTo12,
-                )
-            }),
-        ))
+            expect(isGeneratedColumnsSupported).to.eq(versionGreaterOfEqualTo12)
+        })
+    })
 })

@@ -32,7 +32,7 @@ describe("query builder > time-travel-query", () => {
     it("should execute time travel query without options", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repository = await connection.getRepository(Account)
+                const repository = connection.getRepository(Account)
                 // create account
                 let account = new Account()
                 account.name = "Edna Barath"
@@ -64,7 +64,7 @@ describe("query builder > time-travel-query", () => {
     it("should execute time travel query with options", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repository = await connection.getRepository(Account)
+                const repository = connection.getRepository(Account)
                 // create account
                 let account = new Account()
                 account.name = "Edna Barath"
@@ -96,7 +96,7 @@ describe("query builder > time-travel-query", () => {
     it("should execute time travel query with 'skip' and 'take' options", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const repository = await connection.getRepository(Account)
+                const repository = connection.getRepository(Account)
                 // create accounts
                 for (let i = 1; i < 6; i++) {
                     const account = new Account()
@@ -148,10 +148,8 @@ describe("query builder > time-travel-query", () => {
     it("should execute time travel query with JOIN and skip/take options", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const accountRepository = await connection.getRepository(
-                    Account,
-                )
-                const personRepository = await connection.getRepository(Person)
+                const accountRepository = connection.getRepository(Account)
+                const personRepository = connection.getRepository(Person)
 
                 // create persons and accounts
                 for (let i = 1; i < 6; i++) {
@@ -210,10 +208,8 @@ describe("query builder > time-travel-query", () => {
     it("should execute time travel query with JOIN and limit/offset options", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const accountRepository = await connection.getRepository(
-                    Account,
-                )
-                const personRepository = await connection.getRepository(Person)
+                const accountRepository = connection.getRepository(Account)
+                const personRepository = connection.getRepository(Person)
 
                 // create persons and accounts
                 for (let i = 1; i < 6; i++) {

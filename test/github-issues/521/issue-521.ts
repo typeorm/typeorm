@@ -18,23 +18,20 @@ describe("github issues > #521 Attributes in UPDATE in QB arent getting replaced
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should replace parameters", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const qb = connection
-                    .getRepository(Car)
-                    .createQueryBuilder("car")
-                const [query, parameters] = qb
-                    .update({
-                        name: "Honda",
-                    })
-                    .where("name = :name", {
-                        name: "Toyota",
-                    })
-                    .getQueryAndParameters()
-                query.should.not.be.undefined
-                query.should.not.be.eql("")
-                return parameters.length.should.eql(2)
-            }),
-        ))
+    it("should replace parameters", () => {
+        connections.forEach((connection) => {
+            const qb = connection.getRepository(Car).createQueryBuilder("car")
+            const [query, parameters] = qb
+                .update({
+                    name: "Honda",
+                })
+                .where("name = :name", {
+                    name: "Toyota",
+                })
+                .getQueryAndParameters()
+            query.should.not.be.undefined
+            query.should.not.be.eql("")
+            return parameters.length.should.eql(2)
+        })
+    })
 })
