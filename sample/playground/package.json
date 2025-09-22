@@ -9,14 +9,13 @@
     "typeorm": "typeorm-ts-node-esm -d ./src/ormconfig.ts"
   },
   "dependencies": {
-    "reflect-metadata": "^0.2.2",
     "sql.js": "^1.13.0",
     "ts-node": "^10.9.2",
     "typeorm": "*"
   },
   "devDependencies": {
-    "@types/node": "^20.19.0",
+    "@types/node": "^22.18.6",
     "@types/sql.js": "^1.4.9",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
   }
 }

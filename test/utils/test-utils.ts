@@ -484,23 +484,26 @@ export async function createTestingConnections(
 /**
  * Closes testing connections if they are connected.
  */
-export function closeTestingConnections(connections: DataSource[]) {
-    if (!connections || connections.length === 0) return Promise.resolve()
-    return Promise.all(
-        connections.map((connection) =>
-            connection && connection.isInitialized
-                ? connection.destroy()
-                : undefined,
-        ),
+export async function closeTestingConnections(connections: DataSource[]) {
+    if (!connections || connections.length === 0) {
+        return
+    }
+
+    await Promise.all(
+        connections.map(async (connection) => {
+            if (connection?.isInitialized) {
+                await connection.destroy()
+            }
+        }),
     )
 }
 
 /**
  * Reloads all databases for all given connections.
  */
-export function reloadTestingDatabases(connections: DataSource[]) {
+export async function reloadTestingDatabases(connections: DataSource[]) {
     GeneratedColumnReplacerSubscriber.globalIncrementValues = {}
-    return Promise.all(
+    await Promise.all(
         connections.map((connection) => connection.synchronize(true)),
     )
 }

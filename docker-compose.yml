@@ -49,7 +49,7 @@ services:
   postgres-14:
     # postgis is postgres + PostGIS (only). If you need additional extensions,
     # it's probably time to create a purpose-built image.
-    image: "postgis/postgis:14-3.5"
+    image: "ghcr.io/naorpeled/typeorm-postgres:pg14-postgis3-pgvectorv0.8.0"
     container_name: "typeorm-postgres-14"
     ports:
       - "5432:5432"
@@ -62,7 +62,7 @@ services:
   postgres-17:
     # postgis is postgres + PostGIS (only). If you need additional extensions,
     # it's probably time to create a purpose-built image.
-    image: "postgis/postgis:17-3.5"
+    image: "ghcr.io/naorpeled/typeorm-postgres:pg17-postgis3-pgvectorv0.8.0"
     container_name: "typeorm-postgres-17"
     ports:
       - "5432:5432"

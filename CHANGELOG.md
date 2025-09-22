@@ -1,3 +1,34 @@
+## [0.3.27](https://github.com/typeorm/typeorm/compare/0.3.26...0.3.27) (2025-09-19)
+
+
+### Bug Fixes
+
+* Add package.json exports for react-native ([#11623](https://github.com/typeorm/typeorm/issues/11623)) ([6965fa2](https://github.com/typeorm/typeorm/commit/6965fa20827dcbf95125a9c9a06e7fc3ed36d689))
+* JSON parsing for mysql2 client library ([#8319](https://github.com/typeorm/typeorm/issues/8319)) ([#11659](https://github.com/typeorm/typeorm/issues/11659)) ([974ead2](https://github.com/typeorm/typeorm/commit/974ead202d8eef099257c0ec2a90f9aacfd92b16))
+* **query-builder:** handle empty result set when offset exceeds total ([#11634](https://github.com/typeorm/typeorm/issues/11634)) ([1f90467](https://github.com/typeorm/typeorm/commit/1f904675f4a26ac35049664986a939f4e5d15468))
+* update tests to reflect migration template changes ([#11653](https://github.com/typeorm/typeorm/issues/11653)) ([3fac86b](https://github.com/typeorm/typeorm/commit/3fac86b60e412ad9f1b6e5eb72f5218e47fac93f))
+
+
+### Features
+
+* add new undefined and null behavior flags ([#11332](https://github.com/typeorm/typeorm/issues/11332)) ([96ea431](https://github.com/typeorm/typeorm/commit/96ea431eb758694e9f9cb979a810f37885289358))
+* allow `VirtualColumn`s to be initially non-selectable ([#11586](https://github.com/typeorm/typeorm/issues/11586)) ([22b26d1](https://github.com/typeorm/typeorm/commit/22b26d11535752003eff1d89ee764becb3f0f221))
+* **migration:** improve JSDoc types in generated migration templates ([#11490](https://github.com/typeorm/typeorm/issues/11490)) ([fa3cd43](https://github.com/typeorm/typeorm/commit/fa3cd436a28e8a9dacb9be3da7f2896478d0bccd))
+* **mysql:** add support for MySQL 9 / MariaDB 12 ([#11575](https://github.com/typeorm/typeorm/issues/11575)) ([8b76e1a](https://github.com/typeorm/typeorm/commit/8b76e1af74245c5a1bf1abf5a5d16f57ac732732))
+* **postgres:** support vector/halfvec data types ([#11437](https://github.com/typeorm/typeorm/issues/11437)) ([a49f612](https://github.com/typeorm/typeorm/commit/a49f6122891db715885c2faf4974d3def2f541ea))
+
+
+### Performance Improvements
+
+* Cache package.json location between getNearestPackageJson invocations ([#11580](https://github.com/typeorm/typeorm/issues/11580)) ([b6ffd46](https://github.com/typeorm/typeorm/commit/b6ffd462dd0296edf693ccf68dc7879582437a63)), closes [#4136](https://github.com/typeorm/typeorm/issues/4136)
+
+
+### Reverts
+
+* Revert "fix: do not create junction table metadata when it already exists (#11114)" (#11660) ([34d8714](https://github.com/typeorm/typeorm/commit/34d87149ec1b2a727f0ebcbc878d37a12c4a97bb)), closes [#11114](https://github.com/typeorm/typeorm/issues/11114) [#11660](https://github.com/typeorm/typeorm/issues/11660)
+
+
+
 ## [0.3.26](https://github.com/typeorm/typeorm/compare/0.3.25...0.3.26) (2025-08-16)
 
 Notes:
