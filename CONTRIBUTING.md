@@ -18,8 +18,7 @@ If you have a question or want community support:
 
 ## <a name="issue"></a> Found a security vulnerability?
 
-If you find a security vulnerability or something that should be discussed personally,
-please contact me within my [email](https://github.com/typeorm/typeorm/blob/master/package.json#L17).
+If you find a security vulnerability or something that should be discussed privately, please contact us at [maintainers@typeorm.io](mailto:maintainers@typeorm.io).
 
 ## <a name="issue"></a> Found a Bug?
 
