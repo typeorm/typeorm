@@ -1,12 +1,12 @@
-import "../../../utils/test-setup"
 import { expect } from "chai"
-import { Record } from "./entity/Record"
 import { DataSource } from "../../../../src"
+import "../../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
+import { Record } from "./entity/Record"
 
 describe("jsonb type", () => {
     let connections: DataSource[]
@@ -15,7 +15,6 @@ describe("jsonb type", () => {
             (connections = await createTestingConnections({
                 entities: [Record],
                 enabledDrivers: ["postgres"], // because only postgres supports jsonb type
-                // logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -26,7 +25,7 @@ describe("jsonb type", () => {
             connections.map(async (connection) => {
                 await connection.synchronize(true)
                 const queryRunner = connection.createQueryRunner()
-                let schema = await queryRunner.getTable("record")
+                const schema = await queryRunner.getTable("record")
                 await queryRunner.release()
                 expect(schema).not.to.be.undefined
                 expect(
@@ -64,11 +63,11 @@ describe("jsonb type", () => {
         Promise.all(
             connections.map(async (connection) => {
                 await connection.synchronize(true)
-                let recordRepo = connection.getRepository(Record)
-                let record = new Record()
+                const recordRepo = connection.getRepository(Record)
+                const record = new Record()
                 record.data = { foo: "bar" }
-                let persistedRecord = await recordRepo.save(record)
-                let foundRecord = await recordRepo.findOneBy({
+                const persistedRecord = await recordRepo.save(record)
+                const foundRecord = await recordRepo.findOneBy({
                     id: persistedRecord.id,
                 })
                 expect(foundRecord).to.be.not.undefined
@@ -84,11 +83,11 @@ describe("jsonb type", () => {
     it("should persist jsonb string correctly", () =>
         Promise.all(
             connections.map(async (connection) => {
-                let recordRepo = connection.getRepository(Record)
-                let record = new Record()
+                const recordRepo = connection.getRepository(Record)
+                const record = new Record()
                 record.data = `foo`
-                let persistedRecord = await recordRepo.save(record)
-                let foundRecord = await recordRepo.findOneBy({
+                const persistedRecord = await recordRepo.save(record)
+                const foundRecord = await recordRepo.findOneBy({
                     id: persistedRecord.id,
                 })
                 expect(foundRecord).to.be.not.undefined
@@ -100,11 +99,11 @@ describe("jsonb type", () => {
     it("should persist jsonb array correctly", () =>
         Promise.all(
             connections.map(async (connection) => {
-                let recordRepo = connection.getRepository(Record)
-                let record = new Record()
+                const recordRepo = connection.getRepository(Record)
+                const record = new Record()
                 record.data = [1, `2`, { a: 3 }]
-                let persistedRecord = await recordRepo.save(record)
-                let foundRecord = await recordRepo.findOneBy({
+                const persistedRecord = await recordRepo.save(record)
+                const foundRecord = await recordRepo.findOneBy({
                     id: persistedRecord.id,
                 })
                 expect(foundRecord).to.be.not.undefined

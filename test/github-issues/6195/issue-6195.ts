@@ -1,5 +1,5 @@
-import "reflect-metadata"
 import { expect } from "chai"
+import "reflect-metadata"
 
 import { DataSource, QueryRunner, Table } from "../../../src"
 import {
@@ -40,7 +40,6 @@ describe("github issues > #6195 feature: fake migrations for existing tables", (
             schemaCreate: false,
             dropSchema: false,
             migrations: [__dirname + "/migrations/**/*{.ts,.js}"],
-            // logging: true,
         })
 
         await reloadTestingDatabases(dataSources)

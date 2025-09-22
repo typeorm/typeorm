@@ -12,6 +12,6 @@ export class Department {
     @Column()
     name: string
 
-    @ManyToOne((type) => Accountant, (accountant) => accountant.departments)
+    @ManyToOne(() => Accountant, (accountant) => accountant.departments)
     accountant: Accountant
 }

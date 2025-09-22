@@ -1,9 +1,8 @@
-export namespace RegExpStringTransformer {
-    export function to(value: RegExp): string {
+export const RegExpStringTransformer = {
+    to(value: RegExp): string {
         return value.toString()
-    }
-
-    export function from(value: string): RegExp {
+    },
+    from(value: string): RegExp {
         const match = value.match(/^\/(.*)\/(.*)$/)
         if (match) {
             const [, pattern, flags] = match
@@ -11,5 +10,5 @@ export namespace RegExpStringTransformer {
         } else {
             throw new Error(`"${value}" is not a regular expression`)
         }
-    }
+    },
 }

@@ -20,6 +20,8 @@ import { CheckMetadata } from "../metadata/CheckMetadata"
 import { ExclusionMetadata } from "../metadata/ExclusionMetadata"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
+import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
+import { InstanceChecker } from "../util/InstanceChecker"
 
 /**
  * Builds EntityMetadata objects and all its sub-metadatas.
@@ -385,6 +387,11 @@ export class EntityMetadataBuilder {
                 exclusion.build(this.connection.namingStrategy),
             )
         })
+
+        // generate foreign keys for tables
+        entityMetadatas.forEach((entityMetadata) =>
+            this.createForeignKeys(entityMetadata, entityMetadatas),
+        )
 
         // add lazy initializer for entity relations
         entityMetadatas
@@ -1168,5 +1175,121 @@ export class EntityMetadataBuilder {
                 },
             }),
         )
+    }
+
+    /**
+     * Creates from the given foreign key metadata args real foreign key metadatas.
+     */
+    protected createForeignKeys(
+        entityMetadata: EntityMetadata,
+        entityMetadatas: EntityMetadata[],
+    ) {
+        this.metadataArgsStorage
+            .filterForeignKeys(entityMetadata.inheritanceTree)
+            .forEach((foreignKeyArgs) => {
+                const foreignKeyType =
+                    typeof foreignKeyArgs.type === "function"
+                        ? (foreignKeyArgs.type as () => any)()
+                        : foreignKeyArgs.type
+
+                const referencedEntityMetadata = entityMetadatas.find((m) =>
+                    typeof foreignKeyType === "string"
+                        ? m.targetName === foreignKeyType ||
+                          m.givenTableName === foreignKeyType
+                        : InstanceChecker.isEntitySchema(foreignKeyType)
+                        ? m.target === foreignKeyType.options.name ||
+                          m.target === foreignKeyType.options.target
+                        : m.target === foreignKeyType,
+                )
+
+                if (!referencedEntityMetadata) {
+                    throw new TypeORMError(
+                        "Entity metadata for " +
+                            entityMetadata.name +
+                            (foreignKeyArgs.propertyName
+                                ? "#" + foreignKeyArgs.propertyName
+                                : "") +
+                            " was not found. Check if you specified a correct entity object and if it's connected in the connection options.",
+                    )
+                }
+
+                const columnNames = foreignKeyArgs.columnNames ?? []
+                const referencedColumnNames =
+                    foreignKeyArgs.referencedColumnNames ?? []
+
+                const columns: ColumnMetadata[] = []
+                const referencedColumns: ColumnMetadata[] = []
+
+                if (foreignKeyArgs.propertyName) {
+                    columnNames.push(foreignKeyArgs.propertyName)
+
+                    if (foreignKeyArgs.inverseSide) {
+                        if (typeof foreignKeyArgs.inverseSide === "function") {
+                            referencedColumnNames.push(
+                                foreignKeyArgs.inverseSide(
+                                    referencedEntityMetadata.propertiesMap,
+                                ),
+                            )
+                        } else {
+                            referencedColumnNames.push(
+                                foreignKeyArgs.inverseSide,
+                            )
+                        }
+                    }
+                }
+
+                if (!referencedColumnNames.length) {
+                    referencedColumns.push(
+                        ...referencedEntityMetadata.primaryColumns,
+                    )
+                }
+
+                const columnNameToColumn = (
+                    columnName: string,
+                    entityMetadata: EntityMetadata,
+                ): ColumnMetadata => {
+                    const column = entityMetadata.columns.find(
+                        (column) =>
+                            column.propertyName === columnName ||
+                            column.databaseName === columnName,
+                    )
+
+                    if (column) return column
+
+                    const foreignKeyName = foreignKeyArgs.name
+                        ? '"' + foreignKeyArgs.name + '" '
+                        : ""
+                    const entityName = entityMetadata.targetName
+                    throw new TypeORMError(
+                        `Foreign key constraint ${foreignKeyName}contains column that is missing in the entity (${entityName}): ${columnName}`,
+                    )
+                }
+
+                columns.push(
+                    ...columnNames.map((columnName) =>
+                        columnNameToColumn(columnName, entityMetadata),
+                    ),
+                )
+
+                referencedColumns.push(
+                    ...referencedColumnNames.map((columnName) =>
+                        columnNameToColumn(
+                            columnName,
+                            referencedEntityMetadata,
+                        ),
+                    ),
+                )
+
+                entityMetadata.foreignKeys.push(
+                    new ForeignKeyMetadata({
+                        entityMetadata,
+                        referencedEntityMetadata,
+                        namingStrategy: this.connection.namingStrategy,
+                        columns,
+                        referencedColumns,
+                        ...foreignKeyArgs,
+                    }),
+                )
+            })
     }
 }

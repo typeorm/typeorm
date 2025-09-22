@@ -293,12 +293,14 @@ export abstract class AbstractLogger implements Logger {
             | number
             | (LogMessage | string | number)[],
         options?: Partial<PrepareLogMessagesOptions>,
+        queryRunner?: QueryRunner,
     ): LogMessage[] {
         options = {
             ...{
                 addColonToPrefix: true,
                 appendParameterAsComment: true,
                 highlightSql: true,
+                formatSql: false,
             },
             ...options,
         }
@@ -313,6 +315,13 @@ export abstract class AbstractLogger implements Logger {
 
             if (message.format === "sql") {
                 let sql = String(message.message)
+
+                if (options.formatSql) {
+                    sql = PlatformTools.formatSql(
+                        sql,
+                        queryRunner?.connection?.options.type,
+                    )
+                }
 
                 if (
                     options.appendParameterAsComment &&

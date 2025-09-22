@@ -146,7 +146,7 @@ export interface TestingOptions {
      * Options that may be specific to a driver.
      * They are passed down to the enabled drivers.
      */
-    driverSpecific?: Object
+    driverSpecific?: object
 
     /**
      * Factory to create a logger for each test connection.
@@ -154,6 +154,7 @@ export interface TestingOptions {
     createLogger?: () =>
         | "advanced-console"
         | "simple-console"
+        | "formatted-console"
         | "file"
         | "debug"
         | Logger
@@ -208,7 +209,7 @@ function getOrmFilepath(): string {
     } catch (err) {
         throw new Error(
             `Cannot find ormconfig.json file in the root of the project. To run tests please create ormconfig.json file` +
-                ` in the root of the project (near ormconfig.json.dist, you need to copy ormconfig.json.dist into ormconfig.json` +
+                ` in the root of the project (near ormconfig.sample.json, you need to copy ormconfig.sample.json into ormconfig.json` +
                 ` and change all database settings to match your local environment settings).`,
         )
     }
@@ -389,7 +390,7 @@ export async function createTestingConnections(
 ): Promise<DataSource[]> {
     const dataSourceOptions = setupTestingConnections(options)
     const dataSources: DataSource[] = []
-    for (let options of dataSourceOptions) {
+    for (const options of dataSourceOptions) {
         const dataSource = createDataSource(options)
         await dataSource.initialize()
         dataSources.push(dataSource)
@@ -483,22 +484,26 @@ export async function createTestingConnections(
 /**
  * Closes testing connections if they are connected.
  */
-export function closeTestingConnections(connections: DataSource[]) {
-    return Promise.all(
-        connections.map((connection) =>
-            connection && connection.isInitialized
-                ? connection.destroy()
-                : undefined,
-        ),
+export async function closeTestingConnections(connections: DataSource[]) {
+    if (!connections || connections.length === 0) {
+        return
+    }
+
+    await Promise.all(
+        connections.map(async (connection) => {
+            if (connection?.isInitialized) {
+                await connection.destroy()
+            }
+        }),
     )
 }
 
 /**
  * Reloads all databases for all given connections.
  */
-export function reloadTestingDatabases(connections: DataSource[]) {
+export async function reloadTestingDatabases(connections: DataSource[]) {
     GeneratedColumnReplacerSubscriber.globalIncrementValues = {}
-    return Promise.all(
+    await Promise.all(
         connections.map((connection) => connection.synchronize(true)),
     )
 }
@@ -590,4 +595,22 @@ export async function createTypeormMetadataTable(
         }),
         true,
     )
+}
+
+export function withPlatform<R>(platform: string, fn: () => R): R {
+    const realPlatform = process.platform
+
+    Object.defineProperty(process, `platform`, {
+        configurable: true,
+        value: platform,
+    })
+
+    const result = fn()
+
+    Object.defineProperty(process, `platform`, {
+        configurable: true,
+        value: realPlatform,
+    })
+
+    return result
 }

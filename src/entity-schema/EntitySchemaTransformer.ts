@@ -18,6 +18,7 @@ import { EntitySchemaOptions } from "./EntitySchemaOptions"
 import { EntitySchemaEmbeddedError } from "./EntitySchemaEmbeddedError"
 import { InheritanceMetadataArgs } from "../metadata-args/InheritanceMetadataArgs"
 import { RelationIdMetadataArgs } from "../metadata-args/RelationIdMetadataArgs"
+import { ForeignKeyMetadataArgs } from "../metadata-args/ForeignKeyMetadataArgs"
 
 /**
  * Transforms entity schema into metadata args storage.
@@ -97,6 +98,7 @@ export class EntitySchemaTransformer {
             if (regularColumn.treeChildrenCount) mode = "treeChildrenCount"
             if (regularColumn.treeLevel) mode = "treeLevel"
             if (regularColumn.objectId) mode = "objectId"
+            if (regularColumn.virtualProperty) mode = "virtual-property"
 
             const columnArgs: ColumnMetadataArgs = {
                 target: options.target || options.name,
@@ -134,6 +136,7 @@ export class EntitySchemaTransformer {
                     transformer: regularColumn.transformer,
                     spatialFeatureType: regularColumn.spatialFeatureType,
                     srid: regularColumn.srid,
+                    query: regularColumn.query,
                 },
             }
             metadataArgsStorage.columns.push(columnArgs)
@@ -155,6 +158,22 @@ export class EntitySchemaTransformer {
                     target: options.target || options.name,
                     columns: [columnName],
                 })
+
+            if (regularColumn.foreignKey) {
+                const foreignKey = regularColumn.foreignKey
+
+                const foreignKeyArgs: ForeignKeyMetadataArgs = {
+                    target: options.target || options.name,
+                    type: foreignKey.target,
+                    propertyName: columnName,
+                    inverseSide: foreignKey.inverseSide,
+                    name: foreignKey.name,
+                    onDelete: foreignKey.onDelete,
+                    onUpdate: foreignKey.onUpdate,
+                    deferrable: foreignKey.deferrable,
+                }
+                metadataArgsStorage.foreignKeys.push(foreignKeyArgs)
+            }
         })
 
         // add relation metadata args from the schema
@@ -293,6 +312,22 @@ export class EntitySchemaTransformer {
                     columns: index.columns,
                 }
                 metadataArgsStorage.indices.push(indexArgs)
+            })
+        }
+
+        if (options.foreignKeys) {
+            options.foreignKeys.forEach((foreignKey) => {
+                const foreignKeyArgs: ForeignKeyMetadataArgs = {
+                    target: options.target || options.name,
+                    type: foreignKey.target,
+                    columnNames: foreignKey.columnNames,
+                    referencedColumnNames: foreignKey.referencedColumnNames,
+                    name: foreignKey.name,
+                    onDelete: foreignKey.onDelete,
+                    onUpdate: foreignKey.onUpdate,
+                    deferrable: foreignKey.deferrable,
+                }
+                metadataArgsStorage.foreignKeys.push(foreignKeyArgs)
             })
         }
 
