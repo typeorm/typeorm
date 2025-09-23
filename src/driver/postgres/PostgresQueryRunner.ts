@@ -1226,6 +1226,58 @@ export class PostgresQueryRunner
             : table.columns.find(
                   (column) => column.name === oldTableColumnOrName,
               )
+
+        // ---- SAFE VARCHAR WIDEN START (PostgreSQL: ALTER TYPE, not drop+add) ----
+        {
+            try {
+                const toNum = (v: any) =>
+                    v == null
+                        ? null
+                        : /^\d+$/.test(String(v).trim())
+                        ? parseInt(String(v), 10)
+                        : null
+                const otype = String(
+                    (oldColumn as any)?.type ?? "",
+                ).toLowerCase()
+                const ntype = String(
+                    (newColumn as any)?.type ?? (oldColumn as any)?.type ?? "",
+                ).toLowerCase()
+                const isVarOld =
+                    otype === "varchar" || otype === "character varying"
+                const isVarNew =
+                    ntype === "varchar" || ntype === "character varying"
+                const oldLen = toNum((oldColumn as any)?.length)
+                const newLen = toNum((newColumn as any)?.length)
+                const sameDim =
+                    ((newColumn as any)?.isArray ?? false) ===
+                    ((oldColumn as any)?.isArray ?? false)
+                if (
+                    isVarOld &&
+                    isVarNew &&
+                    oldLen !== null &&
+                    newLen !== null &&
+                    newLen > oldLen &&
+                    sameDim
+                ) {
+                    const upType = this.driver.createFullType(newColumn)
+                    await this.query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            (newColumn as any).name
+                        }" TYPE ${upType}`,
+                    )
+                    // update cached table metadata so follow-up ops see the new length
+                    const cached = table.findColumnByName(
+                        (newColumn as any).name,
+                    )
+                    if (cached)
+                        (cached as any).length = (newColumn as any).length
+                    return
+                }
+            } catch {
+                /* fall back to existing logic */
+            }
+        }
+        // ---- SAFE VARCHAR WIDEN END ----
         if (!oldColumn)
             throw new TypeORMError(
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
