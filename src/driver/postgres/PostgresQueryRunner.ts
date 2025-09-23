@@ -1226,7 +1226,6 @@ export class PostgresQueryRunner
             : table.columns.find(
                   (column) => column.name === oldTableColumnOrName,
               )
-
         // ---- SAFE VARCHAR WIDEN START (PostgreSQL: ALTER TYPE, not drop+add) ----
         {
             try {
