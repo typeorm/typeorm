@@ -1,10 +1,10 @@
 import { Entity } from "../../../../../../src/decorator/entity/Entity"
-import { PrimaryGeneratedColumn } from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { PrimaryColumn } from "../../../../../../src/decorator/columns/PrimaryColumn"
 import { Column } from "../../../../../../src/decorator/columns/Column"
 
 @Entity()
 export class JsonPathExample {
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number
 
     @Column({ type: "jsonpath" })

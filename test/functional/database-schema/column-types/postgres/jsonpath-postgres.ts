@@ -48,13 +48,14 @@ describe("database schema > column types > postgres > jsonpath", () => {
         ["($ + 1).abs().ceil()"],
 
         ["$.floor[*].apt[*].area > 10"],
-    ].forEach(([path, canonical]) => {
+    ].forEach(([path, canonical], index) => {
         it(`should insert and retrieve jsonpath values as strings for: ${path}`, () =>
             Promise.all(
                 connections.map(async (connection) => {
                     const repository = connection.getRepository(JsonPathExample)
                     const createdEntity = new JsonPathExample()
 
+                    createdEntity.id = index
                     createdEntity.path = path
 
                     await repository.save(createdEntity)
