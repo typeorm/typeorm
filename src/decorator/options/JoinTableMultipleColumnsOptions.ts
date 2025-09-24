@@ -44,6 +44,7 @@ export interface JoinTableMultipleColumnsOptions {
      * When set to true, TypeORM will not rename duplicate column names (e.g., id_1).
      * This is useful for partitioned junction tables where both entities share the same partition keys.
      * By default is false.
+     * Column-level `JoinColumnOptions.preserveSharedColumn` takes precedence when provided.
      */
     preserveSharedColumns?: boolean
 }

@@ -51,13 +51,8 @@ export function JoinTable(
             database:
                 options && options.database ? options.database : undefined,
             synchronize: !(options && options.synchronize === false),
-            preserveSharedColumns:
-                options &&
-                (options as JoinTableMultipleColumnsOptions)
-                    .preserveSharedColumns
-                    ? (options as JoinTableMultipleColumnsOptions)
-                          .preserveSharedColumns
-                    : undefined,
+            preserveSharedColumns: (options as JoinTableMultipleColumnsOptions)
+                .preserveSharedColumns,
         } as JoinTableMetadataArgs)
     }
 }

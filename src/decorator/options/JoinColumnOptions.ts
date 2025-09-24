@@ -22,6 +22,7 @@ export interface JoinColumnOptions {
      * in both joinColumns and inverseJoinColumns of a junction table.
      * This allows shared columns for composite foreign key constraints.
      * By default is false.
+     * Only applicable within @JoinTable joinColumns/inverseJoinColumns; ignored on non-junction relations.
      */
     preserveSharedColumn?: boolean
 }
