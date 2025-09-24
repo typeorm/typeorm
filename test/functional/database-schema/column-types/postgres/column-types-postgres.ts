@@ -613,31 +613,33 @@ describe("database schema > column types > postgres", () => {
         // * https://www.postgresql.org/docs/current/datatype-json.html#DATATYPE-JSONPATH
         // * https://www.postgresql.org/docs/current/functions-json.html#FUNCTIONS-SQLJSON-PATH
         const validJsonPaths = [
-            "$", // the whole JSON document (context item)
-            "$foo", // variable "foo"
-            '"bar"', // string literal
-            "12.345", // numeric literal
-            "true", // boolean literal
-            "null", // null
-            "$.floor", // field accessor on $
-            "$.floor[*]", // the same, followed by wildcard array accessor
+            ["$"], // the whole JSON document (context item)
+            ["$foo", `$"foo"`], // variable "foo"
+            ['"bar"'], // string literal
+            ["12.345"], // numeric literal
+            ["true"], // boolean literal
+            ["null"], // null
+            ["$.floor"], // field accessor on $
+            ["$.floor[*]"], // the same, followed by wildcard array accessor
 
             // complex path with filters and variables
-            "$.floor[*] ? (@.level < $max_level).apt[*] ? (@.area > $min_area).no",
+            [
+                "$.floor[*] ? (@.level < $max_level).apt[*] ? (@.area > $min_area).no",
+            ],
 
             // arithmetic expressions:
-            "-$.a[*]", // unary
-            "$.a + 3", // binary
-            "2 * $.a - (3 / $.b + $x.y)", // complex expression with variables
+            ["-$.a[*]"], // unary
+            ["$.a + 3"], // binary
+            ["2 * $.a - (3 / $.b + $x.y)"], // complex expression with variables
 
             // parenthesized expression used as starting element of a path,
             // followed by two item methods ".abs()" and ".ceil()"
-            "($ + 1).abs().ceil()",
+            ["($ + 1).abs().ceil()"],
 
-            "$.floor[*].apt[*].area > 10",
+            ["$.floor[*].apt[*].area > 10"],
         ]
 
-        validJsonPaths.forEach((path) => {
+        validJsonPaths.forEach(([path, canonical]) => {
             it(`should insert and retrieve jsonpath values as strings for: ${path}`, () =>
                 Promise.all(
                     connections.map(async (connection) => {
@@ -653,7 +655,15 @@ describe("database schema > column types > postgres", () => {
                             id: createdEntity.id,
                         })
 
-                        loadedEntity.path.should.be.equal(path)
+                        loadedEntity.path.should.be.equal(canonical ?? path)
+
+                        const loadedCanonicalEntity = await repository
+                            .createQueryBuilder()
+                            .select("path::text as path")
+                            .where({ id: createdEntity.id })
+                            .getOneOrFail()
+
+                        loadedCanonicalEntity.path.should.be.equal(path)
                     }),
                 ))
         })
