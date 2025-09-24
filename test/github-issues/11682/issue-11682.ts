@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import "reflect-metadata"
 import {
     createTestingConnections,
@@ -104,6 +105,7 @@ describe("github issues > #11682", () => {
                             /INSERT INTO "user_groups"\("(\w+)", "(\w+)", "(\w+)", "(\w+)"\)/
 
                         const match = insertQuery.match(insertRegex)
+                        expect(match, "insert column match").to.not.be.null
                         const columns = [
                             match![1],
                             match![2],
@@ -154,6 +156,7 @@ describe("github issues > #11682", () => {
                             /WHERE \("(\w+)" = .+ AND "(\w+)" = .+ AND "(\w+)" = .+ AND "(\w+)" = .+\)/s
 
                         const match = deleteQuery.match(deleteRegex)
+                        expect(match, "delete column match").to.not.be.null
                         const whereColumns = [
                             match![1],
                             match![2],
@@ -212,6 +215,8 @@ describe("github issues > #11682", () => {
                             /DELETE FROM "user_groups" WHERE \("(\w+)" = .+ AND "(\w+)" = .+ AND "(\w+)" = .+ AND "(\w+)" = .+\)/
 
                         const deleteMatch = deleteQuery.match(deleteRegex)
+                        expect(deleteMatch, "delete column match").to.not.be
+                            .null
                         const deleteColumns = [
                             deleteMatch![1],
                             deleteMatch![2],
@@ -230,6 +235,8 @@ describe("github issues > #11682", () => {
                             /INSERT INTO "user_groups"\("(\w+)", "(\w+)", "(\w+)", "(\w+)"\)/
 
                         const insertMatch = insertQuery.match(insertRegex)
+                        expect(insertMatch, "insert column match").to.not.be
+                            .null
                         const insertColumns = [
                             insertMatch![1],
                             insertMatch![2],
@@ -319,6 +326,7 @@ describe("github issues > #11682", () => {
                             /INSERT INTO "user_groups"\("(\w+)", "(\w+)", "(\w+)", "(\w+)"\)/
 
                         const match = insertQuery.match(insertRegex)
+                        expect(match, "insert column match").to.not.be.null
                         const columns = [
                             match![1],
                             match![2],
@@ -369,6 +377,7 @@ describe("github issues > #11682", () => {
                             /WHERE \("(\w+)" = .+ AND "(\w+)" = .+ AND "(\w+)" = .+ AND "(\w+)" = .+\)/s
 
                         const match = deleteQuery.match(deleteRegex)
+                        expect(match, "delete column match").to.not.be.null
                         const whereColumns = [
                             match![1],
                             match![2],
@@ -427,6 +436,8 @@ describe("github issues > #11682", () => {
                             /DELETE FROM "user_groups" WHERE \("(\w+)" = .+ AND "(\w+)" = .+ AND "(\w+)" = .+ AND "(\w+)" = .+\)/
 
                         const deleteMatch = deleteQuery.match(deleteRegex)
+                        expect(deleteMatch, "delete column match").to.not.be
+                            .null
                         const deleteColumns = [
                             deleteMatch![1],
                             deleteMatch![2],
@@ -445,6 +456,8 @@ describe("github issues > #11682", () => {
                             /INSERT INTO "user_groups"\("(\w+)", "(\w+)", "(\w+)", "(\w+)"\)/
 
                         const insertMatch = insertQuery.match(insertRegex)
+                        expect(insertMatch, "insert column match").to.not.be
+                            .null
                         const insertColumns = [
                             insertMatch![1],
                             insertMatch![2],
@@ -608,7 +621,7 @@ describe("github issues > #11682", () => {
             }))
 
         describe("from owner side", () => {
-            it("should generate INSERT with renamed columns", () =>
+            it("should generate INSERT with preserved shared columns", () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
                         const logger = dataSource.logger as MemoryLogger
@@ -641,6 +654,7 @@ describe("github issues > #11682", () => {
                             /INSERT INTO "user_groups_shared"\("(\w+)", "(\w+)", "(\w+)"\)/
 
                         const match = insertQuery.match(insertRegex)
+                        expect(match, "insert column match").to.not.be.null
                         const columns = [match![1], match![2], match![3]]
 
                         // Validate we have exactly the expected columns
@@ -651,7 +665,7 @@ describe("github issues > #11682", () => {
                     }),
                 ))
 
-            it("should generate DELETE with renamed columns", () =>
+            it("should generate DELETE with preserved shared columns", () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
                         const logger = dataSource.logger as MemoryLogger
@@ -685,9 +699,10 @@ describe("github issues > #11682", () => {
                             /WHERE \("(\w+)" = .+ AND "(\w+)" = .+ AND "(\w+)" = .+\)/s
 
                         const match = deleteQuery.match(deleteRegex)
+                        expect(match, "delete column match").to.not.be.null
                         const whereColumns = [match![1], match![2], match![3]]
 
-                        // Validate WHERE clause uses renamed columns
+                        // Validate WHERE clause uses preserved shared columns
                         expect(whereColumns).to.have.length(3)
                         expect(whereColumns).to.include("user_id")
                         expect(whereColumns).to.include("group_id")
@@ -695,7 +710,7 @@ describe("github issues > #11682", () => {
                     }),
                 ))
 
-            it("should generate UPDATE operations (DELETE + INSERT)", () =>
+            it("should generate UPDATE operations (DELETE + INSERT) with preserved shared columns", () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
                         const logger = dataSource.logger as MemoryLogger
@@ -737,6 +752,8 @@ describe("github issues > #11682", () => {
                             /DELETE FROM "user_groups_shared" WHERE \("(\w+)" = .+ AND "(\w+)" = .+ AND "(\w+)" = .+\)/
 
                         const deleteMatch = deleteQuery.match(deleteRegex)
+                        expect(deleteMatch, "delete column match").to.not.be
+                            .null
                         const deleteColumns = [
                             deleteMatch![1],
                             deleteMatch![2],
@@ -753,6 +770,8 @@ describe("github issues > #11682", () => {
                             /INSERT INTO "user_groups_shared"\("(\w+)", "(\w+)", "(\w+)"\)/
 
                         const insertMatch = insertQuery.match(insertRegex)
+                        expect(insertMatch, "insert column match").to.not.be
+                            .null
                         const insertColumns = [
                             insertMatch![1],
                             insertMatch![2],
@@ -765,7 +784,7 @@ describe("github issues > #11682", () => {
                     }),
                 ))
 
-            it("should work functionally with column renaming", () =>
+            it("should work functionally with preserved shared columns", () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
                         const user = createEntity(UserPreserved)
@@ -807,7 +826,7 @@ describe("github issues > #11682", () => {
         })
 
         describe("from inverse side", () => {
-            it("should generate INSERT with renamed columns", () =>
+            it("should generate INSERT with preserved shared columns", () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
                         const logger = dataSource.logger as MemoryLogger
@@ -840,6 +859,7 @@ describe("github issues > #11682", () => {
                             /INSERT INTO "user_groups_shared"\("(\w+)", "(\w+)", "(\w+)"\)/
 
                         const match = insertQuery.match(insertRegex)
+                        expect(match, "insert column match").to.not.be.null
                         const columns = [match![1], match![2], match![3]]
 
                         // Validate we have exactly the expected columns
@@ -850,7 +870,7 @@ describe("github issues > #11682", () => {
                     }),
                 ))
 
-            it("should generate DELETE with renamed columns", () =>
+            it("should generate DELETE with preserved shared columns", () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
                         const logger = dataSource.logger as MemoryLogger
@@ -884,9 +904,10 @@ describe("github issues > #11682", () => {
                             /WHERE \("(\w+)" = .+ AND "(\w+)" = .+ AND "(\w+)" = .+\)/s
 
                         const match = deleteQuery.match(deleteRegex)
+                        expect(match, "delete column match").to.not.be.null
                         const whereColumns = [match![1], match![2], match![3]]
 
-                        // Validate WHERE clause uses renamed columns
+                        // Validate WHERE clause uses preserved shared columns
                         expect(whereColumns).to.have.length(3)
                         expect(whereColumns).to.include("user_id")
                         expect(whereColumns).to.include("group_id")
@@ -894,7 +915,7 @@ describe("github issues > #11682", () => {
                     }),
                 ))
 
-            it("should generate UPDATE operations (DELETE + INSERT)", () =>
+            it("should generate UPDATE operations (DELETE + INSERT) with preserved shared columns", () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
                         const logger = dataSource.logger as MemoryLogger
@@ -936,6 +957,8 @@ describe("github issues > #11682", () => {
                             /DELETE FROM "user_groups_shared" WHERE \("(\w+)" = .+ AND "(\w+)" = .+ AND "(\w+)" = .+\)/
 
                         const deleteMatch = deleteQuery.match(deleteRegex)
+                        expect(deleteMatch, "delete column match").to.not.be
+                            .null
                         const deleteColumns = [
                             deleteMatch![1],
                             deleteMatch![2],
@@ -952,6 +975,8 @@ describe("github issues > #11682", () => {
                             /INSERT INTO "user_groups_shared"\("(\w+)", "(\w+)", "(\w+)"\)/
 
                         const insertMatch = insertQuery.match(insertRegex)
+                        expect(insertMatch, "insert column match").to.not.be
+                            .null
                         const insertColumns = [
                             insertMatch![1],
                             insertMatch![2],
@@ -964,7 +989,7 @@ describe("github issues > #11682", () => {
                     }),
                 ))
 
-            it("should work functionally with column renaming", () =>
+            it("should work functionally with preserved shared columns", () =>
                 Promise.all(
                     dataSources.map(async (dataSource) => {
                         const user1 = createEntity(UserPreserved)
