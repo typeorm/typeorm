@@ -3,7 +3,6 @@ import { DataSource } from "../data-source/DataSource"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
 import { IndexMetadata } from "../metadata/IndexMetadata"
-import { JoinColumnMetadataArgs } from "../metadata-args/JoinColumnMetadataArgs"
 import { JoinTableMetadataArgs } from "../metadata-args/JoinTableMetadataArgs"
 import { RelationMetadata } from "../metadata/RelationMetadata"
 import { TypeORMError } from "../error"
@@ -439,39 +438,10 @@ export class JunctionEntityMetadataBuilder {
             )
 
             if (matchingInverseColumn) {
-                // Found a duplicate column name, check if it should be preserved
-                const shouldPreserve = this.shouldPreserveColumn(
-                    joinColumn,
-                    matchingInverseColumn,
-                    joinTable,
-                )
-
-                if (shouldPreserve) {
-                    sharedColumnNames.push(joinColumn.name)
-                }
+                sharedColumnNames.push(joinColumn.name)
             }
         })
 
         return sharedColumnNames
-    }
-
-    /**
-     * Determines if a column should be preserved as shared based on configuration options.
-     */
-    protected shouldPreserveColumn(
-        joinColumn: JoinColumnMetadataArgs,
-        inverseJoinColumn: JoinColumnMetadataArgs,
-        joinTable: JoinTableMetadataArgs,
-    ): boolean {
-        // Check table-level configuration first
-        if (joinTable.preserveSharedColumns === true) {
-            return true
-        }
-
-        // Check column-level configuration
-        return (
-            joinColumn.preserveSharedColumn === true ||
-            inverseJoinColumn.preserveSharedColumn === true
-        )
     }
 }

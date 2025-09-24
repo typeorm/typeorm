@@ -51,8 +51,6 @@ export function JoinTable(
             database:
                 options && options.database ? options.database : undefined,
             synchronize: !(options && options.synchronize === false),
-            preserveSharedColumns: (options as JoinTableMultipleColumnsOptions)
-                .preserveSharedColumns,
         } as JoinTableMetadataArgs)
     }
 }

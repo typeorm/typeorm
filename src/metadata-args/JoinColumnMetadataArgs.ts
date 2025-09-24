@@ -27,12 +27,4 @@ export interface JoinColumnMetadataArgs {
      * Name of the foreign key constraint.
      */
     foreignKeyConstraintName?: string
-
-    /**
-     * When set to true, prevents this column from being renamed if it appears
-     * in both joinColumns and inverseJoinColumns of a junction table.
-     * This allows shared columns for composite foreign key constraints.
-     * By default is false.
-     */
-    preserveSharedColumn?: boolean
 }

@@ -42,7 +42,6 @@ export function JoinColumn(
                 name: options.name,
                 referencedColumnName: options.referencedColumnName,
                 foreignKeyConstraintName: options.foreignKeyConstraintName,
-                preserveSharedColumn: options.preserveSharedColumn,
             } as JoinColumnMetadataArgs)
         })
     }
