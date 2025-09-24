@@ -59,17 +59,17 @@ describe("database schema > column types > postgres > jsonpath", () => {
 
                     await repository.save(createdEntity)
 
-                    const loadedEntity = await repository.findOneByOrFail({
+                    const loadedEntity = (await repository.findOneBy({
                         id: createdEntity.id,
-                    })
+                    }))!
 
                     loadedEntity.path.should.be.equal(canonical ?? path)
 
-                    const loadedCanonicalEntity = await repository
+                    const loadedCanonicalEntity = (await repository
                         .createQueryBuilder()
                         .select("path::text as path")
                         .where({ id: createdEntity.id })
-                        .getOneOrFail()
+                        .getOne())!
 
                     loadedCanonicalEntity.path.should.be.equal(path)
                 }),
