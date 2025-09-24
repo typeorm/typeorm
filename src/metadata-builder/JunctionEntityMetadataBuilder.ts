@@ -200,7 +200,9 @@ export class JunctionEntityMetadataBuilder {
                             name: columnName,
                             nullable: false,
                             primary: true,
-                            // Shared columns on inverse side are non-insertable/updatable
+                            // Shared columns on inverse side are non-insertable/updatable to prevent
+                            // duplicate column bindings in DML operations (e.g., INSERT INTO table (tenant_id, tenant_id, ...))
+                            // Only the owner side (with @JoinTable) controls shared column values
                             insert: !sharedColumnNames.includes(columnName),
                             update: !sharedColumnNames.includes(columnName),
                         },
