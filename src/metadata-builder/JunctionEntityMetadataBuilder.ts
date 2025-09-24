@@ -65,9 +65,6 @@ export class JunctionEntityMetadataBuilder {
         })
         entityMetadata.build()
 
-        // Pre-calculate which column names will be shared between joinColumns and inverseJoinColumns
-        const sharedColumnNames = this.calculateSharedColumnNames(joinTable)
-
         // create original side junction columns
         const junctionColumns = referencedColumns.map((referencedColumn) => {
             const joinColumn = joinTable.joinColumns
@@ -80,19 +77,20 @@ export class JunctionEntityMetadataBuilder {
                       )
                   })
                 : undefined
-            const columnName =
-                joinColumn && joinColumn.name
-                    ? joinColumn.name
-                    : this.connection.namingStrategy.joinTableColumnName(
-                          relation.entityMetadata.tableNameWithoutPrefix,
-                          referencedColumn.propertyName,
-                          referencedColumn.databaseName,
-                      )
+            const isExplicitlyNamed = !!(joinColumn && joinColumn.name)
+            const columnName = isExplicitlyNamed
+                ? joinColumn.name!
+                : this.connection.namingStrategy.joinTableColumnName(
+                      relation.entityMetadata.tableNameWithoutPrefix,
+                      referencedColumn.propertyName,
+                      referencedColumn.databaseName,
+                  )
 
             return new ColumnMetadata({
                 connection: this.connection,
                 entityMetadata: entityMetadata,
                 referencedColumn: referencedColumn,
+                isExplicitlyNamed: isExplicitlyNamed,
                 args: {
                     target: "",
                     mode: "virtual",
@@ -148,20 +146,20 @@ export class JunctionEntityMetadataBuilder {
                           )
                       })
                     : undefined
-                const columnName =
-                    joinColumn && joinColumn.name
-                        ? joinColumn.name
-                        : this.connection.namingStrategy.joinTableInverseColumnName(
-                              relation.inverseEntityMetadata
-                                  .tableNameWithoutPrefix,
-                              inverseReferencedColumn.propertyName,
-                              inverseReferencedColumn.databaseName,
-                          )
+                const isExplicitlyNamed = !!(joinColumn && joinColumn.name)
+                const columnName = isExplicitlyNamed
+                    ? joinColumn.name!
+                    : this.connection.namingStrategy.joinTableInverseColumnName(
+                          relation.inverseEntityMetadata.tableNameWithoutPrefix,
+                          inverseReferencedColumn.propertyName,
+                          inverseReferencedColumn.databaseName,
+                      )
 
                 return new ColumnMetadata({
                     connection: this.connection,
                     entityMetadata: entityMetadata,
                     referencedColumn: inverseReferencedColumn,
+                    isExplicitlyNamed: isExplicitlyNamed,
                     args: {
                         target: "",
                         mode: "virtual",
