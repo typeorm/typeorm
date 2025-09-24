@@ -15,13 +15,6 @@ describe("database schema > column types > postgres > jsonpath", () => {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
-
-        for (const connection of connections) {
-            if (connection.driver.options.type === "postgres") {
-                // We want to have UTC as timezone
-                await connection.query("SET TIME ZONE 'UTC';")
-            }
-        }
     })
 
     beforeEach(() => reloadTestingDatabases(connections))
