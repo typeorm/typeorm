@@ -3,6 +3,7 @@ import { DataSource } from "../data-source/DataSource"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
 import { IndexMetadata } from "../metadata/IndexMetadata"
+import { JoinColumnMetadataArgs } from "../metadata-args/JoinColumnMetadataArgs"
 import { JoinTableMetadataArgs } from "../metadata-args/JoinTableMetadataArgs"
 import { RelationMetadata } from "../metadata/RelationMetadata"
 import { TypeORMError } from "../error"
@@ -63,6 +64,9 @@ export class JunctionEntityMetadataBuilder {
             },
         })
         entityMetadata.build()
+
+        // Pre-calculate which column names will be shared between joinColumns and inverseJoinColumns
+        const sharedColumnNames = this.calculateSharedColumnNames(joinTable)
 
         // create original side junction columns
         const junctionColumns = referencedColumns.map((referencedColumn) => {
@@ -196,6 +200,9 @@ export class JunctionEntityMetadataBuilder {
                             name: columnName,
                             nullable: false,
                             primary: true,
+                            // Shared columns on inverse side are non-insertable/updatable
+                            insert: !sharedColumnNames.includes(columnName),
+                            update: !sharedColumnNames.includes(columnName),
                         },
                     },
                 })
@@ -205,6 +212,7 @@ export class JunctionEntityMetadataBuilder {
         this.changeDuplicatedColumnNames(
             junctionColumns,
             inverseJunctionColumns,
+            sharedColumnNames,
         )
 
         // set junction table columns
@@ -365,6 +373,7 @@ export class JunctionEntityMetadataBuilder {
     protected changeDuplicatedColumnNames(
         junctionColumns: ColumnMetadata[],
         inverseJunctionColumns: ColumnMetadata[],
+        sharedColumnNames: string[],
     ) {
         junctionColumns.forEach((junctionColumn) => {
             inverseJunctionColumns.forEach((inverseJunctionColumn) => {
@@ -372,6 +381,19 @@ export class JunctionEntityMetadataBuilder {
                     junctionColumn.givenDatabaseName ===
                     inverseJunctionColumn.givenDatabaseName
                 ) {
+                    // Skip renaming if this is a shared column
+                    if (
+                        sharedColumnNames.includes(
+                            junctionColumn.givenDatabaseName!,
+                        ) ||
+                        sharedColumnNames.includes(
+                            inverseJunctionColumn.givenDatabaseName!,
+                        )
+                    ) {
+                        return
+                    }
+
+                    // Original renaming logic for non-shared columns
                     const junctionColumnName =
                         this.connection.namingStrategy.joinTableColumnDuplicationPrefix(
                             junctionColumn.propertyName,
@@ -392,5 +414,64 @@ export class JunctionEntityMetadataBuilder {
                 }
             })
         })
+    }
+
+    /**
+     * Pre-calculates which column names will be shared between joinColumns and inverseJoinColumns
+     * based on the preserveSharedColumns configuration.
+     */
+    protected calculateSharedColumnNames(
+        joinTable: JoinTableMetadataArgs,
+    ): string[] {
+        const sharedColumnNames: string[] = []
+
+        if (!joinTable.joinColumns || !joinTable.inverseJoinColumns) {
+            return sharedColumnNames
+        }
+
+        // Check each joinColumn against inverseJoinColumns for duplicates
+        joinTable.joinColumns.forEach((joinColumn) => {
+            if (!joinColumn.name) return
+
+            const matchingInverseColumn = joinTable.inverseJoinColumns!.find(
+                (inverseJoinColumn) =>
+                    inverseJoinColumn.name === joinColumn.name,
+            )
+
+            if (matchingInverseColumn) {
+                // Found a duplicate column name, check if it should be preserved
+                const shouldPreserve = this.shouldPreserveColumn(
+                    joinColumn,
+                    matchingInverseColumn,
+                    joinTable,
+                )
+
+                if (shouldPreserve) {
+                    sharedColumnNames.push(joinColumn.name)
+                }
+            }
+        })
+
+        return sharedColumnNames
+    }
+
+    /**
+     * Determines if a column should be preserved as shared based on configuration options.
+     */
+    protected shouldPreserveColumn(
+        joinColumn: JoinColumnMetadataArgs,
+        inverseJoinColumn: JoinColumnMetadataArgs,
+        joinTable: JoinTableMetadataArgs,
+    ): boolean {
+        // Check table-level configuration first
+        if (joinTable.preserveSharedColumns === true) {
+            return true
+        }
+
+        // Check column-level configuration
+        return (
+            joinColumn.preserveSharedColumn === true ||
+            inverseJoinColumn.preserveSharedColumn === true
+        )
     }
 }

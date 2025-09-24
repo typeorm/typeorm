@@ -720,12 +720,55 @@ export class ColumnMetadata {
 
                 return undefined
             } else {
+                // Original fallback for non-relation columns or when relation construction fails
                 if (
                     entity[this.propertyName] !== undefined &&
                     (returnNulls === false ||
                         entity[this.propertyName] !== null)
                 ) {
                     return { [this.propertyName]: entity[this.propertyName] }
+                }
+
+                // Check if this is a relation column with undefined relation but available FK values
+                // This logic should only run if the normal column value extraction above didn't return anything
+                if (
+                    this.relationMetadata &&
+                    entity[this.relationMetadata.propertyName] === undefined &&
+                    entity[this.propertyName] !== undefined &&
+                    (returnNulls === false ||
+                        entity[this.propertyName] !== null)
+                ) {
+                    // Construct relation object by iterating over all join columns
+                    // This ensures consistent relation object formatting for all relation columns
+                    // and handles both single and composite primary keys in the referenced entity
+                    const relationObject: ObjectLiteral = {}
+                    let hasAllValues = true
+
+                    // Iterate over all join columns to construct the complete relation object
+                    for (const joinColumn of this.relationMetadata
+                        .joinColumns) {
+                        const fkValue = entity[joinColumn.propertyName]
+
+                        if (fkValue !== undefined && fkValue !== null) {
+                            relationObject[
+                                joinColumn.referencedColumn!.propertyName
+                            ] = fkValue
+                        } else {
+                            hasAllValues = false
+                            break
+                        }
+                    }
+
+                    // Only return the relation object if we have all required FK values
+                    if (
+                        hasAllValues &&
+                        Object.keys(relationObject).length > 0
+                    ) {
+                        return {
+                            [this.relationMetadata.propertyName]:
+                                relationObject,
+                        }
+                    }
                 }
 
                 return undefined

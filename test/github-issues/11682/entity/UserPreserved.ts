@@ -18,8 +18,7 @@ export class UserPreserved {
     @ManyToMany(() => GroupPreserved, (group) => group.users)
     @JoinTable({
         name: "user_groups_shared",
-        // TODO: This option doesn't exist yet - will be implemented
-        // preserveSharedColumns: true,
+        preserveSharedColumns: true, // Enable shared column preservation
         joinColumns: [
             { name: "tenant_id", referencedColumnName: "tenantId" },
             { name: "user_id", referencedColumnName: "id" },

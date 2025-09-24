@@ -50,28 +50,25 @@ describe("github issues > #11682", () => {
 
     describe("Current behavior validation (regression tests)", () => {
         it("should have renamed columns in junction table schema", () =>
-            Promise.all(
-                dataSources.map(async (dataSource) => {
-                    const userMetadata = dataSource.getMetadata(UserRenamed)
-                    const groupsRelation =
-                        userMetadata.findRelationWithPropertyPath("groups")!
-                    const junctionMetadata =
-                        groupsRelation.junctionEntityMetadata!
+            dataSources.forEach((dataSource) => {
+                const userMetadata = dataSource.getMetadata(UserRenamed)
+                const groupsRelation =
+                    userMetadata.findRelationWithPropertyPath("groups")!
+                const junctionMetadata = groupsRelation.junctionEntityMetadata!
 
-                    const columnNames = junctionMetadata.columns.map(
-                        (col) => col.databaseName,
-                    )
+                const columnNames = junctionMetadata.columns.map(
+                    (col) => col.databaseName,
+                )
 
-                    // Should have 4 columns
-                    expect(columnNames).to.have.length(4)
+                // Should have 4 columns
+                expect(columnNames).to.have.length(4)
 
-                    // Should contain user_id, group_id and tenant_id renamed
-                    expect(columnNames).to.include("user_id")
-                    expect(columnNames).to.include("group_id")
-                    expect(columnNames).to.include("tenant_id_1")
-                    expect(columnNames).to.include("tenant_id_2")
-                }),
-            ))
+                // Should contain user_id, group_id and tenant_id renamed
+                expect(columnNames).to.include("user_id")
+                expect(columnNames).to.include("group_id")
+                expect(columnNames).to.include("tenant_id_1")
+                expect(columnNames).to.include("tenant_id_2")
+            }))
 
         describe("from owner side", () => {
             it("should generate INSERT with renamed columns", () =>
@@ -574,28 +571,41 @@ describe("github issues > #11682", () => {
     })
 
     describe("Expected behavior with preserveSharedColumns", () => {
-        it("should have preserved shared columns in junction table schema", () =>
+        beforeEach(() =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const userMetadata = dataSource.getMetadata(UserPreserved)
-                    const groupsRelation =
-                        userMetadata.findRelationWithPropertyPath("groups")!
-                    const junctionMetadata =
-                        groupsRelation.junctionEntityMetadata!
-
-                    const columnNames = junctionMetadata.columns.map(
-                        (col) => col.databaseName,
-                    )
-
-                    // Should still have 4 columns
-                    expect(columnNames).to.have.length(4)
-
-                    // Should contain user_id, group_id and tenant_id
-                    expect(columnNames).to.include("user_id")
-                    expect(columnNames).to.include("group_id")
-                    expect(columnNames).to.include("tenant_id") // Found twice
+                    // Manually create the junction table as TypeORM doesn't support shared columns in DDL
+                    const queryRunner = dataSource.createQueryRunner()
+                    await queryRunner.query(`CREATE TABLE "user_groups_shared" (
+                        "tenant_id" VARCHAR(255) NOT NULL,
+                        "user_id" VARCHAR(255) NOT NULL,
+                        "group_id" VARCHAR(255) NOT NULL,
+                        PRIMARY KEY ("tenant_id", "user_id", "group_id")
+                    )`)
+                    await queryRunner.release()
                 }),
-            ))
+            ),
+        )
+
+        it("should have preserved shared columns in junction table schema", () =>
+            dataSources.forEach((dataSource) => {
+                const userMetadata = dataSource.getMetadata(UserPreserved)
+                const groupsRelation =
+                    userMetadata.findRelationWithPropertyPath("groups")!
+                const junctionMetadata = groupsRelation.junctionEntityMetadata!
+
+                const columnNames = junctionMetadata.columns.map(
+                    (col) => col.databaseName,
+                )
+
+                // Should still have 4 columns
+                expect(columnNames).to.have.length(4)
+
+                // Should contain user_id, group_id and tenant_id
+                expect(columnNames).to.include("user_id")
+                expect(columnNames).to.include("group_id")
+                expect(columnNames).to.include("tenant_id") // Found twice
+            }))
 
         describe("from owner side", () => {
             it("should generate INSERT with renamed columns", () =>

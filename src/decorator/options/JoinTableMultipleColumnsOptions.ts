@@ -38,4 +38,12 @@ export interface JoinTableMultipleColumnsOptions {
      * By default schema synchronization is enabled.
      */
     readonly synchronize?: boolean
+
+    /**
+     * Allows shared columns between joinColumns and inverseJoinColumns in junction table.
+     * When set to true, TypeORM will not rename duplicate column names (e.g., id_1).
+     * This is useful for partitioned junction tables where both entities share the same partition keys.
+     * By default is false.
+     */
+    preserveSharedColumns?: boolean
 }
