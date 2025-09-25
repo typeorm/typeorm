@@ -1593,7 +1593,7 @@ export class SqlServerQueryRunner
                 oldColumn.name = newColumn.name
             }
 
-            // BEGIN length-only fast path (SQL Server)
+            // BEGIN pre-truncate oversized values when shrinking (SQL Server)
             if (
                 oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length
@@ -1604,56 +1604,23 @@ export class SqlServerQueryRunner
                 const newLen = newColumn.length
                     ? parseInt(newColumn.length, 10)
                     : undefined
-                const col = oldColumn.name
-
-                if (oldLen && newLen && newLen < oldLen) {
-                    // shrink: make data fit first
+                if (typeof oldLen === "number" && typeof newLen === "number" && newLen < oldLen) {
+                    const col = this.driver.escape(oldColumn.name)
+                    const t = (newColumn.type as string).toLowerCase()
+                    const threshold = t.startsWith("n") ? `${newLen}*2` : `${newLen}`
+                    const updateExpr =
+                        t === "varbinary" ? `SUBSTRING(${col}, 1, ${newLen})` : `LEFT(${col}, ${newLen})`
+                    // shrink: make data fit first; actual ALTER follows in general path
                     upQueries.push(
                         new Query(
                             `UPDATE ${this.escapePath(table)} ` +
-                                `SET ${this.driver.escape(
-                                    col,
-                                )} = LEFT(${this.driver.escape(
-                                    col,
-                                )}, ${newLen}) ` +
-                                `WHERE LEN(${this.driver.escape(
-                                    col,
-                                )}) > ${newLen}`,
+                                `SET ${col} = ${updateExpr} ` +
+                                `WHERE DATALENGTH(${col}) > ${threshold}`,
                         ),
                     )
                 }
-
-                // ALTER COLUMN with full type preserves collation/nullability per createFullType/null flag
-                const nullability = newColumn.isNullable ? "NULL" : "NOT NULL"
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ` +
-                            `ALTER COLUMN ${this.driver.escape(
-                                col,
-                            )} ${this.driver.createFullType(
-                                newColumn,
-                            )} ${nullability}`,
-                    ),
-                )
-                const downNullability = oldColumn.isNullable
-                    ? "NULL"
-                    : "NOT NULL"
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ` +
-                            `ALTER COLUMN ${this.driver.escape(
-                                col,
-                            )} ${this.driver.createFullType(
-                                oldColumn,
-                            )} ${downNullability}`,
-                    ),
-                )
-
-                await this.executeQueries(upQueries, downQueries)
-                return
             }
-            // END length-only fast path
-
+            // END
             if (
                 this.isColumnChanged(oldColumn, newColumn, false, false, false)
             ) {
