@@ -127,7 +127,7 @@
     "@types/sinon-chai": "^3.2.12",
     "@types/source-map-support": "^0.5.10",
     "@types/yargs": "^17.0.33",
-    "better-sqlite3": "^8.7.0",
+    "better-sqlite3": "^12.4.1",
     "chai": "^4.5.0",
     "chai-as-promised": "^7.1.2",
     "class-transformer": "^0.5.1",
