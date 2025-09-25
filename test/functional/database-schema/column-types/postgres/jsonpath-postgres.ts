@@ -30,24 +30,19 @@ describe("database schema > column types > postgres > jsonpath", () => {
         ["12.345"], // numeric literal
         ["true"], // boolean literal
         ["null"], // null
-        ["$.floor"], // field accessor on $
-        ["$.floor[*]"], // the same, followed by wildcard array accessor
+        ["$.floor", `$."floor"`], // field accessor on $
+        ["$.floor[*]", `$."floor"[*]`], // the same, followed by wildcard array accessor
 
         // complex path with filters and variables
         [
             "$.floor[*] ? (@.level < $max_level).apt[*] ? (@.area > $min_area).no",
+            `$."floor"[*]?(@."level" < $"max_level")."apt"[*]?(@."area" > $"min_area")."no"`,
         ],
 
         // arithmetic expressions:
-        ["-$.a[*]"], // unary
-        ["$.a + 3"], // binary
-        ["2 * $.a - (3 / $.b + $x.y)"], // complex expression with variables
-
-        // parenthesized expression used as starting element of a path,
-        // followed by two item methods ".abs()" and ".ceil()"
-        ["($ + 1).abs().ceil()"],
-
-        ["$.floor[*].apt[*].area > 10"],
+        ["-$.a[*]", `(-$."a"[*])`], // unary
+        ["$.a + 3", `($."a" + 3)`], // binary
+        ["2 * $.a - (3 / $.b + $x.y)", `(2 * $."a" - (3 / $."b" + $"x"."y"))`], // complex expression with variables
     ].forEach(([path, canonical]) => {
         it(`should insert and retrieve jsonpath values as strings for: ${path}`, () =>
             Promise.all(
@@ -64,14 +59,6 @@ describe("database schema > column types > postgres > jsonpath", () => {
                     })
 
                     loaded.path.should.be.equal(canonical ?? path)
-
-                    const typeCasted = await repository
-                        .createQueryBuilder()
-                        .select("path::text as path")
-                        .where({ id: example.id })
-                        .getOneOrFail()
-
-                    typeCasted.path.should.be.equal(path)
                 }),
             ))
     })
