@@ -52,6 +52,12 @@ export interface TableColumnOptions {
     isUnique?: boolean
 
     /**
+     * Indicates if column handles null values as distinct.
+     * Works only in PostgreSQL 15 and above.
+     */
+    isNullsNotDistinct?: boolean
+
+    /**
      * Indicates if column stores array.
      */
     isArray?: boolean
