@@ -1172,7 +1172,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         // BEGIN length-only fast path (SAP HANA)
         if (
             oldColumn.type === newColumn.type &&
-            oldColumn.length !== newColumn.length
+            oldColumn.length !== newColumn.length &&
+            // allow only safe text types
+            ["char","nchar","varchar","nvarchar","alphanum","shorttext"].includes(
+                String(oldColumn.type).toLowerCase(),
+            ) &&
+            // ensure only length changed; let general path handle other mutations
+            newColumn.isNullable === oldColumn.isNullable &&
+            newColumn.default === oldColumn.default &&
+            newColumn.comment === oldColumn.comment &&
+            newColumn.isUnique === oldColumn.isUnique &&
+            newColumn.isPrimary === oldColumn.isPrimary
         ) {
             const oldLen = oldColumn.length
                 ? parseInt(oldColumn.length, 10)
@@ -1194,14 +1204,18 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // (Optional) you generally don't need a down-query for this UPDATE
             }
 
-            // Perform the in-place ALTER. HANA uses: ALTER TABLE <tbl> ALTER ("col" NVARCHAR(<len>) [NULL|NOT NULL])
-            const nullability = newColumn.isNullable ? "NULL" : "NOT NULL"
+            // Perform the in-place ALTER using the generic builder to preserve defaults/comments/etc.
             upQueries.push(
                 new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ` +
-                        `ALTER ("${col}" ${this.driver.createFullType(
-                            newColumn,
-                        )} ${nullability})`,
+                    `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                    this.buildCreateColumnSql(
+                        Object.assign(new TableColumn(), newColumn, { name: col }),
+                        !(
+                            oldColumn.default === null ||
+                            oldColumn.default === undefined
+                        ),
+                        !oldColumn.isNullable,
+                    ) + `)`,
                 ),
             )
 
@@ -1219,7 +1233,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             return
         }
         // END length-only fast path
-
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
