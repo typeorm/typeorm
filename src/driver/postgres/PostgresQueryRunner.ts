@@ -1522,13 +1522,70 @@ export class PostgresQueryRunner
                 oldColumn.name = newColumn.name
             }
 
-            // Handle length, scale and precision changes without recreating the column, e.g.:
+            // BEGIN length-only fast path (Postgres/Cockroach)
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                const oldLen = oldColumn.length
+                    ? parseInt(oldColumn.length, 10)
+                    : undefined
+                const newLen = newColumn.length
+                    ? parseInt(newColumn.length, 10)
+                    : undefined
+                const col = oldColumn.name // target existing column name
+
+                if (oldLen && newLen && newLen < oldLen) {
+                    // shrink: coerce with USING so ALTER never fails
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
+                                    newColumn,
+                                )} ` +
+                                `USING substring("${col}" FROM 1 FOR ${newLen})`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
+                                    oldColumn,
+                                )} ` +
+                                `USING substring("${col}" FROM 1 FOR ${oldLen})`,
+                        ),
+                    )
+                } else {
+                    // widen (or unspecified oldLen): plain ALTER TYPE is enough
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
+                                    newColumn,
+                                )}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
+                                    oldColumn,
+                                )}`,
+                        ),
+                    )
+                }
+
+                await this.executeQueries(upQueries, downQueries)
+                return
+            }
+            // END length-only fast path
+
+            // Handle scale and precision changes without recreating the column, e.g.:
             // varchar(n) -> varchar(m)
             // numeric(x, y) -> numeric(v, w)
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale ||
-                newColumn.length !== oldColumn.length
+                newColumn.scale !== oldColumn.scale
             ) {
                 upQueries.push(
                     new Query(

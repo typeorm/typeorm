@@ -1230,6 +1230,57 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
             }
+            // BEGIN length-only fast path (MySQL family)
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                const oldLen = oldColumn.length
+                    ? parseInt(oldColumn.length, 10)
+                    : undefined
+                const newLen = newColumn.length
+                    ? parseInt(newColumn.length, 10)
+                    : undefined
+                const col = oldColumn.name
+
+                if (oldLen && newLen && newLen < oldLen) {
+                    // shrink: pre-truncate rows that exceed new length
+                    upQueries.push(
+                        new Query(
+                            `UPDATE ${this.escapePath(table)} ` +
+                                `SET \`${col}\` = LEFT(\`${col}\`, ${newLen}) ` +
+                                `WHERE CHAR_LENGTH(\`${col}\`) > ${newLen}`,
+                        ),
+                    )
+                    // (optional) down: if reverting to larger oldLen, no data change needed
+                }
+
+                // in-place alter; use MODIFY so we don't rename the column accidentally
+                const nullability = newColumn.isNullable ? "NULL" : "NOT NULL"
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ` +
+                            `MODIFY \`${col}\` ${this.driver.createFullType(
+                                newColumn,
+                            )} ${nullability}`,
+                    ),
+                )
+                const downNullability = oldColumn.isNullable
+                    ? "NULL"
+                    : "NOT NULL"
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ` +
+                            `MODIFY \`${col}\` ${this.driver.createFullType(
+                                oldColumn,
+                            )} ${downNullability}`,
+                    ),
+                )
+
+                await this.executeQueries(upQueries, downQueries)
+                return
+            }
+            // END length-only fast path
 
             if (this.isColumnChanged(oldColumn, newColumn, true, true)) {
                 upQueries.push(

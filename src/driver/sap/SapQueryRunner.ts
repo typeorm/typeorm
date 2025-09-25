@@ -1169,11 +1169,61 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // BEGIN length-only fast path (SAP HANA)
+        if (
+            oldColumn.type === newColumn.type &&
+            oldColumn.length !== newColumn.length
+        ) {
+            const oldLen = oldColumn.length
+                ? parseInt(oldColumn.length, 10)
+                : undefined
+            const newLen = newColumn.length
+                ? parseInt(newColumn.length, 10)
+                : undefined
+            const col = oldColumn.name
+
+            // If shrinking, make existing values fit first to avoid ALTER errors
+            if (oldLen && newLen && newLen < oldLen) {
+                upQueries.push(
+                    new Query(
+                        `UPDATE ${this.escapePath(table)} ` +
+                            `SET "${col}" = SUBSTRING("${col}", 1, ${newLen}) ` +
+                            `WHERE LENGTH("${col}") > ${newLen}`,
+                    ),
+                )
+                // (Optional) you generally don't need a down-query for this UPDATE
+            }
+
+            // Perform the in-place ALTER. HANA uses: ALTER TABLE <tbl> ALTER ("col" NVARCHAR(<len>) [NULL|NOT NULL])
+            const nullability = newColumn.isNullable ? "NULL" : "NOT NULL"
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ` +
+                        `ALTER ("${col}" ${this.driver.createFullType(
+                            newColumn,
+                        )} ${nullability})`,
+                ),
+            )
+
+            const downNullability = oldColumn.isNullable ? "NULL" : "NOT NULL"
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ` +
+                        `ALTER ("${col}" ${this.driver.createFullType(
+                            oldColumn,
+                        )} ${downNullability})`,
+                ),
+            )
+
+            await this.executeQueries(upQueries, downQueries)
+            return
+        }
+        // END length-only fast path
+
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length
+            newColumn.type !== oldColumn.type
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed
@@ -1366,10 +1416,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (
-                this.isColumnChanged(oldColumn, newColumn, true) &&
-                oldColumn.length == newColumn.length
-            ) {
+            if (this.isColumnChanged(oldColumn, newColumn, true)) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(

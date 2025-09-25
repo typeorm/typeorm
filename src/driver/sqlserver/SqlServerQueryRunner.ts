@@ -1593,6 +1593,67 @@ export class SqlServerQueryRunner
                 oldColumn.name = newColumn.name
             }
 
+            // BEGIN length-only fast path (SQL Server)
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                const oldLen = oldColumn.length
+                    ? parseInt(oldColumn.length, 10)
+                    : undefined
+                const newLen = newColumn.length
+                    ? parseInt(newColumn.length, 10)
+                    : undefined
+                const col = oldColumn.name
+
+                if (oldLen && newLen && newLen < oldLen) {
+                    // shrink: make data fit first
+                    upQueries.push(
+                        new Query(
+                            `UPDATE ${this.escapePath(table)} ` +
+                                `SET ${this.driver.escape(
+                                    col,
+                                )} = LEFT(${this.driver.escape(
+                                    col,
+                                )}, ${newLen}) ` +
+                                `WHERE LEN(${this.driver.escape(
+                                    col,
+                                )}) > ${newLen}`,
+                        ),
+                    )
+                }
+
+                // ALTER COLUMN with full type preserves collation/nullability per createFullType/null flag
+                const nullability = newColumn.isNullable ? "NULL" : "NOT NULL"
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ` +
+                            `ALTER COLUMN ${this.driver.escape(
+                                col,
+                            )} ${this.driver.createFullType(
+                                newColumn,
+                            )} ${nullability}`,
+                    ),
+                )
+                const downNullability = oldColumn.isNullable
+                    ? "NULL"
+                    : "NOT NULL"
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ` +
+                            `ALTER COLUMN ${this.driver.escape(
+                                col,
+                            )} ${this.driver.createFullType(
+                                oldColumn,
+                            )} ${downNullability}`,
+                    ),
+                )
+
+                await this.executeQueries(upQueries, downQueries)
+                return
+            }
+            // END length-only fast path
+
             if (
                 this.isColumnChanged(oldColumn, newColumn, false, false, false)
             ) {

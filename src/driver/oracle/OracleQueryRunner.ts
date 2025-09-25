@@ -1302,6 +1302,56 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
+            // BEGIN length-only fast path (Oracle)
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                const oldLen = oldColumn.length
+                    ? parseInt(oldColumn.length, 10)
+                    : undefined
+                const newLen = newColumn.length
+                    ? parseInt(newColumn.length, 10)
+                    : undefined
+                const col = oldColumn.name
+
+                if (oldLen && newLen && newLen < oldLen) {
+                    // shrink: avoid ORA-01441 by truncating first
+                    upQueries.push(
+                        new Query(
+                            `UPDATE ${this.escapePath(table)} ` +
+                                `SET "${col}" = SUBSTR("${col}", 1, ${newLen}) ` +
+                                `WHERE LENGTH("${col}") > ${newLen}`,
+                        ),
+                    )
+                }
+
+                const nullability = newColumn.isNullable ? "" : " NOT NULL"
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} MODIFY ("${col}" ${this.driver.createFullType(
+                            newColumn,
+                        )}${nullability})`,
+                    ),
+                )
+                const downNullability = oldColumn.isNullable ? "" : " NOT NULL"
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} MODIFY ("${col}" ${this.driver.createFullType(
+                            oldColumn,
+                        )}${downNullability})`,
+                    ),
+                )
+
+                await this.executeQueries(upQueries, downQueries)
+                return
+            }
+            // END length-only fast path
+
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
                 let defaultUp: string = ""
                 let defaultDown: string = ""

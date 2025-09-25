@@ -833,10 +833,62 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
+            // BEGIN length-only fast path (Spanner)
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                const oldLen = oldColumn.length
+                    ? parseInt(oldColumn.length, 10)
+                    : undefined
+                const newLen = newColumn.length
+                    ? parseInt(newColumn.length, 10)
+                    : undefined
+                const col = oldColumn.name
+
+                if (oldLen && newLen && newLen < oldLen) {
+                    // shrink: pre-truncate; Spanner validates length on ALTER
+                    upQueries.push(
+                        new Query(
+                            `UPDATE ${this.escapePath(table)} ` +
+                                `SET ${this.driver.escape(
+                                    col,
+                                )} = SUBSTR(${this.driver.escape(
+                                    col,
+                                )}, 1, ${newLen}) ` +
+                                `WHERE LENGTH(${this.driver.escape(
+                                    col,
+                                )}) > ${newLen}`,
+                        ),
+                    )
+                }
+
+                // in-place ALTER
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ` +
+                            `ALTER COLUMN ${this.driver.escape(col)} STRING(${
+                                newLen ?? oldLen
+                            })`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ` +
+                            `ALTER COLUMN ${this.driver.escape(col)} STRING(${
+                                oldLen ?? newLen
+                            })`,
+                    ),
+                )
+
+                await this.executeQueries(upQueries, downQueries)
+                return
+            }
+            // END length-only fast path
+
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale ||
-                oldColumn.length !== newColumn.length
+                newColumn.scale !== oldColumn.scale
             ) {
                 upQueries.push(
                     new Query(

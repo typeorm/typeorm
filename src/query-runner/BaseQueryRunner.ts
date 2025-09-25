@@ -529,7 +529,6 @@ export abstract class BaseQueryRunner {
             oldColumn.precision !== newColumn.precision ||
             oldColumn.scale !== newColumn.scale ||
             oldColumn.width !== newColumn.width || // MySQL only
-            oldColumn.length !== newColumn.length ||
             oldColumn.zerofill !== newColumn.zerofill || // MySQL only
             oldColumn.unsigned !== newColumn.unsigned || // MySQL only
             oldColumn.asExpression !== newColumn.asExpression ||
