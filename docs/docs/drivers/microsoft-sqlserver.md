@@ -149,6 +149,8 @@ Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation
 
 -   `options.trustServerCertificate` - A boolean, controlling whether encryption occurs if there is no verifiable server certificate. (default: `false`)
 
+-   `options.multiSubnetFailover` - A boolean, controlling whether the driver should connect to all IPs returned from DNS in parallel. (default: `false`)
+
 -   `options.debug.packet` - A boolean, controlling whether `debug` events will be emitted with text describing packet
     details (default: `false`).
 
