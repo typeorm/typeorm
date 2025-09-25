@@ -5,29 +5,37 @@ import {
     ValueTransformer,
 } from "../../../../../../src"
 
+/*
+ * The mysql2 client partially supports the vector type. Newer versions support
+ * only deserializing from binary format. Currently mysql2 only accepts binary
+ * parameters for vector values, and not numeric arrays.
+ */
 const vectorTransformer: ValueTransformer = {
     to: (value: number[]) => {
         const length = value.length
-        const arrayBuffer = new ArrayBuffer(4 + length * 4)
+        const arrayBuffer = new ArrayBuffer(length * 4)
         const dataView = new DataView(arrayBuffer)
 
-        dataView.setUint32(0, length, true)
         for (let index = 0; index < length; index++) {
-            dataView.setFloat32(4 + index * 4, value[index], true)
+            dataView.setFloat32(index * 4, value[index], true)
         }
 
         return Buffer.from(arrayBuffer)
     },
-    from: (value: Buffer) => {
+    from: (value: Buffer | number[]) => {
+        if (Array.isArray(value)) {
+            // newer versions of mysql2 already deserialize vector as number[]
+            return value
+        }
         const dataView = new DataView(
             value.buffer,
             value.byteOffset,
             value.byteLength,
         )
-        const length = dataView.getUint32(0, true)
+        const length = value.byteLength / 4
         const array = new Array<number>(length)
         for (let index = 0; index < length; index++) {
-            array[index] = dataView.getFloat32(4 + index * 4, true)
+            array[index] = dataView.getFloat32(index * 4, true)
         }
 
         return array
@@ -35,18 +43,19 @@ const vectorTransformer: ValueTransformer = {
 }
 
 @Entity()
-export class BufferEmbedding {
+export class Embedding {
     @PrimaryColumn()
     id: number
 
-    @Column("nclob")
+    @Column()
     content: string
 
-    @Column("nclob")
+    @Column()
     metadata: string
 
-    @Column("real_vector", {
+    @Column("vector", {
+        length: 16,
         transformer: vectorTransformer,
     })
-    realVector: number[]
+    vector: number[]
 }
