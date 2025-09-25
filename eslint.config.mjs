@@ -85,6 +85,6 @@ export default tseslint.config([
 
     jsdoc({
         config: 'flat/recommended-typescript', // change to 'flat/recommended-typescript-error' once warnings are fixed
-        files: ["src/**/*.ts"]
-    })
+        files: ["src/**/*.ts"],
+    }),
 ])
