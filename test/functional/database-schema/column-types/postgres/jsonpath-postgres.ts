@@ -53,25 +53,25 @@ describe("database schema > column types > postgres > jsonpath", () => {
             Promise.all(
                 connections.map(async (connection) => {
                     const repository = connection.getRepository(JsonPathExample)
-                    const createdEntity = new JsonPathExample()
+                    const example = new JsonPathExample()
 
-                    createdEntity.path = path
+                    example.path = path
 
-                    await repository.save(createdEntity)
+                    await repository.save(example)
 
-                    const loadedEntity = await repository.findOneByOrFail({
-                        id: createdEntity.id,
+                    const loaded = await repository.findOneByOrFail({
+                        id: example.id,
                     })
 
-                    loadedEntity.path.should.be.equal(canonical ?? path)
+                    loaded.path.should.be.equal(canonical ?? path)
 
-                    const loadedCanonicalEntity = await repository
+                    const typeCasted = await repository
                         .createQueryBuilder()
                         .select("path::text as path")
-                        .where({ id: createdEntity.id })
+                        .where({ id: example.id })
                         .getOneOrFail()
 
-                    loadedCanonicalEntity.path.should.be.equal(path)
+                    typeCasted.path.should.be.equal(path)
                 }),
             ))
     })
