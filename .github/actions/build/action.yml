@@ -20,4 +20,3 @@ runs:
         name: build
         path: build/
         retention-days: 1
-w
