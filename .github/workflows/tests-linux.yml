@@ -182,28 +182,6 @@ jobs:
           flag-name: mysql_mariadb_latest-node:${{ inputs.node-version }}
           parallel: true
 
-  better-sqlite3:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ inputs.node-version }}
-          cache: "npm"
-      - uses: actions/download-artifact@v4
-        with:
-          name: build
-          path: build/
-      - run: npm ci
-      - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test:ci
-      - name: Coveralls Parallel
-        uses: coverallsapp/github-action@v2
-        with:
-          flag-name: better-sqlite3-node:${{ inputs.node-version }}
-          parallel: true
-
   sqlite:
     runs-on: ubuntu-latest
 

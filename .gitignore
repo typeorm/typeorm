@@ -3,12 +3,12 @@
 ._*
 
 ### Node ###
+/build/
+/coverage/
+/node_modules/
+/.nyc_output/
 npm-debug.log*
-build/
-coverage/
 *.lcov
-.nyc_output/
-node_modules/
 
 ### VisualStudioCode ###
 .vscode/*

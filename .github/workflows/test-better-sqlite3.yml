@@ -1,0 +1,57 @@
+name: test-better-sqlite3
+
+on:
+  pull_request:
+    branches:
+      - "**"
+    paths-ignore:
+      - "docs/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/build
+
+  test:
+    needs: build
+
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        node: [16, 18, 20, 22, 24]
+        version: [8, 9, 10, 11, 12]
+        exclude:
+          - node: 22
+            version: [8, 9, 10]
+          - node: 24
+            version: [8, 9, 10, 11]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: build
+          path: build/
+
+      - run: npm ci
+
+      - run: npm install -D better-sqlite3@${{ matrix.version }}
+
+      - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
+
+      - run: npx nyc npm run test:ci
+
+#      - name: Coveralls Parallel
+#        uses: coverallsapp/github-action@v2
+#        with:
+#          flag-name: better-sqlite3:${{ matrix.version }}-node:${{ matrix.node }}-${{ matrix.os }}
+#          parallel: true
