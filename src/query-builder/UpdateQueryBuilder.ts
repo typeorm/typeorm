@@ -18,6 +18,7 @@ import { TypeORMError } from "../error"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { DriverUtils } from "../driver/DriverUtils"
+import { ensureColumnMinLength } from "../util/ensureColumnMinLength"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -62,6 +63,33 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     async execute(): Promise<UpdateResult> {
         const queryRunner = this.obtainQueryRunner()
         let transactionStartedByUs: boolean = false
+        // -------------------------------
+        // TOP-LEVEL AUTO-WIDEN
+        // -------------------------------
+        const metadata = this.expressionMap.mainAlias!.metadata
+        const tablePath = metadata.tablePath
+        // In this branch, UpdateQueryBuilder stores `.set({...})` into expressionMap.valuesSet
+        const updateObj = (this.expressionMap.valuesSet ?? {}) as ObjectLiteral
+
+        for (const col of metadata.columns) {
+            // only varchar-like columns that declare a length
+            if (typeof col.length !== "string" || col.length.length === 0)
+                continue
+            // only columns actually being updated
+            if (!(col.propertyName in updateObj)) continue
+            const v = (updateObj as any)[col.propertyName]
+            // skip expressions/functions
+            if (typeof v !== "string") continue
+            await ensureColumnMinLength(
+                queryRunner,
+                tablePath,
+                col.databaseName,
+                v.length,
+            )
+        }
+        // -------------------------------
+        // END AUTO-WIDEN
+        // -------------------------------
 
         try {
             // start transaction if it was enabled

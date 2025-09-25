@@ -529,6 +529,7 @@ export abstract class BaseQueryRunner {
             oldColumn.precision !== newColumn.precision ||
             oldColumn.scale !== newColumn.scale ||
             oldColumn.width !== newColumn.width || // MySQL only
+            oldColumn.length !== newColumn.length ||
             oldColumn.zerofill !== newColumn.zerofill || // MySQL only
             oldColumn.unsigned !== newColumn.unsigned || // MySQL only
             oldColumn.asExpression !== newColumn.asExpression ||
@@ -536,8 +537,7 @@ export abstract class BaseQueryRunner {
             oldColumn.onUpdate !== newColumn.onUpdate || // MySQL only
             oldColumn.isNullable !== newColumn.isNullable ||
             (checkComment && oldColumn.comment !== newColumn.comment) ||
-            (checkEnum && this.isEnumChanged(oldColumn, newColumn)) ||
-            oldColumn.length !== newColumn.length
+            (checkEnum && this.isEnumChanged(oldColumn, newColumn))
         )
     }
 

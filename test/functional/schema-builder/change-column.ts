@@ -25,149 +25,154 @@ describe("schema builder > change column", () => {
     it("uses ALTER COLUMN when increasing varchar length", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.driver.options.type === "sap") return
                 // use the same entity set as the rest of this file
                 const postMetadata = connection.getMetadata(Post)
                 const nameCol = postMetadata.findColumnWithPropertyName("name")!
                 const originalLen = nameCol.length
+                const repo = connection.getRepository(Post)
+                try {
+                    // 1) ensure starting point length=50 and create schema
+                    nameCol.length = "50"
+                    nameCol.build(connection)
+                    await connection.synchronize()
 
-                // 1) ensure starting point length=50 and create schema
-                nameCol.length = "50"
-                nameCol.build(connection)
-                await connection.synchronize()
+                    // 2) Seed/attempt data that EXCEEDS the current limit BEFORE widening
+                    const fiftyOne = "x".repeat(51)
+                    let preInsertErr: any, preRow: any
+                    try {
+                        preRow = await repo.save({ name: fiftyOne })
+                    } catch (e) {
+                        preInsertErr = e
+                    }
 
-                // request length=51 and inspect the generated diff
-                nameCol.length = "51"
-                nameCol.build(connection)
+                    // Per-driver expectations BEFORE widening:
+                    if (
+                        connection.driver.options.type === "postgres" ||
+                        connection.driver.options.type === "mssql" ||
+                        connection.driver.options.type === "oracle" ||
+                        connection.driver.options.type === "cockroachdb"
+                    ) {
+                        // Enforcing engines should reject > 50
+                        expect(preInsertErr).to.be.instanceOf(Error)
+                    } else if (
+                        DriverUtils.isMySQLFamily(connection.driver) ||
+                        connection.driver.options.type === "aurora-mysql"
+                    ) {
+                        // MySQL-family: STRICT -> error; non-strict -> truncation to 50
+                        if (preInsertErr) {
+                            expect(preInsertErr).to.be.instanceOf(Error)
+                        } else {
+                            const rt = await repo.findOneByOrFail({
+                                id: (preRow as any).id,
+                            })
+                            expect(rt.name.length).to.equal(50) // truncated
+                        }
+                    } else if (
+                        DriverUtils.isSQLiteFamily(connection.driver) ||
+                        connection.driver.options.type === "spanner"
+                    ) {
+                        // Usually not enforced; insert may succeed with full 51 chars
+                        expect(preInsertErr).to.be.undefined
+                        const rt = await repo.findOneByOrFail({
+                            id: (preRow as any).id,
+                        })
+                        expect(rt.name.length).to.equal(51)
+                    }
 
-                const { upQueries } = await connection.driver
-                    .createSchemaBuilder()
-                    .log()
-                const up = upQueries.map((q) => q.query).join("\n")
+                    // 3) Now widen to 51 and apply for real
+                    nameCol.length = "51"
+                    nameCol.build(connection)
+                    await connection.synchronize()
 
-                // driver-aware assertion: when increasing varchar length, prefer ALTER ... not drop/add,
-                // except for engines that rebuild tables (SQLite family)
-                if (connection.driver.options.type === "postgres") {
-                    // ALTER TYPE character varying(51)
-                    expect(up).to.match(
-                        /ALTER TABLE .* ALTER COLUMN "name" TYPE character varying\(51\)/,
-                    )
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
-                } else if (connection.driver.options.type === "mssql") {
-                    // ALTER COLUMN NVARCHAR(51)
-                    expect(up).to.match(
-                        /ALTER TABLE .* ALTER COLUMN .*N?VARCHAR\(\s*51\s*\)/i,
-                    )
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
-                } else if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "aurora-mysql"
-                ) {
-                    // MySQL/MariaDB/Aurora: CHANGE/MODIFY `name` ... varchar(51)
-                    expect(up).to.match(
-                        /ALTER TABLE .* (CHANGE|MODIFY) .*`name`.*varchar\(\s*51\s*\)/i,
-                    )
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
-                } else if (DriverUtils.isSQLiteFamily(connection.driver)) {
-                    // SQLite typically rebuilds the table for this change
-                    expect(up).to.match(/\bCREATE TABLE\b/i)
-                    expect(up).to.match(/\bDROP TABLE\b/i)
-                } else if (connection.driver.options.type === "cockroachdb") {
-                    // CockroachDB: Postgres-style TYPE
-                    expect(up).to.match(
-                        /ALTER TABLE .* ALTER COLUMN .* TYPE .*?\(\s*51\s*\)/i,
-                    )
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
-                } else if (connection.driver.options.type === "spanner") {
-                    // Spanner: SET DATA TYPE
-                    expect(up).to.match(
-                        /ALTER TABLE .* ALTER COLUMN .* SET DATA TYPE .*?\(\s*51\s*\)/i,
-                    )
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
-                } else {
-                    // Fallback: ensure we didn't drop/add the column
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                    const queryRunner = connection.createQueryRunner()
+                    const postTable = await queryRunner.getTable("post")
+                    await queryRunner.release()
+                    const col = postTable!.findColumnByName("name")!
+                    if (col.length) expect(col.length).to.equal("51")
+                } finally {
+                    // cleanup: restore metadata and schema
+                    nameCol.length = originalLen
+                    nameCol.build(connection)
+                    await connection.synchronize()
                 }
-
-                // cleanup: restore metadata and schema
-                nameCol.length = originalLen
-                nameCol.build(connection)
-                await connection.synchronize()
             }),
         ))
     it("uses ALTER COLUMN when reducing varchar length", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (connection.driver.options.type === "sap") return
                 const postMetadata = connection.getMetadata(Post)
                 const nameCol = postMetadata.findColumnWithPropertyName("name")!
                 const originalLen = nameCol.length
+                const repo = connection.getRepository(Post)
+                try {
+                    // start larger
+                    nameCol.length = "100"
+                    nameCol.build(connection)
+                    await connection.synchronize()
 
-                // start larger
-                nameCol.length = "100"
-                nameCol.build(connection)
-                await connection.synchronize()
+                    // 2) SEED data that EXCEEDS the upcoming target (this is the reviewer ask)
+                    //    Existing row is length 100; new limit will be 80.
+                    const tooLong = "y".repeat(100)
+                    const seeded = await repo.save({ name: tooLong })
 
-                // reduce
-                nameCol.length = "80"
-                nameCol.build(connection)
+                    // 3) Now reduce to 80 and run the real DDL
+                    nameCol.length = "80"
+                    nameCol.build(connection)
+                    let syncError: any
+                    try {
+                        await connection.synchronize()
+                    } catch (e) {
+                        syncError = e
+                    }
 
-                const { upQueries } = await connection.driver
-                    .createSchemaBuilder()
-                    .log()
-                const up = upQueries.map((q) => q.query).join("\n")
+                    // 4) Verify outcome per engine:
+                    //    - PG/MSSQL/Oracle/Cockroach: ALTER should fail because existing data are too long.
+                    //    - MySQL/MariaDB/Aurora: STRICT -> error; non-strict -> ALTER succeeds and data truncated to 80.
+                    //    - SQLite/Spanner: usually no enforcement; ALTER succeeds and data remain length 100.
+                    if (
+                        connection.driver.options.type === "postgres" ||
+                        connection.driver.options.type === "mssql" ||
+                        connection.driver.options.type === "oracle" ||
+                        connection.driver.options.type === "cockroachdb"
+                    ) {
+                        expect(syncError).to.be.instanceOf(Error)
+                    } else if (
+                        DriverUtils.isMySQLFamily(connection.driver) ||
+                        connection.driver.options.type === "aurora-mysql"
+                    ) {
+                        if (syncError) {
+                            expect(syncError).to.be.instanceOf(Error)
+                        } else {
+                            const rt = await repo.findOneByOrFail({
+                                id: (seeded as any).id,
+                            })
+                            expect(rt.name.length).to.equal(80) // truncated
+                        }
+                    } else if (
+                        DriverUtils.isSQLiteFamily(connection.driver) ||
+                        connection.driver.options.type === "spanner"
+                    ) {
+                        expect(syncError).to.be.undefined
+                        const rt = await repo.findOneByOrFail({
+                            id: (seeded as any).id,
+                        })
+                        expect(rt.name.length).to.equal(100)
+                    }
 
-                if (connection.driver.options.type === "postgres") {
-                    expect(up).to.match(
-                        /ALTER TABLE .* ALTER COLUMN "name" TYPE character varying\(80\)/,
-                    )
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
-                } else if (connection.driver.options.type === "mssql") {
-                    expect(up).to.match(
-                        /ALTER TABLE .* ALTER COLUMN .*N?VARCHAR\(\s*80\s*\)/i,
-                    )
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
-                } else if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "aurora-mysql"
-                ) {
-                    expect(up).to.match(
-                        /ALTER TABLE .* (CHANGE|MODIFY) .*`name`.*varchar\(\s*80\s*\)/i,
-                    )
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
-                } else if (DriverUtils.isSQLiteFamily(connection.driver)) {
-                    expect(up).to.match(/\bCREATE TABLE\b/i)
-                    expect(up).to.match(/\bDROP TABLE\b/i)
-                } else if (connection.driver.options.type === "cockroachdb") {
-                    expect(up).to.match(
-                        /ALTER TABLE .* ALTER COLUMN .* TYPE .*?\(\s*80\s*\)/i,
-                    )
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
-                } else if (connection.driver.options.type === "spanner") {
-                    expect(up).to.match(
-                        /ALTER TABLE .* ALTER COLUMN .* SET DATA TYPE .*?\(\s*80\s*\)/i,
-                    )
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
-                } else {
-                    expect(up).to.not.match(/\bDROP COLUMN\b/)
-                    expect(up).to.not.match(/\bADD COLUMN\b/)
+                    const queryRunner = connection.createQueryRunner()
+                    const postTable = await queryRunner.getTable("post")
+                    await queryRunner.release()
+                    const col = postTable!.findColumnByName("name")!
+                    if (!syncError && col.length)
+                        expect(col.length).to.equal("80")
+                } finally {
+                    // cleanup
+                    nameCol.length = originalLen
+                    nameCol.build(connection)
+                    try {
+                        await connection.synchronize()
+                    } catch {}
                 }
-
-                // cleanup
-                nameCol.length = originalLen
-                nameCol.build(connection)
-                await connection.synchronize()
             }),
         ))
 

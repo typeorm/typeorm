@@ -25,6 +25,7 @@ import { ReturningType } from "../driver/Driver"
 import { OracleDriver } from "../driver/oracle/OracleDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { escapeRegExp } from "../util/escapeRegExp"
+import { ensureColumnMinLength } from "../util/ensureColumnMinLength"
 
 // todo: completely cover query builder with tests
 // todo: entityOrProperty can be target name. implement proper behaviour if it is.
@@ -507,6 +508,45 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     async execute(): Promise<any> {
         const [sql, parameters] = this.getQueryAndParameters()
         const queryRunner = this.obtainQueryRunner()
+        // -------------------------------
+        // TOP-LEVEL AUTO-WIDEN
+        // -------------------------------
+        const metadata = this.expressionMap.mainAlias!.metadata
+        const tablePath = metadata.tablePath
+
+        // valuesSet can be object or array; when inserting from a subquery,
+        // expressionMap.valuesSet is usually empty -> we skip in that case.
+        const raw = this.expressionMap.valuesSet as any
+        const rows: any[] = raw == null ? [] : Array.isArray(raw) ? raw : [raw]
+
+        if (rows.length > 0) {
+            // Only consider columns that declare a length (varchar-like)
+            for (const col of metadata.columns) {
+                if (typeof col.length !== "string" || col.length.length === 0)
+                    continue
+
+                // Find the longest string among pending rows for this column
+                let desired = 0
+                for (const row of rows) {
+                    const v = col.getEntityValue(row) // robust for nested/embedded props
+                    if (typeof v === "string" && v.length > desired)
+                        desired = v.length
+                }
+                if (desired > 0) {
+                    // Ensure DB column is at least 'desired' BEFORE running the INSERT
+                    await ensureColumnMinLength(
+                        queryRunner,
+                        tablePath,
+                        col.databaseName,
+                        desired,
+                    )
+                }
+            }
+        }
+
+        // -------------------------------
+        // END AUTO-WIDEN
+        // -------------------------------
         try {
             return await queryRunner.query(sql, parameters) // await is needed here because we are using finally
         } finally {
