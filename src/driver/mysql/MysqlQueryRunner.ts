@@ -1255,27 +1255,23 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     // (optional) down: if reverting to larger oldLen, no data change needed
                 }
 
-                // in-place alter; use MODIFY so we don't rename the column accidentally
-                const nullability = newColumn.isNullable ? "NULL" : "NOT NULL"
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ` +
-                            `MODIFY \`${col}\` ${this.driver.createFullType(
-                                newColumn,
-                            )} ${nullability}`,
-                    ),
-                )
-                const downNullability = oldColumn.isNullable
-                    ? "NULL"
-                    : "NOT NULL"
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ` +
-                            `MODIFY \`${col}\` ${this.driver.createFullType(
-                                oldColumn,
-                            )} ${downNullability}`,
-                    ),
-                )
+                // Build full definitions and apply with CHANGE to preserve attributes
+                const newColDef = new TableColumn({
+                    ...newColumn,
+                    name: oldColumn.name, // avoid rename
+                    asExpression: undefined,
+                    generatedType: undefined,
+                })
+                const oldColDef = new TableColumn({
+                    ...oldColumn,
+                    name: oldColumn.name,
+                    asExpression: undefined,
+                    generatedType: undefined,
+                })
+                const up = `ALTER TABLE ${this.escapePath(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColDef, true)}`
+                const down = `ALTER TABLE ${this.escapePath(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(oldColDef, true)}`
+                upQueries.push(new Query(up))
+                downQueries.push(new Query(down))
 
                 await this.executeQueries(upQueries, downQueries)
                 return
