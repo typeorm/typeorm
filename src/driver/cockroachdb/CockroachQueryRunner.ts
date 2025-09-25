@@ -1559,16 +1559,14 @@ export class CockroachQueryRunner
                 oldColumn.name = newColumn.name
             }
             // BEGIN length-only fast path (Postgres/Cockroach)
--           if (
--               oldColumn.type === newColumn.type &&
--               oldColumn.length !== newColumn.length
-           if (
-               oldColumn.type === newColumn.type &&
-               oldColumn.length !== newColumn.length &&
-               newColumn.isNullable === oldColumn.isNullable &&
-               newColumn.default === oldColumn.default &&
-               newColumn.comment === oldColumn.comment
-           ) {
+
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length &&
+                newColumn.isNullable === oldColumn.isNullable &&
+                newColumn.default === oldColumn.default &&
+                newColumn.comment === oldColumn.comment
+            ) {
                 const oldLen = oldColumn.length
                     ? parseInt(oldColumn.length, 10)
                     : undefined
