@@ -28,7 +28,7 @@ export default tseslint.config([
         },
         extends: [
             eslint.configs.recommended,
-            ...tseslint.configs.recommendedTypeChecked
+            ...tseslint.configs.recommendedTypeChecked,
         ],
         rules: {
             // exceptions from typescript-eslint/recommended
