@@ -709,7 +709,7 @@ Steps to run this project:
                 packageJson.dependencies["sqlite3"] = "^5.1.7"
                 break
             case "better-sqlite3":
-                packageJson.dependencies["better-sqlite3"] = "^8.7.0"
+                packageJson.dependencies["better-sqlite3"] = "^12.4.1"
                 break
             case "oracle":
                 packageJson.dependencies["oracledb"] = "^6.8.0"
