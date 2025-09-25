@@ -311,6 +311,12 @@ export class ColumnMetadata {
     foreignKeyConstraintName?: string
 
     /**
+     * Indicates whether this column name was explicitly provided by the user
+     * (e.g., via @JoinColumn({ name: "custom_name" })) or auto-generated via the naming strategy by TypeORM.
+     */
+    isExplicitlyNamed?: boolean
+
+    /**
      * Specifies a value transformer that is to be used to (un)marshal
      * this column when reading or writing to the database.
      */
@@ -364,10 +370,12 @@ export class ColumnMetadata {
         nestedSetLeft?: boolean
         nestedSetRight?: boolean
         materializedPath?: boolean
+        isExplicitlyNamed?: boolean
     }) {
         this.entityMetadata = options.entityMetadata
         this.embeddedMetadata = options.embeddedMetadata!
         this.referencedColumn = options.referencedColumn
+        this.isExplicitlyNamed = options.isExplicitlyNamed
         if (options.args.target) this.target = options.args.target
         if (options.args.propertyName)
             this.propertyName = options.args.propertyName

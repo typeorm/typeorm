@@ -197,11 +197,6 @@ export class JunctionEntityMetadataBuilder {
                             name: columnName,
                             nullable: false,
                             primary: true,
-                            // Shared columns on inverse side are non-insertable/updatable to prevent
-                            // duplicate column bindings in DML operations (e.g., INSERT INTO table (tenant_id, tenant_id, ...))
-                            // Only the owner side (with @JoinTable) controls shared column values
-                            insert: !sharedColumnNames.includes(columnName),
-                            update: !sharedColumnNames.includes(columnName),
                         },
                     },
                 })
@@ -211,8 +206,12 @@ export class JunctionEntityMetadataBuilder {
         this.changeDuplicatedColumnNames(
             junctionColumns,
             inverseJunctionColumns,
-            sharedColumnNames,
         )
+
+        // Shared columns on inverse side are non-insertable/updatable to prevent
+        // duplicate column bindings in DML operations (e.g., INSERT INTO table (tenant_id, tenant_id, ...))
+        // Only the owner side (with @JoinTable) controls shared column values
+        this.configureSharedColumns(junctionColumns, inverseJunctionColumns)
 
         // set junction table columns
         entityMetadata.ownerColumns = junctionColumns
@@ -372,7 +371,6 @@ export class JunctionEntityMetadataBuilder {
     protected changeDuplicatedColumnNames(
         junctionColumns: ColumnMetadata[],
         inverseJunctionColumns: ColumnMetadata[],
-        sharedColumnNames: string[],
     ) {
         junctionColumns.forEach((junctionColumn) => {
             inverseJunctionColumns.forEach((inverseJunctionColumn) => {
@@ -380,68 +378,64 @@ export class JunctionEntityMetadataBuilder {
                     junctionColumn.givenDatabaseName ===
                     inverseJunctionColumn.givenDatabaseName
                 ) {
-                    // Skip renaming if this is a shared column
-                    if (
-                        sharedColumnNames.includes(
-                            junctionColumn.givenDatabaseName!,
-                        ) ||
-                        sharedColumnNames.includes(
-                            inverseJunctionColumn.givenDatabaseName!,
-                        )
-                    ) {
-                        return
+                    let index = 1
+                    // If explicit name is provided, don't rename
+                    // If implicit, rename them (backward compatibility)
+                    if (!junctionColumn.isExplicitlyNamed) {
+                        const junctionColumnName =
+                            this.connection.namingStrategy.joinTableColumnDuplicationPrefix(
+                                junctionColumn.propertyName,
+                                index++,
+                            )
+                        junctionColumn.propertyName = junctionColumnName
+                        junctionColumn.givenDatabaseName = junctionColumnName
                     }
 
-                    // Original renaming logic for non-shared columns
-                    const junctionColumnName =
-                        this.connection.namingStrategy.joinTableColumnDuplicationPrefix(
-                            junctionColumn.propertyName,
-                            1,
-                        )
-                    junctionColumn.propertyName = junctionColumnName
-                    junctionColumn.givenDatabaseName = junctionColumnName
-
-                    const inverseJunctionColumnName =
-                        this.connection.namingStrategy.joinTableColumnDuplicationPrefix(
-                            inverseJunctionColumn.propertyName,
-                            2,
-                        )
-                    inverseJunctionColumn.propertyName =
-                        inverseJunctionColumnName
-                    inverseJunctionColumn.givenDatabaseName =
-                        inverseJunctionColumnName
+                    if (!inverseJunctionColumn.isExplicitlyNamed) {
+                        const inverseJunctionColumnName =
+                            this.connection.namingStrategy.joinTableColumnDuplicationPrefix(
+                                inverseJunctionColumn.propertyName,
+                                index++,
+                            )
+                        inverseJunctionColumn.propertyName =
+                            inverseJunctionColumnName
+                        inverseJunctionColumn.givenDatabaseName =
+                            inverseJunctionColumnName
+                    }
                 }
             })
         })
     }
 
     /**
-     * Pre-calculates which column names will be shared between joinColumns and inverseJoinColumns
-     * based on the preserveSharedColumns configuration.
+     * Handles shared columns in junction tables by preventing duplicate column bindings.
+     *
+     * When both sides of a many-to-many relation reference the same physical database column
+     * (e.g., both sides use "tenant_id"), we need to ensure only one side controls the column
+     * to avoid SQL errors like: INSERT INTO junction (tenant_id, tenant_id, ...) VALUES (1, 1, ...)
+     *
+     * This enables composite foreign key constraints in partitioned many-to-many relationships
+     * where a shared column (like tenant_id) is part of both foreign keys.
+     *
+     * @param junctionColumns Columns from the owner side (entity with @JoinTable)
+     * @param inverseJunctionColumns Columns from the inverse side
      */
-    protected calculateSharedColumnNames(
-        joinTable: JoinTableMetadataArgs,
-    ): string[] {
-        const sharedColumnNames: string[] = []
-
-        if (!joinTable.joinColumns || !joinTable.inverseJoinColumns) {
-            return sharedColumnNames
-        }
-
-        // Check each joinColumn against inverseJoinColumns for duplicates
-        joinTable.joinColumns.forEach((joinColumn) => {
-            if (!joinColumn.name) return
-
-            const matchingInverseColumn = joinTable.inverseJoinColumns!.find(
-                (inverseJoinColumn) =>
-                    inverseJoinColumn.name === joinColumn.name,
-            )
-
-            if (matchingInverseColumn) {
-                sharedColumnNames.push(joinColumn.name)
-            }
+    protected configureSharedColumns(
+        junctionColumns: ColumnMetadata[],
+        inverseJunctionColumns: ColumnMetadata[],
+    ) {
+        junctionColumns.forEach((junctionColumn) => {
+            inverseJunctionColumns.forEach((inverseJunctionColumn) => {
+                if (
+                    junctionColumn.givenDatabaseName ===
+                    inverseJunctionColumn.givenDatabaseName
+                ) {
+                    // Mark inverse side column as read-only to prevent duplicate bindings
+                    // The owner side (with @JoinTable) retains control over shared column values
+                    inverseJunctionColumn.isInsert = false
+                    inverseJunctionColumn.isUpdate = false
+                }
+            })
         })
-
-        return sharedColumnNames
     }
 }
