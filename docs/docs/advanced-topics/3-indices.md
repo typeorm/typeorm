@@ -148,7 +148,7 @@ For more information see the [Postgres documentation](https://www.postgresql.org
 
 TypeORM does not support some index options and definitions (e.g. `lower`, `pg_trgm`) because of lot of different database specifics and multiple
 issues with getting information about exist database indices and synchronizing them automatically. In such cases you should create index manually
-(for example in the migrations) with any index signature you want. To make TypeORM ignore these indices during synchronization use `synchronize: false`
+(for example in the [migrations](../migrations/01-why.md)) with any index signature you want. To make TypeORM ignore these indices during synchronization use `synchronize: false`
 option on `@Index` decorator.
 
 For example, you create an index with case-insensitive comparison:
