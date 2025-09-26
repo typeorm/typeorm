@@ -1259,7 +1259,6 @@ export class SqlServerQueryRunner
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
             newColumn.asExpression !== oldColumn.asExpression ||
             newColumn.generatedType !== oldColumn.generatedType
         ) {
@@ -1594,6 +1593,52 @@ export class SqlServerQueryRunner
                 oldColumn.name = newColumn.name
             }
 
+            // BEGIN pre-truncate oversized values when shrinking (SQL Server)
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                const oldLen =
+                    typeof oldColumn.length === "string"
+                        ? parseInt(oldColumn.length as any, 10)
+                        : undefined
+                const newLen =
+                    typeof newColumn.length === "string"
+                        ? parseInt(newColumn.length as any, 10)
+                        : undefined
+                const isOldMax =
+                    typeof oldColumn.length === "string" &&
+                    oldColumn.length.toUpperCase() === "MAX"
+                const isNewMax =
+                    typeof newColumn.length === "string" &&
+                    newColumn.length.toUpperCase() === "MAX"
+                if (
+                    !isNewMax &&
+                    ((typeof newLen === "number" &&
+                        typeof oldLen === "number" &&
+                        newLen < oldLen) ||
+                        (typeof newLen === "number" && isOldMax))
+                ) {
+                    const col = this.driver.escape(oldColumn.name)
+                    const t = (newColumn.type as string).toLowerCase()
+                    const threshold = t.startsWith("n")
+                        ? `${newLen}*2`
+                        : `${newLen}`
+                    const isBinary = t === "varbinary" || t === "binary"
+                    const updateExpr = isBinary
+                        ? `SUBSTRING(${col}, 1, ${newLen})`
+                        : `LEFT(${col}, ${newLen})`
+                    // shrink: make data fit first; actual ALTER follows in general path
+                    upQueries.push(
+                        new Query(
+                            `UPDATE ${this.escapePath(table)} ` +
+                                `SET ${col} = ${updateExpr} ` +
+                                `WHERE DATALENGTH(${col}) > ${threshold}`,
+                        ),
+                    )
+                }
+            }
+            // END
             if (
                 this.isColumnChanged(oldColumn, newColumn, false, false, false)
             ) {

@@ -1233,8 +1233,8 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
+            (oldColumn.isArray && oldColumn.length !== newColumn.length) || // Add this line
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
@@ -1523,6 +1523,79 @@ export class PostgresQueryRunner
                 oldColumn.name = newColumn.name
             }
 
+            // BEGIN length-only fast path (Postgres/Cockroach)
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                const oldLen = oldColumn.length
+                    ? parseInt(oldColumn.length, 10)
+                    : undefined
+                const newLen = newColumn.length
+                    ? parseInt(newColumn.length, 10)
+                    : undefined
+                const col = oldColumn.name // target existing column name
+
+                const isCharType = [
+                    "character varying",
+                    "varchar",
+                    "character",
+                    "char",
+                ].includes((oldColumn.type || "").toLowerCase())
+                const canUseSubstring = isCharType && !oldColumn.isArray
+
+                if (canUseSubstring && newLen && (!oldLen || newLen < oldLen)) {
+                    // shrink: coerce with USING so ALTER never fails
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
+                                    newColumn,
+                                )} ` +
+                                `USING substring("${col}" FROM 1 FOR ${newLen})`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
+                                    oldColumn,
+                                )} ` +
+                                `USING substring("${col}" FROM 1 FOR ${oldLen})`,
+                        ),
+                    )
+                } else if (
+                    canUseSubstring ||
+                    (!oldColumn.isArray &&
+                        oldColumn.type !== "vector" &&
+                        oldColumn.type !== "halfvec")
+                ) {
+                    // widen (or non-array types that can safely change length): plain ALTER TYPE
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
+                                    newColumn,
+                                )}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
+                                    oldColumn,
+                                )}`,
+                        ),
+                    )
+                }
+                // Note: Array and vector types with length changes will fall through to
+                // the recreation logic (drop/add) for safety
+            }
+            // END length-only fast path
+
+            // Handle scale and precision changes without recreating the column, e.g.:
+            // varchar(n) -> varchar(m)
+            // numeric(x, y) -> numeric(v, w)
             if (
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale

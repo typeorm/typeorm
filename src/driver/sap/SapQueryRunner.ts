@@ -1169,11 +1169,100 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // BEGIN length-only fast path (SAP HANA)
+        if (
+            oldColumn.type === newColumn.type &&
+            oldColumn.length !== newColumn.length &&
+            // allow only safe text types
+            [
+                "char",
+                "nchar",
+                "varchar",
+                "nvarchar",
+                "alphanum",
+                "shorttext",
+            ].includes(String(oldColumn.type).toLowerCase()) &&
+            // no rename in this fast path
+            newColumn.name === oldColumn.name &&
+            // exclude arrays
+            !oldColumn.isArray &&
+            !newColumn.isArray &&
+            // exclude primary key columns to avoid HANA constraints
+            !oldColumn.isPrimary &&
+            !newColumn.isPrimary &&
+            // ensure only length changed; let general path handle other mutations
+            newColumn.isNullable === oldColumn.isNullable &&
+            newColumn.default === oldColumn.default &&
+            newColumn.comment === oldColumn.comment &&
+            newColumn.isUnique === oldColumn.isUnique
+        ) {
+            const oldLen = oldColumn.length
+                ? parseInt(oldColumn.length, 10)
+                : undefined
+            const newLen = newColumn.length
+                ? parseInt(newColumn.length, 10)
+                : undefined
+            const col = oldColumn.name
+
+            // If shrinking, make existing values fit first to avoid ALTER errors
+            if (oldLen && newLen && newLen < oldLen) {
+                upQueries.push(
+                    new Query(
+                        `UPDATE ${this.escapePath(table)} ` +
+                            `SET "${col}" = SUBSTRING("${col}", 1, ${newLen}) ` +
+                            `WHERE LENGTH("${col}") > ${newLen}`,
+                    ),
+                )
+                // (Optional) you generally don't need a down-query for this UPDATE
+            }
+
+            // Perform the in-place ALTER using the generic builder to preserve defaults/comments/etc.
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                        this.buildCreateColumnSql(
+                            Object.assign(new TableColumn(), newColumn, {
+                                name: col,
+                            }),
+                            !(
+                                oldColumn.default === null ||
+                                oldColumn.default === undefined
+                            ),
+                            !oldColumn.isNullable,
+                        ) +
+                        `)`,
+                ),
+            )
+
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                        this.buildCreateColumnSql(
+                            oldColumn,
+                            !(
+                                newColumn.default === null ||
+                                newColumn.default === undefined
+                            ),
+                            !newColumn.isNullable,
+                        ) +
+                        `)`,
+                ),
+            )
+
+            await this.executeQueries(upQueries, downQueries)
+            // refresh cache to reflect new length
+            const updatedCol = clonedTable.findColumnByName(col)
+            if (updatedCol) {
+                updatedCol.length = newColumn.length || ""
+            }
+            this.replaceCachedTable(table, clonedTable)
+            return
+        }
+        // END length-only fast path
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length
+            newColumn.type !== oldColumn.type
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed
