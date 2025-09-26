@@ -1223,13 +1223,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 ),
             )
 
-            const downNullability = oldColumn.isNullable ? "NULL" : "NOT NULL"
             downQueries.push(
                 new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ` +
-                        `ALTER ("${col}" ${this.driver.createFullType(
-                            oldColumn,
-                        )} ${downNullability})`,
+                    `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                    this.buildCreateColumnSql(
+                        oldColumn,
+                        !(
+                            newColumn.default === null ||
+                            newColumn.default === undefined
+                        ),
+                        !newColumn.isNullable,
+                    ) + `)`,
                 ),
             )
 
