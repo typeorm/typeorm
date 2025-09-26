@@ -946,6 +946,7 @@ export class AuroraMysqlQueryRunner
             }
 
             // BEGIN length-only fast path (MySQL family)
+            // BEGIN length-only fast path (MySQL family)
             if (
                 oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length
@@ -955,7 +956,9 @@ export class AuroraMysqlQueryRunner
                     ? newColumn.clone()
                     : ({ ...newColumn } as TableColumn)
                 newColumnExceptLength.length = oldColumn.length
-                if (this.isColumnChanged(oldColumn, newColumnExceptLength, true)) {
+                if (
+                    this.isColumnChanged(oldColumn, newColumnExceptLength, true)
+                ) {
                     // Other changes present; fall through to generic change flow.
                 } else {
                     const oldLen = oldColumn.length
@@ -966,43 +969,60 @@ export class AuroraMysqlQueryRunner
                         : undefined
                     const col = oldColumn.name
 
-                    const isGenerated = !!(newColumn.asExpression || oldColumn.asExpression)
-                    if (!isGenerated && oldLen != null && newLen != null && newLen < oldLen) {
-                        // shrink: pre-truncate rows that exceed new length
+                    const type = (oldColumn.type || "").toLowerCase()
+                    if (type === "bit") {
+                        // Not safe to truncate/modify BIT via string funcs; fall through to generic flow.
+                    } else {
+                        const isGenerated = !!(
+                            newColumn.asExpression || oldColumn.asExpression
+                        )
+                        if (
+                            !isGenerated &&
+                            oldLen != null &&
+                            newLen != null &&
+                            newLen < oldLen
+                        ) {
+                            // shrink: pre-truncate rows that exceed new length
+                            upQueries.push(
+                                new Query(
+                                    `UPDATE ${this.escapePath(table)} ` +
+                                        `SET \`${col}\` = LEFT(\`${col}\`, ${newLen}) ` +
+                                        `WHERE CHAR_LENGTH(\`${col}\`) > ${newLen}`,
+                                ),
+                            )
+                            // (optional) down: if reverting to larger oldLen, no data change needed
+                        }
+
+                        // In-place alter; include full column definition to preserve all attributes
                         upQueries.push(
                             new Query(
-                                `UPDATE ${this.escapePath(table)} ` +
-                                    `SET \`${col}\` = LEFT(\`${col}\`, ${newLen}) ` +
-                                    `WHERE CHAR_LENGTH(\`${col}\`) > ${newLen}`,
+                                `ALTER TABLE ${this.escapePath(table)} ` +
+                                    `MODIFY \`${col}\` ${this.buildCreateColumnSql(
+                                        newColumn,
+                                        true,
+                                        true,
+                                    )}`,
                             ),
                         )
-                        // (optional) down: if reverting to larger oldLen, no data change needed
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(table)} ` +
+                                    `MODIFY \`${col}\` ${this.buildCreateColumnSql(
+                                        oldColumn,
+                                        true,
+                                        true,
+                                    )}`,
+                            ),
+                        )
+
+                        await this.executeQueries(upQueries, downQueries)
+
+                        // sync cache
+                        const clonedCol = clonedTable.findColumnByName(col)
+                        if (clonedCol) clonedCol.length = newColumn.length || ""
+                        this.replaceCachedTable(table, clonedTable)
+                        return
                     }
-
-                    // in-place alter; include full column definition to preserve attributes
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ` +
-                                `MODIFY \`${col}\` ${this.buildCreateColumnSql(
-                                    newColumn,
-                                    true,
-                                    true,
-                                )}`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ` +
-                                `MODIFY \`${col}\` ${this.buildCreateColumnSql(
-                                    oldColumn,
-                                    true,
-                                    true,
-                                )}`,
-                        ),
-                    )
-
-                    await this.executeQueries(upQueries, downQueries)
-                    return
                 }
             }
             // END length-only fast path

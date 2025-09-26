@@ -1573,26 +1573,33 @@ export class CockroachQueryRunner
                 const newLen = newColumn.length
                     ? parseInt(newColumn.length, 10)
                     : undefined
-                const col = oldColumn.name // target existing column name
+                // Use the post-rename column name
+                const colName = newColumn.name
 
-                if (oldLen && newLen && newLen < oldLen) {
+                // Treat unbounded → bounded as a shrink as well
+                if (
+                    newLen !== undefined &&
+                    (oldLen === undefined || newLen < oldLen)
+                ) {
                     // shrink: coerce with USING so ALTER never fails
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
+                                `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
                                     newColumn,
                                 )} ` +
-                                `USING substring("${col}" FROM 1 FOR ${newLen})`,
+                                `USING substring("${colName}" FROM 1 FOR ${newLen})`,
                         ),
                     )
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
+                                `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
                                     oldColumn,
                                 )} ` +
-                                `USING substring("${col}" FROM 1 FOR ${oldLen})`,
+                                `USING substring("${colName}" FROM 1 FOR ${
+                                    oldLen || 2147483647
+                                })`,
                         ),
                     )
                 } else {
@@ -1600,7 +1607,7 @@ export class CockroachQueryRunner
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
+                                `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
                                     newColumn,
                                 )}`,
                         ),
@@ -1608,7 +1615,7 @@ export class CockroachQueryRunner
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
+                                `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
                                     oldColumn,
                                 )}`,
                         ),
@@ -1616,6 +1623,13 @@ export class CockroachQueryRunner
                 }
 
                 await this.executeQueries(upQueries, downQueries)
+
+                // Update cached table metadata to prevent stale cache
+                const clonedCol = clonedTable.columns.find(
+                    (c) => c.name === newColumn.name,
+                )
+                if (clonedCol) clonedCol.length = newColumn.length
+                this.replaceCachedTable(table, clonedTable)
                 return
             }
             // END length-only fast path

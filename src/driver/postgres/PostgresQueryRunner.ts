@@ -1545,7 +1545,7 @@ export class PostgresQueryRunner
                 ].includes((oldColumn.type || "").toLowerCase())
                 const canUseSubstring = isCharType && !oldColumn.isArray
 
-                if (canUseSubstring && oldLen && newLen && newLen < oldLen) {
+                if (canUseSubstring && newLen && (!oldLen || newLen < oldLen)) {
                     // shrink: coerce with USING so ALTER never fails
                     upQueries.push(
                         new Query(
