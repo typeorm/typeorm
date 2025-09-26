@@ -1259,14 +1259,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 const newColDef = new TableColumn({
                     ...newColumn,
                     name: oldColumn.name, // avoid rename
-                    asExpression: undefined,
-                    generatedType: undefined,
                 })
                 const oldColDef = new TableColumn({
                     ...oldColumn,
                     name: oldColumn.name,
-                    asExpression: undefined,
-                    generatedType: undefined,
                 })
                 const up = `ALTER TABLE ${this.escapePath(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColDef, true)}`
                 const down = `ALTER TABLE ${this.escapePath(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(oldColDef, true)}`
