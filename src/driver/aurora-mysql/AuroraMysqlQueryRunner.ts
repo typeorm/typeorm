@@ -979,25 +979,25 @@ export class AuroraMysqlQueryRunner
                         // (optional) down: if reverting to larger oldLen, no data change needed
                     }
 
-                    // in-place alter; use MODIFY so we don't rename the column accidentally
-                    const nullability = newColumn.isNullable ? "NULL" : "NOT NULL"
+                    // in-place alter; include full column definition to preserve attributes
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ` +
-                                `MODIFY \`${col}\` ${this.driver.createFullType(
+                                `MODIFY \`${col}\` ${this.buildCreateColumnSql(
                                     newColumn,
-                                )} ${nullability}`,
+                                    true,
+                                    true,
+                                )}`,
                         ),
                     )
-                    const downNullability = oldColumn.isNullable
-                        ? "NULL"
-                        : "NOT NULL"
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ` +
-                                `MODIFY \`${col}\` ${this.driver.createFullType(
+                                `MODIFY \`${col}\` ${this.buildCreateColumnSql(
                                     oldColumn,
-                                )} ${downNullability}`,
+                                    true,
+                                    true,
+                                )}`,
                         ),
                     )
 
