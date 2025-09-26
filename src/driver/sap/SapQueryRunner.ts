@@ -1177,6 +1177,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             ["char","nchar","varchar","nvarchar","alphanum","shorttext"].includes(
                 String(oldColumn.type).toLowerCase(),
             ) &&
+            // no rename in this fast path
+            newColumn.name === oldColumn.name &&
+            // exclude arrays
+            !oldColumn.isArray && !newColumn.isArray &&
             // ensure only length changed; let general path handle other mutations
             newColumn.isNullable === oldColumn.isNullable &&
             newColumn.default === oldColumn.default &&
