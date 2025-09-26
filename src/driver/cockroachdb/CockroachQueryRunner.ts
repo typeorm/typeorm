@@ -1624,15 +1624,11 @@ export class CockroachQueryRunner
                     )
                 }
 
-                await this.executeQueries(upQueries, downQueries)
-
-                // Update cached table metadata to prevent stale cache
+                // Update metadata; execution happens at the end of changeColumn
                 const clonedCol = clonedTable.columns.find(
                     (c) => c.name === newColumn.name,
                 )
                 if (clonedCol) clonedCol.length = newColumn.length
-                this.replaceCachedTable(table, clonedTable)
-                return
             }
             // END length-only fast path
 
