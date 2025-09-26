@@ -966,7 +966,8 @@ export class AuroraMysqlQueryRunner
                         : undefined
                     const col = oldColumn.name
 
-                    if (oldLen && newLen && newLen < oldLen) {
+                    const isGenerated = !!(newColumn.asExpression || oldColumn.asExpression)
+                    if (!isGenerated && oldLen != null && newLen != null && newLen < oldLen) {
                         // shrink: pre-truncate rows that exceed new length
                         upQueries.push(
                             new Query(
