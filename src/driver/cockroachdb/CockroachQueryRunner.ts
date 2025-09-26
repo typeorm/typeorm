@@ -1563,9 +1563,6 @@ export class CockroachQueryRunner
             if (
                 oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length &&
-                newColumn.isNullable === oldColumn.isNullable &&
-                newColumn.default === oldColumn.default &&
-                newColumn.comment === oldColumn.comment &&
                 !newColumn.isArray &&
                 !oldColumn.isArray
             ) {
