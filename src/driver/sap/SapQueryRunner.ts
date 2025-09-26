@@ -1174,19 +1174,27 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             oldColumn.type === newColumn.type &&
             oldColumn.length !== newColumn.length &&
             // allow only safe text types
-            ["char","nchar","varchar","nvarchar","alphanum","shorttext"].includes(
-                String(oldColumn.type).toLowerCase(),
-            ) &&
+            [
+                "char",
+                "nchar",
+                "varchar",
+                "nvarchar",
+                "alphanum",
+                "shorttext",
+            ].includes(String(oldColumn.type).toLowerCase()) &&
             // no rename in this fast path
             newColumn.name === oldColumn.name &&
             // exclude arrays
-            !oldColumn.isArray && !newColumn.isArray &&
+            !oldColumn.isArray &&
+            !newColumn.isArray &&
+            // exclude primary key columns to avoid HANA constraints
+            !oldColumn.isPrimary &&
+            !newColumn.isPrimary &&
             // ensure only length changed; let general path handle other mutations
             newColumn.isNullable === oldColumn.isNullable &&
             newColumn.default === oldColumn.default &&
             newColumn.comment === oldColumn.comment &&
-            newColumn.isUnique === oldColumn.isUnique &&
-            newColumn.isPrimary === oldColumn.isPrimary
+            newColumn.isUnique === oldColumn.isUnique
         ) {
             const oldLen = oldColumn.length
                 ? parseInt(oldColumn.length, 10)
@@ -1212,28 +1220,32 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(table)} ALTER (` +
-                    this.buildCreateColumnSql(
-                        Object.assign(new TableColumn(), newColumn, { name: col }),
-                        !(
-                            oldColumn.default === null ||
-                            oldColumn.default === undefined
-                        ),
-                        !oldColumn.isNullable,
-                    ) + `)`,
+                        this.buildCreateColumnSql(
+                            Object.assign(new TableColumn(), newColumn, {
+                                name: col,
+                            }),
+                            !(
+                                oldColumn.default === null ||
+                                oldColumn.default === undefined
+                            ),
+                            !oldColumn.isNullable,
+                        ) +
+                        `)`,
                 ),
             )
 
             downQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(table)} ALTER (` +
-                    this.buildCreateColumnSql(
-                        oldColumn,
-                        !(
-                            newColumn.default === null ||
-                            newColumn.default === undefined
-                        ),
-                        !newColumn.isNullable,
-                    ) + `)`,
+                        this.buildCreateColumnSql(
+                            oldColumn,
+                            !(
+                                newColumn.default === null ||
+                                newColumn.default === undefined
+                            ),
+                            !newColumn.isNullable,
+                        ) +
+                        `)`,
                 ),
             )
 

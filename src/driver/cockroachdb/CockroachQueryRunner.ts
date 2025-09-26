@@ -1565,7 +1565,9 @@ export class CockroachQueryRunner
                 oldColumn.length !== newColumn.length &&
                 newColumn.isNullable === oldColumn.isNullable &&
                 newColumn.default === oldColumn.default &&
-                newColumn.comment === oldColumn.comment
+                newColumn.comment === oldColumn.comment &&
+                !newColumn.isArray &&
+                !oldColumn.isArray
             ) {
                 const oldLen = oldColumn.length
                     ? parseInt(oldColumn.length, 10)

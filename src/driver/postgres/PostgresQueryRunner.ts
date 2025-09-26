@@ -1524,7 +1524,6 @@ export class PostgresQueryRunner
             }
 
             // BEGIN length-only fast path (Postgres/Cockroach)
-            // BEGIN length-only fast path (Postgres/Cockroach)
             if (
                 oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length
