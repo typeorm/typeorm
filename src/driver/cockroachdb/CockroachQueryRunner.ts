@@ -1585,37 +1585,73 @@ export class CockroachQueryRunner
                     newLen !== undefined &&
                     (oldLen === undefined || newLen < oldLen)
                 ) {
-                    if (isStringType) {
-                        // shrink strings: truncate to fit
-                        upQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(table)} ` +
-                                    `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
-                                        newColumn,
-                                    )} ` +
-                                    `USING substring("${colName}" FROM 1 FOR ${newLen})`,
-                            ),
-                        )
-                        if (oldLen !== undefined) {
-                            downQueries.push(
-                                new Query(
-                                    `ALTER TABLE ${this.escapePath(table)} ` +
-                                        `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
-                                            oldColumn,
-                                        )} ` +
-                                        `USING substring("${colName}" FROM 1 FOR ${oldLen})`,
-                                ),
-                            )
-                        } else {
-                            downQueries.push(
-                                new Query(
-                                    `ALTER TABLE ${this.escapePath(table)} ` +
-                                        `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
-                                            oldColumn,
-                                        )}`,
-                                ),
-                            )
-                        }
+-                    if (isStringType) {
+-                        // shrink strings: truncate to fit
+-                        upQueries.push(
+-                            new Query(
+-                                `ALTER TABLE ${this.escapePath(table)} ` +
+-                                    `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
+-                                        newColumn,
+-                                    )} ` +
+-                                    `USING substring("${colName}" FROM 1 FOR ${newLen})`,
+-                            ),
+-                        )
+-                        if (oldLen !== undefined) {
+-                            downQueries.push(
+-                                new Query(
+-                                    `ALTER TABLE ${this.escapePath(table)} ` +
+-                                        `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
+-                                            oldColumn,
+-                                        )} ` +
+-                                        `USING substring("${colName}" FROM 1 FOR ${oldLen})`,
+-                                ),
+-                            )
+-                        } else {
+-                            downQueries.push(
+-                                new Query(
+-                                    `ALTER TABLE ${this.escapePath(table)} ` +
+-                                        `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
+-                                            oldColumn,
+-                                        )}`,
+-                                ),
+-                            )
+-                        }
+-                    } else {
+-                        // non-string: rely on DB to enforce (no silent truncation)
+-                        upQueries.push(
+-                            new Query(
+-                                `ALTER TABLE ${this.escapePath(table)} ` +
+-                                    `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
+-                                        newColumn,
+-                                    )}`,
+-                            ),
+-                        )
+-                        downQueries.push(
+-                            new Query(
+-                                `ALTER TABLE ${this.escapePath(table)} ` +
+-                                    `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
+-                                        oldColumn,
+-                                    )}`,
+-                            ),
+-                        )
+                    // Rely on DB to enforce; fail fast if data exceeds new length (no silent truncation)
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
+                                    newColumn,
+                                )}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
+                                    oldColumn,
+                                )}`,
+                        ),
+                    )
+                }
                     } else {
                         // non-string: rely on DB to enforce (no silent truncation)
                         upQueries.push(
