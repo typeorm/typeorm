@@ -1575,32 +1575,66 @@ export class CockroachQueryRunner
                 // Use the post-rename column name
                 const colName = newColumn.name
 
+                // Check if this is a string type that supports substring truncation
+                const isStringType =
+                    /^(varchar|character varying|text|char|character)$/i.test(
+                        newColumn.type,
+                    )
                 // Treat unbounded → bounded as a shrink as well
                 if (
                     newLen !== undefined &&
                     (oldLen === undefined || newLen < oldLen)
                 ) {
-                    // shrink: coerce with USING so ALTER never fails
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
-                                    newColumn,
-                                )} ` +
-                                `USING substring("${colName}" FROM 1 FOR ${newLen})`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
-                                    oldColumn,
-                                )} ` +
-                                `USING substring("${colName}" FROM 1 FOR ${
-                                    oldLen || 2147483647
-                                })`,
-                        ),
-                    )
+                    if (isStringType) {
+                        // shrink strings: truncate to fit
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(table)} ` +
+                                    `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
+                                        newColumn,
+                                    )} ` +
+                                    `USING substring("${colName}" FROM 1 FOR ${newLen})`,
+                            ),
+                        )
+                        if (oldLen !== undefined) {
+                            downQueries.push(
+                                new Query(
+                                    `ALTER TABLE ${this.escapePath(table)} ` +
+                                        `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
+                                            oldColumn,
+                                        )} ` +
+                                        `USING substring("${colName}" FROM 1 FOR ${oldLen})`,
+                                ),
+                            )
+                        } else {
+                            downQueries.push(
+                                new Query(
+                                    `ALTER TABLE ${this.escapePath(table)} ` +
+                                        `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
+                                            oldColumn,
+                                        )}`,
+                                ),
+                            )
+                        }
+                    } else {
+                        // non-string: rely on DB to enforce (no silent truncation)
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(table)} ` +
+                                    `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
+                                        newColumn,
+                                    )}`,
+                            ),
+                        )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(table)} ` +
+                                    `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
+                                        oldColumn,
+                                    )}`,
+                            ),
+                        )
+                    }
                 } else {
                     // widen (or unspecified oldLen): plain ALTER TYPE is enough
                     upQueries.push(
