@@ -1598,29 +1598,50 @@ export class SqlServerQueryRunner
                 oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length
             ) {
-                const oldLen = oldColumn.length
-                    ? parseInt(oldColumn.length, 10)
+-                const oldLen = oldColumn.length
+-                    ? parseInt(oldColumn.length, 10)
+-                    : undefined
+-                const newLen = newColumn.length
+-                    ? parseInt(newColumn.length, 10)
+-                    : undefined
+                const oldLen = typeof oldColumn.length === "string"
+                    ? parseInt(oldColumn.length as any, 10)
                     : undefined
-                const newLen = newColumn.length
-                    ? parseInt(newColumn.length, 10)
+                const newLen = typeof newColumn.length === "string"
+                    ? parseInt(newColumn.length as any, 10)
                     : undefined
-                if (typeof oldLen === "number" && typeof newLen === "number" && newLen < oldLen) {
-                    const col = this.driver.escape(oldColumn.name)
-                    const t = (newColumn.type as string).toLowerCase()
-                    const threshold = t.startsWith("n") ? `${newLen}*2` : `${newLen}`
-                    const updateExpr =
-                        t === "varbinary" ? `SUBSTRING(${col}, 1, ${newLen})` : `LEFT(${col}, ${newLen})`
-                    // shrink: make data fit first; actual ALTER follows in general path
-                    upQueries.push(
-                        new Query(
-                            `UPDATE ${this.escapePath(table)} ` +
-                                `SET ${col} = ${updateExpr} ` +
-                                `WHERE DATALENGTH(${col}) > ${threshold}`,
-                        ),
+                const isOldMax =
+                    typeof oldColumn.length === "string" &&
+                    oldColumn.length.toUpperCase() === "MAX"
+                const isNewMax =
+                    typeof newColumn.length === "string" &&
+                    newColumn.length.toUpperCase() === "MAX"
+                if (
+                    !isNewMax &&
+                    (
+                        (typeof newLen === "number" && typeof oldLen === "number" && newLen < oldLen) ||
+                        (typeof newLen === "number" && isOldMax)
                     )
-                }
-            }
-            // END
+                ) {
+                     const col = this.driver.escape(oldColumn.name)
+                     const t = (newColumn.type as string).toLowerCase()
+                     const threshold = t.startsWith("n") ? `${newLen}*2` : `${newLen}`
+-                    const updateExpr =
+                    const isBinary = t === "varbinary" || t === "binary"
+                    const updateExpr = isBinary
+                        ? `SUBSTRING(${col}, 1, ${newLen})`
+                        : `LEFT(${col}, ${newLen})`
+                     // shrink: make data fit first; actual ALTER follows in general path
+                     upQueries.push(
+                         new Query(
+                             `UPDATE ${this.escapePath(table)} ` +
+                                 `SET ${col} = ${updateExpr} ` +
+                                 `WHERE DATALENGTH(${col}) > ${threshold}`,
+                         ),
+                     )
+                 }
+             }
+             // END
             if (
                 this.isColumnChanged(oldColumn, newColumn, false, false, false)
             ) {
