@@ -90,13 +90,17 @@ export class MigrationExecutor {
     }
 
     /**
-     * Returns an array of all executed migrations.
+     * @returns An array of all executed migrations
      */
     public async getExecutedMigrations(): Promise<Migration[]> {
         return this.withQueryRunner(async (queryRunner) => {
-            const exist = await queryRunner.hasTable(this.migrationsTable)
+            // There is no need to check if migrations table exists for MongoDB,
+            // as it's handled in loadExecutedMigrations
+            if (this.connection.driver.options.type !== "mongodb") {
+                const exist = await queryRunner.hasTable(this.migrationsTable)
 
-            if (!exist) return []
+                if (!exist) return []
+            }
 
             return await this.loadExecutedMigrations(queryRunner)
         })
