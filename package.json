@@ -132,6 +132,7 @@
     "chai-as-promised": "^7.1.2",
     "class-transformer": "^0.5.1",
     "eslint": "^9.36.0",
+    "eslint-plugin-jsdoc": "^60.3.0",
     "globals": "^16.4.0",
     "gulp": "^4.0.2",
     "gulp-rename": "^2.1.0",
