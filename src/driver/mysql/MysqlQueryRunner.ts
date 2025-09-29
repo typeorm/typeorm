@@ -1264,8 +1264,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     ...oldColumn,
                     name: oldColumn.name,
                 })
-                const up = `ALTER TABLE ${this.escapePath(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(newColDef, true)}`
-                const down = `ALTER TABLE ${this.escapePath(table)} CHANGE \`${oldColumn.name}\` ${this.buildCreateColumnSql(oldColDef, true)}`
+                const up = `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                    oldColumn.name
+                }\` ${this.buildCreateColumnSql(newColDef, true)}`
+                const down = `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                    oldColumn.name
+                }\` ${this.buildCreateColumnSql(oldColDef, true)}`
                 upQueries.push(new Query(up))
                 downQueries.push(new Query(down))
 
