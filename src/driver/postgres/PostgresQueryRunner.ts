@@ -1612,14 +1612,15 @@ export class PostgresQueryRunner
                     }
 
                     // For down query, we're be doing the doing the same as normal enum change (create new type, alter column, drop old type)
-                    downQueries.push(
-                        this.dropEnumTypeSql(table, newColumn, newEnumName),
-                    )
 
                     downQueries.push(
                         new Query(
                             `ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`,
                         ),
+                    )
+
+                    downQueries.push(
+                        this.dropEnumTypeSql(table, newColumn, newEnumName),
                     )
 
                     const downType = `${oldEnumNameWithSchema_old}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithSchema_old}${arraySuffix}`
