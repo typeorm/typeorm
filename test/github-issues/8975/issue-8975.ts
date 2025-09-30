@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { exec } from "child_process"
-import { readFile, writeFile, chmod, unlink, rmdir } from "fs/promises"
+import { chmod, readFile, rm, unlink, writeFile } from "fs/promises"
 import { dirname } from "path"
 
 describe("cli init command", () => {
@@ -42,7 +42,7 @@ describe("cli init command", () => {
     })
 
     afterEach(async () => {
-        await rmdir(`./${testProjectPath}`, { recursive: true })
+        await rm(`./${testProjectPath}`, { recursive: true, force: true })
     })
 
     for (const databaseOption of databaseOptions) {
