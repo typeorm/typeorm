@@ -19,14 +19,14 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        let postRepository = dataSource.getRepository(Post)
-        let authorRepository = dataSource.getRepository(Author)
-        let categoryRepository = dataSource.getRepository(Category)
+        const postRepository = dataSource.getRepository(Post)
+        const authorRepository = dataSource.getRepository(Author)
+        const categoryRepository = dataSource.getRepository(Category)
 
-        let author = authorRepository.create()
+        const author = authorRepository.create()
         author.name = "Umed"
 
-        let post = postRepository.create()
+        const post = postRepository.create()
         post.text = "Hello how are you?"
         post.title = "hello"
         post.author = author.asPromise()
@@ -40,7 +40,7 @@ dataSource.initialize().then(
                 )
                 console.log(post)
 
-                let secondPost = postRepository.create()
+                const secondPost = postRepository.create()
                 secondPost.text = "Second post"
                 secondPost.title = "About second post"
                 author.posts = Promise.resolve([secondPost])
@@ -80,13 +80,13 @@ dataSource.initialize().then(
                 console.log("Two post's author has been removed.")
                 console.log("Now lets check many-to-many relations")
 
-                let category1 = categoryRepository.create()
+                const category1 = categoryRepository.create()
                 category1.name = "Hello category1"
 
-                let category2 = categoryRepository.create()
+                const category2 = categoryRepository.create()
                 category2.name = "Bye category2"
 
-                let post = postRepository.create()
+                const post = postRepository.create()
                 post.title = "Post & Categories"
                 post.text = "Post with many categories"
                 post.categories = Promise.resolve([category1, category2])

@@ -61,7 +61,7 @@ export class Post {
     bool: boolean
 
     @Column("json")
-    json: Object
+    json: object
 
     @Column("string", { array: true })
     array: string[]

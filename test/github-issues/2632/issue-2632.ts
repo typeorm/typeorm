@@ -74,7 +74,7 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
                     .of(2)
                     .add(category2)
 
-                let loadedPost2 = await connection.manager.findOne(Post, {
+                const loadedPost2 = await connection.manager.findOne(Post, {
                     where: { id: 2 },
                     relations: { categories: true },
                 })

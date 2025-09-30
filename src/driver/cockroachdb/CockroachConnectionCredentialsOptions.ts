@@ -5,7 +5,7 @@ import { TlsOptions } from "tls"
  */
 export interface CockroachConnectionCredentialsOptions {
     /**
-     * Connection url where perform connection to.
+     * Connection url where the connection is performed.
      */
     readonly url?: string
 

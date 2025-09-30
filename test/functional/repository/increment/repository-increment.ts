@@ -1,11 +1,11 @@
 import "reflect-metadata"
+import { UpdateResult } from "../../../../src"
+import { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
-import { UpdateResult } from "../../../../src"
 import { Post } from "./entity/Post"
 import { PostBigInt } from "./entity/PostBigInt"
 import { UserWithEmbededEntity } from "./entity/UserWithEmbededEntity"
@@ -181,7 +181,6 @@ describe("repository > increment method", () => {
                 (connections = await createTestingConnections({
                     entities: [PostBigInt],
                     enabledDrivers: ["mysql", "mariadb", "postgres", "sap"],
-                    // logging: true
                 })),
         )
         beforeEach(() => reloadTestingDatabases(connections))
