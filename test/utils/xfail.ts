@@ -1,3 +1,4 @@
+// @ts-expect-error: AssertionError exists but is not typed in chai
 import { assert, AssertionError } from "chai"
 import { AsyncFunc, Context, Func, Test, TestFunction } from "mocha"
 
@@ -28,8 +29,8 @@ const wrap = (
                 ok((fn as AsyncFunc).call(context as unknown as Context))
             }
         }).then(
-            (e: any) => assert.fail("Expected this test to fail"),
-            (e: any) => {
+            (_e: unknown) => assert.fail("Expected this test to fail"),
+            (e: unknown) => {
                 if (!(e instanceof AssertionError)) {
                     throw e
                 }
@@ -79,9 +80,10 @@ function unless(condition: boolean | (() => boolean)): { it: TestFunction } {
     return { it: xfailIt }
 }
 
-const xfail: XFailFunction = {
+/**
+ * XFail is used to mark tests that are expected to fail.
+ */
+export const xfail: XFailFunction = {
     ...unless(true),
     unless,
 }
-
-export { xfail }
