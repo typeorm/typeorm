@@ -5,7 +5,7 @@ import { QueryRunner } from "../../query-runner/QueryRunner"
 import { DataSource } from "../../data-source/DataSource"
 
 export class ExpoDriver extends AbstractSqliteDriver {
-    options: ExpoConnectionOptions
+    declare options: ExpoConnectionOptions
 
     constructor(connection: DataSource) {
         super(connection)

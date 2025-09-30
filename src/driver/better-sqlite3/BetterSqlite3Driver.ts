@@ -24,11 +24,6 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      */
     options: BetterSqlite3ConnectionOptions
 
-    /**
-     * SQLite underlying library.
-     */
-    sqlite: any
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
