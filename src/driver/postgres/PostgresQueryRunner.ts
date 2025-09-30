@@ -1598,8 +1598,9 @@ export class PostgresQueryRunner
                     true,
                 )
 
-                // When using ADD VALUE, the up migration is just a series of ADD VALUE queries otherwise we'll need to create a new enum type
+                // ADD VALUE allows us to just add new enum values without any type changes, but can of course only be used when only new values were added
                 if (useAddValueForUp) {
+                    // Add values for up - that's all we need
                     for (const item of extraItems) {
                         const escapedValue = item.replace("'", "''")
 
@@ -1609,6 +1610,37 @@ export class PostgresQueryRunner
                             ),
                         )
                     }
+
+                    // For down query, we're be doing the doing the same as normal enum change (create new type, alter column, drop old type)
+                    downQueries.push(
+                        this.dropEnumTypeSql(table, newColumn, newEnumName),
+                    )
+
+                    downQueries.push(
+                        new Query(
+                            `ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`,
+                        ),
+                    )
+
+                    const downType = `${oldEnumNameWithSchema_old}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithSchema_old}${arraySuffix}`
+
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${downType}`,
+                        ),
+                    )
+
+                    downQueries.push(
+                        this.createEnumTypeSql(
+                            table,
+                            oldColumn,
+                            oldEnumNameWithSchema_old,
+                        ),
+                    )
                 } else {
                     // rename old ENUM
                     upQueries.push(
@@ -1616,48 +1648,46 @@ export class PostgresQueryRunner
                             `ALTER TYPE ${oldEnumName} RENAME TO ${oldEnumNameWithoutSchema_old}`,
                         ),
                     )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`,
+                        ),
+                    )
 
                     // create new ENUM
                     upQueries.push(
                         this.createEnumTypeSql(table, newColumn, newEnumName),
                     )
-                }
-
-                downQueries.push(
-                    this.dropEnumTypeSql(table, newColumn, newEnumName),
-                )
-
-                downQueries.push(
-                    new Query(
-                        `ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`,
-                    ),
-                )
-
-                // if column have default value, we must drop it to avoid issues with type casting
-                if (
-                    oldColumn.default !== null &&
-                    oldColumn.default !== undefined
-                ) {
-                    // mark default as changed to prevent double update
-                    defaultValueChanged = true
-
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`,
-                        ),
-                    )
-
                     downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${
-                                oldColumn.default
-                            }`,
-                        ),
+                        this.dropEnumTypeSql(table, newColumn, newEnumName),
                     )
+
+                    // if column have default value, we must drop it to avoid issues with type casting
+                    if (
+                        oldColumn.default !== null &&
+                        oldColumn.default !== undefined
+                    ) {
+                        // mark default as changed to prevent double update
+                        defaultValueChanged = true
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    oldColumn.name
+                                }" DROP DEFAULT`,
+                            ),
+                        )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    oldColumn.name
+                                }" SET DEFAULT ${oldColumn.default}`,
+                            ),
+                        )
+                    }
 
                     // build column types
                     const upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`
@@ -1671,7 +1701,6 @@ export class PostgresQueryRunner
                             )} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`,
                         ),
                     )
-
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
@@ -1681,14 +1710,12 @@ export class PostgresQueryRunner
                             }" TYPE ${downType}`,
                         ),
                     )
-                }
 
-                // restore column default or create new one
-                if (
-                    newColumn.default !== null &&
-                    newColumn.default !== undefined
-                ) {
-                    if (!useAddValueForUp) {
+                    // restore column default or create new one
+                    if (
+                        newColumn.default !== null &&
+                        newColumn.default !== undefined
+                    ) {
                         upQueries.push(
                             new Query(
                                 `ALTER TABLE ${this.escapePath(
@@ -1698,18 +1725,17 @@ export class PostgresQueryRunner
                                 }" SET DEFAULT ${newColumn.default}`,
                             ),
                         )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    newColumn.name
+                                }" DROP DEFAULT`,
+                            ),
+                        )
                     }
 
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`,
-                        ),
-                    )
-                }
-
-                if (!useAddValueForUp) {
                     // remove old ENUM
                     upQueries.push(
                         this.dropEnumTypeSql(
@@ -1718,15 +1744,14 @@ export class PostgresQueryRunner
                             oldEnumNameWithSchema_old,
                         ),
                     )
+                    downQueries.push(
+                        this.createEnumTypeSql(
+                            table,
+                            oldColumn,
+                            oldEnumNameWithSchema_old,
+                        ),
+                    )
                 }
-
-                downQueries.push(
-                    this.createEnumTypeSql(
-                        table,
-                        oldColumn,
-                        oldEnumNameWithSchema_old,
-                    ),
-                )
             }
 
             if (oldColumn.isNullable !== newColumn.isNullable) {
