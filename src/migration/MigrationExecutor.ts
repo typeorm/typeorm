@@ -153,9 +153,8 @@ export class MigrationExecutor {
         await this.createMigrationsTableIfNotExist(queryRunner)
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations(
-            queryRunner,
-        )
+        const executedMigrations =
+            await this.loadExecutedMigrations(queryRunner)
 
         // get all user's migrations in the source code
         const allMigrations = this.getMigrations()
@@ -201,9 +200,8 @@ export class MigrationExecutor {
         }
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations(
-            queryRunner,
-        )
+        const executedMigrations =
+            await this.loadExecutedMigrations(queryRunner)
 
         // get the time when last migration was executed
         const lastTimeExecutedMigration =
@@ -404,9 +402,8 @@ export class MigrationExecutor {
         }
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations(
-            queryRunner,
-        )
+        const executedMigrations =
+            await this.loadExecutedMigrations(queryRunner)
 
         // get the time when last migration was executed
         const lastTimeExecutedMigration =

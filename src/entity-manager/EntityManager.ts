@@ -1353,7 +1353,7 @@ export class EntityManager {
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
-                (value, key) => ({ [key]: value } as any),
+                (value, key) => ({ [key]: value }) as any,
                 () =>
                     this.connection.driver.escape(column.databaseName) +
                     " + " +
@@ -1390,7 +1390,7 @@ export class EntityManager {
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
-                (value, key) => ({ [key]: value } as any),
+                (value, key) => ({ [key]: value }) as any,
                 () =>
                     this.connection.driver.escape(column.databaseName) +
                     " - " +
