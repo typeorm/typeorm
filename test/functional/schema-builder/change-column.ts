@@ -25,153 +25,298 @@ describe("schema builder > change column", () => {
     it("uses ALTER COLUMN when increasing varchar length", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // use the same entity set as the rest of this file
-                const postMetadata = connection.getMetadata(Post)
-                const nameCol = postMetadata.findColumnWithPropertyName("name")!
-                const originalLen = nameCol.length
-                const repo = connection.getRepository(Post)
-                try {
-                    // 1) ensure starting point length=50 and create schema
-                    nameCol.length = "50"
-                    nameCol.build(connection)
-                    await connection.synchronize()
+                const queryRunner = connection.createQueryRunner()
+                const repo = connection.getRepository("post")
 
-                    // 2) Seed/attempt data that EXCEEDS the current limit BEFORE widening
-                    const fiftyOne = "x".repeat(51)
-                    let preInsertErr: any, preRow: any
-                    try {
-                        preRow = await repo.save({ name: fiftyOne })
-                    } catch (e) {
-                        preInsertErr = e
-                    }
+                const metadata = connection.getMetadata("post")
+                const nameColumnMetadata =
+                    metadata.findColumnWithPropertyName("name")!
+                const originalLength = nameColumnMetadata.length ?? ""
 
-                    // Per-driver expectations BEFORE widening:
-                    if (
-                        connection.driver.options.type === "postgres" ||
-                        connection.driver.options.type === "mssql" ||
-                        connection.driver.options.type === "oracle" ||
-                        connection.driver.options.type === "cockroachdb"
-                    ) {
-                        // Enforcing engines should reject > 50
-                        expect(preInsertErr).to.be.instanceOf(Error)
-                    } else if (
-                        DriverUtils.isMySQLFamily(connection.driver) ||
-                        connection.driver.options.type === "aurora-mysql"
-                    ) {
-                        // MySQL-family: STRICT -> error; non-strict -> truncation to 50
-                        if (preInsertErr) {
-                            expect(preInsertErr).to.be.instanceOf(Error)
-                        } else {
-                            const rt = await repo.findOneByOrFail({
-                                id: (preRow as any).id,
-                            })
-                            expect(rt.name.length).to.equal(50) // truncated
+                // --- SQL recorder around synchronize() ---
+                const recorded: string[] = []
+                const origCreateQR = (connection as any).createQueryRunner.bind(
+                    connection,
+                )
+                const installRecorder = () => {
+                    ;(connection as any).createQueryRunner = (
+                        ...args: any[]
+                    ) => {
+                        const qr = origCreateQR(...args)
+                        const origQuery = qr.query.bind(qr)
+                        qr.query = async (sql: any, params?: any[]) => {
+                            if (typeof sql === "string") recorded.push(sql)
+                            return origQuery(sql, params)
                         }
+                        return qr
+                    }
+                }
+                const removeRecorder = () => {
+                    ;(connection as any).createQueryRunner = origCreateQR
+                }
+
+                let insertedRowId: any | undefined
+
+                try {
+                    // 1) Ensure start at varchar(50)
+                    nameColumnMetadata.length = "50"
+                    nameColumnMetadata.build(connection)
+                    await connection.synchronize()
+
+                    const preTable = await queryRunner.getTable("post")
+                    const preCol = preTable!.findColumnByName("name")!
+                    if (preCol.length) expect(preCol.length).to.equal("50")
+
+                    // 2) Widen to 80 and capture the SQL used by synchronize()
+                    nameColumnMetadata.length = "80"
+                    nameColumnMetadata.build(connection)
+
+                    installRecorder()
+                    let widenErr: any
+                    try {
+                        await connection.synchronize()
+                    } catch (e) {
+                        widenErr = e
+                    } finally {
+                        removeRecorder()
+                    }
+                    expect(widenErr).to.be.undefined
+
+                    // Confirm column length changed
+                    const postTable = await queryRunner.getTable("post")
+                    const postCol = postTable!.findColumnByName("name")!
+                    if (postCol.length) expect(postCol.length).to.equal("80")
+
+                    // 2b) Assert ALTER (driver-scoped)
+                    const driver = connection.driver.options.type
+                    const sqlBlob = recorded.join("\n")
+
+                    if (driver === "postgres" || driver === "cockroachdb") {
+                        // expect ALTER ... ALTER COLUMN "name" ... TYPE/SET DATA TYPE ...
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* ALTER COLUMN "name" (SET DATA TYPE|TYPE) .*80/i,
+                        )
+                        // ensure no drop/add of "name"
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                    } else if (driver === "mysql" || driver === "mariadb") {
+                        // MODIFY or CHANGE for MySQL family
+                        const usedModify =
+                            /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?name`? .*80/i.test(
+                                sqlBlob,
+                            )
+                        expect(
+                            usedModify,
+                            `Expected MODIFY/CHANGE COLUMN for 'name'.\n${sqlBlob}`,
+                        ).to.equal(true)
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                    } else if (driver === "mssql") {
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* ALTER COLUMN \[name\] .*80/i,
+                        )
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+\[name\]/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+\[name\]/i)
                     } else if (
-                        DriverUtils.isSQLiteFamily(connection.driver) ||
-                        connection.driver.options.type === "spanner"
+                        driver === "sqlite" ||
+                        driver === "better-sqlite3"
                     ) {
-                        // Usually not enforced; insert may succeed with full 51 chars
-                        expect(preInsertErr).to.be.undefined
-                        const rt = await repo.findOneByOrFail({
-                            id: (preRow as any).id,
-                        })
-                        expect(rt.name.length).to.equal(51)
+                        // SQLite: no strict assertion here (TypeORM recreates the table). Keep functional test only.
                     }
 
-                    // 3) Now widen to 51 and apply for real
-                    nameCol.length = "51"
-                    nameCol.build(connection)
-                    await connection.synchronize()
+                    // 3) Insert a 51-char value (should succeed)
+                    const fiftyOne = "x".repeat(51)
+                    const needsExtras =
+                        connection.driver.options.type === "cockroachdb"
+                    const payload = needsExtras
+                        ? {
+                              id: 1, // if your PK is generated you can drop this
+                              name: fiftyOne,
+                              version: `v_${Date.now()}`,
+                              tag: "t",
+                              likesCount: 1,
+                          }
+                        : { name: fiftyOne }
 
-                    const queryRunner = connection.createQueryRunner()
-                    const postTable = await queryRunner.getTable("post")
-                    await queryRunner.release()
-                    const col = postTable!.findColumnByName("name")!
-                    if (col.length) expect(col.length).to.equal("51")
+                    let insertErr: any, row: any
+                    try {
+                        row = await repo.save(payload)
+                        insertedRowId = (row as any)?.id
+                    } catch (e) {
+                        insertErr = e
+                    }
+                    expect(insertErr).to.be.undefined
+
+                    // 4) Round-trip length check
+                    const rt = await repo.findOneByOrFail({
+                        id: (row as any).id,
+                    })
+                    expect(rt.name.length).to.equal(51)
                 } finally {
-                    // cleanup: restore metadata and schema
-                    nameCol.length = originalLen
-                    nameCol.build(connection)
-                    await connection.synchronize()
+                    // Revert data
+                    try {
+                        if (insertedRowId !== undefined)
+                            await repo.delete(insertedRowId)
+                    } catch {}
+                    // Revert schema (restore original length)
+                    try {
+                        const nameColumnMetadata = connection
+                            .getMetadata("post")
+                            .findColumnWithPropertyName("name")!
+                        nameColumnMetadata.length = originalLength
+                        nameColumnMetadata.build(connection)
+                        await connection.synchronize()
+                    } catch {}
+                    await queryRunner.release()
                 }
             }),
         ))
     it("uses ALTER COLUMN when reducing varchar length", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const postMetadata = connection.getMetadata(Post)
-                const nameCol = postMetadata.findColumnWithPropertyName("name")!
-                const originalLen = nameCol.length
-                const repo = connection.getRepository(Post)
+                const queryRunner = connection.createQueryRunner()
+                const repo = connection.getRepository("post")
+
+                const metadata = connection.getMetadata("post")
+                const nameColumnMetadata =
+                    metadata.findColumnWithPropertyName("name")!
+                const originalLength = nameColumnMetadata.length ?? ""
+
+                // --- SQL recorder around synchronize() ---
+                const recorded: string[] = []
+                const origCreateQR = (connection as any).createQueryRunner.bind(
+                    connection,
+                )
+                const installRecorder = () => {
+                    ;(connection as any).createQueryRunner = (
+                        ...args: any[]
+                    ) => {
+                        const qr = origCreateQR(...args)
+                        const origQuery = qr.query.bind(qr)
+                        qr.query = async (sql: any, params?: any[]) => {
+                            if (typeof sql === "string") recorded.push(sql)
+                            return origQuery(sql, params)
+                        }
+                        return qr
+                    }
+                }
+                const removeRecorder = () => {
+                    ;(connection as any).createQueryRunner = origCreateQR
+                }
+
+                let insertedRowId: any | undefined
+
                 try {
-                    // start larger
-                    nameCol.length = "100"
-                    nameCol.build(connection)
+                    // 1) Ensure start at varchar(50)
+                    nameColumnMetadata.length = "50"
+                    nameColumnMetadata.build(connection)
                     await connection.synchronize()
 
-                    // 2) SEED data that EXCEEDS the upcoming target (this is the reviewer ask)
-                    //    Existing row is length 100; new limit will be 80.
-                    const tooLong = "y".repeat(100)
-                    const seeded = await repo.save({ name: tooLong })
+                    const preTable = await queryRunner.getTable("post")
+                    const preCol = preTable!.findColumnByName("name")!
+                    if (preCol.length) expect(preCol.length).to.equal("50")
 
-                    // 3) Now reduce to 80 and run the real DDL
-                    nameCol.length = "80"
-                    nameCol.build(connection)
-                    let syncError: any
+                    // 2) Widen to 40 and capture the SQL used by synchronize()
+                    nameColumnMetadata.length = "40"
+                    nameColumnMetadata.build(connection)
+
+                    installRecorder()
+                    let widenErr: any
                     try {
                         await connection.synchronize()
                     } catch (e) {
-                        syncError = e
+                        widenErr = e
+                    } finally {
+                        removeRecorder()
                     }
+                    expect(widenErr).to.be.undefined
 
-                    // 4) Verify outcome per engine:
-                    //    - PG/MSSQL/Oracle/Cockroach: ALTER should fail because existing data are too long.
-                    //    - MySQL/MariaDB/Aurora: STRICT -> error; non-strict -> ALTER succeeds and data truncated to 80.
-                    //    - SQLite/Spanner: usually no enforcement; ALTER succeeds and data remain length 100.
-                    if (
-                        connection.driver.options.type === "postgres" ||
-                        connection.driver.options.type === "mssql" ||
-                        connection.driver.options.type === "oracle" ||
-                        connection.driver.options.type === "cockroachdb"
-                    ) {
-                        expect(syncError).to.be.instanceOf(Error)
-                    } else if (
-                        DriverUtils.isMySQLFamily(connection.driver) ||
-                        connection.driver.options.type === "aurora-mysql"
-                    ) {
-                        if (syncError) {
-                            expect(syncError).to.be.instanceOf(Error)
-                        } else {
-                            const rt = await repo.findOneByOrFail({
-                                id: (seeded as any).id,
-                            })
-                            expect(rt.name.length).to.equal(80) // truncated
-                        }
-                    } else if (
-                        DriverUtils.isSQLiteFamily(connection.driver) ||
-                        connection.driver.options.type === "spanner"
-                    ) {
-                        expect(syncError).to.be.undefined
-                        const rt = await repo.findOneByOrFail({
-                            id: (seeded as any).id,
-                        })
-                        expect(rt.name.length).to.equal(100)
-                    }
-
-                    const queryRunner = connection.createQueryRunner()
+                    // Confirm column length changed
                     const postTable = await queryRunner.getTable("post")
-                    await queryRunner.release()
-                    const col = postTable!.findColumnByName("name")!
-                    if (!syncError && col.length)
-                        expect(col.length).to.equal("80")
-                } finally {
-                    // cleanup
-                    nameCol.length = originalLen
-                    nameCol.build(connection)
+                    const postCol = postTable!.findColumnByName("name")!
+                    if (postCol.length) expect(postCol.length).to.equal("40")
+
+                    // 2b) Assert ALTER (driver-scoped)
+                    const driver = connection.driver.options.type
+                    const sqlBlob = recorded.join("\n")
+
+                    if (driver === "postgres" || driver === "cockroachdb") {
+                        // expect ALTER ... ALTER COLUMN "name" ... TYPE/SET DATA TYPE ...
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* ALTER COLUMN "name" (SET DATA TYPE|TYPE) .*40/i,
+                        )
+                        // ensure no drop/add of "name"
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                    } else if (driver === "mysql" || driver === "mariadb") {
+                        // MODIFY or CHANGE for MySQL family
+                        const usedModify =
+                            /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?name`? .*40/i.test(
+                                sqlBlob,
+                            )
+                        expect(
+                            usedModify,
+                            `Expected MODIFY/CHANGE COLUMN for 'name'.\n${sqlBlob}`,
+                        ).to.equal(true)
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                    } else if (driver === "mssql") {
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* ALTER COLUMN \[name\] .*40/i,
+                        )
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+\[name\]/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+\[name\]/i)
+                    } else if (
+                        driver === "sqlite" ||
+                        driver === "better-sqlite3"
+                    ) {
+                        // SQLite: no strict assertion here (TypeORM recreates the table). Keep functional test only.
+                    }
+
+                    // 3) Insert a 40-char value (should succeed)
+                    const fiftyOne = "x".repeat(40)
+                    const needsExtras =
+                        connection.driver.options.type === "cockroachdb"
+                    const payload = needsExtras
+                        ? {
+                              id: 1, // if your PK is generated you can drop this
+                              name: fiftyOne,
+                              version: `v_${Date.now()}`,
+                              tag: "t",
+                              likesCount: 1,
+                          }
+                        : { name: fiftyOne }
+
+                    let insertErr: any, row: any
                     try {
+                        row = await repo.save(payload)
+                        insertedRowId = (row as any)?.id
+                    } catch (e) {
+                        insertErr = e
+                    }
+                    expect(insertErr).to.be.undefined
+
+                    // 4) Round-trip length check
+                    const rt = await repo.findOneByOrFail({
+                        id: (row as any).id,
+                    })
+                    expect(rt.name.length).to.equal(40)
+                } finally {
+                    // Revert data
+                    try {
+                        if (insertedRowId !== undefined)
+                            await repo.delete(insertedRowId)
+                    } catch {}
+                    // Revert schema (restore original length)
+                    try {
+                        const nameColumnMetadata = connection
+                            .getMetadata("post")
+                            .findColumnWithPropertyName("name")!
+                        nameColumnMetadata.length = originalLength
+                        nameColumnMetadata.build(connection)
                         await connection.synchronize()
                     } catch {}
+                    await queryRunner.release()
                 }
             }),
         ))

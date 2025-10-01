@@ -1272,9 +1272,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 }\` ${this.buildCreateColumnSql(oldColDef, true)}`
                 upQueries.push(new Query(up))
                 downQueries.push(new Query(down))
-
-                await this.executeQueries(upQueries, downQueries)
-                return
             }
             // END length-only fast path
 

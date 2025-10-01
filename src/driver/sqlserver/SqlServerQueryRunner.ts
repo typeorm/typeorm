@@ -1639,6 +1639,49 @@ export class SqlServerQueryRunner
                 }
             }
             // END
+
+            // BEGIN length-only ALTER (SQL Server)
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                // keep to the same local-var style as the shrink pass
+                const t = (newColumn.type as string).toLowerCase()
+                const isCharOrBin =
+                    t === "varchar" ||
+                    t === "nvarchar" ||
+                    t === "varbinary" ||
+                    t === "char" ||
+                    t === "nchar" ||
+                    t === "binary"
+
+                if (isCharOrBin) {
+                    // build full type using the new length/MAX (let driver handle bytes vs chars)
+                    const fullTypeSql = (this.driver.createFullType as any)(
+                        newColumn,
+                    )
+                    const collationSql = newColumn.collation
+                        ? ` COLLATE ${newColumn.collation}`
+                        : ""
+                    const nullSql = newColumn.isNullable ? " NULL" : " NOT NULL"
+
+                    const tableName = this.escapePath(table)
+                    const colName = this.driver.escape(newColumn.name)
+
+                    // actually alter the column when only the length changed
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${tableName} ALTER COLUMN ${colName} ${fullTypeSql}${collationSql}${nullSql}`,
+                        ),
+                    )
+
+                    // keep in-memory state in sync so later diffs don’t re-run it
+                    const cached = table.findColumnByName(newColumn.name)
+                    if (cached) cached.length = newColumn.length
+                }
+            }
+            // END length-only ALTER
+
             if (
                 this.isColumnChanged(oldColumn, newColumn, false, false, false)
             ) {
