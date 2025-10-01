@@ -226,6 +226,7 @@ describe("schema builder > change column", () => {
                         await connection.synchronize()
                     } catch (e) {
                         widenErr = e
+                        console.log(widenErr)
                     } finally {
                         removeRecorder()
                     }
