@@ -18,7 +18,7 @@ import { MetadataTableType } from "../driver/types/MetadataTableType"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { buildSqlTag } from "../util/SqlTagUtils"
 
-export abstract class BaseQueryRunner {
+export abstract class BaseQueryRunner implements AsyncDisposable {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -102,6 +102,16 @@ export abstract class BaseQueryRunner {
     // -------------------------------------------------------------------------
     // Public Abstract Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Releases used database connection.
+     * You cannot use query runner methods after connection is released.
+     */
+    abstract release(): Promise<void>
+
+    async [Symbol.asyncDispose](): Promise<void> {
+        await this.release()
+    }
 
     /**
      * Executes a given SQL query.
