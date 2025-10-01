@@ -39,7 +39,6 @@ export default defineConfig([
             "@typescript-eslint/no-unnecessary-type-constraint": "warn",
             "@typescript-eslint/no-unsafe-declaration-merging": "warn",
             "@typescript-eslint/no-unsafe-function-type": "warn",
-            "@typescript-eslint/no-unused-expressions": "warn",
             "@typescript-eslint/no-unused-vars": [
                 "warn",
                 { argsIgnorePattern: "^_" },
