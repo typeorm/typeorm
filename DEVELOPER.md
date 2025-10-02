@@ -60,7 +60,6 @@ It is recommended to configure your OS to automatically switch to use this versi
 * [`avn`](https://github.com/wbyoung/avn)
 * [`asdf`](https://asdf-vm.com) with `asdf-nodejs` plugin and [`legacy_version_file = true`](https://asdf-vm.com/manage/configuration.html#legacy-version-file) option
 
-
 ## Installing package dependencies
 
 Install all TypeORM dependencies by running this command:
