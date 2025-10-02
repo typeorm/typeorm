@@ -475,9 +475,8 @@ export declare interface AggregationCursorOptions
  * array types can be searched using their element type
  * @public
  */
-export declare type AlternativeType<T> = T extends ReadonlyArray<infer U>
-    ? T | RegExpOrString<U>
-    : RegExpOrString<T>
+export declare type AlternativeType<T> =
+    T extends ReadonlyArray<infer U> ? T | RegExpOrString<U> : RegExpOrString<T>
 
 /** @public */
 export declare type AnyBulkWriteOperation<TSchema extends Document = Document> =
@@ -505,9 +504,8 @@ export declare type AnyBulkWriteOperation<TSchema extends Document = Document> =
 export declare type AnyError = MongoError | Error
 
 /** @public */
-export declare type ArrayElement<Type> = Type extends ReadonlyArray<infer Item>
-    ? Item
-    : never
+export declare type ArrayElement<Type> =
+    Type extends ReadonlyArray<infer Item> ? Item : never
 
 /** @public */
 export declare type ArrayOperator<Type> = {
@@ -3177,8 +3175,8 @@ export declare type EnhancedOmit<TRecordOrUnion, KeyUnion> =
     string extends keyof TRecordOrUnion
         ? TRecordOrUnion
         : TRecordOrUnion extends any
-        ? Pick<TRecordOrUnion, Exclude<keyof TRecordOrUnion, KeyUnion>>
-        : never
+          ? Pick<TRecordOrUnion, Exclude<keyof TRecordOrUnion, KeyUnion>>
+          : never
 
 /** @public */
 export declare interface ErrorDescription extends Document {
@@ -3251,11 +3249,12 @@ export declare type Filter<TSchema> = {
 } & RootFilterOperators<WithId<TSchema>>
 
 /** @public */
-export declare type FilterOperations<T> = T extends Record<string, any>
-    ? {
-          [key in keyof T]?: FilterOperators<T[key]>
-      }
-    : FilterOperators<T>
+export declare type FilterOperations<T> =
+    T extends Record<string, any>
+        ? {
+              [key in keyof T]?: FilterOperators<T[key]>
+          }
+        : FilterOperators<T>
 
 /** @public */
 export declare interface FilterOperators<TValue>
@@ -3591,9 +3590,8 @@ export declare interface FindOptions<TSchema extends Document = Document>
 }
 
 /** @public */
-export declare type Flatten<Type> = Type extends ReadonlyArray<infer Item>
-    ? Item
-    : Type
+export declare type Flatten<Type> =
+    Type extends ReadonlyArray<infer Item> ? Item : Type
 
 /** @public */
 export declare type GenericListener = (...args: any[]) => void
@@ -4002,12 +4000,12 @@ export declare type InferIdType<TSchema> = TSchema extends {
         ? never
         : IdType
     : TSchema extends {
-          _id?: infer IdType
-      }
-    ? unknown extends IdType
-        ? ObjectId
-        : IdType
-    : ObjectId
+            _id?: infer IdType
+        }
+      ? unknown extends IdType
+          ? ObjectId
+          : IdType
+      : ObjectId
 
 /** @public */
 export declare interface InsertManyResult<TSchema = Document> {
@@ -4061,10 +4059,10 @@ export declare type IsAny<Type, ResultIfAny, ResultIfNotAny> =
 export declare type Join<T extends unknown[], D extends string> = T extends []
     ? ""
     : T extends [string | number]
-    ? `${T[0]}`
-    : T extends [string | number, ...infer R]
-    ? `${T[0]}${D}${Join<R, D>}`
-    : string
+      ? `${T[0]}`
+      : T extends [string | number, ...infer R]
+        ? `${T[0]}${D}${Join<R, D>}`
+        : string
 
 /* Excluded from this release type: kBeforeHandshake */
 
@@ -5308,38 +5306,46 @@ export declare type NestedPaths<
 > = Depth["length"] extends 8
     ? []
     : Type extends
-          | string
-          | number
-          | bigint
-          | boolean
-          | Date
-          | RegExp
-          | Buffer
-          | Uint8Array
-          | ((...args: any[]) => any)
-          | {
-                _bsontype: string
-            }
-    ? []
-    : Type extends ReadonlyArray<infer ArrayType>
-    ? [] | [number, ...NestedPaths<ArrayType, [...Depth, 1]>]
-    : Type extends Map<string, any>
-    ? [string]
-    : Type extends object
-    ? {
-          [Key in Extract<keyof Type, string>]: Type[Key] extends Type
-              ? [Key]
-              : Type extends Type[Key]
-              ? [Key]
-              : Type[Key] extends ReadonlyArray<infer ArrayType>
-              ? Type extends ArrayType
-                  ? [Key]
-                  : ArrayType extends Type
-                  ? [Key]
-                  : [Key, ...NestedPaths<Type[Key], [...Depth, 1]>] // child is not structured the same as the parent
-              : [Key, ...NestedPaths<Type[Key], [...Depth, 1]>] | [Key]
-      }[Extract<keyof Type, string>]
-    : []
+            | string
+            | number
+            | bigint
+            | boolean
+            | Date
+            | RegExp
+            | Buffer
+            | Uint8Array
+            | ((...args: any[]) => any)
+            | {
+                  _bsontype: string
+              }
+      ? []
+      : Type extends ReadonlyArray<infer ArrayType>
+        ? [] | [number, ...NestedPaths<ArrayType, [...Depth, 1]>]
+        : Type extends Map<string, any>
+          ? [string]
+          : Type extends object
+            ? {
+                  [Key in Extract<keyof Type, string>]: Type[Key] extends Type
+                      ? [Key]
+                      : Type extends Type[Key]
+                        ? [Key]
+                        : Type[Key] extends ReadonlyArray<infer ArrayType>
+                          ? Type extends ArrayType
+                              ? [Key]
+                              : ArrayType extends Type
+                                ? [Key]
+                                : [
+                                      Key,
+                                      ...NestedPaths<Type[Key], [...Depth, 1]>,
+                                  ] // child is not structured the same as the parent
+                          :
+                                | [
+                                      Key,
+                                      ...NestedPaths<Type[Key], [...Depth, 1]>,
+                                  ]
+                                | [Key]
+              }[Extract<keyof Type, string>]
+            : []
 
 /**
  * @public
@@ -5524,22 +5530,22 @@ export declare type PropertyType<
 > = string extends Property
     ? unknown
     : Property extends keyof Type
-    ? Type[Property]
-    : Property extends `${number}`
-    ? Type extends ReadonlyArray<infer ArrayType>
-        ? ArrayType
-        : unknown
-    : Property extends `${infer Key}.${infer Rest}`
-    ? Key extends `${number}`
+      ? Type[Property]
+      : Property extends `${number}`
         ? Type extends ReadonlyArray<infer ArrayType>
-            ? PropertyType<ArrayType, Rest>
+            ? ArrayType
             : unknown
-        : Key extends keyof Type
-        ? Type[Key] extends Map<string, infer MapType>
-            ? MapType
-            : PropertyType<Type[Key], Rest>
-        : unknown
-    : unknown
+        : Property extends `${infer Key}.${infer Rest}`
+          ? Key extends `${number}`
+              ? Type extends ReadonlyArray<infer ArrayType>
+                  ? PropertyType<ArrayType, Rest>
+                  : unknown
+              : Key extends keyof Type
+                ? Type[Key] extends Map<string, infer MapType>
+                    ? MapType
+                    : PropertyType<Type[Key], Rest>
+                : unknown
+          : unknown
 
 /** @public */
 export declare interface ProxyOptions {

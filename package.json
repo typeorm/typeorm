@@ -155,7 +155,7 @@
     "pg": "^8.16.3",
     "pg-query-stream": "^4.10.3",
     "pkg-pr-new": "^0.0.60",
-    "prettier": "^2.8.8",
+    "prettier": "^3.6.2",
     "redis": "^5.8.2",
     "remap-istanbul": "^0.13.0",
     "sinon": "^21.0.0",

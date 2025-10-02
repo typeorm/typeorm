@@ -40,9 +40,8 @@ describe("MongoDriver", () => {
             const url =
                 "mongodb://username:password@someHost1:27017,someHost2:27018/myDatabase?replicaSet=abc&tls=true"
 
-            const connectionUrl = await getConnectionUrlFromFakedMongoClient(
-                url,
-            )
+            const connectionUrl =
+                await getConnectionUrlFromFakedMongoClient(url)
 
             expect(connectionUrl).to.eql(url)
         })
@@ -51,9 +50,8 @@ describe("MongoDriver", () => {
             const url =
                 "mongodb://username:password@someHost1:27017/myDatabase?tls=true"
 
-            const connectionUrl = await getConnectionUrlFromFakedMongoClient(
-                url,
-            )
+            const connectionUrl =
+                await getConnectionUrlFromFakedMongoClient(url)
 
             expect(connectionUrl).to.eql(url)
         })
