@@ -126,17 +126,72 @@ describe("schema builder > change column", () => {
 
                     // 3) Insert a 51-char value (should succeed)
                     const fiftyOne = "x".repeat(51)
-                    const needsExtras =
-                        connection.driver.options.type === "cockroachdb"
-                    const payload = needsExtras
-                        ? {
-                              id: 1, // if your PK is generated you can drop this
-                              name: fiftyOne,
-                              version: `v_${Date.now()}`,
-                              tag: "t",
-                              likesCount: 1,
-                          }
-                        : { name: fiftyOne }
+                    // Build a payload that satisfies NOT NULL columns that lack defaults/generation
+                    const meta = repo.metadata
+                    const requiredNoDefault = meta.columns.filter(
+                        (c) => !c.isNullable && !c.default && !c.isGenerated,
+                    )
+
+                    // Start with the test's target value
+                    const payload: any = { name: fiftyOne }
+
+                    for (const c of requiredNoDefault) {
+                        switch (c.propertyName) {
+                            case "id": {
+                                // Prefer a small int by default (works everywhere).
+                                // Only switch to a big integer when the column is clearly bigint-like.
+                                const t = String(c.type ?? "").toLowerCase()
+
+                                const isBigInt =
+                                    /\bbigint\b|^int8$|^bigserial$/.test(t) ||
+                                    // TypeORM sometimes sets type as a function/constructor; stringify may be '[Function:Number]'.
+                                    // If metadata has width info suggestive of bigint, treat as bigint (rare in this test schema).
+                                    (typeof (c as any).width === "number" &&
+                                        (c as any).width >= 20)
+
+                                if (isBigInt) {
+                                    // still keep it in JS safe integer range
+                                    payload.id ??= Math.min(
+                                        Number.MAX_SAFE_INTEGER,
+                                        // a “big” but safe number
+                                        9_000_000_000_000 +
+                                            Math.floor(
+                                                Math.random() * 1_000_000,
+                                            ),
+                                    )
+                                } else {
+                                    // safe 32-bit signed int to avoid MySQL overflow
+                                    payload.id ??=
+                                        Math.floor(Math.random() * 1_000_000) +
+                                        1 /* 1..1,000,000 */
+                                }
+                                break
+                            }
+                            case "version":
+                                payload.version ??= `v_${Date.now()}_${
+                                    connection.name
+                                }_${Math.random().toString(36).slice(2)}`
+                                break
+                            case "tag":
+                                payload.tag ??= `t_${Math.random()
+                                    .toString(36)
+                                    .slice(2, 6)}`
+                                break
+                            case "likesCount":
+                                payload.likesCount ??= 1
+                                break
+                            default: {
+                                // generic fallback
+                                const t = String(c.type ?? "").toLowerCase()
+                                const isNumeric =
+                                    /(int|numeric|float|double|decimal|real)/.test(
+                                        t,
+                                    )
+                                payload[c.propertyName] ??= isNumeric ? 0 : ""
+                                break
+                            }
+                        }
+                    }
 
                     let insertErr: any, row: any
                     try {
@@ -144,6 +199,7 @@ describe("schema builder > change column", () => {
                         insertedRowId = (row as any)?.id
                     } catch (e) {
                         insertErr = e
+                        console.log(insertErr)
                     }
                     expect(insertErr).to.be.undefined
 
@@ -220,6 +276,13 @@ describe("schema builder > change column", () => {
                     nameColumnMetadata.length = "40"
                     nameColumnMetadata.build(connection)
 
+                    // 🔧 Cockroach v24.3+: shrinking requires experimental flag (session-scoped)
+                    if (connection.driver.options.type === "cockroachdb") {
+                        await connection.query(
+                            "SET enable_experimental_alter_column_type_general = true",
+                        )
+                    }
+
                     installRecorder()
                     let widenErr: any
                     try {
@@ -275,18 +338,73 @@ describe("schema builder > change column", () => {
                     }
 
                     // 3) Insert a 40-char value (should succeed)
-                    const fiftyOne = "x".repeat(40)
-                    const needsExtras =
-                        connection.driver.options.type === "cockroachdb"
-                    const payload = needsExtras
-                        ? {
-                              id: 1, // if your PK is generated you can drop this
-                              name: fiftyOne,
-                              version: `v_${Date.now()}`,
-                              tag: "t",
-                              likesCount: 1,
-                          }
-                        : { name: fiftyOne }
+                    const forty = "x".repeat(40)
+                    // Build a payload that satisfies NOT NULL columns that lack defaults/generation
+                    const meta = repo.metadata
+                    const requiredNoDefault = meta.columns.filter(
+                        (c) => !c.isNullable && !c.default && !c.isGenerated,
+                    )
+
+                    // Start with the test's target value
+                    const payload: any = { name: forty }
+
+                    for (const c of requiredNoDefault) {
+                        switch (c.propertyName) {
+                            case "id": {
+                                // Prefer a small int by default (works everywhere).
+                                // Only switch to a big integer when the column is clearly bigint-like.
+                                const t = String(c.type ?? "").toLowerCase()
+
+                                const isBigInt =
+                                    /\bbigint\b|^int8$|^bigserial$/.test(t) ||
+                                    // TypeORM sometimes sets type as a function/constructor; stringify may be '[Function:Number]'.
+                                    // If metadata has width info suggestive of bigint, treat as bigint (rare in this test schema).
+                                    (typeof (c as any).width === "number" &&
+                                        (c as any).width >= 20)
+
+                                if (isBigInt) {
+                                    // still keep it in JS safe integer range
+                                    payload.id ??= Math.min(
+                                        Number.MAX_SAFE_INTEGER,
+                                        // a “big” but safe number
+                                        9_000_000_000_000 +
+                                            Math.floor(
+                                                Math.random() * 1_000_000,
+                                            ),
+                                    )
+                                } else {
+                                    // safe 32-bit signed int to avoid MySQL overflow
+                                    payload.id ??=
+                                        Math.floor(Math.random() * 1_000_000) +
+                                        1 /* 1..1,000,000 */
+                                }
+                                break
+                            }
+                            case "version":
+                                payload.version ??= `v_${Date.now()}_${
+                                    connection.name
+                                }_${Math.random().toString(36).slice(2)}`
+                                break
+                            case "tag":
+                                payload.tag ??= `t_${Math.random()
+                                    .toString(36)
+                                    .slice(2, 6)}`
+                                break
+                            case "likesCount":
+                                payload.likesCount ??= 1
+                                break
+                            default: {
+                                // generic fallback
+                                const t = String(c.type ?? "").toLowerCase()
+                                const isNumeric =
+                                    /(int|numeric|float|double|decimal|real)/.test(
+                                        t,
+                                    )
+                                payload[c.propertyName] ??= isNumeric ? 0 : ""
+                                break
+                            }
+                        }
+                    }
 
                     let insertErr: any, row: any
                     try {

@@ -1559,103 +1559,93 @@ export class CockroachQueryRunner
                 oldColumn.name = newColumn.name
             }
 
-            // BEGIN length-only fast path (Postgres/Cockroach)
+            // BEGIN length-only fast path (Cockroach) — FIXED
             if (
                 oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length &&
                 !newColumn.isArray &&
                 !oldColumn.isArray
             ) {
-                const oldLen = oldColumn.length
-                    ? parseInt(oldColumn.length, 10)
-                    : undefined
-                const newLen = newColumn.length
-                    ? parseInt(newColumn.length, 10)
-                    : undefined
-                const colName = newColumn.name
+                const oldLen =
+                    oldColumn.length != null
+                        ? parseInt(oldColumn.length, 10)
+                        : undefined
+                const newLen =
+                    newColumn.length != null
+                        ? parseInt(newColumn.length, 10)
+                        : undefined
+
+                // Length change never implies a rename; guard identifier
+                const colName = newColumn.name ?? oldColumn.name
+                const qCol = `"${colName}"`
 
                 const isStringType =
                     /^(varchar|character varying|text|char|character)$/i.test(
                         newColumn.type,
                     )
 
-                if (
+                const typeNew = this.driver.createFullType(newColumn)
+                const typeOld = this.driver.createFullType(oldColumn)
+
+                // Are we shrinking? (new length is defined and < old, or old was unspecified)
+                const shrinking =
+                    isStringType &&
                     newLen !== undefined &&
                     (oldLen === undefined || newLen < oldLen)
-                ) {
-                    if (isStringType) {
-                        // shrink strings: truncate to fit
-                        upQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(table)} ` +
-                                    `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
-                                        newColumn,
-                                    )} ` +
-                                    `USING substring("${colName}" FROM 1 FOR ${newLen})`,
-                            ),
-                        )
-                        if (oldLen !== undefined) {
-                            downQueries.push(
-                                new Query(
-                                    `ALTER TABLE ${this.escapePath(table)} ` +
-                                        `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
-                                            oldColumn,
-                                        )} ` +
-                                        `USING substring("${colName}" FROM 1 FOR ${oldLen})`,
-                                ),
-                            )
-                        } else {
-                            downQueries.push(
-                                new Query(
-                                    `ALTER TABLE ${this.escapePath(table)} ` +
-                                        `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
-                                            oldColumn,
-                                        )}`,
-                                ),
-                            )
-                        }
-                    } else {
-                        // non-string: rely on DB to enforce (no silent truncation)
-                        upQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(table)} ` +
-                                    `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
-                                        newColumn,
-                                    )}`,
-                            ),
-                        )
-                        downQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(table)} ` +
-                                    `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
-                                        oldColumn,
-                                    )}`,
-                            ),
-                        )
-                    }
-                } else {
-                    // widen (or unspecified oldLen): plain ALTER TYPE is enough
+
+                if (isStringType && shrinking) {
+                    // --- UP (shrink): Cockroach requires USING with substring to ensure safe cast
+                    // newLen is defined in this branch
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
-                                    newColumn,
-                                )}`,
+                                `ALTER COLUMN ${qCol} SET DATA TYPE ${typeNew} ` +
+                                `USING substring(${qCol} FROM 1 FOR ${newLen})`,
                         ),
                     )
+
+                    // --- DOWN (revert): only add USING if oldLen existed; otherwise no USING
+                    const usingOld =
+                        oldLen !== undefined
+                            ? ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
+                            : ""
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN "${colName}" TYPE ${this.driver.createFullType(
-                                    oldColumn,
-                                )}`,
+                                `ALTER COLUMN ${qCol} SET DATA TYPE ${typeOld}${usingOld}`,
+                        ),
+                    )
+                } else {
+                    // Widening or non-string types: plain SET DATA TYPE both directions
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN ${qCol} SET DATA TYPE ${typeNew}`,
+                        ),
+                    )
+
+                    // For DOWN, if going back to a **shorter** varchar and oldLen is known,
+                    // mirror WITH USING to guarantee safe cast; else plain SET DATA TYPE.
+                    const needsUsingOld =
+                        isStringType &&
+                        oldLen !== undefined &&
+                        (newLen === undefined || oldLen < newLen)
+
+                    const usingOld = needsUsingOld
+                        ? ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
+                        : ""
+
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN ${qCol} SET DATA TYPE ${typeOld}${usingOld}`,
                         ),
                     )
                 }
 
-                // Update metadata
+                // Update cloned metadata and STOP falling through
                 const clonedCol = clonedTable.columns.find(
-                    (c) => c.name === newColumn.name,
+                    (c) => c.name === colName,
                 )
                 if (clonedCol) clonedCol.length = newColumn.length
             }

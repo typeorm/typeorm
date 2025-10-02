@@ -1235,16 +1235,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length
             ) {
-                const oldLen = oldColumn.length
-                    ? parseInt(oldColumn.length, 10)
-                    : undefined
-                const newLen = newColumn.length
-                    ? parseInt(newColumn.length, 10)
-                    : undefined
+                // Parse lengths as integers if present
+                const oldLen =
+                    oldColumn.length != null
+                        ? parseInt(oldColumn.length, 10)
+                        : undefined
+                const newLen =
+                    newColumn.length != null
+                        ? parseInt(newColumn.length, 10)
+                        : undefined
                 const col = oldColumn.name
 
+                // If shrinking, proactively truncate values that exceed the new length
                 if (oldLen && newLen && newLen < oldLen) {
-                    // shrink: pre-truncate rows that exceed new length
                     upQueries.push(
                         new Query(
                             `UPDATE ${this.escapePath(table)} ` +
@@ -1252,24 +1255,31 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 `WHERE CHAR_LENGTH(\`${col}\`) > ${newLen}`,
                         ),
                     )
-                    // (optional) down: if reverting to larger oldLen, no data change needed
+                    // Note: on down (reverting to larger size) we don't need a data UPDATE
                 }
 
-                // Build full definitions and apply with CHANGE to preserve attributes
+                // Build full column definitions to preserve all attributes (nullability, default, charset, collation, comment, etc.)
                 const newColDef = new TableColumn({
                     ...newColumn,
-                    name: oldColumn.name, // avoid rename
+                    name: oldColumn.name, // avoid rename; we're only changing definition
                 })
                 const oldColDef = new TableColumn({
                     ...oldColumn,
                     name: oldColumn.name,
                 })
-                const up = `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+
+                // Use CHANGE COLUMN so the emitted SQL matches tests expecting "MODIFY/CHANGE COLUMN"
+                const up = `ALTER TABLE ${this.escapePath(
+                    table,
+                )} CHANGE COLUMN \`${
                     oldColumn.name
                 }\` ${this.buildCreateColumnSql(newColDef, true)}`
-                const down = `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                const down = `ALTER TABLE ${this.escapePath(
+                    table,
+                )} CHANGE COLUMN \`${
                     oldColumn.name
                 }\` ${this.buildCreateColumnSql(oldColDef, true)}`
+
                 upQueries.push(new Query(up))
                 downQueries.push(new Query(down))
             }

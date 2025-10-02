@@ -1523,73 +1523,94 @@ export class PostgresQueryRunner
                 oldColumn.name = newColumn.name
             }
 
-            // BEGIN length-only fast path (Postgres/Cockroach)
+            // BEGIN length-only fast path (Postgres) — FIXED
             if (
                 oldColumn.type === newColumn.type &&
-                oldColumn.length !== newColumn.length
+                oldColumn.length !== newColumn.length &&
+                !newColumn.isArray &&
+                !oldColumn.isArray
             ) {
-                const oldLen = oldColumn.length
-                    ? parseInt(oldColumn.length, 10)
-                    : undefined
-                const newLen = newColumn.length
-                    ? parseInt(newColumn.length, 10)
-                    : undefined
-                const col = oldColumn.name // target existing column name
+                const oldLen =
+                    oldColumn.length != null
+                        ? parseInt(oldColumn.length, 10)
+                        : undefined
+                const newLen =
+                    newColumn.length != null
+                        ? parseInt(newColumn.length, 10)
+                        : undefined
 
-                const isCharType = [
-                    "character varying",
-                    "varchar",
-                    "character",
-                    "char",
-                ].includes((oldColumn.type || "").toLowerCase())
-                const canUseSubstring = isCharType && !oldColumn.isArray
+                // Length change never implies rename; guard identifier
+                const colName = newColumn.name ?? oldColumn.name
+                const qCol = `"${colName}"`
 
-                if (canUseSubstring && newLen && (!oldLen || newLen < oldLen)) {
-                    // shrink: coerce with USING so ALTER never fails
+                const isStringType =
+                    /^(varchar|character varying|text|char|character)$/i.test(
+                        newColumn.type,
+                    )
+
+                const typeNew = this.driver.createFullType(newColumn)
+                const typeOld = this.driver.createFullType(oldColumn)
+
+                // Are we shrinking? (newLen is defined and < old, or old was unspecified)
+                const shrinking =
+                    isStringType &&
+                    newLen !== undefined &&
+                    (oldLen === undefined || newLen < oldLen)
+
+                if (isStringType && shrinking) {
+                    // --- UP: shrink with USING + substring to avoid errors
+                    // newLen is defined here
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
-                                    newColumn,
-                                )} ` +
-                                `USING substring("${col}" FROM 1 FOR ${newLen})`,
+                                `ALTER COLUMN ${qCol} TYPE ${typeNew} ` +
+                                `USING substring(${qCol} FROM 1 FOR ${newLen})`,
                         ),
                     )
+
+                    // --- DOWN: revert; ONLY add USING if oldLen exists
+                    const usingOld =
+                        oldLen !== undefined
+                            ? ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
+                            : ""
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
-                                    oldColumn,
-                                )} ` +
-                                `USING substring("${col}" FROM 1 FOR ${oldLen})`,
+                                `ALTER COLUMN ${qCol} TYPE ${typeOld}${usingOld}`,
                         ),
                     )
-                } else if (
-                    canUseSubstring ||
-                    (!oldColumn.isArray &&
-                        oldColumn.type !== "vector" &&
-                        oldColumn.type !== "halfvec")
-                ) {
-                    // widen (or non-array types that can safely change length): plain ALTER TYPE
+                } else {
+                    // Widening or non-string types: plain TYPE both directions
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
-                                    newColumn,
-                                )}`,
+                                `ALTER COLUMN ${qCol} TYPE ${typeNew}`,
                         ),
                     )
+
+                    // For DOWN, if returning to a shorter varchar and oldLen is known, use USING; else plain TYPE
+                    const needsUsingOld =
+                        isStringType &&
+                        oldLen !== undefined &&
+                        (newLen === undefined || oldLen < newLen)
+
+                    const usingOld = needsUsingOld
+                        ? ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
+                        : ""
+
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN "${col}" TYPE ${this.driver.createFullType(
-                                    oldColumn,
-                                )}`,
+                                `ALTER COLUMN ${qCol} TYPE ${typeOld}${usingOld}`,
                         ),
                     )
                 }
-                // Note: Array and vector types with length changes will fall through to
-                // the recreation logic (drop/add) for safety
+
+                // Update cloned metadata and stop fallthrough
+                const clonedCol = clonedTable.columns.find(
+                    (c) => c.name === colName,
+                )
+                if (clonedCol) clonedCol.length = newColumn.length
             }
             // END length-only fast path
 

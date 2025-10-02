@@ -1249,14 +1249,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 ),
             )
 
-            await this.executeQueries(upQueries, downQueries)
+            //await this.executeQueries(upQueries, downQueries)
             // refresh cache to reflect new length
             const updatedCol = clonedTable.findColumnByName(col)
             if (updatedCol) {
                 updatedCol.length = newColumn.length || ""
             }
-            this.replaceCachedTable(table, clonedTable)
-            return
+            //this.replaceCachedTable(table, clonedTable)
+            //return
         }
         // END length-only fast path
         if (
