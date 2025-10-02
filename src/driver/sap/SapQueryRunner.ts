@@ -1173,7 +1173,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             oldColumn.type === newColumn.type &&
             oldColumn.length !== newColumn.length &&
-            // allow only safe text types
+            // allow only safe text/binary types
             [
                 "char",
                 "nchar",
@@ -1208,7 +1208,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // ---------- SHORTEN (recreate without RENAME) ----------
             if (oldLen && newLen && newLen < oldLen) {
-                const col = oldColumn.name
                 const tmp = `${col}__tmp_len`
 
                 // 1) ADD temp column with the *new* (shorter) length; keep NULLable for the copy
@@ -1283,7 +1282,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                                     Object.assign(
                                         new TableColumn(),
                                         newColumn,
-                                        { name: col },
+                                        {
+                                            name: col,
+                                        },
                                     ),
                                     !(
                                         newColumn.default === null ||
@@ -1303,7 +1304,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     ),
                 )
 
-                // Down (best-effort): widen back to oldLen in place
+                // DOWN (best-effort): widen back to oldLen in place
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER (` +
@@ -1321,7 +1322,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     ),
                 )
 
-                // refresh cache
                 const updatedCol = clonedTable.findColumnByName(col)
                 if (updatedCol) {
                     updatedCol.length = newColumn.length || ""
@@ -1351,11 +1351,22 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     ),
                 )
 
+                // DOWN: HANA cannot shrink in-place; keep widened length but restore other attributes.
+                const downKeepLen = Object.assign(
+                    new TableColumn(),
+                    oldColumn,
+                    {
+                        // keep the *widened* length so DOWN doesn't try to shrink
+                        length: newColumn.length,
+                        name: col,
+                    },
+                )
+
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER (` +
                             this.buildCreateColumnSql(
-                                oldColumn,
+                                downKeepLen,
                                 !(
                                     newColumn.default === null ||
                                     newColumn.default === undefined
@@ -1370,7 +1381,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 if (updatedCol) updatedCol.length = newColumn.length || ""
             }
         }
-        // END length-only fast path
+        // END length-only fast path (SAP HANA)
 
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
@@ -1569,6 +1580,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
+                // UP: apply full column definition change
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1583,20 +1595,59 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         )})`,
                     ),
                 )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(
-                            table,
-                        )} ALTER (${this.buildCreateColumnSql(
-                            oldColumn,
-                            !(
-                                newColumn.default === null ||
-                                newColumn.default === undefined
-                            ),
-                            !newColumn.isNullable,
-                        )})`,
-                    ),
-                )
+
+                // DOWN: revert column definition.
+                // On SAP HANA, in-place *shrink* (e.g., 500 -> 255) is not supported.
+                // If reverting would shrink, keep the widened length but restore other attributes
+                // (default/nullability/unique/etc.) so the revert succeeds.
+                {
+                    const isSap = this.driver.options.type === "sap"
+
+                    const oldLen =
+                        oldColumn.length !== undefined &&
+                        oldColumn.length !== null
+                            ? parseInt(String(oldColumn.length), 10)
+                            : undefined
+                    const newLen =
+                        newColumn.length !== undefined &&
+                        newColumn.length !== null
+                            ? parseInt(String(newColumn.length), 10)
+                            : undefined
+
+                    const wouldShrinkOnDown =
+                        isSap &&
+                        oldLen !== undefined &&
+                        newLen !== undefined &&
+                        newLen > oldLen
+
+                    // Target the *current* column name on the table (may have been renamed earlier)
+                    const targetName = newColumn.name
+
+                    const downColDef = wouldShrinkOnDown
+                        ? Object.assign(new TableColumn(), oldColumn, {
+                              // keep the widened length so DOWN doesn't try to shrink on HANA
+                              length: newColumn.length,
+                              name: targetName,
+                          })
+                        : Object.assign(new TableColumn(), oldColumn, {
+                              name: targetName,
+                          })
+
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER (${this.buildCreateColumnSql(
+                                downColDef,
+                                !(
+                                    newColumn.default === null ||
+                                    newColumn.default === undefined
+                                ),
+                                !newColumn.isNullable,
+                            )})`,
+                        ),
+                    )
+                }
             } else if (oldColumn.comment !== newColumn.comment) {
                 upQueries.push(
                     new Query(
