@@ -6,14 +6,14 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { EntityManager } from "../../../src"
+import sinon from "sinon"
 
 describe("query runner > async dispose", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["postgres"],
+            enabledDrivers: ["postgres"], // this is rather a unit test, so a single driver is enough
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -22,14 +22,14 @@ describe("query runner > async dispose", () => {
     it("should release query runner", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                let entityManager: EntityManager
+                let releaseSpy: sinon.SinonSpy
                 {
                     await using queryRunner = dataSource.createQueryRunner()
+                    releaseSpy = sinon.spy(queryRunner, "release")
                     await queryRunner.connect()
-                    entityManager = queryRunner.manager
                 }
 
-                expect(entityManager.queryRunner?.isReleased).to.be.true
+                expect(releaseSpy).to.have.been.calledOnce
             }),
         ))
 })
