@@ -1181,6 +1181,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 "nvarchar",
                 "alphanum",
                 "shorttext",
+                "varbinary",
+                "binary",
             ].includes(String(oldColumn.type).toLowerCase()) &&
             // no rename in this fast path
             newColumn.name === oldColumn.name &&
@@ -1204,61 +1206,172 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 : undefined
             const col = oldColumn.name
 
-            // If shrinking, make existing values fit first to avoid ALTER errors
+            // ---------- SHORTEN (recreate without RENAME) ----------
             if (oldLen && newLen && newLen < oldLen) {
+                const col = oldColumn.name
+                const tmp = `${col}__tmp_len`
+
+                // 1) ADD temp column with the *new* (shorter) length; keep NULLable for the copy
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ADD (` +
+                            this.buildCreateColumnSql(
+                                Object.assign(new TableColumn(), newColumn, {
+                                    name: tmp,
+                                    isNullable: true, // relax during copy
+                                }),
+                                !(
+                                    newColumn.default === null ||
+                                    newColumn.default === undefined
+                                ),
+                                false, // don't force NOT NULL yet
+                            ) +
+                            `)`,
+                    ),
+                )
+
+                // 2) COPY data into temp, trimming to new length
                 upQueries.push(
                     new Query(
                         `UPDATE ${this.escapePath(table)} ` +
-                            `SET "${col}" = SUBSTRING("${col}", 1, ${newLen}) ` +
-                            `WHERE LENGTH("${col}") > ${newLen}`,
+                            `SET "${tmp}" = SUBSTRING("${col}", 1, ${newLen})`,
                     ),
                 )
-                // (Optional) you generally don't need a down-query for this UPDATE
+
+                // 3) DROP the old column
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} DROP ("${col}")`,
+                    ),
+                )
+
+                // 4) ADD the final column with the new definition (still NULLable for now)
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ADD (` +
+                            this.buildCreateColumnSql(
+                                Object.assign(new TableColumn(), newColumn, {
+                                    name: col,
+                                    isNullable: true, // relax for the back-copy
+                                }),
+                                !(
+                                    newColumn.default === null ||
+                                    newColumn.default === undefined
+                                ),
+                                false,
+                            ) +
+                            `)`,
+                    ),
+                )
+
+                // 5) COPY data back from temp → final
+                upQueries.push(
+                    new Query(
+                        `UPDATE ${this.escapePath(
+                            table,
+                        )} SET "${col}" = "${tmp}"`,
+                    ),
+                )
+
+                // 6) Enforce NOT NULL (and other attributes) if needed via ALTER (...),
+                //    which rebuilds the definition using the generic builder.
+                if (!newColumn.isNullable) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                                this.buildCreateColumnSql(
+                                    Object.assign(
+                                        new TableColumn(),
+                                        newColumn,
+                                        { name: col },
+                                    ),
+                                    !(
+                                        newColumn.default === null ||
+                                        newColumn.default === undefined
+                                    ),
+                                    true, // NOT NULL now
+                                ) +
+                                `)`,
+                        ),
+                    )
+                }
+
+                // 7) DROP temp column
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} DROP ("${tmp}")`,
+                    ),
+                )
+
+                // Down (best-effort): widen back to oldLen in place
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                            this.buildCreateColumnSql(
+                                Object.assign(new TableColumn(), oldColumn, {
+                                    name: col,
+                                }),
+                                !(
+                                    oldColumn.default === null ||
+                                    oldColumn.default === undefined
+                                ),
+                                !oldColumn.isNullable,
+                            ) +
+                            `)`,
+                    ),
+                )
+
+                // refresh cache
+                const updatedCol = clonedTable.findColumnByName(col)
+                if (updatedCol) {
+                    updatedCol.length = newColumn.length || ""
+                    updatedCol.isNullable = newColumn.isNullable
+                    updatedCol.default = newColumn.default
+                    updatedCol.comment = newColumn.comment
+                    updatedCol.isUnique = newColumn.isUnique
+                }
             }
 
-            // Perform the in-place ALTER using the generic builder to preserve defaults/comments/etc.
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER (` +
-                        this.buildCreateColumnSql(
-                            Object.assign(new TableColumn(), newColumn, {
-                                name: col,
-                            }),
-                            !(
-                                oldColumn.default === null ||
-                                oldColumn.default === undefined
-                            ),
-                            !oldColumn.isNullable,
-                        ) +
-                        `)`,
-                ),
-            )
+            // ---------- WIDEN (safe in-place ALTER) ----------
+            if (oldLen && newLen && newLen > oldLen) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                            this.buildCreateColumnSql(
+                                Object.assign(new TableColumn(), newColumn, {
+                                    name: col,
+                                }),
+                                !(
+                                    oldColumn.default === null ||
+                                    oldColumn.default === undefined
+                                ),
+                                !oldColumn.isNullable,
+                            ) +
+                            `)`,
+                    ),
+                )
 
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER (` +
-                        this.buildCreateColumnSql(
-                            oldColumn,
-                            !(
-                                newColumn.default === null ||
-                                newColumn.default === undefined
-                            ),
-                            !newColumn.isNullable,
-                        ) +
-                        `)`,
-                ),
-            )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                            this.buildCreateColumnSql(
+                                oldColumn,
+                                !(
+                                    newColumn.default === null ||
+                                    newColumn.default === undefined
+                                ),
+                                !newColumn.isNullable,
+                            ) +
+                            `)`,
+                    ),
+                )
 
-            //await this.executeQueries(upQueries, downQueries)
-            // refresh cache to reflect new length
-            const updatedCol = clonedTable.findColumnByName(col)
-            if (updatedCol) {
-                updatedCol.length = newColumn.length || ""
+                const updatedCol = clonedTable.findColumnByName(col)
+                if (updatedCol) updatedCol.length = newColumn.length || ""
             }
-            //this.replaceCachedTable(table, clonedTable)
-            //return
         }
         // END length-only fast path
+
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
