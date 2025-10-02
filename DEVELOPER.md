@@ -50,7 +50,11 @@ cd typeorm
 git remote add upstream https://github.com/typeorm/typeorm.git
 ```
 
-## Installing NPM Modules
+## Node
+
+You should have node installed in the version described in [.nvmrc](.nvmrc). It is recommended to use [`avn`](https://github.com/wbyoung/avn) or [`zsh-nvm`](https://github.com/lukechilds/zsh-nvm#auto-use) for automatic node selection based on this file.
+
+## Installing package dependencies
 
 Install all TypeORM dependencies by running this command:
 
@@ -89,7 +93,7 @@ You can copy this tar into your project and run `npm install ./typeorm-x.x.x.tgz
 
 ## Running Tests Locally
 
-It is greatly appreciated if PRs that change code come with appropriate tests. 
+It is greatly appreciated if PRs that change code come with appropriate tests.
 
 To create a new test, check the [relevant functional tests](https://github.com/typeorm/typeorm/tree/master/test/functional). Depending on the test, you may need to create a new test file or modify an existing one.
 
