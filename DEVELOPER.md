@@ -52,7 +52,14 @@ git remote add upstream https://github.com/typeorm/typeorm.git
 
 ## Node
 
-You should have node installed in the version described in [.nvmrc](.nvmrc). It is recommended to use [`avn`](https://github.com/wbyoung/avn) or [`zsh-nvm`](https://github.com/lukechilds/zsh-nvm#auto-use) for automatic node selection based on this file.
+You should have node installed in the version described in [.nvmrc](.nvmrc).
+
+It is recommended to configure your OS to automatically switch to use this version whenever you enter project folder. This can be achieved in many ways:
+
+* [`zsh-nvm`](https://github.com/lukechilds/zsh-nvm#auto-use)
+* [`avn`](https://github.com/wbyoung/avn)
+* [`asdf`](https://asdf-vm.com) with `asdf-nodejs` plugin and [`legacy_version_file = true`](https://asdf-vm.com/manage/configuration.html#legacy-version-file) option
+
 
 ## Installing package dependencies
 
