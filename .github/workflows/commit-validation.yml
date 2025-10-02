@@ -71,14 +71,14 @@ jobs:
         node-version: ${{ fromJSON(needs.test-matrix.outputs.node-versions) }}
     uses: ./.github/workflows/tests-linux.yml
     with:
-      node-version: ${{matrix.node-version}}
-      base-node-version: ${{ needs.test-matrix.outbputs.base-node-version }}
+      node-version: ${{ fromJSON(matrix.node-version) }}
+      base-node-version: ${{ fromJSON(needs.test-matrix.outputs.base-node-version) }}
 
   tests-windows:
     needs: [build, test-matrix]
     uses: ./.github/workflows/tests-windows.yml
     with:
-      node-version: ${{ needs.test-matrix.outputs.base-node-version }}
+      node-version: ${{ fromJSON(needs.test-matrix.outputs.base-node-version) }}
 
   # Run with most databases possible to provide the coverage of the tests
   coverage:
