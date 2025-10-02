@@ -58,8 +58,9 @@ jobs:
       - uses: actions/checkout@v4
       - id: node
         run: |
-          BASE_NODE_VERSION=$(tr -d '\n' < .nvmrc)
+          BASE_NODE_VERSION=$(head -n 1 .nvmrc)
           PREV_NODE_VERSION=$((BASE_NODE_VERSION - 2))
+
           echo "node-versions=[$PREV_NODE_VERSION, $BASE_NODE_VERSION]" >> $GITHUB_OUTPUT
           echo "base-node-version=$BASE_NODE_VERSION" >> $GITHUB_OUTPUT
 
