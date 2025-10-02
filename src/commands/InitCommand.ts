@@ -623,7 +623,7 @@ AppDataSource.initialize().then(async () => {
                 return `services:
 
   mongodb:
-    image: "mongo:8.0.5"
+    image: "mongo:8"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"

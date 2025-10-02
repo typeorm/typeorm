@@ -44,7 +44,7 @@ jobs:
 
     services:
       mongodb:
-        image: mongo:5.0.31
+        image: mongo:8
         ports:
           - "27017:27017"
 
