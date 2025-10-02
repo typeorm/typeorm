@@ -545,7 +545,7 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     async [Symbol.asyncDispose](): Promise<void> {
-        await this.release()
+        // there's no clean-up necessary, so simply don't do anything here
     }
 
     /**
