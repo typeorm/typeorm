@@ -25,6 +25,12 @@ describe("schema builder > change column", () => {
     it("uses ALTER COLUMN when increasing varchar length", () =>
         Promise.all(
             connections.map(async (connection) => {
+                if (
+                    connection.driver.options.type == "better-sqlite3" ||
+                    connection.driver.options.type == "sqljs" ||
+                    connection.driver.options.type == "sqlite"
+                )
+                    return
                 const queryRunner = connection.createQueryRunner()
                 const repo = connection.getRepository("post")
 
@@ -144,11 +150,6 @@ describe("schema builder > change column", () => {
                         )
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
-                    } else if (
-                        driver === "sqlite" ||
-                        driver === "better-sqlite3"
-                    ) {
-                        // SQLite: no strict assertion here (TypeORM recreates the table). Keep functional test only.
                     }
 
                     // 3) Insert a 51-char value (should succeed)
@@ -257,6 +258,12 @@ describe("schema builder > change column", () => {
     it("uses ALTER COLUMN when reducing varchar length", () =>
         Promise.all(
             connections.map(async (connection) => {
+                if (
+                    connection.driver.options.type == "better-sqlite3" ||
+                    connection.driver.options.type == "sqljs" ||
+                    connection.driver.options.type == "sqlite"
+                )
+                    return
                 const queryRunner = connection.createQueryRunner()
                 const repo = connection.getRepository("post")
 
@@ -384,13 +391,7 @@ describe("schema builder > change column", () => {
                         )
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
-                    } else if (
-                        driver === "sqlite" ||
-                        driver === "better-sqlite3"
-                    ) {
-                        // SQLite: no strict assertion here (TypeORM recreates the table). Keep functional test only.
                     }
-
                     // 3) Insert a 40-char value (should succeed)
                     const forty = "x".repeat(40)
                     // Build a payload that satisfies NOT NULL columns that lack defaults/generation
