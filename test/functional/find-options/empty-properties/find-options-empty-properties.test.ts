@@ -10,9 +10,18 @@ import { Post } from "./entity/Post"
 
 describe("find options > where", () => {
     let dataSources: DataSource[]
-    before(async () => {
-        dataSources = await createTestingConnections({ __dirname })
-    })
+    before(
+        async () =>
+            (dataSources = await createTestingConnections({
+                __dirname,
+                driverSpecific: {
+                    invalidWhereValuesBehavior: {
+                        null: "ignore",
+                        undefined: "ignore",
+                    },
+                },
+            })),
+    )
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
