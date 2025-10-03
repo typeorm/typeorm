@@ -39,13 +39,29 @@ describe("schema builder > change column", () => {
                     connection,
                 )
                 const installRecorder = () => {
+                    const driver = connection.driver.options.type
                     ;(connection as any).createQueryRunner = (
                         ...args: any[]
                     ) => {
                         const qr = origCreateQR(...args)
                         const origQuery = qr.query.bind(qr)
                         qr.query = async (sql: any, params?: any[]) => {
-                            if (typeof sql === "string") recorded.push(sql)
+                            if (typeof sql === "string") {
+                                // Always record the top-level SQL for parity with other drivers
+                                recorded.push(sql)
+
+                                // MSSQL sometimes wraps DDL in sp_executesql with the real SQL in params[0]
+                                const isMssql = driver === "mssql"
+                                const isSpExec = /sp_executesql/i.test(sql)
+                                if (
+                                    isMssql &&
+                                    isSpExec &&
+                                    typeof params?.[0] === "string"
+                                ) {
+                                    // Record the actual payload as an additional line
+                                    recorded.push(params[0])
+                                }
+                            }
                             return origQuery(sql, params)
                         }
                         return qr
@@ -266,13 +282,29 @@ describe("schema builder > change column", () => {
                     connection,
                 )
                 const installRecorder = () => {
+                    const driver = connection.driver.options.type
                     ;(connection as any).createQueryRunner = (
                         ...args: any[]
                     ) => {
                         const qr = origCreateQR(...args)
                         const origQuery = qr.query.bind(qr)
                         qr.query = async (sql: any, params?: any[]) => {
-                            if (typeof sql === "string") recorded.push(sql)
+                            if (typeof sql === "string") {
+                                // Always record the top-level SQL for parity with other drivers
+                                recorded.push(sql)
+
+                                // MSSQL sometimes wraps DDL in sp_executesql with the real SQL in params[0]
+                                const isMssql = driver === "mssql"
+                                const isSpExec = /sp_executesql/i.test(sql)
+                                if (
+                                    isMssql &&
+                                    isSpExec &&
+                                    typeof params?.[0] === "string"
+                                ) {
+                                    // Record the actual payload as an additional line
+                                    recorded.push(params[0])
+                                }
+                            }
                             return origQuery(sql, params)
                         }
                         return qr
