@@ -227,7 +227,6 @@ describe("schema builder > change column", () => {
                         insertedRowId = (row as any)?.id
                     } catch (e) {
                         insertErr = e
-                        console.log(insertErr)
                     }
                     expect(insertErr).to.be.undefined
 
@@ -323,7 +322,6 @@ describe("schema builder > change column", () => {
                         await connection.synchronize()
                     } catch (e) {
                         widenErr = e
-                        console.log(widenErr)
                     } finally {
                         removeRecorder()
                     }
