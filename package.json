@@ -245,6 +245,12 @@
     "url": "https://opencollective.com/typeorm",
     "logo": "https://opencollective.com/opencollective/logo.txt"
   },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "onFail": "error"
+    }
+  },
   "readmeFilename": "README.md",
   "tags": [
     "orm",

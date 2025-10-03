@@ -22,10 +22,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -50,10 +49,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -81,10 +79,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -123,10 +120,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -165,10 +161,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -187,10 +182,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -209,10 +203,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -231,10 +224,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -272,10 +264,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -297,10 +288,9 @@ jobs:
 
       - run: docker compose up oracle --detach
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -325,10 +315,9 @@ jobs:
 
       - run: docker compose up hanaexpress --detach
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
