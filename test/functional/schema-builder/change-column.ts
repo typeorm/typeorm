@@ -39,29 +39,13 @@ describe("schema builder > change column", () => {
                     connection,
                 )
                 const installRecorder = () => {
-                    const driver = connection.driver.options.type
                     ;(connection as any).createQueryRunner = (
                         ...args: any[]
                     ) => {
                         const qr = origCreateQR(...args)
                         const origQuery = qr.query.bind(qr)
                         qr.query = async (sql: any, params?: any[]) => {
-                            if (typeof sql === "string") {
-                                // Always record the top-level SQL for parity with other drivers
-                                recorded.push(sql)
-
-                                // MSSQL sometimes wraps DDL in sp_executesql with the real SQL in params[0]
-                                const isMssql = driver === "mssql"
-                                const isSpExec = /sp_executesql/i.test(sql)
-                                if (
-                                    isMssql &&
-                                    isSpExec &&
-                                    typeof params?.[0] === "string"
-                                ) {
-                                    // Record the actual payload as an additional line
-                                    recorded.push(params[0])
-                                }
-                            }
+                            if (typeof sql === "string") recorded.push(sql)
                             return origQuery(sql, params)
                         }
                         return qr
@@ -132,11 +116,16 @@ describe("schema builder > change column", () => {
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
                     } else if (driver === "mssql") {
+                        // widen to 80
                         expect(sqlBlob).to.match(
-                            /ALTER TABLE .* ALTER COLUMN \[name\] .*80/i,
+                            /ALTER TABLE[\s\S]*?ALTER COLUMN\s+(?:\[name\]|"name")\s+[\s\S]*?80/i,
                         )
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+\[name\]/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+\[name\]/i)
+                        expect(sqlBlob).to.not.match(
+                            /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
+                        )
+                        expect(sqlBlob).to.not.match(
+                            /DROP\s+COLUMN\s+(?:\[name\]|"name")/i,
+                        )
                     } else if (driver === "oracle") {
                         // Oracle uses MODIFY COLUMN or ALTER COLUMN
                         // Oracle uses MODIFY with optional parens around the column def
@@ -282,29 +271,13 @@ describe("schema builder > change column", () => {
                     connection,
                 )
                 const installRecorder = () => {
-                    const driver = connection.driver.options.type
                     ;(connection as any).createQueryRunner = (
                         ...args: any[]
                     ) => {
                         const qr = origCreateQR(...args)
                         const origQuery = qr.query.bind(qr)
                         qr.query = async (sql: any, params?: any[]) => {
-                            if (typeof sql === "string") {
-                                // Always record the top-level SQL for parity with other drivers
-                                recorded.push(sql)
-
-                                // MSSQL sometimes wraps DDL in sp_executesql with the real SQL in params[0]
-                                const isMssql = driver === "mssql"
-                                const isSpExec = /sp_executesql/i.test(sql)
-                                if (
-                                    isMssql &&
-                                    isSpExec &&
-                                    typeof params?.[0] === "string"
-                                ) {
-                                    // Record the actual payload as an additional line
-                                    recorded.push(params[0])
-                                }
-                            }
+                            if (typeof sql === "string") recorded.push(sql)
                             return origQuery(sql, params)
                         }
                         return qr
@@ -383,11 +356,16 @@ describe("schema builder > change column", () => {
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
                     } else if (driver === "mssql") {
+                        // shrink to 40
                         expect(sqlBlob).to.match(
-                            /ALTER TABLE .* ALTER COLUMN \[name\] .*40/i,
+                            /ALTER TABLE[\s\S]*?ALTER COLUMN\s+(?:\[name\]|"name")\s+[\s\S]*?40/i,
                         )
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+\[name\]/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+\[name\]/i)
+                        expect(sqlBlob).to.not.match(
+                            /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
+                        )
+                        expect(sqlBlob).to.not.match(
+                            /DROP\s+COLUMN\s+(?:\[name\]|"name")/i,
+                        )
                     } else if (driver === "oracle") {
                         // Oracle uses MODIFY COLUMN or ALTER COLUMN
                         // Oracle uses MODIFY; some versions include parens around the column def
