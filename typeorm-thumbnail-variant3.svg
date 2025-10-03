@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Purple gradient background matching the original design -->
+    <radialGradient id="backgroundGradient" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#7B2D6B"/>
+      <stop offset="100%" stop-color="#3A1A5C"/>
+    </radialGradient>
+    
+    <!-- Decorative circle gradients -->
+    <radialGradient id="circleGradient1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#9B4F7F" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#7B2D6B" stop-opacity="0.3"/>
+    </radialGradient>
+    
+    <radialGradient id="circleGradient2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#B85A91" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#8B3F6F" stop-opacity="0.2"/>
+    </radialGradient>
+    
+    <!-- Button gradient with shadow effect -->
+    <linearGradient id="buttonGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E55B3C"/>
+      <stop offset="100%" stop-color="#D4491C"/>
+    </linearGradient>
+    
+    <!-- Drop shadow filter -->
+    <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#backgroundGradient)"/>
+  
+  <!-- Decorative background circles -->
+  <circle cx="200" cy="150" r="180" fill="url(#circleGradient1)" opacity="0.5"/>
+  <circle cx="1000" cy="480" r="220" fill="url(#circleGradient2)" opacity="0.4"/>
+  <circle cx="950" cy="100" r="120" fill="url(#circleGradient1)" opacity="0.3"/>
+  <circle cx="100" cy="500" r="150" fill="url(#circleGradient2)" opacity="0.3"/>
+  
+  <!-- Main content container - Variant 3: Compact layout with shadow effects -->
+  <g transform="translate(600, 315)">
+    <!-- TypeORM title with slight shadow -->
+    <text x="2" y="-77" text-anchor="middle" font-family="Arial, sans-serif" font-size="66" font-weight="bold" fill="#000000" opacity="0.2">
+      TypeORM
+    </text>
+    <text x="0" y="-80" text-anchor="middle" font-family="Arial, sans-serif" font-size="66" font-weight="bold" fill="white">
+      TypeORM
+    </text>
+    
+    <!-- Version number with glow effect -->
+    <text x="2" y="17" text-anchor="middle" font-family="Arial, sans-serif" font-size="82" font-weight="bold" fill="#000000" opacity="0.2">
+      v0.3.27
+    </text>
+    <text x="0" y="15" text-anchor="middle" font-family="Arial, sans-serif" font-size="82" font-weight="bold" fill="#FF6B35">
+      v0.3.27
+    </text>
+    
+    <!-- NEW RELEASE button - Compact with perfect centering and shadow -->
+    <g transform="translate(0, 78)">
+      <rect x="-118" y="-24" width="236" height="48" rx="24" fill="url(#buttonGradient)" filter="url(#dropShadow)"/>
+      <text x="0" y="0" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="white" dominant-baseline="central">
+        NEW RELEASE
+      </text>
+    </g>
+  </g>
+  
+  <!-- Additional decorative elements with varied sizes -->
+  <circle cx="380" cy="290" r="12" fill="#FF6B35" opacity="0.5"/>
+  <circle cx="820" cy="190" r="7" fill="#FF6B35" opacity="0.6"/>
+  <circle cx="180" cy="380" r="5" fill="#FF6B35" opacity="0.7"/>
+  <circle cx="1020" cy="330" r="9" fill="#FF6B35" opacity="0.4"/>
+  <circle cx="280" cy="450" r="6" fill="#FF6B35" opacity="0.5"/>
+  <circle cx="920" cy="420" r="4" fill="#FF6B35" opacity="0.8"/>
+</svg>
+

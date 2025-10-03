@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Purple gradient background matching the original design -->
+    <radialGradient id="backgroundGradient" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#7B2D6B"/>
+      <stop offset="100%" stop-color="#3A1A5C"/>
+    </radialGradient>
+    
+    <!-- Decorative circle gradients -->
+    <radialGradient id="circleGradient1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#9B4F7F" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#7B2D6B" stop-opacity="0.3"/>
+    </radialGradient>
+    
+    <radialGradient id="circleGradient2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#B85A91" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#8B3F6F" stop-opacity="0.2"/>
+    </radialGradient>
+    
+    <!-- Button gradient -->
+    <linearGradient id="buttonGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E55B3C"/>
+      <stop offset="100%" stop-color="#D4491C"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#backgroundGradient)"/>
+  
+  <!-- Decorative background circles -->
+  <circle cx="200" cy="150" r="180" fill="url(#circleGradient1)" opacity="0.5"/>
+  <circle cx="1000" cy="480" r="220" fill="url(#circleGradient2)" opacity="0.4"/>
+  <circle cx="950" cy="100" r="120" fill="url(#circleGradient1)" opacity="0.3"/>
+  <circle cx="100" cy="500" r="150" fill="url(#circleGradient2)" opacity="0.3"/>
+  
+  <!-- Main content container -->
+  <g transform="translate(600, 315)">
+    <!-- TypeORM title -->
+    <text x="0" y="-80" text-anchor="middle" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="white">
+      TypeORM
+    </text>
+    
+    <!-- Version number -->
+    <text x="0" y="20" text-anchor="middle" font-family="Arial, sans-serif" font-size="84" font-weight="bold" fill="#FF6B35">
+      v0.3.27
+    </text>
+    
+    <!-- NEW RELEASE button -->
+    <g transform="translate(0, 90)">
+      <rect x="-120" y="-25" width="240" height="50" rx="25" fill="url(#buttonGradient)"/>
+      <text x="0" y="8" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="white">
+        NEW RELEASE
+      </text>
+    </g>
+  </g>
+  
+  <!-- Additional decorative elements -->
+  <circle cx="350" cy="300" r="8" fill="#FF6B35" opacity="0.6"/>
+  <circle cx="850" cy="200" r="6" fill="#FF6B35" opacity="0.4"/>
+  <circle cx="150" cy="350" r="5" fill="#FF6B35" opacity="0.5"/>
+  <circle cx="1050" cy="300" r="7" fill="#FF6B35" opacity="0.3"/>
+</svg>
+
