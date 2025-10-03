@@ -1566,14 +1566,12 @@ export class CockroachQueryRunner
                 !newColumn.isArray &&
                 !oldColumn.isArray
             ) {
-                const oldLen =
-                    oldColumn.length != null
-                        ? parseInt(oldColumn.length, 10)
+                const parseLen = (v?: string) =>
+                    v != null && String(v).trim() !== ""
+                        ? Number.parseInt(String(v), 10)
                         : undefined
-                const newLen =
-                    newColumn.length != null
-                        ? parseInt(newColumn.length, 10)
-                        : undefined
+                const oldLen = parseLen(oldColumn.length as any)
+                const newLen = parseLen(newColumn.length as any)
 
                 // Length change never implies a rename; guard identifier
                 const colName = newColumn.name ?? oldColumn.name

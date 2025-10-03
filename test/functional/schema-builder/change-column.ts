@@ -99,7 +99,11 @@ describe("schema builder > change column", () => {
                         // ensure no drop/add of "name"
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
-                    } else if (driver === "mysql" || driver === "mariadb") {
+                    } else if (
+                        driver === "mysql" ||
+                        driver === "mariadb" ||
+                        driver === "aurora-mysql"
+                    ) {
                         // MODIFY or CHANGE for MySQL family
                         const usedModify =
                             /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?name`? .*80/i.test(
@@ -117,6 +121,24 @@ describe("schema builder > change column", () => {
                         )
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+\[name\]/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+\[name\]/i)
+                    } else if (driver === "oracle") {
+                        // Oracle uses MODIFY COLUMN or ALTER COLUMN
+                        // Oracle uses MODIFY with optional parens around the column def
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* (MODIFY|ALTER COLUMN)\s*\(?\s*"name"\s+.*80/i,
+                            `Expected MODIFY/ALTER COLUMN for 'name' in Oracle.\n${sqlBlob}`,
+                        )
+
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                    } else if (driver === "spanner") {
+                        // Spanner uses ALTER COLUMN with type specification
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* ALTER COLUMN `?name`? STRING\(80\)/i,
+                            `Expected ALTER COLUMN STRING(80) for 'name' in Spanner.\n${sqlBlob}`,
+                        )
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
                     } else if (
                         driver === "sqlite" ||
                         driver === "better-sqlite3"
@@ -272,7 +294,7 @@ describe("schema builder > change column", () => {
                     const preCol = preTable!.findColumnByName("name")!
                     if (preCol.length) expect(preCol.length).to.equal("50")
 
-                    // 2) Widen to 40 and capture the SQL used by synchronize()
+                    // 2) Reduce to 40 and capture the SQL used by synchronize()
                     nameColumnMetadata.length = "40"
                     nameColumnMetadata.build(connection)
 
@@ -312,7 +334,11 @@ describe("schema builder > change column", () => {
                         // ensure no drop/add of "name"
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
-                    } else if (driver === "mysql" || driver === "mariadb") {
+                    } else if (
+                        driver === "mysql" ||
+                        driver === "mariadb" ||
+                        driver === "aurora-mysql"
+                    ) {
                         // MODIFY or CHANGE for MySQL family
                         const usedModify =
                             /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?name`? .*40/i.test(
@@ -330,6 +356,24 @@ describe("schema builder > change column", () => {
                         )
                         expect(sqlBlob).to.not.match(/ADD COLUMN\s+\[name\]/i)
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+\[name\]/i)
+                    } else if (driver === "oracle") {
+                        // Oracle uses MODIFY COLUMN or ALTER COLUMN
+                        // Oracle uses MODIFY; some versions include parens around the column def
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* (MODIFY|ALTER COLUMN)\s*\(?\s*"name"\s+.*40/i,
+                            `Expected MODIFY/ALTER COLUMN for 'name' in Oracle.\n${sqlBlob}`,
+                        )
+
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                    } else if (driver === "spanner") {
+                        // Spanner uses ALTER COLUMN with type specification
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* ALTER COLUMN `?name`? STRING\(40\)/i,
+                            `Expected ALTER COLUMN STRING(40) for 'name' in Spanner.\n${sqlBlob}`,
+                        )
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
                     } else if (
                         driver === "sqlite" ||
                         driver === "better-sqlite3"

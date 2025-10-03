@@ -1351,29 +1351,101 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     ),
                 )
 
-                // DOWN: HANA cannot shrink in-place; keep widened length but restore other attributes.
-                const downKeepLen = Object.assign(
-                    new TableColumn(),
-                    oldColumn,
-                    {
-                        // keep the *widened* length so DOWN doesn't try to shrink
-                        length: newColumn.length,
-                        name: col,
-                    },
-                )
+                // DOWN: HANA cannot shrink in-place; use copy/truncate strategy to restore old length
+                const tmpDown = `${col}__tmp_down`
 
+                // 1) ADD temp column with the *old* (shorter) length; keep NULLable for the copy
                 downQueries.push(
                     new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                        `ALTER TABLE ${this.escapePath(table)} ADD (` +
                             this.buildCreateColumnSql(
-                                downKeepLen,
+                                Object.assign(new TableColumn(), oldColumn, {
+                                    name: tmpDown,
+                                    isNullable: true,
+                                }),
                                 !(
-                                    newColumn.default === null ||
-                                    newColumn.default === undefined
+                                    oldColumn.default === null ||
+                                    oldColumn.default === undefined
                                 ),
-                                !newColumn.isNullable,
+                                false,
                             ) +
                             `)`,
+                    ),
+                )
+
+                // 2) COPY data into temp, trimming to old length
+                downQueries.push(
+                    new Query(
+                        `UPDATE ${this.escapePath(table)} ` +
+                            `SET "${tmpDown}" = SUBSTRING("${col}", 1, ${oldLen})`,
+                    ),
+                )
+
+                // 3) DROP the widened column
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} DROP ("${col}")`,
+                    ),
+                )
+
+                // 4) ADD the final column with the old definition (NULLable for now)
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ADD (` +
+                            this.buildCreateColumnSql(
+                                Object.assign(new TableColumn(), oldColumn, {
+                                    name: col,
+                                    isNullable: true,
+                                }),
+                                !(
+                                    oldColumn.default === null ||
+                                    oldColumn.default === undefined
+                                ),
+                                false,
+                            ) +
+                            `)`,
+                    ),
+                )
+
+                // 5) COPY data back from temp → final
+                downQueries.push(
+                    new Query(
+                        `UPDATE ${this.escapePath(
+                            table,
+                        )} SET "${col}" = "${tmpDown}"`,
+                    ),
+                )
+
+                // 6) Enforce NOT NULL if needed
+                if (!oldColumn.isNullable) {
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER (` +
+                                this.buildCreateColumnSql(
+                                    Object.assign(
+                                        new TableColumn(),
+                                        oldColumn,
+                                        {
+                                            name: col,
+                                        },
+                                    ),
+                                    !(
+                                        oldColumn.default === null ||
+                                        oldColumn.default === undefined
+                                    ),
+                                    true,
+                                ) +
+                                `)`,
+                        ),
+                    )
+                }
+
+                // 7) DROP temp column
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} DROP ("${tmpDown}")`,
                     ),
                 )
 
