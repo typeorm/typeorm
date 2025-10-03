@@ -63,6 +63,7 @@ describe("find options > null and undefined handling", () => {
                         await dataSource
                             .createQueryBuilder(Post, "post")
                             .setFindOptions({
+                                // @ts-expect-error - null should be marked as unsafe by default
                                 where: {
                                     title: "Post #1",
                                     text: null,
@@ -80,6 +81,7 @@ describe("find options > null and undefined handling", () => {
                     // Test with Repository find
                     try {
                         await dataSource.getRepository(Post).find({
+                            // @ts-expect-error - null should be marked as unsafe by default
                             where: {
                                 text: null,
                             },
@@ -145,6 +147,7 @@ describe("find options > null and undefined handling", () => {
                         await dataSource
                             .createQueryBuilder(Post, "post")
                             .setFindOptions({
+                                // @ts-expect-error - null should be marked as unsafe by default
                                 where: {
                                     category: null,
                                 },
@@ -161,6 +164,7 @@ describe("find options > null and undefined handling", () => {
                     // Test with Repository
                     try {
                         await dataSource.getRepository(Post).find({
+                            // @ts-expect-error - null should be marked as unsafe by default
                             where: {
                                 category: null,
                             },
