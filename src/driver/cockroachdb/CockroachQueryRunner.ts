@@ -2488,6 +2488,7 @@ export class CockroachQueryRunner
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExist?: boolean,
     ): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
@@ -2495,10 +2496,13 @@ export class CockroachQueryRunner
         const uniqueConstraint = InstanceChecker.isTableUnique(uniqueOrName)
             ? uniqueOrName
             : table.uniques.find((u) => u.name === uniqueOrName)
-        if (!uniqueConstraint)
+        if (!uniqueConstraint) {
+            if (ifExist) return Promise.resolve()
+
             throw new TypeORMError(
                 `Supplied unique constraint was not found in table ${table.name}`,
             )
+        }
 
         // CockroachDB creates index for UNIQUE constraint.
         // We must use DROP INDEX ... CASCADE instead of DROP CONSTRAINT.
@@ -2514,9 +2518,14 @@ export class CockroachQueryRunner
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExist?: boolean,
     ): Promise<void> {
         for (const uniqueConstraint of [...uniqueConstraints]) {
-            await this.dropUniqueConstraint(tableOrName, uniqueConstraint)
+            await this.dropUniqueConstraint(
+                tableOrName,
+                uniqueConstraint,
+                ifExist,
+            )
         }
     }
 
