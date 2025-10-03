@@ -113,6 +113,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@google-cloud/spanner": "^7.21.0",
     "@sap/hana-client": "^2.26.18",
     "@tsconfig/node16": "^16.1.5",
     "@types/chai": "^4.3.20",
