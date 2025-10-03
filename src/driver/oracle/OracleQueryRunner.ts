@@ -1305,7 +1305,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             // BEGIN length-only fast path (Oracle)
             if (
                 oldColumn.type === newColumn.type &&
-                oldColumn.length !== newColumn.length
+                oldColumn.length !== newColumn.length &&
+                // ensure *only* the length changed – everything else must be identical
+                oldColumn.isNullable === newColumn.isNullable &&
+                oldColumn.default === newColumn.default &&
+                oldColumn.name === newColumn.name &&
+                oldColumn.isPrimary === newColumn.isPrimary &&
+                oldColumn.isUnique === newColumn.isUnique
             ) {
                 const oldLen = oldColumn.length
                     ? parseInt(oldColumn.length, 10)
@@ -1326,29 +1332,25 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     )
                 }
 
-                const nullability = newColumn.isNullable ? "" : " NOT NULL"
+                // IMPORTANT: since nullability didn't change, don't mention it here.
+                // This prevents ORA-01442 when combined with other generated statements.
                 upQueries.push(
                     new Query(
-                        `ALTER TABLE ${this.escapePath(
-                            table,
-                        )} MODIFY ("${col}" ${this.driver.createFullType(
-                            newColumn,
-                        )}${nullability})`,
-                    ),
-                )
-                const downNullability = oldColumn.isNullable ? "" : " NOT NULL"
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(
-                            table,
-                        )} MODIFY ("${col}" ${this.driver.createFullType(
-                            oldColumn,
-                        )}${downNullability})`,
+                        `ALTER TABLE ${this.escapePath(table)} ` +
+                            `MODIFY ("${col}" ${this.driver.createFullType(
+                                newColumn,
+                            )})`,
                     ),
                 )
 
-                await this.executeQueries(upQueries, downQueries)
-                return
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ` +
+                            `MODIFY ("${col}" ${this.driver.createFullType(
+                                oldColumn,
+                            )})`,
+                    ),
+                )
             }
             // END length-only fast path
 
