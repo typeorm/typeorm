@@ -1233,8 +1233,8 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
+            (oldColumn.isArray && oldColumn.length !== newColumn.length) || // Add this line
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
@@ -1523,6 +1523,100 @@ export class PostgresQueryRunner
                 oldColumn.name = newColumn.name
             }
 
+            // BEGIN length-only fast path (Postgres) — FIXED
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length &&
+                !newColumn.isArray &&
+                !oldColumn.isArray
+            ) {
+                const oldLen =
+                    oldColumn.length != null
+                        ? parseInt(oldColumn.length, 10)
+                        : undefined
+                const newLen =
+                    newColumn.length != null
+                        ? parseInt(newColumn.length, 10)
+                        : undefined
+
+                // Length change never implies rename; guard identifier
+                const colName = newColumn.name ?? oldColumn.name
+                const qCol = `"${colName}"`
+
+                const isStringType =
+                    /^(varchar|character varying|text|char|character)$/i.test(
+                        newColumn.type,
+                    )
+
+                const typeNew = this.driver.createFullType(newColumn)
+                const typeOld = this.driver.createFullType(oldColumn)
+
+                // Are we shrinking? (newLen is defined and < old, or old was unspecified)
+                const shrinking =
+                    isStringType &&
+                    newLen !== undefined &&
+                    (oldLen === undefined || newLen < oldLen)
+
+                if (isStringType && shrinking) {
+                    // --- UP: shrink with USING + substring to avoid errors
+                    // newLen is defined here
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN ${qCol} TYPE ${typeNew} ` +
+                                `USING substring(${qCol} FROM 1 FOR ${newLen})`,
+                        ),
+                    )
+
+                    // --- DOWN: revert; ONLY add USING if oldLen exists
+                    const usingOld =
+                        oldLen !== undefined
+                            ? ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
+                            : ""
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN ${qCol} TYPE ${typeOld}${usingOld}`,
+                        ),
+                    )
+                } else {
+                    // Widening or non-string types: plain TYPE both directions
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN ${qCol} TYPE ${typeNew}`,
+                        ),
+                    )
+
+                    // For DOWN, if returning to a shorter varchar and oldLen is known, use USING; else plain TYPE
+                    const needsUsingOld =
+                        isStringType &&
+                        oldLen !== undefined &&
+                        (newLen === undefined || oldLen < newLen)
+
+                    const usingOld = needsUsingOld
+                        ? ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
+                        : ""
+
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ` +
+                                `ALTER COLUMN ${qCol} TYPE ${typeOld}${usingOld}`,
+                        ),
+                    )
+                }
+
+                // Update cloned metadata and stop fallthrough
+                const clonedCol = clonedTable.columns.find(
+                    (c) => c.name === colName,
+                )
+                if (clonedCol) clonedCol.length = newColumn.length
+            }
+            // END length-only fast path
+
+            // Handle scale and precision changes without recreating the column, e.g.:
+            // varchar(n) -> varchar(m)
+            // numeric(x, y) -> numeric(v, w)
             if (
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
