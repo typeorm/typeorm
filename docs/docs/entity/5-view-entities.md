@@ -11,7 +11,7 @@ You can create a view entity by defining a new class and mark it with `@ViewEnti
 -   `database` - database name in selected DB server.
 -   `schema` - schema name.
 -   `expression` - view definition. **Required parameter**.
--   `dependsOn` - List of other views on which the current views depends. If your view uses another view in its definition, you can add it here so that migrations are generated in the correct order.
+-   `dependsOn` - List of other views on which the current views depends. If your view uses another view in its definition, you can add it here so that [migrations](../migrations/01-why.md) are generated in the correct order.
 
 `expression` can be string with properly escaped columns and tables, depend on database used (postgres in example):
 
