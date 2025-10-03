@@ -12,7 +12,15 @@ describe("find options > where", () => {
     let connections: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({ __dirname })),
+            (connections = await createTestingConnections({
+                __dirname,
+                driverSpecific: {
+                    invalidWhereValuesBehavior: {
+                        null: "ignore",
+                        undefined: "ignore",
+                    },
+                },
+            })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
