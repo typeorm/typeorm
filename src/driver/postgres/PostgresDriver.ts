@@ -115,8 +115,7 @@ export class PostgresDriver implements Driver {
     /**
      * Gets list of supported column data types by a driver.
      *
-     * @see https://www.tutorialspoint.com/postgresql/postgresql_data_types.htm
-     * @see https://www.postgresql.org/docs/9.2/static/datatype.html
+     * @see https://www.postgresql.org/docs/current/datatype.html
      */
     supportedDataTypes: ColumnType[] = [
         "int",
