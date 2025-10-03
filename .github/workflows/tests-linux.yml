@@ -21,11 +21,10 @@ jobs:
           COCKROACH_ARGS: "start-single-node --insecure --cache=1GB --store=type=mem,size=4GB"
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -49,11 +48,10 @@ jobs:
           - "27017:27017"
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -80,11 +78,10 @@ jobs:
           ACCEPT_EULA: "Y"
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -122,11 +119,10 @@ jobs:
           MYSQL_DATABASE: "test"
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -164,11 +160,10 @@ jobs:
           MYSQL_DATABASE: "test"
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -186,11 +181,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -208,11 +202,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -230,11 +223,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -271,11 +263,10 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -293,14 +284,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - run: docker compose up oracle --detach
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
@@ -321,14 +311,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - run: docker compose up hanaexpress --detach
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node-version }}
-          cache: "npm"
       - uses: actions/download-artifact@v4
         with:
           name: build
