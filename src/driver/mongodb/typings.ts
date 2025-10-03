@@ -56,6 +56,7 @@ export declare abstract class AbstractCursor<
     static readonly CLOSE: "close"
     /* Excluded from this release type: __constructor */
     get id(): Long | undefined
+    /* Excluded from this release type: isDead */
     /* Excluded from this release type: client */
     /* Excluded from this release type: server */
     get namespace(): MongoDBNamespace
@@ -86,6 +87,7 @@ export declare abstract class AbstractCursor<
      * If the iterator returns `false`, iteration will stop.
      *
      * @param iterator - The iteration callback.
+     * @deprecated - Will be removed in a future release. Use for await...of instead.
      */
     forEach(iterator: (doc: TSchema) => boolean | void): Promise<void>
     close(): Promise<void>
@@ -247,7 +249,10 @@ export declare type AddToSetOperators<Type> = {
     $each?: Array<Flatten<Type>>
 }
 
-/** @public */
+/**
+ * @public
+ * @deprecated Use the createUser command directly instead.
+ */
 export declare interface AddUserOptions extends CommandOperationOptions {
     /** Roles associated with the created user */
     roles?: string | string[] | RoleSpecification | RoleSpecification[]
@@ -279,6 +284,22 @@ export declare class Admin {
     /* Excluded from this release type: __constructor */
     /**
      * Execute a command
+     *
+     * The driver will ensure the following fields are attached to the command sent to the server:
+     * - `lsid` - sourced from an implicit session or options.session
+     * - `$readPreference` - defaults to primary or can be configured by options.readPreference
+     * - `$db` - sourced from the name of this database
+     *
+     * If the client has a serverApi setting:
+     * - `apiVersion`
+     * - `apiStrict`
+     * - `apiDeprecationErrors`
+     *
+     * When in a transaction:
+     * - `readConcern` - sourced from readConcern set on the TransactionOptions
+     * - `writeConcern` - sourced from writeConcern set on the TransactionOptions
+     *
+     * Attaching any of the above fields to the command will have no effect as the driver will overwrite the value.
      *
      * @param command - The command to execute
      * @param options - Optional settings for the command
@@ -314,6 +335,8 @@ export declare class Admin {
      * @param username - The username for the new user
      * @param passwordOrOptions - An optional password for the new user, or the options for the command
      * @param options - Optional settings for the command
+     * @deprecated Use the createUser command in `db.command()` instead.
+     * @see https://www.mongodb.com/docs/manual/reference/command/createUser/
      */
     addUser(
         username: string,
@@ -563,10 +586,17 @@ export declare interface AuthMechanismProperties extends Document {
     /** @experimental */
     REFRESH_TOKEN_CALLBACK?: OIDCRefreshFunction
     /** @experimental */
-    PROVIDER_NAME?: "aws"
+    PROVIDER_NAME?: "aws" | "azure"
+    /** @experimental */
+    ALLOWED_HOSTS?: string[]
+    /** @experimental */
+    TOKEN_AUDIENCE?: string
 }
 
-/** @public */
+/**
+ * @public
+ * @deprecated This interface will be removed in the next major version.
+ */
 export declare class AutoEncrypter {
     constructor(client: MongoClient, options: AutoEncryptionOptions)
     init(cb: Callback): void
@@ -694,11 +724,11 @@ export declare interface AutoEncryptionOptions {
      * Other validation rules in the JSON schema will not be enforced by the driver and will result in an error.
      */
     schemaMap?: Document
-    /** @experimental Public Technical Preview: Supply a schema for the encrypted fields in the document  */
+    /** Supply a schema for the encrypted fields in the document  */
     encryptedFieldsMap?: Document
     /** Allows the user to bypass auto encryption, maintaining implicit decryption */
     bypassAutoEncryption?: boolean
-    /** @experimental Public Technical Preview: Allows users to bypass query analysis */
+    /** Allows users to bypass query analysis */
     bypassQueryAnalysis?: boolean
     options?: {
         /** An optional hook to catch logging messages from the underlying encryption engine */
@@ -994,21 +1024,43 @@ export declare class BulkWriteResult {
     }
     private static generateIdMap
     /* Excluded from this release type: __constructor */
+    /* Excluded from this release type: getSuccessfullyInsertedIds */
     /** Evaluates to true if the bulk operation correctly executes */
     get ok(): number
-    /** The number of inserted documents */
+    /**
+     * The number of inserted documents
+     * @deprecated Use insertedCount instead.
+     */
     get nInserted(): number
-    /** Number of upserted documents */
+    /**
+     * Number of upserted documents
+     * @deprecated User upsertedCount instead.
+     */
     get nUpserted(): number
-    /** Number of matched documents */
+    /**
+     * Number of matched documents
+     * @deprecated Use matchedCount instead.
+     */
     get nMatched(): number
-    /** Number of documents updated physically on disk */
+    /**
+     * Number of documents updated physically on disk
+     * @deprecated Use modifiedCount instead.
+     */
     get nModified(): number
-    /** Number of removed documents */
+    /**
+     * Number of removed documents
+     * @deprecated Use deletedCount instead.
+     */
     get nRemoved(): number
-    /** Returns an array of all inserted ids */
+    /**
+     * Returns an array of all inserted ids
+     * @deprecated Use insertedIds instead.
+     */
     getInsertedIds(): Document[]
-    /** Returns an array of all upserted ids */
+    /**
+     * Returns an array of all upserted ids
+     * @deprecated Use upsertedIds instead.
+     */
     getUpsertedIds(): Document[]
     /** Returns the upserted id at the given index */
     getUpsertedIdAt(index: number): Document | undefined
@@ -1101,7 +1153,7 @@ export declare class ChangeStream<
     /**
      * Try to get the next available document from the Change Stream's cursor or `null` if an empty batch is returned
      */
-    tryNext(): Promise<Document | null>
+    tryNext(): Promise<TChange | null>
     [Symbol.asyncIterator](): AsyncGenerator<TChange, void, void>
     /** Is the cursor closed */
     get closed(): boolean
@@ -1253,6 +1305,12 @@ export declare interface ChangeStreamDocumentCommon {
      * Only present if the operation is part of a multi-document transaction.
      */
     lsid?: ServerSessionId
+    /**
+     * When the change stream's backing aggregation pipeline contains the $changeStreamSplitLargeEvent
+     * stage, events larger than 16MB will be split into multiple events and contain the
+     * following information about which fragment the current event is.
+     */
+    splitEvent?: ChangeStreamSplitEvent
 }
 
 /** @public */
@@ -1514,6 +1572,14 @@ export declare interface ChangeStreamShardCollectionDocument
     operationType: "shardCollection"
 }
 
+/** @public */
+export declare interface ChangeStreamSplitEvent {
+    /** Which fragment of the change this is. */
+    fragment: number
+    /** The total number of fragments. */
+    of: number
+}
+
 /**
  * @public
  * @see https://www.mongodb.com/docs/manual/reference/change-events/#update-event
@@ -1557,13 +1623,21 @@ export declare interface ClientMetadata {
     }
     os: {
         type: string
-        name: NodeJS.Platform
-        architecture: string
-        version: string
+        name?: NodeJS.Platform
+        architecture?: string
+        version?: string
     }
     platform: string
     application?: {
         name: string
+    }
+    /** FaaS environment information */
+    env?: {
+        name: "aws.lambda" | "gcp.func" | "azure.func" | "vercel"
+        timeout_sec?: Int32
+        memory_mb?: Int32
+        region?: string
+        url?: string
     }
 }
 
@@ -1778,6 +1852,7 @@ export declare interface CollationOptions {
  */
 export declare class Collection<TSchema extends Document = Document> {
     /* Excluded from this release type: s */
+    /* Excluded from this release type: client */
     /* Excluded from this release type: __constructor */
     /**
      * The name of the database this collection belongs to
@@ -1791,6 +1866,7 @@ export declare class Collection<TSchema extends Document = Document> {
      * The namespace of this collection, in the format `${this.dbName}.${this.collectionName}`
      */
     get namespace(): string
+    /* Excluded from this release type: fullNamespace */
     /**
      * The current readConcern of the collection. If not explicitly defined for
      * this collection, will be inherited from the parent DB
@@ -1868,7 +1944,7 @@ export declare class Collection<TSchema extends Document = Document> {
         filter: Filter<TSchema>,
         update: UpdateFilter<TSchema> | Partial<TSchema>,
         options?: UpdateOptions,
-    ): Promise<UpdateResult>
+    ): Promise<UpdateResult<TSchema>>
     /**
      * Replace a document in a collection with another document
      *
@@ -1880,7 +1956,7 @@ export declare class Collection<TSchema extends Document = Document> {
         filter: Filter<TSchema>,
         replacement: WithoutId<TSchema>,
         options?: ReplaceOptions,
-    ): Promise<UpdateResult | Document>
+    ): Promise<UpdateResult<TSchema> | Document>
     /**
      * Update multiple documents in a collection
      *
@@ -1892,7 +1968,7 @@ export declare class Collection<TSchema extends Document = Document> {
         filter: Filter<TSchema>,
         update: UpdateFilter<TSchema>,
         options?: UpdateOptions,
-    ): Promise<UpdateResult>
+    ): Promise<UpdateResult<TSchema>>
     /**
      * Delete a document from a collection
      *
@@ -2158,6 +2234,9 @@ export declare class Collection<TSchema extends Document = Document> {
     /**
      * Get all the collection statistics.
      *
+     * @deprecated the `collStats` operation will be removed in the next major release.  Please
+     * use an aggregation pipeline with the [`$collStats`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/) stage instead
+     *
      * @param options - Optional settings for the command
      */
     stats(options?: CollStatsOptions): Promise<CollStats>
@@ -2169,8 +2248,21 @@ export declare class Collection<TSchema extends Document = Document> {
      */
     findOneAndDelete(
         filter: Filter<TSchema>,
-        options?: FindOneAndDeleteOptions,
-    ): Promise<ModifyResult<TSchema> | null>
+        options: FindOneAndDeleteOptions & {
+            includeResultMetadata: true
+        },
+    ): Promise<ModifyResult<TSchema>>
+    findOneAndDelete(
+        filter: Filter<TSchema>,
+        options: FindOneAndDeleteOptions & {
+            includeResultMetadata: false
+        },
+    ): Promise<WithId<TSchema> | null>
+    findOneAndDelete(
+        filter: Filter<TSchema>,
+        options: FindOneAndDeleteOptions,
+    ): Promise<ModifyResult<TSchema>>
+    findOneAndDelete(filter: Filter<TSchema>): Promise<ModifyResult<TSchema>>
     /**
      * Find a document and replace it in one atomic operation. Requires a write lock for the duration of the operation.
      *
@@ -2181,8 +2273,26 @@ export declare class Collection<TSchema extends Document = Document> {
     findOneAndReplace(
         filter: Filter<TSchema>,
         replacement: WithoutId<TSchema>,
-        options?: FindOneAndReplaceOptions,
-    ): Promise<ModifyResult<TSchema> | null>
+        options: FindOneAndReplaceOptions & {
+            includeResultMetadata: true
+        },
+    ): Promise<ModifyResult<TSchema>>
+    findOneAndReplace(
+        filter: Filter<TSchema>,
+        replacement: WithoutId<TSchema>,
+        options: FindOneAndReplaceOptions & {
+            includeResultMetadata: false
+        },
+    ): Promise<WithId<TSchema> | null>
+    findOneAndReplace(
+        filter: Filter<TSchema>,
+        replacement: WithoutId<TSchema>,
+        options: FindOneAndReplaceOptions,
+    ): Promise<ModifyResult<TSchema>>
+    findOneAndReplace(
+        filter: Filter<TSchema>,
+        replacement: WithoutId<TSchema>,
+    ): Promise<ModifyResult<TSchema>>
     /**
      * Find a document and update it in one atomic operation. Requires a write lock for the duration of the operation.
      *
@@ -2193,8 +2303,26 @@ export declare class Collection<TSchema extends Document = Document> {
     findOneAndUpdate(
         filter: Filter<TSchema>,
         update: UpdateFilter<TSchema>,
-        options?: FindOneAndUpdateOptions,
-    ): Promise<ModifyResult<TSchema> | null>
+        options: FindOneAndUpdateOptions & {
+            includeResultMetadata: true
+        },
+    ): Promise<ModifyResult<TSchema>>
+    findOneAndUpdate(
+        filter: Filter<TSchema>,
+        update: UpdateFilter<TSchema>,
+        options: FindOneAndUpdateOptions & {
+            includeResultMetadata: false
+        },
+    ): Promise<WithId<TSchema> | null>
+    findOneAndUpdate(
+        filter: Filter<TSchema>,
+        update: UpdateFilter<TSchema>,
+        options: FindOneAndUpdateOptions,
+    ): Promise<ModifyResult<TSchema>>
+    findOneAndUpdate(
+        filter: Filter<TSchema>,
+        update: UpdateFilter<TSchema>,
+    ): Promise<ModifyResult<TSchema>>
     /**
      * Execute an aggregation framework pipeline against the collection, needs MongoDB \>= 2.2
      *
@@ -2283,6 +2411,66 @@ export declare class Collection<TSchema extends Document = Document> {
      * @param options - Optional settings for the command
      */
     count(filter?: Filter<TSchema>, options?: CountOptions): Promise<number>
+    /**
+     * Returns all search indexes for the current collection.
+     *
+     * @param options - The options for the list indexes operation.
+     *
+     * @remarks Only available when used against a 7.0+ Atlas cluster.
+     */
+    listSearchIndexes(
+        options?: ListSearchIndexesOptions,
+    ): ListSearchIndexesCursor
+    /**
+     * Returns all search indexes for the current collection.
+     *
+     * @param name - The name of the index to search for.  Only indexes with matching index names will be returned.
+     * @param options - The options for the list indexes operation.
+     *
+     * @remarks Only available when used against a 7.0+ Atlas cluster.
+     */
+    listSearchIndexes(
+        name: string,
+        options?: ListSearchIndexesOptions,
+    ): ListSearchIndexesCursor
+    /**
+     * Creates a single search index for the collection.
+     *
+     * @param description - The index description for the new search index.
+     * @returns A promise that resolves to the name of the new search index.
+     *
+     * @remarks Only available when used against a 7.0+ Atlas cluster.
+     */
+    createSearchIndex(description: SearchIndexDescription): Promise<string>
+    /**
+     * Creates multiple search indexes for the current collection.
+     *
+     * @param descriptions - An array of `SearchIndexDescription`s for the new search indexes.
+     * @returns A promise that resolves to an array of the newly created search index names.
+     *
+     * @remarks Only available when used against a 7.0+ Atlas cluster.
+     * @returns
+     */
+    createSearchIndexes(
+        descriptions: SearchIndexDescription[],
+    ): Promise<string[]>
+    /**
+     * Deletes a search index by index name.
+     *
+     * @param name - The name of the search index to be deleted.
+     *
+     * @remarks Only available when used against a 7.0+ Atlas cluster.
+     */
+    dropSearchIndex(name: string): Promise<void>
+    /**
+     * Updates a search index by replacing the existing index definition with the provided definition.
+     *
+     * @param name - The name of the search index to update.
+     * @param definition - The new search index definition.
+     *
+     * @remarks Only available when used against a 7.0+ Atlas cluster.
+     */
+    updateSearchIndex(name: string, definition: Document): Promise<void>
 }
 
 /** @public */
@@ -2310,6 +2498,8 @@ export declare interface CollectionOptions
 /* Excluded from this release type: CollectionPrivate */
 
 /**
+ * @deprecated the `collStats` operation will be removed in the next major release.  Please
+ * use an aggregation pipeline with the [`$collStats`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/) stage instead
  * @public
  * @see https://www.mongodb.com/docs/manual/reference/command/collStats/
  */
@@ -2362,11 +2552,17 @@ export declare interface CollStats extends Document {
     scaleFactor: number
 }
 
-/** @public */
+/**
+ * @public
+ * @deprecated the `collStats` operation will be removed in the next major release.  Please
+ * use an aggregation pipeline with the [`$collStats`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/) stage instead
+ */
 export declare interface CollStatsOptions extends CommandOperationOptions {
     /** Divide the returned sizes by scale value. */
     scale?: number
 }
+
+/* Excluded from this release type: CommandCallbackOperation */
 
 /**
  * An event indicating the failure of a given command
@@ -2381,6 +2577,7 @@ export declare class CommandFailedEvent {
     commandName: string
     failure: Error
     serviceId?: ObjectId
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
     get hasServiceId(): boolean
 }
@@ -2416,7 +2613,7 @@ export declare interface CommandOperationOptions
 /* Excluded from this release type: CommandOptions */
 
 /**
- * An event indicating the start of a given
+ * An event indicating the start of a given command
  * @public
  * @category Event
  */
@@ -2429,6 +2626,7 @@ export declare class CommandStartedEvent {
     address: string
     connectionId?: string | number
     serviceId?: ObjectId
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
     get hasServiceId(): boolean
 }
@@ -2446,6 +2644,7 @@ export declare class CommandSucceededEvent {
     commandName: string
     reply: unknown
     serviceId?: ObjectId
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
     get hasServiceId(): boolean
 }
@@ -2474,6 +2673,28 @@ export declare type Condition<T> =
 
 /* Excluded from this release type: Connection */
 
+/* Excluded from this release type: CONNECTION_CHECK_OUT_FAILED */
+
+/* Excluded from this release type: CONNECTION_CHECK_OUT_STARTED */
+
+/* Excluded from this release type: CONNECTION_CHECKED_IN */
+
+/* Excluded from this release type: CONNECTION_CHECKED_OUT */
+
+/* Excluded from this release type: CONNECTION_CLOSED */
+
+/* Excluded from this release type: CONNECTION_CREATED */
+
+/* Excluded from this release type: CONNECTION_POOL_CLEARED */
+
+/* Excluded from this release type: CONNECTION_POOL_CLOSED */
+
+/* Excluded from this release type: CONNECTION_POOL_CREATED */
+
+/* Excluded from this release type: CONNECTION_POOL_READY */
+
+/* Excluded from this release type: CONNECTION_READY */
+
 /**
  * An event published when a connection is checked into the connection pool
  * @public
@@ -2482,6 +2703,7 @@ export declare type Condition<T> =
 export declare class ConnectionCheckedInEvent extends ConnectionPoolMonitoringEvent {
     /** The id of the connection */
     connectionId: number | "<monitor>"
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
 }
 
@@ -2493,6 +2715,7 @@ export declare class ConnectionCheckedInEvent extends ConnectionPoolMonitoringEv
 export declare class ConnectionCheckedOutEvent extends ConnectionPoolMonitoringEvent {
     /** The id of the connection */
     connectionId: number | "<monitor>"
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
 }
 
@@ -2503,7 +2726,9 @@ export declare class ConnectionCheckedOutEvent extends ConnectionPoolMonitoringE
  */
 export declare class ConnectionCheckOutFailedEvent extends ConnectionPoolMonitoringEvent {
     /** The reason the attempt to check out failed */
-    reason: AnyError | string
+    reason: string
+    /* Excluded from this release type: error */
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
 }
 
@@ -2513,6 +2738,7 @@ export declare class ConnectionCheckOutFailedEvent extends ConnectionPoolMonitor
  * @category Event
  */
 export declare class ConnectionCheckOutStartedEvent extends ConnectionPoolMonitoringEvent {
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
 }
 
@@ -2527,6 +2753,8 @@ export declare class ConnectionClosedEvent extends ConnectionPoolMonitoringEvent
     /** The reason the connection was closed */
     reason: string
     serviceId?: ObjectId
+    /* Excluded from this release type: name */
+    /* Excluded from this release type: error */
     /* Excluded from this release type: __constructor */
 }
 
@@ -2538,6 +2766,7 @@ export declare class ConnectionClosedEvent extends ConnectionPoolMonitoringEvent
 export declare class ConnectionCreatedEvent extends ConnectionPoolMonitoringEvent {
     /** A monotonically increasing, per-pool id for the newly created connection */
     connectionId: number | "<monitor>"
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
 }
 
@@ -2568,7 +2797,9 @@ export declare interface ConnectionOptions
     credentials?: MongoCredentials
     connectTimeoutMS?: number
     tls: boolean
+    /** @deprecated - Will not be able to turn off in the future. */
     keepAlive?: boolean
+    /** @deprecated - Will not be configurable in the future. */
     keepAliveInitialDelay?: number
     noDelay?: boolean
     socketTimeoutMS?: number
@@ -2586,6 +2817,7 @@ export declare interface ConnectionOptions
 export declare class ConnectionPoolClearedEvent extends ConnectionPoolMonitoringEvent {
     /* Excluded from this release type: serviceId */
     interruptInUseConnections?: boolean
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
 }
 
@@ -2595,6 +2827,7 @@ export declare class ConnectionPoolClearedEvent extends ConnectionPoolMonitoring
  * @category Event
  */
 export declare class ConnectionPoolClosedEvent extends ConnectionPoolMonitoringEvent {
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
 }
 
@@ -2605,7 +2838,10 @@ export declare class ConnectionPoolClosedEvent extends ConnectionPoolMonitoringE
  */
 export declare class ConnectionPoolCreatedEvent extends ConnectionPoolMonitoringEvent {
     /** The options used to create this connection pool */
-    options?: ConnectionPoolOptions
+    options: Omit<ConnectionPoolOptions, "credentials"> & {
+        credentials?: Record<never, never>
+    }
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
 }
 
@@ -2631,11 +2867,12 @@ export declare type ConnectionPoolEvents = {
  * @public
  * @category Event
  */
-export declare class ConnectionPoolMonitoringEvent {
+export declare abstract class ConnectionPoolMonitoringEvent {
     /** A timestamp when the event was created  */
     time: Date
     /** The address (host/port pair) of the pool */
     address: string
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
 }
 
@@ -2663,6 +2900,7 @@ export declare interface ConnectionPoolOptions
  * @category Event
  */
 export declare class ConnectionPoolReadyEvent extends ConnectionPoolMonitoringEvent {
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
 }
 
@@ -2674,6 +2912,7 @@ export declare class ConnectionPoolReadyEvent extends ConnectionPoolMonitoringEv
 export declare class ConnectionReadyEvent extends ConnectionPoolMonitoringEvent {
     /** The id of the connection */
     connectionId: number | "<monitor>"
+    /* Excluded from this release type: name */
     /* Excluded from this release type: __constructor */
 }
 
@@ -2705,8 +2944,6 @@ export declare interface CountOptions extends CommandOperationOptions {
 /** @public */
 export declare interface CreateCollectionOptions
     extends CommandOperationOptions {
-    /** Returns an error if the collection does not exist */
-    strict?: boolean
     /** Create a capped collection */
     capped?: boolean
     /** @deprecated Create an index on the _id field of the document. This option is deprecated in MongoDB 3.2+ and will be removed once no longer supported by the server. */
@@ -2830,6 +3067,7 @@ export declare interface CursorStreamOptions {
  */
 export declare class Db {
     /* Excluded from this release type: s */
+    /* Excluded from this release type: client */
     static SYSTEM_NAMESPACE_COLLECTION: string
     static SYSTEM_INDEX_COLLECTION: string
     static SYSTEM_PROFILE_COLLECTION: string
@@ -2875,6 +3113,22 @@ export declare class Db {
      *
      * @remarks
      * This command does not inherit options from the MongoClient.
+     *
+     * The driver will ensure the following fields are attached to the command sent to the server:
+     * - `lsid` - sourced from an implicit session or options.session
+     * - `$readPreference` - defaults to primary or can be configured by options.readPreference
+     * - `$db` - sourced from the name of this database
+     *
+     * If the client has a serverApi setting:
+     * - `apiVersion`
+     * - `apiStrict`
+     * - `apiDeprecationErrors`
+     *
+     * When in a transaction:
+     * - `readConcern` - sourced from readConcern set on the TransactionOptions
+     * - `writeConcern` - sourced from writeConcern set on the TransactionOptions
+     *
+     * Attaching any of the above fields to the command will have no effect as the driver will overwrite the value.
      *
      * @param command - The command to run
      * @param options - Optional settings for the command
@@ -2989,6 +3243,8 @@ export declare class Db {
      * @param username - The username for the new user
      * @param passwordOrOptions - An optional password for the new user, or the options for the command
      * @param options - Optional settings for the command
+     * @deprecated Use the createUser command in `db.command()` instead.
+     * @see https://www.mongodb.com/docs/manual/reference/command/createUser/
      */
     addUser(
         username: string,
@@ -3050,6 +3306,19 @@ export declare class Db {
         pipeline?: Document[],
         options?: ChangeStreamOptions,
     ): ChangeStream<TSchema, TChange>
+    /**
+     * A low level cursor API providing basic driver functionality:
+     * - ClientSession management
+     * - ReadPreference for server selection
+     * - Running getMores automatically when a local batch is exhausted
+     *
+     * @param command - The command that will start a cursor on the server.
+     * @param options - Configurations for running the command, bson options will apply to getMores
+     */
+    runCursorCommand(
+        command: Document,
+        options?: RunCursorCommandOptions,
+    ): RunCommandCursor
 }
 
 /* Excluded from this release type: DB_AGGREGATE_COLLECTION */
@@ -3470,6 +3739,11 @@ export declare interface FindOneAndDeleteOptions
     sort?: Sort
     /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
     let?: Document
+    /**
+     * Return the ModifyResult instead of the modified document. Defaults to true
+     * but will default to false in the next major version.
+     */
+    includeResultMetadata?: boolean
 }
 
 /** @public */
@@ -3489,6 +3763,11 @@ export declare interface FindOneAndReplaceOptions
     upsert?: boolean
     /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
     let?: Document
+    /**
+     * Return the ModifyResult instead of the modified document. Defaults to true
+     * but will default to false in the next major version.
+     */
+    includeResultMetadata?: boolean
 }
 
 /** @public */
@@ -3510,6 +3789,11 @@ export declare interface FindOneAndUpdateOptions
     upsert?: boolean
     /** Map of parameter names and values that can be accessed using $$var (requires MongoDB 5.0). */
     let?: Document
+    /**
+     * Return the ModifyResult instead of the modified document. Defaults to true
+     * but will default to false in the next major version.
+     */
+    includeResultMetadata?: boolean
 }
 
 /**
@@ -3792,12 +4076,8 @@ export declare interface GridFSBucketReadStreamOptionsWithRevision
  * @public
  */
 export declare class GridFSBucketWriteStream {
-    /*
-    `implements NodeJS.WritableStream`
-    Has to be removed, otherwise tsc places a `/// <reference types="vinyl-fs" />` in the output file,
-    because vinyl-fs messed with NodeJS.WritableStream in the global scope:
-    https://github.com/DefinitelyTyped/DefinitelyTyped/blob/45372bb8a679f310f65765321ed38399055dcf1b/types/vinyl-fs/v1/index.d.ts#L9 */
-
+    // extends Writable
+    // implements NodeJS.WritableStream
     bucket: GridFSBucket
     chunks: Collection<GridFSChunk>
     filename: string
@@ -3938,6 +4218,30 @@ export declare class HostAddress {
     static fromString(this: void, s: string): HostAddress
     static fromHostPort(host: string, port: number): HostAddress
     static fromSrvRecord({ name, port }: SrvRecord): HostAddress
+    toHostPort(): {
+        host: string
+        port: number
+    }
+}
+
+/**
+ * @public
+ * @experimental
+ */
+export declare interface IdPServerInfo {
+    issuer: string
+    clientId: string
+    requestScopes?: string[]
+}
+
+/**
+ * @public
+ * @experimental
+ */
+export declare interface IdPServerResponse {
+    accessToken: string
+    expiresInSeconds?: number
+    refreshToken?: string
 }
 
 /** @public */
@@ -4150,8 +4454,6 @@ export declare type KeysOfOtherType<TSchema, Type> = {
 
 /* Excluded from this release type: kMode */
 
-/* Excluded from this release type: kMonitor */
-
 /* Excluded from this release type: kMonitorId */
 
 /* Excluded from this release type: kNamespace */
@@ -4177,8 +4479,6 @@ export declare type KeysOfOtherType<TSchema, Type> = {
 /* Excluded from this release type: kQueue */
 
 /* Excluded from this release type: kRoundTripTime */
-
-/* Excluded from this release type: kRTTPinger */
 
 /* Excluded from this release type: kServer */
 
@@ -4304,6 +4604,23 @@ export declare interface ListIndexesOptions
     batchSize?: number
 }
 
+/** @public */
+export declare class ListSearchIndexesCursor extends AggregationCursor<{
+    name: string
+}> {
+    /* Excluded from this release type: __constructor */
+}
+
+/** @public */
+export declare type ListSearchIndexesOptions = AggregateOptions
+
+/* Excluded from this release type: Log */
+
+/* Excluded from this release type: LogConvertible */
+
+/* Excluded from this release type: Loggable */
+
+/* Excluded from this release type: LoggableEvent */
 export { Long }
 
 /** @public */
@@ -4319,12 +4636,7 @@ export { MaxKey }
 /* Excluded from this release type: MessageStreamOptions */
 export { MinKey }
 
-/**
- * @public
- * @deprecated This type will be completely removed and findOneAndUpdate,
- *             findOneAndDelete, and findOneAndReplace will then return the
- *             actual result document.
- */
+/** @public */
 export declare interface ModifyResult<TSchema = Document> {
     value: WithId<TSchema> | null
     lastErrorObject?: Document
@@ -4383,6 +4695,18 @@ export declare class MongoAPIError extends MongoDriverError {
  * @category Error
  */
 export declare class MongoAWSError extends MongoRuntimeError {
+    constructor(message: string)
+    get name(): string
+}
+
+/**
+ * A error generated when the user attempts to authenticate
+ * via Azure, but fails.
+ *
+ * @public
+ * @category Error
+ */
+export declare class MongoAzureError extends MongoRuntimeError {
     constructor(message: string)
     get name(): string
 }
@@ -4478,10 +4802,14 @@ export declare class MongoClient extends TypedEventEmitter<MongoClientEvents> {
     /* Excluded from this release type: connectionLock */
     /* Excluded from this release type: [kOptions] */
     constructor(url: string, options?: MongoClientOptions)
+    /** @see MongoOptions */
     get options(): Readonly<MongoOptions>
     get serverApi(): Readonly<ServerApi | undefined>
     /* Excluded from this release type: monitorCommands */
     /* Excluded from this release type: monitorCommands */
+    /**
+     * @deprecated This method will be removed in the next major version.
+     */
     get autoEncrypter(): AutoEncrypter | undefined
     get readConcern(): ReadConcern | undefined
     get writeConcern(): WriteConcern | undefined
@@ -4581,7 +4909,10 @@ export declare interface MongoClientOptions
     tls?: boolean
     /** A boolean to enable or disables TLS/SSL for the connection. (The ssl option is equivalent to the tls option.) */
     ssl?: boolean
-    /** Specifies the location of a local TLS Certificate */
+    /**
+     * Specifies the location of a local TLS Certificate
+     * @deprecated Will be removed in the next major version. Please use tlsCertificateKeyFile instead.
+     */
     tlsCertificateFile?: string
     /** Specifies the location of a local .pem file that contains either the client's TLS/SSL certificate and key or only the client's TLS/SSL key when tlsCertificateFile is used to provide the certificate. */
     tlsCertificateKeyFile?: string
@@ -4681,23 +5012,44 @@ export declare interface MongoClientOptions
      * @see https://www.mongodb.com/docs/manual/reference/write-concern/
      */
     writeConcern?: WriteConcern | WriteConcernSettings
-    /** Validate mongod server certificate against Certificate Authority */
+    /**
+     * Validate mongod server certificate against Certificate Authority
+     * @deprecated Will be removed in the next major version. Please use tlsAllowInvalidCertificates instead.
+     */
     sslValidate?: boolean
-    /** SSL Certificate file path. */
+    /**
+     * SSL Certificate file path.
+     * @deprecated Will be removed in the next major version. Please use tlsCAFile instead.
+     */
     sslCA?: string
-    /** SSL Certificate file path. */
+    /**
+     * SSL Certificate file path.
+     * @deprecated Will be removed in the next major version. Please use tlsCertificateKeyFile instead.
+     */
     sslCert?: string
-    /** SSL Key file file path. */
+    /**
+     * SSL Key file file path.
+     * @deprecated Will be removed in the next major version. Please use tlsCertificateKeyFile instead.
+     */
     sslKey?: string
-    /** SSL Certificate pass phrase. */
+    /**
+     * SSL Certificate pass phrase.
+     * @deprecated Will be removed in the next major version. Please use tlsCertificateKeyFilePassword instead.
+     */
     sslPass?: string
-    /** SSL Certificate revocation list file path. */
+    /**
+     * SSL Certificate revocation list file path.
+     * @deprecated Will be removed in the next major version. Please use tlsCertificateKeyFile instead.
+     */
     sslCRL?: string
     /** TCP Connection no delay */
     noDelay?: boolean
-    /** TCP Connection keep alive enabled */
+    /** @deprecated TCP Connection keep alive enabled. Will not be able to turn off in the future. */
     keepAlive?: boolean
-    /** The number of milliseconds to wait before initiating keepAlive on the TCP socket */
+    /**
+     * @deprecated The number of milliseconds to wait before initiating keepAlive on the TCP socket.
+     *             Will not be configurable in the future.
+     */
     keepAliveInitialDelay?: number
     /** Force server to assign `_id` values instead of driver */
     forceServerObjectId?: boolean
@@ -4787,7 +5139,7 @@ export declare class MongoCredentials {
 
 /** @public */
 export declare interface MongoCredentialsOptions {
-    username: string
+    username?: string
     password: string
     source: string
     db?: string
@@ -4818,10 +5170,24 @@ export declare class MongoCursorInUseError extends MongoAPIError {
     get name(): string
 }
 
+/**
+ * @public
+ *
+ * A class representing a collection's namespace.  This class enforces (through Typescript) that
+ * the `collection` portion of the namespace is defined and should only be
+ * used in scenarios where this can be guaranteed.
+ */
+export declare class MongoDBCollectionNamespace extends MongoDBNamespace {
+    collection: string
+    constructor(db: string, collection: string)
+}
+
+/* Excluded from this release type: MongoDBLogWritable */
+
 /** @public */
 export declare class MongoDBNamespace {
     db: string
-    collection: string | undefined
+    collection?: string | undefined
     /**
      * Create a namespace object
      *
@@ -4830,7 +5196,7 @@ export declare class MongoDBNamespace {
      */
     constructor(db: string, collection?: string)
     toString(): string
-    withCollection(collection: string): MongoDBNamespace
+    withCollection(collection: string): MongoDBCollectionNamespace
     static fromString(namespace?: string): MongoDBNamespace
 }
 
@@ -4876,6 +5242,7 @@ export declare class MongoError extends Error {
     connectionGeneration?: number
     cause?: Error
     constructor(message: string | Error)
+    /* Excluded from this release type: buildErrorMessage */
     get name(): string
     /** Legacy name for server error responses */
     get errmsg(): string
@@ -4995,7 +5362,14 @@ export declare class MongoMissingCredentialsError extends MongoAPIError {
  * @category Error
  */
 export declare class MongoMissingDependencyError extends MongoAPIError {
-    constructor(message: string)
+    constructor(
+        message: string,
+        {
+            cause,
+        }?: {
+            cause?: Error
+        },
+    )
     get name(): string
 }
 
@@ -5042,7 +5416,22 @@ export declare class MongoNotConnectedError extends MongoAPIError {
 }
 
 /**
- * Mongo Client Options
+ * Parsed Mongo Client Options.
+ *
+ * User supplied options are documented by `MongoClientOptions`.
+ *
+ * **NOTE:** The client's options parsing is subject to change to support new features.
+ * This type is provided to aid with inspection of options after parsing, it should not be relied upon programmatically.
+ *
+ * Options are sourced from:
+ * - connection string
+ * - options object passed to the MongoClient constructor
+ * - file system (ex. tls settings)
+ * - environment variables
+ * - DNS SRV records and TXT records
+ *
+ * Not all options may be present after client construction as some are obtained from asynchronous operations.
+ *
  * @public
  */
 export declare interface MongoOptions
@@ -5094,6 +5483,9 @@ export declare interface MongoOptions
     writeConcern: WriteConcern
     dbName: string
     metadata: ClientMetadata
+    /**
+     * @deprecated This option will be removed in the next major version.
+     */
     autoEncrypter?: AutoEncrypter
     proxyHost?: string
     proxyPort?: number
@@ -5106,19 +5498,29 @@ export declare interface MongoOptions
     /**
      * # NOTE ABOUT TLS Options
      *
-     * If set TLS enabled, equivalent to setting the ssl option.
+     * If `tls` is provided as an option, it is equivalent to setting the `ssl` option.
+     *
+     * NodeJS native TLS options are passed through to the socket and retain their original types.
      *
      * ### Additional options:
      *
-     * |    nodejs option     | MongoDB equivalent                                       | type                                   |
-     * |:---------------------|--------------------------------------------------------- |:---------------------------------------|
-     * | `ca`                 | `sslCA`, `tlsCAFile`                                     | `string \| Buffer \| Buffer[]`         |
-     * | `crl`                | `sslCRL`                                                 | `string \| Buffer \| Buffer[]`         |
-     * | `cert`               | `sslCert`, `tlsCertificateFile`, `tlsCertificateKeyFile` | `string \| Buffer \| Buffer[]`         |
-     * | `key`                | `sslKey`, `tlsCertificateKeyFile`                        | `string \| Buffer \| KeyObject[]`      |
-     * | `passphrase`         | `sslPass`, `tlsCertificateKeyFilePassword`               | `string`                               |
-     * | `rejectUnauthorized` | `sslValidate`                                            | `boolean`                              |
+     * | nodejs native option  | driver spec compliant option name             | legacy option name | driver option type |
+     * |:----------------------|:----------------------------------------------|:-------------------|:-------------------|
+     * | `ca`                  | `tlsCAFile`                                   | `sslCA`            | `string`           |
+     * | `crl`                 | `tlsCRLFile` (next major version)             | `sslCRL`           | `string`           |
+     * | `cert`                | `tlsCertificateFile`, `tlsCertificateKeyFile` | `sslCert`          | `string`           |
+     * | `key`                 | `tlsCertificateKeyFile`                       | `sslKey`           | `string`           |
+     * | `passphrase`          | `tlsCertificateKeyFilePassword`               | `sslPass`          | `string`           |
+     * | `rejectUnauthorized`  | `tlsAllowInvalidCertificates`                 | `sslValidate`      | `boolean`          |
+     * | `checkServerIdentity` | `tlsAllowInvalidHostnames`                    | N/A                | `boolean`          |
+     * | see note below        | `tlsInsecure`                                 | N/A                | `boolean`          |
      *
+     * If `tlsInsecure` is set to `true`, then it will set the node native options `checkServerIdentity`
+     * to a no-op and `rejectUnauthorized` to `false`.
+     *
+     * If `tlsInsecure` is set to `false`, then it will set the node native options `checkServerIdentity`
+     * to a no-op and `rejectUnauthorized` to the inverse value of `tlsAllowInvalidCertificates`. If
+     * `tlsAllowInvalidCertificates` is not set, then `rejectUnauthorized` will be set to `true`.
      */
     tls: boolean
     /* Excluded from this release type: __index */
@@ -5384,13 +5786,11 @@ export { ObjectId }
  * @public
  * @experimental
  */
-export declare interface OIDCMechanismServerStep1 {
-    authorizationEndpoint?: string
-    tokenEndpoint?: string
-    deviceAuthorizationEndpoint?: string
-    clientId: string
-    clientSecret?: string
-    requestScopes?: string[]
+export declare interface OIDCCallbackContext {
+    refreshToken?: string
+    timeoutSeconds?: number
+    timeoutContext?: AbortSignal
+    version: number
 }
 
 /**
@@ -5398,31 +5798,18 @@ export declare interface OIDCMechanismServerStep1 {
  * @experimental
  */
 export declare type OIDCRefreshFunction = (
-    principalName: string,
-    serverResult: OIDCMechanismServerStep1,
-    result: OIDCRequestTokenResult,
-    timeout: AbortSignal | number,
-) => Promise<OIDCRequestTokenResult>
+    info: IdPServerInfo,
+    context: OIDCCallbackContext,
+) => Promise<IdPServerResponse>
 
 /**
  * @public
  * @experimental
  */
 export declare type OIDCRequestFunction = (
-    principalName: string,
-    serverResult: OIDCMechanismServerStep1,
-    timeout: AbortSignal | number,
-) => Promise<OIDCRequestTokenResult>
-
-/**
- * @public
- * @experimental
- */
-export declare interface OIDCRequestTokenResult {
-    accessToken: string
-    expiresInSeconds?: number
-    refreshToken?: string
-}
+    info: IdPServerInfo,
+    context: OIDCCallbackContext,
+) => Promise<IdPServerResponse>
 
 /** @public */
 export declare type OneOrMore<T> = T | ReadonlyArray<T>
@@ -5829,7 +6216,10 @@ export declare const ReturnDocument: Readonly<{
 export declare type ReturnDocument =
     (typeof ReturnDocument)[keyof typeof ReturnDocument]
 
-/** @public */
+/**
+ * @public
+ * @deprecated Use the createUser command directly instead.
+ */
 export declare interface RoleSpecification {
     /**
      * A role grants privileges to perform sets of actions on defined resources.
@@ -5860,7 +6250,82 @@ export declare interface RootFilterOperators<TSchema> extends Document {
 /* Excluded from this release type: RTTPingerOptions */
 
 /** @public */
-export declare type RunCommandOptions = CommandOperationOptions
+export declare class RunCommandCursor extends AbstractCursor {
+    readonly command: Readonly<Record<string, any>>
+    readonly getMoreOptions: {
+        comment?: any
+        maxAwaitTimeMS?: number
+        batchSize?: number
+    }
+    /**
+     * Controls the `getMore.comment` field
+     * @param comment - any BSON value
+     */
+    setComment(comment: any): this
+    /**
+     * Controls the `getMore.maxTimeMS` field. Only valid when cursor is tailable await
+     * @param maxTimeMS - the number of milliseconds to wait for new data
+     */
+    setMaxTimeMS(maxTimeMS: number): this
+    /**
+     * Controls the `getMore.batchSize` field
+     * @param maxTimeMS - the number documents to return in the `nextBatch`
+     */
+    setBatchSize(batchSize: number): this
+    /** Unsupported for RunCommandCursor */
+    clone(): never
+    /** Unsupported for RunCommandCursor: readConcern must be configured directly on command document */
+    withReadConcern(_: ReadConcernLike): never
+    /** Unsupported for RunCommandCursor: various cursor flags must be configured directly on command document */
+    addCursorFlag(_: string, __: boolean): never
+    /** Unsupported for RunCommandCursor: maxTimeMS must be configured directly on command document */
+    maxTimeMS(_: number): never
+    /** Unsupported for RunCommandCursor: batchSize must be configured directly on command document */
+    batchSize(_: number): never
+    /* Excluded from this release type: db */
+    /* Excluded from this release type: __constructor */
+    /* Excluded from this release type: _initialize */
+    /* Excluded from this release type: _getMore */
+}
+
+/** @public */
+export declare type RunCommandOptions = {
+    /** Specify ClientSession for this command */
+    session?: ClientSession
+    /** The read preference */
+    readPreference?: ReadPreferenceLike
+    /** @deprecated This is an internal option that has undefined behavior for this API */
+    willRetryWrite?: any
+    /** @deprecated This is an internal option that has undefined behavior for this API */
+    omitReadPreference?: any
+    /** @deprecated This is an internal option that has undefined behavior for this API */
+    writeConcern?: any
+    /** @deprecated This is an internal option that has undefined behavior for this API */
+    explain?: any
+    /** @deprecated This is an internal option that has undefined behavior for this API */
+    readConcern?: any
+    /** @deprecated This is an internal option that has undefined behavior for this API */
+    collation?: any
+    /** @deprecated This is an internal option that has undefined behavior for this API */
+    maxTimeMS?: any
+    /** @deprecated This is an internal option that has undefined behavior for this API */
+    comment?: any
+    /** @deprecated This is an internal option that has undefined behavior for this API */
+    retryWrites?: any
+    /** @deprecated This is an internal option that has undefined behavior for this API */
+    dbName?: any
+    /** @deprecated This is an internal option that has undefined behavior for this API */
+    authdb?: any
+    /** @deprecated This is an internal option that has undefined behavior for this API */
+    noResponse?: any
+    /* Excluded from this release type: bypassPinningCheck */
+} & BSONSerializeOptions
+
+/** @public */
+export declare type RunCursorCommandOptions = {
+    readPreference?: ReadPreferenceLike
+    session?: ClientSession
+} & BSONSerializeOptions
 
 /** @public */
 export declare type SchemaMember<T, V> =
@@ -5870,6 +6335,16 @@ export declare type SchemaMember<T, V> =
     | {
           [key: string]: V
       }
+
+/**
+ * @public
+ */
+export declare interface SearchIndexDescription {
+    /** The name of the index. */
+    name?: string
+    /** The index definition. */
+    definition: Document
+}
 
 /** @public */
 export declare interface SelectServerOptions {
@@ -6322,6 +6797,8 @@ export declare interface TimeSeriesCollectionOptions extends Document {
     timeField: string
     metaField?: string
     granularity?: "seconds" | "minutes" | "hours" | string
+    bucketMaxSpanSeconds?: number
+    bucketRoundingSeconds?: number
 }
 
 export { Timestamp }
@@ -6618,7 +7095,11 @@ export declare interface TypedEventEmitter<Events extends EventsDescription>
  */
 export declare class TypedEventEmitter<
     Events extends EventsDescription,
-> extends EventEmitter {}
+> extends EventEmitter {
+    /* Excluded from this release type: mongoLogger */
+    /* Excluded from this release type: component */
+    /* Excluded from this release type: emitAndLog */
+}
 
 /** @public */
 export declare class UnorderedBulkOperation extends BulkOperationBase {
@@ -6761,8 +7242,11 @@ export declare interface UpdateOptions extends CommandOperationOptions {
     let?: Document
 }
 
-/** @public */
-export declare interface UpdateResult {
+/**
+ * @public
+ * `TSchema` is the schema of the collection
+ */
+export declare interface UpdateResult<TSchema extends Document = Document> {
     /** Indicates whether this write result was acknowledged. If not, then all other members of this result will be undefined */
     acknowledged: boolean
     /** The number of documents that matched the filter */
@@ -6772,7 +7256,7 @@ export declare interface UpdateResult {
     /** The number of documents that were upserted */
     upsertedCount: number
     /** The identifier of the inserted document if an upsert took place */
-    upsertedId: ObjectId
+    upsertedId: InferIdType<TSchema> | null
 }
 
 /** @public */
@@ -6805,7 +7289,10 @@ export declare type W = number | "majority"
 
 /* Excluded from this release type: WaitQueueMember */
 
-/** @public */
+/**
+ * @public
+ * @deprecated This type is only used for the deprecated `collStats` operation and will be removed in the next major release.
+ */
 export declare interface WiredTigerData extends Document {
     LSM: {
         "bloom filter false positives": number
@@ -6970,22 +7457,44 @@ export declare type WithTransactionCallback<T = void> = (
  * @see https://www.mongodb.com/docs/manual/reference/write-concern/
  */
 export declare class WriteConcern {
-    /** request acknowledgment that the write operation has propagated to a specified number of mongod instances or to mongod instances with specified tags. */
-    w?: W
-    /** specify a time limit to prevent write operations from blocking indefinitely */
+    /** Request acknowledgment that the write operation has propagated to a specified number of mongod instances or to mongod instances with specified tags. */
+    readonly w?: W
+    /** Request acknowledgment that the write operation has been written to the on-disk journal */
+    readonly journal?: boolean
+    /** Specify a time limit to prevent write operations from blocking indefinitely */
+    readonly wtimeoutMS?: number
+    /**
+     * Specify a time limit to prevent write operations from blocking indefinitely.
+     * @deprecated Will be removed in the next major version. Please use wtimeoutMS.
+     */
     wtimeout?: number
-    /** request acknowledgment that the write operation has been written to the on-disk journal */
+    /**
+     * Request acknowledgment that the write operation has been written to the on-disk journal.
+     * @deprecated Will be removed in the next major version. Please use journal.
+     */
     j?: boolean
-    /** equivalent to the j option */
+    /**
+     * Equivalent to the j option.
+     * @deprecated Will be removed in the next major version. Please use journal.
+     */
     fsync?: boolean | 1
     /**
      * Constructs a WriteConcern from the write concern properties.
      * @param w - request acknowledgment that the write operation has propagated to a specified number of mongod instances or to mongod instances with specified tags.
-     * @param wtimeout - specify a time limit to prevent write operations from blocking indefinitely
-     * @param j - request acknowledgment that the write operation has been written to the on-disk journal
-     * @param fsync - equivalent to the j option
+     * @param wtimeoutMS - specify a time limit to prevent write operations from blocking indefinitely
+     * @param journal - request acknowledgment that the write operation has been written to the on-disk journal
+     * @param fsync - equivalent to the j option. Is deprecated and will be removed in the next major version.
      */
-    constructor(w?: W, wtimeout?: number, j?: boolean, fsync?: boolean | 1)
+    constructor(
+        w?: W,
+        wtimeoutMS?: number,
+        journal?: boolean,
+        fsync?: boolean | 1,
+    )
+    /**
+     * Apply a write concern to a command document. Will modify and return the command.
+     */
+    static apply(command: Document, writeConcern: WriteConcern): Document
     /** Construct a WriteConcern given an options object. */
     static fromOptions(
         options?: WriteConcernOptions | WriteConcern | W,
@@ -7032,11 +7541,20 @@ export declare interface WriteConcernSettings {
     wtimeoutMS?: number
     /** The journal write concern */
     journal?: boolean
-    /** The journal write concern */
+    /**
+     * The journal write concern.
+     * @deprecated Will be removed in the next major version. Please use the journal option.
+     */
     j?: boolean
-    /** The write concern timeout */
+    /**
+     * The write concern timeout.
+     * @deprecated Will be removed in the next major version. Please use the wtimeoutMS option.
+     */
     wtimeout?: number
-    /** The file sync write concern */
+    /**
+     * The file sync write concern.
+     * @deprecated Will be removed in the next major version. Please use the journal option.
+     */
     fsync?: boolean | 1
 }
 
