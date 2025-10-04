@@ -6,6 +6,7 @@ import { AuroraPostgresDriver } from "./AuroraPostgresDriver"
 import { PostgresQueryRunner } from "../postgres/PostgresQueryRunner"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { QueryOptions } from "../../query-runner/QueryOptions"
 import { Table } from "../../schema-builder/table/Table"
 import { TypeORMError } from "../../error"
 
@@ -169,8 +170,12 @@ export class AuroraPostgresQueryRunner
     async query(
         query: string,
         parameters?: any[],
-        useStructuredResult = false,
+        optionsOrUseStructuredResult?: QueryOptions | boolean,
     ): Promise<any> {
+        const useStructuredResult =
+            typeof optionsOrUseStructuredResult === "boolean"
+                ? optionsOrUseStructuredResult
+                : optionsOrUseStructuredResult?.useStructuredResult === true
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const raw = await this.client.query(query, parameters)

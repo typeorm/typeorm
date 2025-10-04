@@ -39,6 +39,7 @@ import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
 import { buildSqlTag } from "../util/SqlTagUtils"
+import { QueryOptions } from "../query-runner/QueryOptions"
 import { OrmUtils } from "../util/OrmUtils"
 
 /**
@@ -177,13 +178,13 @@ export class EntityManager {
     async query<T = any>(
         query: string,
         parameters?: any[],
-        useStructuredResult?: boolean,
+        optionsOrUseStructuredResult?: QueryOptions | boolean,
     ): Promise<T> {
-        return this.connection.query(
+        return this.connection.query<T>(
             query,
             parameters,
             this.queryRunner,
-            useStructuredResult,
+            optionsOrUseStructuredResult,
         )
     }
 

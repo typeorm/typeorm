@@ -74,7 +74,9 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
             }
 
             // execute query
-            const queryResult = await queryRunner.query(sql, parameters, true)
+            const queryResult = await queryRunner.query(sql, parameters, {
+                useStructuredResult: true,
+            })
             const deleteResult = DeleteResult.from(queryResult)
 
             // call after deletion methods in listeners and subscribers

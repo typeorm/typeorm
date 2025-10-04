@@ -42,6 +42,7 @@ import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { buildSqlTag } from "../util/SqlTagUtils"
+import { QueryOptions } from "../query-runner/QueryOptions"
 
 registerQueryBuilders()
 
@@ -527,11 +528,33 @@ export class DataSource {
     async query<T = any>(
         query: string,
         parameters?: any[],
-        queryRunner?: QueryRunner,
-        useStructuredResult?: boolean,
+        queryRunnerOrOptions?: QueryRunner | QueryOptions | boolean,
+        queryOptions?: QueryOptions | boolean,
     ): Promise<T> {
         if (InstanceChecker.isMongoEntityManager(this.manager))
             throw new TypeORMError(`Queries aren't supported by MongoDB.`)
+
+        let queryRunner: QueryRunner | undefined
+        let options: QueryOptions | undefined
+
+        if (queryRunnerOrOptions) {
+            if (typeof queryRunnerOrOptions === "boolean") {
+                options = { useStructuredResult: queryRunnerOrOptions }
+            } else if (
+                (queryRunnerOrOptions as QueryRunner).query !== undefined
+            ) {
+                queryRunner = queryRunnerOrOptions as QueryRunner
+            } else {
+                options = queryRunnerOrOptions as QueryOptions
+            }
+        }
+        if (queryOptions) {
+            if (typeof queryOptions === "boolean") {
+                options = { useStructuredResult: queryOptions }
+            } else {
+                options = queryOptions as QueryOptions
+            }
+        }
 
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError()
@@ -539,11 +562,14 @@ export class DataSource {
         const usedQueryRunner = queryRunner || this.createQueryRunner()
 
         try {
-            return (await usedQueryRunner.query(
-                query,
-                parameters,
-                (useStructuredResult || false) as any,
-            )) as T // await is needed here because we are using finally
+            // pass through options (or boolean via overload compatibility)
+            if (options?.useStructuredResult) {
+                return (await usedQueryRunner.query(query, parameters, {
+                    useStructuredResult: true,
+                })) as T
+            }
+
+            return (await usedQueryRunner.query(query, parameters)) as T
         } finally {
             if (!queryRunner) await usedQueryRunner.release()
         }

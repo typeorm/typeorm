@@ -76,7 +76,9 @@ describe("github issues > #11566 .query() useStructuredResult option", () => {
     })
 
     it("should pass useStructuredResult to QueryRunner.query when provided", async () => {
-        await dataSource.query("SELECT 1", [], queryRunner, true)
+        await dataSource.query("SELECT 1", [], queryRunner, {
+            useStructuredResult: true,
+        })
         sinon.assert.calledWith(queryStub, "SELECT 1", [], true)
     })
 
@@ -91,7 +93,7 @@ describe("github issues > #11566 .query() useStructuredResult option", () => {
             `SELECT * FROM users; SELECT id FROM users WHERE id = 2;`,
             [],
             undefined,
-            true,
+            { useStructuredResult: true },
         )
         expect(result).to.be.instanceOf(QueryResult)
         expect(result.records).to.deep.equal([{ id: 1 }, { id: 2 }])
@@ -106,7 +108,7 @@ describe("github issues > #11566 .query() useStructuredResult option", () => {
         const result = await manager.query(
             `SELECT * FROM users; SELECT id FROM users WHERE id = 2;`,
             [],
-            true,
+            { useStructuredResult: true },
         )
         expect(result).to.be.instanceOf(QueryResult)
         expect(result.records).to.deep.equal([{ id: 1 }, { id: 2 }])
@@ -125,7 +127,7 @@ describe("github issues > #11566 .query() useStructuredResult option", () => {
             `,
             [],
             undefined,
-            true,
+            { useStructuredResult: true },
         )
 
         expect(result).to.be.instanceOf(QueryResult)

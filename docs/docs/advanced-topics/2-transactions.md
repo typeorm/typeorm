@@ -74,18 +74,6 @@ await queryRunner.connect()
 // now we can execute any queries on a query runner, for example:
 await queryRunner.query("SELECT * FROM users")
 
-// **NOTE:** if you need to access multiple recordsets from a single query, pass true as the third parameter to the `query` method:
-const {
-    recordsets: [users, photos],
-} = await queryRunner.query(
-    `
-    SELECT * FROM users;
-    SELECT * FROM photos;
-`,
-    null,
-    true,
-)
-
 // we can also access entity manager that works with connection created by a query runner:
 const users = await queryRunner.manager.find(User)
 

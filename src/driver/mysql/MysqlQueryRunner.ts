@@ -27,6 +27,7 @@ import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { MysqlDriver } from "./MysqlDriver"
+import { QueryOptions } from "../../query-runner/QueryOptions"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -183,8 +184,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     async query(
         query: string,
         parameters?: any[],
-        useStructuredResult = false,
+        optionsOrUseStructuredResult?: QueryOptions | boolean,
     ): Promise<any> {
+        const useStructuredResult =
+            typeof optionsOrUseStructuredResult === "boolean"
+                ? optionsOrUseStructuredResult
+                : optionsOrUseStructuredResult?.useStructuredResult === true
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
