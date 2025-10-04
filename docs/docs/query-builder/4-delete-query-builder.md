@@ -1,6 +1,6 @@
 # Delete using Query Builder
 
-### `Delete`
+## `Delete`
 
 You can create `DELETE` queries using `QueryBuilder`.
 Examples:
@@ -16,7 +16,7 @@ await myDataSource
 
 This is the most efficient way in terms of performance to delete entities from your database.
 
-### `Soft-Delete`
+## `Soft-Delete`
 
 Applying Soft Delete to QueryBuilder
 
@@ -35,7 +35,7 @@ await myDataSource
     .execute()
 ```
 
-### `Restore-Soft-Delete`
+## `Restore-Soft-Delete`
 
 Alternatively, You can recover the soft deleted rows by using the `restore()` method:
 

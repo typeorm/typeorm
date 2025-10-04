@@ -50,11 +50,11 @@ The side you set `@JoinColumn` on, that side's table will contain a "relation id
 
 This example will produce the following tables:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                        profile                          |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | gender      | varchar(255) |                            |
 | photo       | varchar(255) |                            |
 +-------------+--------------+----------------------------+
@@ -62,9 +62,9 @@ This example will produce the following tables:
 +-------------+--------------+----------------------------+
 |                          user                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(255) |                            |
-| profileId   | int(11)      | FOREIGN KEY                |
+| profileId   | int          | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
 

@@ -215,6 +215,8 @@ await manager.updateAll(User, { category: "ADULT" })
 
 -   `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
 
+When an upsert operation results in an update (due to a conflict), special columns like `@UpdateDateColumn` and `@VersionColumn` are automatically updated to their current values.
+
 ```typescript
 await manager.upsert(
     User,
@@ -389,7 +391,7 @@ const categoryRepository = manager.getTreeRepository(Category)
 ```
 
 -   `getMongoRepository` - Gets `MongoRepository` to perform operations on a specific entity.
-    Learn more about [MongoDB](../guides/2-mongodb.md).
+    Learn more about [MongoDB](../drivers/mongodb.md).
 
 ```typescript
 const userRepository = manager.getMongoRepository(User)

@@ -1,23 +1,24 @@
-import "reflect-metadata"
+import { expect } from "chai"
+import {
+    DataSource,
+    LockNotSupportedOnGivenDriverError,
+    NoVersionOrUpdateDateColumnError,
+    OptimisticLockCanNotBeUsedError,
+    OptimisticLockVersionMismatchError,
+    PessimisticLockTransactionRequiredError,
+} from "../../../../src/"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { VersionUtils } from "../../../../src/util/VersionUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
-import { PostWithVersion } from "./entity/PostWithVersion"
 import { Post } from "./entity/Post"
-import { expect } from "chai"
 import { PostWithoutVersionAndUpdateDate } from "./entity/PostWithoutVersionAndUpdateDate"
 import { PostWithUpdateDate } from "./entity/PostWithUpdateDate"
+import { PostWithVersion } from "./entity/PostWithVersion"
 import { PostWithVersionAndUpdatedDate } from "./entity/PostWithVersionAndUpdatedDate"
-import { OptimisticLockVersionMismatchError } from "../../../../src/error/OptimisticLockVersionMismatchError"
-import { OptimisticLockCanNotBeUsedError } from "../../../../src/error/OptimisticLockCanNotBeUsedError"
-import { NoVersionOrUpdateDateColumnError } from "../../../../src/error/NoVersionOrUpdateDateColumnError"
-import { PessimisticLockTransactionRequiredError } from "../../../../src/error/PessimisticLockTransactionRequiredError"
-import { LockNotSupportedOnGivenDriverError } from "../../../../src/error/LockNotSupportedOnGivenDriverError"
-import { VersionUtils } from "../../../../src/util/VersionUtils"
-import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > locking", () => {
     let connections: DataSource[]
@@ -379,7 +380,17 @@ describe("query builder > locking", () => {
                     .getSql()
 
                 if (DriverUtils.isMySQLFamily(connection.driver)) {
-                    expect(sql).to.contain("LOCK IN SHARE MODE")
+                    if (
+                        connection.driver.options.type === "mysql" &&
+                        DriverUtils.isReleaseVersionOrGreater(
+                            connection.driver,
+                            "8.0",
+                        )
+                    ) {
+                        expect(sql).to.contain("FOR SHARE")
+                    } else {
+                        expect(sql).to.contain("LOCK IN SHARE MODE")
+                    }
                 } else if (connection.driver.options.type === "postgres") {
                     expect(sql).to.contain("FOR SHARE")
                 } else if (connection.driver.options.type === "oracle") {

@@ -1,9 +1,4 @@
-import "../../../utils/test-setup"
-import {
-    closeTestingConnections,
-    createTestingConnections,
-    reloadTestingDatabases,
-} from "../../../utils/test-utils"
+import { expect } from "chai"
 import {
     DataSource,
     LockNotSupportedOnGivenDriverError,
@@ -13,13 +8,18 @@ import {
     PessimisticLockTransactionRequiredError,
     QueryRunner,
 } from "../../../../src"
-import { PostWithVersion } from "./entity/PostWithVersion"
-import { expect } from "chai"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import "../../../utils/test-setup"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import { Post } from "./entity/Post"
 import { PostWithoutVersionAndUpdateDate } from "./entity/PostWithoutVersionAndUpdateDate"
 import { PostWithUpdateDate } from "./entity/PostWithUpdateDate"
+import { PostWithVersion } from "./entity/PostWithVersion"
 import { PostWithVersionAndUpdatedDate } from "./entity/PostWithVersionAndUpdatedDate"
-import { Post } from "./entity/Post"
-import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("repository > find options > locking", () => {
     let connections: DataSource[]
@@ -147,7 +147,17 @@ describe("repository > find options > locking", () => {
                 })
 
                 if (DriverUtils.isMySQLFamily(connection.driver)) {
-                    expect(executedSql[0]).to.contain("LOCK IN SHARE MODE")
+                    if (
+                        connection.driver.options.type === "mysql" &&
+                        DriverUtils.isReleaseVersionOrGreater(
+                            connection.driver,
+                            "8.0",
+                        )
+                    ) {
+                        expect(executedSql[0]).to.contain("FOR SHARE")
+                    } else {
+                        expect(executedSql[0]).to.contain("LOCK IN SHARE MODE")
+                    }
                 } else if (connection.driver.options.type === "postgres") {
                     expect(executedSql[0]).to.contain("FOR SHARE")
                 } else if (connection.driver.options.type === "oracle") {
