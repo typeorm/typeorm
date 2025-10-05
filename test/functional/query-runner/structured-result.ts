@@ -6,7 +6,7 @@ import { expect } from "chai"
 import sinon from "sinon"
 import "reflect-metadata"
 
-describe("github issues > #11566 .query() useStructuredResult option", () => {
+describe(".query() useStructuredResult option", () => {
     let dataSource: DataSource
     let queryRunner: QueryRunner
     let manager: EntityManager
