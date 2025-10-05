@@ -287,7 +287,11 @@ export class CockroachQueryRunner
         const queryStartTime = Date.now()
 
         if (this.isTransactionActive && this.storeQueries) {
-            this.queries.push({ query, parameters })
+            this.queries.push({
+                query,
+                parameters,
+                options: optionsOrUseStructuredResult,
+            })
         }
 
         try {

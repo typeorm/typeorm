@@ -1,4 +1,4 @@
-import { QueryResult } from "../../../src"
+import { QueryOptions, QueryResult } from "../../../src"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { EntityManager } from "../../../src/entity-manager/EntityManager"
 import { QueryRunner } from "../../../src/query-runner/QueryRunner"
@@ -49,11 +49,15 @@ describe(".query() useStructuredResult option", () => {
                     async (
                         query: string,
                         parameters?: any[],
-                        useStructuredResult?: boolean,
+                        options?: QueryOptions | boolean,
                     ) => {
-                        if (useStructuredResult) {
+                        if (
+                            (typeof options === "boolean" && options) ||
+                            (options as QueryOptions)?.useStructuredResult
+                        ) {
                             return fakeResult
                         }
+
                         return [{ id: 1 }, { id: 2 }]
                     },
                 ),

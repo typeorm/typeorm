@@ -55,8 +55,8 @@ The low-level `query` method available on `DataSource`, `EntityManager`, and `Qu
 
 ```ts
 interface QueryOptions {
-    /** When true, the call returns a QueryResult object instead of the raw driver return. */
-    useStructuredResult?: boolean
+  /** When true, the call returns a QueryResult object instead of the raw driver return. */
+  useStructuredResult?: boolean
 }
 ```
 
