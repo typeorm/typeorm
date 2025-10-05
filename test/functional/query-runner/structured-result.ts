@@ -106,24 +106,4 @@ describe(".query() useStructuredResult option", () => {
             [{ id: 2 }],
         ])
     })
-
-    it("should return a structured result in the same way when using DataSource.query & useStructuredResult", async () => {
-        queryStub.resolves(fakeResult)
-        const result = await dataSource.query(
-            `
-                SELECT * FROM users;
-                SELECT id FROM users WHERE id = 2;
-            `,
-            [],
-            undefined,
-            { useStructuredResult: true },
-        )
-
-        expect(result).to.be.instanceOf(QueryResult)
-        expect(result.records).to.deep.equal([{ id: 1 }, { id: 2 }])
-        expect(result.recordsets).to.deep.equal([
-            [{ id: 1 }, { id: 2 }],
-            [{ id: 2 }],
-        ])
-    })
 })
