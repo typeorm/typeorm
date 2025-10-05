@@ -84,7 +84,12 @@ export default tseslint.config([
     },
 
     jsdoc({
-        config: 'flat/recommended-typescript', // change to 'flat/recommended-typescript-error' once warnings are fixed
+        config: "flat/recommended-typescript",
         files: ["src/**/*.ts"],
+        // Temporarily enable individual rules when they are fixed, until all current warnings are gone,
+        // and then remove manual config in favor of `config: "flat/recommended-typescript-error"`
+        rules: {
+            "jsdoc/valid-types": "error"
+        }
     }),
 ])

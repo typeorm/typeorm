@@ -2,6 +2,7 @@ import { themes as prismThemes } from "prism-react-renderer"
 import type { Config } from "@docusaurus/types"
 import type * as Preset from "@docusaurus/preset-classic"
 import { redirects } from "./redirects"
+import { LLMsTXTPluginOptions } from "@signalwire/docusaurus-plugin-llms-txt"
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -197,7 +198,33 @@ const config: Config = {
                 redirects,
             },
         ],
-        "@signalwire/docusaurus-plugin-llms-txt",
+        [
+            "@signalwire/docusaurus-plugin-llms-txt",
+            {
+                content: {
+                    // https://www.npmjs.com/package/@signalwire/docusaurus-plugin-llms-txt#content-selectors
+                    contentSelectors: [
+                        ".theme-doc-markdown", // Docusaurus main content area
+                        "main .container .col", // Bootstrap-style layout
+                        "main .theme-doc-wrapper", // Docusaurus wrapper
+                        "article", // Semantic article element
+                        "main .container", // Broader container
+                        "main", // Fallback to main element
+                        ".code-example",
+                    ],
+                    enableLlmsFullTxt: true,
+                    includeGeneratedIndex: false,
+                    includePages: true,
+                    includeVersionedDocs: false,
+                    relativePaths: false,
+                },
+                depth: 3,
+                onRouteError: "throw",
+                siteTitle: "TypeORM",
+                siteDescription:
+                    "TypeORM is an ORM that can run in NodeJS, Browser, Cordova, Ionic, React Native, NativeScript, Expo, and Electron platforms and can be used with TypeScript and JavaScript.",
+            } satisfies LLMsTXTPluginOptions,
+        ],
     ],
 }
 
