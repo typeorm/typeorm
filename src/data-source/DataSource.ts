@@ -562,14 +562,11 @@ export class DataSource {
         const usedQueryRunner = queryRunner || this.createQueryRunner()
 
         try {
-            // pass through options (or boolean via overload compatibility)
-            if (options?.useStructuredResult) {
-                return (await usedQueryRunner.query(query, parameters, {
-                    useStructuredResult: true,
-                })) as T
-            }
-
-            return (await usedQueryRunner.query(query, parameters)) as T
+            return (await usedQueryRunner.query(
+                query,
+                parameters,
+                options,
+            )) as T
         } finally {
             if (!queryRunner) await usedQueryRunner.release()
         }

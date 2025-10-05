@@ -62,7 +62,11 @@ export class CockroachQueryRunner
     /**
      * Stores all executed queries to be able to run them again if transaction fails.
      */
-    protected queries: { query: string; parameters?: any[] }[] = []
+    protected queries: {
+        query: string
+        parameters?: any[]
+        options?: QueryOptions | boolean
+    }[] = []
 
     /**
      * Indicates if running queries must be stored
@@ -370,7 +374,7 @@ export class CockroachQueryRunner
                         q.parameters,
                         this,
                     )
-                    result = await this.query(q.query, q.parameters)
+                    result = await this.query(q.query, q.parameters, q.options)
                 }
                 this.transactionRetries = 0
                 this.storeQueries = true

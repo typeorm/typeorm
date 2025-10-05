@@ -139,7 +139,6 @@ export interface QueryRunner {
         parameters: any[] | undefined,
         useStructuredResult: true,
     ): Promise<QueryResult<T>>
-
     /**
      * Tagged template function that executes raw SQL query and returns raw database results.
      * Template expressions are automatically transformed into database parameters.
