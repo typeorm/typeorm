@@ -43,24 +43,7 @@ describe(".query() useStructuredResult option", () => {
         })
         manager = {
             getRepository: sinon.stub(),
-            query: sinon
-                .stub()
-                .callsFake(
-                    async (
-                        query: string,
-                        parameters?: any[],
-                        options?: QueryOptions | boolean,
-                    ) => {
-                        if (
-                            (typeof options === "boolean" && options) ||
-                            (options as QueryOptions)?.useStructuredResult
-                        ) {
-                            return fakeResult
-                        }
-
-                        return [{ id: 1 }, { id: 2 }]
-                    },
-                ),
+            query: sinon.stub().resolves(fakeResult),
             transaction: async (fn: any) => fn(manager),
         } as any
         dataSource = Object.create(DataSource.prototype)
@@ -90,7 +73,7 @@ describe(".query() useStructuredResult option", () => {
 
     it("should default useStructuredResult to undefined if not provided", async () => {
         await dataSource.query("SELECT 1", [], queryRunner)
-        sinon.assert.calledWith(queryStub, "SELECT 1", [])
+        sinon.assert.calledWith(queryStub, "SELECT 1", [], undefined)
     })
 
     it("should return a structured result when useStructuredResult is true and multiple queries are defined", async () => {
