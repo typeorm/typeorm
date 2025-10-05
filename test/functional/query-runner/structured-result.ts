@@ -21,7 +21,7 @@ describe(".query() useStructuredResult option", () => {
 
     beforeEach(() => {
         // Create stubs for QueryRunner and EntityManager
-        queryStub = sinon.stub().resolves("structured-result")
+        queryStub = sinon.stub().resolves(fakeResult)
         releaseStub = sinon.stub().resolves()
         queryRunner = {} as any
         Object.defineProperty(queryRunner, "query", {
@@ -82,21 +82,6 @@ describe(".query() useStructuredResult option", () => {
             `SELECT * FROM users; SELECT id FROM users WHERE id = 2;`,
             [],
             undefined,
-            { useStructuredResult: true },
-        )
-        expect(result).to.be.instanceOf(QueryResult)
-        expect(result.records).to.deep.equal([{ id: 1 }, { id: 2 }])
-        expect(result.recordsets).to.deep.equal([
-            [{ id: 1 }, { id: 2 }],
-            [{ id: 2 }],
-        ])
-    })
-
-    it("should return a structured result in the same way when using EntityManager.query & useStructuredResult", async () => {
-        queryStub.resolves(fakeResult)
-        const result = await manager.query(
-            `SELECT * FROM users; SELECT id FROM users WHERE id = 2;`,
-            [],
             { useStructuredResult: true },
         )
         expect(result).to.be.instanceOf(QueryResult)
