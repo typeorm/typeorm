@@ -55,8 +55,8 @@ The low-level `query` method available on `DataSource`, `EntityManager`, and `Qu
 
 ```ts
 interface QueryOptions {
-	/** When true, the call returns a QueryResult object instead of the raw driver return. */
-	useStructuredResult?: boolean
+    /** When true, the call returns a QueryResult object instead of the raw driver return. */
+    useStructuredResult?: boolean
 }
 ```
 
@@ -68,9 +68,9 @@ const rows = await dataSource.query("SELECT * FROM users WHERE id = ?", [1])
 
 // Structured result
 const result = await dataSource.query(
-	"SELECT * FROM users WHERE id = ?",
-	[1],
-	{ useStructuredResult: true }
+  "SELECT * FROM users WHERE id = ?",
+  [1],
+  { useStructuredResult: true }
 )
 console.log(result.records) // same rows
 console.log(result.affected) // undefined for a SELECT
@@ -80,9 +80,9 @@ console.log(result.affected) // undefined for a SELECT
 
 ```ts
 const update = await manager.query(
-	"UPDATE user SET active = ? WHERE last_login < ?",
-	[false, cutoffDate],
-	{ useStructuredResult: true }
+    "UPDATE user SET active = ? WHERE last_login < ?",
+    [false, cutoffDate],
+    { useStructuredResult: true }
 )
 console.log(update.affected)
 ```
@@ -93,14 +93,14 @@ console.log(update.affected)
 const qr = dataSource.createQueryRunner()
 await qr.connect()
 try {
-	const del = await qr.query(
-		"DELETE FROM session WHERE expires_at < ?",
-		[new Date()],
-		{ useStructuredResult: true }
-	)
-	console.log(del.affected)
+    const del = await qr.query(
+        "DELETE FROM session WHERE expires_at < ?",
+        [new Date()],
+        { useStructuredResult: true }
+    )
+    console.log(del.affected)
 } finally {
-	await qr.release()
+  await qr.release()
 }
 ```
 
