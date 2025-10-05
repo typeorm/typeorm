@@ -229,9 +229,9 @@ Note that `getRawMany` also supports the use of `QueryOptions` to return a struc
 
 ```typescript
 const structured = await dataSource
-	.createQueryBuilder(User, "u")
-	.where("u.isActive = :active", { active: true })
-	.getRawMany({ useStructuredResult: true })
+    .createQueryBuilder(User, "u")
+    .where("u.isActive = :active", { active: true })
+    .getRawMany({ useStructuredResult: true })
 ```
 
 ## Getting a count
