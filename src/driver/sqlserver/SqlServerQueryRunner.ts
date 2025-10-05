@@ -292,6 +292,10 @@ export class SqlServerQueryRunner
                 result.records = raw.recordset
             }
 
+            if (raw?.hasOwnProperty("recordsets")) {
+                result.recordsets = raw.recordsets
+            }
+
             if (raw?.hasOwnProperty("rowsAffected")) {
                 result.affected = raw.rowsAffected[0]
             }
