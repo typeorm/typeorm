@@ -79,7 +79,9 @@ describe("github issues > #11566 .query() useStructuredResult option", () => {
         await dataSource.query("SELECT 1", [], queryRunner, {
             useStructuredResult: true,
         })
-        sinon.assert.calledWith(queryStub, "SELECT 1", [], true)
+        sinon.assert.calledWith(queryStub, "SELECT 1", [], {
+            useStructuredResult: true,
+        })
     })
 
     it("should default useStructuredResult to undefined if not provided", async () => {
