@@ -2605,6 +2605,23 @@ export class CockroachQueryRunner
             )
         }
 
+        if (!uniqueConstraint.name) {
+            const match = table.uniques.find((u) =>
+                OrmUtils.isArraysEqual(
+                    [...u.columnNames].sort((a, b) => a.localeCompare(b)),
+                    [...uniqueConstraint.columnNames].sort((a, b) =>
+                        a.localeCompare(b),
+                    ),
+                ),
+            )
+            uniqueConstraint.name =
+                match?.name ??
+                this.connection.namingStrategy.uniqueConstraintName(
+                    table,
+                    uniqueConstraint.columnNames,
+                )
+        }
+
         // CockroachDB creates index for UNIQUE constraint.
         // We must use DROP INDEX ... CASCADE instead of DROP CONSTRAINT.
         const up = this.dropIndexSql(table, uniqueConstraint, ifExists)
