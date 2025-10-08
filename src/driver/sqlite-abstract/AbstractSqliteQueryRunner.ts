@@ -911,9 +911,14 @@ export abstract class AbstractSqliteQueryRunner
 
         // clone original table and add unique constraints in to cloned table
         const changedTable = table.clone()
-        uniqueConstraints.forEach((uniqueConstraint) =>
-            changedTable.addUniqueConstraint(uniqueConstraint),
-        )
+        uniqueConstraints.forEach((uniqueConstraint) => {
+            uniqueConstraint.name ||=
+                this.connection.namingStrategy.uniqueConstraintName(
+                    table,
+                    uniqueConstraint.columnNames,
+                )
+            changedTable.addUniqueConstraint(uniqueConstraint)
+        })
         await this.recreateTable(changedTable, table)
     }
 
@@ -937,6 +942,23 @@ export abstract class AbstractSqliteQueryRunner
                 `Supplied unique constraint was not found in table ${table.name}`,
             )
 
+        if (!uniqueConstraint.name) {
+            const match = table.uniques.find((u) =>
+                OrmUtils.isArraysEqual(
+                    [...u.columnNames].sort((a, b) => a.localeCompare(b)),
+                    [...uniqueConstraint.columnNames].sort((a, b) =>
+                        a.localeCompare(b),
+                    ),
+                ),
+            )
+            uniqueConstraint.name =
+                match?.name ??
+                this.connection.namingStrategy.uniqueConstraintName(
+                    table,
+                    uniqueConstraint.columnNames,
+                )
+        }
+
         await this.dropUniqueConstraints(table, [uniqueConstraint])
     }
 
@@ -955,9 +977,14 @@ export abstract class AbstractSqliteQueryRunner
 
         // clone original table and remove unique constraints from cloned table
         const changedTable = table.clone()
-        uniqueConstraints.forEach((uniqueConstraint) =>
-            changedTable.removeUniqueConstraint(uniqueConstraint),
-        )
+        uniqueConstraints.forEach((uniqueConstraint) => {
+            uniqueConstraint.name ||=
+                this.connection.namingStrategy.uniqueConstraintName(
+                    table,
+                    uniqueConstraint.columnNames,
+                )
+            changedTable.removeUniqueConstraint(uniqueConstraint)
+        })
 
         await this.recreateTable(changedTable, table)
     }
@@ -1867,16 +1894,15 @@ export abstract class AbstractSqliteQueryRunner
         if (table.uniques.length > 0) {
             const uniquesSql = table.uniques
                 .map((unique) => {
-                    const uniqueName = unique.name
-                        ? unique.name
-                        : this.connection.namingStrategy.uniqueConstraintName(
-                              newTableName,
-                              unique.columnNames,
-                          )
+                    unique.name ||=
+                        this.connection.namingStrategy.uniqueConstraintName(
+                            newTableName,
+                            unique.columnNames,
+                        )
                     const columnNames = unique.columnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
-                    return `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`
+                    return `CONSTRAINT "${unique.name}" UNIQUE (${columnNames})`
                 })
                 .join(", ")
 
