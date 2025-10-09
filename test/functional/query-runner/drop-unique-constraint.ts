@@ -223,11 +223,22 @@ describe("query runner > drop unique constraint", () => {
                         unique,
                     )
 
-                    // Verify the unique constraint was created
-                    const updatedTable = await queryRunner.getTable(
+                    // Get the table with unique constraints
+                    const table = await queryRunner.getTable(
                         "test_drop_unnamed_unique",
                     )
-                    updatedTable!.uniques.length.should.be.equal(1)
+                    if (!table) {
+                        throw new Error("Test table not found")
+                    }
+
+                    // Find only our test unique constraints
+                    const testUniqueConstraints = table.uniques
+                    expect(testUniqueConstraints).to.have.length(
+                        1,
+                        `Should have 1 test unique constraint before dropping, found: ${testUniqueConstraints
+                            .map((uq) => uq.name)
+                            .join(", ")}`,
+                    )
 
                     // Drop the unique constraint without specifying the name
                     await queryRunner.dropUniqueConstraint(
@@ -235,12 +246,25 @@ describe("query runner > drop unique constraint", () => {
                         unique,
                     )
 
-                    // Verify the unique constraint was dropped
+                    // Verify all test unique constraints were dropped
                     const finalTable = await queryRunner.getTable(
                         "test_drop_unnamed_unique",
                     )
+                    if (!finalTable) {
+                        throw new Error("Final test table not found")
+                    }
+
+                    const remainingTestUniqueConstraints = finalTable.uniques
+
+                    expect(remainingTestUniqueConstraints).to.have.length(
+                        0,
+                        `All test unique constraints should be dropped, but found remaining: ${remainingTestUniqueConstraints
+                            .map((uq) => uq.name)
+                            .join(", ")}`,
+                    )
                     finalTable!.uniques.length.should.be.equal(0)
 
+                    // Clean up the test table
                     await queryRunner.dropTable("test_drop_unnamed_unique")
                 } finally {
                     await queryRunner.release()
