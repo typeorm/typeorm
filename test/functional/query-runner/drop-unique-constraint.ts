@@ -1,12 +1,12 @@
-import "reflect-metadata"
 import { expect } from "chai"
+import "reflect-metadata"
 import { DataSource, Table, TableColumn, TableUnique } from "../../../src"
+import { DriverUtils } from "../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > drop unique constraint", () => {
     let connections: DataSource[]
@@ -187,45 +187,52 @@ describe("query runner > drop unique constraint", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                await queryRunner.createTable(
-                    new Table({
-                        name: "test_drop_unnamed_unique",
-                        columns: [
-                            new TableColumn({
-                                name: "id",
-                                type: DriverUtils.isSQLiteFamily(
-                                    connection.driver,
-                                )
-                                    ? "integer"
-                                    : "int",
-                                isPrimary: true,
-                                isGenerated: true,
-                                generationStrategy: "increment",
-                            }),
-                            new TableColumn({
-                                name: "unique_col_1",
-                                type: "varchar",
-                                length: "100",
-                                isNullable: true,
-                            }),
-                        ],
-                    }),
-                    true,
-                )
+                try {
+                    await queryRunner.createTable(
+                        new Table({
+                            name: "test_drop_unnamed_unique",
+                            columns: [
+                                new TableColumn({
+                                    name: "id",
+                                    type: DriverUtils.isSQLiteFamily(
+                                        connection.driver,
+                                    )
+                                        ? "integer"
+                                        : "int",
+                                    isPrimary: true,
+                                    isGenerated: true,
+                                    generationStrategy: "increment",
+                                }),
+                                new TableColumn({
+                                    name: "unique_col_1",
+                                    type: "varchar",
+                                    length: "100",
+                                    isNullable: true,
+                                }),
+                            ],
+                        }),
+                        true,
+                    )
 
-                const unique = new TableUnique({ columnNames: ["unique_col_1"] })
-                await queryRunner.createUniqueConstraint("test_drop_unnamed_unique", unique)
+                    // Create a unique constraint without a name
+                    const unique = new TableUnique({ columnNames: ["unique_col_1"] })
+                    await queryRunner.createUniqueConstraint("test_drop_unnamed_unique", unique)
 
-                const updatedTable = await queryRunner.getTable("test_drop_unnamed_unique")
-                updatedTable!.uniques.length.should.be.equal(1)
+                    // Verify the unique constraint was created
+                    const updatedTable = await queryRunner.getTable("test_drop_unnamed_unique")
+                    updatedTable!.uniques.length.should.be.equal(1)
 
-                await queryRunner.dropUniqueConstraint("test_drop_unnamed_unique", unique)
+                    // Drop the unique constraint without specifying the name
+                    await queryRunner.dropUniqueConstraint("test_drop_unnamed_unique", unique)
 
-                const finalTable = await queryRunner.getTable("test_drop_unnamed_unique")
-                finalTable!.uniques.length.should.be.equal(0)
+                    // Verify the unique constraint was dropped
+                    const finalTable = await queryRunner.getTable("test_drop_unnamed_unique")
+                    finalTable!.uniques.length.should.be.equal(0)
 
-                await queryRunner.dropTable("test_drop_unnamed_unique")
-                await queryRunner.release()
+                    await queryRunner.dropTable("test_drop_unnamed_unique")
+                } finally {
+                    await queryRunner.release()
+                }
             }),
         ))
 })
