@@ -215,18 +215,30 @@ describe("query runner > drop unique constraint", () => {
                     )
 
                     // Create a unique constraint without a name
-                    const unique = new TableUnique({ columnNames: ["unique_col_1"] })
-                    await queryRunner.createUniqueConstraint("test_drop_unnamed_unique", unique)
+                    const unique = new TableUnique({
+                        columnNames: ["unique_col_1"],
+                    })
+                    await queryRunner.createUniqueConstraint(
+                        "test_drop_unnamed_unique",
+                        unique,
+                    )
 
                     // Verify the unique constraint was created
-                    const updatedTable = await queryRunner.getTable("test_drop_unnamed_unique")
+                    const updatedTable = await queryRunner.getTable(
+                        "test_drop_unnamed_unique",
+                    )
                     updatedTable!.uniques.length.should.be.equal(1)
 
                     // Drop the unique constraint without specifying the name
-                    await queryRunner.dropUniqueConstraint("test_drop_unnamed_unique", unique)
+                    await queryRunner.dropUniqueConstraint(
+                        "test_drop_unnamed_unique",
+                        unique,
+                    )
 
                     // Verify the unique constraint was dropped
-                    const finalTable = await queryRunner.getTable("test_drop_unnamed_unique")
+                    const finalTable = await queryRunner.getTable(
+                        "test_drop_unnamed_unique",
+                    )
                     finalTable!.uniques.length.should.be.equal(0)
 
                     await queryRunner.dropTable("test_drop_unnamed_unique")
