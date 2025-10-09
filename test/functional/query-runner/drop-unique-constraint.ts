@@ -191,14 +191,29 @@ describe("query runner > drop unique constraint", () => {
                     new Table({
                         name: "test_drop_unnamed_unique",
                         columns: [
-                            new TableColumn({ name: "id", type: "int", isPrimary: true }),
-                            new TableColumn({ name: "col", type: "varchar" }),
+                            new TableColumn({
+                                name: "id",
+                                type: DriverUtils.isSQLiteFamily(
+                                    connection.driver,
+                                )
+                                    ? "integer"
+                                    : "int",
+                                isPrimary: true,
+                                isGenerated: true,
+                                generationStrategy: "increment",
+                            }),
+                            new TableColumn({
+                                name: "unique_col_1",
+                                type: "varchar",
+                                length: "100",
+                                isNullable: true,
+                            }),
                         ],
                     }),
                     true,
                 )
 
-                const unique = new TableUnique({ columnNames: ["col"] })
+                const unique = new TableUnique({ columnNames: ["unique_col_1"] })
                 await queryRunner.createUniqueConstraint("test_drop_unnamed_unique", unique)
 
                 const updatedTable = await queryRunner.getTable("test_drop_unnamed_unique")
