@@ -182,4 +182,35 @@ describe("query runner > drop unique constraint", () => {
                 }
             }),
         ))
+
+    it("should handle dropping unique constraint without a name", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const queryRunner = connection.createQueryRunner()
+                await queryRunner.createTable(
+                    new Table({
+                        name: "test_drop_unnamed_unique",
+                        columns: [
+                            new TableColumn({ name: "id", type: "int", isPrimary: true }),
+                            new TableColumn({ name: "col", type: "varchar" }),
+                        ],
+                    }),
+                    true,
+                )
+
+                const unique = new TableUnique({ columnNames: ["col"] })
+                await queryRunner.createUniqueConstraint("test_drop_unnamed_unique", unique)
+
+                const updatedTable = await queryRunner.getTable("test_drop_unnamed_unique")
+                updatedTable!.uniques.length.should.be.equal(1)
+
+                await queryRunner.dropUniqueConstraint("test_drop_unnamed_unique", unique)
+
+                const finalTable = await queryRunner.getTable("test_drop_unnamed_unique")
+                finalTable!.uniques.length.should.be.equal(0)
+
+                await queryRunner.dropTable("test_drop_unnamed_unique")
+                await queryRunner.release()
+            }),
+        ))
 })
