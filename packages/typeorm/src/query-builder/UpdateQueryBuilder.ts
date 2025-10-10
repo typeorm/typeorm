@@ -18,6 +18,8 @@ import { TypeORMError } from "../error"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { DriverUtils } from "../driver/DriverUtils"
+import { EntityTarget } from "../common/EntityTarget"
+import { FromOnUpdateNotSupportedError } from "../error/FromOnUpdateNotSupportedError"
 import { isUint8Array } from "../util/Uint8ArrayUtils"
 import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
 import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
@@ -208,6 +210,36 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     set(values: QueryDeepPartialEntity<Entity>): this {
         this.expressionMap.valuesSet = values
         return this
+    }
+
+    /**
+     * Specifies additional FROMs for update query.
+     */
+    from<T extends ObjectLiteral>(
+        entityTarget:
+            | EntityTarget<T>
+            | ((qb: UpdateQueryBuilder<any>) => UpdateQueryBuilder<any>),
+        aliasName: string,
+    ): UpdateQueryBuilder<T> {
+        if (this.connection.driver.isUpdateFromSqlSupported()) {
+            this.createFromAlias(entityTarget, aliasName)
+
+            return this as any as UpdateQueryBuilder<T>
+        } else {
+            throw new FromOnUpdateNotSupportedError()
+        }
+    }
+
+    /**
+     * Specifies additional FROMs for update query.
+     */
+    addFrom<T extends ObjectLiteral>(
+        entityTarget:
+            | EntityTarget<T>
+            | ((qb: UpdateQueryBuilder<any>) => UpdateQueryBuilder<any>),
+        aliasName: string,
+    ): UpdateQueryBuilder<T> {
+        return this.from(entityTarget, aliasName)
     }
 
     /**
@@ -731,6 +763,26 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             throw new UpdateValuesMissingError()
         }
 
+        const froms = this.expressionMap.aliases
+            .filter(
+                (alias) =>
+                    this.expressionMap.mainAlias !== alias &&
+                    alias.type === "from" &&
+                    (alias.tablePath || alias.subQuery),
+            )
+            .map((alias) => {
+                if (alias.subQuery)
+                    return alias.subQuery + " " + this.escape(alias.name)
+
+                return (
+                    this.getTableName(alias.tablePath!) +
+                    " " +
+                    this.escape(alias.name)
+                )
+            })
+
+        const fromExpression = froms.length ? " FROM " + froms.join(", ") : ""
+
         // get a table name and all column database names
         const whereExpression = this.createWhereExpression()
         const returningExpression = this.createReturningExpression("update")
@@ -738,7 +790,9 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         if (returningExpression === "") {
             return `UPDATE ${this.getTableName(
                 this.getMainTableName(),
-            )} SET ${updateColumnAndValues.join(", ")}${whereExpression}` // todo: how do we replace aliases in where to nothing?
+            )} SET ${updateColumnAndValues.join(
+                ", ",
+            )}${fromExpression}${whereExpression}` // todo: how do we replace aliases in where to nothing?
         }
         if (this.dataSource.driver.options.type === "mssql") {
             return `UPDATE ${this.getTableName(
@@ -752,7 +806,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 this.getMainTableName(),
             )} SET ${updateColumnAndValues.join(
                 ", ",
-            )}${whereExpression} THEN RETURN ${returningExpression}`
+            )}${fromExpression}${whereExpression} THEN RETURN ${returningExpression}`
         }
 
         return `UPDATE ${this.getTableName(
