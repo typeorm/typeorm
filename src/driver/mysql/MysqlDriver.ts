@@ -1150,6 +1150,13 @@ export class MysqlDriver implements Driver {
     }
 
     /**
+     * Returns true if driver supports UPDATE FROM statement.
+     */
+    isUpdateFromSqlSupported(): boolean {
+        return false
+    }
+
+    /**
      * Returns true if driver supports uuid values generation on its own.
      */
     isUUIDGenerationSupported(): boolean {

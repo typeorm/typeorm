@@ -269,6 +269,11 @@ export interface Driver {
     isReturningSqlSupported(returningType: ReturningType): boolean
 
     /**
+     * Returns true if driver supports UPDATE FROM statement.
+     */
+    isUpdateFromSqlSupported(): boolean
+
+    /**
      * Returns true if driver supports uuid values generation on its own.
      */
     isUUIDGenerationSupported(): boolean

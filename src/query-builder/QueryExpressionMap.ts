@@ -398,10 +398,6 @@ export class QueryExpressionMap {
      * Creates a main alias and adds it to the current expression map.
      */
     setMainAlias(alias: Alias): Alias {
-        // if main alias is already set then remove it from the array
-        // if (this.mainAlias)
-        //     this.aliases.splice(this.aliases.indexOf(this.mainAlias));
-
         // set new main alias
         this.mainAlias = alias
 
@@ -437,6 +433,15 @@ export class QueryExpressionMap {
 
         this.aliases.push(alias)
         return alias
+    }
+
+    /**
+     * Removes alias from expression map.
+     */
+    removeAlias(alias?: Alias) {
+        if (alias) {
+            this.aliases = this.aliases.filter((alias0) => alias0 !== alias)
+        }
     }
 
     /**
@@ -493,9 +498,17 @@ export class QueryExpressionMap {
         map.maxExecutionTime = this.maxExecutionTime
         map.selectDistinct = this.selectDistinct
         map.selectDistinctOn = this.selectDistinctOn
-        this.aliases.forEach((alias) => map.aliases.push(new Alias(alias)))
+        map.aliases = this.aliases.map((alias) => {
+            const newAlias = new Alias(alias)
+            if (this.mainAlias === alias) {
+                map.mainAlias = newAlias
+            }
+            return newAlias
+        })
         map.relationLoadStrategy = this.relationLoadStrategy
-        map.mainAlias = this.mainAlias
+        if (!map.mainAlias) {
+            map.mainAlias = this.mainAlias
+        }
         map.valuesSet = this.valuesSet
         map.returning = this.returning
         map.onConflict = this.onConflict

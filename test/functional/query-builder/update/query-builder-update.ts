@@ -7,11 +7,13 @@ import {
 } from "../../../utils/test-utils"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
+import { UserNameMap } from "./entity/UserNameMap"
 import { LimitOnUpdateNotSupportedError } from "../../../../src/error/LimitOnUpdateNotSupportedError"
 import { Photo } from "./entity/Photo"
 import { UpdateValuesMissingError } from "../../../../src/error/UpdateValuesMissingError"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { FromOnUpdateNotSupportedError } from "../../../../src/error/FromOnUpdateNotSupportedError"
 
 describe("query builder > update", () => {
     let connections: DataSource[]
@@ -311,6 +313,63 @@ describe("query builder > update", () => {
                     error = err
                 }
                 expect(error).to.be.an.instanceof(EntityPropertyNotFoundError)
+            }),
+        ))
+
+    it("should perform update with from correctly", async () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const oldNames = ["Ezekiel Riley", "Neo Ward", "Charis Orozco"]
+                const newNames = ["Jimmy Hanson", "Georgiana Cordova"]
+
+                for (const name of oldNames) {
+                    const user = new User()
+                    user.name = name
+
+                    await connection.manager.save(user)
+                }
+
+                for (let i = 0; i < newNames.length; i++) {
+                    const userNameMap = new UserNameMap()
+                    userNameMap.newName = newNames[i]
+                    userNameMap.oldName = oldNames[i]
+
+                    await connection.manager.save(userNameMap)
+                }
+
+                try {
+                    await connection
+                        .createQueryBuilder()
+                        .update(User)
+                        .set({ name: () => 'um."newName"' })
+                        .from(UserNameMap, "um")
+                        .where('name = um."oldName"')
+                        .execute()
+
+                    const res = await connection.getRepository(User).find({
+                        order: {
+                            id: "ASC",
+                        },
+                    })
+
+                    expect(res.map((user) => user.name)).to.be.deep.equal([
+                        "Jimmy Hanson",
+                        "Georgiana Cordova",
+                        "Charis Orozco",
+                    ])
+                } catch (error) {
+                    if (
+                        !(
+                            DriverUtils.isPostgresFamily(connection.driver) ||
+                            DriverUtils.isSQLiteFamily(connection.driver) ||
+                            connection.driver.options.type === "mssql"
+                        )
+                    ) {
+                        expect(error).instanceOf(FromOnUpdateNotSupportedError)
+                    } else {
+                        throw error
+                    }
+                }
             }),
         ))
 })
