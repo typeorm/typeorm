@@ -666,44 +666,44 @@ export class DataSource {
         const metadataFromMap = this.entityMetadatasMap.get(target)
         if (metadataFromMap) return metadataFromMap
 
-        for (const [_, metadata] of this.entityMetadatasMap) {
-            if (
-                InstanceChecker.isEntitySchema(target) &&
-                metadata.name === target.options.name
-            ) {
-                return metadata
+        const findMatching = (
+            predicate: (metadata: EntityMetadata) => boolean,
+        ): EntityMetadata | undefined => {
+            let junctionCandidate: EntityMetadata | undefined
+            for (const [, metadata] of this.entityMetadatasMap) {
+                if (!predicate(metadata)) continue
+                if (!metadata.isJunction) return metadata
+                if (!junctionCandidate) junctionCandidate = metadata
             }
-            if (typeof target === "string") {
-                if (target.indexOf(".") !== -1) {
-                    if (metadata.tablePath === target) {
-                        return metadata
-                    }
-                } else {
-                    if (
-                        metadata.name === target ||
-                        metadata.tableName === target
-                    ) {
-                        return metadata
-                    }
-                }
-            }
-            if (
-                ObjectUtils.isObjectWithName(target) &&
-                typeof target.name === "string"
-            ) {
-                if (target.name.indexOf(".") !== -1) {
-                    if (metadata.tablePath === target.name) {
-                        return metadata
-                    }
-                } else {
-                    if (
-                        metadata.name === target.name ||
-                        metadata.tableName === target.name
-                    ) {
-                        return metadata
-                    }
-                }
-            }
+            return junctionCandidate
+        }
+
+        if (InstanceChecker.isEntitySchema(target)) {
+            return findMatching(
+                (metadata) => metadata.name === target.options.name,
+            )
+        }
+
+        if (typeof target === "string") {
+            const hasSchema = target.indexOf(".") !== -1
+            return findMatching((metadata) =>
+                hasSchema
+                    ? metadata.tablePath === target
+                    : metadata.name === target || metadata.tableName === target,
+            )
+        }
+
+        if (
+            ObjectUtils.isObjectWithName(target) &&
+            typeof target.name === "string"
+        ) {
+            const hasSchema = target.name.indexOf(".") !== -1
+            return findMatching((metadata) =>
+                hasSchema
+                    ? metadata.tablePath === target.name
+                    : metadata.name === target.name ||
+                      metadata.tableName === target.name,
+            )
         }
 
         return undefined
@@ -733,11 +733,22 @@ export class DataSource {
             await connectionMetadataBuilder.buildEntityMetadatas(
                 flattenedEntities,
             )
+        const entityMetadatasMap = new Map<EntityTarget<any>, EntityMetadata>()
+        for (const metadata of entityMetadatas) {
+            const existing = entityMetadatasMap.get(metadata.target)
+            if (!existing) {
+                entityMetadatasMap.set(metadata.target, metadata)
+                continue
+            }
+
+            if (existing.isJunction && !metadata.isJunction) {
+                entityMetadatasMap.set(metadata.target, metadata)
+            }
+        }
+
         ObjectUtils.assign(this, {
             entityMetadatas: entityMetadatas,
-            entityMetadatasMap: new Map(
-                entityMetadatas.map((metadata) => [metadata.target, metadata]),
-            ),
+            entityMetadatasMap,
         })
 
         // create migration instances
