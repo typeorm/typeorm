@@ -3186,6 +3186,26 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             sql += `, ${foreignKeysSql}`
         }
 
+        if (
+            this.driver.isCheckConstraintsSupported &&
+            table.checks &&
+            table.checks.length > 0
+        ) {
+            const checksSql = table.checks
+                .filter(check => !!check.expression)
+                .map((check) => {
+                    const checkName = check.name
+                        ? check.name
+                        : this.connection.namingStrategy.checkConstraintName(
+                              table,
+                              check.expression!,
+                          )
+                    return `CONSTRAINT \`${checkName}\` CHECK (${check.expression})`
+                })
+                .join(", ")
+            sql += `, ${checksSql}`
+        }
+
         if (table.primaryColumns.length > 0) {
             const columnNames = table.primaryColumns
                 .map((column) => `\`${column.name}\``)
