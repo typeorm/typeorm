@@ -3192,7 +3192,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             table.checks.length > 0
         ) {
             const checksSql = table.checks
-                .filter(check => !!check.expression)
+                .filter((check) => !!check.expression)
                 .map((check) => {
                     const checkName = check.name
                         ? check.name
