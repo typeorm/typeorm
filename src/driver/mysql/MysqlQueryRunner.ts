@@ -2600,6 +2600,21 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     \`rc\`.\`CONSTRAINT_NAME\` = \`kcu\`.\`CONSTRAINT_NAME\`
             `
 
+        const checksSubquerySql = dbTables
+            .map(({ TABLE_SCHEMA, TABLE_NAME }) => {
+                return `
+                SELECT tc.TABLE_SCHEMA, tc.TABLE_NAME, tc.CONSTRAINT_NAME, cc.CHECK_CLAUSE
+                FROM information_schema.TABLE_CONSTRAINTS tc
+                INNER JOIN information_schema.CHECK_CONSTRAINTS cc
+                    ON cc.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+                    AND cc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+                WHERE tc.TABLE_SCHEMA = '${TABLE_SCHEMA}'
+                    AND tc.TABLE_NAME = '${TABLE_NAME}'
+                    AND tc.CONSTRAINT_TYPE = 'CHECK'
+                `
+            })
+            .join(" UNION ")
+
         const [
             dbColumns,
             dbPrimaryKeys,
@@ -2614,14 +2629,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             this.query(indicesSql),
             this.query(foreignKeysSql),
             this.driver.isCheckConstraintsSupported
-                ? this.query(`
-                    SELECT tc.TABLE_SCHEMA, tc.TABLE_NAME, tc.CONSTRAINT_NAME, cc.CHECK_CLAUSE
-                    FROM information_schema.TABLE_CONSTRAINTS tc
-                    INNER JOIN information_schema.CHECK_CONSTRAINTS cc
-                        ON cc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
-                        AND cc.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
-                    WHERE tc.CONSTRAINT_TYPE = 'CHECK'
-                `)
+                ? this.query(checksSubquerySql)
                 : Promise.resolve([]),
         ])
 
