@@ -2024,7 +2024,27 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         checkConstraint: TableCheck,
     ): Promise<void> {
-        throw new TypeORMError(`MySql does not support check constraints.`)
+        if (!this.driver.isCheckConstraintsSupported) {
+            throw new TypeORMError(
+                `MySql version does not support check constraints.`,
+            )
+        }
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+
+        if (!checkConstraint.name) {
+            checkConstraint.name =
+                this.connection.namingStrategy.checkConstraintName(
+                    table,
+                    checkConstraint.expression!,
+                )
+        }
+
+        const up = this.createCheckConstraintSql(table, checkConstraint)
+        const down = this.dropCheckConstraintSql(table, checkConstraint)
+        await this.executeQueries(up, down)
+        table.addCheckConstraint(checkConstraint)
     }
 
     /**
@@ -2034,7 +2054,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
     ): Promise<void> {
-        throw new TypeORMError(`MySql does not support check constraints.`)
+        if (!this.driver.isCheckConstraintsSupported) {
+            throw new TypeORMError(
+                `MySql version does not support check constraints.`,
+            )
+        }
+        const promises = checkConstraints.map((checkConstraint) =>
+            this.createCheckConstraint(tableOrName, checkConstraint),
+        )
+        await Promise.all(promises)
     }
 
     /**
@@ -2044,7 +2072,26 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         checkOrName: TableCheck | string,
     ): Promise<void> {
-        throw new TypeORMError(`MySql does not support check constraints.`)
+        if (!this.driver.isCheckConstraintsSupported) {
+            throw new TypeORMError(
+                `MySql version does not support check constraints.`,
+            )
+        }
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const checkConstraint = InstanceChecker.isTableCheck(checkOrName)
+            ? checkOrName
+            : table.checks.find((c) => c.name === checkOrName)
+        if (!checkConstraint)
+            throw new TypeORMError(
+                `Supplied check constraint was not found in table ${table.name}`,
+            )
+
+        const up = this.dropCheckConstraintSql(table, checkConstraint)
+        const down = this.createCheckConstraintSql(table, checkConstraint)
+        await this.executeQueries(up, down)
+        table.removeCheckConstraint(checkConstraint)
     }
 
     /**
@@ -2054,7 +2101,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
     ): Promise<void> {
-        throw new TypeORMError(`MySql does not support check constraints.`)
+        if (!this.driver.isCheckConstraintsSupported) {
+            throw new TypeORMError(
+                `MySql version does not support check constraints.`,
+            )
+        }
+        const promises = checkConstraints.map((checkConstraint) =>
+            this.dropCheckConstraint(tableOrName, checkConstraint),
+        )
+        await Promise.all(promises)
     }
 
     /**
@@ -2551,12 +2606,22 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             dbCollations,
             dbIndices,
             dbForeignKeys,
+            dbChecks,
         ]: ObjectLiteral[][] = await Promise.all([
             this.query(columnsSql),
             this.query(primaryKeySql),
             this.query(collationsSql),
             this.query(indicesSql),
             this.query(foreignKeysSql),
+            this.driver.isCheckConstraintsSupported
+                ? this.query(`
+                    SELECT tc.TABLE_SCHEMA, tc.TABLE_NAME, tc.CONSTRAINT_NAME, cc.CHECK_CLAUSE
+                    FROM information_schema.TABLE_CONSTRAINTS tc
+                    INNER JOIN information_schema.CHECK_CONSTRAINTS cc
+                        ON cc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+                    WHERE tc.CONSTRAINT_TYPE = 'CHECK'
+                `)
+                : Promise.resolve([]),
         ])
 
         const isMariaDb = this.driver.options.type === "mariadb"
@@ -2973,6 +3038,21 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                 table.comment = dbTable["TABLE_COMMENT"]
 
+                if (this.driver.isCheckConstraintsSupported) {
+                    const tableChecks = dbChecks.filter(
+                        (c) =>
+                            c["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                            c["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"],
+                    )
+                    table.checks = tableChecks.map(
+                        (c) =>
+                            new TableCheck({
+                                name: c["CONSTRAINT_NAME"],
+                                expression: c["CHECK_CLAUSE"],
+                            }),
+                    )
+                }
+
                 return table
             }),
         )
@@ -3275,6 +3355,43 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             `ALTER TABLE ${this.escapePath(
                 table,
             )} DROP FOREIGN KEY \`${foreignKeyName}\``,
+        )
+    }
+
+    /**
+     * Builds create check constraint sql.
+     * @param table The table.
+     * @param checkConstraint The check constraint metadata.
+     * @returns Query to create the check constraint.
+     */
+    protected createCheckConstraintSql(
+        table: Table,
+        checkConstraint: TableCheck,
+    ): Query {
+        return new Query(
+            `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT \`${
+                checkConstraint.name
+            }\` CHECK (${checkConstraint.expression})`,
+        )
+    }
+
+    /**
+     * Builds drop check constraint sql.
+     * @param table The table.
+     * @param checkOrName The check constraint object or its name.
+     * @returns Query to drop the check constraint.
+     */
+    protected dropCheckConstraintSql(
+        table: Table,
+        checkOrName: TableCheck | string,
+    ): Query {
+        const checkName = InstanceChecker.isTableCheck(checkOrName)
+            ? checkOrName.name
+            : checkOrName
+        return new Query(
+            `ALTER TABLE ${this.escapePath(
+                table,
+            )} DROP CONSTRAINT \`${checkName}\``,
         )
     }
 

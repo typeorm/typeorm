@@ -77,6 +77,11 @@ export class MysqlDriver implements Driver {
     version?: string
 
     /**
+     * Indicates if CHECK constraints are fully supported (MySQL >= 8.0.16).
+     */
+    isCheckConstraintsSupported: boolean = false
+
+    /**
      * Master database used to perform all write queries.
      */
     database?: string
@@ -414,6 +419,9 @@ export class MysqlDriver implements Driver {
         } else if (this.options.type === "mysql") {
             if (VersionUtils.isGreaterOrEqual(this.version, "8.0.0")) {
                 this.cteCapabilities.enabled = true
+            }
+            if (VersionUtils.isGreaterOrEqual(this.version, "8.0.21")) {
+                this.isCheckConstraintsSupported = true
             }
         }
     }

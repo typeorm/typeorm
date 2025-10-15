@@ -496,9 +496,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     protected async dropOldChecks(): Promise<void> {
-        // Mysql does not support check constraints
         if (
-            DriverUtils.isMySQLFamily(this.connection.driver) ||
+            (DriverUtils.isMySQLFamily(this.connection.driver) &&
+                !this.connection.driver.isCheckConstraintsSupported) ||
             this.connection.driver.options.type === "aurora-mysql"
         )
             return
@@ -1056,9 +1056,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     protected async createNewChecks(): Promise<void> {
-        // Mysql does not support check constraints
         if (
-            DriverUtils.isMySQLFamily(this.connection.driver) ||
+            (DriverUtils.isMySQLFamily(this.connection.driver) &&
+                !this.connection.driver.isCheckConstraintsSupported) ||
             this.connection.driver.options.type === "aurora-mysql"
         )
             return

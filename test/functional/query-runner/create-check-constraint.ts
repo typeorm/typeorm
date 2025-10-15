@@ -23,8 +23,11 @@ describe("query runner > create check constraint", () => {
     it("should correctly create check constraint and revert creation", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // Mysql does not support check constraints.
-                if (DriverUtils.isMySQLFamily(connection.driver)) return
+                if (
+                    DriverUtils.isMySQLFamily(connection.driver) &&
+                    !connection.driver.isCheckConstraintsSupported
+                )
+                    return
 
                 let numericType = "int"
                 if (DriverUtils.isSQLiteFamily(connection.driver)) {
