@@ -666,6 +666,13 @@ export class DataSource {
         const metadataFromMap = this.entityMetadatasMap.get(target)
         if (metadataFromMap) return metadataFromMap
 
+        /**
+         * Sharing table names between user entities and auto-created junctions is
+         * perfectly legal, but it means lookups can produce more than one match.
+         * This helper makes sure we hand back the user-defined metadata whenever
+         * it is available, falling back to the junction metadata only when it is
+         * the sole candidate left.
+         */
         const findMatching = (
             predicate: (metadata: EntityMetadata) => boolean,
         ): EntityMetadata | undefined => {
@@ -741,6 +748,12 @@ export class DataSource {
                 continue
             }
 
+            /**
+             * Auto-generated junction metadata can appear alongside the user's
+             * entity that describes the same table. We keep the user metadata so
+             * that relation discovery, repositories, and other consumers continue
+             * to “see” the richer definition instead of the synthetic junction.
+             */
             if (existing.isJunction && !metadata.isJunction) {
                 entityMetadatasMap.set(metadata.target, metadata)
             }
