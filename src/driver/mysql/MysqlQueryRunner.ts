@@ -2619,6 +2619,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     FROM information_schema.TABLE_CONSTRAINTS tc
                     INNER JOIN information_schema.CHECK_CONSTRAINTS cc
                         ON cc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+                        AND cc.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
                     WHERE tc.CONSTRAINT_TYPE = 'CHECK'
                 `)
                 : Promise.resolve([]),
