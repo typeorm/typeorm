@@ -420,7 +420,7 @@ export class MysqlDriver implements Driver {
             if (VersionUtils.isGreaterOrEqual(this.version, "8.0.0")) {
                 this.cteCapabilities.enabled = true
             }
-            if (VersionUtils.isGreaterOrEqual(this.version, "8.0.21")) {
+            if (VersionUtils.isGreaterOrEqual(this.version, "8.0.16")) {
                 this.isCheckConstraintsSupported = true
             }
         }
