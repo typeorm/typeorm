@@ -10,8 +10,7 @@ import {
 @Entity()
 @Unique(["text", "tag"])
 @Exclusion(`USING gist ("name" WITH =)`)
-@Check(`"version" < 999`) // should be properly escaped for each driver.
-// @Check(`\`version\` < 999`) // should be properly escaped for each driver.
+@Check(`version < 999`)
 export class Post {
     @PrimaryColumn()
     id: number
