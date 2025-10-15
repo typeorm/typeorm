@@ -416,6 +416,9 @@ export class MysqlDriver implements Driver {
             if (VersionUtils.isGreaterOrEqual(this.version, "10.7.0")) {
                 this.uuidColumnTypeSuported = true
             }
+            if (VersionUtils.isGreaterOrEqual(this.version, "10.2.1")) {
+                this.isCheckConstraintsSupported = true
+            }
         } else if (this.options.type === "mysql") {
             if (VersionUtils.isGreaterOrEqual(this.version, "8.0.0")) {
                 this.cteCapabilities.enabled = true
