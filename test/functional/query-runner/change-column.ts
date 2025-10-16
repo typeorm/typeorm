@@ -15,8 +15,8 @@ describe("query runner > change column", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [
-                __dirname + "/entity/:driver:/*{.js,.ts}",
                 __dirname + "/entity/common/*{.js,.ts}",
+                __dirname + "/entity/:driver:/*{.js,.ts}",
             ],
             schemaCreate: true,
             dropSchema: true,

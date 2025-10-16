@@ -8,7 +8,7 @@ import {
 
 @Entity()
 @Unique(["text", "tag"])
-@Check(`"version" < 999`)
+@Check(`[version] < 999`)
 export class Post {
     @PrimaryColumn()
     id: number

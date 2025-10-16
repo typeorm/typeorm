@@ -6,7 +6,7 @@ import { Check } from "../../../../../src/decorator/Check"
 
 @Entity()
 @Unique(["text", "tag"])
-@Check(`"likesCount" < 1000`)
+@Check(`[likesCount] < 1000`)
 export class Post {
     @PrimaryColumn()
     id: number

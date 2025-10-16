@@ -7,7 +7,6 @@ import {
 
 @Entity()
 @Unique(["text", "tag"])
-// MongoDB does not support CHECK constraints; @Check omitted intentionally.
 export class Post {
     @PrimaryColumn()
     id: number

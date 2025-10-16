@@ -1,7 +1,7 @@
 import { Entity } from "../../../../../src/decorator/entity/Entity"
 import { Column } from "../../../../../src/decorator/columns/Column"
 import { ManyToOne } from "../../../../../src/decorator/relations/ManyToOne"
-import { JoinColumn } from "../../../../../src"
+import { JoinColumn } from "../../../../../src/decorator/relations/JoinColumn"
 import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
 import { Post } from "./Post"
 

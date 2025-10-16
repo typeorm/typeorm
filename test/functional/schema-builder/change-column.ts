@@ -443,7 +443,7 @@ describe("schema builder > change column", () => {
                     version: "5",
                     text: "a",
                     tag: "b",
-                    likesCount: 1001,
+                    likesCount: 45,
                 })
 
                 const post = await connection
