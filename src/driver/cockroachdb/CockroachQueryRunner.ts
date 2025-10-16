@@ -2499,6 +2499,13 @@ export class CockroachQueryRunner
             throw new TypeORMError(
                 `Supplied unique constraint was not found in table ${table.name}`,
             )
+        if (!uniqueConstraint.name) {
+            uniqueConstraint.name =
+                this.connection.namingStrategy.uniqueConstraintName(
+                    table,
+                    uniqueConstraint.columnNames,
+                )
+        }
 
         // CockroachDB creates index for UNIQUE constraint.
         // We must use DROP INDEX ... CASCADE instead of DROP CONSTRAINT.
