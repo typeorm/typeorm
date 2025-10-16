@@ -1,4 +1,11 @@
-import { Entity, PrimaryColumn, Column, Unique, Check, Exclusion } from "../../../../../src";
+import {
+    Entity,
+    PrimaryColumn,
+    Column,
+    Unique,
+    Check,
+    Exclusion,
+} from "../../../../../src"
 
 // For react-native (uses sqlite under the hood) we use double quotes
 @Entity()

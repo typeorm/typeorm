@@ -14,7 +14,10 @@ describe("schema builder > change unique constraint", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/common/*{.js,.ts}", __dirname + "/entity/:driver:/*{.js,.ts}"],
+            entities: [
+                __dirname + "/entity/common/*{.js,.ts}",
+                __dirname + "/entity/:driver:/*{.js,.ts}",
+            ],
             schemaCreate: true,
             dropSchema: true,
         })

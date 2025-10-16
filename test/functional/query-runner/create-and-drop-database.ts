@@ -10,7 +10,10 @@ describe("query runner > create and drop database", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/common/*{.js,.ts}", __dirname + "/entity/:driver:/*{.js,.ts}"],
+            entities: [
+                __dirname + "/entity/common/*{.js,.ts}",
+                __dirname + "/entity/:driver:/*{.js,.ts}",
+            ],
             enabledDrivers: ["mysql", "mssql", "cockroachdb", "postgres"],
             dropSchema: true,
         })

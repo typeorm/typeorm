@@ -12,7 +12,10 @@ describe("schema builder > change column", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/common/*{.js,.ts}", __dirname + "/entity/:driver:/*{.js,.ts}"],
+            entities: [
+                __dirname + "/entity/common/*{.js,.ts}",
+                __dirname + "/entity/:driver:/*{.js,.ts}",
+            ],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -97,7 +100,8 @@ describe("schema builder > change column", () => {
                         : "int"
 
                 // in test we must manually change referenced column too, but in real sync, it changes automatically
-                const postVersionMetadata = connection.getMetadata("PostVersion")
+                const postVersionMetadata =
+                    connection.getMetadata("PostVersion")
                 const postVersionColumn =
                     postVersionMetadata.findColumnWithPropertyName("post")!
                 postVersionColumn.type =
