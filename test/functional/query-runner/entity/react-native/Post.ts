@@ -4,13 +4,11 @@ import {
     Column,
     Unique,
     Check,
-    Exclusion,
 } from "../../../../../src"
 
 // For react-native (uses sqlite under the hood) we use double quotes
 @Entity()
 @Unique(["text", "tag"])
-@Exclusion(`USING gist ("name" WITH =)`)
 @Check(`"version" < 999`)
 export class Post {
     @PrimaryColumn()

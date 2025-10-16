@@ -3,12 +3,10 @@ import {
     PrimaryColumn,
     Column,
     Unique,
-    Exclusion,
 } from "../../../../../src"
 
 @Entity()
 @Unique(["text", "tag"])
-@Exclusion(`USING gist ("name" WITH =)`)
 // MongoDB does not support CHECK constraints; @Check omitted intentionally.
 export class Post {
     @PrimaryColumn()
