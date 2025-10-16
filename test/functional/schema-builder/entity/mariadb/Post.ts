@@ -8,7 +8,7 @@ import { Exclusion } from "../../../../../src/decorator/Exclusion"
 @Entity()
 @Unique(["text", "tag"])
 @Exclusion(`USING gist ("text" WITH =)`)
-@Check(`"likesCount" < 1000`)
+@Check(`\`likesCount\` < 1000`)
 export class Post {
     @PrimaryColumn()
     id: number
