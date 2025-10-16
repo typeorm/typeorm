@@ -16,6 +16,8 @@ import {
 import { TreeRepository } from "../repository/TreeRepository"
 import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
 import { EntityMetadata } from "../metadata/EntityMetadata"
+import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
 import { Logger } from "../logger/Logger"
 import { MigrationInterface } from "../migration/MigrationInterface"
 import { MigrationExecutor } from "../migration/MigrationExecutor"
@@ -717,6 +719,157 @@ export class DataSource {
     }
 
     /**
+     * Deduplicates automatically generated junction metadata when a user-defined
+     * entity maps to the same join table. This allows the ORM to keep using the
+     * richer user metadata while preserving the junction-specific configuration
+     * (foreign keys, join columns, indices) the relation helpers rely on.
+     */
+    protected deduplicateJunctionEntityMetadatas(
+        entityMetadatas: EntityMetadata[],
+    ): EntityMetadata[] {
+        const userMetadatasByTable = new Map<string, EntityMetadata>()
+        for (const metadata of entityMetadatas) {
+            if (!metadata.isJunction) {
+                userMetadatasByTable.set(metadata.tablePath, metadata)
+            }
+        }
+
+        if (userMetadatasByTable.size === 0) return entityMetadatas
+
+        const namingStrategy = this.namingStrategy
+        const junctionsToRemove = new Set<EntityMetadata>()
+
+        const promoteJunction = (
+            junctionMetadata: EntityMetadata,
+            userMetadata: EntityMetadata,
+        ) => {
+            const mapColumn = (column: ColumnMetadata): ColumnMetadata => {
+                const match = userMetadata.columns.find(
+                    (candidate) =>
+                        candidate.databaseName === column.databaseName,
+                )
+                if (!match) {
+                    throw new TypeORMError(
+                        `Column "${column.databaseName}" referenced by the join table "${junctionMetadata.tableName}" was not found in the user-defined entity "${userMetadata.name}".`,
+                    )
+                }
+
+                match.referencedColumn = column.referencedColumn
+                match.relationMetadata = column.relationMetadata
+                match.isNullable = column.isNullable
+                match.isGenerated = column.isGenerated
+                match.generationStrategy = column.generationStrategy
+                match.type = column.type
+                match.length = column.length
+                match.width = column.width
+                match.precision = column.precision
+                match.scale = column.scale
+                match.charset = column.charset
+                match.collation = column.collation
+                match.zerofill = column.zerofill
+                match.unsigned = column.unsigned
+                match.enum = column.enum
+                match.enumName = column.enumName
+
+                return match
+            }
+
+            const ownerColumns = junctionMetadata.ownerColumns.map(mapColumn)
+            const inverseColumns =
+                junctionMetadata.inverseColumns.map(mapColumn)
+
+            const clonedForeignKeys = junctionMetadata.foreignKeys.map(
+                (foreignKey) => {
+                    const columns = foreignKey.columns.map(mapColumn)
+                    const cloned = new ForeignKeyMetadata({
+                        entityMetadata: userMetadata,
+                        referencedEntityMetadata:
+                            foreignKey.referencedEntityMetadata,
+                        columns,
+                        referencedColumns: foreignKey.referencedColumns,
+                        onDelete: foreignKey.onDelete,
+                        onUpdate: foreignKey.onUpdate,
+                        deferrable: foreignKey.deferrable,
+                        name: foreignKey.givenName ?? foreignKey.name,
+                    })
+                    cloned.build(namingStrategy)
+                    return cloned
+                },
+            )
+
+            const existingForeignKeySignatures = new Set(
+                userMetadata.foreignKeys.map((foreignKey) => {
+                    const columnSignature = foreignKey.columns
+                        .map((column) => column.databaseName)
+                        .sort()
+                        .join(",")
+                    return `${columnSignature}->${foreignKey.referencedEntityMetadata.tablePath}`
+                }),
+            )
+
+            const foreignKeysToRegister = clonedForeignKeys.filter(
+                (foreignKey) => {
+                    const columnSignature = foreignKey.columns
+                        .map((column) => column.databaseName)
+                        .sort()
+                        .join(",")
+                    const signature = `${columnSignature}->${foreignKey.referencedEntityMetadata.tablePath}`
+                    if (existingForeignKeySignatures.has(signature))
+                        return false
+                    existingForeignKeySignatures.add(signature)
+                    return true
+                },
+            )
+
+            userMetadata.tableMetadataArgs.type = "junction"
+            userMetadata.tableType = "junction"
+            userMetadata.isJunction = true
+            userMetadata.ownerColumns = ownerColumns
+            userMetadata.inverseColumns = inverseColumns
+            userMetadata.foreignKeys.push(...foreignKeysToRegister)
+
+            entityMetadatas.forEach((metadata) => {
+                metadata.relations
+                    .filter(
+                        (relation) =>
+                            relation.junctionEntityMetadata ===
+                            junctionMetadata,
+                    )
+                    .forEach((relation) => {
+                        relation.foreignKeys = relation.foreignKeys.filter(
+                            (foreignKey) =>
+                                foreignKey.entityMetadata !== junctionMetadata,
+                        )
+                        relation.registerForeignKeys(...foreignKeysToRegister)
+                        relation.registerJoinColumns(
+                            ownerColumns,
+                            inverseColumns,
+                        )
+                        relation.registerJunctionEntityMetadata(userMetadata)
+                    })
+            })
+
+            junctionsToRemove.add(junctionMetadata)
+        }
+
+        for (const junctionMetadata of entityMetadatas) {
+            if (!junctionMetadata.isJunction) continue
+            const userMetadata = userMetadatasByTable.get(
+                junctionMetadata.tablePath,
+            )
+            if (userMetadata) {
+                promoteJunction(junctionMetadata, userMetadata)
+            }
+        }
+
+        if (junctionsToRemove.size === 0) return entityMetadatas
+
+        return entityMetadatas.filter(
+            (metadata) => !junctionsToRemove.has(metadata),
+        )
+    }
+
+    /**
      * Builds metadatas for all registered classes inside this connection.
      */
     protected async buildMetadatas(): Promise<void> {
@@ -736,10 +889,12 @@ export class DataSource {
         const flattenedEntities = ObjectUtils.mixedListToArray(
             this.options.entities || [],
         )
-        const entityMetadatas =
+        const builtEntityMetadatas =
             await connectionMetadataBuilder.buildEntityMetadatas(
                 flattenedEntities,
             )
+        const entityMetadatas =
+            this.deduplicateJunctionEntityMetadatas(builtEntityMetadatas)
         const entityMetadatasMap = new Map<EntityTarget<any>, EntityMetadata>()
         for (const metadata of entityMetadatas) {
             const existing = entityMetadatasMap.get(metadata.target)
