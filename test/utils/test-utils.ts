@@ -511,9 +511,9 @@ function applyDriverPlaceholder(
                 typeof item === "string"
                     ? item.replace(/:driver:/g, driverName)
                     : item,
-            );
+            )
         }
-        const result: MixedList<T | string>  = {}
+        const result: MixedList<T | string> = {}
         for (const key of Object.keys(list)) {
             const value = list[key]
             result[key] =
@@ -521,7 +521,7 @@ function applyDriverPlaceholder(
                     ? value.replace(/:driver:/g, driverName)
                     : value
         }
-        return result;
+        return result
     }
 
     return {
