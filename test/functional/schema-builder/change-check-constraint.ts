@@ -5,8 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Teacher } from "./entity/Teacher"
-import { Post } from "./entity/Post"
+import { Teacher } from "./entity/common/Teacher"
 import { CheckMetadata } from "../../../src/metadata/CheckMetadata"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
@@ -14,7 +13,7 @@ describe("schema builder > change check constraint", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [__dirname + "/entity/common/*{.js,.ts}", __dirname + "/entity/:driver:/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -63,7 +62,7 @@ describe("schema builder > change check constraint", () => {
                 )
                     return
 
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = connection.getMetadata("Post")
                 postMetadata.checks[0].expression = `${connection.driver.escape(
                     "likesCount",
                 )} < 2000`
@@ -90,7 +89,7 @@ describe("schema builder > change check constraint", () => {
                 )
                     return
 
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = connection.getMetadata("Post")
                 postMetadata.checks = []
 
                 await connection.synchronize()

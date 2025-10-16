@@ -5,15 +5,14 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Teacher } from "./entity/Teacher"
-import { Post } from "./entity/Post"
+import { Teacher } from "./entity/common/Teacher"
 import { ExclusionMetadata } from "../../../src/metadata/ExclusionMetadata"
 
 describe("schema builder > change exclusion constraint", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [__dirname + "/entity/common/*{.js,.ts}", __dirname + "/entity/:driver:/*{.js,.ts}"],
             enabledDrivers: ["postgres"], // Only PostgreSQL supports exclusion constraints.
             schemaCreate: true,
             dropSchema: true,
@@ -49,7 +48,7 @@ describe("schema builder > change exclusion constraint", () => {
     it("should correctly change exclusion", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = connection.getMetadata("Post")
                 postMetadata.exclusions[0].expression = `USING gist ("tag" WITH =)`
                 postMetadata.exclusions[0].build(connection.namingStrategy)
 
@@ -68,7 +67,7 @@ describe("schema builder > change exclusion constraint", () => {
     it("should correctly drop removed exclusion", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = connection.getMetadata("Post")
                 postMetadata.exclusions = []
 
                 await connection.synchronize()

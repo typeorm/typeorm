@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Book } from "./entity/Book"
+import { Book } from "./entity/common/Book"
 
 describe("query runner > stream", () => {
     let connections: DataSource[]

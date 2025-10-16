@@ -6,14 +6,13 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { Post } from "./entity/Post"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("schema builder > add column", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [__dirname + "/entity/common/*{.js,.ts}", __dirname + "/entity/:driver:/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -43,7 +42,7 @@ describe("schema builder > add column", () => {
                     connection: connection,
                     entityMetadata: postMetadata!,
                     args: <ColumnMetadataArgs>{
-                        target: Post,
+                        target: "Post",
                         propertyName: "secondId",
                         mode: "regular",
                         options: {
@@ -62,7 +61,7 @@ describe("schema builder > add column", () => {
                     connection: connection,
                     entityMetadata: postMetadata!,
                     args: <ColumnMetadataArgs>{
-                        target: Post,
+                        target: "Post",
                         propertyName: "description",
                         mode: "regular",
                         options: {

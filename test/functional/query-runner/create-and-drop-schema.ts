@@ -10,7 +10,7 @@ describe("query runner > create and drop schema", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [__dirname + "/entity/common/*{.js,.ts}", __dirname + "/entity/:driver:/*{.js,.ts}"],
             enabledDrivers: ["mssql", "postgres", "sap"],
             dropSchema: true,
         })

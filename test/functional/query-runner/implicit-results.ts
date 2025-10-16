@@ -10,7 +10,7 @@ describe("query runner > implicit results", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/view/*{.js,.ts}"],
+            entities: [__dirname + "/view/*{.js,.ts}", __dirname + "/entity/:driver:/*{.js,.ts}"],
             enabledDrivers: ["oracle"],
             schemaCreate: true,
             dropSchema: true,

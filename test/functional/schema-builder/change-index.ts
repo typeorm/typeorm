@@ -6,8 +6,8 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { IndexMetadata } from "../../../src/metadata/IndexMetadata"
-import { Teacher } from "./entity/Teacher"
-import { Student } from "./entity/Student"
+import { Teacher } from "./entity/common/Teacher"
+import { Student } from "./entity/common/Student"
 import { TableIndex } from "../../../src/schema-builder/table/TableIndex"
 import { expect } from "chai"
 
@@ -15,7 +15,7 @@ describe("schema builder > change index", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [__dirname + "/entity/common/*{.js,.ts}", __dirname + "/entity/:driver:/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })

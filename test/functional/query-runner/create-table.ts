@@ -7,16 +7,15 @@ import {
 } from "../../utils/test-utils"
 import { Table } from "../../../src/schema-builder/table/Table"
 import { TableOptions } from "../../../src/schema-builder/options/TableOptions"
-import { Post } from "./entity/Post"
-import { Photo } from "./entity/Photo"
-import { Book2, Book } from "./entity/Book"
+import { Photo } from "./entity/common/Photo"
+import { Book2, Book } from "./entity/common/Book"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > create table", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [__dirname + "/entity/common/*{.js,.ts}", __dirname + "/entity/:driver:/*{.js,.ts}"],
             dropSchema: true,
         })
     })
@@ -103,7 +102,7 @@ describe("query runner > create table", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                const metadata = connection.getMetadata(Post)
+                const metadata = connection.getMetadata("Post")
                 const newTable = Table.create(metadata, connection.driver)
                 await queryRunner.createTable(newTable)
 

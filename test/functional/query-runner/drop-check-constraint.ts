@@ -11,7 +11,7 @@ describe("query runner > drop check constraint", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [__dirname + "/entity/common/*{.js,.ts}", __dirname + "/entity/:driver:/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })

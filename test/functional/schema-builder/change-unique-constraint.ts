@@ -7,15 +7,14 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Post } from "./entity/Post"
-import { Teacher } from "./entity/Teacher"
+import { Teacher } from "./entity/common/Teacher"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("schema builder > change unique constraint", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [__dirname + "/entity/common/*{.js,.ts}", __dirname + "/entity/:driver:/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -98,7 +97,7 @@ describe("schema builder > change unique constraint", () => {
                 // Sqlite does not store unique constraint name
                 if (DriverUtils.isSQLiteFamily(connection.driver)) return
 
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = connection.getMetadata("Post")
 
                 // Mysql and SAP stores unique constraints as unique indices.
                 if (
@@ -168,7 +167,7 @@ describe("schema builder > change unique constraint", () => {
     it("should correctly drop removed unique constraint", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = connection.getMetadata("Post")
 
                 // Mysql and SAP stores unique constraints as unique indices.
                 if (

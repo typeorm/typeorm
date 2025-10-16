@@ -4,15 +4,15 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { Category } from "./entity/Category"
-import { Question } from "./entity/Question"
+import { Category } from "./entity/common/Category"
+import { Question } from "./entity/common/Question"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("schema builder > update primary keys", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [__dirname + "/entity/common/*{.js,.ts}", __dirname + "/entity/:driver:/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })

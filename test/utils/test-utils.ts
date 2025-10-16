@@ -11,6 +11,7 @@ import {
     NamingStrategyInterface,
     QueryRunner,
     Table,
+    MixedList,
 } from "../../src"
 import { QueryResultCache } from "../../src/cache/QueryResultCache"
 import path from "path"
@@ -390,8 +391,13 @@ export async function createTestingConnections(
 ): Promise<DataSource[]> {
     const dataSourceOptions = setupTestingConnections(options)
     const dataSources: DataSource[] = []
-    for (const options of dataSourceOptions) {
-        const dataSource = createDataSource(options)
+    for (const baseOptions of dataSourceOptions) {
+        const dsOptions: DataSourceOptions = applyDriverPlaceholder(
+            baseOptions,
+            baseOptions.type,
+        )
+
+        const dataSource = createDataSource(dsOptions)
         await dataSource.initialize()
         dataSources.push(dataSource)
     }
@@ -458,9 +464,17 @@ export async function createTestingConnections(
                     schemaPaths.add(schema)
                 })
 
-            const schema = connection.driver.options?.hasOwnProperty("schema")
-                ? (connection.driver.options as any).schema
-                : undefined
+            // Safely extract optional schema property without using hasOwnProperty directly
+            let schema: string | undefined = undefined
+            const rawOpts: unknown = connection.driver.options
+            if (
+                rawOpts !== null &&
+                typeof rawOpts === "object" &&
+                "schema" in rawOpts
+            ) {
+                const withSchema = rawOpts as { schema?: string }
+                schema = withSchema.schema
+            }
 
             if (schema) {
                 schemaPaths.add(schema)
@@ -469,8 +483,8 @@ export async function createTestingConnections(
             for (const schemaPath of schemaPaths) {
                 try {
                     await queryRunner.createSchema(schemaPath, true)
-                } catch (e) {
-                    // Do nothing
+                } catch {
+                    // ignore
                 }
             }
 
@@ -479,6 +493,43 @@ export async function createTestingConnections(
     )
 
     return dataSources
+}
+
+/**
+ * Replaces :driver: tokens in MixedList<string|...> values of entity/migration/subscriber arrays or maps.
+ */
+function applyDriverPlaceholder(
+    source: DataSourceOptions,
+    driverName: string,
+): DataSourceOptions {
+    const replaceInMixedList = <T>(
+        list: MixedList<T | string> | undefined,
+    ): MixedList<T | string> | undefined => {
+        if (!list) return list
+        if (Array.isArray(list)) {
+            return list.map((item) =>
+                typeof item === "string"
+                    ? item.replace(/:driver:/g, driverName)
+                    : item,
+            );
+        }
+        const result: MixedList<T | string>  = {}
+        for (const key of Object.keys(list)) {
+            const value = list[key]
+            result[key] =
+                typeof value === "string"
+                    ? value.replace(/:driver:/g, driverName)
+                    : value
+        }
+        return result;
+    }
+
+    return {
+        ...source,
+        entities: replaceInMixedList(source.entities),
+        migrations: replaceInMixedList(source.migrations),
+        subscribers: replaceInMixedList(source.subscribers),
+    }
 }
 
 /**
