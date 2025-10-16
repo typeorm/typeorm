@@ -668,13 +668,6 @@ export class DataSource {
         const metadataFromMap = this.entityMetadatasMap.get(target)
         if (metadataFromMap) return metadataFromMap
 
-        /**
-         * Sharing table names between user entities and auto-created junctions is
-         * perfectly legal, but it means lookups can produce more than one match.
-         * This helper makes sure we hand back the user-defined metadata whenever
-         * it is available, falling back to the junction metadata only when it is
-         * the sole candidate left.
-         */
         for (const [_, metadata] of this.entityMetadatasMap) {
             if (
                 InstanceChecker.isEntitySchema(target) &&
