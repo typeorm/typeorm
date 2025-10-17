@@ -1,9 +1,4 @@
-import {
-    Entity,
-    PrimaryColumn,
-    Column,
-    Unique,
-} from "../../../../../src"
+import { Entity, PrimaryColumn, Column, Unique } from "../../../../../src"
 
 @Entity()
 @Unique(["text", "tag"])

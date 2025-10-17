@@ -3053,7 +3053,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                             c["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
                             c["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"],
                     )
-                    if(isMariaDb) {
+                    if (isMariaDb) {
                         /**
                          * MariaDB "JSON" columns are not true JSON types like in MySQL.
                          * Internally, MariaDB stores them as LONGTEXT and automatically adds
@@ -3073,25 +3073,33 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                          * regex that matches CHECK clauses like `json_valid(column)` or
                          * `json_valid(`column`)`.
                          */
-                        const makeSystemJsonChecker = (jsonColumnNames: string[]) => {
-                            const jsonSet = new Set(jsonColumnNames.map(n => n.toLowerCase()));
+                        const makeSystemJsonChecker = (
+                            jsonColumnNames: string[],
+                        ) => {
+                            const jsonSet = new Set(
+                                jsonColumnNames.map((n) => n.toLowerCase()),
+                            )
                             // Matches: json_valid(`col`), json_valid(col), with arbitrary spaces/case
-                            const rx = /^json_valid\s*\(\s*`?([a-z0-9_]+)`?\s*\)$/i;
+                            const rx =
+                                /^json_valid\s*\(\s*`?([a-z0-9_]+)`?\s*\)$/i
 
                             return (clause: string) => {
-                                const m = clause.match(rx);
-                                if (!m) 
-                                    return false;
-                                const col = m[1].toLowerCase();
+                                const m = clause.match(rx)
+                                if (!m) return false
+                                const col = m[1].toLowerCase()
 
-                                return jsonSet.has(col);
-                            };
-                        };
+                                return jsonSet.has(col)
+                            }
+                        }
 
-                        const jsonCols = table.columns.filter(c => c.type === "json").map(c => c.name);
-                        const isSystemJson = makeSystemJsonChecker(jsonCols);
+                        const jsonCols = table.columns
+                            .filter((c) => c.type === "json")
+                            .map((c) => c.name)
+                        const isSystemJson = makeSystemJsonChecker(jsonCols)
 
-                        tableChecks = tableChecks.filter((c) => !isSystemJson(c["CHECK_CLAUSE"]));
+                        tableChecks = tableChecks.filter(
+                            (c) => !isSystemJson(c["CHECK_CLAUSE"]),
+                        )
                     }
 
                     table.checks = tableChecks.map(
