@@ -3093,7 +3093,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         }
 
                         const jsonCols = table.columns
-                            .filter((c) => c.type === "json")
+                            .filter((c) => c.type === "longtext")
                             .map((c) => c.name)
                         const isSystemJson = makeSystemJsonChecker(jsonCols)
 
