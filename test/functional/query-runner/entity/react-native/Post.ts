@@ -6,7 +6,6 @@ import {
     Check,
 } from "../../../../../src"
 
-// For react-native (uses sqlite under the hood) we use double quotes
 @Entity()
 @Unique(["text", "tag"])
 @Check(`[version] < 999`)
