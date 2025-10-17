@@ -3048,11 +3048,52 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 table.comment = dbTable["TABLE_COMMENT"]
 
                 if (this.driver.isCheckConstraintsSupported) {
-                    const tableChecks = dbChecks.filter(
+                    let tableChecks = dbChecks.filter(
                         (c) =>
                             c["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
                             c["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"],
                     )
+                    if(isMariaDb) {
+                        /**
+                         * MariaDB "JSON" columns are not true JSON types like in MySQL.
+                         * Internally, MariaDB stores them as LONGTEXT and automatically adds
+                         * a system CHECK constraint of the form `CHECK (json_valid(`column`))`
+                         * to ensure the stored text is valid JSON.
+                         *
+                         * These checks are not user-defined, and they
+                         * are not actually managed by TypeORM or any migration logic, they
+                         * are generated automatically by MariaDB whenever a column is defined
+                         * as type "JSON".
+                         *
+                         * Unfortunately, MariaDB does not provide any metadata flag to
+                         * distinguish these system-generated checks from user-created ones.
+                         * Because of that, we have to detect and ignore them manually.
+                         *
+                         * The best practical approach i could think of is to filter them out using a simple
+                         * regex that matches CHECK clauses like `json_valid(column)` or
+                         * `json_valid(`column`)`.
+                         */
+                        const makeSystemJsonChecker = (jsonColumnNames: string[]) => {
+                            const jsonSet = new Set(jsonColumnNames.map(n => n.toLowerCase()));
+                            // Matches: json_valid(`col`), json_valid(col), with arbitrary spaces/case
+                            const rx = /^json_valid\s*\(\s*`?([a-z0-9_]+)`?\s*\)$/i;
+
+                            return (clause: string) => {
+                                const m = clause.match(rx);
+                                if (!m) 
+                                    return false;
+                                const col = m[1].toLowerCase();
+
+                                return jsonSet.has(col);
+                            };
+                        };
+
+                        const jsonCols = table.columns.filter(c => c.type === "json").map(c => c.name);
+                        const isSystemJson = makeSystemJsonChecker(jsonCols);
+
+                        tableChecks = tableChecks.filter((c) => !isSystemJson(c["CHECK_CLAUSE"]));
+                    }
+
                     table.checks = tableChecks.map(
                         (c) =>
                             new TableCheck({
