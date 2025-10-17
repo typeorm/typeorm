@@ -749,20 +749,6 @@ export class DataSource {
 
                 match.referencedColumn = column.referencedColumn
                 match.relationMetadata = column.relationMetadata
-                match.isNullable = column.isNullable
-                match.isGenerated = column.isGenerated
-                match.generationStrategy = column.generationStrategy
-                match.type = column.type
-                match.length = column.length
-                match.width = column.width
-                match.precision = column.precision
-                match.scale = column.scale
-                match.charset = column.charset
-                match.collation = column.collation
-                match.zerofill = column.zerofill
-                match.unsigned = column.unsigned
-                match.enum = column.enum
-                match.enumName = column.enumName
 
                 return match
             }
