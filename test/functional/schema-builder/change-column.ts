@@ -22,6 +22,477 @@ describe("schema builder > change column", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
+    it("uses ALTER COLUMN when increasing varchar length", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (
+                    connection.driver.options.type == "better-sqlite3" ||
+                    connection.driver.options.type == "sqljs" ||
+                    connection.driver.options.type == "sqlite"
+                )
+                    return
+                const queryRunner = connection.createQueryRunner()
+                const repo = connection.getRepository("post")
+
+                const metadata = connection.getMetadata("post")
+                const nameColumnMetadata =
+                    metadata.findColumnWithPropertyName("name")!
+                const originalLength = nameColumnMetadata.length ?? ""
+
+                // --- SQL recorder around synchronize() ---
+                const recorded: string[] = []
+                const origCreateQR = (connection as any).createQueryRunner.bind(
+                    connection,
+                )
+                const installRecorder = () => {
+                    ;(connection as any).createQueryRunner = (
+                        ...args: any[]
+                    ) => {
+                        const qr = origCreateQR(...args)
+                        const origQuery = qr.query.bind(qr)
+                        qr.query = async (sql: any, params?: any[]) => {
+                            if (typeof sql === "string") recorded.push(sql)
+                            return origQuery(sql, params)
+                        }
+                        return qr
+                    }
+                }
+                const removeRecorder = () => {
+                    ;(connection as any).createQueryRunner = origCreateQR
+                }
+
+                let insertedRowId: any | undefined
+
+                try {
+                    // 1) Ensure start at varchar(50)
+                    nameColumnMetadata.length = "50"
+                    nameColumnMetadata.build(connection)
+                    await connection.synchronize()
+
+                    const preTable = await queryRunner.getTable("post")
+                    const preCol = preTable!.findColumnByName("name")!
+                    if (preCol.length) expect(preCol.length).to.equal("50")
+
+                    // 2) Widen to 80 and capture the SQL used by synchronize()
+                    nameColumnMetadata.length = "80"
+                    nameColumnMetadata.build(connection)
+
+                    installRecorder()
+                    let widenErr: any
+                    try {
+                        await connection.synchronize()
+                    } catch (e) {
+                        widenErr = e
+                    } finally {
+                        removeRecorder()
+                    }
+                    expect(widenErr).to.be.undefined
+
+                    // Confirm column length changed
+                    const postTable = await queryRunner.getTable("post")
+                    const postCol = postTable!.findColumnByName("name")!
+                    if (postCol.length) expect(postCol.length).to.equal("80")
+
+                    // 2b) Assert ALTER (driver-scoped)
+                    const driver = connection.driver.options.type
+                    const sqlBlob = recorded.join("\n")
+
+                    if (driver === "postgres" || driver === "cockroachdb") {
+                        // expect ALTER ... ALTER COLUMN "name" ... TYPE/SET DATA TYPE ...
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* ALTER COLUMN "name" (SET DATA TYPE|TYPE) .*80/i,
+                        )
+                        // ensure no drop/add of "name"
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                    } else if (
+                        driver === "mysql" ||
+                        driver === "mariadb" ||
+                        driver === "aurora-mysql"
+                    ) {
+                        // MODIFY or CHANGE for MySQL family
+                        const usedModify =
+                            /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?name`? .*80/i.test(
+                                sqlBlob,
+                            )
+                        expect(
+                            usedModify,
+                            `Expected MODIFY/CHANGE COLUMN for 'name'.\n${sqlBlob}`,
+                        ).to.equal(true)
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                    } else if (driver === "mssql") {
+                        // widen to 80
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE[\s\S]*?ALTER COLUMN\s+(?:\[name\]|"name")\s+[\s\S]*?80/i,
+                        )
+                        expect(sqlBlob).to.not.match(
+                            /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
+                        )
+                        expect(sqlBlob).to.not.match(
+                            /DROP\s+COLUMN\s+(?:\[name\]|"name")/i,
+                        )
+                    } else if (driver === "oracle") {
+                        // Oracle uses MODIFY COLUMN or ALTER COLUMN
+                        // Oracle uses MODIFY with optional parens around the column def
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* (MODIFY|ALTER COLUMN)\s*\(?\s*"name"\s+.*80/i,
+                            `Expected MODIFY/ALTER COLUMN for 'name' in Oracle.\n${sqlBlob}`,
+                        )
+
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                    } else if (driver === "spanner") {
+                        // Spanner uses ALTER COLUMN with type specification
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* ALTER COLUMN `?name`? STRING\(80\)/i,
+                            `Expected ALTER COLUMN STRING(80) for 'name' in Spanner.\n${sqlBlob}`,
+                        )
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                    }
+
+                    // 3) Insert a 51-char value (should succeed)
+                    const fiftyOne = "x".repeat(51)
+                    // Build a payload that satisfies NOT NULL columns that lack defaults/generation
+                    const meta = repo.metadata
+                    const requiredNoDefault = meta.columns.filter(
+                        (c) => !c.isNullable && !c.default && !c.isGenerated,
+                    )
+
+                    // Start with the test's target value
+                    const payload: any = { name: fiftyOne }
+
+                    for (const c of requiredNoDefault) {
+                        switch (c.propertyName) {
+                            case "id": {
+                                // Prefer a small int by default (works everywhere).
+                                // Only switch to a big integer when the column is clearly bigint-like.
+                                const t = String(c.type ?? "").toLowerCase()
+
+                                const isBigInt =
+                                    /\bbigint\b|^int8$|^bigserial$/.test(t) ||
+                                    // TypeORM sometimes sets type as a function/constructor; stringify may be '[Function:Number]'.
+                                    // If metadata has width info suggestive of bigint, treat as bigint (rare in this test schema).
+                                    (typeof (c as any).width === "number" &&
+                                        (c as any).width >= 20)
+
+                                if (isBigInt) {
+                                    // still keep it in JS safe integer range
+                                    payload.id ??= Math.min(
+                                        Number.MAX_SAFE_INTEGER,
+                                        // a “big” but safe number
+                                        9_000_000_000_000 +
+                                            Math.floor(
+                                                Math.random() * 1_000_000,
+                                            ),
+                                    )
+                                } else {
+                                    // safe 32-bit signed int to avoid MySQL overflow
+                                    payload.id ??=
+                                        Math.floor(Math.random() * 1_000_000) +
+                                        1 /* 1..1,000,000 */
+                                }
+                                break
+                            }
+                            case "version":
+                                payload.version ??= `v_${Date.now()}_${
+                                    connection.name
+                                }_${Math.random().toString(36).slice(2)}`
+                                break
+                            case "tag":
+                                payload.tag ??= `t_${Math.random()
+                                    .toString(36)
+                                    .slice(2, 6)}`
+                                break
+                            case "likesCount":
+                                payload.likesCount ??= 1
+                                break
+                            default: {
+                                // generic fallback
+                                const t = String(c.type ?? "").toLowerCase()
+                                const isNumeric =
+                                    /(int|numeric|float|double|decimal|real)/.test(
+                                        t,
+                                    )
+                                payload[c.propertyName] ??= isNumeric ? 0 : ""
+                                break
+                            }
+                        }
+                    }
+
+                    let insertErr: any, row: any
+                    try {
+                        row = await repo.save(payload)
+                        insertedRowId = (row as any)?.id
+                    } catch (e) {
+                        insertErr = e
+                    }
+                    expect(insertErr).to.be.undefined
+
+                    // 4) Round-trip length check
+                    const rt = await repo.findOneByOrFail({
+                        id: (row as any).id,
+                    })
+                    expect(rt.name.length).to.equal(51)
+                } finally {
+                    // Revert data
+                    try {
+                        if (insertedRowId !== undefined)
+                            await repo.delete(insertedRowId)
+                    } catch {}
+                    // Revert schema (restore original length)
+                    try {
+                        const nameColumnMetadata = connection
+                            .getMetadata("post")
+                            .findColumnWithPropertyName("name")!
+                        nameColumnMetadata.length = originalLength
+                        nameColumnMetadata.build(connection)
+                        await connection.synchronize()
+                    } catch {}
+                    await queryRunner.release()
+                }
+            }),
+        ))
+    it("uses ALTER COLUMN when reducing varchar length", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (
+                    connection.driver.options.type == "better-sqlite3" ||
+                    connection.driver.options.type == "sqljs" ||
+                    connection.driver.options.type == "sqlite"
+                )
+                    return
+                const queryRunner = connection.createQueryRunner()
+                const repo = connection.getRepository("post")
+
+                const metadata = connection.getMetadata("post")
+                const nameColumnMetadata =
+                    metadata.findColumnWithPropertyName("name")!
+                const originalLength = nameColumnMetadata.length ?? ""
+
+                // --- SQL recorder around synchronize() ---
+                const recorded: string[] = []
+                const origCreateQR = (connection as any).createQueryRunner.bind(
+                    connection,
+                )
+                const installRecorder = () => {
+                    ;(connection as any).createQueryRunner = (
+                        ...args: any[]
+                    ) => {
+                        const qr = origCreateQR(...args)
+                        const origQuery = qr.query.bind(qr)
+                        qr.query = async (sql: any, params?: any[]) => {
+                            if (typeof sql === "string") recorded.push(sql)
+                            return origQuery(sql, params)
+                        }
+                        return qr
+                    }
+                }
+                const removeRecorder = () => {
+                    ;(connection as any).createQueryRunner = origCreateQR
+                }
+
+                let insertedRowId: any | undefined
+
+                try {
+                    // 1) Ensure start at varchar(50)
+                    nameColumnMetadata.length = "50"
+                    nameColumnMetadata.build(connection)
+                    await connection.synchronize()
+
+                    const preTable = await queryRunner.getTable("post")
+                    const preCol = preTable!.findColumnByName("name")!
+                    if (preCol.length) expect(preCol.length).to.equal("50")
+
+                    // 2) Reduce to 40 and capture the SQL used by synchronize()
+                    nameColumnMetadata.length = "40"
+                    nameColumnMetadata.build(connection)
+
+                    // 🔧 Cockroach v24.3+: shrinking requires experimental flag (session-scoped)
+                    if (connection.driver.options.type === "cockroachdb") {
+                        await connection.query(
+                            "SET enable_experimental_alter_column_type_general = true",
+                        )
+                    }
+
+                    installRecorder()
+                    let widenErr: any
+                    try {
+                        await connection.synchronize()
+                    } catch (e) {
+                        widenErr = e
+                    } finally {
+                        removeRecorder()
+                    }
+                    expect(widenErr).to.be.undefined
+
+                    // Confirm column length changed
+                    const postTable = await queryRunner.getTable("post")
+                    const postCol = postTable!.findColumnByName("name")!
+                    if (postCol.length) expect(postCol.length).to.equal("40")
+
+                    // 2b) Assert ALTER (driver-scoped)
+                    const driver = connection.driver.options.type
+                    const sqlBlob = recorded.join("\n")
+
+                    if (driver === "postgres" || driver === "cockroachdb") {
+                        // expect ALTER ... ALTER COLUMN "name" ... TYPE/SET DATA TYPE ...
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* ALTER COLUMN "name" (SET DATA TYPE|TYPE) .*40/i,
+                        )
+                        // ensure no drop/add of "name"
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                    } else if (
+                        driver === "mysql" ||
+                        driver === "mariadb" ||
+                        driver === "aurora-mysql"
+                    ) {
+                        // MODIFY or CHANGE for MySQL family
+                        const usedModify =
+                            /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?name`? .*40/i.test(
+                                sqlBlob,
+                            )
+                        expect(
+                            usedModify,
+                            `Expected MODIFY/CHANGE COLUMN for 'name'.\n${sqlBlob}`,
+                        ).to.equal(true)
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                    } else if (driver === "mssql") {
+                        // shrink to 40
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE[\s\S]*?ALTER COLUMN\s+(?:\[name\]|"name")\s+[\s\S]*?40/i,
+                        )
+                        expect(sqlBlob).to.not.match(
+                            /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
+                        )
+                        expect(sqlBlob).to.not.match(
+                            /DROP\s+COLUMN\s+(?:\[name\]|"name")/i,
+                        )
+                    } else if (driver === "oracle") {
+                        // Oracle uses MODIFY COLUMN or ALTER COLUMN
+                        // Oracle uses MODIFY; some versions include parens around the column def
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* (MODIFY|ALTER COLUMN)\s*\(?\s*"name"\s+.*40/i,
+                            `Expected MODIFY/ALTER COLUMN for 'name' in Oracle.\n${sqlBlob}`,
+                        )
+
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                    } else if (driver === "spanner") {
+                        // Spanner uses ALTER COLUMN with type specification
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* ALTER COLUMN `?name`? STRING\(40\)/i,
+                            `Expected ALTER COLUMN STRING(40) for 'name' in Spanner.\n${sqlBlob}`,
+                        )
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                    }
+                    // 3) Insert a 40-char value (should succeed)
+                    const forty = "x".repeat(40)
+                    // Build a payload that satisfies NOT NULL columns that lack defaults/generation
+                    const meta = repo.metadata
+                    const requiredNoDefault = meta.columns.filter(
+                        (c) => !c.isNullable && !c.default && !c.isGenerated,
+                    )
+
+                    // Start with the test's target value
+                    const payload: any = { name: forty }
+
+                    for (const c of requiredNoDefault) {
+                        switch (c.propertyName) {
+                            case "id": {
+                                // Prefer a small int by default (works everywhere).
+                                // Only switch to a big integer when the column is clearly bigint-like.
+                                const t = String(c.type ?? "").toLowerCase()
+
+                                const isBigInt =
+                                    /\bbigint\b|^int8$|^bigserial$/.test(t) ||
+                                    // TypeORM sometimes sets type as a function/constructor; stringify may be '[Function:Number]'.
+                                    // If metadata has width info suggestive of bigint, treat as bigint (rare in this test schema).
+                                    (typeof (c as any).width === "number" &&
+                                        (c as any).width >= 20)
+
+                                if (isBigInt) {
+                                    // still keep it in JS safe integer range
+                                    payload.id ??= Math.min(
+                                        Number.MAX_SAFE_INTEGER,
+                                        // a “big” but safe number
+                                        9_000_000_000_000 +
+                                            Math.floor(
+                                                Math.random() * 1_000_000,
+                                            ),
+                                    )
+                                } else {
+                                    // safe 32-bit signed int to avoid MySQL overflow
+                                    payload.id ??=
+                                        Math.floor(Math.random() * 1_000_000) +
+                                        1 /* 1..1,000,000 */
+                                }
+                                break
+                            }
+                            case "version":
+                                payload.version ??= `v_${Date.now()}_${
+                                    connection.name
+                                }_${Math.random().toString(36).slice(2)}`
+                                break
+                            case "tag":
+                                payload.tag ??= `t_${Math.random()
+                                    .toString(36)
+                                    .slice(2, 6)}`
+                                break
+                            case "likesCount":
+                                payload.likesCount ??= 1
+                                break
+                            default: {
+                                // generic fallback
+                                const t = String(c.type ?? "").toLowerCase()
+                                const isNumeric =
+                                    /(int|numeric|float|double|decimal|real)/.test(
+                                        t,
+                                    )
+                                payload[c.propertyName] ??= isNumeric ? 0 : ""
+                                break
+                            }
+                        }
+                    }
+
+                    let insertErr: any, row: any
+                    try {
+                        row = await repo.save(payload)
+                        insertedRowId = (row as any)?.id
+                    } catch (e) {
+                        insertErr = e
+                    }
+                    expect(insertErr).to.be.undefined
+
+                    // 4) Round-trip length check
+                    const rt = await repo.findOneByOrFail({
+                        id: (row as any).id,
+                    })
+                    expect(rt.name.length).to.equal(40)
+                } finally {
+                    // Revert data
+                    try {
+                        if (insertedRowId !== undefined)
+                            await repo.delete(insertedRowId)
+                    } catch {}
+                    // Revert schema (restore original length)
+                    try {
+                        const nameColumnMetadata = connection
+                            .getMetadata("post")
+                            .findColumnWithPropertyName("name")!
+                        nameColumnMetadata.length = originalLength
+                        nameColumnMetadata.build(connection)
+                        await connection.synchronize()
+                    } catch {}
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
     it("should correctly change column name", () =>
         Promise.all(
             connections.map(async (connection) => {

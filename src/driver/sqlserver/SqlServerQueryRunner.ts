@@ -1259,7 +1259,6 @@ export class SqlServerQueryRunner
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
             newColumn.asExpression !== oldColumn.asExpression ||
             newColumn.generatedType !== oldColumn.generatedType
         ) {
@@ -1593,6 +1592,95 @@ export class SqlServerQueryRunner
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
             }
+
+            // BEGIN pre-truncate oversized values when shrinking (SQL Server)
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                const oldLen =
+                    typeof oldColumn.length === "string"
+                        ? parseInt(oldColumn.length as any, 10)
+                        : undefined
+                const newLen =
+                    typeof newColumn.length === "string"
+                        ? parseInt(newColumn.length as any, 10)
+                        : undefined
+                const isOldMax =
+                    typeof oldColumn.length === "string" &&
+                    oldColumn.length.toUpperCase() === "MAX"
+                const isNewMax =
+                    typeof newColumn.length === "string" &&
+                    newColumn.length.toUpperCase() === "MAX"
+                if (
+                    !isNewMax &&
+                    ((typeof newLen === "number" &&
+                        typeof oldLen === "number" &&
+                        newLen < oldLen) ||
+                        (typeof newLen === "number" && isOldMax))
+                ) {
+                    const col = this.driver.escape(oldColumn.name)
+                    const t = (newColumn.type as string).toLowerCase()
+                    const threshold = t.startsWith("n")
+                        ? `${newLen}*2`
+                        : `${newLen}`
+                    const isBinary = t === "varbinary" || t === "binary"
+                    const updateExpr = isBinary
+                        ? `SUBSTRING(${col}, 1, ${newLen})`
+                        : `LEFT(${col}, ${newLen})`
+                    // shrink: make data fit first; actual ALTER follows in general path
+                    upQueries.push(
+                        new Query(
+                            `UPDATE ${this.escapePath(table)} ` +
+                                `SET ${col} = ${updateExpr} ` +
+                                `WHERE DATALENGTH(${col}) > ${threshold}`,
+                        ),
+                    )
+                }
+            }
+            // END
+
+            // BEGIN length-only ALTER (SQL Server)
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                // keep to the same local-var style as the shrink pass
+                const t = (newColumn.type as string).toLowerCase()
+                const isCharOrBin =
+                    t === "varchar" ||
+                    t === "nvarchar" ||
+                    t === "varbinary" ||
+                    t === "char" ||
+                    t === "nchar" ||
+                    t === "binary"
+
+                if (isCharOrBin) {
+                    // build full type using the new length/MAX (let driver handle bytes vs chars)
+                    const fullTypeSql = (this.driver.createFullType as any)(
+                        newColumn,
+                    )
+                    const collationSql = newColumn.collation
+                        ? ` COLLATE ${newColumn.collation}`
+                        : ""
+                    const nullSql = newColumn.isNullable ? " NULL" : " NOT NULL"
+
+                    const tableName = this.escapePath(table)
+                    const colName = this.driver.escape(newColumn.name)
+
+                    // actually alter the column when only the length changed
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${tableName} ALTER COLUMN ${colName} ${fullTypeSql}${collationSql}${nullSql}`,
+                        ),
+                    )
+
+                    // keep in-memory state in sync so later diffs don’t re-run it
+                    const cached = table.findColumnByName(newColumn.name)
+                    if (cached) cached.length = newColumn.length
+                }
+            }
+            // END length-only ALTER
 
             if (
                 this.isColumnChanged(oldColumn, newColumn, false, false, false)
