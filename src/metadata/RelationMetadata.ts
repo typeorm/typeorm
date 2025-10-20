@@ -12,6 +12,7 @@ import { PropertyTypeFactory } from "./types/PropertyTypeInFunction"
 import { TypeORMError } from "../error"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { OrmUtils } from "../util/OrmUtils"
 
 /**
  * Contains all information about some entity's relation.
@@ -520,7 +521,11 @@ export class RelationMetadata {
                 entity,
             )
         } else {
-            entity[propertyName] = value
+            if (ObjectUtils.isObject(entity[propertyName])) {
+                OrmUtils.mergeDeep(entity[propertyName], value)
+            } else {
+                entity[propertyName] = value
+            }
         }
     }
 
