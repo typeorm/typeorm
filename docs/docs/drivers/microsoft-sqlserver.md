@@ -176,7 +176,7 @@ The `vector` data type is available in SQL Server for storing high-dimensional v
 -   Similarity matching
 -   Machine learning applications
 
-NOTE: general `halfvec` type supprot is unavailable because this feature is still in preview: https://learn.microsoft.com/en-us/sql/t-sql/data-types/vector-data-type?view=sql-server-ver17&tabs=csharp
+NOTE: general `halfvec` type support is unavailable because this feature is still in preview: https://learn.microsoft.com/en-us/sql/t-sql/data-types/vector-data-type?view=sql-server-ver17&tabs=csharp
 
 #### Usage
 
