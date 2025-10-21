@@ -63,16 +63,17 @@ AppDataSource.initialize()
         const queryEmbedding = generateEmbedding(1998)
         const documentIds = [document.id]
 
+        const docIdParams = documentIds.map((_, i) => `@${i + 1}`).join(", ")
         const results = await connection.query(
             `
             DECLARE @question AS VECTOR (1998) = @0;
             SELECT TOP (3) dc.*, VECTOR_DISTANCE('cosine', @question, embedding) AS distance, d.fileName as "documentName"
               FROM document_chunks dc
               LEFT JOIN documents d ON dc.documentId = d.id
-              WHERE documentId IN (@1)
+              WHERE documentId IN (${docIdParams})
               ORDER BY VECTOR_DISTANCE('cosine', @question, embedding)
         `,
-            [JSON.stringify(queryEmbedding), documentIds.join(", ")],
+            [JSON.stringify(queryEmbedding), ...documentIds],
         )
 
         console.log("Search results (top 3 most similar chunks):")
