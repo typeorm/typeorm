@@ -7,9 +7,10 @@ const AppDataSource = new DataSource({
     type: "mssql",
     host: "localhost",
     username: "sa",
-    password: "Admin12345",
-    database: "test",
+    password: "Katechat@!",
+    database: "katechat",
     synchronize: true,
+    dropSchema: true,
     logging: false,
     entities: [Document, DocumentChunk],
     options: {
@@ -64,17 +65,14 @@ AppDataSource.initialize()
 
         const results = await connection.query(
             `
-            DECLARE @question AS VECTOR (1998) = '${JSON.stringify(
-                queryEmbedding,
-            )}';
+            DECLARE @question AS VECTOR (1998) = @0;
             SELECT TOP (3) dc.*, VECTOR_DISTANCE('cosine', @question, embedding) AS distance, d.fileName as "documentName"
               FROM document_chunks dc
               LEFT JOIN documents d ON dc.documentId = d.id
-              WHERE documentId IN (${documentIds
-                  .map((s) => `'${s}'`)
-                  .join(", ")})
+              WHERE documentId IN (@1)
               ORDER BY VECTOR_DISTANCE('cosine', @question, embedding)
         `,
+            [JSON.stringify(queryEmbedding), documentIds.join(", ")],
         )
 
         console.log("Search results (top 3 most similar chunks):")
