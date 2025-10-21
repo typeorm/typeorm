@@ -10,6 +10,7 @@ import {
 import {
     And,
     DataSource,
+    FindOptionsWhere,
     In,
     MssqlParameter,
     Not,
@@ -168,11 +169,12 @@ describe("github issues > #11285 Missing MSSQL input type", () => {
                     )
 
                     const excludedUserIds = [user2.memberId]
+                    const where: FindOptionsWhere<User> = {
+                        memberId: And(Not(In(excludedUserIds))),
+                    }
 
                     const users = await dataSource.getRepository(User).find({
-                        where: {
-                            memberId: And(Not(In(excludedUserIds))),
-                        },
+                        where: where,
                     })
 
                     expect(users).to.have.length(1)
@@ -181,6 +183,11 @@ describe("github issues > #11285 Missing MSSQL input type", () => {
                     // Ensure that the input array was not mutated into MssqlParameter instances
                     // https://github.com/typeorm/typeorm/issues/11474
                     expect(excludedUserIds).to.eql([user2.memberId])
+
+                    // Ensure that the FindOptionsWhere instance is not mutated
+                    expect(where).to.eql({
+                        memberId: And(Not(In(excludedUserIds))),
+                    })
 
                     expect(selectSpy.calledOnce).to.be.true
 
