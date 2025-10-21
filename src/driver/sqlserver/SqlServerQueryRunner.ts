@@ -3151,14 +3151,19 @@ export class SqlServerQueryRunner
                                 if (length === "-1") {
                                     tableColumn.length = "MAX"
                                 } else {
-                                    tableColumn.length =
-                                        !this.isDefaultColumnLength(
-                                            table,
-                                            tableColumn,
-                                            length,
-                                        )
-                                            ? length
-                                            : ""
+                                    // For vector type, always preserve the length (dimensions)
+                                    if (tableColumn.type === "vector") {
+                                        tableColumn.length = length
+                                    } else {
+                                        tableColumn.length =
+                                            !this.isDefaultColumnLength(
+                                                table,
+                                                tableColumn,
+                                                length,
+                                            )
+                                                ? length
+                                                : ""
+                                    }
                                 }
                             }
 
