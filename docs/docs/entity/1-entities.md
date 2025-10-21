@@ -182,16 +182,17 @@ There are several special column types with additional functionality available:
 
 ### Vector columns
 
-Vector columns are supported on both PostgreSQL (via [`pgvector`](https://github.com/pgvector/pgvector) extension) and SAP HANA Cloud, enabling storing and querying vector embeddings for similarity search and machine learning applications.
+Vector columns are supported on PostgreSQL (via [`pgvector`](https://github.com/pgvector/pgvector) extension), Microsoft SQL Server, and SAP HANA Cloud, enabling storing and querying vector embeddings for similarity search and machine learning applications.
 
 TypeORM supports both `vector` and `halfvec` column types across databases:
 
-- `vector` - stores vectors as 4-byte floats (single precision)
-  - PostgreSQL: native `vector` type via pgvector extension
-  - SAP HANA: alias for `real_vector` type
-- `halfvec` - stores vectors as 2-byte floats (half precision) for memory efficiency
-  - PostgreSQL: native `halfvec` type via pgvector extension  
-  - SAP HANA: alias for `half_vector` type
+-   `vector` - stores vectors as 4-byte floats (single precision)
+    -   PostgreSQL: native `vector` type via pgvector extension
+    -   SQL Server: native `vector` type
+    -   SAP HANA: alias for `real_vector` type
+-   `halfvec` - stores vectors as 2-byte floats (half precision) for memory efficiency
+    -   PostgreSQL: native `halfvec` type via pgvector extension
+    -   SAP HANA: alias for `half_vector` type
 
 You can specify the vector dimensions using the `length` option:
 
@@ -201,45 +202,62 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number
 
-    // Vector without specified dimensions (works on PostgreSQL and SAP HANA)
+    // Vector without specified dimensions (works on PostgreSQL, SQL Server, and SAP HANA)
     @Column("vector")
     embedding: number[] | Buffer
 
-    // Vector with 3 dimensions: vector(3) (works on PostgreSQL and SAP HANA)
+    // Vector with 3 dimensions: vector(3)
     @Column("vector", { length: 3 })
     embedding_3d: number[] | Buffer
 
-    // Half-precision vector with 4 dimensions: halfvec(4) (works on PostgreSQL and SAP HANA)
+    // Half-precision vector with 4 dimensions: halfvec(4) (PostgreSQL and SAP HANA only)
     @Column("halfvec", { length: 4 })
     halfvec_embedding: number[] | Buffer
 }
 ```
 
-Vector columns can be used for similarity searches using PostgreSQL's vector operators:
+**PostgreSQL** - Vector columns can be used for similarity searches using vector operators:
 
 ```typescript
 // L2 distance (Euclidean) - <->
 const results = await dataSource.query(
     `SELECT id, embedding FROM post ORDER BY embedding <-> $1 LIMIT 5`,
-    ["[1,2,3]"]
+    ["[1,2,3]"],
 )
 
 // Cosine distance - <=>
 const results = await dataSource.query(
     `SELECT id, embedding FROM post ORDER BY embedding <=> $1 LIMIT 5`,
-    ["[1,2,3]"]
+    ["[1,2,3]"],
 )
 
 // Inner product - <#>
 const results = await dataSource.query(
     `SELECT id, embedding FROM post ORDER BY embedding <#> $1 LIMIT 5`,
-    ["[1,2,3]"]
+    ["[1,2,3]"],
 )
 ```
 
-> **Note**: 
-> - **PostgreSQL**: Vector columns require the `pgvector` extension to be installed. The extension provides the vector data types and similarity operators.
-> - **SAP HANA**: Vector columns require SAP HANA Cloud (2024Q1+) and a supported version of `@sap/hana-client`. Use the appropriate [vector similarity functions](https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/vector-functions) for similarity searches.
+**SQL Server** - Use the `VECTOR_DISTANCE` function for similarity searches:
+
+```typescript
+const queryEmbedding = [1, 2, 3]
+
+// Cosine distance
+const results = await dataSource.query(`
+    DECLARE @question AS VECTOR (3) = '${JSON.stringify(queryEmbedding)}';
+    SELECT TOP (5) id, embedding, 
+           VECTOR_DISTANCE('cosine', @question, embedding) AS distance
+    FROM post
+    ORDER BY VECTOR_DISTANCE('cosine', @question, embedding)
+`)
+```
+
+> **Note**:
+>
+> -   **PostgreSQL**: Vector columns require the `pgvector` extension to be installed. The extension provides the vector data types and similarity operators.
+> -   **SQL Server**: Vector type support requires a compatible SQL Server version with vector functionality enabled.
+> -   **SAP HANA**: Vector columns require SAP HANA Cloud (2024Q1+) and a supported version of `@sap/hana-client`. Use the appropriate [vector similarity functions](https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/vector-functions) for similarity searches.
 
 ## Column types
 

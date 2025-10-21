@@ -142,6 +142,7 @@ export class SqlServerDriver implements Driver {
         "geometry",
         "geography",
         "rowversion",
+        "vector",
     ]
 
     /**
@@ -164,6 +165,7 @@ export class SqlServerDriver implements Driver {
         "nvarchar",
         "binary",
         "varbinary",
+        "vector",
     ]
 
     /**
@@ -322,7 +324,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
-    afterConnect(): Promise<void> {
+    async afterConnect(): Promise<void> {
         return Promise.resolve()
     }
 
@@ -549,6 +551,12 @@ export class SqlServerDriver implements Driver {
             return DateUtils.simpleJsonToString(value)
         } else if (columnMetadata.type === "simple-enum") {
             return DateUtils.simpleEnumToString(value)
+        } else if (columnMetadata.type === "vector") {
+            if (Array.isArray(value)) {
+                return JSON.stringify(value)
+            } else {
+                return value
+            }
         }
 
         return value
@@ -586,6 +594,14 @@ export class SqlServerDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "simple-enum") {
             value = DateUtils.stringToSimpleEnum(value, columnMetadata)
+        } else if (columnMetadata.type === "vector") {
+            if (typeof value === "string") {
+                try {
+                    value = JSON.parse(value)
+                } catch (e) {
+                    // If parsing fails, return the value as-is
+                }
+            }
         } else if (columnMetadata.type === Number) {
             // convert to number if number
             value = !isNaN(+value) ? parseInt(value) : value
@@ -707,8 +723,18 @@ export class SqlServerDriver implements Driver {
 
         let type = column.type
 
+        // Handle vector type with length (dimensions)
+        if (column.type === "vector") {
+            if (!column.length) {
+                throw new TypeORMError(
+                    `Column "${column.name}" is of type "vector" does not have required length set.`,
+                )
+            }
+            // NOT: real returned length is (N*4 + 8) where N is desired dimensions
+            type = `vector (${column.length})`
+        }
         // used 'getColumnLength()' method, because SqlServer sets `varchar` and `nvarchar` length to 1 by default.
-        if (this.getColumnLength(column)) {
+        else if (this.getColumnLength(column)) {
             type += `(${this.getColumnLength(column)})`
         } else if (
             column.precision !== null &&
@@ -1176,6 +1202,19 @@ export class SqlServerDriver implements Driver {
                 if (err) return fail(err)
                 ok(connection)
             })
+        })
+    }
+
+    /**
+     * Executes given query.
+     */
+    protected executeQuery(connection: any, query: string) {
+        this.connection.logger.logQuery(query)
+
+        return new Promise((ok, fail) => {
+            connection.query(query, (err: any, result: any) =>
+                err ? fail(err) : ok(result),
+            )
         })
     }
 }
