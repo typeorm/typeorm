@@ -177,6 +177,7 @@ The `vector` data type is available in SQL Server for storing high-dimensional v
 -   Machine learning applications
 
 NOTE: general `halfvec` type support is unavailable because this feature is still in preview. See the Microsoft docs: [Vector data type](https://learn.microsoft.com/en-us/sql/t-sql/data-types/vector-data-type).
+
 #### Usage
 
 ```typescript
@@ -203,13 +204,16 @@ const queryEmbedding = [
     /* your query vector */
 ]
 
-const results = await dataSource.query(`
-    DECLARE @question AS VECTOR (1998) = '${JSON.stringify(queryEmbedding)}';
+const results = await dataSource.query(
+    `
+    DECLARE @question AS VECTOR (1998) = @0;
     SELECT TOP (10) dc.*, 
            VECTOR_DISTANCE('cosine', @question, embedding) AS distance
     FROM document_chunk dc
     ORDER BY VECTOR_DISTANCE('cosine', @question, embedding)
-`)
+`,
+    [JSON.stringify(queryEmbedding)],
+)
 ```
 
 **Distance Metrics:**

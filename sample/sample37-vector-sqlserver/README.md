@@ -51,16 +51,19 @@ const queryEmbedding = [
 ]
 const documentIds = ["doc-id-1", "doc-id-2"]
 
-const results = await connection.query(`
-    DECLARE @question AS VECTOR (1998) = '${JSON.stringify(queryEmbedding)}';
+const results = await connection.query(
+    `
+    DECLARE @question AS VECTOR (1998) = @0;
     SELECT TOP (10) dc.*, 
            VECTOR_DISTANCE('cosine', @question, embedding) AS distance,
            d.fileName as "documentName"
     FROM document_chunks dc
     LEFT JOIN documents d ON dc.documentId = d.id
-    WHERE documentId IN (${documentIds.map((s) => `'${s}'`).join(", ")})
+    WHERE documentId IN (@1))
     ORDER BY VECTOR_DISTANCE('cosine', @question, embedding)
-`)
+`,
+    [JSON.stringify(queryEmbedding), documentIds.join(", ")],
+)
 ```
 
 ## Distance Metrics

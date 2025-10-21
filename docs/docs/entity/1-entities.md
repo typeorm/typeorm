@@ -246,12 +246,12 @@ const queryEmbedding = [1, 2, 3]
 
 // Cosine distance
 const results = await dataSource.query(`
-    DECLARE @question AS VECTOR (3) = '${JSON.stringify(queryEmbedding)}';
+    DECLARE @question AS VECTOR(3) = @0;
     SELECT TOP (5) id, embedding, 
            VECTOR_DISTANCE('cosine', @question, embedding) AS distance
     FROM post
     ORDER BY VECTOR_DISTANCE('cosine', @question, embedding)
-`)
+`,  [JSON.stringify(queryEmbedding)])
 ```
 
 > **Note**:
