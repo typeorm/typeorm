@@ -324,7 +324,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
-    async afterConnect(): Promise<void> {
+    afterConnect(): Promise<void> {
         return Promise.resolve()
     }
 
@@ -1202,19 +1202,6 @@ export class SqlServerDriver implements Driver {
                 if (err) return fail(err)
                 ok(connection)
             })
-        })
-    }
-
-    /**
-     * Executes given query.
-     */
-    protected executeQuery(connection: any, query: string) {
-        this.connection.logger.logQuery(query)
-
-        return new Promise((ok, fail) => {
-            connection.query(query, (err: any, result: any) =>
-                err ? fail(err) : ok(result),
-            )
         })
     }
 }
