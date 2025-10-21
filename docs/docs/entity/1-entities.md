@@ -203,7 +203,7 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number
 
-    // Vector without specified dimensions (works on PostgreSQL, SQL Server, and SAP HANA)
+    // Vector without specified dimensions (works on PostgreSQL and SAP HANA; SQL Server requires explicit dimensions)
     @Column("vector")
     embedding: number[] | Buffer
 

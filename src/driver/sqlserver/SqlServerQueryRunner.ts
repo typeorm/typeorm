@@ -4139,6 +4139,8 @@ export class SqlServerQueryRunner
                 return this.driver.mssql.UDT
             case "rowversion":
                 return this.driver.mssql.RowVersion
+            case "vector":
+                return this.driver.mssql.Ntext
         }
     }
 
