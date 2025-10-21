@@ -730,7 +730,7 @@ export class SqlServerDriver implements Driver {
                     `Column "${column.name}" is of type "vector" does not have required length set.`,
                 )
             }
-            // NOT: real returned length is (N*4 + 8) where N is desired dimensions
+            // NOTE: real returned length is (N*4 + 8) where N is desired dimensions
             type = `vector (${column.length})`
         }
         // used 'getColumnLength()' method, because SqlServer sets `varchar` and `nvarchar` length to 1 by default.
