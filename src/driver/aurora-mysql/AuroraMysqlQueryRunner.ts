@@ -1613,6 +1613,7 @@ export class AuroraMysqlQueryRunner
     async dropUniqueConstraint(
         tableOrName: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExist?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `MySql does not support unique constraints. Use unique index instead.`,
@@ -1625,6 +1626,7 @@ export class AuroraMysqlQueryRunner
     async dropUniqueConstraints(
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExist?: boolean,
     ): Promise<void> {
         throw new TypeORMError(
             `MySql does not support unique constraints. Use unique index instead.`,

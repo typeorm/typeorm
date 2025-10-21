@@ -390,6 +390,7 @@ export interface QueryRunner {
     dropUniqueConstraint(
         table: Table | string,
         uniqueOrName: TableUnique | string,
+        ifExist?: boolean,
     ): Promise<void>
 
     /**
@@ -398,6 +399,7 @@ export interface QueryRunner {
     dropUniqueConstraints(
         table: Table | string,
         uniqueConstraints: TableUnique[],
+        ifExist?: boolean,
     ): Promise<void>
 
     /**

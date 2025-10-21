@@ -743,11 +743,12 @@ Creates new unique constraints.
 ---
 
 ```ts
-dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string): Promise<void>
+dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string, ifExist?: boolean): Promise<void>
 ```
 
 -   `table` - Table object or name
 -   `uniqueOrName` - TableUnique object or unique constraint name to be dropped
+-   `ifExist` - skips deletion if `true`, otherwise throws error if constraint was not found
 
 Drops a unique constraint.
 
@@ -756,11 +757,12 @@ Drops a unique constraint.
 ---
 
 ```ts
-dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Promise<void>
+dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[], ifExist?: boolean): Promise<void>
 ```
 
 -   `table` - Table object or name
 -   `uniqueConstraints` - array of TableUnique objects to be dropped
+-   `ifExist` - skips deletion if `true`, otherwise throws error if some constraint was not found
 
 Drops unique constraints.
 
