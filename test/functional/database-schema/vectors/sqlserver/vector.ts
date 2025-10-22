@@ -34,8 +34,7 @@ describe("columns > vector type > sqlserver", () => {
 
                 expect(embeddingColumn).to.exist
                 expect(embeddingColumn!.type).to.equal("vector")
-                // NOTE: real returned length is (N*4 + 8) where N is desired dimensions
-                expect(embeddingColumn!.length).to.equal("8000")
+                expect(embeddingColumn!.length).to.equal("1998")
             }),
         ))
 
