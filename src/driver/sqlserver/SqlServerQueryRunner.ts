@@ -3151,9 +3151,14 @@ export class SqlServerQueryRunner
                                 if (length === "-1") {
                                     tableColumn.length = "MAX"
                                 } else {
-                                    // For vector type, always preserve the length (dimensions)
                                     if (tableColumn.type === "vector") {
-                                        tableColumn.length = length
+                                        const len = +length
+                                        // NOTE: real returned length is (N*4 + 8) where N is desired dimensions
+                                        if (!Number.isNaN(len)) {
+                                            tableColumn.length = String(
+                                                (len - 8) / 4,
+                                            )
+                                        }
                                     } else {
                                         tableColumn.length =
                                             !this.isDefaultColumnLength(
