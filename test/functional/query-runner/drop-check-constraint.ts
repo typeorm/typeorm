@@ -11,7 +11,10 @@ describe("query runner > drop check constraint", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [
+                __dirname + "/entity/common/*{.js,.ts}",
+                __dirname + "/entity/:driver:/*{.js,.ts}",
+            ],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -22,8 +25,11 @@ describe("query runner > drop check constraint", () => {
     it("should correctly drop check constraint and revert drop", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // Mysql does not support check constraints.
-                if (DriverUtils.isMySQLFamily(connection.driver)) return
+                if (
+                    DriverUtils.isMySQLFamily(connection.driver) &&
+                    !connection.driver.isCheckConstraintsSupported
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
 

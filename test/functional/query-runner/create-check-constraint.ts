@@ -12,7 +12,10 @@ describe("query runner > create check constraint", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [
+                __dirname + "/entity/common/*{.js,.ts}",
+                __dirname + "/entity/:driver:/*{.js,.ts}",
+            ],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -23,8 +26,11 @@ describe("query runner > create check constraint", () => {
     it("should correctly create check constraint and revert creation", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // Mysql does not support check constraints.
-                if (DriverUtils.isMySQLFamily(connection.driver)) return
+                if (
+                    DriverUtils.isMySQLFamily(connection.driver) &&
+                    !connection.driver.isCheckConstraintsSupported
+                )
+                    return
 
                 let numericType = "int"
                 if (DriverUtils.isSQLiteFamily(connection.driver)) {
