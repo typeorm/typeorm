@@ -921,6 +921,9 @@ export class ReactNativeDriver implements Driver {
                 },
                 this.options.extra || {},
             )
+            if (this.options.encryptionKey) {
+                options.encryptionKey = this.options.encryptionKey;
+            }
 
             this.sqlite.openDatabase(
                 options,
