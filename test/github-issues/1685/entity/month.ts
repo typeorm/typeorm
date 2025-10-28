@@ -16,10 +16,10 @@ export class Month {
     @PrimaryColumn()
     public monthNo: number
 
-    @ManyToOne((type) => Year, (year) => year.month)
+    @ManyToOne(() => Year, (year) => year.month)
     @JoinColumn({ name: "yearNo", referencedColumnName: "yearNo" })
     public year: Year
 
-    @OneToMany((type) => UserMonth, (userMonth) => userMonth.month)
+    @OneToMany(() => UserMonth, (userMonth) => userMonth.month)
     public userMonth: UserMonth[]
 }

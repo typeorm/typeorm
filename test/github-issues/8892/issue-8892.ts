@@ -9,7 +9,7 @@ import { Zip } from "./entity/zip"
 import { Country } from "./entity/country"
 import { DataSource } from "../../../src"
 
-describe('github issues > #8892 ManyToMany relations save throws "Violation of PRIMARY KEY constraint"', async () => {
+describe('github issues > #8892 ManyToMany relations save throws "Violation of PRIMARY KEY constraint"', () => {
     let connections: DataSource[]
 
     beforeEach(async () => {

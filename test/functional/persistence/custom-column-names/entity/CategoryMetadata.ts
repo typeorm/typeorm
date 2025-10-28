@@ -12,6 +12,6 @@ export class CategoryMetadata {
     @Column()
     keyword: string
 
-    @OneToOne((type) => Category, (category) => category.metadata)
+    @OneToOne(() => Category, (category) => category.metadata)
     category: Category
 }
