@@ -21,6 +21,6 @@ export class User {
     @Column()
     age: number
 
-    @OneToMany((type) => Photo, (photo) => photo.user)
+    @OneToMany(() => Photo, (photo) => photo.user)
     photos: Photo[]
 }

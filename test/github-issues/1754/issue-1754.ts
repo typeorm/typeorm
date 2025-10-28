@@ -41,7 +41,7 @@ describe("github issue #1754 Repository.save() always updating ManyToOne relatio
 
                 // The issue happens when I receive the cliente JSON from user interface
                 // 1. First I tried to call save() after receive the JSON
-                let myReceivedJson1 = {
+                const myReceivedJson1 = {
                     id: 1,
                     nome: "Kirliam changed 1",
                     tipo: { id: 1, descricao: "Mensalista" },
@@ -52,17 +52,17 @@ describe("github issue #1754 Repository.save() always updating ManyToOne relatio
 
                 // 2. After I tried to preload the entity before saving. I was expecting that just
                 // the name column to be updated, but in both cases tipoCliente is also being updated.
-                let myReceivedJson2 = {
+                const myReceivedJson2 = {
                     id: 1,
                     nome: "Kirliam changed 2",
                     tipo: { id: 1, descricao: "Mensalista" },
                 }
-                let clienteDb1: Cliente = (await connection.manager
+                const clienteDb1: Cliente = (await connection.manager
                     .getRepository(Cliente)
                     .preload(myReceivedJson2)) as Cliente
                 await connection.manager.getRepository(Cliente).save(clienteDb1)
 
-                let myReceivedJson3 = {
+                const myReceivedJson3 = {
                     id: 1,
                     nome: "Kirliam changed 3",
                     tipo: { id: 2, descricao: "XXXX" },

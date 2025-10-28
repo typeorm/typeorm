@@ -9,7 +9,7 @@ export class Parent {
     })
     public id: number
 
-    @OneToMany((type) => Child, (child) => child.parent, {
+    @OneToMany(() => Child, (child) => child.parent, {
         eager: true,
         cascade: true,
         onDelete: "CASCADE",

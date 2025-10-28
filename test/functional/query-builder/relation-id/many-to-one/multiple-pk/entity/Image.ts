@@ -12,7 +12,7 @@ export class Image {
     @Column()
     name: string
 
-    @OneToMany((type) => Category, (category) => category.image)
+    @OneToMany(() => Category, (category) => category.image)
     categories: Category[]
 
     categoryIds: number[]

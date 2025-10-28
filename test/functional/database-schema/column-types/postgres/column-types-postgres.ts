@@ -85,12 +85,14 @@ describe("database schema > column types > postgres", () => {
                 post.cidr = "192.168.100.128/25"
                 post.inet = "192.168.100.128"
                 post.macaddr = "08:00:2b:01:02:03"
+                post.macaddr8 = "08:00:2b:01:02:03:04:05"
                 post.bit = "1"
                 post.varbit = "100"
                 post.bitVarying = "00"
                 post.uuid = "0e37df36-f698-11e6-8dd4-cb9ced3df976"
                 post.json = { id: 1, name: "Post" }
                 post.jsonb = { id: 1, name: "Post" }
+                post.jsonpath = '$."name"'
                 post.int4range = "[10,20)"
                 post.int8range = "[200000,500000)"
                 post.numrange = "(10.5,20.2)"
@@ -178,12 +180,14 @@ describe("database schema > column types > postgres", () => {
                 loadedPost.cidr.should.be.equal(post.cidr)
                 loadedPost.inet.should.be.equal(post.inet)
                 loadedPost.macaddr.should.be.equal(post.macaddr)
+                loadedPost.macaddr8.should.be.equal(post.macaddr8)
                 loadedPost.bit.should.be.equal(post.bit)
                 loadedPost.varbit.should.be.equal(post.varbit)
                 loadedPost.bitVarying.should.be.equal(post.bitVarying)
                 loadedPost.uuid.should.be.equal(post.uuid)
                 loadedPost.json.should.be.eql(post.json)
                 loadedPost.jsonb.should.be.eql(post.jsonb)
+                loadedPost.jsonpath.should.be.eql(post.jsonpath)
                 loadedPost.int4range.should.be.eql(post.int4range)
                 loadedPost.int8range.should.be.eql(post.int8range)
                 loadedPost.numrange.should.be.eql(post.numrange)
@@ -308,6 +312,9 @@ describe("database schema > column types > postgres", () => {
                 table!
                     .findColumnByName("macaddr")!
                     .type.should.be.equal("macaddr")
+                table!
+                    .findColumnByName("macaddr8")!
+                    .type.should.be.equal("macaddr8")
                 table!.findColumnByName("bit")!.type.should.be.equal("bit")
                 table!
                     .findColumnByName("varbit")!
@@ -319,6 +326,9 @@ describe("database schema > column types > postgres", () => {
                 table!.findColumnByName("xml")!.type.should.be.equal("xml")
                 table!.findColumnByName("json")!.type.should.be.equal("json")
                 table!.findColumnByName("jsonb")!.type.should.be.equal("jsonb")
+                table!
+                    .findColumnByName("jsonpath")!
+                    .type.should.be.equal("jsonpath")
                 table!
                     .findColumnByName("int4range")!
                     .type.should.be.equal("int4range")
