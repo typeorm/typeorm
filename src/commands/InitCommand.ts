@@ -6,6 +6,8 @@ import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
 import { CommandUtils } from "./CommandUtils"
 
+import ourPackageJson from "../../package.json"
+
 /**
  * Generates a new project with TypeORM.
  */
@@ -623,7 +625,7 @@ AppDataSource.initialize().then(async () => {
                 return `services:
 
   mongodb:
-    image: "mongo:8.0.5"
+    image: "mongo:8"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
@@ -680,48 +682,53 @@ Steps to run this project:
 
         if (!packageJson.devDependencies) packageJson.devDependencies = {}
         packageJson.devDependencies = {
-            "@types/node": "^22.13.10",
-            "ts-node": "^10.9.2",
-            typescript: "^5.8.2",
+            "@types/node": ourPackageJson.devDependencies["@types/node"],
+            "ts-node": ourPackageJson.devDependencies["ts-node"],
+            typescript: ourPackageJson.devDependencies.typescript,
             ...packageJson.devDependencies,
         }
 
         if (!packageJson.dependencies) packageJson.dependencies = {}
         packageJson.dependencies = {
             ...packageJson.dependencies,
-            "reflect-metadata": "^0.2.2",
-            typeorm:
-                require("../package.json").version !== "0.0.0"
-                    ? require("../package.json").version // install version from package.json if present
-                    : require("../package.json").installFrom, // else use custom source
+            "reflect-metadata": ourPackageJson.dependencies["reflect-metadata"],
+            typeorm: ourPackageJson.version,
         }
 
         switch (database) {
             case "mysql":
             case "mariadb":
-                packageJson.dependencies["mysql2"] = "^3.14.0"
+                packageJson.dependencies["mysql2"] =
+                    ourPackageJson.devDependencies.mysql2
                 break
             case "postgres":
             case "cockroachdb":
-                packageJson.dependencies["pg"] = "^8.14.1"
+                packageJson.dependencies["pg"] =
+                    ourPackageJson.devDependencies.pg
                 break
             case "sqlite":
-                packageJson.dependencies["sqlite3"] = "^5.1.7"
+                packageJson.dependencies["sqlite3"] =
+                    ourPackageJson.devDependencies.sqlite3
                 break
             case "better-sqlite3":
-                packageJson.dependencies["better-sqlite3"] = "^8.7.0"
+                packageJson.dependencies["better-sqlite3"] =
+                    ourPackageJson.devDependencies["better-sqlite3"]
                 break
             case "oracle":
-                packageJson.dependencies["oracledb"] = "^6.8.0"
+                packageJson.dependencies["oracledb"] =
+                    ourPackageJson.devDependencies.oracledb
                 break
             case "mssql":
-                packageJson.dependencies["mssql"] = "^10.0.4"
+                packageJson.dependencies["mssql"] =
+                    ourPackageJson.devDependencies.mssql
                 break
             case "mongodb":
-                packageJson.dependencies["mongodb"] = "^6.15.0"
+                packageJson.dependencies["mongodb"] =
+                    ourPackageJson.devDependencies.mongodb
                 break
             case "spanner":
-                packageJson.dependencies["@google-cloud/spanner"] = "^7.19.1 "
+                packageJson.dependencies["@google-cloud/spanner"] =
+                    ourPackageJson.devDependencies["@google-cloud/spanner"]
                 break
         }
 
