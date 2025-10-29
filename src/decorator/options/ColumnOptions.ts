@@ -200,4 +200,15 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
      */
     query?: (alias: string) => string
+
+    /**
+     * Indicates if date values should be stored and retrieved in UTC timezone
+     * instead of local timezone. Only applies to "date" column type.
+     * Default value is "false" (uses local timezone for backward compatibility).
+     *
+     * @example
+     * @Column({ type: "date", utc: true })
+     * birthDate: Date
+     */
+    utc?: boolean
 }
