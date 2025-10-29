@@ -1,15 +1,14 @@
 import "reflect-metadata"
-import {
-    createTestingConnections,
-    closeTestingConnections,
-    reloadTestingDatabases,
-} from "../../utils/test-utils"
-import { DataSource } from "../../../src"
-import { Event } from "./entity/Event"
-import { after, before } from "mocha"
 import { expect } from "chai"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import { Event } from "./entity/Event"
+import { DataSource } from "../../../../src"
 
-describe("github issues > #11515 DateUtils.mixedDateToDateString should support UTC", () => {
+describe("columns > date utc flag", () => {
     let originalTZ: string | undefined
     let connections: DataSource[]
 
@@ -17,7 +16,7 @@ describe("github issues > #11515 DateUtils.mixedDateToDateString should support 
         originalTZ = process.env.TZ
         process.env.TZ = "America/New_York"
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [Event],
         })
     })
 
@@ -25,23 +24,26 @@ describe("github issues > #11515 DateUtils.mixedDateToDateString should support 
         process.env.TZ = originalTZ
         await closeTestingConnections(connections)
     })
+
     beforeEach(() => reloadTestingDatabases(connections))
 
-    it("should save the date column in UTC when the utc flag is true", () =>
+    it("should save date columns in UTC when utc flag is true and in local timezone when false", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const event = new Event()
-                const utc = new Date(Date.UTC(2025, 5, 1))
+                const testDate = new Date(Date.UTC(2025, 5, 1)) // 2025-06-01 in UTC
 
-                event.localDate = utc
-                event.utcDate = utc
+                event.localDate = testDate
+                event.utcDate = testDate
 
-                const saveEvent = await connection.manager.save(event)
+                const savedEvent = await connection.manager.save(event)
                 const result = await connection.manager.findOneBy(Event, {
-                    id: saveEvent.id,
+                    id: savedEvent.id,
                 })
 
+                // UTC flag true: should save as 2025-06-01 (UTC date)
                 expect(result!.utcDate).to.equal("2025-06-01")
+                // UTC flag false (default): should save as 2025-05-31 (local timezone)
                 expect(result!.localDate).to.equal("2025-05-31")
             }),
         ))
