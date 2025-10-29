@@ -190,7 +190,7 @@ TypeORM supports both `vector` and `halfvec` column types across databases:
   - PostgreSQL: native `vector` type via pgvector extension
   - SAP HANA: alias for `real_vector` type
 - `halfvec` - stores vectors as 2-byte floats (half precision) for memory efficiency
-  - PostgreSQL: native `halfvec` type via pgvector extension  
+  - PostgreSQL: native `halfvec` type via pgvector extension
   - SAP HANA: alias for `half_vector` type
 
 You can specify the vector dimensions using the `length` option:
@@ -237,7 +237,7 @@ const results = await dataSource.query(
 )
 ```
 
-> **Note**: 
+> **Note**:
 > - **PostgreSQL**: Vector columns require the `pgvector` extension to be installed. The extension provides the vector data types and similarity operators.
 > - **SAP HANA**: Vector columns require SAP HANA Cloud (2024Q1+) and a supported version of `@sap/hana-client`. Use the appropriate [vector similarity functions](https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/vector-functions) for similarity searches.
 
@@ -470,6 +470,7 @@ List of available options in `ColumnOptions`:
 -   `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
 -   `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[])
 -   `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database. Array of transformers are also supported and will be applied in natural order when writing, and in reverse order when reading. e.g. `[lowercase, encrypt]` will first lowercase the string then encrypt it when writing, and will decrypt then do nothing when reading.
+-   `utc: boolean` - Indicates if date values should be stored and retrieved in UTC timezone instead of local timezone. Only applies to `date` column type. Default value is `false` (uses local timezone for backward compatibility).
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.
 
