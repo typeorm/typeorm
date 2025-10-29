@@ -21,9 +21,9 @@ describe("github issues > #11515 DateUtils.mixedDateToDateString should support 
         })
     })
 
-    after(() => {
+    after(async () => {
         process.env.TZ = originalTZ
-        after(() => closeTestingConnections(connections))
+        await closeTestingConnections(connections)
     })
     beforeEach(() => reloadTestingDatabases(connections))
 

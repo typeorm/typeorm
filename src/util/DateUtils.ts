@@ -27,7 +27,7 @@ export class DateUtils {
      */
     static mixedDateToDateString(
         value: string | Date,
-        utc: Boolean = false,
+        utc: boolean = false,
     ): string {
         if (value instanceof Date) {
             if (utc) {

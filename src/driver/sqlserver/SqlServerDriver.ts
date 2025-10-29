@@ -532,7 +532,7 @@ export class SqlServerDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDate(value)
+            return DateUtils.mixedDateToDate(value, columnMetadata.utc)
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToDate(value)
         } else if (
