@@ -1,24 +1,24 @@
-import { QueryRunner } from "../../query-runner/QueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { Table } from "../../schema-builder/table/Table"
-import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { View } from "../../schema-builder/view/View"
-import { Query } from "../Query"
-import { AbstractSqliteDriver } from "./AbstractSqliteDriver"
-import { ReadStream } from "../../platform/PlatformTools"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
-import { TableUnique } from "../../schema-builder/table/TableUnique"
-import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
-import { OrmUtils } from "../../util/OrmUtils"
-import { TableCheck } from "../../schema-builder/table/TableCheck"
-import { IsolationLevel } from "../types/IsolationLevel"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TransactionAlreadyStartedError, TypeORMError } from "../../error"
-import { MetadataTableType } from "../types/MetadataTableType"
+import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { ReadStream } from "../../platform/PlatformTools"
+import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryRunner } from "../../query-runner/QueryRunner"
+import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
+import { Table } from "../../schema-builder/table/Table"
+import { TableCheck } from "../../schema-builder/table/TableCheck"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableExclusion } from "../../schema-builder/table/TableExclusion"
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import { TableIndex } from "../../schema-builder/table/TableIndex"
+import { TableUnique } from "../../schema-builder/table/TableUnique"
+import { View } from "../../schema-builder/view/View"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import { Query } from "../Query"
+import { IsolationLevel } from "../types/IsolationLevel"
+import { MetadataTableType } from "../types/MetadataTableType"
+import { AbstractSqliteDriver } from "./AbstractSqliteDriver"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -877,6 +877,13 @@ export abstract class AbstractSqliteQueryRunner
             throw new TypeORMError(
                 `Supplied unique constraint was not found in table ${table.name}`,
             )
+        if (!uniqueConstraint.name) {
+            uniqueConstraint.name =
+                this.connection.namingStrategy.uniqueConstraintName(
+                    table,
+                    uniqueConstraint.columnNames,
+                )
+        }
 
         await this.dropUniqueConstraints(table, [uniqueConstraint])
     }

@@ -1,12 +1,12 @@
-import "reflect-metadata"
 import { expect } from "chai"
+import "reflect-metadata"
 import { DataSource, Table, TableColumn, TableUnique } from "../../../src"
+import { DriverUtils } from "../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > drop unique constraint", () => {
     let connections: DataSource[]
@@ -177,6 +177,95 @@ describe("query runner > drop unique constraint", () => {
 
                     // Clean up the test table
                     await queryRunner.dropTable("test_unique_table")
+                } finally {
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
+    it("should handle dropping unique constraint without a name", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const queryRunner = connection.createQueryRunner()
+                try {
+                    await queryRunner.createTable(
+                        new Table({
+                            name: "test_drop_unnamed_unique",
+                            columns: [
+                                new TableColumn({
+                                    name: "id",
+                                    type: DriverUtils.isSQLiteFamily(
+                                        connection.driver,
+                                    )
+                                        ? "integer"
+                                        : "int",
+                                    isPrimary: true,
+                                    isGenerated: true,
+                                    generationStrategy: "increment",
+                                }),
+                                new TableColumn({
+                                    name: "unique_col_1",
+                                    type: "varchar",
+                                    length: "100",
+                                    isNullable: true,
+                                }),
+                            ],
+                        }),
+                        true,
+                    )
+
+                    // Create a unique constraint without a name
+                    await queryRunner.createUniqueConstraint(
+                        "test_drop_unnamed_unique",
+                        new TableUnique({
+                            columnNames: ["unique_col_1"],
+                        }),
+                    )
+
+                    // Get the table with unique constraints
+                    const table = await queryRunner.getTable(
+                        "test_drop_unnamed_unique",
+                    )
+                    if (!table) {
+                        throw new Error("Test table not found")
+                    }
+
+                    // Find only our test unique constraints
+                    const testUniqueConstraints = table.uniques
+                    expect(testUniqueConstraints).to.have.length(
+                        1,
+                        `Should have 1 test unique constraint before dropping, found: ${testUniqueConstraints
+                            .map((uq) => uq.name)
+                            .join(", ")}`,
+                    )
+
+                    // Drop the unique constraint without specifying the name
+                    await queryRunner.dropUniqueConstraint(
+                        "test_drop_unnamed_unique",
+                        new TableUnique({
+                            columnNames: ["unique_col_1"],
+                        }),
+                    )
+
+                    // Verify all test unique constraints were dropped
+                    const finalTable = await queryRunner.getTable(
+                        "test_drop_unnamed_unique",
+                    )
+                    if (!finalTable) {
+                        throw new Error("Final test table not found")
+                    }
+
+                    const remainingTestUniqueConstraints = finalTable.uniques
+
+                    expect(remainingTestUniqueConstraints).to.have.length(
+                        0,
+                        `All test unique constraints should be dropped, but found remaining: ${remainingTestUniqueConstraints
+                            .map((uq) => uq.name)
+                            .join(", ")}`,
+                    )
+
+                    // Clean up the test table
+                    await queryRunner.dropTable("test_drop_unnamed_unique")
                 } finally {
                     await queryRunner.release()
                 }

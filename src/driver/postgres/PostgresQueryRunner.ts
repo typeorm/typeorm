@@ -2714,6 +2714,13 @@ export class PostgresQueryRunner
             throw new TypeORMError(
                 `Supplied unique constraint was not found in table ${table.name}`,
             )
+        if (!uniqueConstraint.name) {
+            uniqueConstraint.name =
+                this.connection.namingStrategy.uniqueConstraintName(
+                    table,
+                    uniqueConstraint.columnNames,
+                )
+        }
 
         const up = this.dropUniqueConstraintSql(table, uniqueConstraint)
         const down = this.createUniqueConstraintSql(table, uniqueConstraint)
