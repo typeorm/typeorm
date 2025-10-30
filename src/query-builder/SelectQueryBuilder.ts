@@ -3729,7 +3729,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     return expr.replace(regex, (match, aliasName, propertyPath) => {
         const alias = this.expressionMap.findAliasByName(aliasName);
-        if (!alias) return match;
+        if (!alias || !alias.metadata) return match;
 
         const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
         if (!column) return match;
