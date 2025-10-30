@@ -15,7 +15,7 @@ export class CreateTableWithExtraValues1719925118382
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP TYPE "public"."foo_bar_enum"`)
         await queryRunner.query(`DROP TABLE "foo"`)
+        await queryRunner.query(`DROP TYPE "public"."foo_bar_enum"`)
     }
 }
