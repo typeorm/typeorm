@@ -3723,6 +3723,32 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
     }
 
+    protected _resolveAliasColumnsInExpression(expr: string, parentAlias: string): string {
+    // Match alias.column e.g. user.name
+    const regex = /([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_.]*)/g;
+
+    return expr.replace(regex, (match, aliasName, propertyPath) => {
+        const alias = this.expressionMap.findAliasByName(aliasName);
+        if (!alias) return match;
+
+        const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
+        if (!column) return match;
+
+        return (
+            this.escape(parentAlias) +
+            "." +
+            this.escape(
+                DriverUtils.buildAlias(
+                    this.connection.driver,
+                    undefined,
+                    aliasName,
+                    column.databaseName,
+                ),
+            )
+        );
+    });
+    }
+
     protected createOrderByCombinedWithSelectExpression(
         parentAlias: string,
     ): [string, OrderByCondition] {
@@ -3731,24 +3757,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const selectString = Object.keys(orderBys)
             .map((orderCriteria) => {
                 if (orderCriteria.indexOf(".") !== -1) {
-                    const criteriaParts = orderCriteria.split(".")
-                    const aliasName = criteriaParts[0]
-                    const propertyPath = criteriaParts.slice(1).join(".")
-                    const alias = this.expressionMap.findAliasByName(aliasName)
-                    const column =
-                        alias.metadata.findColumnWithPropertyPath(propertyPath)
-                    return (
-                        this.escape(parentAlias) +
-                        "." +
-                        this.escape(
-                            DriverUtils.buildAlias(
-                                this.connection.driver,
-                                undefined,
-                                aliasName,
-                                column!.databaseName,
-                            ),
-                        )
-                    )
+                    return this._resolveAliasColumnsInExpression(orderCriteria, parentAlias)
                 } else {
                     if (
                         this.expressionMap.selects.find(
@@ -3771,23 +3780,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const orderByObject: OrderByCondition = {}
         Object.keys(orderBys).forEach((orderCriteria) => {
             if (orderCriteria.indexOf(".") !== -1) {
-                const criteriaParts = orderCriteria.split(".")
-                const aliasName = criteriaParts[0]
-                const propertyPath = criteriaParts.slice(1).join(".")
-                const alias = this.expressionMap.findAliasByName(aliasName)
-                const column =
-                    alias.metadata.findColumnWithPropertyPath(propertyPath)
                 orderByObject[
-                    this.escape(parentAlias) +
-                        "." +
-                        this.escape(
-                            DriverUtils.buildAlias(
-                                this.connection.driver,
-                                undefined,
-                                aliasName,
-                                column!.databaseName,
-                            ),
-                        )
+                    this._resolveAliasColumnsInExpression(orderCriteria, parentAlias)
                 ] = orderBys[orderCriteria]
             } else {
                 if (
