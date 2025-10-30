@@ -3722,33 +3722,52 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             entities: entities,
         }
     }
-
+    /**
+     * Resolve "alias.propertyPath" tokens in a SQL expression to
+     * escaped columns prefixed with the provided parent alias.
+     *
+     * Unchanged tokens are left as-is when alias or column metadata
+     * cannot be resolved.
+     *
+     * @param expr SQL expression
+     * @param parentAlias alias used to prefix resolved columns
+     * @internal
+     * @returns Resolved SQL expression with columns prefixed by parentAlias
+     */
     protected _resolveAliasColumnsInExpression(expr: string, parentAlias: string): string {
-    // Match alias.column e.g. user.name
-    const regex = /([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_.]*)/g;
+        // Match alias.column e.g. user.name
+        const regex = /([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_.]*)/g;
 
-    return expr.replace(regex, (match, aliasName, propertyPath) => {
-        const alias = this.expressionMap.findAliasByName(aliasName);
-        if (!alias || !alias.metadata) return match;
+        return expr.replace(regex, (match, aliasName, propertyPath) => {
+            const alias = this.expressionMap.findAliasByName(aliasName);
+            if (!alias || !alias.metadata) return match;
 
-        const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
-        if (!column) return match;
+            const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
+            if (!column) return match;
 
-        return (
-            this.escape(parentAlias) +
-            "." +
-            this.escape(
-                DriverUtils.buildAlias(
-                    this.connection.driver,
-                    undefined,
-                    aliasName,
-                    column.databaseName,
-                ),
-            )
-        );
-    });
+            return (
+                this.escape(parentAlias) +
+                "." +
+                this.escape(
+                    DriverUtils.buildAlias(
+                        this.connection.driver,
+                        undefined,
+                        aliasName,
+                        column.databaseName,
+                    ),
+                )
+            );
+        });
     }
 
+    /**
+     * Builds a SELECT fragment and resolved ORDER BY mapping for the given parent alias.
+     * Resolves qualified aliases and prefixes unqualified selected columns that are part
+     * of the current selects with the provided parent alias.
+     *
+     * @param parentAlias - alias used to prefix unqualified selected columns
+     * @returns [selectString, orderByObject]
+     */
     protected createOrderByCombinedWithSelectExpression(
         parentAlias: string,
     ): [string, OrderByCondition] {
