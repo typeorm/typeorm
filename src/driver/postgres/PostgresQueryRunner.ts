@@ -1602,7 +1602,7 @@ export class PostgresQueryRunner
                 if (useAddValueForUp) {
                     // Add values for up - that's all we need
                     for (const item of extraItems) {
-                        const escapedValue = item.replace("'", "''")
+                        const escapedValue = item.replaceAll("'", "''")
 
                         upQueries.push(
                             new Query(
