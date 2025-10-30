@@ -16,6 +16,8 @@ export class CreateTableWithSpecialCharsMissingValues1719925118383
 
     public async down(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`DROP TABLE "foo_with_special_chars"`)
-        await queryRunner.query(`DROP TYPE "public"."foo_with_special_chars_bar_enum"`)
+        await queryRunner.query(
+            `DROP TYPE "public"."foo_with_special_chars_bar_enum"`,
+        )
     }
 }
