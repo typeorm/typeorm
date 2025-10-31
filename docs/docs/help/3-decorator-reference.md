@@ -17,6 +17,7 @@ This code will create a database table named "users".
 You can also specify some additional entity options:
 
 -   `name` - table name. If not specified, then table name is generated from entity class name.
+-   `targetName` - entity identifier name used by TypeORM internally to reference this entity (useful when class name can be minified in production code).
 -   `database` - database name in selected DB server.
 -   `schema` - schema name.
 -   `engine` - database engine to be set during table creation (works only in some databases).
@@ -28,6 +29,7 @@ Example:
 ```typescript
 @Entity({
     name: "users",
+    targetName: "UserEntity",
     engine: "MyISAM",
     database: "example_dev",
     schema: "schema_with_best_tables",
@@ -38,6 +40,15 @@ Example:
     },
 })
 export class User {}
+```
+
+Alternatively, you can use a static `displayName` property as a fallback when `targetName` is not provided:
+
+```typescript
+@Entity()
+export class User {
+    static displayName = "UserEntity"
+}
 ```
 
 Learn more about [Entities](../entity/1-entities.md).

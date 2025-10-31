@@ -80,6 +80,122 @@ When using an entity constructor its arguments **must be optional**. Since ORM c
 
 Learn more about parameters `@Entity` in [Decorators reference](../help/3-decorator-reference.md).
 
+## Entity Target Name
+
+TypeORM supports an optional target name to identify and reference entities By default, the class name is used as the target name, which works well in most scenarios. However, in production environments where code is minified, class names can be shortened (e.g., `User` becomes `a`), which can break entity resolution and relations. To address this edge case, TypeORM provides optional `targetName` and `displayName` features as a failsafe.
+
+TypeORM uses the following priority order to determine an entity's target name:
+
+1. **Explicit `targetName`** in `@Entity()` decorator (highest priority)
+2. **Static `displayName` property** on the class (fallback)
+3. **Class name** (default behavior)
+
+### Using targetName
+
+You can specify an explicit `targetName` in the `@Entity()` decorator options:
+
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+
+@Entity({ targetName: "UserEntity" })
+export class User {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    name: string
+}
+```
+
+This ensures that TypeORM will always identify this entity as `"UserEntity"`, regardless of whether the class name `User` gets minified to something else.
+
+You can then reference this entity by its target name in relations:
+
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm"
+
+@Entity({ targetName: "PostEntity" })
+export class Post {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    title: string
+
+    @ManyToOne("UserEntity", "posts")
+    user: User
+}
+```
+
+And when getting repositories:
+
+```typescript
+const userRepository = dataSource.getRepository("UserEntity")
+const userMetadata = dataSource.getMetadata("UserEntity")
+```
+
+### Using static displayName
+
+Alternatively, you can define a static `displayName` property on your entity class:
+
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+
+@Entity()
+export class User {
+    static displayName = "UserEntity"
+
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    name: string
+}
+```
+
+This serves as a fallback if `targetName` is not explicitly provided in the decorator. The `displayName` property is useful when you want to keep the decorator clean but still ensure minification-safe entity identification.
+
+### When to use targetName or displayName
+
+In most cases, you don't need to specify `targetName` or `displayName`. TypeORM will use the class name by default, which works perfectly fine.
+
+**Consider using explicit `targetName` when:**
+
+-   Your code will be minified in production (e.g., bundled with webpack, terser, or similar tools) **AND** you use string-based entity references
+-   You want a failsafe to ensure entity resolution works regardless of minification
+-   You need guaranteed stable entity identification across different build configurations
+
+**Example for minification-safe production environments:**
+
+```typescript
+@Entity({ targetName: "UserEntity" })
+export class User {
+    @PrimaryGeneratedColumn()
+    id: number
+}
+
+@Entity({ targetName: "PostEntity" })
+export class Post {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @ManyToOne("UserEntity")
+    user: User
+}
+```
+
+**Note:** The `targetName` serves as a stable identifier for the entity and is separate from the database table name. You can use both together:
+
+```typescript
+@Entity({ name: "users", targetName: "UserEntity" })
+export class User {
+    // Table will be "users" in database
+    // Entity identifier will be "UserEntity" in TypeORM
+}
+```
+
+If you're not using code minification or don't use string-based entity references in your relations, you can safely omit `targetName` and rely on the default class name behavior.
+
 ## Entity columns
 
 Since database tables consist of columns your entities must consist of columns too.
