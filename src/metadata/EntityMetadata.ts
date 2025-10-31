@@ -1000,6 +1000,7 @@ export class EntityMetadata {
         this.synchronize =
             this.tableMetadataArgs.synchronize === false ? false : true
         this.targetName =
+            this.tableMetadataArgs.targetName ??
             typeof this.tableMetadataArgs.target === "function"
                 ? (this.tableMetadataArgs.target as any).name
                 : this.tableMetadataArgs.target
