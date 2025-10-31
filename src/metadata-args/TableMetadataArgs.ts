@@ -19,8 +19,9 @@ export interface TableMetadataArgs {
      * string-based entity references in relations (e.g., @ManyToOne('EntityName')).
      *
      * If not specified, TypeORM will use the following priority order:
-     * 1. The class name (target.name, which may be minified)
-     * 2. The target itself (if target is a string)
+     * 1. Static 'displayName' property on the class (if target is a function)
+     * 2. The class name (target.name, which may be minified)
+     * 3. The target itself (if target is a string)
      *
      * This allows developers to ensure consistent entity resolution even when class
      * names are mangled by minifiers like UglifyJS or Terser.

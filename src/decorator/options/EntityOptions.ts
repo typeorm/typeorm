@@ -16,8 +16,9 @@ export interface EntityOptions {
      * string-based entity references in relations (e.g., @ManyToOne('EntityName')).
      *
      * If not specified, TypeORM will use the following priority order:
-     * 1. The class name (which may be minified)
-     * 2. The target itself (if target is a string)
+     * 1. Static 'displayName' property on the class
+     * 2. The class name (which may be minified)
+     * 3. The target itself (if target is a string)
      *
      * Example usage with minification:
      * @Entity({ name: "users", targetName: "User" })
