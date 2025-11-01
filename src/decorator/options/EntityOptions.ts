@@ -11,6 +11,22 @@ export interface EntityOptions {
     name?: string
 
     /**
+     * Target name used for entity identification in relations and metadata resolution.
+     * This is particularly useful when code minification changes class names, breaking
+     * string-based entity references in relations (e.g., @ManyToOne('EntityName')).
+     *
+     * If not specified, TypeORM will use the following priority order:
+     * 1. Static 'displayName' property on the class
+     * 2. The class name (which may be minified)
+     * 3. The target itself (if target is a string)
+     *
+     * Example usage with minification:
+     * @Entity({ name: "users", targetName: "User" })
+     * export class User { ... }
+     */
+    targetName?: string
+
+    /**
      * Specifies a default order by used for queries from this table when no explicit order by is specified.
      */
     orderBy?: OrderByCondition | ((object: any) => OrderByCondition | any)
