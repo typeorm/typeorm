@@ -83,7 +83,7 @@ describe("query builder > join-and-map > leftJoinAndMapOne with subquery select"
                 }),
             ))
 
-        it.skip("should map all columns when subquery selects entire alias", () =>
+        it("should map all columns when subquery selects entire alias", () =>
             Promise.all(
                 connections.map(async (connection) => {
                     // Setup test data
@@ -164,6 +164,72 @@ describe("query builder > join-and-map > leftJoinAndMapOne with subquery select"
                     expect(loadedEvent!.myRespond).to.not.be.undefined
                     expect(loadedEvent!.myRespond).to.have.property("id")
                     expect(loadedEvent!.myRespond).to.have.property("eventId")
+                    expect(loadedEvent!.myRespond).to.not.have.property(
+                        "status",
+                    )
+                    expect(loadedEvent!.myRespond).to.not.have.property(
+                        "userId",
+                    )
+                }),
+            ))
+
+        it("should preserve nested property paths in subquery select", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    // Setup test data
+                    const event = new Event()
+                    event.name = "Networking Event 2024"
+                    event.description = "Professional networking"
+                    await connection.manager.save(event)
+
+                    const respond = new EventRespond()
+                    respond.eventId = event.id
+                    respond.userId = 4
+                    respond.status = "yes"
+                    respond.contact = {
+                        email: "test@example.com",
+                        phone: "123-456-7890",
+                    }
+                    await connection.manager.save(respond)
+
+                    // Execute query selecting nested property
+                    const loadedEvent = await connection.manager
+                        .createQueryBuilder(Event, "event")
+                        .leftJoinAndMapOne(
+                            "event.myRespond",
+                            (qb) =>
+                                qb
+                                    .select([
+                                        "respond.id",
+                                        "respond.eventId",
+                                        "respond.contact.email",
+                                    ])
+                                    .from(EventRespond, "respond")
+                                    .where("respond.userId = :userId", {
+                                        userId: 4,
+                                    }),
+                            "respond",
+                            "respond.respond_eventId = event.id",
+                        )
+                        .where("event.id = :eventId", { eventId: event.id })
+                        .getOne()
+
+                    // Verify nested property path is preserved
+                    expect(loadedEvent!.myRespond).to.not.be.undefined
+                    expect(loadedEvent!.myRespond).to.have.property("id")
+                    expect(loadedEvent!.myRespond).to.have.property("eventId")
+                    expect(loadedEvent!.myRespond).to.have.property("contact")
+                    expect(loadedEvent!.myRespond.contact).to.have.property(
+                        "email",
+                    )
+                    expect(loadedEvent!.myRespond.contact.email).to.equal(
+                        "test@example.com",
+                    )
+                    // phone should not be present (not selected)
+                    expect(loadedEvent!.myRespond.contact).to.not.have.property(
+                        "phone",
+                    )
+                    // Other properties should not be present
                     expect(loadedEvent!.myRespond).to.not.have.property(
                         "status",
                     )
