@@ -2107,13 +2107,31 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             )
 
             if (subQuery.expressionMap.selects.length > 0) {
-                // Extract column names from selections (e.g., "respond.id" -> "id")
-                joinAttribute.selectedColumns =
-                    subQuery.expressionMap.selects.map((select: SelectQuery) =>
-                        select.selection.includes(".")
-                            ? select.selection.split(".").pop()!
-                            : select.selection,
+                const mainAliasName = subQuery.expressionMap.mainAlias?.name
+                const selectedColumns = subQuery.expressionMap.selects
+                    .map((select: SelectQuery) => {
+                        const selection = select.selection
+                        if (!selection || !mainAliasName) return selection
+
+                        // Full alias select means "select everything"
+                        if (selection === mainAliasName) {
+                            return undefined
+                        }
+
+                        // Remove only alias prefix, preserve full property path
+                        const aliasPrefix = `${mainAliasName}.`
+                        if (selection.startsWith(aliasPrefix)) {
+                            return selection.slice(aliasPrefix.length)
+                        }
+                        return selection
+                    })
+                    .filter(
+                        (name: string | undefined): name is string => !!name,
                     )
+
+                if (selectedColumns.length > 0) {
+                    joinAttribute.selectedColumns = selectedColumns
+                }
             }
 
             // Store the subquery's entity metadata for transformation
