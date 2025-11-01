@@ -111,9 +111,7 @@ describe("query builder > join-and-map > leftJoinAndMapOne with subquery select"
                                         userId: 2,
                                     }),
                             "respond",
-                            "respond.eventId = event.id",
-                            undefined,
-                            EventRespond,
+                            "respond.respond_eventId = event.id",
                         )
                         .where("event.id = :eventId", { eventId: event.id })
                         .getOne()
