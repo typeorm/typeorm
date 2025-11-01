@@ -2094,6 +2094,42 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         joinAttribute.isMappingMany = isMappingMany
         joinAttribute.entityOrProperty = entityOrProperty // relationName
         joinAttribute.condition = condition // joinInverseSideCondition
+
+        // If this is a subquery join with explicit column selections, store them
+        // so the transformer can respect the partial select
+        // We need to check if it's a QueryBuilder function (not an Entity class)
+        if (
+            typeof entityOrProperty === "function" &&
+            !this.connection.hasMetadata(entityOrProperty)
+        ) {
+            const subQuery = entityOrProperty(
+                this.subQuery() as SelectQueryBuilder<any>,
+            )
+
+            if (subQuery.expressionMap.selects.length > 0) {
+                // Extract column names from selections (e.g., "respond.id" -> "id")
+                joinAttribute.selectedColumns =
+                    subQuery.expressionMap.selects.map((select: SelectQuery) =>
+                        select.selection.includes(".")
+                            ? select.selection.split(".").pop()!
+                            : select.selection,
+                    )
+            }
+
+            // Store the subquery's entity metadata for transformation
+            // (without setting mapAsEntity which would change the JOIN type)
+            if (subQuery.expressionMap.mainAlias) {
+                const subQueryEntity = subQuery.expressionMap.mainAlias.target
+                if (
+                    subQueryEntity &&
+                    this.connection.hasMetadata(subQueryEntity)
+                ) {
+                    joinAttribute["__subqueryMetadata"] =
+                        this.connection.getMetadata(subQueryEntity)
+                }
+            }
+        }
+
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
         this.expressionMap.joinAttributes.push(joinAttribute)
 
