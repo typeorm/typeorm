@@ -53,7 +53,7 @@ describe("query builder > join-and-map > leftJoinAndMapOne with subquery select"
                                         userId: 1,
                                     }),
                             "respond",
-                            "respond.respond_eventId = event.id",
+                            "respond.respond_eventid = event.id",
                         )
                         .where("event.id = :eventId", { eventId: event.id })
                         .getOne()
@@ -111,7 +111,7 @@ describe("query builder > join-and-map > leftJoinAndMapOne with subquery select"
                                         userId: 2,
                                     }),
                             "respond",
-                            "respond.respond_eventId = event.id",
+                            "respond.respond_eventid = event.id",
                         )
                         .where("event.id = :eventId", { eventId: event.id })
                         .getOne()
@@ -153,7 +153,7 @@ describe("query builder > join-and-map > leftJoinAndMapOne with subquery select"
                                         userId: 3,
                                     }),
                             "respond",
-                            "respond.respond_eventId = event.id",
+                            "respond.respond_eventid = event.id",
                         )
                         .where("event.id = :eventId", { eventId: event.id })
                         .getOne()
@@ -207,7 +207,7 @@ describe("query builder > join-and-map > leftJoinAndMapOne with subquery select"
                                         userId: 4,
                                     }),
                             "respond",
-                            "respond.respond_eventId = event.id",
+                            "respond.respond_eventid = event.id",
                         )
                         .where("event.id = :eventId", { eventId: event.id })
                         .getOne()
