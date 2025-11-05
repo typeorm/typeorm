@@ -1,4 +1,5 @@
 import eslint from "@eslint/js"
+import { jsdoc } from "eslint-plugin-jsdoc"
 import tseslint from "typescript-eslint"
 import globals from "globals"
 
@@ -12,6 +13,7 @@ export default tseslint.config([
             "temp/**",
         ],
     },
+
     {
         files: ["**/*.ts"],
         languageOptions: {
@@ -80,4 +82,14 @@ export default tseslint.config([
             "no-regex-spaces": "warn",
         },
     },
+
+    jsdoc({
+        config: "flat/recommended-typescript",
+        files: ["src/**/*.ts"],
+        // Temporarily enable individual rules when they are fixed, until all current warnings are gone,
+        // and then remove manual config in favor of `config: "flat/recommended-typescript-error"`
+        rules: {
+            "jsdoc/valid-types": "error"
+        }
+    }),
 ])

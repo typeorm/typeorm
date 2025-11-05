@@ -3182,6 +3182,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             this.selects = []
+
             if (this.findOptions.relations) {
                 const relations = Array.isArray(this.findOptions.relations)
                     ? OrmUtils.propertyPathsToTruthyObject(
@@ -4321,7 +4322,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         } else {
             const andConditions: string[] = []
             for (const key in where) {
-                if (where[key] === undefined || where[key] === null) continue
+                let parameterValue = where[key]
 
                 const propertyPath = embedPrefix ? embedPrefix + "." + key : key
                 const column =
@@ -4331,21 +4332,56 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 const relation =
                     metadata.findRelationWithPropertyPath(propertyPath)
 
-                if (!embed && !column && !relation)
+                if (!embed && !column && !relation) {
                     throw new EntityPropertyNotFoundError(
                         propertyPath,
                         metadata,
                     )
+                }
+
+                if (parameterValue === undefined) {
+                    const undefinedBehavior =
+                        this.connection.options.invalidWhereValuesBehavior
+                            ?.undefined || "ignore"
+                    if (undefinedBehavior === "throw") {
+                        throw new TypeORMError(
+                            `Undefined value encountered in property '${alias}.${key}' of a where condition. ` +
+                                `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                        )
+                    }
+                    continue
+                }
+
+                if (parameterValue === null) {
+                    const nullBehavior =
+                        this.connection.options.invalidWhereValuesBehavior
+                            ?.null || "ignore"
+                    if (nullBehavior === "ignore") {
+                        continue
+                    } else if (nullBehavior === "throw") {
+                        throw new TypeORMError(
+                            `Null value encountered in property '${alias}.${key}' of a where condition. ` +
+                                `To match with SQL NULL, the IsNull() operator must be used. ` +
+                                `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                        )
+                    }
+                    // 'sql-null' behavior continues to the next logic
+                }
 
                 if (column) {
                     let aliasPath = `${alias}.${propertyPath}`
                     if (column.isVirtualProperty && column.query) {
                         aliasPath = `(${column.query(this.escape(alias))})`
                     }
+
+                    if (parameterValue === null) {
+                        andConditions.push(`${aliasPath} IS NULL`)
+                        continue
+                    }
+
                     // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
 
                     // todo: we need to handle other operators as well?
-                    let parameterValue = where[key]
                     if (InstanceChecker.isEqualOperator(where[key])) {
                         parameterValue = where[key].value
                     }
@@ -4368,38 +4404,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         ).parametrizeValues(column, parameterValue)
                     }
 
-                    // if (parameterValue === null) {
-                    //     andConditions.push(`${aliasPath} IS NULL`);
-                    //
-                    // } else if (parameterValue instanceof FindOperator) {
-                    //     // let parameters: any[] = [];
-                    //     // if (parameterValue.useParameter) {
-                    //     //     const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
-                    //     //     realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
-                    //     //
-                    //     //         // don't create parameters for number to prevent max number of variables issues as much as possible
-                    //     //         if (typeof realParameterValue === "number") {
-                    //     //             parameters.push(realParameterValue);
-                    //     //
-                    //     //         } else {
-                    //     //             this.expressionMap.nativeParameters[parameterName + realParameterValueIndex] = realParameterValue;
-                    //     //             parameterIndex++;
-                    //     //             parameters.push(this.connection.driver.createParameter(parameterName + realParameterValueIndex, parameterIndex - 1));
-                    //     //         }
-                    //     //     });
-                    //     // }
-                    //     andConditions.push(
-                    //         this.createWhereConditionExpression(this.getWherePredicateCondition(aliasPath, parameterValue))
-                    //         // parameterValue.toSql(this.connection, aliasPath, parameters));
-                    //     )
-                    //
-                    // } else {
-                    //     this.expressionMap.nativeParameters[parameterName] = parameterValue;
-                    //     parameterIndex++;
-                    //     const parameter = this.connection.driver.createParameter(parameterName, parameterIndex - 1);
-                    //     andConditions.push(`${aliasPath} = ${parameter}`);
-                    // }
-
                     andConditions.push(
                         this.createWhereConditionExpression(
                             this.getWherePredicateCondition(
@@ -4421,6 +4425,24 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     )
                     if (condition) andConditions.push(condition)
                 } else if (relation) {
+                    if (where[key] === null) {
+                        const nullBehavior =
+                            this.connection.options.invalidWhereValuesBehavior
+                                ?.null || "ignore"
+                        if (nullBehavior === "sql-null") {
+                            andConditions.push(
+                                `${alias}.${propertyPath} IS NULL`,
+                            )
+                        } else if (nullBehavior === "throw") {
+                            throw new TypeORMError(
+                                `Null value encountered in property '${alias}.${key}' of a where condition. ` +
+                                    `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                            )
+                        }
+                        // 'ignore' behavior falls through to continue
+                        continue
+                    }
+
                     // if all properties of where are undefined we don't need to join anything
                     // this can happen when user defines map with conditional queries inside
                     if (typeof where[key] === "object") {
