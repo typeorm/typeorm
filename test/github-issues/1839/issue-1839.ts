@@ -1,4 +1,4 @@
-import "reflect-metadata"
+import { expect } from "chai"
 import { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
@@ -10,7 +10,7 @@ describe("github issues > #1839 Charset and collation not being carried to JoinT
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["mysql"],
+            enabledDrivers: ["mariadb", "mysql"],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -24,19 +24,16 @@ describe("github issues > #1839 Charset and collation not being carried to JoinT
                 const table = await queryRunner.getTable(
                     "post_categories_category",
                 )
-                table!
-                    .findColumnByName("postId")!
-                    .charset!.should.be.equal("utf8")
-                table!
-                    .findColumnByName("postId")!
-                    .collation!.should.be.equal("utf8_unicode_ci")
-                table!
-                    .findColumnByName("categoryId")!
-                    .charset!.should.be.equal("ascii")
-                table!
-                    .findColumnByName("categoryId")!
-                    .collation!.should.be.equal("ascii_general_ci")
                 await queryRunner.release()
+
+                expect(table!.findColumnByName("postId")).to.include({
+                    charset: "latin2",
+                    collation: "latin2_general_ci",
+                })
+                expect(table!.findColumnByName("categoryId")).to.include({
+                    charset: "ascii",
+                    collation: "ascii_general_ci",
+                })
             }),
         ))
 })

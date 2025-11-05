@@ -115,8 +115,7 @@ export class PostgresDriver implements Driver {
     /**
      * Gets list of supported column data types by a driver.
      *
-     * @see https://www.tutorialspoint.com/postgresql/postgresql_data_types.htm
-     * @see https://www.postgresql.org/docs/9.2/static/datatype.html
+     * @see https://www.postgresql.org/docs/current/datatype.html
      */
     supportedDataTypes: ColumnType[] = [
         "int",
@@ -175,6 +174,7 @@ export class PostgresDriver implements Driver {
         "xml",
         "json",
         "jsonb",
+        "jsonpath",
         "int4range",
         "int8range",
         "numrange",
@@ -191,6 +191,8 @@ export class PostgresDriver implements Driver {
         "geography",
         "cube",
         "ltree",
+        "vector",
+        "halfvec",
     ]
 
     /**
@@ -214,6 +216,8 @@ export class PostgresDriver implements Driver {
         "bit",
         "varbit",
         "bit varying",
+        "vector",
+        "halfvec",
     ]
 
     /**
@@ -409,6 +413,7 @@ export class PostgresDriver implements Driver {
             hasCubeColumns,
             hasGeometryColumns,
             hasLtreeColumns,
+            hasVectorColumns,
             hasExclusionConstraints,
         } = extensionsMetadata
 
@@ -488,6 +493,18 @@ export class PostgresDriver implements Driver {
                     "At least one of the entities has a ltree column, but the 'ltree' extension cannot be installed automatically. Please install it manually using superuser rights",
                 )
             }
+        if (hasVectorColumns)
+            try {
+                await this.executeQuery(
+                    connection,
+                    `CREATE EXTENSION IF NOT EXISTS "vector"`,
+                )
+            } catch (_) {
+                logger.log(
+                    "warn",
+                    "At least one of the entities has a vector column, but the 'vector' extension (pgvector) cannot be installed automatically. Please install it manually using superuser rights",
+                )
+            }
         if (hasExclusionConstraints)
             try {
                 // The btree_gist extension provides operator support in PostgreSQL exclusion constraints
@@ -556,6 +573,14 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
+        const hasVectorColumns = this.connection.entityMetadatas.some(
+            (metadata) => {
+                return metadata.columns.some(
+                    (column) =>
+                        column.type === "vector" || column.type === "halfvec",
+                )
+            },
+        )
         const hasExclusionConstraints = this.connection.entityMetadatas.some(
             (metadata) => {
                 return metadata.exclusions.length > 0
@@ -569,6 +594,7 @@ export class PostgresDriver implements Driver {
             hasCubeColumns,
             hasGeometryColumns,
             hasLtreeColumns,
+            hasVectorColumns,
             hasExclusionConstraints,
             hasExtensions:
                 hasUuidColumns ||
@@ -577,6 +603,7 @@ export class PostgresDriver implements Driver {
                 hasGeometryColumns ||
                 hasCubeColumns ||
                 hasLtreeColumns ||
+                hasVectorColumns ||
                 hasExclusionConstraints,
         }
     }
@@ -641,6 +668,15 @@ export class PostgresDriver implements Driver {
             ) >= 0
         ) {
             return JSON.stringify(value)
+        } else if (
+            columnMetadata.type === "vector" ||
+            columnMetadata.type === "halfvec"
+        ) {
+            if (Array.isArray(value)) {
+                return `[${value.join(",")}]`
+            } else {
+                return value
+            }
         } else if (columnMetadata.type === "hstore") {
             if (typeof value === "string") {
                 return value
@@ -717,6 +753,18 @@ export class PostgresDriver implements Driver {
             value = DateUtils.mixedDateToDateString(value)
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
+        } else if (
+            columnMetadata.type === "vector" ||
+            columnMetadata.type === "halfvec"
+        ) {
+            if (
+                typeof value === "string" &&
+                value.startsWith("[") &&
+                value.endsWith("]")
+            ) {
+                if (value === "[]") return []
+                return value.slice(1, -1).split(",").map(Number)
+            }
         } else if (columnMetadata.type === "hstore") {
             if (columnMetadata.hstoreType === "object") {
                 const unescapeString = (str: string) =>
@@ -1139,6 +1187,9 @@ export class PostgresDriver implements Driver {
             } else {
                 type = column.type
             }
+        } else if (column.type === "vector" || column.type === "halfvec") {
+            type =
+                column.type + (column.length ? "(" + column.length + ")" : "")
         }
 
         if (column.isArray) type += " array"

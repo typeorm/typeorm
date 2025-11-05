@@ -250,6 +250,7 @@ Alternatively, you can also output your migrations as Javascript files using the
 ```javascript
 /**
  * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ * @typedef {import('typeorm').QueryRunner} QueryRunner
  */
 
 /**
@@ -257,12 +258,18 @@ Alternatively, you can also output your migrations as Javascript files using the
  * @implements {MigrationInterface}
  */
 module.exports = class PostRefactoringTIMESTAMP {
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async up(queryRunner) {
         await queryRunner.query(
             `ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`,
         )
     }
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async down(queryRunner) {
         await queryRunner.query(
             `ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`,
@@ -276,6 +283,7 @@ By default, it generates CommonJS JavaScript code with the `o` (alias for `--out
 ```javascript
 /**
  * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ * @typedef {import('typeorm').QueryRunner} QueryRunner
  */
 
 /**
@@ -283,38 +291,18 @@ By default, it generates CommonJS JavaScript code with the `o` (alias for `--out
  * @implements {MigrationInterface}
  */
 export class PostRefactoringTIMESTAMP {
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async up(queryRunner) {
         await queryRunner.query(
             `ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`,
         )
     }
 
-    async down(queryRunner) {
-        await queryRunner.query(
-            `ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`,
-        )
-    }
-}
-```
-
-By default, it generates CommonJS JavaScript code with the `o` (alias for `--outputJs`) flag, but you can also generate ESM code with the `esm` flag. This is useful for Javascript projects that use ESM:
-
-```javascript
-/**
- * @typedef {import('typeorm').MigrationInterface} MigrationInterface
- */
-
-/**
- * @class
- * @implements {MigrationInterface}
- */
-export class PostRefactoringTIMESTAMP {
-    async up(queryRunner) {
-        await queryRunner.query(
-            `ALTER TABLE "post" ALTER COLUMN "title" RENAME TO "name"`,
-        )
-    }
-
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async down(queryRunner) {
         await queryRunner.query(
             `ALTER TABLE "post" ALTER COLUMN "name" RENAME TO "title"`,
@@ -761,7 +749,7 @@ dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string): Pro
 -   `table` - Table object or name
 -   `uniqueOrName` - TableUnique object or unique constraint name to be dropped
 
-Drops an unique constraint.
+Drops a unique constraint.
 
 > Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `dropIndex()` method instead.
 
@@ -774,7 +762,7 @@ dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Pr
 -   `table` - Table object or name
 -   `uniqueConstraints` - array of TableUnique objects to be dropped
 
-Drops an unique constraints.
+Drops unique constraints.
 
 > Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `dropIndices()` method instead.
 
@@ -787,7 +775,7 @@ createCheckConstraint(table: Table|string, checkConstraint: TableCheck): Promise
 -   `table` - Table object or name
 -   `checkConstraint` - TableCheck object
 
-Creates new check constraint.
+Creates a new check constraint.
 
 > Note: MySQL does not support check constraints.
 
@@ -800,7 +788,7 @@ createCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Pro
 -   `table` - Table object or name
 -   `checkConstraints` - array of TableCheck objects
 
-Creates new check constraint.
+Creates a new check constraint.
 
 > Note: MySQL does not support check constraints.
 
