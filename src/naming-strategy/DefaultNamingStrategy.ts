@@ -1,5 +1,5 @@
 import { NamingStrategyInterface } from "./NamingStrategyInterface"
-import { RandomGenerator } from "../util/RandomGenerator"
+import { PlatformTools } from "../platform/PlatformTools"
 import { camelCase, snakeCase, titleCase } from "../util/StringUtils"
 import { Table } from "../schema-builder/table/Table"
 
@@ -60,7 +60,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
         const key = `${replacedTableName}_${clonedColumnNames.join("_")}`
-        return "PK_" + RandomGenerator.sha1(key).substr(0, 27)
+        return "PK_" + PlatformTools.sha1(key).substr(0, 27)
     }
 
     uniqueConstraintName(
@@ -73,7 +73,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
         const key = `${replacedTableName}_${clonedColumnNames.join("_")}`
-        return "UQ_" + RandomGenerator.sha1(key).substr(0, 27)
+        return "UQ_" + PlatformTools.sha1(key).substr(0, 27)
     }
 
     relationConstraintName(
@@ -89,7 +89,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         let key = `${replacedTableName}_${clonedColumnNames.join("_")}`
         if (where) key += `_${where}`
 
-        return "REL_" + RandomGenerator.sha1(key).substr(0, 26)
+        return "REL_" + PlatformTools.sha1(key).substr(0, 26)
     }
 
     defaultConstraintName(
@@ -99,7 +99,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
         const key = `${replacedTableName}_${columnName}`
-        return "DF_" + RandomGenerator.sha1(key).substr(0, 27)
+        return "DF_" + PlatformTools.sha1(key).substr(0, 27)
     }
 
     foreignKeyName(
@@ -114,7 +114,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
         const key = `${replacedTableName}_${clonedColumnNames.join("_")}`
-        return "FK_" + RandomGenerator.sha1(key).substr(0, 27)
+        return "FK_" + PlatformTools.sha1(key).substr(0, 27)
     }
 
     indexName(
@@ -130,7 +130,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         let key = `${replacedTableName}_${clonedColumnNames.join("_")}`
         if (where) key += `_${where}`
 
-        return "IDX_" + RandomGenerator.sha1(key).substr(0, 26)
+        return "IDX_" + PlatformTools.sha1(key).substr(0, 26)
     }
 
     checkConstraintName(
@@ -141,7 +141,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
         const key = `${replacedTableName}_${expression}`
-        const name = "CHK_" + RandomGenerator.sha1(key).substr(0, 26)
+        const name = "CHK_" + PlatformTools.sha1(key).substr(0, 26)
         return isEnum ? `${name}_ENUM` : name
     }
 
@@ -152,7 +152,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
         const key = `${replacedTableName}_${expression}`
-        return "XCL_" + RandomGenerator.sha1(key).substr(0, 26)
+        return "XCL_" + PlatformTools.sha1(key).substr(0, 26)
     }
 
     joinColumnName(relationName: string, referencedColumnName: string): string {

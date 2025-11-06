@@ -1,5 +1,5 @@
 import { NamingStrategyInterface } from "./NamingStrategyInterface"
-import { RandomGenerator } from "../util/RandomGenerator"
+import { PlatformTools } from "../platform/PlatformTools"
 import { DefaultNamingStrategy } from "./DefaultNamingStrategy"
 import { TypeORMError } from "../error"
 
@@ -54,7 +54,7 @@ export class LegacyOracleNamingStrategy
         }
         return (
             prefix +
-            RandomGenerator.sha1(input).substring(
+            PlatformTools.sha1(input).substring(
                 0,
                 this.IDENTIFIER_MAX_SIZE - prefix.length,
             )

@@ -1,4 +1,5 @@
 import ansi from "ansis"
+import crypto from "crypto"
 import dotenv from "dotenv"
 import fs from "fs"
 import path from "path"
@@ -130,9 +131,9 @@ export class PlatformTools {
                     return require("react-native-sqlite-storage")
             }
         } catch (err) {
-            return require(path.resolve(
-                process.cwd() + "/node_modules/" + name,
-            ))
+            return require(
+                path.resolve(process.cwd() + "/node_modules/" + name),
+            )
         }
 
         // If nothing above matched and we get here, the package was not listed within PlatformTools
@@ -275,5 +276,73 @@ export class PlatformTools {
     static logCmdErr(prefix: string, err?: any) {
         console.log(ansi.black.bgRed(prefix))
         if (err) console.error(err)
+    }
+
+    /**
+     * Generates SHA1 hash of input string.
+     * Uses JavaScript implementation for consistency across all platforms
+     * to avoid breaking changes in database constraint names.
+     */
+    static sha1(input: string): string {
+        // Import lazily to avoid circular dependency
+        const { RandomGenerator } = require("../util/RandomGenerator")
+        return RandomGenerator.sha1(input)
+    }
+
+    /**
+     * Generates UUID v4 using native crypto API with fallback for environments
+     * that don't support it (e.g., React Native, Hermes).
+     */
+    static generateUuid(): string {
+        try {
+            if (PlatformTools.type === "node") {
+                return crypto.randomUUID()
+            }
+            // Try browser/modern environment crypto
+            if (
+                typeof globalThis !== "undefined" &&
+                globalThis.crypto &&
+                typeof globalThis.crypto.randomUUID === "function"
+            ) {
+                return globalThis.crypto.randomUUID()
+            }
+        } catch (e) {
+            // Fall through to polyfill
+        }
+
+        // Fallback implementation for React Native, Hermes, and other environments
+        // Based on RFC 4122 version 4 UUID
+        const randomBytes = new Uint8Array(16)
+
+        if (
+            typeof globalThis !== "undefined" &&
+            globalThis.crypto &&
+            typeof globalThis.crypto.getRandomValues === "function"
+        ) {
+            globalThis.crypto.getRandomValues(randomBytes)
+        } else {
+            // Last resort: Math.random (not cryptographically secure)
+            for (let i = 0; i < 16; i++) {
+                randomBytes[i] = Math.floor(Math.random() * 256)
+            }
+        }
+
+        // Set version (4) and variant bits according to RFC 4122
+        randomBytes[6] = (randomBytes[6] & 0x0f) | 0x40
+        randomBytes[8] = (randomBytes[8] & 0x3f) | 0x80
+
+        // Convert to UUID string format
+        const hexValues: string[] = []
+        randomBytes.forEach((byte) => {
+            hexValues.push(byte.toString(16).padStart(2, "0"))
+        })
+
+        return [
+            hexValues.slice(0, 4).join(""),
+            hexValues.slice(4, 6).join(""),
+            hexValues.slice(6, 8).join(""),
+            hexValues.slice(8, 10).join(""),
+            hexValues.slice(10, 16).join(""),
+        ].join("-")
     }
 }

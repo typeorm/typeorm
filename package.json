@@ -105,10 +105,8 @@
     "dotenv": "^16.6.1",
     "glob": "^10.4.5",
     "reflect-metadata": "^0.2.2",
-    "sha.js": "^2.4.12",
     "sql-highlight": "^6.1.0",
     "tslib": "^2.8.1",
-    "uuid": "^11.1.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
@@ -123,7 +121,6 @@
     "@types/gulp-sourcemaps": "^0.0.38",
     "@types/mocha": "^10.0.10",
     "@types/node": "^16.18.126",
-    "@types/sha.js": "^2.4.4",
     "@types/sinon": "^10.0.20",
     "@types/sinon-chai": "^3.2.12",
     "@types/source-map-support": "^0.5.10",
