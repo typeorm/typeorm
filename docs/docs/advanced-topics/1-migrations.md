@@ -749,7 +749,7 @@ dropUniqueConstraint(table: Table|string, uniqueOrName: TableUnique|string): Pro
 -   `table` - Table object or name
 -   `uniqueOrName` - TableUnique object or unique constraint name to be dropped
 
-Drops an unique constraint.
+Drops a unique constraint.
 
 > Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `dropIndex()` method instead.
 
@@ -762,7 +762,7 @@ dropUniqueConstraints(table: Table|string, uniqueConstraints: TableUnique[]): Pr
 -   `table` - Table object or name
 -   `uniqueConstraints` - array of TableUnique objects to be dropped
 
-Drops an unique constraints.
+Drops unique constraints.
 
 > Note: does not work for MySQL, because MySQL stores unique constraints as unique indices. Use `dropIndices()` method instead.
 
@@ -775,7 +775,7 @@ createCheckConstraint(table: Table|string, checkConstraint: TableCheck): Promise
 -   `table` - Table object or name
 -   `checkConstraint` - TableCheck object
 
-Creates new check constraint.
+Creates a new check constraint.
 
 > Note: MySQL does not support check constraints.
 
@@ -788,7 +788,7 @@ createCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Pro
 -   `table` - Table object or name
 -   `checkConstraints` - array of TableCheck objects
 
-Creates new check constraint.
+Creates a new check constraint.
 
 > Note: MySQL does not support check constraints.
 
