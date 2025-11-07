@@ -303,4 +303,24 @@ export interface MongoConnectionOptions extends BaseDataSourceOptions {
      * Please use the {@link writeConcern} option instead
      */
     readonly wtimeoutMS?: number
+
+    /**
+     * Configures a Socks5 proxy host used for creating TCP connections.
+     */
+    readonly proxyHost?: string
+
+    /**
+     * Configures a Socks5 proxy port used for creating TCP connections.
+     */
+    readonly proxyPort?: number
+
+    /**
+     * Configures a Socks5 proxy username when the proxy in proxyHost requires username/password authentication.
+     */
+    readonly proxyUsername?: string
+
+    /**
+     * Configures a Socks5 proxy password when the proxy in proxyHost requires username/password authentication.
+     */
+    readonly proxyPassword?: string
 }
