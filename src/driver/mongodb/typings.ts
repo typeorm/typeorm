@@ -1,3 +1,9 @@
+/**
+ * Content of this file below the imports is a copy of mongodb.d.ts from the version of mongodb package
+ * listed in package.json:devDependencies. We disabled eslint for this file, since it does not come from us
+ * and does not necessary have to adhere to our rules.
+ */
+/* eslint-disable */
 import type { SrvRecord } from "dns"
 import type { Socket, TcpNetConnectOpts } from "net"
 import type {

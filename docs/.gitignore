@@ -8,6 +8,7 @@
 .docusaurus
 .cache-loader
 llms.txt
+llms-full.txt
 
 # Misc
 .DS_Store
