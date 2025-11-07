@@ -946,7 +946,6 @@ export class AuroraMysqlQueryRunner
             }
 
             // BEGIN length-only fast path (MySQL family)
-            // BEGIN length-only fast path (MySQL family)
             if (
                 oldColumn.type === newColumn.type &&
                 oldColumn.length !== newColumn.length

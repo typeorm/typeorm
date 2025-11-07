@@ -1234,7 +1234,6 @@ export class PostgresQueryRunner
         if (
             oldColumn.type !== newColumn.type ||
             newColumn.isArray !== oldColumn.isArray ||
-            (oldColumn.isArray && oldColumn.length !== newColumn.length) || // Add this line
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
