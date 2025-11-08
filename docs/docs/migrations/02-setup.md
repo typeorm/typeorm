@@ -64,7 +64,7 @@ migrationsTableName: 'some_custom_migrations_table'
 
 ### `migrationsTransactionMode`
 
-Controls transaction mode when running migrations. Poossible options are:
+Controls transaction mode when running migrations. Possible options are:
 
 - `all` (_default_) - wraps migrations run into a single transaction
 - `none`
