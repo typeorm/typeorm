@@ -26,7 +26,7 @@ export default defineConfig({
 })
 ```
 
-### Option 1: Disable minify
+## Option 1: Disable minify
 
 This is the most crude option and will result in significantly larger files. Add `build.minify = false` to your config.
 
@@ -43,7 +43,7 @@ This is the most crude option and will result in significantly larger files. Add
    resolve: {
 ```
 
-### Option 2: Disable esbuild minify identifiers
+## Option 2: Disable esbuild minify identifiers
 
 Vite uses esbuild as the default minifier. You can disable mangling of identifiers by adding `esbuild.minifyIdentifiers = false` to your config.
 This will result in smaller file sizes, but depending on your code base you will get diminishing returns as all identifiers will be kept at full length.
@@ -60,7 +60,7 @@ This will result in smaller file sizes, but depending on your code base you will
    resolve: {
 ```
 
-### Option 3: Use terser as minifier while keeping only the migration class names
+## Option 3: Use terser as minifier while keeping only the migration class names
 
 Vite supports using terser as minifier. Terser is slower then esbuild, but offers more fine grained control over what to minify.
 Add `minify: 'terser'` with `terserOptions.mangle.keep_classnames: /^Migrations\d+$/` and `terserOptions.compress.keep_classnames: /^Migrations\d+$/` to your config.

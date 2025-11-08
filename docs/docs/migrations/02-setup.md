@@ -46,13 +46,13 @@ export default new DataSource({
 
 but it also requires more manual work and can be error prone.
 
--   `migrationsRun` - Indicates if [migrations](../migrations/01-why.md) should be auto run on every application launch.
+-   `migrationsRun` - Indicates if [migrations](../migrations/01-why.md) should be auto-run on every application launch.
 
 ## Optional settings
 
 ### `migrationsRun`
 
-Indicates if migrations should be auto run on every application launch. Default: `false`
+Indicates if migrations should be auto-run on every application launch. Default: `false`
 
 ### `migrationsTableName`
 
