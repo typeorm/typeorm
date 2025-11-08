@@ -6,7 +6,7 @@ Once you have a migration to run on production, you can run them using a CLI com
 typeorm migration:run -- -d path-to-datasource-config
 ```
 
-**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files, unless you use the `o` flag (see more in [Generating migrations](#generating-migrations)). The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively, you can use `ts-node` with `typeorm` to run `.ts` migration files.
+**`typeorm migration:create` and `typeorm migration:generate` will create `.ts` files, unless you use the `o` flag (see more in [Generating migrations](04-generating.md)). The `migration:run` and `migration:revert` commands only work on `.js` files. Thus the typescript files need to be compiled before running the commands.** Alternatively, you can use `ts-node` with `typeorm` to run `.ts` migration files.
 
 Example with `ts-node`:
 
