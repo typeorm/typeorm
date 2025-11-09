@@ -13,8 +13,8 @@
   "funding": "https://opencollective.com/typeorm",
   "license": "MIT",
   "author": {
-    "name": "Umed Khudoiberdiev",
-    "email": "pleerock.me@gmail.com"
+    "name": "TypeORM",
+    "email": "maintainers@typeorm.io"
   },
   "exports": {
     ".": {
