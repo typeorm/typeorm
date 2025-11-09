@@ -63,7 +63,7 @@ Different RDBMS-es have their own specific options.
 
 -   `migrations` - [Migrations](../migrations/01-why.md) to be loaded and used for this data source
 
--   `migrationsRun` - Indicates if [migrations](../migrations/01-why.md) should be auto run on every application launch.
+-   `migrationsRun` - Indicates if [migrations](../migrations/01-why.md) should be auto-run on every application launch.
 
 -   `migrationsTableName` - Name of the table in the database which is going to contain information about executed [migrations](../migrations/01-why.md).
 
