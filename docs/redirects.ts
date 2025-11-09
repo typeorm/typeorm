@@ -101,7 +101,7 @@ export const redirects = [
     },
     { from: "/data-source-api", to: "/docs/data-source/data-source-api" },
 
-    { from: "/migrations", to: "/docs/advanced-topics/migrations" },
+    { from: "/migrations", to: "/docs/migrations" },
     { from: "/transactions", to: "/docs/advanced-topics/transactions" },
     { from: "/indices", to: "/docs/advanced-topics/indices" },
     {
