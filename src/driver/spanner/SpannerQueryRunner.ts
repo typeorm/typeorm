@@ -1147,7 +1147,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates new check constraint.
+     * Creates a new check constraint.
      */
     async createCheckConstraint(
         tableOrName: Table | string,

@@ -110,7 +110,7 @@ describe("transaction > transaction with entity manager", () => {
                             await entityManager.save(wrongPost)
                         },
                     )
-                } catch (err) {
+                } catch {
                     /* skip error */
                 }
 

@@ -17,7 +17,7 @@ export class Post {
     @OneToOne(() => Category)
     category: Category
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     category2: Category
 
     @RelationCount((post: Post) => post.category)
