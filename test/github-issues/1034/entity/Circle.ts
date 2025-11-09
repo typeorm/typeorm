@@ -17,7 +17,7 @@ export class Circle {
      *
      * You have to use getter and setter
      */
-    @ManyToMany((type) => User, (user) => "circles")
+    @ManyToMany(() => User, (user) => "circles")
     @JoinTable({ name: "circle_users_user" })
     private users: Promise<User[]>
 

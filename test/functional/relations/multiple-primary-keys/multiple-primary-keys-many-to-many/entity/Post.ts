@@ -13,11 +13,11 @@ export class Post {
     @Column()
     title: string
 
-    @ManyToMany((type) => Category, (category) => category.posts)
+    @ManyToMany(() => Category, (category) => category.posts)
     @JoinTable()
     categories: Category[]
 
-    @ManyToMany((type) => Category, (category) => category.postsWithOptions)
+    @ManyToMany(() => Category, (category) => category.postsWithOptions)
     @JoinTable({
         name: "post_categories",
         joinColumns: [
