@@ -2311,7 +2311,7 @@ export class SqlServerQueryRunner
     }
 
     /**
-     * Drops a unique constraints.
+     * Drops unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
