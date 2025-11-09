@@ -861,7 +861,7 @@ export abstract class AbstractSqliteQueryRunner
     }
 
     /**
-     * Drops an unique constraint.
+     * Drops a unique constraint.
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
@@ -882,7 +882,7 @@ export abstract class AbstractSqliteQueryRunner
     }
 
     /**
-     * Creates an unique constraints.
+     * Creates a unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,

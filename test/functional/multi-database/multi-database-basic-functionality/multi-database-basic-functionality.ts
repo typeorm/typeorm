@@ -98,7 +98,7 @@ describe("multi-database > basic-functionality", () => {
 
         it("should correctly attach and create database files", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                connections.map(async () => {
                     const expectedMainPath = path.join(
                         tempPath,
                         (connections[0].options.database as string).match(

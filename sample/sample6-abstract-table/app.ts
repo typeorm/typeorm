@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src"
 import { Post } from "./entity/Post"
 import { PostCategory } from "./entity/PostCategory"
 import { PostAuthor } from "./entity/PostAuthor"
