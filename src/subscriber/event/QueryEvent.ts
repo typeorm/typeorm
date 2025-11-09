@@ -5,7 +5,7 @@ import { QueryRunner } from "../../query-runner/QueryRunner"
 /**
  * BeforeQueryEvent is an object that broadcaster sends to the entity subscriber before query is ran against the database.
  */
-export interface QueryEvent<Entity> {
+export interface QueryEvent {
     /**
      * Connection used in the event.
      */
@@ -34,9 +34,9 @@ export interface QueryEvent<Entity> {
     parameters?: any[]
 }
 
-export interface BeforeQueryEvent<Entity> extends QueryEvent<Entity> {}
+export interface BeforeQueryEvent extends QueryEvent {}
 
-export interface AfterQueryEvent<Entity> extends QueryEvent<Entity> {
+export interface AfterQueryEvent extends QueryEvent {
     /**
      * Whether the query was successful.
      */

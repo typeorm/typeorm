@@ -2872,6 +2872,7 @@ export class CockroachQueryRunner
             } catch {
                 // no-op
             }
+
             throw error
         }
     }

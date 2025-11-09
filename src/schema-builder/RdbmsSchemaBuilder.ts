@@ -105,11 +105,14 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             }
         } catch (error) {
             try {
-                // we throw original error even if rollback thrown an error
+                // we throw the original error even if the rollback throws an error
                 if (isUsingTransactions) {
                     await this.queryRunner.rollbackTransaction()
                 }
-            } catch (rollbackError) {}
+            } catch {
+                // ignore
+            }
+
             throw error
         } finally {
             await this.queryRunner.afterMigration()
@@ -1176,6 +1179,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 (table) =>
                     this.getTablePath(table) === this.getTablePath(metadata),
             )
+
             if (!table) continue
 
             const newKeys = metadata.foreignKeys.filter((foreignKey) => {
@@ -1188,19 +1192,19 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                             ),
                 )
             })
+
             if (newKeys.length === 0) continue
 
             const dbForeignKeys = newKeys.map((foreignKeyMetadata) =>
-                TableForeignKey.create(
-                    foreignKeyMetadata,
-                    this.connection.driver,
-                ),
+                TableForeignKey.create(foreignKeyMetadata),
             )
+
             this.connection.logger.logSchemaBuild(
                 `creating a foreign keys: ${newKeys
                     .map((key) => key.name)
                     .join(", ")} on table "${table.name}"`,
             )
+
             await this.queryRunner.createForeignKeys(table, dbForeignKeys)
         }
     }

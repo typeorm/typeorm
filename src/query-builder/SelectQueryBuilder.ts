@@ -1637,8 +1637,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                } catch {
+                    // ignore
+                }
             }
+
             throw error
         } finally {
             if (queryRunner !== this.queryRunner) {
@@ -1681,8 +1684,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                } catch {
+                    // ignore
+                }
             }
+
             throw error
         } finally {
             if (queryRunner !== this.queryRunner)
@@ -1796,8 +1802,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                } catch {
+                    // ignore
+                }
             }
+
             throw error
         } finally {
             if (queryRunner !== this.queryRunner)
@@ -1840,8 +1849,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                } catch {
+                    // ignore
+                }
             }
+
             throw error
         } finally {
             if (queryRunner !== this.queryRunner)
@@ -1899,8 +1911,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                } catch {
+                    // ignore
+                }
             }
+
             throw error
         } finally {
             if (queryRunner !== this.queryRunner)
@@ -2006,8 +2021,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                } catch {
+                    // ignore
+                }
             }
+
             throw error
         }
     }

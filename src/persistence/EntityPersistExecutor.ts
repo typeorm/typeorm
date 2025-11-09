@@ -193,7 +193,9 @@ export class EntityPersistExecutor {
                 if (isTransactionStartedByUs) {
                     try {
                         await queryRunner.rollbackTransaction()
-                    } catch (rollbackError) {}
+                    } catch {
+                        // ignore
+                    }
                 }
                 throw error
             }

@@ -2,8 +2,6 @@ import { ObjectLiteral } from "../common/ObjectLiteral"
 import { Repository } from "./Repository"
 import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
 import { MongoEntityManager } from "../entity-manager/MongoEntityManager"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { TypeORMError } from "../error/TypeORMError"
 import { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
 import { FindOneOptions } from "../find-options/FindOneOptions"
@@ -12,7 +10,6 @@ import {
     CreateIndexesOptions,
     ObjectId,
     ReplaceOptions,
-    //
     AggregateOptions,
     AggregationCursor,
     AnyBulkWriteOperation,
@@ -70,7 +67,7 @@ export class MongoRepository<
      * Raw SQL query execution is not supported by MongoDB.
      * Calling this method will return an error.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    query(): never {
         throw new TypeORMError(`Queries aren't supported by MongoDB.`)
     }
 
@@ -78,10 +75,7 @@ export class MongoRepository<
      * Using Query Builder with MongoDB is not supported yet.
      * Calling this method will return an error.
      */
-    createQueryBuilder(
-        alias: string,
-        queryRunner?: QueryRunner,
-    ): SelectQueryBuilder<Entity> {
+    createQueryBuilder(): never {
         throw new TypeORMError(`Query Builder is not supported by MongoDB.`)
     }
 
