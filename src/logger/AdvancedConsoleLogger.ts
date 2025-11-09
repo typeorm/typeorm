@@ -1,7 +1,6 @@
 import { PlatformTools } from "../platform/PlatformTools"
 import { AbstractLogger } from "./AbstractLogger"
 import { LogLevel, LogMessage } from "./Logger"
-import { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Performs logging of the events in TypeORM.
@@ -11,11 +10,7 @@ export class AdvancedConsoleLogger extends AbstractLogger {
     /**
      * Write log to specific output.
      */
-    protected writeLog(
-        level: LogLevel,
-        logMessage: LogMessage | LogMessage[],
-        queryRunner?: QueryRunner,
-    ) {
+    protected writeLog(level: LogLevel, logMessage: LogMessage | LogMessage[]) {
         const messages = this.prepareLogMessages(logMessage)
 
         for (const message of messages) {

@@ -355,7 +355,7 @@ export abstract class AbstractLogger implements Logger {
     protected stringifyParams(parameters: any[]) {
         try {
             return JSON.stringify(parameters)
-        } catch (error) {
+        } catch {
             // most probably circular objects in parameters
             return parameters
         }

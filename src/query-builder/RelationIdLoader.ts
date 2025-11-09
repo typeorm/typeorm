@@ -51,11 +51,7 @@ export class RelationIdLoader {
             )
         } else {
             // if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-            return this.loadForOneToManyAndOneToOneNotOwner(
-                relation,
-                entities,
-                relatedEntities,
-            )
+            return this.loadForOneToManyAndOneToOneNotOwner(relation, entities)
         }
     }
 
@@ -579,7 +575,6 @@ export class RelationIdLoader {
     protected loadForOneToManyAndOneToOneNotOwner(
         relation: RelationMetadata,
         entities: ObjectLiteral[],
-        relatedEntities?: ObjectLiteral[],
     ) {
         const originalRelation = relation
         relation = relation.inverseRelation!
