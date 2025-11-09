@@ -19,10 +19,7 @@ export class QueryFailedError<T extends Error = Error> extends TypeORMError {
         )
 
         if (driverError) {
-            const {
-                name: _, // eslint-disable-line
-                ...otherProperties
-            } = driverError
+            const { name: _, ...otherProperties } = driverError
 
             ObjectUtils.assign(this, {
                 ...otherProperties,

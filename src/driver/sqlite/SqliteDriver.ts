@@ -8,7 +8,6 @@ import { SqliteConnectionOptions } from "./SqliteConnectionOptions"
 import { ColumnType } from "../types/ColumnTypes"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
 import { filepathToName, isAbsolute } from "../../util/PathUtils"
 
 /**
@@ -62,7 +61,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: ReplicationMode): QueryRunner {
+    createQueryRunner(): QueryRunner {
         if (!this.queryRunner) this.queryRunner = new SqliteQueryRunner(this)
 
         return this.queryRunner
@@ -194,7 +193,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
         try {
             const sqlite = this.options.driver || PlatformTools.load("sqlite3")
             this.sqlite = sqlite.verbose()
-        } catch (e) {
+        } catch {
             throw new DriverPackageNotInstalledError("SQLite", "sqlite3")
         }
     }

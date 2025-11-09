@@ -816,75 +816,6 @@ export class SqlServerDriver implements Driver {
                         columnMetadata.enum.map((val) => val + ""),
                     ))
 
-            // DEBUG SECTION
-            // if (isColumnChanged) {
-            //     console.log("table:", columnMetadata.entityMetadata.tableName)
-            //     console.log(
-            //         "name:",
-            //         tableColumn.name,
-            //         columnMetadata.databaseName,
-            //     )
-            //     console.log(
-            //         "type:",
-            //         tableColumn.type,
-            //         this.normalizeType(columnMetadata),
-            //         this.compareColumnType(tableColumn, columnMetadata),
-            //     )
-            //     console.log(
-            //         "length:",
-            //         tableColumn.length,
-            //         columnMetadata.length,
-            //         this.compareColumnLength(tableColumn, columnMetadata),
-            //     )
-            //     console.log(
-            //         "precision:",
-            //         tableColumn.precision,
-            //         columnMetadata.precision,
-            //     )
-            //     console.log("scale:", tableColumn.scale, columnMetadata.scale)
-            //     console.log(
-            //         "isGenerated:",
-            //         tableColumn.isGenerated,
-            //         columnMetadata.isGenerated,
-            //     )
-            //     console.log(
-            //         "isGenerated 2:",
-            //         !tableColumn.isGenerated &&
-            //             this.lowerDefaultValueIfNecessary(
-            //                 this.normalizeDefault(columnMetadata),
-            //             ) !==
-            //                 this.lowerDefaultValueIfNecessary(
-            //                     tableColumn.default,
-            //                 ),
-            //     )
-            //     console.log(
-            //         "isPrimary:",
-            //         tableColumn.isPrimary,
-            //         columnMetadata.isPrimary,
-            //     )
-            //     console.log(
-            //         "isNullable:",
-            //         tableColumn.isNullable,
-            //         columnMetadata.isNullable,
-            //     )
-            //     console.log(
-            //         "asExpression:",
-            //         tableColumn.asExpression,
-            //         columnMetadata.asExpression,
-            //     )
-            //     console.log(
-            //         "generatedType:",
-            //         tableColumn.generatedType,
-            //         columnMetadata.generatedType,
-            //     )
-            //     console.log(
-            //         "isUnique:",
-            //         tableColumn.isUnique,
-            //         this.normalizeIsUnique(columnMetadata),
-            //     )
-            //     console.log("==========================================")
-            // }
-
             return isColumnChanged
         })
     }
@@ -1055,7 +986,7 @@ export class SqlServerDriver implements Driver {
         try {
             const mssql = this.options.driver || PlatformTools.load("mssql")
             this.mssql = mssql
-        } catch (e) {
+        } catch {
             // todo: better error for browser env
             throw new DriverPackageNotInstalledError("SQL Server", "mssql")
         }

@@ -43,7 +43,11 @@ export default tseslint.config([
             "@typescript-eslint/no-unused-expressions": "warn",
             "@typescript-eslint/no-unused-vars": [
                 "warn",
-                { argsIgnorePattern: "^_" },
+                {
+                    argsIgnorePattern: "^_",
+                    destructuredArrayIgnorePattern: "^_",
+                    ignoreRestSiblings: true
+                },
             ],
             "@typescript-eslint/no-wrapper-object-types": "off",
             "prefer-const": ["error", { destructuring: "all" }],
