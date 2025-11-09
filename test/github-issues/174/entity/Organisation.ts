@@ -11,6 +11,6 @@ export class Organisation {
     @Column()
     name: string
 
-    @Column((type) => Contact)
+    @Column(() => Contact)
     contact: Contact
 }
