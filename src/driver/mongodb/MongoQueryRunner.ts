@@ -995,9 +995,7 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
-    /**
      * Drops unique constraints.
-     */
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
