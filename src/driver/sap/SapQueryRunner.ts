@@ -2145,7 +2145,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraints.
+     * Drops a unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
