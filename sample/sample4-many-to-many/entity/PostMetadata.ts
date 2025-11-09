@@ -14,6 +14,6 @@ export class PostMetadata {
     @Column()
     description: string
 
-    @ManyToMany((type) => Post, (post) => post.metadatas)
+    @ManyToMany(() => Post, (post) => post.metadatas)
     posts: Post[]
 }

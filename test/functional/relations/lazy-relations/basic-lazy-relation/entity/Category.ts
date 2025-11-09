@@ -17,7 +17,7 @@ export class Category {
     @OneToOne(() => Post, (post) => post.oneCategory)
     onePost: Promise<Post>
 
-    @ManyToMany((type) => Post, (post) => post.twoSideCategories)
+    @ManyToMany(() => Post, (post) => post.twoSideCategories)
     twoSidePosts: Promise<Post[]>
 
     @OneToMany(() => Post, (post) => post.twoSideCategory)
