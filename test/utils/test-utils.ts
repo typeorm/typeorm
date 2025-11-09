@@ -202,11 +202,11 @@ function getOrmFilepath(): string {
             // first checks build/compiled
             // useful for docker containers in order to provide a custom config
             return require.resolve(__dirname + "/../../ormconfig.json")
-        } catch (err) {
+        } catch {
             // fallbacks to the root config
             return require.resolve(__dirname + "/../../../../ormconfig.json")
         }
-    } catch (err) {
+    } catch {
         throw new Error(
             `Cannot find ormconfig.json file in the root of the project. To run tests please create ormconfig.json file` +
                 ` in the root of the project (near ormconfig.sample.json, you need to copy ormconfig.sample.json into ormconfig.json` +
@@ -469,7 +469,7 @@ export async function createTestingConnections(
             for (const schemaPath of schemaPaths) {
                 try {
                     await queryRunner.createSchema(schemaPath, true)
-                } catch (e) {
+                } catch {
                     // Do nothing
                 }
             }

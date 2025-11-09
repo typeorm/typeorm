@@ -18,7 +18,7 @@ export class Post extends BaseEntity {
     })
     text: string
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     @JoinTable()
     categories: Category[]
 }
