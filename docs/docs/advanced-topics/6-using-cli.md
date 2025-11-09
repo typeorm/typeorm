@@ -124,6 +124,15 @@ typeorm subscriber:create path-to-subscriber-dir/subscriber
 
 Learn more about [Subscribers](./4-listeners-and-subscribers.md).
 
+## Manage migrations
+
+* `typeorm migration:generate` - [generate](../migrations/04-generating.md) migration comparing entities with actual database schema
+* `typeorm migration:run` - [execute](../migrations/05-executing.md) migrations
+* `typeorm migration:revert` - [revert](../migrations/06-reverting.md) last migration
+* `typeorm migration:show` - [show](../migrations/07-status.md) status of all migrations
+
+Learn more about [Migrations](../migrations/01-why.md).
+
 ## Sync database schema
 
 To synchronize a database schema use:
