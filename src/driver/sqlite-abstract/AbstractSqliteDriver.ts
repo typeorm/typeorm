@@ -267,8 +267,9 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Performs connection to the database.
      */
-    async connect(): Promise<void> {
-        this.databaseConnection = await this.createDatabaseConnection()
+    connect(): Promise<void> {
+        this.databaseConnection = this.createDatabaseConnection()
+        return Promise.resolve()
     }
 
     /**
@@ -474,10 +475,7 @@ export abstract class AbstractSqliteDriver implements Driver {
                     return value
                         .map((v: any) => {
                             escapedParameters.push(v)
-                            return this.createParameter(
-                                key,
-                                escapedParameters.length - 1,
-                            )
+                            return this.createParameter()
                         })
                         .join(", ")
                 }
@@ -492,24 +490,18 @@ export abstract class AbstractSqliteDriver implements Driver {
                 // it to 1 or 0
                 if (typeof value === "boolean") {
                     escapedParameters.push(+value)
-                    return this.createParameter(
-                        key,
-                        escapedParameters.length - 1,
-                    )
+                    return this.createParameter()
                 }
 
                 if (value instanceof Date) {
                     escapedParameters.push(
                         DateUtils.mixedDateToUtcDatetimeString(value),
                     )
-                    return this.createParameter(
-                        key,
-                        escapedParameters.length - 1,
-                    )
+                    return this.createParameter()
                 }
 
                 escapedParameters.push(value)
-                return this.createParameter(key, escapedParameters.length - 1)
+                return this.createParameter()
             },
         ) // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters]
@@ -528,11 +520,7 @@ export abstract class AbstractSqliteDriver implements Driver {
      *
      * Returns only simple table name because all inherited drivers does not supports schema and database.
      */
-    buildTableName(
-        tableName: string,
-        schema?: string,
-        database?: string,
-    ): string {
+    buildTableName(tableName: string): string {
         return tableName
     }
 
@@ -900,10 +888,8 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Creates an escaped parameter.
      */
-    createParameter(parameterName: string, index: number): string {
-        // return "$" + (index + 1);
+    createParameter(): string {
         return "?"
-        // return "$" + parameterName;
     }
 
     // -------------------------------------------------------------------------
@@ -913,7 +899,7 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Creates connection with the database.
      */
-    protected async createDatabaseConnection(): Promise<any> {
+    protected createDatabaseConnection(): Promise<any> {
         throw new TypeORMError(
             "Do not use AbstractSqlite directly, it has to be used with one of the sqlite drivers",
         )
