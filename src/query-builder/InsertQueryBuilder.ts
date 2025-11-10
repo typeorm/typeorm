@@ -209,8 +209,11 @@ export class InsertQueryBuilder<
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                } catch {
+                    // ignore
+                }
             }
+
             throw error
         } finally {
             // console.time(".releasing connection");

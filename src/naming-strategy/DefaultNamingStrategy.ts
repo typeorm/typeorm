@@ -163,7 +163,6 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         firstTableName: string,
         secondTableName: string,
         firstPropertyName: string,
-        secondPropertyName: string,
     ): string {
         return snakeCase(
             firstTableName +

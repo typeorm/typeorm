@@ -8,14 +8,12 @@ import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { View } from "../../schema-builder/view/View"
 import { Query } from "../Query"
 import { AbstractSqliteDriver } from "./AbstractSqliteDriver"
-import { ReadStream } from "../../platform/PlatformTools"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { OrmUtils } from "../../util/OrmUtils"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { IsolationLevel } from "../types/IsolationLevel"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TransactionAlreadyStartedError, TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
@@ -164,12 +162,7 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Returns raw data stream.
      */
-    stream(
-        query: string,
-        parameters?: any[],
-        onEnd?: Function,
-        onError?: Function,
-    ): Promise<ReadStream> {
+    stream(): never {
         throw new TypeORMError(`Stream is not supported by sqlite driver.`)
     }
 
@@ -184,14 +177,14 @@ export abstract class AbstractSqliteQueryRunner
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
      */
-    async getSchemas(database?: string): Promise<string[]> {
+    async getSchemas(): Promise<string[]> {
         return Promise.resolve([])
     }
 
     /**
      * Checks if database with the given name exist.
      */
-    async hasDatabase(database: string): Promise<boolean> {
+    async hasDatabase(): Promise<boolean> {
         return Promise.resolve(false)
     }
 
@@ -205,7 +198,7 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Checks if schema with the given name exist.
      */
-    async hasSchema(schema: string): Promise<boolean> {
+    hasSchema(): never {
         throw new TypeORMError(`This driver does not support table schemas`)
     }
 
@@ -246,34 +239,28 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Creates a new database.
      */
-    async createDatabase(
-        database: string,
-        ifNotExist?: boolean,
-    ): Promise<void> {
+    async createDatabase(): Promise<void> {
         return Promise.resolve()
     }
 
     /**
      * Drops database.
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+    async dropDatabase(): Promise<void> {
         return Promise.resolve()
     }
 
     /**
      * Creates a new table schema.
      */
-    async createSchema(
-        schemaPath: string,
-        ifNotExist?: boolean,
-    ): Promise<void> {
+    async createSchema(): Promise<void> {
         return Promise.resolve()
     }
 
     /**
      * Drops table schema.
      */
-    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+    async dropSchema(): Promise<void> {
         return Promise.resolve()
     }
 
@@ -804,10 +791,7 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Updates composite primary keys.
      */
-    async updatePrimaryKeys(
-        tableOrName: Table | string,
-        columns: TableColumn[],
-    ): Promise<void> {
+    async updatePrimaryKeys(): Promise<void> {
         await Promise.resolve()
     }
 
@@ -974,40 +958,28 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Creates a new exclusion constraint.
      */
-    async createExclusionConstraint(
-        tableOrName: Table | string,
-        exclusionConstraint: TableExclusion,
-    ): Promise<void> {
+    createExclusionConstraint(): never {
         throw new TypeORMError(`Sqlite does not support exclusion constraints.`)
     }
 
     /**
      * Creates a new exclusion constraints.
      */
-    async createExclusionConstraints(
-        tableOrName: Table | string,
-        exclusionConstraints: TableExclusion[],
-    ): Promise<void> {
+    createExclusionConstraints(): never {
         throw new TypeORMError(`Sqlite does not support exclusion constraints.`)
     }
 
     /**
      * Drops exclusion constraint.
      */
-    async dropExclusionConstraint(
-        tableOrName: Table | string,
-        exclusionOrName: TableExclusion | string,
-    ): Promise<void> {
+    dropExclusionConstraint(): never {
         throw new TypeORMError(`Sqlite does not support exclusion constraints.`)
     }
 
     /**
      * Drops exclusion constraints.
      */
-    async dropExclusionConstraints(
-        tableOrName: Table | string,
-        exclusionConstraints: TableExclusion[],
-    ): Promise<void> {
+    dropExclusionConstraints(): never {
         throw new TypeORMError(`Sqlite does not support exclusion constraints.`)
     }
 
@@ -1206,7 +1178,10 @@ export abstract class AbstractSqliteQueryRunner
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {}
+            } catch {
+                // ignore
+            }
+
             throw error
         } finally {
             await this.query(`PRAGMA foreign_keys = ON`)
@@ -2243,10 +2218,7 @@ export abstract class AbstractSqliteQueryRunner
     /**
      * Change table comment.
      */
-    changeTableComment(
-        tableOrName: Table | string,
-        comment?: string,
-    ): Promise<void> {
-        throw new TypeORMError(`sqlit driver does not support change comment.`)
+    changeTableComment(): never {
+        throw new TypeORMError(`sqlite driver does not support change comment.`)
     }
 }

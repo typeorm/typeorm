@@ -1,7 +1,6 @@
 import { FileLoggerOptions, LoggerOptions } from "./LoggerOptions"
 import { LogLevel, LogMessage } from "./Logger"
 import appRootPath from "app-root-path"
-import { QueryRunner } from "../query-runner/QueryRunner"
 import { PlatformTools } from "../platform/PlatformTools"
 import { AbstractLogger } from "./AbstractLogger"
 
@@ -28,11 +27,7 @@ export class FileLogger extends AbstractLogger {
     /**
      * Write log to specific output.
      */
-    protected writeLog(
-        level: LogLevel,
-        logMessage: LogMessage | LogMessage[],
-        queryRunner?: QueryRunner,
-    ) {
+    protected writeLog(level: LogLevel, logMessage: LogMessage | LogMessage[]) {
         const messages = this.prepareLogMessages(logMessage, {
             highlightSql: false,
             addColonToPrefix: false,

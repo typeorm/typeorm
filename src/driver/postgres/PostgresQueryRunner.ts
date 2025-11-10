@@ -3182,6 +3182,7 @@ export class PostgresQueryRunner
             } catch {
                 // no-op
             }
+
             throw error
         }
     }

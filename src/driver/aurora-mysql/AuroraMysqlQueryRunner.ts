@@ -1915,7 +1915,10 @@ export class AuroraMysqlQueryRunner
                 if (!isAnotherTransactionActive) {
                     await this.rollbackTransaction()
                 }
-            } catch (rollbackError) {}
+            } catch {
+                // ignore
+            }
+
             throw error
         }
     }

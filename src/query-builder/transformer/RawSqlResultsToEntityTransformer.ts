@@ -195,7 +195,6 @@ export class RawSqlResultsToEntityTransformer {
             rawResults,
             alias,
             entity,
-            metadata,
         )
         const hasRelationCounts = this.transformRelationCounts(
             rawResults,
@@ -319,7 +318,6 @@ export class RawSqlResultsToEntityTransformer {
         rawSqlResults: any[],
         alias: Alias,
         entity: ObjectLiteral,
-        metadata: EntityMetadata,
     ): boolean {
         let hasData = false
         for (const [

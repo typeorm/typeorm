@@ -492,10 +492,7 @@ export class MysqlDriver implements Driver {
                     return value
                         .map((v: any) => {
                             escapedParameters.push(v)
-                            return this.createParameter(
-                                key,
-                                escapedParameters.length - 1,
-                            )
+                            return this.createParameter()
                         })
                         .join(", ")
                 }
@@ -505,7 +502,7 @@ export class MysqlDriver implements Driver {
                 }
 
                 escapedParameters.push(value)
-                return this.createParameter(key, escapedParameters.length - 1)
+                return this.createParameter()
             },
         ) // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters]
@@ -1166,7 +1163,7 @@ export class MysqlDriver implements Driver {
     /**
      * Creates an escaped parameter.
      */
-    createParameter(parameterName: string, index: number): string {
+    createParameter(): string {
         return "?"
     }
 
@@ -1225,12 +1222,12 @@ export class MysqlDriver implements Driver {
             } else {
                 this.loadedConnectorPackage = connectorPackage
             }
-        } catch (e) {
+        } catch {
             try {
                 this.mysql = PlatformTools.load(fallbackConnectorPackage) // try to load second supported package
                 // Successfully loaded the fallback package
                 this.loadedConnectorPackage = fallbackConnectorPackage
-            } catch (e) {
+            } catch {
                 throw new DriverPackageNotInstalledError(
                     "Mysql",
                     connectorPackage,

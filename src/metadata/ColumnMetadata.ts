@@ -617,10 +617,7 @@ export class ColumnMetadata {
      * Examples what this method can return depend if this column is in embeds.
      * { id: 1 } or { title: "hello" }, { counters: { code: 1 } }, { data: { information: { counters: { code: 1 } } } }
      */
-    getEntityValueMap(
-        entity: ObjectLiteral,
-        options?: { skipNulls?: boolean },
-    ): ObjectLiteral | undefined {
+    getEntityValueMap(entity: ObjectLiteral): ObjectLiteral | undefined {
         const returnNulls = false // options && options.skipNulls === false ? false : true; // todo: remove if current will not bring problems, uncomment if it will.
 
         // extract column value from embeds of entity if column is in embedded

@@ -129,7 +129,7 @@ export class PlatformTools {
                 case "react-native-sqlite-storage":
                     return require("react-native-sqlite-storage")
             }
-        } catch (err) {
+        } catch {
             return require(path.resolve(
                 process.cwd() + "/node_modules/" + name,
             ))

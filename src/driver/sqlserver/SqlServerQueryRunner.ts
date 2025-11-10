@@ -12,7 +12,6 @@ import { TableIndexOptions } from "../../schema-builder/options/TableIndexOption
 import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
@@ -2401,10 +2400,7 @@ export class SqlServerQueryRunner
     /**
      * Creates a new exclusion constraint.
      */
-    async createExclusionConstraint(
-        tableOrName: Table | string,
-        exclusionConstraint: TableExclusion,
-    ): Promise<void> {
+    createExclusionConstraint(): never {
         throw new TypeORMError(
             `SqlServer does not support exclusion constraints.`,
         )
@@ -2413,10 +2409,7 @@ export class SqlServerQueryRunner
     /**
      * Creates a new exclusion constraints.
      */
-    async createExclusionConstraints(
-        tableOrName: Table | string,
-        exclusionConstraints: TableExclusion[],
-    ): Promise<void> {
+    createExclusionConstraints(): never {
         throw new TypeORMError(
             `SqlServer does not support exclusion constraints.`,
         )
@@ -2425,10 +2418,7 @@ export class SqlServerQueryRunner
     /**
      * Drops exclusion constraint.
      */
-    async dropExclusionConstraint(
-        tableOrName: Table | string,
-        exclusionOrName: TableExclusion | string,
-    ): Promise<void> {
+    dropExclusionConstraint(): never {
         throw new TypeORMError(
             `SqlServer does not support exclusion constraints.`,
         )
@@ -2437,10 +2427,7 @@ export class SqlServerQueryRunner
     /**
      * Drops exclusion constraints.
      */
-    async dropExclusionConstraints(
-        tableOrName: Table | string,
-        exclusionConstraints: TableExclusion[],
-    ): Promise<void> {
+    dropExclusionConstraints(): never {
         throw new TypeORMError(
             `SqlServer does not support exclusion constraints.`,
         )
@@ -2735,7 +2722,10 @@ export class SqlServerQueryRunner
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {}
+            } catch {
+                // ignore
+            }
+
             throw error
         }
     }
@@ -4160,12 +4150,9 @@ export class SqlServerQueryRunner
     /**
      * Change table comment.
      */
-    changeTableComment(
-        tableOrName: Table | string,
-        comment?: string,
-    ): Promise<void> {
+    changeTableComment(): never {
         throw new TypeORMError(
-            `sqlserver driver does not support change table comment.`,
+            `SqlServer driver does not support change table comment.`,
         )
     }
 }

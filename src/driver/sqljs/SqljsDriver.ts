@@ -9,7 +9,6 @@ import { PlatformTools } from "../../platform/PlatformTools"
 import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { OrmUtils } from "../../util/OrmUtils"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { ReplicationMode } from "../types/ReplicationMode"
 import { TypeORMError } from "../../error"
 
 // This is needed to satisfy the typescript compiler.
@@ -66,7 +65,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: ReplicationMode): QueryRunner {
+    createQueryRunner(): QueryRunner {
         if (!this.queryRunner) this.queryRunner = new SqljsQueryRunner(this)
 
         return this.queryRunner
@@ -221,7 +220,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
      */
-    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
+    createGeneratedMap(metadata: EntityMetadata) {
         const generatedMap = metadata.generatedColumns.reduce(
             (map, generatedColumn) => {
                 // seems to be the only way to get the inserted id, see https://github.com/kripken/sql.js/issues/77
@@ -303,7 +302,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                 const sqlite =
                     this.options.driver || PlatformTools.load("sql.js")
                 this.sqlite = sqlite
-            } catch (e) {
+            } catch {
                 throw new DriverPackageNotInstalledError("sql.js", "sql.js")
             }
         }
