@@ -1,8 +1,8 @@
 {
   "all": true,
   "cache": false,
-  "exclude": ["**/*.d.ts"],
+  "exclude": ["node_modules", "**/*.d.ts"],
   "extension": [".ts"],
   "include": ["build/compiled/src/**", "src/**"],
-  "reporter": "lcov"
+  "reporter": ["lcov"]
 }
