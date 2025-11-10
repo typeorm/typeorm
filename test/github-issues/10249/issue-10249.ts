@@ -25,7 +25,7 @@ describe("github issues > #10249 Saving an entity is not possible if only column
 
     it("should ignore changes for columns with `update: false` on saving entity", () =>
         Promise.all(
-            dataSources.map(async (dataSource) => {
+            dataSources.map(async () => {
                 await Promise.all(
                     dataSources.map(async (dataSource) => {
                         const manager = dataSource.manager

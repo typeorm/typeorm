@@ -15,7 +15,7 @@ export class Image {
     @Column()
     isRemoved: boolean = false
 
-    @ManyToMany((type) => Category, (category) => category.images)
+    @ManyToMany(() => Category, (category) => category.images)
     categories: Category[]
 
     categoryCount: number

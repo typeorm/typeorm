@@ -7,7 +7,7 @@ import { createTestingConnections } from "../../utils/test-utils"
 describe("sqljs driver > autosave", () => {
     let connections: DataSource[]
     let saves = 0
-    const callback = (database: Uint8Array) => {
+    const callback = () => {
         saves++
     }
 
@@ -81,7 +81,7 @@ describe("sqljs driver > autosave", () => {
 describe("sqljs driver > autosave off", () => {
     let connections: DataSource[]
     let saves = 0
-    const callback = (database: Uint8Array) => {
+    const callback = () => {
         saves++
     }
 
