@@ -101,7 +101,7 @@ export const redirects = [
     },
     { from: "/data-source-api", to: "/docs/data-source/data-source-api" },
 
-    { from: "/migrations", to: "/docs/migrations" },
+    { from: "/migrations", to: "/docs/migrations/why" },
     { from: "/transactions", to: "/docs/advanced-topics/transactions" },
     { from: "/indices", to: "/docs/advanced-topics/indices" },
     {
@@ -123,5 +123,5 @@ export const redirects = [
     { from: "/getting-started", to: "/docs/getting-started" },
     { from: "/future-of-typeorm", to: "/docs/future-of-typeorm" },
     { from: "/query-runner", to: "/docs/query-runner" },
-    { from: "/docs/advanced-topics/migrations", to: "/docs/migrations" },
+    { from: "/docs/advanced-topics/migrations", to: "/docs/migrations/why" },
 ]
