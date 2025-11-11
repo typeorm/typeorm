@@ -31,6 +31,7 @@ jobs:
             src-or-tests: &src-or-tests
               - *src
               - .github/workflows/test/**/*
+              - .github/workflows/test*.yml
               - .mocharc.json
               - .nycrc.json
 
