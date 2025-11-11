@@ -29,8 +29,9 @@ jobs:
               - *package-json
 
             src-or-tests: &src-or-tests
-              - ./github/workflows/test/**/*
               - *src
+              - ./github/workflows/test/**/*
+              - ./github/workflows/**/*
               - .mocharc.json
               - .nycrc.json
 
