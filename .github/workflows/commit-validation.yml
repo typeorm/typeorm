@@ -58,7 +58,6 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash
         working-directory: ./docs
     steps:
       - uses: actions/checkout@v5
