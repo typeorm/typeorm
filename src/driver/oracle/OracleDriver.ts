@@ -434,11 +434,7 @@ export class OracleDriver implements Driver {
      * Build full table name with database name, schema name and table name.
      * Oracle does not support table schemas. One user can have only one schema.
      */
-    buildTableName(
-        tableName: string,
-        schema?: string,
-        database?: string,
-    ): string {
+    buildTableName(tableName: string, schema?: string): string {
         const tablePath = [tableName]
 
         if (schema) {
@@ -751,12 +747,10 @@ export class OracleDriver implements Driver {
                 return fail(new TypeORMError("Driver not Connected"))
             }
 
-            this.master.getConnection(
-                (err: any, connection: any, release: Function) => {
-                    if (err) return fail(err)
-                    ok(connection)
-                },
-            )
+            this.master.getConnection((err: any, connection: any) => {
+                if (err) return fail(err)
+                ok(connection)
+            })
         })
     }
 
@@ -984,9 +978,8 @@ export class OracleDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const oracle = this.options.driver || PlatformTools.load("oracledb")
-            this.oracle = oracle
-        } catch (e) {
+            this.oracle = this.options.driver || PlatformTools.load("oracledb")
+        } catch {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb")
         }
         const thickMode = this.options.thickMode

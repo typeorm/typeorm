@@ -10,7 +10,6 @@ import { QueryRunner } from "../../query-runner/QueryRunner"
 import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
@@ -359,9 +358,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Returns all available schema names including system schemas.
-     * If database parameter specified, returns schemas of that database.
      */
-    async getSchemas(database?: string): Promise<string[]> {
+    async getSchemas(): Promise<string[]> {
         return Promise.resolve([])
     }
 
@@ -375,7 +373,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
 
             return query.length > 0
-        } catch (e) {
+        } catch {
             return false
         }
     }
@@ -393,7 +391,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Checks if schema with the given name exist.
      */
-    async hasSchema(schema: string): Promise<boolean> {
+    async hasSchema(): Promise<boolean> {
         return Promise.resolve(false)
     }
 
@@ -460,17 +458,14 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops database.
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+    async dropDatabase(): Promise<void> {
         return Promise.resolve()
     }
 
     /**
      * Creates a new table schema.
      */
-    async createSchema(
-        schemaPath: string,
-        ifNotExist?: boolean,
-    ): Promise<void> {
+    createSchema(): never {
         throw new TypeORMError(
             `Schema create queries are not supported by Oracle driver.`,
         )
@@ -479,7 +474,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops table schema.
      */
-    async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
+    dropSchema(): never {
         throw new TypeORMError(
             `Schema drop queries are not supported by Oracle driver.`,
         )
@@ -2015,40 +2010,28 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new exclusion constraint.
      */
-    async createExclusionConstraint(
-        tableOrName: Table | string,
-        exclusionConstraint: TableExclusion,
-    ): Promise<void> {
+    createExclusionConstraint(): never {
         throw new TypeORMError(`Oracle does not support exclusion constraints.`)
     }
 
     /**
      * Creates a new exclusion constraints.
      */
-    async createExclusionConstraints(
-        tableOrName: Table | string,
-        exclusionConstraints: TableExclusion[],
-    ): Promise<void> {
+    createExclusionConstraints(): never {
         throw new TypeORMError(`Oracle does not support exclusion constraints.`)
     }
 
     /**
      * Drops exclusion constraint.
      */
-    async dropExclusionConstraint(
-        tableOrName: Table | string,
-        exclusionOrName: TableExclusion | string,
-    ): Promise<void> {
+    dropExclusionConstraint(): never {
         throw new TypeORMError(`Oracle does not support exclusion constraints.`)
     }
 
     /**
      * Drops exclusion constraints.
      */
-    async dropExclusionConstraints(
-        tableOrName: Table | string,
-        exclusionConstraints: TableExclusion[],
-    ): Promise<void> {
+    dropExclusionConstraints(): never {
         throw new TypeORMError(`Oracle does not support exclusion constraints.`)
     }
 
@@ -3182,10 +3165,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Change table comment.
      */
-    changeTableComment(
-        tableOrName: Table | string,
-        comment?: string,
-    ): Promise<void> {
+    changeTableComment(): never {
         throw new TypeORMError(
             `oracle driver does not support change table comment.`,
         )
