@@ -360,9 +360,8 @@ export class PostgresQueryRunner
 
     /**
      * Returns all available schema names including system schemas.
-     * If database parameter specified, returns schemas of that database.
      */
-    async getSchemas(database?: string): Promise<string[]> {
+    async getSchemas(): Promise<string[]> {
         return Promise.resolve([])
     }
 

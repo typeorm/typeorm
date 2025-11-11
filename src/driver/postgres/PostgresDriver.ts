@@ -385,7 +385,7 @@ export class PostgresDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
-        const extensionsMetadata = await this.checkMetadataForExtensions()
+        const extensionsMetadata = this.checkMetadataForExtensions()
         const [connection, release] = await this.obtainMasterConnection()
 
         const installExtensions =
@@ -425,7 +425,7 @@ export class PostgresDriver implements Driver {
                         this.options.uuidExtension || "uuid-ossp"
                     }"`,
                 )
-            } catch (_) {
+            } catch {
                 logger.log(
                     "warn",
                     `At least one of the entities has uuid column, but the '${
@@ -439,7 +439,7 @@ export class PostgresDriver implements Driver {
                     connection,
                     `CREATE EXTENSION IF NOT EXISTS "citext"`,
                 )
-            } catch (_) {
+            } catch {
                 logger.log(
                     "warn",
                     "At least one of the entities has citext column, but the 'citext' extension cannot be installed automatically. Please install it manually using superuser rights",
@@ -451,7 +451,7 @@ export class PostgresDriver implements Driver {
                     connection,
                     `CREATE EXTENSION IF NOT EXISTS "hstore"`,
                 )
-            } catch (_) {
+            } catch {
                 logger.log(
                     "warn",
                     "At least one of the entities has hstore column, but the 'hstore' extension cannot be installed automatically. Please install it manually using superuser rights",
@@ -463,7 +463,7 @@ export class PostgresDriver implements Driver {
                     connection,
                     `CREATE EXTENSION IF NOT EXISTS "postgis"`,
                 )
-            } catch (_) {
+            } catch {
                 logger.log(
                     "warn",
                     "At least one of the entities has a geometry column, but the 'postgis' extension cannot be installed automatically. Please install it manually using superuser rights",
@@ -475,7 +475,7 @@ export class PostgresDriver implements Driver {
                     connection,
                     `CREATE EXTENSION IF NOT EXISTS "cube"`,
                 )
-            } catch (_) {
+            } catch {
                 logger.log(
                     "warn",
                     "At least one of the entities has a cube column, but the 'cube' extension cannot be installed automatically. Please install it manually using superuser rights",
@@ -487,7 +487,7 @@ export class PostgresDriver implements Driver {
                     connection,
                     `CREATE EXTENSION IF NOT EXISTS "ltree"`,
                 )
-            } catch (_) {
+            } catch {
                 logger.log(
                     "warn",
                     "At least one of the entities has a ltree column, but the 'ltree' extension cannot be installed automatically. Please install it manually using superuser rights",
@@ -499,7 +499,7 @@ export class PostgresDriver implements Driver {
                     connection,
                     `CREATE EXTENSION IF NOT EXISTS "vector"`,
                 )
-            } catch (_) {
+            } catch {
                 logger.log(
                     "warn",
                     "At least one of the entities has a vector column, but the 'vector' extension (pgvector) cannot be installed automatically. Please install it manually using superuser rights",
@@ -512,7 +512,7 @@ export class PostgresDriver implements Driver {
                     connection,
                     `CREATE EXTENSION IF NOT EXISTS "btree_gist"`,
                 )
-            } catch (_) {
+            } catch {
                 logger.log(
                     "warn",
                     "At least one of the entities has an exclusion constraint, but the 'btree_gist' extension cannot be installed automatically. Please install it manually using superuser rights",
@@ -520,7 +520,7 @@ export class PostgresDriver implements Driver {
             }
     }
 
-    protected async checkMetadataForExtensions() {
+    protected checkMetadataForExtensions() {
         const hasUuidColumns = this.connection.entityMetadatas.some(
             (metadata) => {
                 return (
@@ -1486,8 +1486,8 @@ export class PostgresDriver implements Driver {
                     this.options.nativeDriver || PlatformTools.load("pg-native")
                 if (pgNative && this.postgres.native)
                     this.postgres = this.postgres.native
-            } catch (e) {}
-        } catch (e) {
+            } catch {}
+        } catch {
             // todo: better error for browser env
             throw new DriverPackageNotInstalledError("Postgres", "pg")
         }
