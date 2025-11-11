@@ -33,6 +33,7 @@ jobs:
               - .github/workflows/test/**/*
               - .github/workflows/**/*
               - .mocharc.json
+              - .nvmrc
               - .nycrc.json
 
             lint: &lint
