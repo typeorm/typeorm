@@ -37,7 +37,6 @@ jobs:
 
             lint: &lint
               - *src-or-tests
-              - *docs
               - .prettierrc.json
               - eslint.config.mjs
 
