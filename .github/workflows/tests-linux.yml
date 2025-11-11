@@ -5,14 +5,11 @@ on:
       node-version:
         required: true
         type: number
-      base-node-version:
-        required: true
-        type: number
 
 jobs:
   cockroachdb:
     # CockroachDB is slow, run less often so it doesn't block other workflows
-    if: ${{ inputs.node-version == inputs.base-node-version }}
+    if: ${{ inputs.node-version >= 20 }}
     runs-on: ubuntu-latest
 
     services:

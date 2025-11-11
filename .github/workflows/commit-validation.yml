@@ -45,37 +45,22 @@ jobs:
           path: build/
           retention-days: 1
 
-  test-matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      node-versions: ${{ steps.node.outputs.node-versions }}
-      base-node-version: ${{ steps.node.outputs.base-node-version }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: node
-        run: |
-          BASE_NODE_VERSION=$(grep -oE '[0-9]+' .nvmrc | head -1)
-          PREV_NODE_VERSION=$((BASE_NODE_VERSION - 2))
-
-          echo "node-versions=[$PREV_NODE_VERSION, $BASE_NODE_VERSION]" >> $GITHUB_OUTPUT
-          echo "base-node-version=$BASE_NODE_VERSION" >> $GITHUB_OUTPUT
-
   tests-linux:
-    needs: [build, test-matrix]
+    needs: build
     strategy:
       fail-fast: false
       matrix:
-        node-version: ${{ fromJSON(needs.test-matrix.outputs.node-versions) }}
+        node-version: [18, 20]
     uses: ./.github/workflows/tests-linux.yml
     with:
       node-version: ${{ fromJSON(matrix.node-version) }}
       base-node-version: ${{ fromJSON(needs.test-matrix.outputs.base-node-version) }}
 
   tests-windows:
-    needs: [build, test-matrix]
+    needs: build
     uses: ./.github/workflows/tests-windows.yml
     with:
-      node-version: ${{ fromJSON(needs.test-matrix.outputs.base-node-version) }}
+      node-version: 20
 
   # Run with most databases possible to provide the coverage of the tests
   coverage:
