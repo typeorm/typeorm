@@ -106,7 +106,7 @@ jobs:
   coverage:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
     runs-on: ubuntu-latest
-    needs: [tests-linux, tests-windows]
+    needs: [detect-changes, tests-linux, tests-windows]
     steps:
       - name: Coveralls Finished
         uses: coverallsapp/github-action@v2
