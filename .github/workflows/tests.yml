@@ -1,4 +1,4 @@
-name: Commit Validation
+name: Tests
 on:
   pull_request:
 
@@ -111,3 +111,16 @@ jobs:
       - uses: coverallsapp/github-action@v2
         with:
           parallel-finished: true
+
+  all-passed:
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - build
+      - coverage
+      - docs
+      - formatting
+      - tests-linux
+      - tests-windows
+    steps:
+      - run: exit ${{ contains(needs.*.result, 'failure') && 1 || 0 }}
