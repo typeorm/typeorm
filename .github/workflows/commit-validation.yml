@@ -53,8 +53,7 @@ jobs:
         node-version: [18, 20]
     uses: ./.github/workflows/tests-linux.yml
     with:
-      node-version: ${{ fromJSON(matrix.node-version) }}
-      base-node-version: ${{ fromJSON(needs.test-matrix.outputs.base-node-version) }}
+      node-version: ${{matrix.node-version}}
 
   tests-windows:
     needs: build
