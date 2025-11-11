@@ -433,10 +433,8 @@ export class SapDriver implements Driver {
                     return value
                         .map((v: any) => {
                             escapedParameters.push(v)
-                            return this.createParameter(
-                                key,
-                                escapedParameters.length - 1,
-                            )
+
+                            return this.createParameter()
                         })
                         .join(", ")
                 }
@@ -450,7 +448,8 @@ export class SapDriver implements Driver {
                 }
 
                 escapedParameters.push(value)
-                return this.createParameter(key, escapedParameters.length - 1)
+
+                return this.createParameter()
             },
         ) // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters]
@@ -862,7 +861,7 @@ export class SapDriver implements Driver {
     /**
      * Creates an escaped parameter.
      */
-    createParameter(parameterName: string, index: number): string {
+    createParameter(): string {
         return "?"
     }
 

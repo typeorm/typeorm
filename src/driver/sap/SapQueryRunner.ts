@@ -13,7 +13,6 @@ import { TableIndexOptions } from "../../schema-builder/options/TableIndexOption
 import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
@@ -510,17 +509,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new database.
      */
-    async createDatabase(
-        database: string,
-        ifNotExist?: boolean,
-    ): Promise<void> {
+    async createDatabase(): Promise<void> {
         return Promise.resolve()
     }
 
     /**
      * Drops database.
      */
-    async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
+    async dropDatabase(): Promise<void> {
         return Promise.resolve()
     }
 
@@ -2111,10 +2107,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new unique constraint.
      */
-    async createUniqueConstraint(
-        tableOrName: Table | string,
-        uniqueConstraint: TableUnique,
-    ): Promise<void> {
+    createUniqueConstraint(): never {
         throw new TypeORMError(
             `SAP HANA does not support unique constraints. Use unique index instead.`,
         )
@@ -2123,10 +2116,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new unique constraints.
      */
-    async createUniqueConstraints(
-        tableOrName: Table | string,
-        uniqueConstraints: TableUnique[],
-    ): Promise<void> {
+    createUniqueConstraints(): never {
         throw new TypeORMError(
             `SAP HANA does not support unique constraints. Use unique index instead.`,
         )
@@ -2135,10 +2125,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops unique constraint.
      */
-    async dropUniqueConstraint(
-        tableOrName: Table | string,
-        uniqueOrName: TableUnique | string,
-    ): Promise<void> {
+    dropUniqueConstraint(): never {
         throw new TypeORMError(
             `SAP HANA does not support unique constraints. Use unique index instead.`,
         )
@@ -2147,10 +2134,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops unique constraints.
      */
-    async dropUniqueConstraints(
-        tableOrName: Table | string,
-        uniqueConstraints: TableUnique[],
-    ): Promise<void> {
+    dropUniqueConstraints(): never {
         throw new TypeORMError(
             `SAP HANA does not support unique constraints. Use unique index instead.`,
         )
@@ -2234,10 +2218,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new exclusion constraint.
      */
-    async createExclusionConstraint(
-        tableOrName: Table | string,
-        exclusionConstraint: TableExclusion,
-    ): Promise<void> {
+    createExclusionConstraint(): never {
         throw new TypeORMError(
             `SAP HANA does not support exclusion constraints.`,
         )
@@ -2246,10 +2227,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new exclusion constraints.
      */
-    async createExclusionConstraints(
-        tableOrName: Table | string,
-        exclusionConstraints: TableExclusion[],
-    ): Promise<void> {
+    createExclusionConstraints(): never {
         throw new TypeORMError(
             `SAP HANA does not support exclusion constraints.`,
         )
@@ -2258,10 +2236,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops exclusion constraint.
      */
-    async dropExclusionConstraint(
-        tableOrName: Table | string,
-        exclusionOrName: TableExclusion | string,
-    ): Promise<void> {
+    dropExclusionConstraint(): never {
         throw new TypeORMError(
             `SAP HANA does not support exclusion constraints.`,
         )
@@ -2270,10 +2245,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops exclusion constraints.
      */
-    async dropExclusionConstraints(
-        tableOrName: Table | string,
-        exclusionConstraints: TableExclusion[],
-    ): Promise<void> {
+    dropExclusionConstraints(): never {
         throw new TypeORMError(
             `SAP HANA does not support exclusion constraints.`,
         )
@@ -3389,12 +3361,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Change table comment.
      */
-    changeTableComment(
-        tableOrName: Table | string,
-        comment?: string,
-    ): Promise<void> {
+    changeTableComment(): never {
         throw new TypeORMError(
-            `spa driver does not support change table comment.`,
+            `SAP driver does not support change table comment.`,
         )
     }
 }
