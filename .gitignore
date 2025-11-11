@@ -27,3 +27,8 @@ node_modules/
 ormlogs.log
 
 /test/github-issues/799/tmp/*
+# ignore yarn2 artifacts but allow yarn.lock (forces yarn1 compat which is node_modules)
+.yarn/
+.yarn*
+*.iml
+.VSCodeCounter/**/*

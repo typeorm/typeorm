@@ -1,3 +1,4 @@
+import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TableColumnOptions } from "../options/TableColumnOptions"
 
 /**
@@ -44,7 +45,12 @@ export class TableColumn {
      * Specifies generation strategy if this column will use auto increment.
      * `rowid` option supported only in CockroachDB.
      */
-    generationStrategy?: "uuid" | "increment" | "rowid" | "identity"
+    generationStrategy?:
+        | "uuid"
+        | "increment"
+        | "rowid"
+        | "identity"
+        | ((row:ObjectLiteral) => string | number)
 
     /**
      * Indicates if column is a primary key.

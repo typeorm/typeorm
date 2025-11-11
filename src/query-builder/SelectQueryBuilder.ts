@@ -2245,7 +2245,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     return alias.subQuery + " " + this.escape(alias.name)
 
                 return (
-                    this.getTableName(alias.tablePath!) +
+                    this.getTableName(alias.tablePath!, alias.metadata) +
                     " " +
                     this.escape(alias.name)
                 )
@@ -2330,7 +2330,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (!parentAlias || !relation) {
                 const destinationJoin = joinAttr.alias.subQuery
                     ? joinAttr.alias.subQuery
-                    : this.getTableName(destinationTableName)
+                    : this.getTableName(
+                          destinationTableName,
+                          joinAttr.metadata || joinAttr.alias.metadata,
+                      )
                 return (
                     " " +
                     joinAttr.direction +
@@ -2368,7 +2371,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     " " +
                     joinAttr.direction +
                     " JOIN " +
-                    this.getTableName(destinationTableName) +
+                    this.getTableName(
+                        destinationTableName,
+                        joinAttr.metadata || joinAttr.alias.metadata,
+                    ) +
                     " " +
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
@@ -2419,7 +2425,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     " " +
                     joinAttr.direction +
                     " JOIN " +
-                    this.getTableName(destinationTableName) +
+                    this.getTableName(
+                        destinationTableName,
+                        joinAttr.metadata || joinAttr.alias.metadata,
+                    ) +
                     " " +
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
@@ -2503,7 +2512,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     " " +
                     joinAttr.direction +
                     " JOIN " +
-                    this.getTableName(junctionTableName) +
+                    this.getTableName(
+                        junctionTableName,
+                        joinAttr.metadata || joinAttr.alias.metadata,
+                    ) +
                     " " +
                     this.escape(junctionAlias) +
                     this.createTableLockExpression() +
@@ -2512,7 +2524,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     " " +
                     joinAttr.direction +
                     " JOIN " +
-                    this.getTableName(destinationTableName) +
+                    this.getTableName(
+                        destinationTableName,
+                        joinAttr.metadata || joinAttr.alias.metadata,
+                    ) +
                     " " +
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
@@ -3131,7 +3146,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     protected applyFindOptions() {
         // todo: convert relations: string[] to object map to simplify code
         // todo: same with selects
-
+        if (this.findOptions.splitTableFunction) {
+            this.setSplitTableFunction(this.findOptions.splitTableFunction)
+        }
         if (this.expressionMap.mainAlias!.metadata) {
             if (this.findOptions.relationLoadStrategy) {
                 this.expressionMap.relationLoadStrategy =

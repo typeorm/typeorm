@@ -2700,6 +2700,7 @@ export declare interface CountOptions extends CommandOperationOptions {
     maxTimeMS?: number
     /** An index name hint for the query. */
     hint?: string | Document
+    [key: string]: any
 }
 
 /** @public */

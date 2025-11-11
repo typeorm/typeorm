@@ -688,11 +688,13 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         if (returningExpression === "") {
             return `UPDATE ${this.getTableName(
                 this.getMainTableName(),
+                this.expressionMap.mainAlias?.metadata,
             )} SET ${updateColumnAndValues.join(", ")}${whereExpression}` // todo: how do we replace aliases in where to nothing?
         }
         if (this.connection.driver.options.type === "mssql") {
             return `UPDATE ${this.getTableName(
                 this.getMainTableName(),
+                this.expressionMap.mainAlias?.metadata,
             )} SET ${updateColumnAndValues.join(
                 ", ",
             )} OUTPUT ${returningExpression}${whereExpression}`
@@ -707,6 +709,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
         return `UPDATE ${this.getTableName(
             this.getMainTableName(),
+            this.expressionMap.mainAlias?.metadata,
         )} SET ${updateColumnAndValues.join(
             ", ",
         )}${whereExpression} RETURNING ${returningExpression}`

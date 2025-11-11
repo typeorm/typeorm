@@ -15,5 +15,5 @@ export interface GeneratedMetadataArgs {
     /**
      * Generation strategy.
      */
-    readonly strategy: "uuid" | "increment" | "rowid"
+    readonly strategy: "uuid" | "increment" | "rowid" | (() => string | number)
 }

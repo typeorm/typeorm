@@ -279,7 +279,10 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
      * Creates DELETE express used to perform query.
      */
     protected createDeleteExpression() {
-        const tableName = this.getTableName(this.getMainTableName())
+        const tableName = this.getTableName(
+            this.getMainTableName(),
+            this.expressionMap.mainAlias?.metadata,
+        )
         const whereExpression = this.createWhereExpression()
         const returningExpression = this.createReturningExpression("delete")
 

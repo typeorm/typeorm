@@ -75,6 +75,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     protected parentQueryBuilder: QueryBuilder<any>
 
+    /** 分表函数 */
+    protected splitTableFunction?: (
+        tablePath: string,
+        metadata?: EntityMetadata,
+    ) => string | null | undefined
     /**
      * Memo to help keep place of current parameter index for `createParameter`
      */
@@ -147,6 +152,17 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    setSplitTableFunction(
+        func?: (
+            tablePath: string,
+            metadata?: EntityMetadata,
+        ) => string | null | undefined,
+    ) {
+        if (!func) return this
+        this.splitTableFunction = func
+        return this
+    }
 
     /**
      * Creates SELECT query.
@@ -613,7 +629,17 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Gets escaped table name with schema name if SqlServer driver used with custom
      * schema name, otherwise returns escaped table name.
      */
-    protected getTableName(tablePath: string): string {
+    protected getTableName(
+        tablePath: string,
+        metadata?: EntityMetadata,
+    ): string {
+        const splitTableFunc = this.splitTableFunction
+        if (splitTableFunc) {
+            const newTablePath = splitTableFunc.call(this, tablePath, metadata)
+            if (newTablePath) {
+                tablePath = newTablePath
+            }
+        }
         return tablePath
             .split(".")
             .map((i) => {
