@@ -8,8 +8,6 @@ on:
   pull_request:
     branches:
       - "**"
-    paths-ignore:
-      - "docs/**"
   workflow_dispatch:
 
 jobs:
