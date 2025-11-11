@@ -11,7 +11,6 @@ import { TableIndexOptions } from "../../schema-builder/options/TableIndexOption
 import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
@@ -21,7 +20,6 @@ import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
 import { ColumnType } from "../types/ColumnTypes"
-import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { SpannerDriver } from "./SpannerDriver"
@@ -96,7 +94,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Starts transaction.
      */
-    async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+    async startTransaction(): Promise<void> {
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
@@ -372,14 +370,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
      */
-    async getSchemas(database?: string): Promise<string[]> {
+    async getSchemas(): Promise<string[]> {
         return Promise.resolve([])
     }
 
     /**
      * Checks if database with the given name exist.
      */
-    async hasDatabase(database: string): Promise<boolean> {
+    hasDatabase(): never {
         throw new TypeORMError(
             `Check database queries are not supported by Spanner driver.`,
         )
@@ -388,7 +386,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Loads currently using database
      */
-    async getCurrentDatabase(): Promise<string> {
+    getCurrentDatabase(): never {
         throw new TypeORMError(
             `Check database queries are not supported by Spanner driver.`,
         )
@@ -407,7 +405,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Loads currently using database schema
      */
-    async getCurrentSchema(): Promise<string> {
+    getCurrentSchema(): never {
         throw new TypeORMError(
             `Check schema queries are not supported by Spanner driver.`,
         )
@@ -448,18 +446,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Creates a new database.
      * Note: Spanner does not support database creation inside a transaction block.
      */
-    async createDatabase(
-        database: string,
-        ifNotExist?: boolean,
-    ): Promise<void> {
-        if (ifNotExist) {
-            const databaseAlreadyExists = await this.hasDatabase(database)
-
-            if (databaseAlreadyExists) return Promise.resolve()
-        }
-
+    async createDatabase(database: string): Promise<void> {
         const up = `CREATE DATABASE "${database}"`
         const down = `DROP DATABASE "${database}"`
+
         await this.executeQueries(new Query(up), new Query(down))
     }
 
@@ -478,21 +468,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates a new table schema.
      */
-    async createSchema(
-        schemaPath: string,
-        ifNotExist?: boolean,
-    ): Promise<void> {
+    async createSchema(): Promise<void> {
         return Promise.resolve()
     }
 
     /**
      * Drops table schema.
      */
-    async dropSchema(
-        schemaPath: string,
-        ifExist?: boolean,
-        isCascade?: boolean,
-    ): Promise<void> {
+    async dropSchema(): Promise<void> {
         return Promise.resolve()
     }
 
@@ -658,10 +641,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Renames the given table.
      */
-    async renameTable(
-        oldTableOrName: Table | string,
-        newTableName: string,
-    ): Promise<void> {
+    renameTable(): never {
         throw new TypeORMError(
             `Rename table queries are not supported by Spanner driver.`,
         )
@@ -1065,10 +1045,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Not supported in Spanner.
      * @see https://cloud.google.com/spanner/docs/schema-and-data-model#notes_about_key_columns
      */
-    async createPrimaryKey(
-        tableOrName: Table | string,
-        columnNames: string[],
-    ): Promise<void> {
+    createPrimaryKey(): never {
         throw new Error(
             "The keys of a table can't change; you can't add a key column to an existing table or remove a key column from an existing table.",
         )
@@ -1077,10 +1054,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Updates composite primary keys.
      */
-    async updatePrimaryKeys(
-        tableOrName: Table | string,
-        columns: TableColumn[],
-    ): Promise<void> {
+    updatePrimaryKeys(): never {
         throw new Error(
             "The keys of a table can't change; you can't add a key column to an existing table or remove a key column from an existing table.",
         )
@@ -1092,7 +1066,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Not supported in Spanner.
      * @see https://cloud.google.com/spanner/docs/schema-and-data-model#notes_about_key_columns
      */
-    async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
+    dropPrimaryKey(): never {
         throw new Error(
             "The keys of a table can't change; you can't add a key column to an existing table or remove a key column from an existing table.",
         )
@@ -1101,10 +1075,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates new unique constraint.
      */
-    async createUniqueConstraint(
-        tableOrName: Table | string,
-        uniqueConstraint: TableUnique,
-    ): Promise<void> {
+    createUniqueConstraint(): never {
         throw new TypeORMError(
             `Spanner does not support unique constraints. Use unique index instead.`,
         )
@@ -1113,10 +1084,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates new unique constraints.
      */
-    async createUniqueConstraints(
-        tableOrName: Table | string,
-        uniqueConstraints: TableUnique[],
-    ): Promise<void> {
+    createUniqueConstraints(): never {
         throw new TypeORMError(
             `Spanner does not support unique constraints. Use unique index instead.`,
         )
@@ -1125,10 +1093,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops unique constraint.
      */
-    async dropUniqueConstraint(
-        tableOrName: Table | string,
-        uniqueOrName: TableUnique | string,
-    ): Promise<void> {
+    dropUniqueConstraint(): never {
         throw new TypeORMError(
             `Spanner does not support unique constraints. Use unique index instead.`,
         )
@@ -1137,10 +1102,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops unique constraints.
      */
-    async dropUniqueConstraints(
-        tableOrName: Table | string,
-        uniqueConstraints: TableUnique[],
-    ): Promise<void> {
+    dropUniqueConstraints(): never {
         throw new TypeORMError(
             `Spanner does not support unique constraints. Use unique index instead.`,
         )
@@ -1227,10 +1189,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates new exclusion constraint.
      */
-    async createExclusionConstraint(
-        tableOrName: Table | string,
-        exclusionConstraint: TableExclusion,
-    ): Promise<void> {
+    createExclusionConstraint(): never {
         throw new TypeORMError(
             `Spanner does not support exclusion constraints.`,
         )
@@ -1239,10 +1198,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Creates new exclusion constraints.
      */
-    async createExclusionConstraints(
-        tableOrName: Table | string,
-        exclusionConstraints: TableExclusion[],
-    ): Promise<void> {
+    createExclusionConstraints(): never {
         throw new TypeORMError(
             `Spanner does not support exclusion constraints.`,
         )
@@ -1251,10 +1207,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops exclusion constraint.
      */
-    async dropExclusionConstraint(
-        tableOrName: Table | string,
-        exclusionOrName: TableExclusion | string,
-    ): Promise<void> {
+    dropExclusionConstraint(): never {
         throw new TypeORMError(
             `Spanner does not support exclusion constraints.`,
         )
@@ -1263,10 +1216,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Drops exclusion constraints.
      */
-    async dropExclusionConstraints(
-        tableOrName: Table | string,
-        exclusionConstraints: TableExclusion[],
-    ): Promise<void> {
+    dropExclusionConstraints(): never {
         throw new TypeORMError(
             `Spanner does not support exclusion constraints.`,
         )
@@ -1545,39 +1495,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     // Protected Methods
     // -------------------------------------------------------------------------
 
-    protected async loadViews(viewNames?: string[]): Promise<View[]> {
-        // const hasTable = await this.hasTable(this.getTypeormMetadataTableName())
-        // if (!hasTable) {
-        //     return []
-        // }
-        //
-        // if (!viewNames) {
-        //     viewNames = []
-        // }
-        //
-        // const escapedViewNames = viewNames
-        //     .map((viewName) => `'${viewName}'`)
-        //     .join(", ")
-        //
-        // const query =
-        //     `SELECT \`T\`.*, \`V\`.\`VIEW_DEFINITION\` FROM ${this.escapePath(
-        //         this.getTypeormMetadataTableName(),
-        //     )} \`T\` ` +
-        //     `INNER JOIN \`INFORMATION_SCHEMA\`.\`VIEWS\` \`V\` ON \`V\`.\`TABLE_NAME\` = \`T\`.\`NAME\` ` +
-        //     `WHERE \`T\`.\`TYPE\` = '${MetadataTableType.VIEW}' ${
-        //         viewNames.length
-        //             ? ` AND \`T\`.\`NAME\` IN (${escapedViewNames})`
-        //             : ""
-        //     }`
-        // const dbViews = await this.query(query)
-        // return dbViews.map((dbView: any) => {
-        //     const view = new View()
-        //     view.database = dbView["NAME"]
-        //     view.name = this.driver.buildTableName(dbView["NAME"])
-        //     view.expression = dbView["NAME"]
-        //     return view
-        // })
-
+    protected async loadViews(): Promise<View[]> {
         return Promise.resolve([])
     }
 
@@ -2233,10 +2151,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Change table comment.
      */
-    changeTableComment(
-        tableOrName: Table | string,
-        comment?: string,
-    ): Promise<void> {
+    changeTableComment(): never {
         throw new TypeORMError(
             `spanner driver does not support change table comment.`,
         )
