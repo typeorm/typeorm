@@ -101,7 +101,7 @@ jobs:
     needs: [detect-changes, build]
     uses: ./.github/workflows/tests-windows.yml
     with:
-      node-version: 18
+      node-version: 20
 
   coverage:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
