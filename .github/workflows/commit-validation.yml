@@ -108,7 +108,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [detect-changes, tests-linux, tests-windows]
     steps:
-      - name: Coveralls Finished
-        uses: coverallsapp/github-action@v2
+      - uses: coverallsapp/github-action@v2
         with:
           parallel-finished: true
