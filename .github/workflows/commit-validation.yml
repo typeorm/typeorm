@@ -20,7 +20,6 @@ jobs:
 
             docs: &docs
               - docs/**/*
-              - .github/workflows/**
 
             src: &src
               - extra/**/*.js
