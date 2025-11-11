@@ -18,7 +18,7 @@ jobs:
               - package.json
               - package-lock.json
 
-            docs:
+            docs: &docs
               - docs/**/*
               - .github/workflows/**
 
@@ -37,6 +37,7 @@ jobs:
 
             lint: &lint
               - *src-or-tests
+              - *docs
               - .prettierrc.json
               - eslint.config.mjs
 
