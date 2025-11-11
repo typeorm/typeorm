@@ -13,7 +13,6 @@ import { TableColumn } from "../../schema-builder/table/TableColumn"
 import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { OrmUtils } from "../../util/OrmUtils"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
-import { ReplicationMode } from "../types/ReplicationMode"
 import { DriverPackageNotInstalledError } from "../../error"
 import { Table } from "../../schema-builder/table/Table"
 import { View } from "../../schema-builder/view/View"
@@ -259,7 +258,7 @@ export class ReactNativeDriver implements Driver {
     /**
      * Creates a query runner used to execute database queries.
      */
-    createQueryRunner(mode: ReplicationMode): QueryRunner {
+    createQueryRunner(): QueryRunner {
         if (!this.queryRunner)
             this.queryRunner = new ReactNativeQueryRunner(this)
 
@@ -472,10 +471,7 @@ export class ReactNativeDriver implements Driver {
                     return value
                         .map((v: any) => {
                             escapedParameters.push(v)
-                            return this.createParameter(
-                                key,
-                                escapedParameters.length - 1,
-                            )
+                            return this.createParameter()
                         })
                         .join(", ")
                 }
@@ -490,24 +486,19 @@ export class ReactNativeDriver implements Driver {
                 // it to 1 or 0
                 if (typeof value === "boolean") {
                     escapedParameters.push(+value)
-                    return this.createParameter(
-                        key,
-                        escapedParameters.length - 1,
-                    )
+                    return this.createParameter()
                 }
 
                 if (value instanceof Date) {
                     escapedParameters.push(
                         DateUtils.mixedDateToUtcDatetimeString(value),
                     )
-                    return this.createParameter(
-                        key,
-                        escapedParameters.length - 1,
-                    )
+                    return this.createParameter()
                 }
 
                 escapedParameters.push(value)
-                return this.createParameter(key, escapedParameters.length - 1)
+
+                return this.createParameter()
             },
         ) // todo: make replace only in value statements, otherwise problems
         return [sql, escapedParameters]
@@ -526,11 +517,7 @@ export class ReactNativeDriver implements Driver {
      *
      * Returns only simple table name because all inherited drivers does not supports schema and database.
      */
-    buildTableName(
-        tableName: string,
-        schema?: string,
-        database?: string,
-    ): string {
+    buildTableName(tableName: string): string {
         return tableName
     }
 
@@ -898,10 +885,8 @@ export class ReactNativeDriver implements Driver {
     /**
      * Creates an escaped parameter.
      */
-    createParameter(parameterName: string, index: number): string {
-        // return "$" + (index + 1);
+    createParameter(): string {
         return "?"
-        // return "$" + parameterName;
     }
 
     // -------------------------------------------------------------------------
@@ -932,7 +917,7 @@ export class ReactNativeDriver implements Driver {
                     databaseConnection.executeSql(
                         `PRAGMA foreign_keys = ON`,
                         [],
-                        (result: any) => {
+                        () => {
                             ok(databaseConnection)
                         },
                         (error: any) => {
@@ -955,7 +940,7 @@ export class ReactNativeDriver implements Driver {
             const sqlite =
                 this.options.driver || require("react-native-sqlite-storage")
             this.sqlite = sqlite
-        } catch (e) {
+        } catch {
             throw new DriverPackageNotInstalledError(
                 "React-Native",
                 "react-native-sqlite-storage",
