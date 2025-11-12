@@ -235,6 +235,7 @@ export class SqlServerDriver implements Driver {
         time: { precision: 7 },
         datetime2: { precision: 7 },
         datetimeoffset: { precision: 7 },
+        vector: { length: 255 }, // default length if not provided a value
     }
 
     cteCapabilities: CteCapabilities = {
@@ -725,11 +726,6 @@ export class SqlServerDriver implements Driver {
 
         // Handle vector type with length (dimensions)
         if (column.type === "vector") {
-            if (!column.length) {
-                throw new TypeORMError(
-                    `Column "${column.name}" is of type "vector" but does not have the required length set.`,
-                )
-            }
             type = `vector(${column.length})`
         }
         // used 'getColumnLength()' method, because SqlServer sets `varchar` and `nvarchar` length to 1 by default.

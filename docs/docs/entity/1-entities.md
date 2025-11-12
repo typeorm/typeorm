@@ -184,16 +184,15 @@ There are several special column types with additional functionality available:
 
 Vector columns are supported on PostgreSQL (via [`pgvector`](https://github.com/pgvector/pgvector) extension), Microsoft SQL Server, and SAP HANA Cloud, enabling storing and querying vector embeddings for similarity search and machine learning applications.
 
-
 TypeORM supports both `vector` and `halfvec` column types across databases:
 
 -   `vector` - stores vectors as 4-byte floats (single precision)
-  -   PostgreSQL: native `vector` type via pgvector extension
-  -   SQL Server: native `vector` type
-  -   SAP HANA: alias for `real_vector` type
+-   PostgreSQL: native `vector` type via pgvector extension
+-   SQL Server: native `vector` type
+-   SAP HANA: alias for `real_vector` type
 -   `halfvec` - stores vectors as 2-byte floats (half precision) for memory efficiency
-  -   PostgreSQL: native `halfvec` type via pgvector extension
-  -   SAP HANA: alias for `half_vector` type
+-   PostgreSQL: native `halfvec` type via pgvector extension
+-   SAP HANA: alias for `half_vector` type
 
 You can specify the vector dimensions using the `length` option:
 
@@ -245,13 +244,16 @@ const results = await dataSource.query(
 const queryEmbedding = [1, 2, 3]
 
 // Cosine distance
-const results = await dataSource.query(`
+const results = await dataSource.query(
+    `
     DECLARE @question AS VECTOR(3) = @0;
     SELECT TOP (5) id, embedding, 
            VECTOR_DISTANCE('cosine', @question, embedding) AS distance
     FROM post
     ORDER BY VECTOR_DISTANCE('cosine', @question, embedding)
-`,  [JSON.stringify(queryEmbedding)])
+`,
+    [JSON.stringify(queryEmbedding)],
+)
 ```
 
 > **Note**:
