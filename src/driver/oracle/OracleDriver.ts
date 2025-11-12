@@ -533,6 +533,7 @@ export class OracleDriver implements Driver {
             return () =>
                 `TO_DATE('${DateUtils.mixedDateToDateString(
                     value,
+                    columnMetadata.utc,
                 )}', 'YYYY-MM-DD')`
         } else if (
             columnMetadata.type === Date ||
@@ -567,7 +568,7 @@ export class OracleDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             value = !!value
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, columnMetadata.utc)
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
         } else if (
