@@ -12,6 +12,6 @@ export class Parent {
     @Column()
     public name: string
 
-    @OneToMany((target) => Child, (child) => child.parent, { lazy: true })
+    @OneToMany(() => Child, (child) => child.parent, { lazy: true })
     public children: Promise<Child[]>
 }

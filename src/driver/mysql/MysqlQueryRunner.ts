@@ -2042,7 +2042,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraint.
+     * Drops a unique constraint.
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
@@ -2054,7 +2054,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraints.
+     * Drops a unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
