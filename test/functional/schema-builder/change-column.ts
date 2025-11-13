@@ -9,6 +9,7 @@ import {
 import { Post } from "./entity/Post"
 import { PostVersion } from "./entity/PostVersion"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { ColumnType } from "../../../src/driver/types/ColumnTypes"
 
 describe("schema builder > change column", () => {
     let connections: DataSource[]
@@ -21,6 +22,432 @@ describe("schema builder > change column", () => {
     })
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
+    it("uses ALTER COLUMN when changing from CHAR → VARCHAR", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const driver = connection.driver.options.type
+
+                // Map driver-specific type names for CHAR/VARCHAR
+                // (If a mapping is not available for a driver, skip.)
+
+                const charTypeByDriver: Record<string, ColumnType> = {
+                    postgres: "char",
+                    cockroachdb: "char",
+                    mysql: "char",
+                    mariadb: "char",
+                    "aurora-mysql": "char",
+                    mssql: "char",
+                    oracle: "char",
+                }
+
+                const varcharTypeByDriver: Record<string, ColumnType> = {
+                    postgres: "varchar",
+                    cockroachdb: "varchar",
+                    mysql: "varchar",
+                    mariadb: "varchar",
+                    "aurora-mysql": "varchar",
+                    mssql: "varchar",
+                    oracle: "varchar2",
+                }
+                if (!charTypeByDriver[driver] || !varcharTypeByDriver[driver])
+                    return
+
+                const metadata = connection.getMetadata(Post)
+                const nameColumn = metadata.findColumnWithPropertyName("name")!
+                const originalType = nameColumn.type
+                const originalLength = nameColumn.length || "50"
+
+                // Helper: record SQL emitted by synchronize()
+                const recorded: string[] = []
+                const origCreateQR = (connection as any).createQueryRunner.bind(
+                    connection,
+                )
+                const installRecorder = () => {
+                    ;(connection as any).createQueryRunner = (
+                        ...args: any[]
+                    ) => {
+                        const qr = origCreateQR(...args)
+                        const origQuery = qr.query.bind(qr)
+                        qr.query = async (sql: any, params?: any[]) => {
+                            if (typeof sql === "string") recorded.push(sql)
+                            return origQuery(sql, params)
+                        }
+                        return qr
+                    }
+                }
+                const removeRecorder = () => {
+                    ;(connection as any).createQueryRunner = origCreateQR
+                }
+
+                try {
+                    // Step 1: Ensure column is CHAR(N)
+                    nameColumn.type = charTypeByDriver[driver]
+                    nameColumn.length = originalLength
+                    nameColumn.build(connection)
+                    await connection.synchronize()
+
+                    // Step 2: Switch to VARCHAR(N) and capture SQL
+                    nameColumn.type = varcharTypeByDriver[driver]
+                    nameColumn.length = originalLength
+                    nameColumn.build(connection)
+
+                    installRecorder()
+                    let err: any
+                    try {
+                        await connection.synchronize()
+                    } catch (e) {
+                        err = e
+                    } finally {
+                        removeRecorder()
+                    }
+                    expect(err).to.be.undefined
+
+                    const sqlBlob = recorded.join("\n")
+                    /*console.log(
+                        `\n----- Emitted SQL (${driver}) -----\n${sqlBlob}\n----- /SQL -----\n`,
+                    )*/
+
+                    if (driver === "postgres" || driver === "cockroachdb") {
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* ALTER COLUMN "name" (SET DATA TYPE|TYPE) .*varchar/i,
+                        )
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                    } else if (
+                        driver === "mysql" ||
+                        driver === "mariadb" ||
+                        driver === "aurora-mysql"
+                    ) {
+                        const usedModify =
+                            /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?name`? .*varchar/i.test(
+                                sqlBlob,
+                            )
+                        expect(
+                            usedModify,
+                            `Expected MODIFY/CHANGE COLUMN for 'name'.\n${sqlBlob}`,
+                        ).to.equal(true)
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                    } else if (driver === "mssql") {
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE[\s\S]*?ALTER COLUMN\s+(?:\[name\]|"name")\s+[\s\S]*?varchar/i,
+                        )
+                        expect(sqlBlob).to.not.match(
+                            /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
+                        )
+                        expect(sqlBlob).to.not.match(
+                            /DROP\s+COLUMN\s+(?:\[name\]|"name")/i,
+                        )
+                    } else if (driver === "oracle") {
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* (MODIFY|ALTER COLUMN)\s*\(?\s*"name"\s+.*varchar2/i,
+                        )
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                    } else if (driver === "spanner") {
+                        // No CHAR in Spanner; this test is skipped above for spanner
+                    }
+
+                    // Round-trip: ensure column exists and is still same length
+                    const qr = connection.createQueryRunner()
+                    const postTable = await qr.getTable("post")
+                    await qr.release()
+                    const col = postTable!.findColumnByName("name")!
+                    if (col.length) expect(col.length).to.equal(originalLength)
+                } finally {
+                    // Revert
+                    nameColumn.type = originalType
+                    nameColumn.length = originalLength
+                    nameColumn.build(connection)
+                    await connection.synchronize()
+                }
+            }),
+        ))
+
+    it("uses ALTER COLUMN when changing from FLOAT → DOUBLE", () =>
+        Promise.all(
+            connections.map(async (base) => {
+                // Create a fresh, isolated connection for THIS iteration, with ONLY Post registered.
+                const driverType = (base as any).driver?.options?.type
+                const conns = await createTestingConnections({
+                    entities: [Post], // <-- exclude PostVersion here
+                    schemaCreate: true,
+                    dropSchema: true,
+                    enabledDrivers: driverType ? [driverType] : undefined,
+                })
+
+                if (!conns.length) return
+                const connection = conns[0]
+
+                // driver-specific type names
+                const floatBy: Record<string, ColumnType> = {
+                    postgres: "real",
+                    cockroachdb: "real",
+                    mysql: "float",
+                    mariadb: "float",
+                    "aurora-mysql": "float",
+                    mssql: "float", // MSSQL 'float' is double-precision; emulate via precision change
+                    oracle: "real",
+                    spanner: "float64", // Spanner only has FLOAT64 (double); we bail below
+                }
+                const doubleBy: Record<string, ColumnType> = {
+                    postgres: "double precision",
+                    cockroachdb: "double precision",
+                    mysql: "double",
+                    mariadb: "double",
+                    "aurora-mysql": "double",
+                    mssql: "float", // stay 'float', bump precision to emulate change
+                    oracle: "double precision",
+                }
+
+                const driver = connection.driver.options.type
+                if (driver === "spanner") {
+                    await closeTestingConnections(conns)
+                    return
+                }
+                if (!floatBy[driver] || !doubleBy[driver]) {
+                    await closeTestingConnections(conns)
+                    return
+                }
+
+                // SQL recorder
+                const recorded: string[] = []
+                const origCreateQR = (connection as any).createQueryRunner.bind(
+                    connection,
+                )
+                const installRecorder = () => {
+                    ;(connection as any).createQueryRunner = (
+                        ...args: any[]
+                    ) => {
+                        const qr = origCreateQR(...args)
+                        const origQuery = qr.query.bind(qr)
+                        qr.query = async (sql: any, params?: any[]) => {
+                            if (typeof sql === "string") recorded.push(sql)
+                            return origQuery(sql, params)
+                        }
+                        return qr
+                    }
+                }
+                const removeRecorder = () => {
+                    ;(connection as any).createQueryRunner = origCreateQR
+                }
+
+                // Test body (same assertions, just run on the isolated connection)
+                const postMeta = connection.getMetadata(Post)
+                const versionCol =
+                    postMeta.findColumnWithPropertyName("version")!
+                const originalType: any = versionCol.type
+                const originalPrecision = (versionCol as any).precision
+
+                try {
+                    // Step 1: set FLOAT
+                    versionCol.type = floatBy[driver]
+                    if (driver === "mssql") (versionCol as any).precision = 24
+                    versionCol.build(connection)
+                    await connection.synchronize()
+
+                    // Step 2: change to DOUBLE (or higher-precision float)
+                    versionCol.type = doubleBy[driver]
+                    if (driver === "mssql") (versionCol as any).precision = 53
+                    versionCol.build(connection)
+
+                    installRecorder()
+                    let err: any
+                    try {
+                        await connection.synchronize()
+                    } catch (e) {
+                        err = e
+                    } finally {
+                        removeRecorder()
+                    }
+                    expect(err).to.be.undefined
+
+                    const sqlBlob = recorded.join("\n")
+                    //console.log(sqlBlob)
+
+                    if (driver === "postgres" || driver === "cockroachdb") {
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* ALTER COLUMN "version" (SET DATA TYPE|TYPE) .*double/i,
+                        )
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"version"/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"version"/i)
+                    } else if (
+                        driver === "mysql" ||
+                        driver === "mariadb" ||
+                        driver === "aurora-mysql"
+                    ) {
+                        const usedModify =
+                            /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?version`? .*double/i.test(
+                                sqlBlob,
+                            )
+                        expect(
+                            usedModify,
+                            `Expected MODIFY/CHANGE for 'version'.\n${sqlBlob}`,
+                        ).to.equal(true)
+                        expect(sqlBlob).to.not.match(
+                            /ADD COLUMN\s+`?version`?/i,
+                        )
+                        expect(sqlBlob).to.not.match(
+                            /DROP COLUMN\s+`?version`?/i,
+                        )
+                    } else if (driver === "mssql") {
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE[\s\S]*?ALTER COLUMN\s+(?:\[version\]|"version")\s+[\s\S]*?float/i,
+                        )
+                        expect(sqlBlob).to.not.match(
+                            /ADD\s+COLUMN\s+(?:\[version\]|"version")/i,
+                        )
+                        expect(sqlBlob).to.not.match(
+                            /DROP\s+COLUMN\s+(?:\[version\]|"version")/i,
+                        )
+                    } else if (driver === "oracle") {
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* (MODIFY|ALTER COLUMN)\s*\(?\s*"(?:version)"\s+.*double/i,
+                        )
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"version"/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"version"/i)
+                    }
+                } finally {
+                    // Revert & clean up the isolated connection
+                    versionCol.type = originalType
+                    ;(versionCol as any).precision = originalPrecision
+                    versionCol.build(connection)
+                    try {
+                        await connection.synchronize()
+                    } catch {}
+                    await closeTestingConnections(conns)
+                }
+            }),
+        ))
+
+    it("uses ALTER COLUMN when changing from DATETIME → TIMESTAMP", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const driver = connection.driver.options.type
+
+                // This transition mainly applies cleanly to MySQL-family & MSSQL & Oracle.
+                // Postgres already uses TIMESTAMP; Cockroach the same; Spanner has TIMESTAMP only.
+                if (
+                    driver === "postgres" ||
+                    driver === "cockroachdb" ||
+                    driver === "spanner"
+                )
+                    return
+
+                // We'll borrow the 'name' column slot by temporarily retargeting its type
+                // to a datetime-like, then to timestamp-like. (Only asserting ALTER vs ADD/DROP.)
+                const postMeta = connection.getMetadata(Post)
+                const nameCol = postMeta.findColumnWithPropertyName("name")!
+                const originalType: any = nameCol.type
+                const originalLength = nameCol.length
+
+                const datetimeBy: Record<string, ColumnType> = {
+                    mysql: "datetime",
+                    mariadb: "datetime",
+                    "aurora-mysql": "datetime",
+                    mssql: "datetime2",
+                    oracle: "timestamp", // Oracle lacks DATETIME; we use TIMESTAMP then TIMESTAMP with precision
+                }
+                const timestampBy: Record<string, ColumnType> = {
+                    mysql: "timestamp",
+                    mariadb: "timestamp",
+                    "aurora-mysql": "timestamp",
+                    mssql: "datetimeoffset", // a distinct timestamp-like type with tz
+                    oracle: "timestamp", // Oracle: keep TIMESTAMP but change precision to emulate type change
+                }
+                if (!datetimeBy[driver] || !timestampBy[driver]) return
+
+                // SQL recorder
+                const recorded: string[] = []
+                const origCreateQR = (connection as any).createQueryRunner.bind(
+                    connection,
+                )
+                const installRecorder = () => {
+                    ;(connection as any).createQueryRunner = (
+                        ...args: any[]
+                    ) => {
+                        const qr = origCreateQR(...args)
+                        const origQuery = qr.query.bind(qr)
+                        qr.query = async (sql: any, params?: any[]) => {
+                            if (typeof sql === "string") recorded.push(sql)
+                            return origQuery(sql, params)
+                        }
+                        return qr
+                    }
+                }
+                const removeRecorder = () => {
+                    ;(connection as any).createQueryRunner = origCreateQR
+                }
+
+                try {
+                    // Step 1: make it a datetime-like type
+                    nameCol.type = datetimeBy[driver]
+                    nameCol.length = "undefined"
+                    // Oracle: give a starting precision
+                    if (driver === "oracle") (nameCol as any).precision = 3
+                    nameCol.build(connection)
+                    await connection.synchronize()
+
+                    // Step 2: switch to timestamp-like type and capture SQL
+                    nameCol.type = timestampBy[driver]
+                    if (driver === "oracle") (nameCol as any).precision = 6
+                    nameCol.build(connection)
+
+                    installRecorder()
+                    let err: any
+                    try {
+                        await connection.synchronize()
+                    } catch (e) {
+                        err = e
+                    } finally {
+                        removeRecorder()
+                    }
+                    expect(err).to.be.undefined
+
+                    const sqlBlob = recorded.join("\n")
+                    //console.log(sqlBlob)
+                    if (
+                        driver === "mysql" ||
+                        driver === "mariadb" ||
+                        driver === "aurora-mysql"
+                    ) {
+                        const usedModify =
+                            /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?name`? .*timestamp/i.test(
+                                sqlBlob,
+                            )
+                        expect(
+                            usedModify,
+                            `Expected MODIFY/CHANGE for 'name'.\n${sqlBlob}`,
+                        ).to.equal(true)
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                    } else if (driver === "mssql") {
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE[\s\S]*?ALTER COLUMN\s+(?:\[name\]|"name")\s+[\s\S]*?(datetimeoffset|timestamp)/i,
+                        )
+                        expect(sqlBlob).to.not.match(
+                            /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
+                        )
+                        expect(sqlBlob).to.not.match(
+                            /DROP\s+COLUMN\s+(?:\[name\]|"name")/i,
+                        )
+                    } else if (driver === "oracle") {
+                        expect(sqlBlob).to.match(
+                            /ALTER TABLE .* (MODIFY|ALTER COLUMN)\s*\(?\s*"name"\s+.*TIMESTAMP/i,
+                        )
+                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
+                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                    }
+                } finally {
+                    // Revert
+                    nameCol.type = originalType
+                    nameCol.length = originalLength
+                    ;(nameCol as any).precision = undefined
+                    nameCol.build(connection)
+                    await connection.synchronize()
+                }
+            }),
+        ))
 
     it("uses ALTER COLUMN when increasing varchar length", () =>
         Promise.all(

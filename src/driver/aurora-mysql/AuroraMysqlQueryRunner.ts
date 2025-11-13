@@ -23,7 +23,11 @@ import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { AuroraMysqlDriver } from "./AuroraMysqlDriver"
-
+import {
+    handleMysqlLengthOnlyFastPath,
+    handleSafeAlter,
+} from "./AuroraMysqlQueryRunnerHelper"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 /**
  * Runs queries on a single mysql database connection.
  */
@@ -796,7 +800,8 @@ export class AuroraMysqlQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
+            (oldColumn.type !== newColumn.type &&
+                !isSafeAlter(oldColumn, newColumn)) ||
             oldColumn.generatedType !== newColumn.generatedType
         ) {
             await this.dropColumn(table, oldColumn)
@@ -945,86 +950,45 @@ export class AuroraMysqlQueryRunner
                 oldColumn.name = newColumn.name
             }
 
-            // BEGIN length-only fast path (MySQL family)
-            if (
-                oldColumn.type === newColumn.type &&
-                oldColumn.length !== newColumn.length
+            if (oldColumn.type !== newColumn.type) {
+                await handleSafeAlter({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    Query: Query,
+                    escapePath: (t) => this.escapePath(t as any),
+                    buildCreateColumnSql: (col) =>
+                        this.buildCreateColumnSql(col, true),
+                    executeQueries: (up, down) => this.executeQueries(up, down),
+                    replaceCachedTable: (t, ct) =>
+                        this.replaceCachedTable(t, ct),
+                    isSafeAlter,
+                })
+            } else if (
+                oldColumn?.type === newColumn?.type &&
+                oldColumn?.length !== newColumn?.length
             ) {
-                // Only use this path when no other column attributes changed.
-                const newColumnExceptLength = newColumn.clone
-                    ? newColumn.clone()
-                    : ({ ...newColumn } as TableColumn)
-                newColumnExceptLength.length = oldColumn.length
-                if (
-                    this.isColumnChanged(oldColumn, newColumnExceptLength, true)
-                ) {
-                    // Other changes present; fall through to generic change flow.
-                } else {
-                    const oldLen = oldColumn.length
-                        ? parseInt(oldColumn.length, 10)
-                        : undefined
-                    const newLen = newColumn.length
-                        ? parseInt(newColumn.length, 10)
-                        : undefined
-                    const col = oldColumn.name
-
-                    const type = (oldColumn.type || "").toLowerCase()
-                    if (type === "bit") {
-                        // Not safe to truncate/modify BIT via string funcs; fall through to generic flow.
-                    } else {
-                        const isGenerated = !!(
-                            newColumn.asExpression || oldColumn.asExpression
-                        )
-                        if (
-                            !isGenerated &&
-                            oldLen != null &&
-                            newLen != null &&
-                            newLen < oldLen
-                        ) {
-                            // shrink: pre-truncate rows that exceed new length
-                            upQueries.push(
-                                new Query(
-                                    `UPDATE ${this.escapePath(table)} ` +
-                                        `SET \`${col}\` = LEFT(\`${col}\`, ${newLen}) ` +
-                                        `WHERE CHAR_LENGTH(\`${col}\`) > ${newLen}`,
-                                ),
-                            )
-                            // (optional) down: if reverting to larger oldLen, no data change needed
-                        }
-
-                        // In-place alter; include full column definition to preserve all attributes
-                        upQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(table)} ` +
-                                    `MODIFY \`${col}\` ${this.buildCreateColumnSql(
-                                        newColumn,
-                                        true,
-                                        true,
-                                    )}`,
-                            ),
-                        )
-                        downQueries.push(
-                            new Query(
-                                `ALTER TABLE ${this.escapePath(table)} ` +
-                                    `MODIFY \`${col}\` ${this.buildCreateColumnSql(
-                                        oldColumn,
-                                        true,
-                                        true,
-                                    )}`,
-                            ),
-                        )
-
-                        await this.executeQueries(upQueries, downQueries)
-
-                        // sync cache
-                        const clonedCol = clonedTable.findColumnByName(col)
-                        if (clonedCol) clonedCol.length = newColumn.length || ""
-                        this.replaceCachedTable(table, clonedTable)
-                        return
-                    }
-                }
+                // BEGIN length-only fast path (MySQL family)
+                await handleMysqlLengthOnlyFastPath({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    Query,
+                    escapePath: this.escapePath.bind(this),
+                    isColumnChanged: this.isColumnChanged.bind(this),
+                    buildCreateColumnSql: this.buildCreateColumnSql.bind(this),
+                    executeQueries: this.executeQueries.bind(this),
+                    replaceCachedTable: this.replaceCachedTable.bind(this),
+                })
+                // END length-only fast path
             }
-            // END length-only fast path
+
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
                 upQueries.push(
                     new Query(

@@ -25,6 +25,11 @@ import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { OracleDriver } from "./OracleDriver"
+import {
+    handleOracleLengthOnlyFastPath,
+    handleSafeAlterOracle,
+} from "./OracleQueryRunnerHelper"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
  * Runs queries on a single oracle database connection.
@@ -1078,7 +1083,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
+            (oldColumn.type !== newColumn.type &&
+                !isSafeAlter(oldColumn, newColumn)) ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -1301,58 +1307,53 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
             }
+            if (oldColumn.type !== newColumn.type) {
+                await handleSafeAlterOracle({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    Query, // from "../Query"
+                    escapePath: (t) => this.escapePath(t as any),
 
-            // BEGIN length-only fast path (Oracle)
-            if (
-                oldColumn.type === newColumn.type &&
-                oldColumn.length !== newColumn.length &&
+                    // IMPORTANT: match your runner's signature for building a full column definition.
+                    // Many Oracle runners expose: buildCreateColumnSql(column: TableColumn)
+                    buildCreateColumnSql: (col) =>
+                        this.buildCreateColumnSql(col),
+
+                    executeQueries: (up, down) => this.executeQueries(up, down),
+                    replaceCachedTable: (t, ct) =>
+                        this.replaceCachedTable(t, ct),
+
+                    // Your widening rule function from earlier
+                    isSafeAlter,
+                })
+            } else if (
+                oldColumn?.type === newColumn?.type &&
+                oldColumn?.length !== newColumn?.length &&
                 // ensure *only* the length changed – everything else must be identical
-                oldColumn.isNullable === newColumn.isNullable &&
-                oldColumn.default === newColumn.default &&
-                oldColumn.name === newColumn.name &&
-                oldColumn.isPrimary === newColumn.isPrimary &&
-                oldColumn.isUnique === newColumn.isUnique
+                oldColumn?.isNullable === newColumn?.isNullable &&
+                oldColumn?.default === newColumn?.default &&
+                oldColumn?.name === newColumn?.name &&
+                oldColumn?.isPrimary === newColumn?.isPrimary &&
+                oldColumn?.isUnique === newColumn?.isUnique
             ) {
-                const oldLen = oldColumn.length
-                    ? parseInt(oldColumn.length, 10)
-                    : undefined
-                const newLen = newColumn.length
-                    ? parseInt(newColumn.length, 10)
-                    : undefined
-                const col = oldColumn.name
-
-                if (oldLen && newLen && newLen < oldLen) {
-                    // shrink: avoid ORA-01441 by truncating first
-                    upQueries.push(
-                        new Query(
-                            `UPDATE ${this.escapePath(table)} ` +
-                                `SET "${col}" = SUBSTR("${col}", 1, ${newLen}) ` +
-                                `WHERE LENGTH("${col}") > ${newLen}`,
-                        ),
-                    )
-                }
-
-                // IMPORTANT: since nullability didn't change, don't mention it here.
-                // This prevents ORA-01442 when combined with other generated statements.
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ` +
-                            `MODIFY ("${col}" ${this.driver.createFullType(
-                                newColumn,
-                            )})`,
-                    ),
-                )
-
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ` +
-                            `MODIFY ("${col}" ${this.driver.createFullType(
-                                oldColumn,
-                            )})`,
-                    ),
-                )
+                // BEGIN length-only fast path (Oracle)
+                handleOracleLengthOnlyFastPath({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    driver: this.driver,
+                    escapePath: this.escapePath.bind(this),
+                    Query, // pass the Query class TypeORM uses
+                })
+                // END length-only fast path
             }
-            // END length-only fast path
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
                 let defaultUp: string = ""
@@ -2405,7 +2406,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return `("C"."OWNER" = '${OWNER}' AND "C"."TABLE_NAME" = '${TABLE_NAME}')`
             })
             .join(" OR ")
-        const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition})`
+        const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition}) AND NVL("C"."HIDDEN_COLUMN", 'NO') = 'NO'`
 
         const indicesSql =
             `SELECT "C"."INDEX_NAME", "C"."OWNER", "C"."TABLE_NAME", "C"."UNIQUENESS", ` +

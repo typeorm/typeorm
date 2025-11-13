@@ -87,48 +87,9 @@ describe("query runner > change column", () => {
                     idColumn,
                     changedIdColumn,
                 )
-                {
-                    const mem = (queryRunner as any).sqlInMemory
-                    console.log(
-                        "DOWN after name change:",
-                        mem.downQueries.map((q: any) => q.query),
-                    )
-                }
+
                 table = await queryRunner.getTable("post")
                 table!.findColumnByName("id")!.isPrimary.should.be.false
-
-                // --- DEBUG: print the generated DOWN SQL and the columns that produced them ---
-                const mem = (queryRunner as any).sqlInMemory
-                console.log("=== DOWN QUERIES ===")
-                mem.downQueries.forEach((q: any, i: number) =>
-                    console.log(i, q.query),
-                )
-
-                const bad = mem.downQueries.find((q: any) =>
-                    q.query.includes('ALTER COLUMN "undefined"'),
-                )
-                if (bad) console.log(">> BAD DOWN QUERY:", bad.query)
-                // -----------------------------------------------
-
-                // also dump the columns involved in *this* test block
-                console.log(
-                    "nameColumn:",
-                    nameColumn?.name,
-                    "changedNameColumn:",
-                    changedNameColumn?.name,
-                )
-                console.log(
-                    "textColumn:",
-                    textColumn?.name,
-                    "changedTextColumn:",
-                    changedTextColumn?.name,
-                )
-                console.log(
-                    "idColumn:",
-                    idColumn?.name,
-                    "changedIdColumn:",
-                    changedIdColumn?.name,
-                )
 
                 await queryRunner.executeMemoryDownSql()
 

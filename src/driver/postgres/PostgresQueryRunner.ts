@@ -27,6 +27,11 @@ import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { PostgresDriver } from "./PostgresDriver"
+import {
+    handlePostgresLengthOnlyFastPath,
+    handleSafeAlterPostgres,
+} from "./PostgresQueryRunnerHelper"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -1232,6 +1237,9 @@ export class PostgresQueryRunner
             )
 
         if (
+            (oldColumn.type !== newColumn.type &&
+                !isSafeAlter(oldColumn, newColumn)) ||
+            oldColumn.isArray !== newColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
@@ -1520,96 +1528,115 @@ export class PostgresQueryRunner
                 oldColumn.name = newColumn.name
             }
 
-            // BEGIN length-only fast path (Postgres) — FIXED
-            if (
-                oldColumn.type === newColumn.type &&
-                oldColumn.length !== newColumn.length &&
-                !newColumn.isArray &&
-                !oldColumn.isArray
-            ) {
-                const oldLen =
-                    oldColumn.length != null
-                        ? parseInt(oldColumn.length, 10)
-                        : undefined
-                const newLen =
-                    newColumn.length != null
-                        ? parseInt(newColumn.length, 10)
-                        : undefined
+            if (oldColumn.type !== newColumn.type) {
+                await handleSafeAlterPostgres({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    Query, // from "../Query"
+                    escapePath: (t) => this.escapePath(t as any),
+                    executeQueries: (up, down) => this.executeQueries(up, down),
+                    replaceCachedTable: (t, ct) =>
+                        this.replaceCachedTable(t, ct),
 
-                // Length change never implies rename; guard identifier
-                const colName = newColumn.name ?? oldColumn.name
-                const qCol = `"${colName}"`
+                    // your widening/safety rule you shared earlier
+                    isSafeAlter,
 
-                const isStringType =
-                    /^(varchar|character varying|text|char|character)$/i.test(
-                        newColumn.type,
-                    )
+                    // derive a Postgres TYPE fragment directly from TableColumn
+                    buildColumnType: (col) => {
+                        const t = String(col.type ?? "").toLowerCase()
+                        const len = col.length
+                            ? parseInt(String(col.length), 10)
+                            : undefined
+                        const prec = (col as any).precision
+                        const scale = (col as any).scale
 
-                const typeNew = this.driver.createFullType(newColumn)
-                const typeOld = this.driver.createFullType(oldColumn)
+                        const withLen = (base: string) =>
+                            len ? `${base}(${len})` : base
+                        const withPS = (base: string) => {
+                            if (prec == null) return base
+                            if (scale == null) return `${base}(${prec})`
+                            return `${base}(${prec},${scale})`
+                        }
+                        const withTimePrec = (base: string) =>
+                            prec != null ? `${base}(${prec})` : base
 
-                // Are we shrinking? (newLen is defined and < old, or old was unspecified)
-                const shrinking =
-                    isStringType &&
-                    newLen !== undefined &&
-                    (oldLen === undefined || newLen < oldLen)
+                        // strings
+                        if (t === "varchar" || t === "character varying")
+                            return withLen("varchar")
+                        if (t === "char" || t === "character")
+                            return withLen("char")
+                        if (t === "text" || t === "string") return "text"
 
-                if (isStringType && shrinking) {
-                    // --- UP: shrink with USING + substring to avoid errors
-                    // newLen is defined here
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN ${qCol} TYPE ${typeNew} ` +
-                                `USING substring(${qCol} FROM 1 FOR ${newLen})`,
-                        ),
-                    )
+                        // numerics
+                        if (
+                            t === "decimal" ||
+                            t === "numeric" ||
+                            t === "number"
+                        )
+                            return withPS("numeric")
+                        if (t === "int" || t === "integer" || t === "int4")
+                            return "integer"
+                        if (t === "bigint" || t === "int8") return "bigint"
+                        if (t === "smallint" || t === "int2") return "smallint"
+                        if (t === "real" || t === "float4") return "real"
+                        if (
+                            t === "double" ||
+                            t === "double precision" ||
+                            t === "float8"
+                        )
+                            return "double precision"
 
-                    // --- DOWN: revert; ONLY add USING if oldLen exists
-                    const usingOld =
-                        oldLen !== undefined
-                            ? ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
-                            : ""
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN ${qCol} TYPE ${typeOld}${usingOld}`,
-                        ),
-                    )
-                } else {
-                    // Widening or non-string types: plain TYPE both directions
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN ${qCol} TYPE ${typeNew}`,
-                        ),
-                    )
+                        // temporals
+                        if (
+                            t === "timestamp" ||
+                            t === "timestamp without time zone"
+                        )
+                            return withTimePrec("timestamp without time zone")
+                        if (
+                            t === "timestamptz" ||
+                            t === "timestamp with time zone"
+                        )
+                            return withTimePrec("timestamp with time zone")
+                        if (t === "time" || t === "time without time zone")
+                            return withTimePrec("time without time zone")
+                        if (t === "timetz" || t === "time with time zone")
+                            return withTimePrec("time with time zone")
+                        if (t === "date") return "date"
 
-                    // For DOWN, if returning to a shorter varchar and oldLen is known, use USING; else plain TYPE
-                    const needsUsingOld =
-                        isStringType &&
-                        oldLen !== undefined &&
-                        (newLen === undefined || oldLen < newLen)
+                        // bytes / other
+                        if (t === "bytea" || t === "bytes") return "bytea"
 
-                    const usingOld = needsUsingOld
-                        ? ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
-                        : ""
-
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} ` +
-                                `ALTER COLUMN ${qCol} TYPE ${typeOld}${usingOld}`,
-                        ),
-                    )
-                }
-
-                // Update cloned metadata and stop fallthrough
-                const clonedCol = clonedTable.columns.find(
-                    (c) => c.name === colName,
+                        // fallback
+                        return t
+                    },
+                })
+            } else if (
+                oldColumn?.type === newColumn?.type &&
+                oldColumn?.length !== newColumn?.length &&
+                !newColumn?.isArray &&
+                !oldColumn?.isArray &&
+                /^(varchar|character varying|char|character)$/i.test(
+                    String(oldColumn?.type ?? ""),
                 )
-                if (clonedCol) clonedCol.length = newColumn.length
+            ) {
+                // BEGIN length-only fast path (Postgres) — FIXED
+                handlePostgresLengthOnlyFastPath({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    driver: this.driver as any,
+                    escapePath: (t) => this.escapePath(t),
+                    Query, // pass the Query class/ctor you already use
+                })
+                // END length-only fast path
             }
-            // END length-only fast path
 
             // Handle scale and precision changes without recreating the column, e.g.:
             // varchar(n) -> varchar(m)
@@ -2345,26 +2372,32 @@ export class PostgresQueryRunner
                             )} DROP COLUMN "TEMP_OLD_${oldColumn.name}"`,
                         ),
                     )
-                    upQueries.push(
-                        this.deleteTypeormMetadataSql({
-                            database: this.driver.database,
-                            schema,
-                            table: tableName,
-                            type: MetadataTableType.GENERATED_COLUMN,
-                            name: oldColumn.name,
-                        }),
-                    )
-                    // However, we can't copy it back on downgrade. It needs to regenerate.
-                    downQueries.push(
-                        this.insertTypeormMetadataSql({
-                            database: this.driver.database,
-                            schema,
-                            table: tableName,
-                            type: MetadataTableType.GENERATED_COLUMN,
-                            name: oldColumn.name,
-                            value: oldColumn.asExpression,
-                        }),
-                    )
+                    // ONLY touch metadata if the old column really was a stored generated column
+                    if (
+                        oldColumn.generatedType === "STORED" &&
+                        oldColumn.asExpression
+                    ) {
+                        upQueries.push(
+                            this.deleteTypeormMetadataSql({
+                                database: this.driver.database,
+                                schema,
+                                table: tableName,
+                                type: MetadataTableType.GENERATED_COLUMN,
+                                name: oldColumn.name,
+                            }),
+                        )
+                        // However, we can't copy it back on downgrade. It needs to regenerate.
+                        downQueries.push(
+                            this.insertTypeormMetadataSql({
+                                database: this.driver.database,
+                                schema,
+                                table: tableName,
+                                type: MetadataTableType.GENERATED_COLUMN,
+                                name: oldColumn.name,
+                                value: oldColumn.asExpression,
+                            }),
+                        )
+                    }
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
