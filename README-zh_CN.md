@@ -164,7 +164,7 @@ await timber.remove()
 
     - **MySQL** 或者 **MariaDB**
 
-        `npm install mysql` (也可以安装 `mysql2`)
+        `npm install mysql2`
 
     - **PostgreSQL**
 

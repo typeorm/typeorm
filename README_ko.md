@@ -164,7 +164,7 @@ await timber.remove()
 
     - **MySQL** 또는 **MariaDB**의 경우
 
-        `npm install mysql` / `npm install mysql2`
+        `npm install mysql2`
 
     - for **PostgreSQL**또는 **CockroachDB**의 경우
 
