@@ -28,6 +28,20 @@ export class PlatformTools {
     }
 
     /**
+     * Reads package.json of the given package.
+     * This operation only supports on node platform
+     */
+    static readPackageVersion(name: string): string {
+        try {
+            return require(`${name}/package.json`).version
+        } catch (err) {
+            throw new TypeError(
+                `Failed to read package.json for "${name}": ${err.message}`,
+            )
+        }
+    }
+
+    /**
      * Loads ("require"-s) given file or package.
      * This operation only supports on node platform
      */
