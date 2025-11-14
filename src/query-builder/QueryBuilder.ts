@@ -695,7 +695,44 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      *  Instead, we'll replace property names at the end - once query is build.
      */
     protected replacePropertyNames(statement: string) {
-        return statement
+        // Handle VirtualColumn expansion in WHERE clauses
+        return this.replaceVirtualColumnReferences(statement)
+    }
+
+    /**
+     * Replaces VirtualColumn property references with their query expressions.
+     * This enables using VirtualColumns in WHERE, HAVING, and ORDER BY clauses.
+     */
+    protected replaceVirtualColumnReferences(statement: string): string {
+        // Pattern to match alias.propertyName references
+        const aliasPropertyPattern = /(\w+)\.(\w+)/g
+        
+        return statement.replace(aliasPropertyPattern, (match, aliasName, propertyName) => {
+            // Find the alias in our expression map
+            let alias: any = undefined
+            for (const a of this.expressionMap.aliases) {
+                if (a.name === aliasName) {
+                    alias = a
+                    break
+                }
+            }
+            
+            if (!alias || !alias.hasMetadata) {
+                return match // Return original if alias not found
+            }
+
+            // Find the column by property name
+            const column = alias.metadata.findColumnWithPropertyName(propertyName)
+            if (!column || !column.isVirtualProperty || !column.query) {
+                return match // Return original if not a virtual column
+            }
+
+            // Get the escaped alias name for the query
+            const escapedAliasName = this.escape(aliasName)
+            
+            // Replace the VirtualColumn reference with its query expression
+            return `(${column.query(escapedAliasName)})`
+        })
     }
 
     /**
