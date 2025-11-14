@@ -146,19 +146,20 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      */
-    cursor(collectionName: string, filter: Filter<Document>): FindCursor<any> {
-        return this.getCollection(collectionName).find(filter || {})
+    cursor(database: string, collectionName: string, filter: Filter<Document>): FindCursor<any> {
+        return this.getCollection(database, collectionName).find(filter || {})
     }
 
     /**
      * Execute an aggregation framework pipeline against the collection.
      */
     aggregate(
+        database: string,
         collectionName: string,
         pipeline: Document[],
         options?: AggregateOptions,
     ): AggregationCursor<any> {
-        return this.getCollection(collectionName).aggregate(
+        return this.getCollection(database, collectionName).aggregate(
             pipeline,
             options || {},
         )
@@ -168,11 +169,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Perform a bulkWrite operation without a fluent API.
      */
     async bulkWrite(
+        database: string,
         collectionName: string,
         operations: AnyBulkWriteOperation<Document>[],
         options?: BulkWriteOptions,
     ): Promise<BulkWriteResult> {
-        return await this.getCollection(collectionName).bulkWrite(
+        return await this.getCollection(database, collectionName).bulkWrite(
             operations,
             options || {},
         )
@@ -182,11 +184,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Count number of matching documents in the db to a query.
      */
     async count(
+        database: string,
         collectionName: string,
         filter: Filter<Document>,
         options?: CountOptions,
     ): Promise<number> {
-        return this.getCollection(collectionName).count(
+        return this.getCollection(database, collectionName).count(
             filter || {},
             options || {},
         )
@@ -196,11 +199,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Count number of matching documents in the db to a query.
      */
     async countDocuments(
+        database: string,
         collectionName: string,
         filter: Filter<Document>,
         options?: CountDocumentsOptions,
     ): Promise<any> {
-        return this.getCollection(collectionName).countDocuments(
+        return this.getCollection(database, collectionName).countDocuments(
             filter || {},
             options || {},
         )
@@ -210,11 +214,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Creates an index on the db and collection.
      */
     async createCollectionIndex(
+        database: string,
         collectionName: string,
         indexSpec: IndexSpecification,
         options?: CreateIndexesOptions,
     ): Promise<string> {
-        return this.getCollection(collectionName).createIndex(
+        return this.getCollection(database, collectionName).createIndex(
             indexSpec,
             options || {},
         )
@@ -225,21 +230,23 @@ export class MongoQueryRunner implements QueryRunner {
      * Earlier version of MongoDB will throw a command not supported error. Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
      */
     async createCollectionIndexes(
+        database: string,
         collectionName: string,
         indexSpecs: IndexDescription[],
     ): Promise<string[]> {
-        return this.getCollection(collectionName).createIndexes(indexSpecs)
+        return this.getCollection(database, collectionName).createIndexes(indexSpecs)
     }
 
     /**
      * Delete multiple documents on MongoDB.
      */
     async deleteMany(
+        database: string,
         collectionName: string,
         filter: Filter<Document>,
         options: DeleteOptions,
     ): Promise<DeleteResult> {
-        return this.getCollection(collectionName).deleteMany(
+        return this.getCollection(database, collectionName).deleteMany(
             filter,
             options || {},
         )
@@ -249,11 +256,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Delete a document on MongoDB.
      */
     async deleteOne(
+        database: string,
         collectionName: string,
         filter: Filter<Document>,
         options?: DeleteOptions,
     ): Promise<DeleteResult> {
-        return this.getCollection(collectionName).deleteOne(
+        return this.getCollection(database, collectionName).deleteOne(
             filter,
             options || {},
         )
@@ -263,12 +271,13 @@ export class MongoQueryRunner implements QueryRunner {
      * The distinct command returns returns a list of distinct values for the given key across a collection.
      */
     async distinct(
+        database: string,
         collectionName: string,
         key: any,
         filter: Filter<Document>,
         options?: CommandOperationOptions,
     ): Promise<any> {
-        return this.getCollection(collectionName).distinct(
+        return this.getCollection(database, collectionName).distinct(
             key,
             filter,
             options || {},
@@ -279,11 +288,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops an index from this collection.
      */
     async dropCollectionIndex(
+        database: string,
         collectionName: string,
         indexName: string,
         options?: CommandOperationOptions,
     ): Promise<Document> {
-        return this.getCollection(collectionName).dropIndex(
+        return this.getCollection(database, collectionName).dropIndex(
             indexName,
             options || {},
         )
@@ -292,19 +302,20 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops all indexes from the collection.
      */
-    async dropCollectionIndexes(collectionName: string): Promise<Document> {
-        return this.getCollection(collectionName).dropIndexes()
+    async dropCollectionIndexes(database: string, collectionName: string): Promise<Document> {
+        return this.getCollection(database, collectionName).dropIndexes()
     }
 
     /**
      * Find a document and delete it in one atomic operation, requires a write lock for the duration of the operation.
      */
     async findOneAndDelete(
+        database: string,
         collectionName: string,
         filter: Filter<Document>,
         options?: FindOneAndDeleteOptions,
     ): Promise<Document | null> {
-        return this.getCollection(collectionName).findOneAndDelete(
+        return this.getCollection(database, collectionName).findOneAndDelete(
             filter,
             options || {},
         )
@@ -314,12 +325,13 @@ export class MongoQueryRunner implements QueryRunner {
      * Find a document and replace it in one atomic operation, requires a write lock for the duration of the operation.
      */
     async findOneAndReplace(
+        database: string,
         collectionName: string,
         filter: Filter<Document>,
         replacement: Document,
         options?: FindOneAndReplaceOptions,
     ): Promise<Document | null> {
-        return this.getCollection(collectionName).findOneAndReplace(
+        return this.getCollection(database, collectionName).findOneAndReplace(
             filter,
             replacement,
             options || {},
@@ -330,12 +342,13 @@ export class MongoQueryRunner implements QueryRunner {
      * Find a document and update it in one atomic operation, requires a write lock for the duration of the operation.
      */
     async findOneAndUpdate(
+        database: string,
         collectionName: string,
         filter: Filter<Document>,
         update: UpdateFilter<Document>,
         options?: FindOneAndUpdateOptions,
     ): Promise<Document | null> {
-        return this.getCollection(collectionName).findOneAndUpdate(
+        return this.getCollection(database, collectionName).findOneAndUpdate(
             filter,
             update,
             options || {},
@@ -345,28 +358,30 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Retrieve all the indexes on the collection.
      */
-    async collectionIndexes(collectionName: string): Promise<Document> {
-        return this.getCollection(collectionName).indexes()
+    async collectionIndexes(database: string, collectionName: string): Promise<Document> {
+        return this.getCollection(database, collectionName).indexes()
     }
 
     /**
      * Retrieve all the indexes on the collection.
      */
     async collectionIndexExists(
+        database: string,
         collectionName: string,
         indexes: string | string[],
     ): Promise<boolean> {
-        return this.getCollection(collectionName).indexExists(indexes)
+        return this.getCollection(database, collectionName).indexExists(indexes)
     }
 
     /**
      * Retrieves this collections index info.
      */
     async collectionIndexInformation(
+        database: string,
         collectionName: string,
         options?: IndexInformationOptions,
     ): Promise<any> {
-        return this.getCollection(collectionName).indexInformation(
+        return this.getCollection(database, collectionName).indexInformation(
             options || {},
         )
     }
@@ -375,10 +390,11 @@ export class MongoQueryRunner implements QueryRunner {
      * Initiate an In order bulk write operation, operations will be serially executed in the order they are added, creating a new operation for each switch in types.
      */
     initializeOrderedBulkOp(
+        database: string,
         collectionName: string,
         options?: BulkWriteOptions,
     ): OrderedBulkOperation {
-        return this.getCollection(collectionName).initializeOrderedBulkOp(
+        return this.getCollection(database, collectionName).initializeOrderedBulkOp(
             options,
         )
     }
@@ -387,10 +403,11 @@ export class MongoQueryRunner implements QueryRunner {
      * Initiate a Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order.
      */
     initializeUnorderedBulkOp(
+        database: string,
         collectionName: string,
         options?: BulkWriteOptions,
     ): UnorderedBulkOperation {
-        return this.getCollection(collectionName).initializeUnorderedBulkOp(
+        return this.getCollection(database, collectionName).initializeUnorderedBulkOp(
             options,
         )
     }
@@ -399,11 +416,12 @@ export class MongoQueryRunner implements QueryRunner {
      * Inserts an array of documents into MongoDB.
      */
     async insertMany(
+        database: string,
         collectionName: string,
         docs: OptionalId<Document>[],
         options?: BulkWriteOptions,
     ): Promise<InsertManyResult> {
-        return this.getCollection(collectionName).insertMany(
+        return this.getCollection(database, collectionName).insertMany(
             docs,
             options || {},
         )
@@ -413,39 +431,42 @@ export class MongoQueryRunner implements QueryRunner {
      * Inserts a single document into MongoDB.
      */
     async insertOne(
+        database: string,
         collectionName: string,
         doc: OptionalId<Document>,
         options?: InsertOneOptions,
     ): Promise<InsertOneResult> {
-        return this.getCollection(collectionName).insertOne(doc, options || {})
+        return this.getCollection(database, collectionName).insertOne(doc, options || {})
     }
 
     /**
      * Returns if the collection is a capped collection.
      */
-    async isCapped(collectionName: string): Promise<boolean> {
-        return this.getCollection(collectionName).isCapped()
+    async isCapped(database: string, collectionName: string): Promise<boolean> {
+        return this.getCollection(database, collectionName).isCapped()
     }
 
     /**
      * Get the list of all indexes information for the collection.
      */
     listCollectionIndexes(
+        database: string,
         collectionName: string,
         options?: ListIndexesOptions,
     ): ListIndexesCursor {
-        return this.getCollection(collectionName).listIndexes(options)
+        return this.getCollection(database, collectionName).listIndexes(options)
     }
 
     /**
      * Reindex all indexes on the collection Warning: reIndex is a blocking operation (indexes are rebuilt in the foreground) and will be slow for large collections.
      */
     async rename(
+        database: string,
         collectionName: string,
         newName: string,
         options?: RenameOptions,
     ): Promise<Collection<Document>> {
-        return this.getCollection(collectionName).rename(newName, options || {})
+        return this.getCollection(database, collectionName).rename(newName, options || {})
     }
 
     /**
@@ -453,11 +474,12 @@ export class MongoQueryRunner implements QueryRunner {
      */
     async replaceOne(
         collectionName: string,
+        database: string,
         filter: Filter<Document>,
         replacement: Document,
         options?: ReplaceOptions,
     ): Promise<Document | UpdateResult> {
-        return this.getCollection(collectionName).replaceOne(
+        return this.getCollection(database, collectionName).replaceOne(
             filter,
             replacement,
             options || {},
@@ -468,33 +490,36 @@ export class MongoQueryRunner implements QueryRunner {
      * Get all the collection statistics.
      */
     async stats(
+        database: string,
         collectionName: string,
         options?: CollStatsOptions,
     ): Promise<CollStats> {
-        return this.getCollection(collectionName).stats(options || {})
+        return this.getCollection(database, collectionName).stats(options || {})
     }
 
     /**
      * Watching new changes as stream.
      */
     watch(
+        database: string,
         collectionName: string,
         pipeline?: Document[],
         options?: ChangeStreamOptions,
     ): ChangeStream {
-        return this.getCollection(collectionName).watch(pipeline, options)
+        return this.getCollection(database, collectionName).watch(pipeline, options)
     }
 
     /**
      * Update multiple documents on MongoDB.
      */
     async updateMany(
+        database: string,
         collectionName: string,
         filter: Filter<Document>,
         update: UpdateFilter<Document>,
         options?: UpdateOptions,
     ): Promise<Document | UpdateResult> {
-        return this.getCollection(collectionName).updateMany(
+        return this.getCollection(database, collectionName).updateMany(
             filter,
             update,
             options || {},
@@ -505,12 +530,13 @@ export class MongoQueryRunner implements QueryRunner {
      * Update a single document on MongoDB.
      */
     async updateOne(
+        database: string,
         collectionName: string,
         filter: Filter<Document>,
         update: UpdateFilter<Document>,
         options?: UpdateOptions,
     ): Promise<Document | UpdateResult> {
-        return await this.getCollection(collectionName).updateOne(
+        return await this.getCollection(database, collectionName).updateOne(
             filter,
             update,
             options || {},
@@ -535,7 +561,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * For MongoDB database we don't create a connection because its single connection already created by a driver.
      */
-    async connect(): Promise<any> {}
+    async connect(): Promise<any> { }
 
     /**
      * For MongoDB database we don't release the connection because it is a single connection.
@@ -1270,9 +1296,9 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Gets collection from the database with a given name.
      */
-    protected getCollection(collectionName: string): Collection<any> {
+    protected getCollection(database: string, collectionName: string): Collection<any> {
         return this.databaseConnection
-            .db(this.connection.driver.database!)
+            .db(database || this.connection.driver.database!)
             .collection(collectionName)
     }
 
