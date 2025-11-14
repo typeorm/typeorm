@@ -47,7 +47,7 @@ describe.skip("github issues > #1685 JoinColumn from JoinColum is not considered
 
                 try {
                     await connection.manager.save(userMonth)
-                } catch (err) {
+                } catch {
                     throw new Error("userMonth should be added")
                 }
             }),

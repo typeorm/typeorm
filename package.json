@@ -13,8 +13,8 @@
   "funding": "https://opencollective.com/typeorm",
   "license": "MIT",
   "author": {
-    "name": "Umed Khudoiberdiev",
-    "email": "pleerock.me@gmail.com"
+    "name": "TypeORM",
+    "email": "maintainers@typeorm.io"
   },
   "exports": {
     ".": {
@@ -82,7 +82,7 @@
     "docs:dev": "cd docs && npm run start",
     "format": "prettier --cache --write \"./**/*.ts\"",
     "format:ci": "prettier --check \"./**/*.ts\"",
-    "lint": "eslint .",
+    "lint": "eslint",
     "pack": "gulp pack",
     "package": "gulp package",
     "pre-commit": "lint-staged",
@@ -112,7 +112,7 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@eslint/js": "^9.36.0",
+    "@eslint/js": "^9.39.1",
     "@google-cloud/spanner": "^7.21.0",
     "@sap/hana-client": "^2.26.18",
     "@tsconfig/node16": "^16.1.5",
@@ -132,9 +132,9 @@
     "chai": "^4.5.0",
     "chai-as-promised": "^7.1.2",
     "class-transformer": "^0.5.1",
-    "eslint": "^9.36.0",
-    "eslint-plugin-jsdoc": "^60.3.0",
-    "globals": "^16.4.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-jsdoc": "^61.1.12",
+    "globals": "^16.5.0",
     "gulp": "^4.0.2",
     "gulp-rename": "^2.1.0",
     "gulp-replace": "^1.1.4",
@@ -144,7 +144,7 @@
     "gulpclass": "^0.2.0",
     "husky": "^9.1.7",
     "is-ci": "^4.1.0",
-    "lint-staged": "^15.5.2",
+    "lint-staged": "^16.2.6",
     "mocha": "^11.7.2",
     "mongodb": "^6.20.0",
     "mssql": "^11.0.1",
@@ -168,7 +168,7 @@
     "standard-changelog": "^7.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.44.0"
+    "typescript-eslint": "^8.46.3"
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^5.18.0 || ^6.0.0 || ^7.0.0",

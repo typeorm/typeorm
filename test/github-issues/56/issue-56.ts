@@ -35,7 +35,7 @@ describe.skip("github issues > #56 relationships only work when both primary key
                 return connection
                     .getRepository(AccessToken)
                     .save(token)
-                    .then((token) => {
+                    .then(() => {
                         return connection.getRepository(User).save(user)
                     })
                     .then((user) => {

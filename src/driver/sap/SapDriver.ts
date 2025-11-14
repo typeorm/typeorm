@@ -1,7 +1,6 @@
 import { promisify } from "node:util"
 import {
     ColumnType,
-    ConnectionIsNotSetError,
     DataSource,
     EntityMetadata,
     ObjectLiteral,
@@ -9,6 +8,7 @@ import {
     TableColumn,
     TableForeignKey,
 } from "../.."
+import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { TypeORMError } from "../../error/TypeORMError"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
