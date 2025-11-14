@@ -47,10 +47,11 @@ describe("github issues > #2518 TreeRepository.findDescendantsTree does not load
                     parent: root,
                 } as File)
                 expect(child.parentId).to.be.equal(1)
-                const file: File | any = await repo
+
+                const file = (await repo
                     .createQueryBuilder("file")
                     .where("file.id = :id", { id: 1 })
-                    .getOne()
+                    .getOne())!
                 await repo.findDescendantsTree(file)
                 expect(file.children.length).to.be.greaterThan(0)
             }),

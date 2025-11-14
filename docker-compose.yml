@@ -1,8 +1,19 @@
 services:
   # mysql
-  mysql:
-    image: "mysql:5.7.37"
-    container_name: "typeorm-mysql"
+  mysql-5:
+    image: "mysql:5.7.44"
+    container_name: "typeorm-mysql-5"
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "admin"
+      MYSQL_USER: "test"
+      MYSQL_PASSWORD: "test"
+      MYSQL_DATABASE: "test"
+
+  mysql-9:
+    image: "mysql:9.4.0"
+    container_name: "typeorm-mysql-9"
     ports:
       - "3306:3306"
     environment:
@@ -12,9 +23,20 @@ services:
       MYSQL_DATABASE: "test"
 
   # mariadb
-  mariadb:
-    image: "mariadb:10.10.3"
-    container_name: "typeorm-mariadb"
+  mariadb-10:
+    image: "mariadb:10.6.22-jammy"
+    container_name: "typeorm-mariadb-10"
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "admin"
+      MYSQL_USER: "test"
+      MYSQL_PASSWORD: "test"
+      MYSQL_DATABASE: "test"
+
+  mariadb-12:
+    image: "mariadb:12.0.1-rc"
+    container_name: "typeorm-mariadb-12"
     ports:
       - "3307:3306"
     environment:
@@ -24,12 +46,24 @@ services:
       MYSQL_DATABASE: "test"
 
   # postgres
-  postgres:
-    # mdillon/postgis is postgres + PostGIS (only). if you need additional
-    # extensions, it's probably time to create a purpose-built image with all
-    # necessary extensions. sorry, and thanks for adding support for them!
-    image: "postgis/postgis:14-3.3"
-    container_name: "typeorm-postgres"
+  postgres-14:
+    # postgis is postgres + PostGIS (only). If you need additional extensions,
+    # it's probably time to create a purpose-built image.
+    image: "ghcr.io/naorpeled/typeorm-postgres:pg14-postgis3-pgvectorv0.8.0"
+    container_name: "typeorm-postgres-14"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "test"
+      POSTGRES_PASSWORD: "test"
+      POSTGRES_DB: "test"
+
+  # postgres
+  postgres-17:
+    # postgis is postgres + PostGIS (only). If you need additional extensions,
+    # it's probably time to create a purpose-built image.
+    image: "ghcr.io/naorpeled/typeorm-postgres:pg17-postgis3-pgvectorv0.8.0"
+    container_name: "typeorm-postgres-17"
     ports:
       - "5432:5432"
     environment:
@@ -39,13 +73,14 @@ services:
 
   # mssql
   mssql:
-    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    image: "mcr.microsoft.com/mssql/server:2025-latest"
     container_name: "typeorm-mssql"
     ports:
       - "1433:1433"
     environment:
       SA_PASSWORD: "Admin12345"
       ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
 
   # cockroachdb
   cockroachdb:
@@ -59,7 +94,7 @@ services:
 
   # oracle
   oracle:
-    image: "container-registry.oracle.com/database/free:23.5.0.0-lite"
+    image: "container-registry.oracle.com/database/free:23.7.0.0-lite"
     container_name: "typeorm-oracle"
     ports:
       - "1521:1521"
@@ -108,7 +143,7 @@ services:
 
   # mongodb
   mongodb:
-    image: "mongo:5.0.12"
+    image: "mongo:8"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"

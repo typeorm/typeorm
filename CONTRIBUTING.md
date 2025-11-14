@@ -18,8 +18,7 @@ If you have a question or want community support:
 
 ## <a name="issue"></a> Found a security vulnerability?
 
-If you find a security vulnerability or something that should be discussed personally,
-please contact me within my [email](https://github.com/typeorm/typeorm/blob/master/package.json#L10).
+If you find a security vulnerability or something that should be discussed privately, please contact us at [maintainers@typeorm.io](mailto:maintainers@typeorm.io).
 
 ## <a name="issue"></a> Found a Bug?
 
@@ -64,7 +63,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
 
 * Create your patch, **including appropriate test cases**. Without tests your PR will not be accepted.
 * Run the full TypeORM test suite, as described in the [developer documentation](DEVELOPER.md), and ensure that all tests pass.
-* Commit your changes using a descriptive commit message that follows our [commit message conventions](#commit). Adherence to these conventions is necessary because release notes are automatically generated from these messages.
+* Commit your changes using descriptive commit messages. See our [commit message conventions](#commit)
 
      ```shell
      git commit -a
@@ -77,16 +76,8 @@ Before you submit your Pull Request (PR) consider the following guidelines:
     git push origin my-fix-branch
     ```
 
-* In GitHub, send a pull request to `typeorm:master`.
-* If we suggest changes then:
-  * Make the required updates.
-  * Re-run the TypeORM test suites to ensure tests are still passing.
-  * Rebase your branch and force push to your GitHub repository (this will update your Pull Request):
-
-    ```shell
-    git rebase master -i
-    git push -f
-    ```
+* In GitHub, send a pull request to `typeorm:master` and include a description following the template.
+* Changes can be added as new commits to the same branch, which will update your pull request.
 
 That's it! Thank you for your contribution!
 
@@ -122,13 +113,10 @@ from the main (upstream) repository:
 
 ## <a name="commit"></a> Commit Message Guidelines
 
-We have very precise rules over how our git commit messages can be formatted.  This leads to **more
-readable messages** that are easy to follow when looking through the **project history**.  But also,
-we use the git commit messages to **generate changelog**.
+We follow the format below to help generate changelogs and keep commit history readable.
+We will squash and merge commits into a single commit when merging a PR to follow this convention.
 
-### Commit Message Format
-Each commit message consists of a **header**, a **body** and a **footer**.  The header has a special
-format that includes a **type** and a **subject**:
+If you're contributing to the project, we recommend following the same guidelines.
 
 ```
 <type>: <subject>
@@ -138,16 +126,12 @@ format that includes a **type** and a **subject**:
 <footer>
 ```
 
-Any line of the commit message cannot be longer 100 characters! This allows the message to be easier
-to read on GitHub as well as in various git tools.
-
-### Revert
-If the commit reverts a previous commit, it should begin with `revert: `, followed by the header of
-the reverted commit. In the body it should say: `This reverts commit <hash>.`, where the hash is
-the SHA of the commit being reverted.
+Any line of the commit message should not be longer than 100 characters. This allows the message
+to be easier to read on GitHub as well as in various git tools.
 
 ### Type
-Must be one of the following:
+
+One of the following:
 
 * **feat**: A new feature
 * **fix**: A bug fix
@@ -158,8 +142,10 @@ Must be one of the following:
 * **test**: Adding missing tests or correcting existing tests
 * **build**: Changes that affect the build system, CI configuration or external dependencies
 * **chore**: Other changes that don't modify `src` or `test` files
+* **revert**: Reverts a previous commit. Include the hash of the commit being reverted.
 
 ### Subject
+
 The subject contains succinct description of the change:
 
 * use the imperative, present tense: "change" not "changed" nor "changes"
@@ -167,41 +153,16 @@ The subject contains succinct description of the change:
 * no dot (.) at the end
 
 ### Body
+
 Just as in the **subject**, use the imperative, present tense: "change" not "changed" nor "changes".
 The body should include the motivation for the change and contrast this with previous behavior.
 
 ### Footer
+
 The footer should contain any information about **Breaking Changes** and is also the place to
 reference GitHub issues that this commit **Closes**.
-
 **Breaking Changes** should start with the word `BREAKING CHANGE:` with a space or two newlines.
 The rest of the commit message is then used for this.
-
-### Examples
-Fix and close issue:
-```
-fix: resolve issues uppercase column names
-
-Closes: #123456
-```
-Implement new feature:
-```
-feat: implement new magic decorator
-
-This new feature change bahviour of typeorm to allow use new magic decorator...
-
-Closes: #22222
-```
-Docs update:
-```
-docs: update supported mssql column types
-```
-Breaking change:
-```
-refactor: refactor driver API
-
-BREAKING CHANGE: description of breaking change in driver API
-```
 
 ## Financial contributions
 

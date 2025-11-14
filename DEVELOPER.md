@@ -50,7 +50,17 @@ cd typeorm
 git remote add upstream https://github.com/typeorm/typeorm.git
 ```
 
-## Installing NPM Modules
+## Node
+
+You should have node installed in the version described in [.nvmrc](.nvmrc).
+
+It is recommended to configure your OS to automatically switch to use this version whenever you enter project folder. This can be achieved in many ways:
+
+* [`fnm`](https://github.com/Schniz/fnm)
+* [`zsh-nvm`](https://github.com/lukechilds/zsh-nvm#auto-use)
+* [`asdf`](https://asdf-vm.com) with `asdf-nodejs` plugin and [`legacy_version_file = true`](https://asdf-vm.com/manage/configuration.html#legacy-version-file) option
+
+## Installing package dependencies
 
 Install all TypeORM dependencies by running this command:
 
@@ -89,11 +99,11 @@ You can copy this tar into your project and run `npm install ./typeorm-x.x.x.tgz
 
 ## Running Tests Locally
 
-It would be greatly appreciated if PRs that change code come with appropriate tests.
+It is greatly appreciated if PRs that change code come with appropriate tests.
 
-To create a test for a specific issue opened on GitHub, create a file: `test/github-issues/<num>/issue-<num>.ts` where
-`<num>` is the corresponding GitHub issue. For example, if you were creating a PR to fix github issue #363, you'd
-create `test/github-issues/363/issue-363.ts`.
+To create a new test, check the [relevant functional tests](https://github.com/typeorm/typeorm/tree/master/test/functional). Depending on the test, you may need to create a new test file or modify an existing one.
+
+If the test is for a specific regression or issue opened on GitHub, add a comment to the tests mentioning the issue number.
 
 Most tests will benefit from using this template as a starting point:
 
@@ -103,7 +113,7 @@ import { createTestingConnections, closeTestingConnections, reloadTestingDatabas
 import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai";
 
-describe("github issues > #<issue number> <issue title>", () => {
+describe("description of the functionality you're testing", () => {
 
     let dataSources: DataSource[];
     before(async () => dataSources = await createTestingConnections({
@@ -114,18 +124,16 @@ describe("github issues > #<issue number> <issue title>", () => {
     beforeEach(() => reloadTestingDatabases(dataSources));
     after(() => closeTestingConnections(dataSources));
 
+    // optional: test fix for issue https://github.com/typeorm/typeorm/issues/<issue-number>
     it("should <put a detailed description of what it should do here>", () => Promise.all(dataSources.map(async dataSource => {
-
        // tests go here
-
     })));
 
-    // you can add additional tests if needed
-
+// you can add additional tests if needed
 });
 ```
 
-If you place entities in `./entity/<entity-name>.ts` relative to your `issue-<num>.ts` file,
+If you place entities in `./entity/<entity-name>.ts` relative to your test file,
 they will automatically be loaded.
 
 To run the tests, setup your environment configuration by copying `ormconfig.sample.json` into `ormconfig.json` and replacing parameters with your own. The tests will be run for each database that is defined in that file. If you're working on something that's not database specific and you want to speed things up, you can pick which objects in the file make sense for you to keep.
@@ -149,7 +157,7 @@ describe.only('your describe test', ....)
 Alternatively, you can use the `--grep` flag to pass a regex to `mocha`. Only the tests that have `describe`/`it` statements that match the regex will be run. For example:
 
 ```shell
-npm run test -- --grep "github issues > #363"
+npm run test -- --grep "your test name"
 ```
 
 ### Faster developer cycle for editing code and running tests
@@ -167,3 +175,14 @@ in the root of the project. Once all images are fetched and are running, you can
 
 - The docker image of mssql-server needs at least 3.25GB of RAM.
 - Make sure to assign enough memory to the Docker VM if you're running on Docker for Mac or Windows
+
+## Release Process
+
+To create a new release, follow these steps:
+
+1. Create a new branch from `master` with the format `release-x.x.x` (e.g. `release-0.3.23`).
+2. Update the version in `package.json` and run `npm install` to update the lock file.
+3. Run the `npm run changelog` command to generate the changelog for the new version.
+4. Commit the changes and create a pull request to merge the release branch into `master`.
+5. Once the pull request is approved and merged, create a new release on GitHub with the same version number.
+6. The `publish-package.yml` script will then run a GitHub Actions workflow that will publish the new version to npm.

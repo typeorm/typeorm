@@ -14,7 +14,7 @@ export class Subcounters {
     @Column()
     watches: number
 
-    @ManyToMany((type) => User)
+    @ManyToMany(() => User)
     @JoinTable({ name: "subcnt_users" })
     watchedUsers: User[]
 

@@ -11,6 +11,6 @@ export class User {
     @PrimaryColumn()
     name: string
 
-    @ManyToOne((type) => Post, (post) => post.counters.subcounters.watchedUsers)
+    @ManyToOne(() => Post, (post) => post.counters.subcounters.watchedUsers)
     post: Post
 }

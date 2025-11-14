@@ -3,7 +3,7 @@ import { QueryRunner } from "../../../../src/query-runner/QueryRunner"
 import { Table } from "../../../../src/schema-builder/table/Table"
 
 export class CreateUsers0000000000002 implements MigrationInterface {
-    public up(queryRunner: QueryRunner): Promise<any> {
+    public async up(queryRunner: QueryRunner) {
         return queryRunner.createTable(
             new Table({
                 name: "users",

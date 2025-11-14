@@ -28,10 +28,10 @@ export class Photo {
     @Column()
     isPublished: boolean
 
-    @ManyToOne((type) => Author, (author) => author.photos)
+    @ManyToOne(() => Author, (author) => author.photos)
     author: Author
 
-    @OneToOne((type) => PhotoMetadata, (photoMetadata) => photoMetadata.photo, {
+    @OneToOne(() => PhotoMetadata, (photoMetadata) => photoMetadata.photo, {
         eager: true,
     })
     @JoinColumn()

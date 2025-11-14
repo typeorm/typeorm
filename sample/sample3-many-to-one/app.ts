@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src"
 import { Post } from "./entity/Post"
 import { PostDetails } from "./entity/PostDetails"
 import { PostCategory } from "./entity/PostCategory"
@@ -9,11 +9,6 @@ import { PostInformation } from "./entity/PostInformation"
 import { PostAuthor } from "./entity/PostAuthor"
 
 const options: DataSourceOptions = {
-    // type: "mssql",
-    // host: "192.168.1.10",
-    // username: "sa",
-    // password: "admin12345",
-    // database: "test",
     type: "oracle",
     host: "localhost",
     username: "system",
@@ -51,7 +46,7 @@ dataSource
 
         postRepository
             .save(post)
-            .then((post) => console.log("Post has been saved"))
+            .then(() => console.log("Post has been saved"))
             .catch((error) => console.log("Cannot save. Error: ", error))
     })
     .catch((error) => console.log("Error: ", error))

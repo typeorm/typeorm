@@ -14,7 +14,7 @@ export class Product {
     @Column()
     name: string
 
-    @OneToMany((type) => TicketProduct, (ticketp) => ticketp.product)
+    @OneToMany(() => TicketProduct, (ticketp) => ticketp.product)
     ticketProduct: TicketProduct[]
 
     constructor(name: string) {

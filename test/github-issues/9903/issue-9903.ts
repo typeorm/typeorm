@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/index"
+import { DataSource } from "../../../src"
 import { expect } from "chai"
 import { User } from "./entity/User"
 
@@ -56,7 +56,7 @@ describe("github issues > #9903 json data type", () => {
                     // this will ensure its json valid in mariadb so this won't break the constraint
                     try {
                         await userRepository.save(badJsonUser)
-                    } catch (err) {
+                    } catch {
                         expect.fail(
                             null,
                             null,
