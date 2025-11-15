@@ -27,7 +27,7 @@ describe("query builder > comment", () => {
                     .comment("Hello World */ */")
                     .getSql()
 
-                expect(sql).to.match(/^\/\* Hello World   \*\/ /)
+                expect(sql).to.match(/^\/\* Hello World {3}\*\/ /)
             }),
         ))
 
@@ -39,7 +39,7 @@ describe("query builder > comment", () => {
                     .comment("")
                     .getSql()
 
-                expect(sql).to.not.match(/^\/\* Hello World  \*\/ /)
+                expect(sql).to.not.match(/^\/\* Hello World {2}\*\/ /)
             }),
         ))
 
@@ -51,7 +51,7 @@ describe("query builder > comment", () => {
                     .comment(" ")
                     .getSql()
 
-                expect(sql).to.match(/^\/\*   \*\/ /)
+                expect(sql).to.match(/^\/\* {3}\*\/ /)
             }),
         ))
 

@@ -67,7 +67,7 @@ describe("github issues > #8522 Single table inheritance returns the same discri
 
                     await connection.manager.save(internalRole)
 
-                    let users = await connection.manager
+                    const users = await connection.manager
                         .createQueryBuilder(User, "user")
                         .getMany()
 
@@ -77,7 +77,7 @@ describe("github issues > #8522 Single table inheritance returns the same discri
                     expect(users[0].createdAt.should.be.instanceOf(Date))
                     expect(users[0].updatedAt.should.be.instanceOf(Date))
 
-                    let roles = await connection.manager
+                    const roles = await connection.manager
                         .createQueryBuilder(Role, "role")
                         .getMany()
 

@@ -1,30 +1,30 @@
-import { QueryRunner } from "../../query-runner/QueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { TypeORMError } from "../../error"
+import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { ReadStream } from "../../platform/PlatformTools"
+import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryResult } from "../../query-runner/QueryResult"
+import { QueryRunner } from "../../query-runner/QueryRunner"
 import { Table } from "../../schema-builder/table/Table"
+import { TableCheck } from "../../schema-builder/table/TableCheck"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
-import { View } from "../../schema-builder/view/View"
-import { Query } from "../Query"
-import { OracleDriver } from "./OracleDriver"
-import { ReadStream } from "../../platform/PlatformTools"
-import { QueryFailedError } from "../../error/QueryFailedError"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
+import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
-import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
-import { TableCheck } from "../../schema-builder/table/TableCheck"
+import { Query } from "../Query"
 import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { TypeORMError } from "../../error"
-import { QueryResult } from "../../query-runner/QueryResult"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { InstanceChecker } from "../../util/InstanceChecker"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { OracleDriver } from "./OracleDriver"
 
 /**
  * Runs queries on a single oracle database connection.
@@ -198,16 +198,12 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
-        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-        const queryStartTime = +new Date()
+        const broadcasterResult = new BroadcasterResult()
+        const queryStartTime = Date.now()
 
         try {
             const executionOptions = {
@@ -224,7 +220,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
@@ -667,7 +663,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         const oldTable = InstanceChecker.isTable(oldTableOrName)
             ? oldTableOrName
             : await this.getCachedTable(oldTableOrName)
-        let newTable = oldTable.clone()
+        const newTable = oldTable.clone()
 
         const { database: dbName, tableName: oldTableName } =
             this.driver.parseTableName(oldTable)
@@ -1734,7 +1730,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -1905,7 +1901,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraint.
+     * Drops a unique constraint.
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
@@ -1929,7 +1925,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates an unique constraints.
+     * Creates a unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
@@ -2980,7 +2976,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Builds drop index sql.
      */
     protected dropIndexSql(indexOrName: TableIndex | string): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(`DROP INDEX "${indexName}"`)

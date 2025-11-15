@@ -12,12 +12,12 @@ export class RandomGenerator {
      *   returns 1: '54916d2e62f65b3afa6e192e6a601cdbe5cb5897'
      */
     static sha1(str: string) {
-        let _rotLeft = function (n: any, s: any) {
-            let t4 = (n << s) | (n >>> (32 - s))
+        const _rotLeft = function (n: any, s: any) {
+            const t4 = (n << s) | (n >>> (32 - s))
             return t4
         }
 
-        let _cvtHex = function (val: any) {
+        const _cvtHex = function (val: any) {
             let str = ""
             let i
             let v
@@ -31,7 +31,7 @@ export class RandomGenerator {
 
         let blockstart
         let i, j
-        let W = new Array(80)
+        const W = new Array(80)
         let H0 = 0x67452301
         let H1 = 0xefcdab89
         let H2 = 0x98badcfe
@@ -42,9 +42,9 @@ export class RandomGenerator {
 
         // utf8_encode
         str = /*unescape*/ encodeURIComponent(str)
-        let strLen = str.length
+        const strLen = str.length
 
-        let wordArray = []
+        const wordArray = []
         for (i = 0; i < strLen - 3; i += 4) {
             j =
                 (str.charCodeAt(i) << 24) |

@@ -1,57 +1,59 @@
-import "../../../utils/test-setup"
+import appRoot from "app-root-path"
 import { expect } from "chai"
+import fs from "fs/promises"
+import path from "path"
+import { rimraf } from "rimraf"
+
 import { DataSource } from "../../../../src/data-source/DataSource"
+import { filepathToName } from "../../../../src/util/PathUtils"
+import "../../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
+    withPlatform,
 } from "../../../utils/test-utils"
 import { Answer } from "./entity/Answer"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { User } from "./entity/User"
-import { filepathToName } from "../../../../src/util/PathUtils"
-import { rimraf } from "rimraf"
-import path from "path"
-import fs from "fs/promises"
-import appRoot from "app-root-path"
 
 const VALID_NAME_REGEX = /^(?!sqlite_).{1,63}$/
 
 describe("multi-database > basic-functionality", () => {
     describe("filepathToName()", () => {
         for (const platform of [`darwin`, `win32`]) {
-            let realPlatform: string
-
-            beforeEach(() => {
-                realPlatform = process.platform
-                Object.defineProperty(process, `platform`, {
-                    configurable: true,
-                    value: platform,
-                })
-            })
-
-            afterEach(() => {
-                Object.defineProperty(process, `platform`, {
-                    configurable: true,
-                    value: realPlatform,
-                })
-            })
-
-            it(`produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged (${platform})`, () => {
+            it(`[${platform}] produces deterministic, unique, and valid table names for relative paths; leaves absolute paths unchanged`, () => {
                 const testMap = [
                     ["FILENAME.db", "filename.db"],
-                    ["..\\FILENAME.db", "../filename.db"],
+                    [
+                        "..\\FILENAME.db",
+                        platform === "win32"
+                            ? "../filename.db"
+                            : "..\\filename.db",
+                    ],
+                    [
+                        ".\\FILENAME.db",
+                        platform === "win32"
+                            ? "./filename.db"
+                            : ".\\filename.db",
+                    ],
                     [
                         "..\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\FILENAME.db",
-                        "../longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/filename.db",
+                        platform === "win32"
+                            ? "../longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/longpathdir/filename.db"
+                            : "..\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\longpathdir\\filename.db",
                     ],
                     ["C:\\dirFILENAME.db", "C:\\dirFILENAME.db"],
                     ["/dir/filename.db", "/dir/filename.db"],
                 ]
                 for (const [winOs, otherOs] of testMap) {
-                    const winOsRes = filepathToName(winOs)
-                    const otherOsRes = filepathToName(otherOs)
+                    const winOsRes = withPlatform(platform, () =>
+                        filepathToName(winOs),
+                    )
+                    const otherOsRes = withPlatform(platform, () =>
+                        filepathToName(otherOs),
+                    )
                     expect(winOsRes).to.equal(otherOsRes)
                     expect(winOsRes).to.match(
                         VALID_NAME_REGEX,
@@ -91,12 +93,12 @@ describe("multi-database > basic-functionality", () => {
         beforeEach(() => reloadTestingDatabases(connections))
         after(async () => {
             await closeTestingConnections(connections)
-            await rimraf(`${tempPath}/**/*.attach.db`)
+            await rimraf(`${tempPath}/**/*.attach.db`, { glob: true })
         })
 
         it("should correctly attach and create database files", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                connections.map(async () => {
                     const expectedMainPath = path.join(
                         tempPath,
                         (connections[0].options.database as string).match(

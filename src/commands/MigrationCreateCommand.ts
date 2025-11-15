@@ -26,6 +26,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                 describe:
                     "Generate a migration file on Javascript instead of Typescript",
             })
+            .option("esm", {
+                type: "boolean",
+                default: false,
+                describe:
+                    "Generate a migration file on ESM instead of CommonJS",
+            })
             .option("t", {
                 alias: "timestamp",
                 type: "number",
@@ -48,6 +54,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
                 ? MigrationCreateCommand.getJavascriptTemplate(
                       filename,
                       timestamp,
+                      args.esm,
                   )
                 : MigrationCreateCommand.getTemplate(filename, timestamp)
 
@@ -97,14 +104,29 @@ export class ${camelCase(
     protected static getJavascriptTemplate(
         name: string,
         timestamp: number,
+        esm: boolean,
     ): string {
-        return `const { MigrationInterface, QueryRunner } = require("typeorm");
+        const exportMethod = esm ? "export" : "module.exports ="
+        return `/**
+ * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ * @typedef {import('typeorm').QueryRunner} QueryRunner
+ */
 
-module.exports = class ${camelCase(name, true)}${timestamp} {
+/**
+ * @class
+ * @implements {MigrationInterface}
+ */
+${exportMethod} class ${camelCase(name, true)}${timestamp} {
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async up(queryRunner) {
     }
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async down(queryRunner) {
     }
 
