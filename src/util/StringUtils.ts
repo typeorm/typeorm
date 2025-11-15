@@ -1,4 +1,4 @@
-import { PlatformTools } from "../platform/PlatformTools"
+import shajs from "sha.js"
 
 /**
  * Converts string into camelCase.
@@ -117,7 +117,9 @@ interface IHashOptions {
  * @param options.length Optionally, shorten the output to desired length.
  */
 export function hash(input: string, options: IHashOptions = {}): string {
-    const hashedInput = PlatformTools.sha1(input)
+    const hashFunction = shajs("sha1")
+    hashFunction.update(input, "utf8")
+    const hashedInput = hashFunction.digest("hex")
     if (options.length && options.length > 0) {
         return hashedInput.slice(0, options.length)
     }
