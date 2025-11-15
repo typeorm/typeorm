@@ -28,6 +28,8 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { IndexMetadata } from "../../metadata/IndexMetadata"
+import { TableIndex } from "../../schema-builder/table/TableIndex"
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -1439,6 +1441,13 @@ export class PostgresDriver implements Driver {
         return false
     }
 
+    /**
+     * Returns true if driver supports type indices
+     */
+    isIndicesTypeSupported(): boolean {
+        return true
+    }
+
     get uuidGenerator(): string {
         return this.options.uuidExtension === "pgcrypto"
             ? "gen_random_uuid()"
@@ -1450,6 +1459,13 @@ export class PostgresDriver implements Driver {
      */
     createParameter(parameterName: string, index: number): string {
         return this.parametersPrefix + (index + 1)
+    }
+
+    compareTableIndexTypes = (indexA: IndexMetadata, indexB: TableIndex) => {
+        const normalizedA = indexA.isSpatial ? "gist" : indexA.type ?? "btree"
+        const normalizedB = indexB.isSpatial ? "gist" : indexB.type ?? "btree"
+
+        return normalizedA.toLowerCase() === normalizedB.toLowerCase()
     }
 
     // -------------------------------------------------------------------------
