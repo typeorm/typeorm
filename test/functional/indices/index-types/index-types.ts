@@ -99,28 +99,70 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 })
 
 describe("github issues > Add support of 'hash' indexes for postgres", () => {
-    const driversToTest = ["sqlite", "mysql", "mariadb"] as const
-
-    driversToTest.forEach((driver) => {
-        it(`Should throw an error when using index types on driver: ${driver}`, async () => {
-            const connections = await createTestingConnections({
-                entities: [User3],
-                enabledDrivers: [driver],
-                schemaCreate: true,
-            })
-
-            // Check if driver is enabled in test environment
-            if (connections.length > 0) {
-                await closeTestingConnections(connections)
-
-                await expect(
-                    createTestingConnections({
-                        entities: [User2],
-                        enabledDrivers: [driver],
-                        schemaCreate: true,
-                    }),
-                ).to.be.rejectedWith(TypeORMError)
-            }
+    it("Should throw an error if index type is set and sqlite does not support index types", async () => {
+        const connections = await createTestingConnections({
+            entities: [User3],
+            enabledDrivers: ["sqlite"],
+            schemaCreate: true,
         })
+
+        const isSqlite = connections.length > 0
+
+        if (isSqlite) {
+            await closeTestingConnections(connections)
+            expect(
+                createTestingConnections({
+                    entities: [User2],
+                    enabledDrivers: ["sqlite"],
+                    schemaCreate: true,
+                }),
+            ).rejectedWith(TypeORMError)
+        }
+    })
+})
+
+describe("github issues > Add support of 'hash' indexes for postgres", () => {
+    it("Should throw an error if index type is set and mariadb does not support index types", async () => {
+        const connections = await createTestingConnections({
+            entities: [User3],
+            enabledDrivers: ["mariadb"],
+            schemaCreate: true,
+        })
+
+        const isMariadb = connections.length > 0
+
+        if (isMariadb) {
+            await closeTestingConnections(connections)
+            expect(
+                createTestingConnections({
+                    entities: [User2],
+                    enabledDrivers: ["mariadb"],
+                    schemaCreate: true,
+                }),
+            ).rejectedWith(TypeORMError)
+        }
+    })
+})
+
+describe("github issues > Add support of 'hash' indexes for postgres", () => {
+    it("Should throw an error if index type is set and mysql does not support index types", async () => {
+        const connections = await createTestingConnections({
+            entities: [User3],
+            enabledDrivers: ["mysql"],
+            schemaCreate: true,
+        })
+
+        const isMysql = connections.length > 0
+
+        if (isMysql) {
+            await closeTestingConnections(connections)
+            expect(
+                createTestingConnections({
+                    entities: [User2],
+                    enabledDrivers: ["mysql"],
+                    schemaCreate: true,
+                }),
+            ).rejectedWith(TypeORMError)
+        }
     })
 })
