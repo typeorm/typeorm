@@ -744,6 +744,7 @@ export class PostgresDriver implements Driver {
             columnMetadata.type === "datetime" ||
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
+            columnMetadata.type === "timestamptz" ||
             columnMetadata.type === "timestamp with time zone" ||
             columnMetadata.type === "timestamp without time zone"
         ) {
@@ -831,6 +832,7 @@ export class PostgresDriver implements Driver {
             columnMetadata.type === "datetime" ||
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
+            columnMetadata.type === "timestamptz" ||
             columnMetadata.type === "timestamp with time zone" ||
             columnMetadata.type === "timestamp without time zone"
         ) {
