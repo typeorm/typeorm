@@ -15,6 +15,7 @@ describe("database schema > column types > postgres", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
+            cache: true,
         })
 
         for (const connection of connections) {
@@ -403,9 +404,17 @@ describe("database schema > column types > postgres", () => {
                 post.timeWithTimeZone = "15:30:13.27801+05"
                 post.int4range = "[2,4)"
                 await postRepository.save(post)
-
-                const loadedPost = (await postRepository.findOneBy({
-                    id: 1,
+                await postRepository.findOne({
+                    where: {
+                        id: 1,
+                    },
+                    cache: true,
+                })
+                const loadedPost = (await postRepository.findOne({
+                    where: {
+                        id: 1,
+                    },
+                    cache: true,
                 }))!
                 loadedPost.id.should.be.equal(post.id)
                 loadedPost.numeric.should.be.equal(post.numeric)
