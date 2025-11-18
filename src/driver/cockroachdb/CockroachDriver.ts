@@ -196,7 +196,7 @@ export class CockroachDriver implements Driver {
 
     /**
      * Orm has special columns and we need to know what database column types should be for those types.
-     * Column types are driver dependant.
+     * Column types are driver dependent.
      */
     mappedDataTypes: MappedColumnTypes = {
         createDate: "timestamptz",
