@@ -1052,6 +1052,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        console.log(oldColumn, newColumn)
+
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
@@ -1064,6 +1066,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newColumn.generatedType === "VIRTUAL") ||
             (oldColumn.generatedType === "VIRTUAL" && !newColumn.generatedType)
         ) {
+            console.log("it passed through drop/add")
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1238,6 +1241,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
 
             if (oldColumn.type !== newColumn.type) {
+                console.log("it passed through alter")
+
                 await handleSafeAlterMysql({
                     table,
                     clonedTable,
@@ -1252,7 +1257,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     //   buildCreateColumnSql(column: TableColumn, skipIdentity?: boolean)
                     // If that's your case, pass the 2-arg form like below.
                     buildCreateColumnSql: (col) =>
-                        this.buildCreateColumnSql(col, true),
+                        this.buildCreateColumnSql(col, true, true),
 
                     executeQueries: (up, down) => this.executeQueries(up, down),
                     replaceCachedTable: (t, ct) =>

@@ -181,8 +181,6 @@ export function isSafeAlter(
     oldColumn: TableColumn,
     newColumn: TableColumn,
 ): boolean {
-    //console.log(oldColumn, newColumn)
-    // --- helpers -------------------------------------------------------------
     const norm = (t: unknown): string =>
         (t ?? "").toString().toLowerCase().replace(/\s+/g, " ").trim()
 
@@ -202,9 +200,11 @@ export function isSafeAlter(
             // Oracle
             nvarchar2: "nvarchar2",
             varchar2: "varchar2",
-            binary_double: "binary_double",
-            binary_float: "binary_float",
+            real: "real",
             "long raw": "long raw",
+            // (keep binary_* as-is; we treat them explicitly later)
+            // binary_float: "binary_float",
+            // binary_double: "binary_double",
 
             // MySQL-ish
             mediumtext: "text",
@@ -218,7 +218,8 @@ export function isSafeAlter(
             int2: "smallint",
             int4: "int",
             int8: "bigint",
-            // Float synonyms
+
+            // Float synonyms (PG)
             float4: "real",
             float8: "double",
         }
@@ -235,6 +236,7 @@ export function isSafeAlter(
                   .filter((n) => !Number.isNaN(n))
             : []
     }
+
     // Prefer TableColumn.length when params aren’t inline
     const lengthFromCol = (c: TableColumn) => {
         const n = parseInt((c.length ?? "").toString(), 10)
@@ -251,7 +253,8 @@ export function isSafeAlter(
     const oldType = base(oldRaw)
     const newType = base(newRaw)
 
-    if (oldRaw === newRaw) return true // no effective change
+    // No effective change in type string
+    if (oldRaw === newRaw) return true
 
     // --- families ------------------------------------------------------------
     const STR = new Set([
@@ -376,17 +379,29 @@ export function isSafeAlter(
                 const p = paramsFromType(newRaw)
                 return [p[0], p[1]] as const
             })()
+            // unparameterized -> parameterized: treat as widening
             if (op === undefined || np === undefined) return true
             if (np > op) return true
             if (np === op && (ns ?? 0) >= (os ?? 0)) return true
             return false
         }
 
-        // float/real/double widening: FLOAT/REAL -> DOUBLE
-        const fpr: Record<string, number> = { float: 1, real: 1, double: 2 }
-        const of = fpr[oldType] ?? 0
-        const nf = fpr[newType] ?? 0
-        if (of && nf) return nf >= of
+        // float/real/double family (including Oracle binary_*):
+        //   FLOAT ↔ REAL (equivalent)
+        //   REAL/FLOAT/BINARY_FLOAT -> DOUBLE/BINARY_DOUBLE (widening)
+        const floatRank: Record<string, number> = {
+            real: 1,
+            float: 1,
+            binary_float: 1,
+            double: 2,
+            binary_double: 2,
+        }
+        const of = floatRank[oldType] ?? 0
+        const nf = floatRank[newType] ?? 0
+        if (of && nf) {
+            // allow widening or same-rank (e.g. FLOAT -> REAL or REAL -> FLOAT)
+            return nf >= of
+        }
 
         return false
     }
@@ -394,17 +409,24 @@ export function isSafeAlter(
     // --- TEMPORAL safe cases -------------------------------------------------
     if (TMP.has(oldType) && TMP.has(newType)) {
         if (oldType === newType) return true
-        // widening: DATE -> TIMESTAMP/DATETIME*, DATETIME* -> TIMESTAMP/DATETIME*
+
+        // widening: DATE -> TIMESTAMP/DATETIME*
         if (
             oldType === "date" &&
             (newType === "timestamp" || newType.startsWith("datetime"))
-        )
+        ) {
             return true
+        }
+
+        // widening within datetime family:
+        // DATETIME* -> TIMESTAMP/DATETIME*
         if (
             oldType.startsWith("datetime") &&
             (newType === "timestamp" || newType.startsWith("datetime"))
-        )
+        ) {
             return true
+        }
+
         return false
     }
 

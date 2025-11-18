@@ -103,9 +103,9 @@ describe("schema builder > change column", () => {
                     expect(err).to.be.undefined
 
                     const sqlBlob = recorded.join("\n")
-                    /*console.log(
+                    console.log(
                         `\n----- Emitted SQL (${driver}) -----\n${sqlBlob}\n----- /SQL -----\n`,
-                    )*/
+                    )
 
                     if (driver === "postgres" || driver === "cockroachdb") {
                         expect(sqlBlob).to.match(
@@ -187,7 +187,7 @@ describe("schema builder > change column", () => {
                     mariadb: "float",
                     "aurora-mysql": "float",
                     mssql: "float", // MSSQL 'float' is double-precision; emulate via precision change
-                    oracle: "real",
+                    oracle: "float",
                     spanner: "float64", // Spanner only has FLOAT64 (double); we bail below
                 }
                 const doubleBy: Record<string, ColumnType> = {
@@ -197,7 +197,7 @@ describe("schema builder > change column", () => {
                     mariadb: "double",
                     "aurora-mysql": "double",
                     mssql: "float", // stay 'float', bump precision to emulate change
-                    oracle: "double precision",
+                    oracle: "binary_double",
                 }
 
                 const driver = connection.driver.options.type
@@ -260,10 +260,11 @@ describe("schema builder > change column", () => {
                     } finally {
                         removeRecorder()
                     }
+                    console.log(err)
                     expect(err).to.be.undefined
 
                     const sqlBlob = recorded.join("\n")
-                    //console.log(sqlBlob)
+                    console.log(sqlBlob)
 
                     if (driver === "postgres" || driver === "cockroachdb") {
                         expect(sqlBlob).to.match(
@@ -325,8 +326,6 @@ describe("schema builder > change column", () => {
             connections.map(async (connection) => {
                 const driver = connection.driver.options.type
 
-                // This transition mainly applies cleanly to MySQL-family & MSSQL & Oracle.
-                // Postgres already uses TIMESTAMP; Cockroach the same; Spanner has TIMESTAMP only.
                 if (
                     driver === "postgres" ||
                     driver === "cockroachdb" ||
@@ -334,30 +333,28 @@ describe("schema builder > change column", () => {
                 )
                     return
 
-                // We'll borrow the 'name' column slot by temporarily retargeting its type
-                // to a datetime-like, then to timestamp-like. (Only asserting ALTER vs ADD/DROP.)
                 const postMeta = connection.getMetadata(Post)
                 const nameCol = postMeta.findColumnWithPropertyName("name")!
                 const originalType: any = nameCol.type
                 const originalLength = nameCol.length
+                const originalDefault = nameCol.default // ← save this
 
                 const datetimeBy: Record<string, ColumnType> = {
                     mysql: "datetime",
                     mariadb: "datetime",
                     "aurora-mysql": "datetime",
                     mssql: "datetime2",
-                    oracle: "timestamp", // Oracle lacks DATETIME; we use TIMESTAMP then TIMESTAMP with precision
+                    oracle: "date",
                 }
                 const timestampBy: Record<string, ColumnType> = {
                     mysql: "timestamp",
                     mariadb: "timestamp",
                     "aurora-mysql": "timestamp",
-                    mssql: "datetimeoffset", // a distinct timestamp-like type with tz
-                    oracle: "timestamp", // Oracle: keep TIMESTAMP but change precision to emulate type change
+                    mssql: "datetimeoffset",
+                    oracle: "timestamp",
                 }
                 if (!datetimeBy[driver] || !timestampBy[driver]) return
 
-                // SQL recorder
                 const recorded: string[] = []
                 const origCreateQR = (connection as any).createQueryRunner.bind(
                     connection,
@@ -380,17 +377,38 @@ describe("schema builder > change column", () => {
                 }
 
                 try {
-                    // Step 1: make it a datetime-like type
+                    // STEP 1: varchar2 -> "datetime-like" (DATE for Oracle)
                     nameCol.type = datetimeBy[driver]
-                    nameCol.length = "undefined"
-                    // Oracle: give a starting precision
-                    if (driver === "oracle") (nameCol as any).precision = 3
+
+                    if (driver === "oracle") {
+                        // DATE must not have a bogus length or a string default
+                        nameCol.length = undefined as any
+                        nameCol.default = undefined as any
+                    } else if (
+                        driver === "mysql" ||
+                        driver === "mariadb" ||
+                        driver === "aurora-mysql"
+                    ) {
+                        // arbitrary string default like 'My post' is invalid for temporal columns,
+                        // so drop it for this test
+                        nameCol.default = undefined as any
+                        nameCol.length = ""
+                    } else {
+                        nameCol.length = undefined as any
+                    }
+
                     nameCol.build(connection)
                     await connection.synchronize()
 
-                    // Step 2: switch to timestamp-like type and capture SQL
+                    // STEP 2: datetime-like -> timestamp-like, record SQL
                     nameCol.type = timestampBy[driver]
-                    if (driver === "oracle") (nameCol as any).precision = 6
+
+                    if (driver === "oracle") {
+                        ;(nameCol as any).precision = 6
+                        nameCol.length = undefined as any
+                        // keep default undefined for this test
+                    }
+
                     nameCol.build(connection)
 
                     installRecorder()
@@ -405,7 +423,7 @@ describe("schema builder > change column", () => {
                     expect(err).to.be.undefined
 
                     const sqlBlob = recorded.join("\n")
-                    //console.log(sqlBlob)
+                    console.log(sqlBlob)
                     if (
                         driver === "mysql" ||
                         driver === "mariadb" ||
@@ -439,9 +457,10 @@ describe("schema builder > change column", () => {
                         expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
                     }
                 } finally {
-                    // Revert
+                    // Revert everything
                     nameCol.type = originalType
                     nameCol.length = originalLength
+                    nameCol.default = originalDefault
                     ;(nameCol as any).precision = undefined
                     nameCol.build(connection)
                     await connection.synchronize()

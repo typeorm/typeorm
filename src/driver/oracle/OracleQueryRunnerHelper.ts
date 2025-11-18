@@ -154,13 +154,26 @@ export async function handleSafeAlterOracle({
     const newDefSansName = stripLeadingName(newDef)
     const oldDefSansName = stripLeadingName(oldDef)
 
+    // When nullability hasn't changed, avoid specifying NULL/NOT NULL in MODIFY.
+    // This prevents ORA-01442 ("column to be modified to NOT NULL is already NOT NULL")
+    // for safe widening changes.
+    let finalNewDef = newDefSansName
+    let finalOldDef = oldDefSansName
+
+    if (oldColumn.isNullable === newColumn.isNullable) {
+        const stripNullability = (def: string) =>
+            def.replace(/\s+NOT NULL\b/gi, "").replace(/\s+NULL\b/gi, "")
+        finalNewDef = stripNullability(finalNewDef)
+        finalOldDef = stripNullability(finalOldDef)
+    }
+
     // Correct: name only once
     const upSql = `ALTER TABLE ${tableSql} MODIFY (${q(
         colName,
-    )} ${newDefSansName})`
+    )} ${finalNewDef})`
     const downSql = `ALTER TABLE ${tableSql} MODIFY (${q(
         colName,
-    )} ${oldDefSansName})`
+    )} ${finalOldDef})`
 
     console.log("[safe-alter up]", upSql)
     console.log("[safe-alter down]", downSql)
