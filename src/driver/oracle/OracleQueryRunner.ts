@@ -1073,7 +1073,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             : table.columns.find(
                   (column) => column.name === oldTableColumnOrName,
               )
-        console.log(oldColumn, newColumn)
 
         if (!oldColumn)
             throw new TypeORMError(
@@ -1090,7 +1089,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
-            console.log("it passes through drop/add")
             // Oracle does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed
             await this.dropColumn(table, oldColumn)
@@ -1311,7 +1309,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
             if (oldColumn.type !== newColumn.type) {
-                console.log("it passes through alter path")
                 await handleSafeAlterOracle({
                     table,
                     clonedTable,

@@ -64,12 +64,6 @@ export async function handleMysqlLengthOnlyFastPath({
         return false
     }
 
-    const oldLen = oldColumn.length
-        ? parseInt(String(oldColumn.length), 10)
-        : undefined
-    const newLen = newColumn.length
-        ? parseInt(String(newColumn.length), 10)
-        : undefined
     const col: string = String(oldColumn.name)
 
     const type = String(oldColumn.type || "").toLowerCase()
@@ -82,7 +76,21 @@ export async function handleMysqlLengthOnlyFastPath({
         newColumn.asExpression || oldColumn.asExpression,
     )
 
-    if (!isGenerated && oldLen != null && newLen != null && newLen < oldLen) {
+    // Generated/computed columns are handled by the generic change flow.
+    if (isGenerated) {
+        return false
+    }
+
+    const oldLenRaw =
+        oldColumn.length != null ? parseInt(String(oldColumn.length), 10) : NaN
+    const newLenRaw =
+        newColumn.length != null ? parseInt(String(newColumn.length), 10) : NaN
+
+    const haveFiniteLengths =
+        Number.isFinite(oldLenRaw) && Number.isFinite(newLenRaw)
+
+    if (haveFiniteLengths && newLenRaw < oldLenRaw) {
+        const newLen = newLenRaw
         // shrink: pre-truncate rows that exceed new length
         upQueries.push(
             new Query(
@@ -117,13 +125,6 @@ export async function handleMysqlLengthOnlyFastPath({
             )}`,
         ),
     )
-
-    await executeQueries(upQueries, downQueries)
-
-    // sync cache
-    const clonedCol = clonedTable?.findColumnByName?.(col)
-    if (clonedCol) clonedCol.length = newColumn.length || ""
-    replaceCachedTable(table, clonedTable)
 
     return true
 }
@@ -197,29 +198,6 @@ export async function handleSafeAlter({
 
     upQueries.push(new QueryCtor(upSql))
     downQueries.push(new QueryCtor(downSql))
-
-    await executeQueries(upQueries, downQueries)
-
-    // sync cache (best-effort)
-    const cloned = clonedTable?.findColumnByName?.(colName)
-    if (cloned) {
-        cloned.type = newColumn.type
-        cloned.length = newColumn.length ?? ""
-        ;(cloned as any).precision = (newColumn as any).precision
-        ;(cloned as any).scale = (newColumn as any).scale
-        cloned.isNullable = newColumn.isNullable
-        cloned.default = newColumn.default
-        ;(cloned as any).charset =
-            (newColumn as any).charset ?? (cloned as any).charset
-        ;(cloned as any).collation =
-            (newColumn as any).collation ?? (cloned as any).collation
-        cloned.comment = newColumn.comment
-        cloned.enum = newColumn.enum
-        ;(cloned as any).unsigned = (newColumn as any).unsigned
-        ;(cloned as any).zerofill = (newColumn as any).zerofill
-        ;(cloned as any).width = (newColumn as any).width
-    }
-    replaceCachedTable(table, clonedTable)
 
     return true
 }

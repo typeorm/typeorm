@@ -140,30 +140,6 @@ export async function handleSafeAlterMysql({
     upQueries.push(new QueryCtor(upSql))
     downQueries.push(new QueryCtor(downSql))
 
-    await executeQueries(upQueries, downQueries)
-
-    // Update cached table metadata (best-effort)
-    const cloned = clonedTable?.findColumnByName?.(colName)
-    if (cloned) {
-        cloned.type = newColumn.type
-        cloned.length = newColumn.length ?? ""
-        ;(cloned as any).precision = (newColumn as any).precision
-        ;(cloned as any).scale = (newColumn as any).scale
-        cloned.isNullable = newColumn.isNullable
-        cloned.default = newColumn.default
-        ;(cloned as any).charset =
-            (newColumn as any).charset ?? (cloned as any).charset
-        ;(cloned as any).collation =
-            (newColumn as any).collation ?? (cloned as any).collation
-        cloned.comment = newColumn.comment
-        cloned.enum = newColumn.enum
-        ;(cloned as any).unsigned = (newColumn as any).unsigned
-        ;(cloned as any).zerofill = (newColumn as any).zerofill
-        ;(cloned as any).width = (newColumn as any).width
-        ;(cloned as any).onUpdate = (newColumn as any).onUpdate
-    }
-    replaceCachedTable(table, clonedTable)
-
     return true
 }
 

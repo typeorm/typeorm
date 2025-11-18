@@ -961,7 +961,7 @@ export class AuroraMysqlQueryRunner
                     Query: Query,
                     escapePath: (t) => this.escapePath(t as any),
                     buildCreateColumnSql: (col) =>
-                        this.buildCreateColumnSql(col, true),
+                        this.buildCreateColumnSql(col, true, true),
                     executeQueries: (up, down) => this.executeQueries(up, down),
                     replaceCachedTable: (t, ct) =>
                         this.replaceCachedTable(t, ct),

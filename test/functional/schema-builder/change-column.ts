@@ -103,9 +103,6 @@ describe("schema builder > change column", () => {
                     expect(err).to.be.undefined
 
                     const sqlBlob = recorded.join("\n")
-                    console.log(
-                        `\n----- Emitted SQL (${driver}) -----\n${sqlBlob}\n----- /SQL -----\n`,
-                    )
 
                     if (driver === "postgres" || driver === "cockroachdb") {
                         expect(sqlBlob).to.match(
@@ -260,11 +257,9 @@ describe("schema builder > change column", () => {
                     } finally {
                         removeRecorder()
                     }
-                    console.log(err)
                     expect(err).to.be.undefined
 
                     const sqlBlob = recorded.join("\n")
-                    console.log(sqlBlob)
 
                     if (driver === "postgres" || driver === "cockroachdb") {
                         expect(sqlBlob).to.match(
@@ -423,7 +418,6 @@ describe("schema builder > change column", () => {
                     expect(err).to.be.undefined
 
                     const sqlBlob = recorded.join("\n")
-                    console.log(sqlBlob)
                     if (
                         driver === "mysql" ||
                         driver === "mariadb" ||

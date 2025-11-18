@@ -371,18 +371,6 @@ export async function handleSafeAlterSap({
     upQueries.push(new QueryCtor(upSql))
     downQueries.push(new QueryCtor(downSql))
 
-    await executeQueries(upQueries, downQueries)
-
-    // best-effort cache sync
-    const cloned = clonedTable?.findColumnByName?.(colName)
-    if (cloned) {
-        cloned.type = newColumn.type
-        cloned.length = newColumn.length ?? ""
-        ;(cloned as any).precision = (newColumn as any).precision
-        ;(cloned as any).scale = (newColumn as any).scale
-    }
-    replaceCachedTable(table, clonedTable)
-
     return true
 }
 

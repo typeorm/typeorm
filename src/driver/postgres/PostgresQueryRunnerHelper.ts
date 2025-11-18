@@ -48,7 +48,7 @@ export function handlePostgresLengthOnlyFastPath({
 
     // Length change never implies rename; guard identifier
     const colName: string = (newColumn?.name ?? oldColumn?.name) as string
-    const qCol = `"${colName}"`
+    const qCol = `"${colName.replace(/"/g, '""')}"`
 
     const isStringType =
         /^(varchar|character varying|text|char|character)$/i.test(

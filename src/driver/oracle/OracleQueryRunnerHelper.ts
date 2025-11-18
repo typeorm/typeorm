@@ -175,9 +175,6 @@ export async function handleSafeAlterOracle({
         colName,
     )} ${finalOldDef})`
 
-    console.log("[safe-alter up]", upSql)
-    console.log("[safe-alter down]", downSql)
-
     upQueries.push(new QueryCtor(upSql))
     downQueries.push(new QueryCtor(downSql))
     return true
