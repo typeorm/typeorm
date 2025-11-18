@@ -90,7 +90,7 @@ export type MysqlSafeAlterArgs = {
     escapePath: (target: string | Table) => string
 
     // must return the FULL MySQL column definition (type + nullability + default + on update, etc.)
-    // This should typically be: (col) => this.buildCreateColumnSql(col, /*skipIdentity?*/ true)
+    // This should typically be: (col) => this.buildCreateColumnSql(col, true, /*skipName*/ true)
     buildCreateColumnSql: (column: TableColumn) => string
 
     executeQueries: (up: Query[], down: Query[]) => Promise<void>

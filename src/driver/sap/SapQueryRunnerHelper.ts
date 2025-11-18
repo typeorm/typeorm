@@ -74,17 +74,34 @@ export function handleHanaLengthOnlyFastPath({
         return false
     }
 
+    // Skip renamed columns
+    if (oldColumn.name !== newColumn.name) {
+        return false
+    }
+
+    const escapeColumnName = (name: string) =>
+        `"${String(name).replace(/"/g, '""')}"`
+
     const oldLen = oldColumn.length
         ? parseInt(String(oldColumn.length), 10)
         : undefined
     const newLen = newColumn.length
         ? parseInt(String(newColumn.length), 10)
         : undefined
-    const col = colName
+
+    // Validate that lengths are valid numbers and at least one is defined
+    if (!oldLen && !newLen) {
+        return false
+    }
+    if ((oldLen && isNaN(oldLen)) || (newLen && isNaN(newLen))) {
+        return false
+    }
+
+    const col = escapeColumnName(colName)
 
     // ---------- SHORTEN (recreate without RENAME) ----------
     if (oldLen && newLen && newLen < oldLen) {
-        const tmp = `${col}__tmp_len`
+        const tmp = escapeColumnName(`${colName}__tmp_len`)
 
         // 1) ADD temp column with the *new* (shorter) length; keep NULLable for the copy
         upQueries.push(
@@ -194,6 +211,7 @@ export function handleHanaLengthOnlyFastPath({
             updatedCol.comment = newColumn.comment
             updatedCol.isUnique = newColumn.isUnique
         }
+        return true
     }
 
     // ---------- WIDEN (safe in-place ALTER) ----------
@@ -301,12 +319,11 @@ export function handleHanaLengthOnlyFastPath({
         downQueries.push(
             new Query(`ALTER TABLE ${escapePath(table)} DROP ("${tmpDown}")`),
         )
-
-        const updatedCol2 = clonedTable?.findColumnByName?.(col)
-        if (updatedCol2) updatedCol2.length = newColumn.length || ""
+        return true
     }
 
-    return true
+    // If lengths are equal or no valid comparison, fall back to generic path
+    return false
 }
 
 export type SapSafeAlterArgs = {
@@ -320,8 +337,6 @@ export type SapSafeAlterArgs = {
     downQueries: Query[]
     Query: typeof Query
     escapePath: (target: string | Table) => string
-    executeQueries: (up: Query[], down: Query[]) => Promise<void>
-    replaceCachedTable: (table: Table, cloned: Table) => void
 
     // your guard
     isSafeAlter: (oldCol: TableColumn, newCol: TableColumn) => boolean
@@ -339,8 +354,6 @@ export async function handleSafeAlterSap({
     downQueries,
     Query: QueryCtor,
     escapePath,
-    executeQueries,
-    replaceCachedTable,
     isSafeAlter,
     buildColumnType,
 }: SapSafeAlterArgs): Promise<boolean> {

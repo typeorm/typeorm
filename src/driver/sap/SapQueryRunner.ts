@@ -1184,8 +1184,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 downQueries,
                 Query, // from "../Query"
                 escapePath: (t) => this.escapePath(t as any),
-                executeQueries: (up, down) => this.executeQueries(up, down),
-                replaceCachedTable: (t, ct) => this.replaceCachedTable(t, ct),
 
                 // your widening/safety rule
                 isSafeAlter,
