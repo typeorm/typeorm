@@ -44,9 +44,14 @@ export class RandomGenerator {
         ) {
             globalThis.crypto.getRandomValues(randomBytes)
         } else {
-            throw new Error(
-                "crypto.getRandomValues() is not available. UUID generation requires a cryptographically secure random number generator.",
-            )
+            // Fallback for React Native/Hermes and environments without crypto support
+            // Hermes (React Native's JavaScript engine) does not provide crypto APIs
+            // Math.random() is permitted by RFC 4122 for UUID v4 ("pseudo-randomly")
+            // This approach is also used by expo-crypto and other RN libraries
+            // Note: For TypeORM's use case (DB IDs, cache IDs), uniqueness is sufficient
+            for (let i = 0; i < 16; i++) {
+                randomBytes[i] = Math.floor(Math.random() * 256)
+            }
         }
 
         // Set version (4) and variant bits according to RFC 4122
