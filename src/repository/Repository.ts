@@ -14,7 +14,7 @@ import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { ObjectId } from "../driver/mongodb/typings"
 import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import { UpsertOptions } from "./UpsertOptions"
-import { UpdateOptions } from "./UpdateOptions"
+import { RepositoryUpdateOptions } from "./RepositoryUpdateOptions"
 import { EntityTarget } from "../common/EntityTarget"
 import { PickKeysByType } from "../common/PickKeysByType"
 import { buildSqlTag } from "../util/SqlTagUtils"
@@ -360,7 +360,7 @@ export class Repository<Entity extends ObjectLiteral> {
             | FindOptionsWhere<Entity>
             | FindOptionsWhere<Entity>[],
         partialEntity: QueryDeepPartialEntity<Entity>,
-        options?: UpdateOptions,
+        options?: RepositoryUpdateOptions,
     ): Promise<UpdateResult> {
         return this.manager.update(
             this.metadata.target,
@@ -379,7 +379,7 @@ export class Repository<Entity extends ObjectLiteral> {
      */
     updateAll(
         partialEntity: QueryDeepPartialEntity<Entity>,
-        options?: UpdateOptions,
+        options?: RepositoryUpdateOptions,
     ): Promise<UpdateResult> {
         return this.manager.updateAll(
             this.metadata.target,

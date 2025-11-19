@@ -35,7 +35,7 @@ import { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { getMetadataArgsStorage } from "../globals"
 import { UpsertOptions } from "../repository/UpsertOptions"
-import { UpdateOptions } from "../repository/UpdateOptions"
+import { RepositoryUpdateOptions } from "../repository/RepositoryUpdateOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
@@ -787,7 +787,7 @@ export class EntityManager {
             | ObjectId[]
             | any,
         partialEntity: QueryDeepPartialEntity<Entity>,
-        options?: UpdateOptions,
+        options?: RepositoryUpdateOptions,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
@@ -833,7 +833,7 @@ export class EntityManager {
     updateAll<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
         partialEntity: QueryDeepPartialEntity<Entity>,
-        options?: UpdateOptions,
+        options?: RepositoryUpdateOptions,
     ): Promise<UpdateResult> {
         const qb = this.createQueryBuilder().update(target).set(partialEntity)
 
