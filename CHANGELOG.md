@@ -44,6 +44,7 @@
 * **migration:** improve JSDoc types in generated migration templates ([#11490](https://github.com/typeorm/typeorm/issues/11490)) ([fa3cd43](https://github.com/typeorm/typeorm/commit/fa3cd436a28e8a9dacb9be3da7f2896478d0bccd))
 * **mysql:** add support for MySQL 9 / MariaDB 12 ([#11575](https://github.com/typeorm/typeorm/issues/11575)) ([8b76e1a](https://github.com/typeorm/typeorm/commit/8b76e1af74245c5a1bf1abf5a5d16f57ac732732))
 * **postgres:** support vector/halfvec data types ([#11437](https://github.com/typeorm/typeorm/issues/11437)) ([a49f612](https://github.com/typeorm/typeorm/commit/a49f6122891db715885c2faf4974d3def2f541ea))
+* allow Repository/EntityManager update & upsert APIs to choose RETURNING clauses on supported drivers
 
 
 ### Performance Improvements
