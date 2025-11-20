@@ -2,6 +2,7 @@
   "all": true,
   "cache": false,
   "exclude": ["node_modules", "**/*.d.ts"],
+  "exclude-after-remap": true,
   "extension": [".ts"],
   "include": ["build/compiled/src/**", "src/**"],
   "reporter": ["lcov"]
