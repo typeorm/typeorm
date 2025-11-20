@@ -20,7 +20,7 @@ describe("entity-schema > uniques", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should create an unique constraint with 2 columns", () =>
+    it("should create a unique constraint with 2 columns", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()

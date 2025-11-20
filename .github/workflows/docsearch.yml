@@ -6,15 +6,14 @@ on:
       - master
 
 jobs:
-  index_docs:
+  index-docs:
+    if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Index docs to Typesense
-        run: |
+      - run: |
           docker run \
             -e TYPESENSE_API_KEY=${{ secrets.TYPESENSE_API_KEY }} \
             -e TYPESENSE_HOST="${{ secrets.TYPESENSE_HOST }}" \

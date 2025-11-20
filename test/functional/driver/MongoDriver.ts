@@ -56,4 +56,42 @@ describe("MongoDriver", () => {
             expect(connectionUrl).to.eql(url)
         })
     })
+
+    describe("proxy options", () => {
+        it("should pass proxy options to MongoClient.connect", async () => {
+            const options = {
+                type: "mongodb",
+                host: "someHost",
+                port: 27017,
+                database: "myDatabase",
+                proxyHost: "127.0.0.1",
+                proxyPort: 1080,
+                proxyUsername: "proxyUser",
+                proxyPassword: "proxyPass",
+            }
+
+            const driver = new MongoDriver({
+                options,
+            } as DataSource)
+
+            // replace MongoClient.connect with a fake that resolves so connect() completes
+            const connect = sinon.fake.resolves({})
+            driver.mongodb = {
+                ...driver.mongodb,
+                MongoClient: {
+                    connect,
+                },
+            }
+
+            await driver.connect()
+
+            // the second argument passed to MongoClient.connect should contain our proxy settings
+            const passedOptions = connect.args[0][1]
+
+            expect(passedOptions).to.have.property("proxyHost", "127.0.0.1")
+            expect(passedOptions).to.have.property("proxyPort", 1080)
+            expect(passedOptions).to.have.property("proxyUsername", "proxyUser")
+            expect(passedOptions).to.have.property("proxyPassword", "proxyPass")
+        })
+    })
 })

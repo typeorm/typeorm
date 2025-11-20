@@ -533,15 +533,15 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
-     * For MongoDB database we don't create connection, because its single connection already created by a driver.
+     * For MongoDB database we don't create a connection because its single connection already created by a driver.
      */
     async connect(): Promise<any> {}
 
     /**
-     * For MongoDB database we don't release connection, because its single connection.
+     * For MongoDB database we don't release the connection because it is a single connection.
      */
     async release(): Promise<void> {
-        // releasing connection are not supported by mongodb driver, so simply don't do anything here
+        // the mongodb driver does not support releasing connection, so simply don't do anything here
     }
 
     async [Symbol.asyncDispose](): Promise<void> {
@@ -987,7 +987,7 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraint.
+     * Drops a unique constraint.
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
@@ -999,7 +999,7 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraints.
+     * Drops unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,

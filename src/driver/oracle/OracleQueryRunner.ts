@@ -1901,7 +1901,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraint.
+     * Drops a unique constraint.
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
@@ -1925,7 +1925,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates an unique constraints.
+     * Creates a unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
