@@ -362,19 +362,23 @@ export class PostgresDriver implements Driver {
             this.master = await this.createPool(this.options, this.options)
         }
 
-        const queryRunner = this.createQueryRunner("master")
+        if (!this.version || !this.database || !this.searchSchema) {
+            const queryRunner = this.createQueryRunner("master")
 
-        this.version = await queryRunner.getVersion()
+            if (!this.version) {
+                this.version = await queryRunner.getVersion()
+            }
 
-        if (!this.database) {
-            this.database = await queryRunner.getCurrentDatabase()
+            if (!this.database) {
+                this.database = await queryRunner.getCurrentDatabase()
+            }
+
+            if (!this.searchSchema) {
+                this.searchSchema = await queryRunner.getCurrentSchema()
+            }
+
+            await queryRunner.release()
         }
-
-        if (!this.searchSchema) {
-            this.searchSchema = await queryRunner.getCurrentSchema()
-        }
-
-        await queryRunner.release()
 
         if (!this.schema) {
             this.schema = this.searchSchema
