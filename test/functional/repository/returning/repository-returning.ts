@@ -7,7 +7,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { User } from "../../query-builder/returning/entity/User"
+import { User } from "./entity/User"
 
 describe("repository > returning", () => {
     let connections: DataSource[]
@@ -15,11 +15,8 @@ describe("repository > returning", () => {
     before(
         async () =>
             (connections = await createTestingConnections({
-                entities: [
-                    __dirname +
-                        "/../../query-builder/returning/entity/*{.js,.ts}",
-                ],
-                enabledDrivers: ["postgres", "cockroachdb"],
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                enabledDrivers: ["postgres", "mysql", "mssql", "spanner"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
