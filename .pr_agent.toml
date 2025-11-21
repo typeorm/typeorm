@@ -1,0 +1,12 @@
+[github_app]
+pr_commands = [
+    "/review",
+    "/improve",
+]
+
+push_commands = [
+    "/improve",
+]
+
+[auto_best_practices]
+enable_auto_best_practices = true  
