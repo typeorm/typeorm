@@ -77,7 +77,7 @@ export const browserCopyTemplates = () =>
 export const browserCompile = () =>
     runCommand(npxCommand, ["tsc", "-p", "tsconfig.browser.json"]);
 
-export const browserClearPackageDirectory = async () =>
+export const browserClearWorkDirectory = async () =>
     rimraf(["./build/browser/**"], { glob: true });
 
 // -------------------------------------------------------------------------
@@ -238,14 +238,15 @@ const packageTask = gulp.series(
     packageMoveCompiledFiles,
     packageCreateEsmIndex,
     gulp.parallel(
-        browserClearPackageDirectory,
+        browserClearWorkDirectory,
         packageClearPackageDirectory,
         packageReplaceReferences,
         packagePreparePackageFile,
         packageCopyReadme,
         packageCopyShims,
         movePackageJsonReferenceLevelUp
-    )
+    ),
+    packageClearPackageDirectory
 );
 
 /**
