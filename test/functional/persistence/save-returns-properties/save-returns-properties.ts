@@ -63,6 +63,21 @@ describe("persistence > save should not set undefined on unmodified properties",
                 // Description should still be "Another company"
                 expect(updated2.description).to.equal("Another company")
                 expect(updated2.name).to.equal("Acme2 modified")
+                
+                // Test ES2022 specific scenario: entity created with all fields undefined
+                // then some fields set, then saved
+                const company3 = new Company()
+                // With ES2022, all fields are now undefined: { id: undefined, name: undefined, description: undefined }
+                company3.name = "Acme3"
+                // Now only name is set, description is still undefined
+                const saved3 = await connection.manager.save(company3)
+                
+                // After save, name should be set, id should be generated,
+                // but description should be null (from database) not undefined
+                expect(saved3.name).to.equal("Acme3")
+                expect(saved3.id).to.not.be.undefined
+                // description is nullable, so it should be null from database
+                expect(saved3.description).to.be.null
             }),
         ))
 })

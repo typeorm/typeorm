@@ -49,8 +49,27 @@ export class PlainObjectToNewEntityTransformer {
         // copy regular column properties from the given object
         metadata.nonVirtualColumns.forEach((column) => {
             const objectColumnValue = column.getEntityValue(object)
-            if (objectColumnValue !== undefined)
+            // Skip copying if the value is undefined AND the property doesn't exist in the source object.
+            // This is important for ES2022+ where class fields may be initialized as undefined,
+            // but we only want to copy properties that actually exist in the source object.
+            if (objectColumnValue !== undefined) {
                 column.setEntityValue(entity, objectColumnValue)
+            } else if (column.embeddedMetadata) {
+                // For embedded columns, check if any property related to this embed exists in the object
+                // Embedded columns are stored with prefixed names like "embed_propertyName"
+                const embeddedPrefix = column.embeddedMetadata.propertyPath.replace(/\./g, "_")
+                const hasEmbeddedProperty = Object.keys(object).some(
+                    (key) => key.startsWith(embeddedPrefix + "_") || key === column.propertyName
+                )
+                if (hasEmbeddedProperty) {
+                    column.setEntityValue(entity, objectColumnValue)
+                }
+            } else {
+                // For regular (non-embedded) columns, only copy if property exists in source object
+                if (Object.prototype.hasOwnProperty.call(object, column.propertyName)) {
+                    column.setEntityValue(entity, objectColumnValue)
+                }
+            }
         })
 
         // // copy relation properties from the given object
