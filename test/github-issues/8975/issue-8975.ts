@@ -38,7 +38,6 @@ describe.only("cli init command", () => {
     })
 
     afterEach(async () => {
-        return
         await rm(`./${testProjectPath}`, { recursive: true, force: true })
     })
 
