@@ -2,7 +2,7 @@ import { expect } from "chai"
 import { exec } from "child_process"
 import { readFile, rm, unlink, writeFile } from "fs/promises"
 
-describe.only("cli init command", () => {
+describe("cli init command", () => {
     const cliPath = `${__dirname}/../../../src/cli.js`
     const databaseOptions = [
         "mysql",
