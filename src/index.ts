@@ -117,7 +117,6 @@ export * from "./repository/RemoveOptions"
 export * from "./repository/SaveOptions"
 export * from "./repository/UpdateOptions"
 export * from "./repository/UpsertOptions"
-export * from "./query-builder/ReturningOption"
 export * from "./schema-builder/table/TableCheck"
 export * from "./schema-builder/table/TableColumn"
 export * from "./schema-builder/table/TableExclusion"
@@ -167,6 +166,7 @@ export {
     QueryPartialEntity,
     QueryDeepPartialEntity,
 } from "./query-builder/QueryPartialEntity"
+export { ReturningOption } from "./query-builder/ReturningOption"
 export { QueryResult } from "./query-runner/QueryResult"
 export { QueryRunner } from "./query-runner/QueryRunner"
 export { MongoEntityManager } from "./entity-manager/MongoEntityManager"
