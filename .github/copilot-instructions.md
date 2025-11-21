@@ -68,11 +68,11 @@ TypeORM is a TypeScript-based Object-Relational Mapping (ORM) library that suppo
 
 Tests are organized in `test/` directory:
 - **`test/functional/`** - Feature and integration tests organized by functionality (preferred)
-- **`test/github-issues/`** - Tests for specific GitHub issues (use only when a functional test is not appropriate)
+- **`test/github-issues/`** - Tests for specific GitHub issues
 - **`test/unit/`** - Unit tests for individual components
 - **`test/utils/`** - Test utilities and helpers
 
-**Note**: Prefer writing functional tests over per-issue tests. Only create issue-specific tests when the test doesn't fit well into the functional test structure.
+**Note**: Prefer writing functional tests over per-issue tests.
 
 ### Test Writing Guidelines
 
