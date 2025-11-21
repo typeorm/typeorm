@@ -34,9 +34,7 @@ TypeORM is a TypeScript-based Object-Relational Mapping (ORM) library that suppo
 ### TypeScript Configuration
 
 - Target: ES2021+ with CommonJS modules
-- Strict mode enabled with some exceptions
 - Decorators: `experimentalDecorators` and `emitDecoratorMetadata` enabled
-- Required imports: `reflect-metadata` must be imported before TypeORM
 
 ### Code Style
 
@@ -69,10 +67,12 @@ TypeORM is a TypeScript-based Object-Relational Mapping (ORM) library that suppo
 ### Test Structure
 
 Tests are organized in `test/` directory:
-- **`test/functional/`** - Feature and integration tests organized by functionality
-- **`test/github-issues/`** - Tests for specific GitHub issues
+- **`test/functional/`** - Feature and integration tests organized by functionality (preferred)
+- **`test/github-issues/`** - Tests for specific GitHub issues (use only when a functional test is not appropriate)
 - **`test/unit/`** - Unit tests for individual components
 - **`test/utils/`** - Test utilities and helpers
+
+**Note**: Prefer writing functional tests over per-issue tests. Only create issue-specific tests when the test doesn't fit well into the functional test structure.
 
 ### Test Writing Guidelines
 
