@@ -54,19 +54,13 @@ export class PlainObjectToNewEntityTransformer {
             // but we only want to copy properties that actually exist in the source object.
             if (objectColumnValue !== undefined) {
                 column.setEntityValue(entity, objectColumnValue)
-            } else if (column.embeddedMetadata) {
-                // For embedded columns, check if any property related to this embed exists in the object
-                // Embedded columns are stored with prefixed names like "embed_propertyName"
-                const embeddedPrefix = column.embeddedMetadata.propertyPath.replace(/\./g, "_")
-                const hasEmbeddedProperty = Object.keys(object).some(
-                    (key) => key.startsWith(embeddedPrefix + "_") || key === column.propertyName
-                )
-                if (hasEmbeddedProperty) {
-                    column.setEntityValue(entity, objectColumnValue)
-                }
             } else {
-                // For regular (non-embedded) columns, only copy if property exists in source object
-                if (Object.prototype.hasOwnProperty.call(object, column.propertyName)) {
+                // Check if the property exists in the source object
+                // The object may contain properties with database names or property names depending on the source
+                const hasProperty = Object.prototype.hasOwnProperty.call(object, column.propertyName) ||
+                    Object.prototype.hasOwnProperty.call(object, column.databaseName)
+                
+                if (hasProperty) {
                     column.setEntityValue(entity, objectColumnValue)
                 }
             }
