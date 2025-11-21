@@ -7,7 +7,7 @@ import { TypeORMError } from "./TypeORMError"
 export class ReturningStatementNotSupportedError extends TypeORMError {
     constructor() {
         super(
-            `OUTPUT or RETURNING clause only supported by PostgreSQL family databases (including CockroachDB and Aurora Postgres), MariaDB (with supported versions), Microsoft SqlServer, Oracle or Google Spanner.`,
+            `OUTPUT or RETURNING clause only supported by PostgreSQL, MariaDB, Microsoft SqlServer or Google Spanner.`,
         )
     }
 }
