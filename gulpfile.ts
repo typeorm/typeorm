@@ -1,286 +1,279 @@
+import path from "path";
 import fs from "fs/promises";
+import { spawn } from "child_process";
+import { pathToFileURL } from "url";
 import gulp from "gulp";
 import rename from "gulp-rename";
-import replace from "gulp-replace";
-import shell from "gulp-shell";
-import sourcemaps from "gulp-sourcemaps";
-import ts from "gulp-typescript";
-import { Gulpclass, MergedTask, SequenceTask, Task } from "gulpclass";
+import { glob } from "glob";
 import { rimraf } from "rimraf";
 
-@Gulpclass()
-export class Gulpfile {
+const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
+const buildDir = "./build";
+const packageDir = `${buildDir}/package`;
+const browserSrcDir = `${buildDir}/browser/src`;
 
-    // -------------------------------------------------------------------------
-    // General tasks
-    // -------------------------------------------------------------------------
+type SpawnOptions = Parameters<typeof spawn>[2];
 
-    /**
-     * Cleans build folder.
-     */
-    @Task()
-    async clean() {
-        return rimraf(["./build/**"], { glob: true });
-    }
-
-    /**
-     * Runs typescript files compilation.
-     */
-    @Task()
-    compile() {
-        return gulp.src("package.json", { read: false })
-            .pipe(shell(["npm run compile"]));
-    }
-
-    // -------------------------------------------------------------------------
-    // Build and packaging for browser
-    // -------------------------------------------------------------------------
-
-    /**
-     * Copies all source files into destination folder in a correct structure.
-     */
-    @Task()
-    browserCopySources() {
-        return gulp.src([
-            "./src/**/*.ts",
-            "!./src/commands/*.ts",
-            "!./src/cli.ts",
-            "!./src/typeorm.ts",
-            "!./src/typeorm-model-shim.ts"
-        ])
-        .pipe(gulp.dest("./build/browser/src"));
-    }
-
-    /**
-     * Copies templates for compilation
-     */
-    @Task()
-    browserCopyTemplates() {
-        return gulp.src("./src/platform/*.template")
-            .pipe(rename((p) => { p.extname = '.ts'; }))
-            .pipe(gulp.dest("./build/browser/src/platform"));
-    }
-
-    @MergedTask()
-    browserCompile() {
-        const tsProject = ts.createProject("tsconfig.json", {
-            module: "es2020",
-            lib: ["es2021", "dom"],
-            typescript: require("typescript")
+const runCommand = (command: string, args: string[], options: SpawnOptions = {}) =>
+    new Promise<void>((resolve, reject) => {
+        const child = spawn(command, args, {
+            stdio: "inherit",
+            shell: false,
+            ...options,
         });
-        const tsResult = gulp.src([
-            "./build/browser/src/**/*.ts",
-            "./node_modules/reflect-metadata/**/*.d.ts"
-        ])
-            .pipe(sourcemaps.init())
-            .pipe(tsProject());
 
-        return [
-            tsResult.dts.pipe(gulp.dest("./build/package/browser")),
-            tsResult.js
-                .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
-                .pipe(gulp.dest("./build/package/browser"))
-        ];
-    }
-
-    @Task()
-    async browserClearPackageDirectory() {
-        return rimraf([
-            "./build/browser/**"
-        ], { glob: true });
-    }
-
-    // -------------------------------------------------------------------------
-    // Main Packaging and Publishing tasks
-    // -------------------------------------------------------------------------
-
-    /**
-     * Publishes a package to npm from ./build/package directory.
-     */
-    @Task()
-    packagePublish() {
-        return gulp.src("package.json", { read: false })
-            .pipe(shell([
-                "cd ./build/package && npm publish"
-            ]));
-    }
-
-    /**
-     * Packs a .tgz from ./build/package directory.
-     */
-    @Task()
-    packagePack() {
-        return gulp.src("package.json", { read: false })
-            .pipe(shell([
-                "cd ./build/package && npm pack && mv -f typeorm-*.tgz .."
-            ]));
-    }
-
-    /**
-     * Publishes a package to npm from ./build/package directory with @next tag.
-     */
-    @Task()
-    packagePublishNext() {
-        return gulp.src("package.json", { read: false })
-            .pipe(shell([
-                "cd ./build/package && npm publish --tag next"
-            ]));
-    }
-
-    /**
-     * Copies all sources to the package directory.
-     */
-    @MergedTask()
-    packageCompile() {
-        const tsProject = ts.createProject("tsconfig.json", {
-            typescript: require("typescript")
+        child.on("close", (code) => {
+            if (code === 0) {
+                resolve();
+            } else {
+                reject(new Error(`${command} ${args.join(" ")} exited with code ${code}`));
+            }
         });
-        const tsResult = gulp.src([
-            "./src/**/*.ts"
-        ])
-            .pipe(sourcemaps.init())
-            .pipe(tsProject());
 
-        return [
-            tsResult.dts.pipe(gulp.dest("./build/package")),
-            tsResult.js
-                .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
-                .pipe(gulp.dest("./build/package"))
-        ];
+        child.on("error", reject);
+    });
+
+const ensureDir = (dir: string) => fs.mkdir(dir, { recursive: true });
+
+// -------------------------------------------------------------------------
+// General tasks
+// -------------------------------------------------------------------------
+
+/**
+ * Cleans build folder.
+ */
+export const clean = async () => rimraf(["./build/**"], { glob: true });
+
+/**
+ * Runs typescript files compilation.
+ */
+export const compile = () => runCommand(npmCommand, ["run", "compile"]);
+
+// -------------------------------------------------------------------------
+// Build and packaging for browser
+// -------------------------------------------------------------------------
+
+/**
+ * Copies all source files into destination folder in a correct structure.
+ */
+export const browserCopySources = () =>
+    gulp.src([
+        "./src/**/*.ts",
+        "!./src/commands/*.ts",
+        "!./src/cli.ts",
+        "!./src/typeorm.ts",
+        "!./src/typeorm-model-shim.ts"
+    ])
+        .pipe(gulp.dest(browserSrcDir));
+
+/**
+ * Copies templates for compilation.
+ */
+export const browserCopyTemplates = () =>
+    gulp.src("./src/platform/*.template")
+        .pipe(rename((p) => { p.extname = ".ts"; }))
+        .pipe(gulp.dest(`${browserSrcDir}/platform`));
+
+export const browserCompile = () =>
+    runCommand(npxCommand, ["tsc", "-p", "tsconfig.browser.json"]);
+
+export const browserClearPackageDirectory = async () =>
+    rimraf(["./build/browser/**"], { glob: true });
+
+// -------------------------------------------------------------------------
+// Main Packaging and Publishing tasks
+// -------------------------------------------------------------------------
+
+/**
+ * Publishes a package to npm from ./build/package directory.
+ */
+export const packagePublish = () =>
+    runCommand(npmCommand, ["publish"], { cwd: packageDir });
+
+/**
+ * Packs a .tgz from ./build/package directory.
+ */
+export const packagePack = async () => {
+    await runCommand(npmCommand, ["pack"], { cwd: packageDir });
+    const archives = await glob("typeorm-*.tgz", { cwd: packageDir, absolute: true });
+
+    if (!archives.length) {
+        throw new Error("npm pack did not create any archives.");
     }
 
-    /**
-     * Moves all compiled files to the final package directory.
-     */
-    @Task()
-    packageMoveCompiledFiles() {
-        return gulp.src("./build/package/src/**/*")
-            .pipe(gulp.dest("./build/package"));
+    const latestArchive = archives.sort().at(-1)!;
+    const destination = path.join(buildDir, path.basename(latestArchive));
+
+    await fs.rm(destination, { force: true });
+    await fs.rename(latestArchive, destination);
+};
+
+/**
+ * Publishes a package to npm from ./build/package directory with @next tag.
+ */
+export const packagePublishNext = () =>
+    runCommand(npmCommand, ["publish", "--tag", "next"], { cwd: packageDir });
+
+/**
+ * Copies all sources to the package directory.
+ */
+export const packageCompile = () =>
+    runCommand(npxCommand, ["tsc", "-p", "tsconfig.package.json"]);
+
+/**
+ * Moves all compiled files to the final package directory.
+ */
+export const packageMoveCompiledFiles = () =>
+    gulp.src("./build/package/src/**/*")
+        .pipe(gulp.dest("./build/package"));
+
+/**
+ * Create ESM index file in the final package directory.
+ */
+export const packageCreateEsmIndex = async () => {
+    const indexPath = path.join(packageDir, "index.js");
+    const cjsModule = await import(pathToFileURL(path.resolve(indexPath)).href);
+    const cjsIndex = (cjsModule.default ?? cjsModule) as Record<string, unknown>;
+    const cjsKeys = Object.keys(cjsIndex).filter((key) => key !== "default" && !key.startsWith("__"));
+
+    const indexMjsContent =
+        'import TypeORM from "./index.js";\n' +
+        `const {\n    ${cjsKeys.join(",\n    ")}\n} = TypeORM;\n` +
+        `export {\n    ${cjsKeys.join(",\n    ")}\n};\n` +
+        "export default TypeORM;\n";
+
+    await fs.writeFile(path.join(packageDir, "index.mjs"), indexMjsContent, "utf8");
+};
+
+/**
+ * Removes /// <reference from compiled sources.
+ */
+export const packageReplaceReferences = async () => {
+    const files = await glob("**/*.d.ts", { cwd: packageDir, absolute: true });
+
+    await Promise.all(files.map(async (file) => {
+        const content = await fs.readFile(file, "utf8");
+        const updated = content
+            .replace(/\/\/\/ <reference types="node" \/>/g, "")
+            .replace(/\/\/\/ <reference types="chai" \/>/g, "");
+
+        if (updated !== content) {
+            await fs.writeFile(file, updated, "utf8");
+        }
+    }));
+};
+
+/**
+ * Clears the temporary package/src directory.
+ */
+export const packageClearPackageDirectory = async () =>
+    rimraf(["build/package/src/**"], { glob: true });
+
+/**
+ * Change the "private" state of the packaged package.json file to public.
+ */
+export const packagePreparePackageFile = async () => {
+    const pkg = JSON.parse(await fs.readFile("./package.json", "utf8"));
+    pkg.private = false;
+
+    await ensureDir(packageDir);
+    await fs.writeFile(path.join(packageDir, "package.json"), `${JSON.stringify(pkg, null, 2)}\n`, "utf8");
+};
+
+/**
+ * Copies README.md into the package.
+ */
+export const packageCopyReadme = async () => {
+    const readme = await fs.readFile("./README.md", "utf8");
+    const updated = readme.replace(/```typescript([\s\S]*?)```/g, "```javascript$1```");
+
+    await ensureDir(packageDir);
+    await fs.writeFile(path.join(packageDir, "README.md"), updated, "utf8");
+};
+
+/**
+ * Copies shims to use typeorm in different environments.
+ */
+export const packageCopyShims = async () => {
+    const shims = [
+        "./extra/typeorm-model-shim.js",
+        "./extra/typeorm-class-transformer-shim.js",
+    ];
+
+    await ensureDir(packageDir);
+
+    await Promise.all(shims.map(async (file) => {
+        const destination = path.join(packageDir, path.basename(file));
+        await fs.copyFile(file, destination);
+    }));
+};
+
+/**
+ * Move reference to package.json one level up.
+ */
+export const movePackageJsonReferenceLevelUp = async () => {
+    const target = path.join(packageDir, "commands/InitCommand.js");
+
+    try {
+        const content = await fs.readFile(target, "utf8");
+        const updated = content.replace(/\.\.\/package.json/g, "package.json");
+
+        if (updated !== content) {
+            await fs.writeFile(target, updated, "utf8");
+        }
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+            throw error;
+        }
     }
+};
 
-    /**
-     * Create ESM index file in the final package directory.
-     */
-    @Task()
-    async packageCreateEsmIndex() {
-        const buildDir = "./build/package";
-        const cjsIndex = require(`${buildDir}/index.js`);
-        const cjsKeys = Object.keys(cjsIndex).filter(key => key !== "default" && !key.startsWith("__"));
+/**
+ * Creates a package that can be published to npm.
+ */
+const packageTask = gulp.series(
+    clean,
+    gulp.parallel(browserCopySources, browserCopyTemplates),
+    gulp.parallel(packageCompile, browserCompile),
+    packageMoveCompiledFiles,
+    packageCreateEsmIndex,
+    gulp.parallel(
+        browserClearPackageDirectory,
+        packageClearPackageDirectory,
+        packageReplaceReferences,
+        packagePreparePackageFile,
+        packageCopyReadme,
+        packageCopyShims,
+        movePackageJsonReferenceLevelUp
+    )
+);
 
-        const indexMjsContent =
-            'import TypeORM from "./index.js";\n' +
-            `const {\n    ${cjsKeys.join(",\n    ")}\n} = TypeORM;\n` +
-            `export {\n    ${cjsKeys.join(",\n    ")}\n};\n` +
-            'export default TypeORM;\n';
+/**
+ * Creates a package .tgz.
+ */
+const packTask = gulp.series(packageTask, packagePack);
 
-        await fs.writeFile(`${buildDir}/index.mjs`, indexMjsContent, "utf8");
-    }
+/**
+ * Creates a package and publishes it to npm.
+ */
+const publishTask = gulp.series(packageTask, packagePublish);
 
-    /**
-     * Removes /// <reference from compiled sources.
-     */
-    @Task()
-    packageReplaceReferences() {
-        return gulp.src("./build/package/**/*.d.ts")
-            .pipe(replace(`/// <reference types="node" />`, ""))
-            .pipe(replace(`/// <reference types="chai" />`, ""))
-            .pipe(gulp.dest("./build/package"));
-    }
+/**
+ * Creates a package and publishes it to npm with @next tag.
+ */
+const publishNextTask = gulp.series(packageTask, packagePublishNext);
 
-    /**
-     * Moves all compiled files to the final package directory.
-     */
-    @Task()
-    async packageClearPackageDirectory() {
-        return rimraf([
-            "build/package/src/**"
-        ], { glob: true });
-    }
+packTask.displayName = "pack";
+publishTask.displayName = "publish";
+publishNextTask.displayName = "publish-next";
 
-    /**
-     * Change the "private" state of the packaged package.json file to public.
-     */
-    @Task()
-    packagePreparePackageFile() {
-        return gulp.src("./package.json")
-            .pipe(replace("\"private\": true,", "\"private\": false,"))
-            .pipe(gulp.dest("./build/package"));
-    }
+gulp.task("package", packageTask);
+gulp.task("pack", packTask);
+gulp.task("publish", publishTask);
+gulp.task("publish-next", publishNextTask);
 
-    /**
-     * Copies README.md into the package.
-     */
-    @Task()
-    packageCopyReadme() {
-        return gulp.src("./README.md")
-            .pipe(replace(/```typescript([\s\S]*?)```/g, "```javascript$1```"))
-            .pipe(gulp.dest("./build/package"));
-    }
-
-    /**
-     * Copies shims to use typeorm in different environment and conditions file into package.
-     */
-    @Task()
-    packageCopyShims() {
-        return gulp.src(["./extra/typeorm-model-shim.js", "./extra/typeorm-class-transformer-shim.js"])
-            .pipe(gulp.dest("./build/package"));
-    }
-
-    /**
-     * Move reference to package.json one level up
-     */
-    @Task()
-    movePackageJsonReferenceLevelUp() {
-        return gulp.src("./build/package/commands/InitCommand.js")
-            .pipe(replace(/\.\.\/package.json/g, "package.json"))
-            .pipe(gulp.dest("./build/package/commands"));
-    }
-
-    /**
-     * Creates a package that can be published to npm.
-     */
-    @SequenceTask()
-    package() {
-        return [
-            "clean",
-            ["browserCopySources", "browserCopyTemplates"],
-            ["packageCompile", "browserCompile"],
-            "packageMoveCompiledFiles",
-            "packageCreateEsmIndex",
-            [
-                "browserClearPackageDirectory",
-                "packageClearPackageDirectory",
-                "packageReplaceReferences",
-                "packagePreparePackageFile",
-                "packageCopyReadme",
-                "packageCopyShims",
-                "movePackageJsonReferenceLevelUp"
-            ],
-        ];
-    }
-
-    /**
-     * Creates a package .tgz
-     */
-    @SequenceTask()
-    pack() {
-        return ["package", "packagePack"];
-    }
-
-    /**
-     * Creates a package and publishes it to npm.
-     */
-    @SequenceTask()
-    publish() {
-        return ["package", "packagePublish"];
-    }
-
-    /**
-     * Creates a package and publishes it to npm with @next tag.
-     */
-    @SequenceTask("publish-next")
-    publishNext() {
-        return ["package", "packagePublishNext"];
-    }
-
-}
+export { packageTask as package };
+export const pack = packTask;
+export const publish = publishTask;
+export const publishNext = publishNextTask;

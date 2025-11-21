@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "es2020",
+    "lib": ["es2021", "dom"],
+    "outDir": "build/package/browser",
+    "rootDir": "build/browser/src"
+  },
+  "include": [
+    "build/browser/src/**/*.ts",
+    "node_modules/reflect-metadata/**/*.d.ts"
+  ],
+  "exclude": []
+}
+
