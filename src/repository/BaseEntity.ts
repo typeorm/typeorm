@@ -14,7 +14,7 @@ import { ObjectId } from "../driver/mongodb/typings"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { UpsertOptions } from "./UpsertOptions"
-import { RepositoryUpdateOptions } from "./RepositoryUpdateOptions"
+import { UpdateOptions } from "./UpdateOptions"
 import { EntityTarget } from "../common/EntityTarget"
 import { PickKeysByType } from "../common/PickKeysByType"
 
@@ -346,7 +346,7 @@ export class BaseEntity {
             | ObjectId[]
             | FindOptionsWhere<T>,
         partialEntity: QueryDeepPartialEntity<T>,
-        options?: RepositoryUpdateOptions,
+        options?: UpdateOptions,
     ): Promise<UpdateResult> {
         return this.getRepository<T>().update(criteria, partialEntity, options)
     }
