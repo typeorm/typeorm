@@ -45,6 +45,7 @@
 * **mysql:** add support for MySQL 9 / MariaDB 12 ([#11575](https://github.com/typeorm/typeorm/issues/11575)) ([8b76e1a](https://github.com/typeorm/typeorm/commit/8b76e1af74245c5a1bf1abf5a5d16f57ac732732))
 * **postgres:** support vector/halfvec data types ([#11437](https://github.com/typeorm/typeorm/issues/11437)) ([a49f612](https://github.com/typeorm/typeorm/commit/a49f6122891db715885c2faf4974d3def2f541ea))
 
+
 ### Performance Improvements
 
 * Cache package.json location between getNearestPackageJson invocations ([#11580](https://github.com/typeorm/typeorm/issues/11580)) ([b6ffd46](https://github.com/typeorm/typeorm/commit/b6ffd462dd0296edf693ccf68dc7879582437a63)), closes [#4136](https://github.com/typeorm/typeorm/issues/4136)
