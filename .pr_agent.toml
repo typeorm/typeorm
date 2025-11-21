@@ -4,6 +4,7 @@ pr_commands = [
     "/improve",
 ]
 
+handle_push_trigger = true
 push_commands = [
     "/improve",
 ]
