@@ -57,8 +57,7 @@ export class PlainObjectToNewEntityTransformer {
             } else {
                 // Check if the property exists in the source object
                 // The object may contain properties with database names or property names depending on the source
-                const hasProperty = Object.prototype.hasOwnProperty.call(object, column.propertyName) ||
-                    Object.prototype.hasOwnProperty.call(object, column.databaseName)
+                const hasProperty = column.propertyName in object || column.databaseName in object
                 
                 if (hasProperty) {
                     column.setEntityValue(entity, objectColumnValue)

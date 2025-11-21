@@ -67,7 +67,8 @@ describe("persistence > save should not set undefined on unmodified properties",
                 // Test ES2022 specific scenario: entity created with all fields undefined
                 // then some fields set, then saved
                 const company3 = new Company()
-                // With ES2022, all fields are now undefined: { id: undefined, name: undefined, description: undefined }
+                // With ES2022 class field declarations, uninitialized fields are set to undefined by default
+                // Result: { id: undefined, name: undefined, description: undefined }
                 company3.name = "Acme3"
                 // Now only name is set, description is still undefined
                 const saved3 = await connection.manager.save(company3)
