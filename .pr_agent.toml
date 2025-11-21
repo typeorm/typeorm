@@ -9,4 +9,5 @@ push_commands = [
 ]
 
 [auto_best_practices]
-enable_auto_best_practices = true  
+enable_auto_best_practices = true
+utilize_auto_best_practices = true 
