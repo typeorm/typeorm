@@ -239,7 +239,6 @@ const packageTask = gulp.series(
     packageCreateEsmIndex,
     gulp.parallel(
         browserClearWorkDirectory,
-        packageClearPackageDirectory,
         packageReplaceReferences,
         packagePreparePackageFile,
         packageCopyReadme,
