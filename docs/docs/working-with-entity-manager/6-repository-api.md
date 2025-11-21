@@ -141,6 +141,14 @@ await repository.update({ age: 18 }, { category: "ADULT" })
 
 await repository.update(1, { firstName: "Rizzrak" })
 // executes UPDATE user SET firstName = Rizzrak WHERE id = 1
+
+// optionally request RETURNING / OUTPUT values (supported drivers only)
+const result = await repository.update(
+    1,
+    { firstName: "Rizzrak" },
+    { returning: ["id", "firstName"] },
+)
+console.log(result.raw) // [{ id: 1, firstName: "Rizzrak" }]
 ```
 
 -   `updateAll` - Updates _all_ entities of target type (without WHERE clause). Sets fields from supplied partial entity.
@@ -148,6 +156,11 @@ await repository.update(1, { firstName: "Rizzrak" })
 ```typescript
 await repository.updateAll({ category: "ADULT" })
 // executes UPDATE user SET category = ADULT
+
+await repository.updateAll(
+    { category: "ADULT" },
+    { returning: "*" }, // limited to drivers that support returning clauses
+)
 ```
 
 -   `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
@@ -172,6 +185,19 @@ await repository.upsert(
  *      updatedDate = CURRENT_TIMESTAMP,
  *      version = version + 1
  **/
+```
+
+You can also request values to be returned from an upsert (supported on drivers with RETURNING / OUTPUT support):
+
+```typescript
+const { raw } = await repository.upsert(
+    { externalId: "abc123", firstName: "Rizzrak" },
+    {
+        conflictPaths: ["externalId"],
+        returning: ["externalId", "firstName"],
+    },
+)
+console.log(raw) // [{ externalId: "abc123", firstName: "Rizzrak" }]
 ```
 
 ```typescript
