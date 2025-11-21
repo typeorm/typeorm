@@ -1,7 +1,6 @@
 import path from "path";
 import fs from "fs/promises";
 import { spawn } from "child_process";
-import { pathToFileURL } from "url";
 import gulp from "gulp";
 import rename from "gulp-rename";
 import { glob } from "glob";
@@ -132,8 +131,8 @@ export const packageMoveCompiledFiles = () =>
  * Create ESM index file in the final package directory.
  */
 export const packageCreateEsmIndex = async () => {
-    const indexPath = path.join(packageDir, "index.js");
-    const cjsModule = await import(pathToFileURL(path.resolve(indexPath)).href);
+    const indexPath = path.resolve(packageDir, "index.js");
+    const cjsModule = await import(indexPath);
     const cjsIndex = (cjsModule.default ?? cjsModule) as Record<string, unknown>;
     const cjsKeys = Object.keys(cjsIndex).filter((key) => key !== "default" && !key.startsWith("__"));
 
