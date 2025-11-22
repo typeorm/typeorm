@@ -10,6 +10,7 @@ import {
 } from "../../../utils/test-utils"
 import { User } from "./entity/User"
 import { DataSource, TypeORMError } from "../../../../src"
+import { User4 } from "./entity/User4"
 
 describe("github issues > Add support of 'hash' indexes for postgres", () => {
     let connections: DataSource[]
@@ -94,6 +95,29 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
         Promise.all(
             connections.map(async (connection) => {
                 expect(connection.getMetadata(User).indices.length).equal(6)
+            }),
+        ))
+
+    it("User4 should have 1 index", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                expect(connection.getMetadata(User4).indices.length).equal(1)
+            }),
+        ))
+
+    it("User4 should have 'btree' index", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const idxs = connection.getMetadata(User4).indices
+
+                expect(idxs.length).equals(1)
+
+                const idx = idxs[0]
+
+                expect(String(idx.givenColumnNames)).equals(
+                    String(["firstName", "lastName"]),
+                )
+                expect(idx.type === "btree")
             }),
         ))
 })
