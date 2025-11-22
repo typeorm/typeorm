@@ -802,14 +802,20 @@ export class AuroraMysqlDriver implements Driver {
                 this.poolCluster.getConnection(
                     "MASTER",
                     (err: any, dbConnection: any) => {
-                        err
-                            ? fail(err)
-                            : ok(this.prepareDbConnection(dbConnection))
+                        if (err) {
+                            fail(err)
+                        } else {
+                            ok(this.prepareDbConnection(dbConnection))
+                        }
                     },
                 )
             } else if (this.pool) {
                 this.pool.getConnection((err: any, dbConnection: any) => {
-                    err ? fail(err) : ok(this.prepareDbConnection(dbConnection))
+                    if (err) {
+                        fail(err)
+                    } else {
+                        ok(this.prepareDbConnection(dbConnection))
+                    }
                 })
             } else {
                 fail(
@@ -833,7 +839,11 @@ export class AuroraMysqlDriver implements Driver {
             this.poolCluster.getConnection(
                 "SLAVE*",
                 (err: any, dbConnection: any) => {
-                    err ? fail(err) : ok(this.prepareDbConnection(dbConnection))
+                    if (err) {
+                        fail(err)
+                    } else {
+                        ok(this.prepareDbConnection(dbConnection))
+                    }
                 },
             )
         })

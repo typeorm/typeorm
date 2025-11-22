@@ -19,7 +19,7 @@ type _QueryDeepPartialEntity<T> = {
         | (T[P] extends Array<infer U>
               ? Array<_QueryDeepPartialEntity<U>>
               : T[P] extends ReadonlyArray<infer U>
-              ? ReadonlyArray<_QueryDeepPartialEntity<U>>
-              : _QueryDeepPartialEntity<T[P]>)
+                ? ReadonlyArray<_QueryDeepPartialEntity<U>>
+                : _QueryDeepPartialEntity<T[P]>)
         | (() => string)
 }

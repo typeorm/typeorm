@@ -1197,9 +1197,9 @@ export class EntityMetadataBuilder {
                         ? m.targetName === foreignKeyType ||
                           m.givenTableName === foreignKeyType
                         : InstanceChecker.isEntitySchema(foreignKeyType)
-                        ? m.target === foreignKeyType.options.name ||
-                          m.target === foreignKeyType.options.target
-                        : m.target === foreignKeyType,
+                          ? m.target === foreignKeyType.options.name ||
+                            m.target === foreignKeyType.options.target
+                          : m.target === foreignKeyType,
                 )
 
                 if (!referencedEntityMetadata) {

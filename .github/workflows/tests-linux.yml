@@ -9,7 +9,7 @@ on:
 jobs:
   cockroachdb:
     # CockroachDB is slow, run less often so it doesn't block other workflows
-    if: ${{ inputs.node-version >= 20 }}
+    if: ${{ inputs.node-version >= 22 }}
     runs-on: ubuntu-latest
 
     services:

@@ -207,9 +207,8 @@ describe("column > virtual columns", () => {
                 }
 
                 // find one
-                let foundCompany = await companyRepository.findOne(
-                    findOneOptions,
-                )
+                let foundCompany =
+                    await companyRepository.findOne(findOneOptions)
                 expect(foundCompany!.totalEmployeesCount).to.equal(4)
 
                 let [foundTimesheet] = foundCompany!.employees.find(
@@ -218,9 +217,8 @@ describe("column > virtual columns", () => {
                 expect(foundTimesheet.totalActivityHours).to.equal(9)
 
                 // find many
-                const foundCompanies = await companyRepository.find(
-                    findOneOptions,
-                )
+                const foundCompanies =
+                    await companyRepository.find(findOneOptions)
                 expect(foundCompanies).to.have.lengthOf(1)
 
                 foundCompany = foundCompanies[0]

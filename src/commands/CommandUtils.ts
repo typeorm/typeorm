@@ -14,9 +14,8 @@ export class CommandUtils {
     ): Promise<DataSource> {
         let dataSourceFileExports
         try {
-            ;[dataSourceFileExports] = await importOrRequireFile(
-                dataSourceFilePath,
-            )
+            ;[dataSourceFileExports] =
+                await importOrRequireFile(dataSourceFilePath)
         } catch (err) {
             throw new Error(
                 `Unable to open file: "${dataSourceFilePath}". ${err.message}`,

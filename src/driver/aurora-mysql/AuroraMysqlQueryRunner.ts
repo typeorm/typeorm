@@ -1886,9 +1886,8 @@ export class AuroraMysqlQueryRunner
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
             const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
@@ -1898,9 +1897,8 @@ export class AuroraMysqlQueryRunner
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`
 
             await this.query(disableForeignKeysCheckQuery)
-            const dropQueries: ObjectLiteral[] = await this.query(
-                dropTablesQuery,
-            )
+            const dropQueries: ObjectLiteral[] =
+                await this.query(dropTablesQuery)
             await Promise.all(
                 dropQueries.map((query) => this.query(query["query"])),
             )

@@ -2837,17 +2837,15 @@ export class CockroachQueryRunner
             const selectViewDropsQuery =
                 `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString})`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
 
             const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || table_schema || '"."' || table_name || '" CASCADE;' as "query" FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`
-            const dropQueries: ObjectLiteral[] = await this.query(
-                selectDropsQuery,
-            )
+            const dropQueries: ObjectLiteral[] =
+                await this.query(selectDropsQuery)
             await Promise.all(dropQueries.map((q) => this.query(q["query"])))
 
             const selectSequenceDropsQuery = `SELECT 'DROP SEQUENCE "' || sequence_schema || '"."' || sequence_name || '";' as "query" FROM "information_schema"."sequences" WHERE "sequence_schema" IN (${schemaNamesString})`

@@ -1,19 +1,18 @@
 import js from "@eslint/js"
-import { defineConfig } from "eslint/config"
+import chaiFriendly from "eslint-plugin-chai-friendly"
 import { jsdoc } from "eslint-plugin-jsdoc"
+import { defineConfig, globalIgnores } from "eslint/config"
 import globals from "globals"
 import ts from "typescript-eslint"
 
 export default defineConfig([
-    {
-        ignores: [
-            "build/**",
-            "docs/**",
-            "node_modules/**",
-            "sample/playground/**",
-            "temp/**",
-        ],
-    },
+    globalIgnores([
+        "build/**",
+        "docs/**",
+        "node_modules/**",
+        "sample/playground/**",
+        "temp/**",
+    ]),
 
     {
         files: ["**/*.ts"],
@@ -45,7 +44,6 @@ export default defineConfig([
             "@typescript-eslint/no-unnecessary-type-constraint": "warn",
             "@typescript-eslint/no-unsafe-declaration-merging": "warn",
             "@typescript-eslint/no-unsafe-function-type": "warn",
-            "@typescript-eslint/no-unused-expressions": "warn",
             "@typescript-eslint/no-unused-vars": [
                 "warn",
                 {
@@ -92,12 +90,17 @@ export default defineConfig([
     },
 
     jsdoc({
-        config: "flat/recommended-typescript",
         files: ["src/**/*.ts"],
+        config: "flat/recommended-typescript", // change to 'flat/recommended-typescript-error' once warnings are fixed
         // Temporarily enable individual rules when they are fixed, until all current warnings are gone,
         // and then remove manual config in favor of `config: "flat/recommended-typescript-error"`
         rules: {
             "jsdoc/valid-types": "error"
         }
     }),
+
+    {
+        files: ["test/**/*.ts"],
+        ...chaiFriendly.configs.recommendedFlat,
+    },
 ])

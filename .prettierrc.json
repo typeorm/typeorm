@@ -1,5 +1,3 @@
 {
-  "arrowParens": "always",
-  "semi": false,
-  "trailingComma": "all"
+  "semi": false
 }

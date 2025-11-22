@@ -29,9 +29,8 @@ describe("ConnectionOptionsReader", () => {
             root: __dirname,
             configName: "configs/class-entities",
         })
-        const options: DataSourceOptions = await connectionOptionsReader.get(
-            "test-conn",
-        )
+        const options: DataSourceOptions =
+            await connectionOptionsReader.get("test-conn")
         expect(options.entities).to.be.an.instanceOf(Array)
         const entities: EntititesList = options.entities as EntititesList
         expect(entities.length).to.equal(1)

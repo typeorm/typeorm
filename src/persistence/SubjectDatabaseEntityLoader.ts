@@ -159,16 +159,22 @@ export class SubjectDatabaseEntityLoader {
         target: Function | string
         subjects: Subject[]
     }[] {
-        return this.subjects.reduce((groups, operatedEntity) => {
-            let group = groups.find(
-                (group) => group.target === operatedEntity.metadata.target,
-            )
-            if (!group) {
-                group = { target: operatedEntity.metadata.target, subjects: [] }
-                groups.push(group)
-            }
-            group.subjects.push(operatedEntity)
-            return groups
-        }, [] as { target: Function | string; subjects: Subject[] }[])
+        return this.subjects.reduce(
+            (groups, operatedEntity) => {
+                let group = groups.find(
+                    (group) => group.target === operatedEntity.metadata.target,
+                )
+                if (!group) {
+                    group = {
+                        target: operatedEntity.metadata.target,
+                        subjects: [],
+                    }
+                    groups.push(group)
+                }
+                group.subjects.push(operatedEntity)
+                return groups
+            },
+            [] as { target: Function | string; subjects: Subject[] }[],
+        )
     }
 }

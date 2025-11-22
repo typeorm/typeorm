@@ -69,4 +69,24 @@ describe("driver > sap > connection pool", () => {
                 expect(poolClient.getPooledCount()).to.equal(3)
             }),
         ))
+
+    it("should be managed correctly with explicit resource management ", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const poolClient = (dataSource.driver as SapDriver)
+                    .master as ConnectionPool
+                expect(poolClient.getInUseCount()).to.equal(0)
+                expect(poolClient.getPooledCount()).to.be.at.most(3)
+
+                {
+                    await using queryRunner = dataSource.createQueryRunner()
+                    await queryRunner.connect()
+                    expect(poolClient.getInUseCount()).to.equal(1)
+                    expect(poolClient.getPooledCount()).to.be.at.most(2)
+                }
+
+                expect(poolClient.getInUseCount()).to.equal(0)
+                expect(poolClient.getPooledCount()).to.be.at.most(3)
+            }),
+        ))
 })

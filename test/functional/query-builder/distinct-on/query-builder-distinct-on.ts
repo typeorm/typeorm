@@ -138,13 +138,14 @@ describe("query builder > distinct on", () => {
 
                 expect(
                     result.map(({ moderator }) => moderator),
-                ).to.have.members(["Dion", "Sarah", "Dion", "Dion"]) &&
-                    expect(result.map(({ author }) => author)).to.have.members([
-                        "Dion",
-                        "Pablo",
-                        "Sarah",
-                        "Zelda",
-                    ])
+                ).to.have.members(["Dion", "Sarah", "Dion", "Dion"])
+
+                expect(result.map(({ author }) => author)).to.have.members([
+                    "Dion",
+                    "Pablo",
+                    "Sarah",
+                    "Zelda",
+                ])
             }),
         ))
 

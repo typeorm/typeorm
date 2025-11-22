@@ -1,10 +1,9 @@
 import { expect } from "chai"
 import { exec } from "child_process"
-import { readFile, writeFile, chmod, unlink, rmdir } from "fs/promises"
-import { dirname } from "path"
+import { readFile, rm, unlink, writeFile } from "fs/promises"
 
 describe("cli init command", () => {
-    const cliPath = `${dirname(dirname(dirname(__dirname)))}/src/cli.js`
+    const cliPath = `${__dirname}/../../../src/cli.js`
     const databaseOptions = [
         "mysql",
         "mariadb",
@@ -20,21 +19,18 @@ describe("cli init command", () => {
     const builtSrcDirectory = "build/compiled/src"
 
     before(async () => {
-        const copyPackageJson = async () => {
-            // load package.json from the root of the project
-            const packageJson = JSON.parse(
-                await readFile("./package.json", "utf8"),
-            )
-            packageJson.version = `0.0.0` // install no version but
-            packageJson.installFrom = `file:../${builtSrcDirectory}` // use the built src directory
-            // write the modified package.json to the build directory
-            await writeFile(
-                `./${builtSrcDirectory}/package.json`,
-                JSON.stringify(packageJson, null, 4),
-            )
-        }
+        // load package.json from the root of the project
+        const packageJson = JSON.parse(await readFile("./package.json", "utf8"))
 
-        await Promise.all([chmod(cliPath, 0o755), copyPackageJson()])
+        // init command is taking typeorm version from package.json
+        // so ensure we are working against local build
+        packageJson.version = `file:../${builtSrcDirectory}`
+
+        // write the modified package.json to the build directory
+        await writeFile(
+            `./${builtSrcDirectory}/package.json`,
+            JSON.stringify(packageJson, null, 4),
+        )
     })
 
     after(async () => {
@@ -42,7 +38,7 @@ describe("cli init command", () => {
     })
 
     afterEach(async () => {
-        await rmdir(`./${testProjectPath}`, { recursive: true })
+        await rm(`./${testProjectPath}`, { recursive: true, force: true })
     })
 
     for (const databaseOption of databaseOptions) {

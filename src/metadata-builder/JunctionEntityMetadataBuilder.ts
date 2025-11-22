@@ -249,15 +249,15 @@ export class JunctionEntityMetadataBuilder {
                           this.connection.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : relation.inverseRelation
-                              ? relation.inverseRelation.onDelete
-                              : "CASCADE",
+                                ? relation.inverseRelation.onDelete
+                                : "CASCADE",
                       onUpdate:
                           this.connection.driver.options.type === "oracle" ||
                           this.connection.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : relation.inverseRelation
-                              ? relation.inverseRelation.onUpdate
-                              : "CASCADE",
+                                ? relation.inverseRelation.onUpdate
+                                : "CASCADE",
                   }),
               ]
             : []
