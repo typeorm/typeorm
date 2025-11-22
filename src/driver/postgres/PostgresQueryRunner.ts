@@ -4826,4 +4826,16 @@ export class PostgresQueryRunner
         table.comment = newTable.comment
         this.replaceCachedTable(table, newTable)
     }
+
+    /**
+     * Change table auto increment initial value.
+     */
+    changeTableAutoIncrementStartFrom(
+        tableOrName: Table | string,
+        autoIncrementStartFrom?: number,
+    ): Promise<void> {
+        throw new TypeORMError(
+            `postgres driver does not support change auto increment initial value.`,
+        )
+    }
 }

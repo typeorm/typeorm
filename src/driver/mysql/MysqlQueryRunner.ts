@@ -749,6 +749,58 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Change table auto increment initial value.
+     */
+    async changeTableAutoIncrementStartFrom(
+        tableOrName: Table | string,
+        autoIncrementStartFrom?: number,
+    ): Promise<void> {
+        const upQueries: Query[] = []
+        const downQueries: Query[] = []
+
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        if (autoIncrementStartFrom === table.autoIncrementStartFrom) {
+            return
+        }
+
+        const newTable = table.clone()
+
+        const primaryColumnGenerated = table.primaryColumns.find(
+            (col) => col.isGenerated,
+        )
+        if (
+            table.autoIncrementStartFrom &&
+            autoIncrementStartFrom &&
+            primaryColumnGenerated &&
+            primaryColumnGenerated.isGenerated &&
+            primaryColumnGenerated.generationStrategy === "increment"
+        ) {
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        newTable,
+                    )} AUTO_INCREMENT ${autoIncrementStartFrom}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} AUTO_INCREMENT ${
+                        table.autoIncrementStartFrom
+                    }`,
+                ),
+            )
+
+            await this.executeQueries(upQueries, downQueries)
+
+            // change table auto increment inital value and replace it in cached tabled;
+            table.autoIncrementStartFrom = newTable.autoIncrementStartFrom
+            this.replaceCachedTable(table, newTable)
+        }
+    }
+
+    /**
      * Change table comment.
      */
     async changeTableComment(
@@ -2395,11 +2447,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             TABLE_SCHEMA: string
             TABLE_NAME: string
             TABLE_COMMENT: string
+            AUTO_INCREMENT: number
         }[] = []
 
         if (!tableNames) {
             // Since we don't have any of this data we have to do a scan
-            const tablesSql = `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\`, \`TABLE_COMMENT\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\``
+            const tablesSql = `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\`, \`TABLE_COMMENT\`, \`AUTO_INCREMENT\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\``
 
             dbTables.push(...(await this.query(tablesSql)))
         } else {
@@ -2416,7 +2469,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         database = currentDatabase
                     }
 
-                    return `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\`, \`TABLE_COMMENT\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`
+                    return `SELECT \`TABLE_SCHEMA\`, \`TABLE_NAME\`, \`TABLE_COMMENT\`, \`AUTO_INCREMENT\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE \`TABLE_SCHEMA\` = '${database}' AND \`TABLE_NAME\` = '${name}'`
                 })
                 .join(" UNION ")
 
@@ -2972,6 +3025,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 })
 
                 table.comment = dbTable["TABLE_COMMENT"]
+                table.autoIncrementStartFrom = dbTable["AUTO_INCREMENT"]
 
                 return table
             }),
@@ -3105,6 +3159,18 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         sql += `) ENGINE=${table.engine || "InnoDB"}`
+
+        const primaryColumnGenerated = table.primaryColumns.find(
+            (col) => col.isGenerated,
+        )
+        if (
+            table.autoIncrementStartFrom &&
+            primaryColumnGenerated &&
+            primaryColumnGenerated.isGenerated &&
+            primaryColumnGenerated.generationStrategy === "increment"
+        ) {
+            sql += ` AUTO_INCREMENT = ${table.autoIncrementStartFrom}`
+        }
 
         if (table.comment) {
             sql += ` COMMENT="${table.comment}"`
