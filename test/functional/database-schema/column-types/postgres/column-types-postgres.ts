@@ -15,6 +15,7 @@ describe("database schema > column types > postgres", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
+            cache: true,
         })
 
         for (const connection of connections) {
@@ -399,13 +400,22 @@ describe("database schema > column types > postgres", () => {
                 post.characterVarying = "This is character varying"
                 post.timestamp = new Date()
                 post.timestampWithTimeZone = new Date()
+                post.timestampTz = new Date()
                 post.time = "15:30:13.278"
                 post.timeWithTimeZone = "15:30:13.27801+05"
                 post.int4range = "[2,4)"
                 await postRepository.save(post)
-
-                const loadedPost = (await postRepository.findOneBy({
-                    id: 1,
+                await postRepository.findOne({
+                    where: {
+                        id: 1,
+                    },
+                    cache: true,
+                })
+                const loadedPost = (await postRepository.findOne({
+                    where: {
+                        id: 1,
+                    },
+                    cache: true,
                 }))!
                 loadedPost.id.should.be.equal(post.id)
                 loadedPost.numeric.should.be.equal(post.numeric)
@@ -419,7 +429,15 @@ describe("database schema > column types > postgres", () => {
                 loadedPost.timestamp
                     .valueOf()
                     .should.be.equal(post.timestamp.valueOf())
-                // loadedPost.timestampWithTimeZone.valueOf().should.be.equal(post.timestampWithTimeZone.valueOf());
+                loadedPost.timestamp.should.be.instanceof(Date)
+                loadedPost.timestampWithTimeZone
+                    .valueOf()
+                    .should.be.equal(post.timestampWithTimeZone.valueOf())
+                loadedPost.timestampWithTimeZone.should.be.instanceof(Date)
+                loadedPost.timestampTz
+                    .valueOf()
+                    .should.be.equal(post.timestampTz.valueOf())
+                loadedPost.timestampTz.should.be.instanceof(Date)
                 loadedPost.time.valueOf().should.be.equal(post.time.valueOf())
                 loadedPost.timeWithTimeZone
                     .valueOf()
