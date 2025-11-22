@@ -11,6 +11,7 @@ import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { QueryRunner } from "../.."
 import { DriverUtils } from "../../driver/DriverUtils"
 import { ObjectUtils } from "../../util/ObjectUtils"
+import { JoinAttribute } from "../JoinAttribute"
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -58,11 +59,11 @@ export class RawSqlResultsToEntityTransformer {
      * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
      * we need to group our result and we must have some unique id (primary key in our case)
      */
-    transform(rawResults: any[], alias: Alias): any[] {
+    transform(rawResults: any[], alias: Alias, join?: JoinAttribute): any[] {
         const group = this.group(rawResults, alias)
         const entities: any[] = []
         for (const results of group.values()) {
-            const entity = this.transformRawResultsGroup(results, alias)
+            const entity = this.transformRawResultsGroup(results, alias, join)
             if (entity !== undefined) entities.push(entity)
         }
         return entities
@@ -146,6 +147,7 @@ export class RawSqlResultsToEntityTransformer {
     protected transformRawResultsGroup(
         rawResults: any[],
         alias: Alias,
+        join?: JoinAttribute,
     ): ObjectLiteral | undefined {
         // let hasColumns = false; // , hasEmbeddedColumns = false, hasParentColumns = false, hasParentEmbeddedColumns = false;
         let metadata = alias.metadata
@@ -184,6 +186,7 @@ export class RawSqlResultsToEntityTransformer {
             alias,
             entity,
             metadata,
+            join,
         )
         const hasRelations = this.transformJoins(
             rawResults,
@@ -228,12 +231,14 @@ export class RawSqlResultsToEntityTransformer {
         alias: Alias,
         entity: ObjectLiteral,
         metadata: EntityMetadata,
+        join?: JoinAttribute,
     ): boolean {
         let hasData = false
         const result = rawResults[0]
         for (const [key, column] of this.getColumnsToProcess(
             alias.name,
             metadata,
+            join,
         )) {
             const value = result[key]
 
@@ -267,11 +272,17 @@ export class RawSqlResultsToEntityTransformer {
         for (const join of this.expressionMap.joinAttributes) {
             // todo: we have problem here - when inner joins are used without selects it still create empty array
 
-            // skip joins without metadata
-            if (!join.metadata) continue
+            // skip joins without metadata, unless it's a subquery join with mapToProperty
+            const effectiveMetadata =
+                join.metadata || (join as any).__subqueryMetadata
+            if (!effectiveMetadata) {
+                continue
+            }
 
             // if simple left or inner join was performed without selection then we don't need to do anything
-            if (!join.isSelected) continue
+            if (!join.isSelected) {
+                continue
+            }
 
             // this check need to avoid setting properties than not belong to entity when single table inheritance used. (todo: check if we still need it)
             // const metadata = metadata.childEntityMetadatas.find(childEntityMetadata => discriminatorValue === childEntityMetadata.discriminatorValue);
@@ -280,28 +291,44 @@ export class RawSqlResultsToEntityTransformer {
                 !metadata.relations.find(
                     (relation) => relation === join.relation,
                 )
-            )
+            ) {
                 continue
+            }
 
             // some checks to make sure this join is for current alias
             if (join.mapToProperty) {
-                if (join.mapToPropertyParentAlias !== alias.name) continue
+                if (join.mapToPropertyParentAlias !== alias.name) {
+                    continue
+                }
             } else {
                 if (
                     !join.relation ||
                     join.parentAlias !== alias.name ||
                     join.relationPropertyPath !== join.relation!.propertyPath
-                )
+                ) {
                     continue
+                }
+            }
+
+            // For subquery joins, temporarily set the alias metadata to the effective metadata
+            const originalMetadata = (join.alias as any)._metadata
+            if (effectiveMetadata && !originalMetadata) {
+                ;(join.alias as any)._metadata = effectiveMetadata
             }
 
             // transform joined data into entities
-            let result: any = this.transform(rawResults, join.alias)
+            let result: any = this.transform(rawResults, join.alias, join)
+
             result = !join.isMany ? result[0] : result
             result = !join.isMany && result === undefined ? null : result // this is needed to make relations to return null when its joined but nothing was found in the database
-            // if nothing was joined then simply continue
-            if (result === undefined) continue
 
+            // Restore original metadata
+            ;(join.alias as any)._metadata = originalMetadata
+
+            // if nothing was joined then simply continue
+            if (result === undefined) {
+                continue
+            }
             // if join was mapped to some property then save result to that property
             if (join.mapToPropertyPropertyName) {
                 entity[join.mapToPropertyPropertyName] = result // todo: fix embeds
@@ -435,7 +462,35 @@ export class RawSqlResultsToEntityTransformer {
         return hasData
     }
 
-    private getColumnsToProcess(aliasName: string, metadata: EntityMetadata) {
+    private getColumnsToProcess(
+        aliasName: string,
+        metadata: EntityMetadata,
+        join?: JoinAttribute,
+    ): [string, ColumnMetadata][] {
+        // If this is a join with explicit column selections, we need to filter based on those selections
+        // We can't cache this case since it depends on the specific join
+        if (join?.selectedColumns && join.selectedColumns.length > 0) {
+            const selectedSet = new Set(join.selectedColumns)
+            const filtered = metadata.columns
+                .filter(
+                    (column) =>
+                        !column.isVirtual &&
+                        // Only include columns that were explicitly selected in the subquery
+                        selectedSet.has(column.propertyPath) &&
+                        // if table inheritance is used make sure this column is not child's column
+                        !metadata.childEntityMetadatas.some(
+                            (childMetadata) =>
+                                childMetadata.target === column.target,
+                        ),
+                )
+                .map((column): [string, ColumnMetadata] => [
+                    this.buildAlias(aliasName, column.databaseName),
+                    column,
+                ])
+            return filtered
+        }
+
+        // Standard caching logic for regular cases
         let metadatas = this.columnsCache.get(aliasName)
         if (!metadatas) {
             metadatas = new Map()
@@ -459,7 +514,7 @@ export class RawSqlResultsToEntityTransformer {
                                 childMetadata.target === column.target,
                         ),
                 )
-                .map((column) => [
+                .map((column): [string, ColumnMetadata] => [
                     this.buildAlias(aliasName, column.databaseName),
                     column,
                 ])
