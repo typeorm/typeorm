@@ -33,6 +33,11 @@ export class RedisQueryResultCache implements QueryResultCache {
      */
     protected redisMajorVersion: number | undefined
 
+    /**
+     * Whether legacy mode is enabled (for Redis 4.x compatibility)
+     */
+    protected isLegacyMode: boolean = false
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -67,6 +72,7 @@ export class RedisQueryResultCache implements QueryResultCache {
                 // Redis 4+ detected, recreate with legacyMode for Redis 4.x
                 // (Redis 5 will ignore legacyMode if not needed)
                 clientOptions.legacyMode = true
+                this.isLegacyMode = true
                 tempClient = this.redis.createClient(clientOptions)
             }
 
@@ -132,7 +138,7 @@ export class RedisQueryResultCache implements QueryResultCache {
      * Disconnects the connection
      */
     async disconnect(): Promise<void> {
-        if (this.isRedis5OrHigher()) {
+        if (this.shouldUsePromiseApi()) {
             // Redis 5+ uses quit() that returns a Promise
             await this.client.quit()
             this.client = undefined
@@ -166,7 +172,7 @@ export class RedisQueryResultCache implements QueryResultCache {
         const key = options.identifier || options.query
         if (!key) return Promise.resolve(undefined)
 
-        if (this.isRedis5OrHigher()) {
+        if (this.shouldUsePromiseApi()) {
             // Redis 5+ Promise-based API
             return this.client.get(key).then((result: any) => {
                 return result ? JSON.parse(result) : undefined
@@ -203,7 +209,7 @@ export class RedisQueryResultCache implements QueryResultCache {
         const value = JSON.stringify(options)
         const duration = options.duration
 
-        if (this.isRedis5OrHigher()) {
+        if (this.shouldUsePromiseApi()) {
             // Redis 5+ Promise-based API with PX option
             await this.client.set(key, value, {
                 PX: duration,
@@ -230,7 +236,7 @@ export class RedisQueryResultCache implements QueryResultCache {
      * Clears everything stored in the cache.
      */
     async clear(queryRunner?: QueryRunner): Promise<void> {
-        if (this.isRedis5OrHigher()) {
+        if (this.shouldUsePromiseApi()) {
             // Redis 5+ Promise-based API
             await this.client.flushDb()
             return
@@ -267,7 +273,7 @@ export class RedisQueryResultCache implements QueryResultCache {
      * Removes a single key from redis database.
      */
     protected async deleteKey(key: string): Promise<void> {
-        if (this.isRedis5OrHigher()) {
+        if (this.shouldUsePromiseApi()) {
             // Redis 5+ Promise-based API
             await this.client.del(key)
             return
@@ -309,6 +315,12 @@ export class RedisQueryResultCache implements QueryResultCache {
         try {
             // Detect version by examining the client's method signatures
             // This avoids creating test keys in the database
+
+            // redis 3.x does not have connect() method
+            if (typeof this.client.connect !== "function") {
+                this.redisMajorVersion = 3
+                return
+            }
             const setMethod = this.client.set
             if (setMethod && setMethod.length <= 3) {
                 // Redis 5+ set method accepts fewer parameters (key, value, options)
@@ -324,10 +336,13 @@ export class RedisQueryResultCache implements QueryResultCache {
     }
 
     /**
-     * Checks if Redis version is 5.x or higher
+     * Determines whether the promise-based Redis API should be used.
+     * Legacy mode (used for Redis 4.x compatibility) requires callback-based API
      */
-    private isRedis5OrHigher(): boolean {
+    private shouldUsePromiseApi(): boolean {
         if (this.clientType !== "redis") return false
+        // If legacy mode is enabled, use callback-based API regardless of version
+        if (this.isLegacyMode) return false
         return (
             this.redisMajorVersion !== undefined && this.redisMajorVersion >= 5
         )
