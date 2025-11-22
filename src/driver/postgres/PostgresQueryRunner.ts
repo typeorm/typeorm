@@ -8,6 +8,7 @@ import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
+import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
 import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
@@ -4029,6 +4030,7 @@ export class PostgresQueryRunner
                         isUnique: constraint["is_unique"] === "TRUE",
                         where: constraint["condition"],
                         isSpatial: constraint["index_type"] === "gist",
+                        type: constraint["index_type"],
                         isFulltext: false,
                     })
                 })
@@ -4346,9 +4348,37 @@ export class PostgresQueryRunner
     }
 
     /**
+     * Builds the SQL `USING <index_type>` clause based on the index type, prioritizing `isSpatial` as `GiST`.
+     */
+
+    private buildIndexTypeClause(index: TableIndex) {
+        // List of index types supported by PostgreSQL
+        // https://www.postgresql.org/docs/current/indexes-types.html
+        const pgValidIdxTypes = new Set<TableIndexTypes>([
+            "btree",
+            "hash",
+            "gist",
+            "spgist",
+            "gin",
+            "brin",
+        ])
+
+        const type = index.isSpatial ? "gist" : index.type
+
+        if (typeof type !== "string") return null
+
+        if (!pgValidIdxTypes.has(type))
+            throw new TypeORMError(`Unsupported index type`)
+
+        return `USING ${type}`
+    }
+
+    /**
      * Builds create index sql.
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
+        const indexTypeClause = this.buildIndexTypeClause(index)
+
         const columns = index.columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
@@ -4356,7 +4386,7 @@ export class PostgresQueryRunner
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX${
                 index.isConcurrent ? " CONCURRENTLY" : ""
             } "${index.name}" ON ${this.escapePath(table)} ${
-                index.isSpatial ? "USING GiST " : ""
+                indexTypeClause ?? ""
             }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
         )
     }
