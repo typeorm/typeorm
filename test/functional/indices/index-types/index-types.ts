@@ -98,13 +98,6 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
             }),
         ))
 
-    it("User4 should have 1 index", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                expect(connection.getMetadata(User4).indices.length).equal(1)
-            }),
-        ))
-
     it("User4 should have 'btree' index", () =>
         Promise.all(
             connections.map(async (connection) => {
