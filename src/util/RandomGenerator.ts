@@ -1,5 +1,79 @@
 export class RandomGenerator {
     /**
+     * Generates a RFC 4122 version 4 UUID.
+     * Uses native crypto.randomUUID() if available, otherwise falls back to
+     * a custom implementation using crypto.getRandomValues().
+     *
+     * @returns A version 4 UUID string
+     */
+    static uuidv4(): string {
+        // Try Node.js native crypto
+        if (typeof process !== "undefined" && process.versions?.node) {
+            try {
+                // Use dynamic import to avoid bundler issues
+                const crypto = require("crypto")
+                if (crypto.randomUUID) {
+                    return crypto.randomUUID()
+                }
+            } catch (e) {
+                // Fall through to custom implementation
+            }
+        }
+
+        // Try browser/modern environment crypto
+        if (
+            typeof globalThis !== "undefined" &&
+            globalThis.crypto &&
+            typeof globalThis.crypto.randomUUID === "function"
+        ) {
+            try {
+                return globalThis.crypto.randomUUID()
+            } catch (e) {
+                // Fall through to custom implementation
+            }
+        }
+
+        // Custom implementation using crypto.getRandomValues()
+        // Based on RFC 4122 version 4 UUID specification
+        const randomBytes = new Uint8Array(16)
+
+        if (
+            typeof globalThis !== "undefined" &&
+            globalThis.crypto &&
+            typeof globalThis.crypto.getRandomValues === "function"
+        ) {
+            globalThis.crypto.getRandomValues(randomBytes)
+        } else {
+            // Fallback for React Native/Hermes and environments without crypto support
+            // Hermes (React Native's JavaScript engine) does not provide crypto APIs
+            // Math.random() is permitted by RFC 4122 for UUID v4 ("pseudo-randomly")
+            // This approach is also used by expo-crypto and other RN libraries
+            // Note: For TypeORM's use case (DB IDs, cache IDs), uniqueness is sufficient
+            for (let i = 0; i < 16; i++) {
+                randomBytes[i] = Math.floor(Math.random() * 256)
+            }
+        }
+
+        // Set version (4) and variant bits according to RFC 4122
+        randomBytes[6] = (randomBytes[6] & 0x0f) | 0x40 // Version 4
+        randomBytes[8] = (randomBytes[8] & 0x3f) | 0x80 // Variant 10
+
+        // Convert to UUID string format (xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx)
+        const hexValues: string[] = []
+        randomBytes.forEach((byte) => {
+            hexValues.push(byte.toString(16).padStart(2, "0"))
+        })
+
+        return [
+            hexValues.slice(0, 4).join(""),
+            hexValues.slice(4, 6).join(""),
+            hexValues.slice(6, 8).join(""),
+            hexValues.slice(8, 10).join(""),
+            hexValues.slice(10, 16).join(""),
+        ].join("-")
+    }
+
+    /**
      *  discuss at: http://locutus.io/php/sha1/
      * original by: Webtoolkit.info (http://www.webtoolkit.info/)
      * improved by: Michael White (http://getsprink.com)
