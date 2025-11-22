@@ -8,6 +8,7 @@ import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
+import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
 import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
@@ -4353,7 +4354,7 @@ export class PostgresQueryRunner
     private buildIndexTypeClause(index: TableIndex) {
         // List of index types supported by PostgreSQL
         // https://www.postgresql.org/docs/current/indexes-types.html
-        const pgValidIdxTypes = new Set<string>([
+        const pgValidIdxTypes = new Set<TableIndexTypes>([
             "btree",
             "hash",
             "gist",
