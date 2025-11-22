@@ -76,8 +76,11 @@ export class MongoEntityManager extends EntityManager {
     readonly "@instanceof" = Symbol.for("MongoEntityManager")
 
     get mongoQueryRunner(): MongoQueryRunner {
-        return (this.connection.driver as MongoDriver)
-            .queryRunner as MongoQueryRunner
+        const driver = this.connection.driver as MongoDriver;
+        const queryRunner = driver.queryRunner as MongoQueryRunner;
+        if (!queryRunner)
+            void driver.connect();
+        return queryRunner;
     }
 
     // -------------------------------------------------------------------------
@@ -420,7 +423,7 @@ export class MongoEntityManager extends EntityManager {
         query: ObjectLiteral = {},
     ): FindCursor<T> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.cursor(metadata.tableName, query)
+        return this.mongoQueryRunner.cursor(metadata.database!, metadata.tableName, query)
     }
 
     /**
@@ -447,6 +450,7 @@ export class MongoEntityManager extends EntityManager {
     ): AggregationCursor<R> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.aggregate(
+            metadata.database!,
             metadata.tableName,
             pipeline,
             options,
@@ -464,6 +468,7 @@ export class MongoEntityManager extends EntityManager {
     ): AggregationCursor<Entity> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         const cursor = this.mongoQueryRunner.aggregate(
+            metadata.database!,
             metadata.tableName,
             pipeline,
             options,
@@ -482,6 +487,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<BulkWriteResult> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.bulkWrite(
+            metadata.database!,
             metadata.tableName,
             operations,
             options,
@@ -497,7 +503,7 @@ export class MongoEntityManager extends EntityManager {
         options: CountOptions = {},
     ): Promise<number> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.count(metadata.tableName, query, options)
+        return this.mongoQueryRunner.count(metadata.database!, metadata.tableName, query, options)
     }
 
     /**
@@ -510,6 +516,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<number> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.countDocuments(
+            metadata.database!,
             metadata.tableName,
             query,
             options,
@@ -537,6 +544,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<string> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.createCollectionIndex(
+            metadata.database!,
             metadata.tableName,
             fieldOrSpec,
             options,
@@ -554,6 +562,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<string[]> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.createCollectionIndexes(
+            metadata.database!,
             metadata.tableName,
             indexSpecs,
         )
@@ -569,6 +578,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<DeleteResultMongoDb> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.deleteMany(
+            metadata.database!,
             metadata.tableName,
             query,
             options,
@@ -585,6 +595,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<DeleteResultMongoDb> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.deleteOne(
+            metadata.database!,
             metadata.tableName,
             query,
             options,
@@ -602,6 +613,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.distinct(
+            metadata.database!,
             metadata.tableName,
             key,
             query,
@@ -619,6 +631,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.dropCollectionIndex(
+            metadata.database!,
             metadata.tableName,
             indexName,
             options,
@@ -632,7 +645,7 @@ export class MongoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
     ): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.dropCollectionIndexes(metadata.tableName)
+        return this.mongoQueryRunner.dropCollectionIndexes(metadata.database!, metadata.tableName)
     }
 
     /**
@@ -645,6 +658,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<Document | null> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndDelete(
+            metadata.database!,
             metadata.tableName,
             query,
             options,
@@ -662,6 +676,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<Document | null> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndReplace(
+            metadata.database!,
             metadata.tableName,
             query,
             replacement,
@@ -680,6 +695,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<Document | null> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.findOneAndUpdate(
+            metadata.database!,
             metadata.tableName,
             query,
             update,
@@ -694,7 +710,7 @@ export class MongoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
     ): Promise<Document> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.collectionIndexes(metadata.tableName)
+        return this.mongoQueryRunner.collectionIndexes(metadata.database!, metadata.tableName)
     }
 
     /**
@@ -706,6 +722,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<boolean> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.collectionIndexExists(
+            metadata.database!,
             metadata.tableName,
             indexes,
         )
@@ -720,6 +737,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.collectionIndexInformation(
+            metadata.database!,
             metadata.tableName,
             options,
         )
@@ -734,6 +752,7 @@ export class MongoEntityManager extends EntityManager {
     ): OrderedBulkOperation {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.initializeOrderedBulkOp(
+            metadata.database!,
             metadata.tableName,
             options,
         )
@@ -748,6 +767,7 @@ export class MongoEntityManager extends EntityManager {
     ): UnorderedBulkOperation {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.initializeUnorderedBulkOp(
+            metadata.database!,
             metadata.tableName,
             options,
         )
@@ -763,6 +783,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<InsertManyResult> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.insertMany(
+            metadata.database!,
             metadata.tableName,
             docs,
             options,
@@ -778,7 +799,7 @@ export class MongoEntityManager extends EntityManager {
         options?: InsertOneOptions,
     ): Promise<InsertOneResult> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.insertOne(metadata.tableName, doc, options)
+        return this.mongoQueryRunner.insertOne(metadata.database!, metadata.tableName, doc, options)
     }
 
     /**
@@ -786,7 +807,7 @@ export class MongoEntityManager extends EntityManager {
      */
     isCapped<Entity>(entityClassOrName: EntityTarget<Entity>): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.isCapped(metadata.tableName)
+        return this.mongoQueryRunner.isCapped(metadata.database!, metadata.tableName)
     }
 
     /**
@@ -798,6 +819,7 @@ export class MongoEntityManager extends EntityManager {
     ): ListIndexesCursor {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.listCollectionIndexes(
+            metadata.database!,
             metadata.tableName,
             options,
         )
@@ -813,6 +835,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<Collection<Document>> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.rename(
+            metadata.database!,
             metadata.tableName,
             newName,
             options,
@@ -830,6 +853,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<Document | UpdateResultMongoDb> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.replaceOne(
+            metadata.database!,
             metadata.tableName,
             query,
             doc,
@@ -845,7 +869,7 @@ export class MongoEntityManager extends EntityManager {
         options?: CollStatsOptions,
     ): Promise<CollStats> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.stats(metadata.tableName, options)
+        return this.mongoQueryRunner.stats(metadata.database!, metadata.tableName, options)
     }
 
     watch<Entity>(
@@ -855,6 +879,7 @@ export class MongoEntityManager extends EntityManager {
     ): ChangeStream {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.watch(
+            metadata.database!,
             metadata.tableName,
             pipeline,
             options,
@@ -872,6 +897,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<Document | UpdateResultMongoDb> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.updateMany(
+            metadata.database!,
             metadata.tableName,
             query,
             update,
@@ -890,6 +916,7 @@ export class MongoEntityManager extends EntityManager {
     ): Promise<Document | UpdateResultMongoDb> {
         const metadata = this.connection.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.updateOne(
+            metadata.database!,
             metadata.tableName,
             query,
             update,
@@ -1026,7 +1053,7 @@ export class MongoEntityManager extends EntityManager {
     ) {
         const queryRunner = this.mongoQueryRunner
 
-        ;(cursor as any)["__to_array_func"] = cursor.toArray
+            ; (cursor as any)["__to_array_func"] = cursor.toArray
         cursor.toArray = () =>
             ((cursor as any)["__to_array_func"] as CallableFunction)().then(
                 async (results: Entity[]) => {
@@ -1041,7 +1068,7 @@ export class MongoEntityManager extends EntityManager {
                     return entities
                 },
             )
-        ;(cursor as any)["__next_func"] = cursor.next
+            ; (cursor as any)["__next_func"] = cursor.next
         cursor.next = () =>
             ((cursor as any)["__next_func"] as CallableFunction)().then(
                 async (result: Entity) => {
@@ -1085,7 +1112,7 @@ export class MongoEntityManager extends EntityManager {
         const objectIdInstance = PlatformTools.load("mongodb").ObjectId
         const id =
             optionsOrConditions instanceof objectIdInstance ||
-            typeof optionsOrConditions === "string"
+                typeof optionsOrConditions === "string"
                 ? optionsOrConditions
                 : undefined
         const findOneOptionsOrConditions = (

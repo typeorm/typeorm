@@ -23,7 +23,7 @@ export class MongoSchemaBuilder implements SchemaBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: DataSource) {}
+    constructor(protected connection: DataSource) { }
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -52,6 +52,7 @@ export class MongoSchemaBuilder implements SchemaBuilder {
                 )
                 promises.push(
                     queryRunner.createCollectionIndex(
+                        metadata.database!,
                         metadata.tableName,
                         index.columnNamesWithOrderingMap,
                         options,
@@ -65,6 +66,7 @@ export class MongoSchemaBuilder implements SchemaBuilder {
                 }
                 promises.push(
                     queryRunner.createCollectionIndex(
+                        metadata.database!,
                         metadata.tableName,
                         unique.columnNamesWithOrderingMap,
                         options,
