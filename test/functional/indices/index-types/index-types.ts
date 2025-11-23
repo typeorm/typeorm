@@ -11,6 +11,7 @@ import {
 import { User } from "./entity/User"
 import { DataSource, TypeORMError } from "../../../../src"
 import { User4 } from "./entity/User4"
+import { User5 } from "./entity/User5"
 
 describe("github issues > Add support of 'hash' indexes for postgres", () => {
     let connections: DataSource[]
@@ -111,6 +112,22 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
                     String(["firstName", "lastName"]),
                 )
                 expect(idx.type === "btree")
+            }),
+        ))
+
+    it("User5 view indexes should be defined and correct", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const idxs = connection.getMetadata(User5).indices
+
+                expect(idxs.length).equals(2)
+
+                expect(idxs.find((idx) => idx.type === "btree")).instanceOf(
+                    Object,
+                )
+                expect(idxs.find((idx) => idx.type === "hash")).instanceOf(
+                    Object,
+                )
             }),
         ))
 })
