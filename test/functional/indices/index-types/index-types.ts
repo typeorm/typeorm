@@ -150,7 +150,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
                     enabledDrivers: ["sqlite"],
                     schemaCreate: true,
                 }),
-            ).rejectedWith(TypeORMError)
+            ).to.be.rejectedWith(TypeORMError)
         }
     })
 })
@@ -173,7 +173,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
                     enabledDrivers: ["mariadb"],
                     schemaCreate: true,
                 }),
-            ).rejectedWith(TypeORMError)
+            ).to.be.rejectedWith(TypeORMError)
         }
     })
 })
@@ -196,7 +196,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
                     enabledDrivers: ["mysql"],
                     schemaCreate: true,
                 }),
-            ).rejectedWith(TypeORMError)
+            ).to.be.rejectedWith(TypeORMError)
         }
     })
 })
