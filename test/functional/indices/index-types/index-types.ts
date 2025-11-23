@@ -144,7 +144,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
         if (isSqlite) {
             await closeTestingConnections(connections)
-            expect(
+            await expect(
                 createTestingConnections({
                     entities: [User2],
                     enabledDrivers: ["sqlite"],
@@ -167,7 +167,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
         if (isMariadb) {
             await closeTestingConnections(connections)
-            expect(
+            await expect(
                 createTestingConnections({
                     entities: [User2],
                     enabledDrivers: ["mariadb"],
@@ -190,7 +190,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
 
         if (isMysql) {
             await closeTestingConnections(connections)
-            expect(
+            await expect(
                 createTestingConnections({
                     entities: [User2],
                     enabledDrivers: ["mysql"],
