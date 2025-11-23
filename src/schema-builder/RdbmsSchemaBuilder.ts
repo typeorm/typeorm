@@ -18,6 +18,7 @@ import { ViewUtils } from "./util/ViewUtils"
 import { DriverUtils } from "../driver/DriverUtils"
 import { PostgresQueryRunner } from "../driver/postgres/PostgresQueryRunner"
 import { TypeORMError } from "../error"
+import { IndexMetadata } from "../metadata/IndexMetadata"
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -377,6 +378,54 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         }
     }
 
+    private shouldDropIndices(
+        indexMetadata: IndexMetadata | undefined,
+        tableIndex: TableIndex,
+    ) {
+        if (indexMetadata) {
+            if (indexMetadata.synchronize === false) return false
+
+            if (indexMetadata.isUnique !== tableIndex.isUnique) return true
+
+            if (indexMetadata.isSpatial !== tableIndex.isSpatial) return true
+
+            if (
+                this.connection.driver.isIndicesTypeSupported() &&
+                typeof this.connection.driver.compareTableIndexTypes ===
+                    "function" &&
+                !this.connection.driver.compareTableIndexTypes(
+                    indexMetadata,
+                    tableIndex,
+                )
+            )
+                return true
+
+            if (
+                !this.connection.driver.isIndicesTypeSupported() &&
+                indexMetadata.type
+            )
+                throw new TypeORMError(
+                    `Current database driver does not support index 'type' property`,
+                )
+
+            if (
+                this.connection.driver.isFullTextColumnTypeSupported() &&
+                indexMetadata.isFulltext !== tableIndex.isFulltext
+            )
+                return true
+
+            if (indexMetadata.columns.length !== tableIndex.columnNames.length)
+                return true
+
+            return !indexMetadata.columns.every(
+                (column) =>
+                    tableIndex.columnNames.indexOf(column.databaseName) !== -1,
+            )
+        }
+
+        return true
+    }
+
     protected async dropOldIndices(): Promise<void> {
         for (const metadata of this.entityToSyncMetadatas) {
             const table = this.queryRunner.loadedTables.find(
@@ -390,55 +439,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     const indexMetadata = metadata.indices.find(
                         (index) => index.name === tableIndex.name,
                     )
-                    if (indexMetadata) {
-                        if (indexMetadata.synchronize === false) return false
-
-                        if (indexMetadata.isUnique !== tableIndex.isUnique)
-                            return true
-
-                        if (indexMetadata.isSpatial !== tableIndex.isSpatial)
-                            return true
-
-                        if (
-                            this.connection.driver.isIndicesTypeSupported() &&
-                            typeof this.connection.driver
-                                .compareTableIndexTypes === "function" &&
-                            !this.connection.driver.compareTableIndexTypes(
-                                indexMetadata,
-                                tableIndex,
-                            )
-                        )
-                            return true
-
-                        if (
-                            !this.connection.driver.isIndicesTypeSupported() &&
-                            indexMetadata.type
-                        )
-                            throw new TypeORMError(
-                                `Current database driver does not support index 'type' property`,
-                            )
-
-                        if (
-                            this.connection.driver.isFullTextColumnTypeSupported() &&
-                            indexMetadata.isFulltext !== tableIndex.isFulltext
-                        )
-                            return true
-
-                        if (
-                            indexMetadata.columns.length !==
-                            tableIndex.columnNames.length
-                        )
-                            return true
-
-                        return !indexMetadata.columns.every(
-                            (column) =>
-                                tableIndex.columnNames.indexOf(
-                                    column.databaseName,
-                                ) !== -1,
-                        )
-                    }
-
-                    return true
+                    return this.shouldDropIndices(indexMetadata, tableIndex)
                 })
                 .map(async (tableIndex) => {
                     this.connection.logger.logSchemaBuild(
@@ -465,40 +466,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         const indexMetadata = metadata.indices.find(
                             (index) => index.name === tableIndex.name,
                         )
-                        if (indexMetadata) {
-                            if (indexMetadata.synchronize === false)
-                                return false
-
-                            if (indexMetadata.isUnique !== tableIndex.isUnique)
-                                return true
-
-                            if (
-                                indexMetadata.isSpatial !== tableIndex.isSpatial
-                            )
-                                return true
-
-                            if (
-                                this.connection.driver.isFullTextColumnTypeSupported() &&
-                                indexMetadata.isFulltext !==
-                                    tableIndex.isFulltext
-                            )
-                                return true
-
-                            if (
-                                indexMetadata.columns.length !==
-                                tableIndex.columnNames.length
-                            )
-                                return true
-
-                            return !indexMetadata.columns.every(
-                                (column) =>
-                                    tableIndex.columnNames.indexOf(
-                                        column.databaseName,
-                                    ) !== -1,
-                            )
-                        }
-
-                        return true
+                        return this.shouldDropIndices(indexMetadata, tableIndex)
                     })
                     .map(async (tableIndex) => {
                         this.connection.logger.logSchemaBuild(
@@ -1077,6 +1045,18 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 .map((indexMetadata) => TableIndex.create(indexMetadata))
 
             if (newIndices.length === 0) continue
+
+            if (
+                newIndices.find(
+                    (idx) =>
+                        !!idx.type &&
+                        !this.connection.driver.isIndicesTypeSupported(),
+                )
+            ) {
+                throw new TypeORMError(
+                    `Current database driver does not support index 'type' property`,
+                )
+            }
 
             this.connection.logger.logSchemaBuild(
                 `adding new indices ${newIndices
