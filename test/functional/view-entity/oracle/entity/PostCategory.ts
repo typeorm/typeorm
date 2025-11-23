@@ -3,7 +3,7 @@ import { ViewColumn } from "../../../../../src/decorator/columns/ViewColumn"
 import { ViewEntity } from "../../../../../src/decorator/entity-view/ViewEntity"
 
 export const uppercase: ValueTransformer = {
-    to: (entityValue: string) => {},
+    to: () => {},
     from: (databaseValue: string) => databaseValue.toLocaleUpperCase(),
 }
 @ViewEntity({

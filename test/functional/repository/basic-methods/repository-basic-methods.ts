@@ -562,7 +562,7 @@ describe("repository > basic methods", () => {
                         await externalIdObjects.findBy({
                             externalId: Like("external-bulk-%"),
                         })
-                    ).forEach((inserted, i) => {
+                    ).forEach((inserted) => {
                         inserted.title.should.be.equal("Initially inserted")
                     })
 
@@ -581,7 +581,7 @@ describe("repository > basic methods", () => {
                         await externalIdObjects.findBy({
                             externalId: Like("external-bulk-%"),
                         })
-                    ).forEach((updated, i) => {
+                    ).forEach((updated) => {
                         updated.title.should.be.equal("Updated")
                     })
                 }),

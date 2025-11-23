@@ -2311,7 +2311,7 @@ export class SqlServerQueryRunner
     }
 
     /**
-     * Drops an unique constraints.
+     * Drops unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
@@ -3151,14 +3151,24 @@ export class SqlServerQueryRunner
                                 if (length === "-1") {
                                     tableColumn.length = "MAX"
                                 } else {
-                                    tableColumn.length =
-                                        !this.isDefaultColumnLength(
-                                            table,
-                                            tableColumn,
-                                            length,
-                                        )
-                                            ? length
-                                            : ""
+                                    if (tableColumn.type === "vector") {
+                                        const len = +length
+                                        // NOTE: real returned length is (N*4 + 8) where N is desired dimensions
+                                        if (!Number.isNaN(len)) {
+                                            tableColumn.length = String(
+                                                (len - 8) / 4,
+                                            )
+                                        }
+                                    } else {
+                                        tableColumn.length =
+                                            !this.isDefaultColumnLength(
+                                                table,
+                                                tableColumn,
+                                                length,
+                                            )
+                                                ? length
+                                                : ""
+                                    }
                                 }
                             }
 
@@ -4134,6 +4144,8 @@ export class SqlServerQueryRunner
                 return this.driver.mssql.UDT
             case "rowversion":
                 return this.driver.mssql.RowVersion
+            case "vector":
+                return this.driver.mssql.Ntext
         }
     }
 

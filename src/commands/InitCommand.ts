@@ -619,6 +619,7 @@ AppDataSource.initialize().then(async () => {
     environment:
       SA_PASSWORD: "Admin12345"
       ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
 
 `
             case "mongodb":
