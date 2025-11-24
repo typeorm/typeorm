@@ -1,0 +1,103 @@
+import js from "@eslint/js"
+import { defineConfig } from "eslint/config"
+import { jsdoc } from "eslint-plugin-jsdoc"
+import globals from "globals"
+import ts from "typescript-eslint"
+
+export default defineConfig([
+    {
+        ignores: [
+            "build/**",
+            "docs/**",
+            "node_modules/**",
+            "sample/playground/**",
+            "temp/**",
+        ],
+    },
+
+    {
+        files: ["**/*.ts"],
+        languageOptions: {
+            parser: ts.parser,
+            parserOptions: {
+                project: "tsconfig.json",
+            },
+            globals: {
+                ...globals.browser,
+                ...globals.node,
+            },
+        },
+        plugins: {
+            js,
+            ts,
+        },
+        extends: [
+            js.configs.recommended,
+            ...ts.configs.recommendedTypeChecked,
+        ],
+        rules: {
+            // exceptions from typescript-eslint/recommended
+            "@typescript-eslint/ban-ts-comment": "warn",
+            "@typescript-eslint/no-empty-object-type": "warn",
+            "@typescript-eslint/no-explicit-any": "warn",
+            "@typescript-eslint/no-require-imports": "warn",
+            "@typescript-eslint/no-this-alias": "warn",
+            "@typescript-eslint/no-unnecessary-type-constraint": "warn",
+            "@typescript-eslint/no-unsafe-declaration-merging": "warn",
+            "@typescript-eslint/no-unsafe-function-type": "warn",
+            "@typescript-eslint/no-unused-expressions": "warn",
+            "@typescript-eslint/no-unused-vars": [
+                "warn",
+                {
+                    argsIgnorePattern: "^_",
+                    destructuredArrayIgnorePattern: "^_"
+                },
+            ],
+            "@typescript-eslint/no-wrapper-object-types": "off",
+            "prefer-const": ["error", { destructuring: "all" }],
+
+            // exceptions from typescript-eslint/recommended-type-checked
+            "@typescript-eslint/no-base-to-string": "off",
+            "@typescript-eslint/no-misused-promises": [
+                "error",
+                {
+                    checksConditionals: false,
+                    checksVoidReturn: false,
+                },
+            ],
+            "@typescript-eslint/no-redundant-type-constituents": "warn",
+            "@typescript-eslint/no-unnecessary-type-assertion": "off",
+            "@typescript-eslint/no-unsafe-argument": "off",
+            "@typescript-eslint/no-unsafe-assignment": "off",
+            "@typescript-eslint/no-unsafe-call": "off",
+            "@typescript-eslint/no-unsafe-member-access": "off",
+            "@typescript-eslint/no-unsafe-return": "off",
+            "@typescript-eslint/prefer-promise-reject-errors": "off",
+            "@typescript-eslint/require-await": "warn",
+            "@typescript-eslint/restrict-plus-operands": "warn",
+            "@typescript-eslint/restrict-template-expressions": "warn",
+            "@typescript-eslint/unbound-method": [
+                "warn",
+                { ignoreStatic: true },
+            ],
+
+            // exceptions for eslint/recommended
+            "no-async-promise-executor": "warn",
+            "no-control-regex": "warn",
+            "no-empty": "warn",
+            "no-loss-of-precision": "warn",
+            "no-prototype-builtins": "warn",
+            "no-regex-spaces": "warn",
+        },
+    },
+
+    jsdoc({
+        config: "flat/recommended-typescript",
+        files: ["src/**/*.ts"],
+        // Temporarily enable individual rules when they are fixed, until all current warnings are gone,
+        // and then remove manual config in favor of `config: "flat/recommended-typescript-error"`
+        rules: {
+            "jsdoc/valid-types": "error"
+        }
+    }),
+])

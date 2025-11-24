@@ -17,10 +17,10 @@ export class Category {
     @Column()
     isRemoved: boolean = false
 
-    @ManyToMany((type) => Post, (post) => post.categories)
+    @ManyToMany(() => Post, (post) => post.categories)
     posts: Post[]
 
-    @ManyToMany((type) => Image, (image) => image.categories)
+    @ManyToMany(() => Image, (image) => image.categories)
     @JoinTable()
     images: Image[]
 

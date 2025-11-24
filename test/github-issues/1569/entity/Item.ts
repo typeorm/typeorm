@@ -13,6 +13,6 @@ export class Item {
     @Column()
     someText: string
 
-    @Column((type) => EmbeddedItem)
+    @Column(() => EmbeddedItem)
     embedded: EmbeddedItem
 }

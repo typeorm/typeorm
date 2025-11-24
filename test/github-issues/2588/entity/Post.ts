@@ -14,7 +14,7 @@ export class Post {
     @Column()
     title: string
 
-    @OneToMany((type) => PostReview, (postReview) => postReview.post, {
+    @OneToMany(() => PostReview, (postReview) => postReview.post, {
         eager: true,
     })
     reviews: PostReview[]

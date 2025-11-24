@@ -7,6 +7,6 @@ export class Bar {
     @PrimaryColumn()
     id: number
 
-    @ManyToOne((type) => Foo)
+    @ManyToOne(() => Foo)
     foo: Foo
 }

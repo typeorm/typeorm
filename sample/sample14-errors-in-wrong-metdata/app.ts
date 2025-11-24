@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src"
 import { Post } from "./entity/Post"
 import { PostAuthor } from "./entity/PostAuthor"
 
@@ -17,19 +17,19 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        let author = new PostAuthor()
+        const author = new PostAuthor()
         author.name = "Umed"
 
-        let post = new Post()
+        const post = new Post()
         post.text = "Hello how are you?"
         post.title = "hello"
         post.author = author
 
-        let postRepository = dataSource.getRepository(Post)
+        const postRepository = dataSource.getRepository(Post)
 
         postRepository
             .save(post)
-            .then((post) => console.log("Post has been saved"))
+            .then(() => console.log("Post has been saved"))
             .catch((error) => console.log("Cannot save. Error: ", error))
     },
     (error) => console.log("Cannot connect: ", error),
