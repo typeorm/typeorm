@@ -36,6 +36,7 @@ jobs:
               - *src
               - .github/workflows/test/**/*
               - .github/workflows/test*.yml
+              - test/**/*
               - .mocharc.json
               - .nvmrc
               - .nycrc.json
