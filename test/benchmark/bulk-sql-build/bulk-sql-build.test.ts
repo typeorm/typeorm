@@ -12,6 +12,7 @@ describe("benchmark > bulk-sql-build", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             __dirname,
+            enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))

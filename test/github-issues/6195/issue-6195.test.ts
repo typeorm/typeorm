@@ -7,10 +7,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-
-export const testTableName = "test_table"
-export const testColumnName = "test_column"
-export const nonExistentColumnName = "nonexistent_column"
+import { testColumnName, testTableName } from "./migrations/MigrationToFakeRun"
 
 const createTestTable = async (queryRunner: QueryRunner) => {
     await queryRunner.createTable(
