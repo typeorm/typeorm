@@ -73,7 +73,8 @@ export class PostgresDriver implements Driver {
     options: PostgresConnectionOptions
 
     /**
-     * Version of Postgres. Requires a SQL query to the DB, so it is not always set
+     * Version of Postgres. Requires a SQL query to the DB, so it is set on the first
+     * connection attempt.
      */
     version?: string
 
