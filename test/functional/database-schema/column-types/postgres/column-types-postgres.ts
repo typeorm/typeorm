@@ -15,7 +15,6 @@ describe("database schema > column types > postgres", () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
-            cache: true,
         })
 
         for (const connection of connections) {
