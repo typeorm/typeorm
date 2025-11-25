@@ -13,9 +13,9 @@ export class Schedule {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column()
+    @Column({ type: "timestamptz" })
     start: Date
 
-    @Column()
+    @Column({ type: "timestamptz" })
     end: Date
 }

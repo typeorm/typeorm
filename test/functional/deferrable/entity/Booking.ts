@@ -13,9 +13,9 @@ export class Booking {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column()
+    @Column({ type: "timestamptz" })
     from: Date
 
-    @Column()
+    @Column({ type: "timestamptz" })
     to: Date
 }
