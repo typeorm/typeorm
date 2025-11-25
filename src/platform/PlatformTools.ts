@@ -1,4 +1,5 @@
 import ansi from "ansis"
+import crypto from "crypto"
 import dotenv from "dotenv"
 import fs from "fs"
 import path from "path"
@@ -275,5 +276,14 @@ export class PlatformTools {
     static logCmdErr(prefix: string, err?: any) {
         console.log(ansi.black.bgRed(prefix))
         if (err) console.error(err)
+    }
+
+    /**
+     * Generates UUID v4 using native crypto API with fallback for environments
+     * that don't support it (e.g., React Native, Hermes).
+     */
+    static generateUuid(): string {
+        const { RandomGenerator } = require("../util/RandomGenerator")
+        return RandomGenerator.uuidv4()
     }
 }
