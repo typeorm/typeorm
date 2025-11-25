@@ -262,8 +262,8 @@ export const AppDataSource = new DataSource({
             return JSON.stringify(
                 {
                     compilerOptions: {
-                        lib: ["es2023"],
-                        target: "es2022",
+                        lib: ["es2021"],
+                        target: "es2021",
                         module: "es2022",
                         moduleResolution: "node",
                         allowSyntheticDefaultImports: true,
@@ -280,8 +280,8 @@ export const AppDataSource = new DataSource({
             return JSON.stringify(
                 {
                     compilerOptions: {
-                        lib: ["es2023"],
-                        target: "es2022",
+                        lib: ["es2021"],
+                        target: "es2021",
                         module: "commonjs",
                         moduleResolution: "node",
                         outDir: "./build",
