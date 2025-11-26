@@ -7,7 +7,7 @@ import {
 import { expect } from "chai"
 import { Example } from "./entity/example"
 
-describe.only("github issues > #10931 Migration:generate issue using postgres when defined enumName equals to auto-generated", () => {
+describe("github issues > #10931 Migration:generate issue using postgres when defined enumName equals to auto-generated", () => {
     let connections: DataSource[]
     before(
         async () =>
