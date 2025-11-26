@@ -3594,16 +3594,28 @@ export class PostgresQueryRunner
                                         table,
                                         tableColumn,
                                     )
-
+                                const tableMetadata =
+                                    this.connection.getMetadata(table.name)
+                                const columnMetadata =
+                                    tableMetadata.columns.find(
+                                        (columnMetadata) =>
+                                            tableColumn.name ===
+                                            columnMetadata.databaseName,
+                                    )
+                                const givenName = columnMetadata?.enumName
                                 // check if `enumName` is specified by user
-                                const builtEnumName = this.buildEnumName(
-                                    table,
-                                    tableColumn,
-                                    false,
-                                    true,
-                                )
+                                const builtEnumName =
+                                    givenName ??
+                                    this.buildEnumName(
+                                        table,
+                                        tableColumn,
+                                        false,
+                                        true,
+                                    )
                                 const enumName =
-                                    builtEnumName !== name ? name : undefined
+                                    builtEnumName !== name || !!givenName
+                                        ? name
+                                        : undefined
 
                                 // check if type is ENUM
                                 const sql =
