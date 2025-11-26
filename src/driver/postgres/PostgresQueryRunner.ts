@@ -3597,7 +3597,7 @@ export class PostgresQueryRunner
                                 const tableMetadata =
                                     this.connection.getMetadata(table.name)
                                 const columnMetadata =
-                                    tableMetadata.columns.find(
+                                    tableMetadata?.columns.find(
                                         (columnMetadata) =>
                                             tableColumn.name ===
                                             columnMetadata.databaseName,
