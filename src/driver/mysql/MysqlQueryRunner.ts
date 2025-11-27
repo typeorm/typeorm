@@ -2807,17 +2807,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 ) !== -1 &&
                                 dbColumn["CHARACTER_MAXIMUM_LENGTH"]
                             ) {
-                                const length =
-                                    dbColumn[
-                                        "CHARACTER_MAXIMUM_LENGTH"
-                                    ].toString()
+                                let length: number =
+                                    dbColumn["CHARACTER_MAXIMUM_LENGTH"]
+                                if (tableColumn.type === "vector") {
+                                    // MySQL and MariaDb store the vector length in bytes, not in number of dimensions.
+                                    length = length / 4
+                                }
                                 tableColumn.length =
                                     !this.isDefaultColumnLength(
                                         table,
                                         tableColumn,
-                                        length,
+                                        length.toString(),
                                     )
-                                        ? length
+                                        ? length.toString()
                                         : ""
                             }
 
