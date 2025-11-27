@@ -1,4 +1,4 @@
-import { QueryOptions, QueryResult } from "../../../src"
+import { QueryResult } from "../../../src"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { EntityManager } from "../../../src/entity-manager/EntityManager"
 import { QueryRunner } from "../../../src/query-runner/QueryRunner"
