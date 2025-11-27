@@ -139,3 +139,7 @@ export class User {
     roles: UserRoleType[]
 }
 ```
+
+### Vector Types
+
+MySQL supports the [VECTOR type](https://dev.mysql.com/doc/refman/en/vector.html) since version 9.0, while in MariaDB, [vectors](https://mariadb.com/docs/server/reference/sql-structure/vectors/vector-overview) are available since 11.7.
