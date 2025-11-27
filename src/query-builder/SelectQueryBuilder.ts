@@ -3904,7 +3904,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
         }
 
-        return useStructuredResult ? results : results
+        return useStructuredResult ? results : results.records
     }
 
     /**
