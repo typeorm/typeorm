@@ -48,7 +48,7 @@ describe("github issues > #10322 logMigration of AbstractLogger has wrong loggin
             dataSources.map(async (dataSource) => {
                 try {
                     await dataSource.runMigrations()
-                } catch (e) {
+                } catch {
                     expect(fakeLog.called).to.be.true
                 }
             }),
