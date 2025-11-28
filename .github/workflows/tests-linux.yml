@@ -300,6 +300,7 @@ jobs:
       - run: npm ci
       - run: cat ormconfig.sample.json | jq 'map(select(.name == "oracle"))' > ormconfig.json
       - run: docker compose up oracle --no-recreate --wait
+      - run: sleep 10
       - run: npx c8 npm run test:ci
 
       - name: Coveralls Parallel
