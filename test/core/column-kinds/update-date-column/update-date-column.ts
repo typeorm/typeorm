@@ -1,11 +1,11 @@
 import { expect } from "chai"
 import "reflect-metadata"
+import { scheduler } from "timers/promises"
 import { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    sleep,
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
 
@@ -109,7 +109,7 @@ describe("column kinds > update date column", () => {
                     })
 
                 // wait a second
-                await sleep(2000)
+                await scheduler.wait(1010)
 
                 // update post once again
                 post.title = "Updated Title"
@@ -120,9 +120,9 @@ describe("column kinds > update date column", () => {
                     await postRepository.findOneByOrFail({
                         id: post.id,
                     })
-                expect(loadedPostAfterUpdate.updatedAt.getTime()).to.be.not.eql(
-                    loadedPostBeforeUpdate.updatedAt.getTime(),
-                )
+                expect(
+                    loadedPostAfterUpdate.updatedAt.getTime(),
+                ).to.be.greaterThan(loadedPostBeforeUpdate.updatedAt.getTime())
             }),
         ))
 
