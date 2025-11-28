@@ -78,7 +78,7 @@
   },
   "scripts": {
     "changelog": "standard-changelog",
-    "compile": "rimraf ./build && tsc",
+    "compile": "rimraf ./build && tsgo",
     "docs:dev": "cd docs && npm run start",
     "format": "prettier --cache --write \"./**/*.ts\"",
     "format:ci": "prettier --check \"./**/*.ts\"",
@@ -91,8 +91,8 @@
     "test": "npm run compile && npm run test:fast --",
     "test:ci": "mocha --bail",
     "test:fast": "mocha",
-    "typecheck": "tsc --noEmit",
-    "watch": "tsc --watch"
+    "typecheck": "tsgo --noEmit",
+    "watch": "tsgo --watch"
   },
   "dependencies": {
     "@sqltools/formatter": "^1.2.5",
@@ -128,6 +128,7 @@
     "@types/sinon-chai": "^3.2.12",
     "@types/source-map-support": "^0.5.10",
     "@types/yargs": "^17.0.33",
+    "@typescript/native-preview": "latest",
     "better-sqlite3": "^8.7.0",
     "c8": "^10.1.3",
     "chai": "^4.5.0",
@@ -167,7 +168,7 @@
     "sqlite3": "^5.1.7",
     "standard-changelog": "^7.0.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.3"
   },
   "peerDependencies": {
