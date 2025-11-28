@@ -31,21 +31,21 @@ describe("deferrable exclusion constraints", () => {
                     // first save booking
                     const booking1 = new Booking()
                     booking1.id = 1
-                    booking1.from = new Date("2024-01-01")
-                    booking1.to = new Date("2024-01-10")
+                    booking1.from = 1
+                    booking1.to = 5
 
                     await manager.save(booking1)
 
                     // then save booking with exclusion violation
                     const booking2 = new Booking()
                     booking2.id = 2
-                    booking2.from = new Date("2024-01-05")
-                    booking2.to = new Date("2024-01-15")
+                    booking2.from = 3
+                    booking2.to = 7
 
                     await manager.save(booking2)
 
                     // Fix overlap before commit
-                    booking2.from = new Date("2024-01-11")
+                    booking2.from = 6
 
                     await manager.save(booking2)
                 })
@@ -59,13 +59,13 @@ describe("deferrable exclusion constraints", () => {
 
                 bookings[0].should.be.eql({
                     id: 1,
-                    from: new Date("2024-01-01"),
-                    to: new Date("2024-01-10"),
+                    from: 1,
+                    to: 5,
                 })
                 bookings[1].should.be.eql({
                     id: 2,
-                    from: new Date("2024-01-11"),
-                    to: new Date("2024-01-15"),
+                    from: 6,
+                    to: 7,
                 })
             }),
         ))
@@ -79,20 +79,20 @@ describe("deferrable exclusion constraints", () => {
 
                     // first save schedule
                     const schedule1 = new Schedule()
-                    schedule1.start = new Date("2024-02-01")
-                    schedule1.end = new Date("2024-02-10")
+                    schedule1.start = 10
+                    schedule1.end = 20
 
                     await manager.save(schedule1)
 
                     // then save schedule with exclusion violation
                     const schedule2 = new Schedule()
-                    schedule2.start = new Date("2024-02-05")
-                    schedule2.end = new Date("2024-02-15")
+                    schedule2.start = 15
+                    schedule2.end = 25
 
                     await manager.save(schedule2)
 
                     // Fix overlap before commit
-                    schedule1.end = new Date("2024-02-04")
+                    schedule1.end = 14
 
                     await manager.save(schedule1)
                 })
@@ -106,13 +106,13 @@ describe("deferrable exclusion constraints", () => {
 
                 schedules[0].should.be.eql({
                     id: schedules[0].id,
-                    start: new Date("2024-02-01"),
-                    end: new Date("2024-02-04"),
+                    start: 10,
+                    end: 14,
                 })
                 schedules[1].should.be.eql({
                     id: schedules[1].id,
-                    start: new Date("2024-02-05"),
-                    end: new Date("2024-02-15"),
+                    start: 15,
+                    end: 25,
                 })
             }),
         ))

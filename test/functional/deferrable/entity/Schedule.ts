@@ -6,16 +6,16 @@ import {
 } from "../../../../src"
 
 @Entity()
-@Exclusion(`USING gist (tstzrange("start","end") WITH &&)`, {
+@Exclusion(`USING gist (int4range("start", "end") WITH &&)`, {
     deferrable: "INITIALLY IMMEDIATE",
 })
 export class Schedule {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column({ type: "timestamptz" })
-    start: Date
+    @Column()
+    start: number
 
-    @Column({ type: "timestamptz" })
-    end: Date
+    @Column()
+    end: number
 }
