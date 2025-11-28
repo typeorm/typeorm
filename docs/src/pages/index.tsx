@@ -310,8 +310,8 @@ function PlatformsSection() {
                     Works Everywhere
                 </Heading>
                 <p className={styles.platformsDescription}>
-                    TypeORM runs in NodeJS, Browser, Cordova, PhoneGap, Ionic,
-                    React Native, NativeScript, Expo, and Electron platforms.
+                    TypeORM runs in NodeJS, Browser, Cordova, Ionic, React
+                    Native, NativeScript, Expo, and Electron platforms.
                 </p>
                 <div className={styles.platformsIcons}>
                     <span>🖥️ NodeJS</span>
@@ -337,7 +337,10 @@ function CallToAction() {
                 </p>
                 <div className={styles.ctaButtons}>
                     <Link
-                        className={clsx("button button--secondary button--lg margin-right--md", styles.noHorizontalMarginTablet)}
+                        className={clsx(
+                            "button button--secondary button--lg margin-right--md",
+                            styles.noHorizontalMarginTablet,
+                        )}
                         to="/docs/getting-started"
                     >
                         Read the Docs
@@ -361,7 +364,7 @@ export default function Home(): ReactNode {
     return (
         <Layout
             title={`${siteConfig.title} - ${siteConfig.tagline}`}
-            description="TypeORM is an ORM that can run in NodeJS, Browser, Cordova, PhoneGap, Ionic, React Native, NativeScript, Expo, and Electron platforms and can be used with TypeScript and JavaScript."
+            description="TypeORM is an ORM that can run in NodeJS, Browser, Cordova, Ionic, React Native, NativeScript, Expo, and Electron platforms and can be used with TypeScript and JavaScript."
         >
             <HomepageHeader />
             <main>

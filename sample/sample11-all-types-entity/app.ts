@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src"
 import { EverythingEntity, SampleEnum } from "./entity/EverythingEntity"
 
 const options: DataSourceOptions = {
@@ -99,7 +99,7 @@ dataSource.initialize().then(
                 console.log("Now remove it")
                 return postRepository.remove(entity!)
             })
-            .then((entity) => {
+            .then(() => {
                 console.log("Entity has been removed")
             })
             .catch((error) =>

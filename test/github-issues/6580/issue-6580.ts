@@ -2,7 +2,7 @@ import { DeepPartial } from "../../../src"
 import { Comment } from "./entity/Comment"
 
 describe("github issues > #6580 DeepPartial does not handle `any` and `{[k: string]}`", () => {
-    function attemptDeepPartial(entityLike: DeepPartial<Comment>): void {}
+    function attemptDeepPartial(_: DeepPartial<Comment>): void {}
 
     it("DeepPartial should correctly handle any", () => {
         attemptDeepPartial({

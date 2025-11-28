@@ -11,6 +11,6 @@ export class PostComplex {
     @Column({ default: "Hello Complexity" })
     text: string
 
-    @Column((type) => PostEmbedded)
+    @Column(() => PostEmbedded)
     embed: PostEmbedded
 }
