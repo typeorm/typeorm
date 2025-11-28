@@ -311,6 +311,9 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
         if (this.connection.driver.options.type === "mssql") {
             return `DELETE FROM ${tableName} OUTPUT ${returningExpression}${whereExpression}`
         }
+        if (this.connection.driver.options.type === "spanner") {
+            return `DELETE FROM ${tableName}${whereExpression} THEN RETURN ${returningExpression}`
+        }
         return `DELETE FROM ${tableName}${whereExpression} RETURNING ${returningExpression}`
     }
 }

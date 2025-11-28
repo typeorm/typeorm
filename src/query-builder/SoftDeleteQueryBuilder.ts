@@ -572,7 +572,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
      * Creates "LIMIT" parts of SQL query.
      */
     protected createLimitExpression(): string {
-        let limit: number | undefined = this.expressionMap.limit
+        const limit: number | undefined = this.expressionMap.limit
 
         if (limit) {
             if (DriverUtils.isMySQLFamily(this.connection.driver)) {

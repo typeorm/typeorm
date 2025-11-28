@@ -17,10 +17,10 @@ export class Post {
     @Column()
     description: string
 
-    @Column((type) => Counters)
+    @Column(() => Counters)
     counters: Counters
 
-    @ManyToMany((type) => Category, (category) => category.posts, {
+    @ManyToMany(() => Category, (category) => category.posts, {
         cascade: ["update"],
     })
     @JoinTable()

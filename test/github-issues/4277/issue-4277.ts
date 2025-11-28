@@ -26,7 +26,7 @@ describe("github issues > #4277 Using cache in findAndCount and getManyAndCount 
             connections.map((conn) => {
                 const repo = conn.getRepository(User)
 
-                const usersToInsert = [...Array(10)].map((e) => {
+                const usersToInsert = [...Array(10)].map(() => {
                     const user = new User()
                     user.name = "Jeremy Clarkson"
                     return user

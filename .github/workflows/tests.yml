@@ -1,0 +1,131 @@
+name: Tests
+on:
+  push:
+    branches:
+      - master
+      - next
+  pull_request:
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changes: ${{ steps.detect-changes.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: detect-changes
+        with:
+          filters: |
+            package-json: &package-json
+              - package.json
+              - package-lock.json
+
+            docs: &docs
+              - docs/**/*
+
+            src: &src
+              - extra/**/*.js
+              - src/**/*.ts
+              - gulpfile.js
+              - tsconfig.json
+              - *package-json
+
+            src-or-tests: &src-or-tests
+              - *src
+              - .github/workflows/test/**/*
+              - .github/workflows/test*.yml
+              - .mocharc.json
+              - .nvmrc
+              - .nycrc.json
+
+            lint: &lint
+              - *src-or-tests
+              - .prettierrc.json
+              - eslint.config.mjs
+
+  formatting:
+    if: contains(needs.detect-changes.outputs.changes, 'lint')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:ci
+
+  docs:
+    if: contains(needs.detect-changes.outputs.changes, 'docs')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./docs
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci
+      - run: npm run build
+
+  build:
+    if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci
+      - run: npm run compile
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: build/
+          retention-days: 1
+
+  tests-linux:
+    if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
+    needs: [detect-changes, build]
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18, 20]
+    uses: ./.github/workflows/tests-linux.yml
+    with:
+      node-version: ${{matrix.node-version}}
+
+  tests-windows:
+    if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
+    needs: [detect-changes, build]
+    uses: ./.github/workflows/tests-windows.yml
+    with:
+      node-version: 20
+
+  coverage:
+    if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
+    runs-on: ubuntu-latest
+    needs: [detect-changes, tests-linux, tests-windows]
+    steps:
+      - uses: coverallsapp/github-action@v2
+        with:
+          parallel-finished: true
+
+  all-passed:
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - build
+      - coverage
+      - docs
+      - formatting
+      - tests-linux
+      - tests-windows
+    steps:
+      - run: exit ${{ contains(needs.*.result, 'failure') && 1 || 0 }}

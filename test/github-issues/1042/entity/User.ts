@@ -18,6 +18,6 @@ export class User {
     @Column("json")
     profile: Profile
 
-    @Column((type) => Information)
+    @Column(() => Information)
     information: Information
 }

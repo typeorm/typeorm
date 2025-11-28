@@ -267,6 +267,11 @@ exports.Tree = Tree;
 }
 exports.Index = Index;
 
+/* export */ function ForeignKey() {
+    return noop
+}
+exports.ForeignKey = ForeignKey;
+
 /* export */ function Unique() {
     return noop
 }
@@ -292,4 +297,7 @@ exports.Generated = Generated;
 }
 exports.EntityRepository = EntityRepository;
 
-
+/* export */ function VirtualColumn() {
+    return noop
+}
+exports.VirtualColumn = VirtualColumn;
