@@ -147,10 +147,11 @@ export class IndexMetadata {
         if (
             options.args &&
             options.args.type &&
-            options.entityMetadata.connection.driver.supportedIndexTypes &&
-            !options.entityMetadata.connection.driver.supportedIndexTypes.find(
-                (idx) => idx === options.args?.type,
-            )
+            ((options.entityMetadata.connection.driver.supportedIndexTypes &&
+                !options.entityMetadata.connection.driver.supportedIndexTypes.find(
+                    (idx) => idx === options.args?.type,
+                )) ||
+                !options.entityMetadata.connection.driver.supportedIndexTypes)
         ) {
             throw new TypeORMError(`Unsupported index type`)
         }
