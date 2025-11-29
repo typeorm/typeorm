@@ -1,6 +1,7 @@
 import { EntityMetadata } from "./EntityMetadata"
 import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
 import { ExclusionMetadataArgs } from "../metadata-args/ExclusionMetadataArgs"
+import { DeferrableType } from "./types/DeferrableType"
 
 /**
  * Exclusion metadata contains all information about table's exclusion constraints.
@@ -24,6 +25,11 @@ export class ExclusionMetadata {
      * Exclusion expression.
      */
     expression: string
+
+    /**
+     * Indicate if exclusion constraints can be deferred.
+     */
+    deferrable?: DeferrableType
 
     /**
      * User specified exclusion constraint name.
@@ -51,6 +57,7 @@ export class ExclusionMetadata {
             this.target = options.args.target
             this.expression = options.args.expression
             this.givenName = options.args.name
+            this.deferrable = options.args.deferrable
         }
     }
 
