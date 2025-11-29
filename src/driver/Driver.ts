@@ -99,6 +99,11 @@ export interface Driver {
     withLengthColumnTypes: ColumnType[]
 
     /**
+     * Supported index types
+     */
+    supportedIndexTypes?: boolean
+
+    /**
      * Gets list of column data types that support precision by a driver.
      */
     withPrecisionColumnTypes: ColumnType[]
@@ -284,11 +289,6 @@ export interface Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string
-
-    /**
-     * Returns true if driver supports type indices
-     */
-    isIndicesTypeSupported(): boolean
 
     /**
      * Returns true if both indexes types are equivalent

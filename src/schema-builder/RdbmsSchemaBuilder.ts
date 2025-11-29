@@ -390,7 +390,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (indexMetadata.isSpatial !== tableIndex.isSpatial) return true
 
             if (
-                this.connection.driver.isIndicesTypeSupported() &&
+                !!this.connection.driver.supportedIndexTypes &&
                 typeof this.connection.driver.compareTableIndexTypes ===
                     "function" &&
                 !this.connection.driver.compareTableIndexTypes(
@@ -401,7 +401,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 return true
 
             if (
-                !this.connection.driver.isIndicesTypeSupported() &&
+                !this.connection.driver.supportedIndexTypes &&
                 indexMetadata.type
             )
                 throw new TypeORMError(
@@ -985,7 +985,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 newIndices.find(
                     (idx) =>
                         !!idx.type &&
-                        !this.connection.driver.isIndicesTypeSupported(),
+                        !this.connection.driver.supportedIndexTypes,
                 )
             ) {
                 throw new TypeORMError(
@@ -1050,7 +1050,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 newIndices.find(
                     (idx) =>
                         !!idx.type &&
-                        !this.connection.driver.isIndicesTypeSupported(),
+                        !this.connection.driver.supportedIndexTypes,
                 )
             ) {
                 throw new TypeORMError(

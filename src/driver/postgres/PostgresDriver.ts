@@ -271,6 +271,11 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Table indices supported
+     */
+    supportedIndexTypes: boolean = true
+
+    /**
      * The prefix used for the parameters
      */
     parametersPrefix: string = "$"
@@ -1439,13 +1444,6 @@ export class PostgresDriver implements Driver {
      */
     isFullTextColumnTypeSupported(): boolean {
         return false
-    }
-
-    /**
-     * Returns true if driver supports type indices
-     */
-    isIndicesTypeSupported(): boolean {
-        return true
     }
 
     get uuidGenerator(): string {
