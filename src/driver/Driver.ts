@@ -18,6 +18,7 @@ import { OnDeleteType } from "../metadata/types/OnDeleteType"
 import { OnUpdateType } from "../metadata/types/OnUpdateType"
 import { TableIndex } from "../schema-builder/table/TableIndex"
 import { IndexMetadata } from "../metadata/IndexMetadata"
+import { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
 
 export type ReturningType = "insert" | "update" | "delete"
 
@@ -101,7 +102,7 @@ export interface Driver {
     /**
      * Supported index types
      */
-    supportedIndexTypes?: boolean
+    supportedIndexTypes?: TableIndexTypes[]
 
     /**
      * Gets list of column data types that support precision by a driver.

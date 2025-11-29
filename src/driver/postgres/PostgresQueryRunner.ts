@@ -4356,23 +4356,9 @@ export class PostgresQueryRunner
      */
 
     private buildIndexTypeClause(index: TableIndex) {
-        // List of index types supported by PostgreSQL
-        // https://www.postgresql.org/docs/current/indexes-types.html
-        const pgValidIdxTypes = new Set<TableIndexTypes>([
-            "btree",
-            "hash",
-            "gist",
-            "spgist",
-            "gin",
-            "brin",
-        ])
-
         const type = index.isSpatial ? "gist" : index.type
 
         if (typeof type !== "string") return null
-
-        if (!pgValidIdxTypes.has(type))
-            throw new TypeORMError(`Unsupported index type`)
 
         return `USING ${type}`
     }

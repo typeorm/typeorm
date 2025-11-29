@@ -143,6 +143,18 @@ export class IndexMetadata {
         columns?: ColumnMetadata[]
         args?: IndexMetadataArgs
     }) {
+        // check if index type is supported
+        if (
+            options.args &&
+            options.args.type &&
+            options.entityMetadata.connection.driver.supportedIndexTypes &&
+            !options.entityMetadata.connection.driver.supportedIndexTypes.find(
+                (idx) => idx === options.args?.type,
+            )
+        ) {
+            throw new TypeORMError(`Unsupported index type`)
+        }
+
         this.entityMetadata = options.entityMetadata
         this.embeddedMetadata = options.embeddedMetadata
         if (options.columns) this.columns = options.columns

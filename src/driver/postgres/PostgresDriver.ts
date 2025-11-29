@@ -30,6 +30,7 @@ import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
 import { IndexMetadata } from "../../metadata/IndexMetadata"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
+import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -273,7 +274,14 @@ export class PostgresDriver implements Driver {
     /**
      * Table indices supported
      */
-    supportedIndexTypes: boolean = true
+    supportedIndexTypes: TableIndexTypes[] = [
+        "brin",
+        "btree",
+        "gin",
+        "gist",
+        "hash",
+        "spgist",
+    ]
 
     /**
      * The prefix used for the parameters
