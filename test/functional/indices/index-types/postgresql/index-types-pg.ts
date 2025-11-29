@@ -14,7 +14,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
     before(
         async () =>
             (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
+                entities: [__dirname + "./../entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
                 schemaCreate: true,
             })),
