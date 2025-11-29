@@ -5,7 +5,6 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    sleep,
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
 
@@ -97,9 +96,6 @@ describe("column kinds > version column", () => {
                 const post = new Post()
                 post.title = "Post"
                 await postRepository.save(post)
-
-                // wait a second
-                await sleep(1000)
 
                 // update post once again
                 post.title = "Updated Title"
