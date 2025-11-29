@@ -1,7 +1,7 @@
 export type TableIndexTypes =
-    | "btree"
-    | "hash"
-    | "gist"
-    | "spgist"
-    | "gin"
-    | "brin"
+    | "btree" // Postgres
+    | "hash" // Postgres
+    | "gist" // Postgres
+    | "spgist" // Postgres
+    | "gin" // Postgres
+    | "brin" // Postgres
