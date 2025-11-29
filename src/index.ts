@@ -166,6 +166,7 @@ export {
 } from "./query-builder/QueryPartialEntity"
 export { QueryResult } from "./query-runner/QueryResult"
 export { QueryRunner } from "./query-runner/QueryRunner"
+export { QueryOptions } from "./query-runner/QueryOptions"
 export { MongoEntityManager } from "./entity-manager/MongoEntityManager"
 export { Migration } from "./migration/Migration"
 export { MigrationExecutor } from "./migration/MigrationExecutor"
