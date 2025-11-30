@@ -1,15 +1,15 @@
-import "reflect-metadata"
 import { expect } from "chai"
+import "reflect-metadata"
+import { scheduler } from "timers/promises"
+import { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    sleep,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { Address } from "./entity/Address"
 import { User } from "./entity/User"
 import { MockQueryResultCache } from "./provider/MockQueryResultCache"
-import { Address } from "./entity/Address"
 
 describe("custom cache provider", () => {
     let connections: DataSource[]
@@ -101,7 +101,7 @@ describe("custom cache provider", () => {
                 expect(users3.length).to.be.equal(1)
 
                 // give some time for cache to expire
-                await sleep(1000)
+                await scheduler.wait(1010)
 
                 // now, when our cache has expired we check if we have new user inserted even with cache enabled
                 const users4 = await connection
@@ -179,7 +179,7 @@ describe("custom cache provider", () => {
                 expect(users3.length).to.be.equal(1)
 
                 // give some time for cache to expire
-                await sleep(1000)
+                await scheduler.wait(1010)
 
                 // now, when our cache has expired we check if we have new user inserted even with cache enabled
                 const users4 = await connection
@@ -249,7 +249,7 @@ describe("custom cache provider", () => {
                 expect(users2.length).to.be.equal(2)
 
                 // give some time for cache to expire
-                await sleep(1000)
+                await scheduler.wait(1010)
 
                 // but with cache enabled it must not return newly inserted entity since cache is not expired yet
                 const users3 = await connection
@@ -263,7 +263,7 @@ describe("custom cache provider", () => {
                 expect(users3.length).to.be.equal(1)
 
                 // give some time for cache to expire
-                await sleep(1000)
+                await scheduler.wait(1010)
 
                 // now, when our cache has expired we check if we have new user inserted even with cache enabled
                 const users4 = await connection
@@ -389,7 +389,7 @@ describe("custom cache provider", () => {
                 expect(users3).to.be.equal(1)
 
                 // give some time for cache to expire
-                await sleep(1000)
+                await scheduler.wait(1010)
 
                 // now, when our cache has expired we check if we have new user inserted even with cache enabled
                 const users4 = await connection
