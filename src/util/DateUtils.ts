@@ -25,8 +25,21 @@ export class DateUtils {
     /**
      * Converts given value into date string in a "YYYY-MM-DD" format.
      */
-    static mixedDateToDateString(value: string | Date): string {
+    static mixedDateToDateString(
+        value: string | Date,
+        options?: { utc?: boolean },
+    ): string {
+        const utc = options?.utc ?? false
         if (value instanceof Date) {
+            if (utc) {
+                return (
+                    this.formatZerolessValue(value.getUTCFullYear(), 4) +
+                    "-" +
+                    this.formatZerolessValue(value.getUTCMonth() + 1) +
+                    "-" +
+                    this.formatZerolessValue(value.getUTCDate())
+                )
+            }
             return (
                 this.formatZerolessValue(value.getFullYear(), 4) +
                 "-" +

@@ -531,9 +531,9 @@ export class OracleDriver implements Driver {
         } else if (columnMetadata.type === "date") {
             if (typeof value === "string") value = value.replace(/[^0-9-]/g, "")
             return () =>
-                `TO_DATE('${DateUtils.mixedDateToDateString(
-                    value,
-                )}', 'YYYY-MM-DD')`
+                `TO_DATE('${DateUtils.mixedDateToDateString(value, {
+                    utc: columnMetadata.utc,
+                })}', 'YYYY-MM-DD')`
         } else if (
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
@@ -567,7 +567,9 @@ export class OracleDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             value = !!value
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
         } else if (
