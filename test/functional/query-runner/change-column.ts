@@ -24,7 +24,7 @@ describe("query runner > change column", () => {
     it("should correctly change column and revert change", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // CockroachDB and Spanner does not allow changing primary columns and renaming constraints
+                // CockroachDB & Spanner do not allow changing primary columns and renaming constraints
                 if (
                     connection.driver.options.type === "cockroachdb" ||
                     connection.driver.options.type === "spanner"
@@ -81,6 +81,7 @@ describe("query runner > change column", () => {
                 const idColumn = table!.findColumnByName("id")!
                 const changedIdColumn = idColumn.clone()
                 changedIdColumn!.isPrimary = false
+
                 await queryRunner.changeColumn(
                     table!,
                     idColumn,
