@@ -18,4 +18,11 @@ export interface UpsertOptions<Entity> extends InsertOrUpdateOptions {
      * If none provided, it will use the default for the database (first one in the list)
      */
     upsertType?: UpsertType
+
+    /**
+     * Specifies which columns to update when a conflict occurs.
+     * If not provided, all provided fields will be updated (existing behavior).
+     * This allows fine-grained control over which fields get overwritten during upsert.
+     */
+    updateOnly?: string[] | { [P in keyof Entity]?: true }
 }

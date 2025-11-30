@@ -873,6 +873,173 @@ describe("repository > basic methods", () => {
                         .should.be.rejectedWith(TypeORMError)
                 }),
             ))
+        it("should only update specified fields when updateOnly option is provided", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    if (!connection.driver.supportedUpsertTypes.length) return
+
+                    const postRepository = connection.getRepository(Post)
+                    const externalId = "external-updateonly-test"
+
+                    await postRepository.upsert(
+                        {
+                            externalId,
+                            title: "Initial title",
+                            subTitle: "Initial subtitle",
+                        },
+                        {
+                            conflictPaths: ["externalId"],
+                        },
+                    )
+
+                    const initial = await postRepository.findOneByOrFail({
+                        externalId,
+                    })
+
+                    initial.title.should.be.equal("Initial title")
+                    initial.subTitle.should.be.equal("Initial subtitle")
+
+                    await postRepository.upsert(
+                        {
+                            externalId,
+                            title: "Updated title",
+                            subTitle: "Updated subtitle",
+                        },
+                        {
+                            conflictPaths: ["externalId"],
+                            updateOnly: ["title"],
+                        },
+                    )
+
+                    const result = await postRepository.findOneByOrFail({
+                        externalId,
+                    })
+
+                    // only title should be updated, subTitle should remain the same
+                    result.title.should.be.equal("Updated title")
+                    result.subTitle.should.be.equal("Initial subtitle")
+                }),
+            ))
+        it("should work with object form of updateOnly option", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    if (!connection.driver.supportedUpsertTypes.length) return
+
+                    const postRepository = connection.getRepository(Post)
+                    const externalId = "external-updateonly-object-test"
+
+                    await postRepository.upsert(
+                        {
+                            externalId,
+                            title: "Initial title",
+                            subTitle: "Initial subtitle",
+                        },
+                        {
+                            conflictPaths: ["externalId"],
+                        },
+                    )
+
+                    const initial = await postRepository.findOneByOrFail({
+                        externalId,
+                    })
+
+                    initial.title.should.be.equal("Initial title")
+                    initial.subTitle.should.be.equal("Initial subtitle")
+
+                    await postRepository.upsert(
+                        {
+                            externalId,
+                            title: "Updated title",
+                            subTitle: "Updated subtitle",
+                        },
+                        {
+                            conflictPaths: ["externalId"],
+                            updateOnly: {
+                                title: true,
+                            },
+                        },
+                    )
+
+                    const result = await postRepository.findOneByOrFail({
+                        externalId,
+                    })
+
+                    result.title.should.be.equal("Updated title")
+                    result.subTitle.should.be.equal("Initial subtitle")
+                }),
+            ))
+        it("should NOT update whitelisted columns if their values are not provided", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    if (!connection.driver.supportedUpsertTypes.length) return
+
+                    const postRepository = connection.getRepository(Post)
+                    const externalId = "external-updateonly-no-value-test"
+
+                    await postRepository.upsert(
+                        {
+                            externalId,
+                            title: "Initial title",
+                            subTitle: "Initial subtitle",
+                        },
+                        {
+                            conflictPaths: ["externalId"],
+                        },
+                    )
+
+                    const initial = await postRepository.findOneByOrFail({
+                        externalId,
+                    })
+
+                    initial.title.should.be.equal("Initial title")
+                    initial.subTitle.should.be.equal("Initial subtitle")
+
+                    await postRepository.upsert(
+                        {
+                            externalId,
+                            title: "Updated title",
+                            // subTitle column omitted on purpose
+                        },
+                        {
+                            conflictPaths: ["externalId"],
+                            updateOnly: ["title", "subTitle"],
+                        },
+                    )
+
+                    const result = await postRepository.findOneByOrFail({
+                        externalId,
+                    })
+
+                    result.title.should.be.equal("Updated title")
+                    result.subTitle.should.be.equal("Initial subtitle")
+                }),
+            ))
+        it("should throw error when updateOnly contains unknown columns", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    if (!connection.driver.supportedUpsertTypes.length) return
+
+                    const postRepository = connection.getRepository(Post)
+                    const externalId = "external-updateonly-unknown-column-test"
+
+                    await postRepository
+                        .upsert(
+                            {
+                                externalId,
+                                title: "Test title",
+                            },
+                            {
+                                conflictPaths: ["externalId"],
+                                updateOnly: [
+                                    "title",
+                                    "unknownColumn",
+                                    "anotherUnknownColumn",
+                                ],
+                            },
+                        )
+                        .should.be.rejectedWith(TypeORMError)
+                }),
+            ))
     })
 
     describe("preload also should also implement merge functionality", function () {
