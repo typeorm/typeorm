@@ -1,15 +1,15 @@
-import "reflect-metadata"
 import { expect } from "chai"
-import { Post } from "./entity/Post"
-import { Counters } from "./entity/Counters"
+import "reflect-metadata"
+import { scheduler } from "timers/promises"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    sleep,
 } from "../../../utils/test-utils"
 import { Subcounters } from "../embedded-many-to-one-case2/entity/Subcounters"
+import { Counters } from "./entity/Counters"
+import { Post } from "./entity/Post"
 
 describe("embedded > embedded-with-special-columns", () => {
     let connections: DataSource[]
@@ -106,7 +106,9 @@ describe("embedded > embedded-with-special-columns", () => {
 
                 loadedPost!.title = "About cars #2"
 
-                await sleep(1000)
+                // wait a second
+                await scheduler.wait(1010)
+
                 await connection.getRepository(Post).save(loadedPost!)
 
                 loadedPost = await connection.manager
