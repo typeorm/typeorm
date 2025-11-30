@@ -202,4 +202,20 @@ describe(`OrmUtils`, () => {
             expect(objCopy2).to.equal(undefined)
         })
     })
+
+    describe("getArraysDiff", () => {
+        it("should return array difference", () => {
+            const a = [1, 2, 3]
+            const b = [2, 3, 4]
+
+            expect(OrmUtils.getArraysDiff(a, b)).to.deep.equal({
+                extraItems: [1],
+                missingItems: [4],
+            })
+            expect(OrmUtils.getArraysDiff(b, a)).to.deep.equal({
+                extraItems: [4],
+                missingItems: [1],
+            })
+        })
+    })
 })
