@@ -1,19 +1,19 @@
-import "reflect-metadata"
-import fs from "fs/promises"
 import { expect } from "chai"
+import fs from "fs/promises"
+import "reflect-metadata"
 import sinon from "sinon"
+import { scheduler } from "timers/promises"
+import { FileLogger } from "../../../../src"
+import { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    sleep,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
-import { User } from "./entity/User"
 import { Category } from "./entity/Category"
-import { Post } from "./entity/Post"
 import { Photo } from "./entity/Photo"
-import { FileLogger } from "../../../../src"
+import { Post } from "./entity/Post"
+import { User } from "./entity/User"
 
 describe("repository > find options", () => {
     let connections: DataSource[]
@@ -328,7 +328,7 @@ describe("repository > find options > cache", () => {
                 expect(users3.length).to.be.equal(3)
 
                 // give some time for cache to expire
-                await sleep(1000)
+                await scheduler.wait(1010)
 
                 // now, when our cache has expired we check if we have new user inserted even with cache enabled
                 const users4 = await connection
