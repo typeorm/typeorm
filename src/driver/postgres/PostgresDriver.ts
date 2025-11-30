@@ -1431,6 +1431,13 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Returns true if driver supports UPDATE FROM statement.
+     */
+    isUpdateFromSqlSupported(): boolean {
+        return true
+    }
+
+    /**
      * Returns true if driver supports uuid values generation on its own.
      */
     isUUIDGenerationSupported(): boolean {
