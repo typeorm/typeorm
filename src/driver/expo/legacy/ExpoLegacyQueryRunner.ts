@@ -5,6 +5,7 @@ import { TransactionNotStartedError } from "../../../error/TransactionNotStarted
 import { ExpoLegacyDriver } from "./ExpoLegacyDriver"
 import { Broadcaster } from "../../../subscriber/Broadcaster"
 import { QueryResult } from "../../../query-runner/QueryResult"
+import { QueryOptions } from "../../../query-runner/QueryOptions"
 import { BroadcasterResult } from "../../../subscriber/BroadcasterResult"
 
 // Needed to satisfy the Typescript compiler
@@ -159,8 +160,12 @@ export class ExpoLegacyQueryRunner extends AbstractSqliteQueryRunner {
     async query(
         query: string,
         parameters?: any[],
-        useStructuredResult = false,
+        optionsOrUseStructuredResult?: QueryOptions | boolean,
     ): Promise<any> {
+        const useStructuredResult =
+            typeof optionsOrUseStructuredResult === "boolean"
+                ? optionsOrUseStructuredResult
+                : optionsOrUseStructuredResult?.useStructuredResult === true
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         return new Promise<any>(async (ok, fail) => {
