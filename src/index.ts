@@ -115,6 +115,8 @@ export * from "./repository/TreeRepository"
 export * from "./repository/MongoRepository"
 export * from "./repository/RemoveOptions"
 export * from "./repository/SaveOptions"
+export { UpdateOptions as RepositoryUpdateOptions } from "./repository/UpdateOptions"
+export * from "./repository/UpsertOptions"
 export * from "./schema-builder/table/TableCheck"
 export * from "./schema-builder/table/TableColumn"
 export * from "./schema-builder/table/TableExclusion"
@@ -160,6 +162,7 @@ export { WhereExpression } from "./query-builder/WhereExpressionBuilder"
 export { InsertResult } from "./query-builder/result/InsertResult"
 export { UpdateResult } from "./query-builder/result/UpdateResult"
 export { DeleteResult } from "./query-builder/result/DeleteResult"
+export { ReturningOption } from "./query-builder/ReturningOption"
 export {
     QueryPartialEntity,
     QueryDeepPartialEntity,
