@@ -34,6 +34,10 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 -   `database` - Database name.
 
+-   `socketPath` - Database socket path.
+
+-   `poolSize` - Maximum number of clients the pool should contain for each connection.
+
 -   `charset` and `collation` - The charset/collation for the connection. If an SQL-level charset is specified (like utf8mb4) then the default collation for that charset is used.
 
 -   `timezone` - the timezone configured on the MySQL server. This is used to typecast server date/time
