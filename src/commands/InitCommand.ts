@@ -6,8 +6,6 @@ import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
 import { CommandUtils } from "./CommandUtils"
 
-import ourPackageJson from "../../package.json"
-
 /**
  * Generates a new project with TypeORM.
  */
@@ -117,7 +115,7 @@ export class InitCommand implements yargs.CommandModule {
             )
             await CommandUtils.createFile(
                 basePath + "/package.json",
-                InitCommand.appendPackageJson(
+                await InitCommand.appendPackageJson(
                     packageJsonContents,
                     database,
                     isExpress,
@@ -619,13 +617,14 @@ AppDataSource.initialize().then(async () => {
     environment:
       SA_PASSWORD: "Admin12345"
       ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
 
 `
             case "mongodb":
                 return `services:
 
   mongodb:
-    image: "mongo:8.0.5"
+    image: "mongo:8"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"
@@ -672,13 +671,16 @@ Steps to run this project:
     /**
      * Appends to a given package.json template everything needed.
      */
-    protected static appendPackageJson(
+    protected static async appendPackageJson(
         packageJsonContents: string,
         database: string,
         express: boolean,
         projectIsEsm: boolean /*, docker: boolean*/,
-    ): string {
+    ): Promise<string> {
         const packageJson = JSON.parse(packageJsonContents)
+        const ourPackageJson = JSON.parse(
+            await CommandUtils.readFile(`${__dirname}/../package.json`),
+        )
 
         if (!packageJson.devDependencies) packageJson.devDependencies = {}
         packageJson.devDependencies = {

@@ -26,7 +26,7 @@ export class ActionLog {
     })
     person: Person
 
-    @ManyToMany((type) => Address, {
+    @ManyToMany(() => Address, {
         createForeignKeyConstraints: false,
     })
     @JoinTable()

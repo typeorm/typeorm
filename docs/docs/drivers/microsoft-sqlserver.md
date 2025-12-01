@@ -165,4 +165,64 @@ Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation
 
 ## Column Types
 
-`int`, `bigint`, `bit`, `decimal`, `money`, `numeric`, `smallint`, `smallmoney`, `tinyint`, `float`, `real`, `date`, `datetime2`, `datetime`, `datetimeoffset`, `smalldatetime`, `time`, `char`, `varchar`, `text`, `nchar`, `nvarchar`, `ntext`, `binary`, `image`, `varbinary`, `hierarchyid`, `sql_variant`, `timestamp`, `uniqueidentifier`, `xml`, `geometry`, `geography`, `rowversion`
+`int`, `bigint`, `bit`, `decimal`, `money`, `numeric`, `smallint`, `smallmoney`, `tinyint`, `float`, `real`, `date`, `datetime2`, `datetime`, `datetimeoffset`, `smalldatetime`, `time`, `char`, `varchar`, `text`, `nchar`, `nvarchar`, `ntext`, `binary`, `image`, `varbinary`, `hierarchyid`, `sql_variant`, `timestamp`, `uniqueidentifier`, `xml`, `geometry`, `geography`, `rowversion`, `vector`
+
+### Vector Type (vector)
+
+The `vector` data type is available in SQL Server for storing high-dimensional vectors, commonly used for:
+
+-   Semantic search with embeddings
+-   Recommendation systems
+-   Similarity matching
+-   Machine learning applications
+
+NOTE: general `halfvec` type support is unavailable because this feature is still in preview. See the Microsoft docs: [Vector data type](https://learn.microsoft.com/en-us/sql/t-sql/data-types/vector-data-type).
+
+#### Usage
+
+```typescript
+@Entity()
+export class DocumentChunk {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column("varchar")
+    content: string
+
+    // Vector column with 1998 dimensions
+    @Column("vector", { length: 1998 })
+    embedding: number[]
+}
+```
+
+#### Vector Similarity Search
+
+SQL Server provides the `VECTOR_DISTANCE` function for calculating distances between vectors:
+
+```typescript
+const queryEmbedding = [
+    /* your query vector */
+]
+
+const results = await dataSource.query(
+    `
+    DECLARE @question AS VECTOR (1998) = @0;
+    SELECT TOP (10) dc.*,
+           VECTOR_DISTANCE('cosine', @question, embedding) AS distance
+    FROM document_chunk dc
+    ORDER BY VECTOR_DISTANCE('cosine', @question, embedding)
+`,
+    [JSON.stringify(queryEmbedding)],
+)
+```
+
+**Distance Metrics:**
+
+-   `'cosine'` - Cosine distance (most common for semantic search)
+-   `'euclidean'` - Euclidean (L2) distance
+-   `'dot'` - Negative dot product
+
+**Requirements:**
+
+-   SQL Server version with vector support enabled
+-   Vector dimensions must be specified using the `length` option
