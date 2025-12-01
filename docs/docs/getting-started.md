@@ -34,7 +34,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 -   Cascades.
 -   Indices.
 -   Transactions.
--   Migrations and automatic migrations generation.
+-   [Migrations](/docs/migrations/why) with automatic generation.
 -   Connection pooling.
 -   Replication.
 -   Using multiple database instances.
@@ -504,11 +504,11 @@ Now if you run your `index.ts`, a connection with the database will be initializ
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(100) |                            |
 | description | text         |                            |
 | filename    | varchar(255) |                            |
-| views       | int(11)      |                            |
+| views       | int          |                            |
 | isPublished | boolean      |                            |
 +-------------+--------------+----------------------------+
 ```
@@ -703,13 +703,13 @@ If you run the app, you'll see a newly generated table, and it will contain a co
 +-------------+--------------+----------------------------+
 |                     photo_metadata                      |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
-| height      | int(11)      |                            |
-| width       | int(11)      |                            |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
+| height      | int          |                            |
+| width       | int          |                            |
 | comment     | varchar(255) |                            |
 | compressed  | boolean      |                            |
 | orientation | varchar(255) |                            |
-| photoId     | int(11)      | FOREIGN KEY                |
+| photoId     | int          | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
 
@@ -999,7 +999,7 @@ After you run the application, the ORM will create the `author` table:
 +-------------+--------------+----------------------------+
 |                          author                         |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(255) |                            |
 +-------------+--------------+----------------------------+
 ```
@@ -1010,12 +1010,12 @@ It will also modify the `photo` table, adding a new `author` column and creating
 +-------------+--------------+----------------------------+
 |                         photo                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | name        | varchar(255) |                            |
 | description | varchar(255) |                            |
 | filename    | varchar(255) |                            |
 | isPublished | boolean      |                            |
-| authorId    | int(11)      | FOREIGN KEY                |
+| authorId    | int          | FOREIGN KEY                |
 +-------------+--------------+----------------------------+
 ```
 
@@ -1067,8 +1067,8 @@ After you run the application, the ORM will create an **album_photos_photo_album
 +-------------+--------------+----------------------------+
 |                album_photos_photo_albums                |
 +-------------+--------------+----------------------------+
-| album_id    | int(11)      | PRIMARY KEY FOREIGN KEY    |
-| photo_id    | int(11)      | PRIMARY KEY FOREIGN KEY    |
+| album_id    | int          | PRIMARY KEY FOREIGN KEY    |
+| photo_id    | int          | PRIMARY KEY FOREIGN KEY    |
 +-------------+--------------+----------------------------+
 ```
 
@@ -1195,7 +1195,7 @@ There are several extensions that simplify working with TypeORM and integrating 
 -   ER Diagram generator - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
 -   another ER Diagram generator - [erdia](https://www.npmjs.com/package/erdia/)
 -   Create, drop and seed database - [typeorm-extension](https://github.com/tada5hi/typeorm-extension)
--   Automatically update `data-source.ts` after generating migrations/entities - [typeorm-codebase-sync](https://www.npmjs.com/package/typeorm-codebase-sync)
+-   Automatically update `data-source.ts` after generating [migrations](/docs/migrations/why)/entities - [typeorm-codebase-sync](https://www.npmjs.com/package/typeorm-codebase-sync)
 -   Easy manipulation of `relations` objects - [typeorm-relations](https://npmjs.com/package/typeorm-relations)
 -   Automatically generate `relations` based on a GraphQL query - [typeorm-relations-graphql](https://npmjs.com/package/typeorm-relations-graphql)
 

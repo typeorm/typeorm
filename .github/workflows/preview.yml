@@ -15,26 +15,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          cache: "npm"
-          node-version: 20
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: npm ci
 
       - name: Build
         run: npm run package
-
-      - name: Prepare pnpm for preview publishing
-        run: |
-          npm install -g corepack@latest
-          corepack prepare pnpm@latest --activate
 
       - name: Release preview version
         run: npm run publish:preview
