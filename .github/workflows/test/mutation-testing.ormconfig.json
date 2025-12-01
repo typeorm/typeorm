@@ -7,33 +7,7 @@
     "logging": false
   },
   {
-    "skip": true,
-    "disabledIfNotEnabledImplicitly": true,
-    "name": "mongodb",
-    "type": "mongodb",
-    "host": "localhost",
-    "port": 27017,
-    "database": "test",
-    "logging": false,
-    "useNewUrlParser": true,
-    "useUnifiedTopology": true
-  },
-  {
-    "skip": true,
-    "name": "mssql",
-    "type": "mssql",
-    "host": "localhost",
-    "port": 1433,
-    "username": "sa",
-    "password": "Admin12345",
-    "database": "tempdb",
-    "logging": false,
-    "extra": {
-      "trustServerCertificate": true
-    }
-  },
-  {
-    "skip": true,
+    "skip": false,
     "name": "mysql",
     "type": "mysql",
     "host": "localhost",
@@ -44,7 +18,7 @@
     "logging": false
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mariadb",
     "type": "mariadb",
     "host": "localhost",
@@ -55,7 +29,7 @@
     "logging": false
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "postgres",
     "type": "postgres",
     "host": "localhost",
