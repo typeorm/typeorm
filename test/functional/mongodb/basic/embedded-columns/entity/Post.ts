@@ -15,6 +15,6 @@ export class Post {
     @Column()
     text: string
 
-    @Column((type) => Counters)
+    @Column(() => Counters)
     counters: Counters
 }

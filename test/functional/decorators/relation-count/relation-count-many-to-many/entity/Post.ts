@@ -17,7 +17,7 @@ export class Post {
     @Column()
     isRemoved: boolean = false
 
-    @ManyToMany((type) => Category, (category) => category.posts)
+    @ManyToMany(() => Category, (category) => category.posts)
     @JoinTable()
     categories: Category[]
 

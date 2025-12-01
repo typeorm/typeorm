@@ -12,7 +12,7 @@ export class ActivityEntity {
     @Column({ type: "datetime" })
     endDate: Date
 
-    @ManyToMany((type) => TileEntity, (tile) => tile.activities, {
+    @ManyToMany(() => TileEntity, (tile) => tile.activities, {
         cascade: true,
     })
     tiles: TileEntity[]
