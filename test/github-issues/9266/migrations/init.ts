@@ -11,5 +11,5 @@ export class CreateDatabase implements MigrationInterface {
         )
     }
 
-    async down(queryRunner: QueryRunner): Promise<void> {}
+    async down(): Promise<void> {}
 }

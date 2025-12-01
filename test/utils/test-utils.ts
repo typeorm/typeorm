@@ -154,6 +154,7 @@ export interface TestingOptions {
     createLogger?: () =>
         | "advanced-console"
         | "simple-console"
+        | "formatted-console"
         | "file"
         | "debug"
         | Logger
@@ -201,14 +202,14 @@ function getOrmFilepath(): string {
             // first checks build/compiled
             // useful for docker containers in order to provide a custom config
             return require.resolve(__dirname + "/../../ormconfig.json")
-        } catch (err) {
+        } catch {
             // fallbacks to the root config
             return require.resolve(__dirname + "/../../../../ormconfig.json")
         }
-    } catch (err) {
+    } catch {
         throw new Error(
             `Cannot find ormconfig.json file in the root of the project. To run tests please create ormconfig.json file` +
-                ` in the root of the project (near ormconfig.json.dist, you need to copy ormconfig.json.dist into ormconfig.json` +
+                ` in the root of the project (near ormconfig.sample.json, you need to copy ormconfig.sample.json into ormconfig.json` +
                 ` and change all database settings to match your local environment settings).`,
         )
     }
@@ -468,7 +469,7 @@ export async function createTestingConnections(
             for (const schemaPath of schemaPaths) {
                 try {
                     await queryRunner.createSchema(schemaPath, true)
-                } catch (e) {
+                } catch {
                     // Do nothing
                 }
             }
@@ -483,22 +484,26 @@ export async function createTestingConnections(
 /**
  * Closes testing connections if they are connected.
  */
-export function closeTestingConnections(connections: DataSource[]) {
-    return Promise.all(
-        connections.map((connection) =>
-            connection && connection.isInitialized
-                ? connection.destroy()
-                : undefined,
-        ),
+export async function closeTestingConnections(connections: DataSource[]) {
+    if (!connections || connections.length === 0) {
+        return
+    }
+
+    await Promise.all(
+        connections.map(async (connection) => {
+            if (connection?.isInitialized) {
+                await connection.destroy()
+            }
+        }),
     )
 }
 
 /**
  * Reloads all databases for all given connections.
  */
-export function reloadTestingDatabases(connections: DataSource[]) {
+export async function reloadTestingDatabases(connections: DataSource[]) {
     GeneratedColumnReplacerSubscriber.globalIncrementValues = {}
-    return Promise.all(
+    await Promise.all(
         connections.map((connection) => connection.synchronize(true)),
     )
 }
@@ -515,12 +520,6 @@ export function generateRandomText(length: number): string {
         text += characters.charAt(Math.floor(Math.random() * characters.length))
 
     return text
-}
-
-export function sleep(ms: number): Promise<void> {
-    return new Promise<void>((ok) => {
-        setTimeout(ok, ms)
-    })
 }
 
 /**

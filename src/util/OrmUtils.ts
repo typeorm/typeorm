@@ -1,4 +1,9 @@
+import { DeepPartial } from "../common/DeepPartial"
 import { ObjectLiteral } from "../common/ObjectLiteral"
+import {
+    PrimitiveCriteria,
+    SinglePrimitiveCriteria,
+} from "../common/PrimitiveCriteria"
 
 export class OrmUtils {
     // -------------------------------------------------------------------------
@@ -8,13 +13,13 @@ export class OrmUtils {
     /**
      * Chunks array into pieces.
      */
-    static chunk<T>(array: T[], size: number): T[][] {
+    public static chunk<T>(array: T[], size: number): T[][] {
         return Array.from(Array(Math.ceil(array.length / size)), (_, i) => {
             return array.slice(i * size, i * size + size)
         })
     }
 
-    static splitClassesAndStrings<T>(
+    public static splitClassesAndStrings<T>(
         classesAndStrings: (string | T)[],
     ): [T[], string[]] {
         return [
@@ -27,7 +32,7 @@ export class OrmUtils {
         ]
     }
 
-    static groupBy<T, R>(
+    public static groupBy<T, R>(
         array: T[],
         propertyCallback: (item: T) => R,
     ): { id: R; items: T[] }[] {
@@ -43,11 +48,11 @@ export class OrmUtils {
         }, [] as Array<{ id: R; items: T[] }>)
     }
 
-    static uniq<T>(array: T[], criteria?: (item: T) => any): T[]
-    static uniq<T, K extends keyof T>(array: T[], property: K): T[]
-    static uniq<T, K extends keyof T>(
+    public static uniq<T>(array: T[], criteria?: (item: T) => unknown): T[]
+    public static uniq<T, K extends keyof T>(array: T[], property: K): T[]
+    public static uniq<T, K extends keyof T>(
         array: T[],
-        criteriaOrProperty?: ((item: T) => any) | K,
+        criteriaOrProperty?: ((item: T) => unknown) | K,
     ): T[] {
         return array.reduce((uniqueArray, item) => {
             let found: boolean = false
@@ -73,106 +78,13 @@ export class OrmUtils {
         }, [] as T[])
     }
 
-    // Checks if it's an object made by Object.create(null), {} or new Object()
-    private static isPlainObject(item: any) {
-        if (item === null || item === undefined) {
-            return false
-        }
-
-        return !item.constructor || item.constructor === Object
-    }
-
-    private static mergeArrayKey(
-        target: any,
-        key: number,
-        value: any,
-        memo: Map<any, any>,
-    ) {
-        // Have we seen this before?  Prevent infinite recursion.
-        if (memo.has(value)) {
-            target[key] = memo.get(value)
-            return
-        }
-
-        if (value instanceof Promise) {
-            // Skip promises entirely.
-            // This is a hold-over from the old code & is because we don't want to pull in
-            // the lazy fields.  Ideally we'd remove these promises via another function first
-            // but for now we have to do it here.
-            return
-        }
-
-        if (!this.isPlainObject(value) && !Array.isArray(value)) {
-            target[key] = value
-            return
-        }
-
-        if (!target[key]) {
-            target[key] = Array.isArray(value) ? [] : {}
-        }
-
-        memo.set(value, target[key])
-        this.merge(target[key], value, memo)
-        memo.delete(value)
-    }
-
-    private static mergeObjectKey(
-        target: any,
-        key: string,
-        value: any,
-        memo: Map<any, any>,
-    ) {
-        // Have we seen this before?  Prevent infinite recursion.
-        if (memo.has(value)) {
-            Object.assign(target, { [key]: memo.get(value) })
-            return
-        }
-
-        if (value instanceof Promise) {
-            // Skip promises entirely.
-            // This is a hold-over from the old code & is because we don't want to pull in
-            // the lazy fields.  Ideally we'd remove these promises via another function first
-            // but for now we have to do it here.
-            return
-        }
-
-        if (!this.isPlainObject(value) && !Array.isArray(value)) {
-            Object.assign(target, { [key]: value })
-            return
-        }
-
-        if (!target[key]) {
-            Object.assign(target, { [key]: Array.isArray(value) ? [] : {} })
-        }
-
-        memo.set(value, target[key])
-        this.merge(target[key], value, memo)
-        memo.delete(value)
-    }
-
-    private static merge(
-        target: any,
-        source: any,
-        memo: Map<any, any> = new Map(),
-    ): any {
-        if (this.isPlainObject(target) && this.isPlainObject(source)) {
-            for (const key of Object.keys(source)) {
-                if (key === "__proto__") continue
-                this.mergeObjectKey(target, key, source[key], memo)
-            }
-        }
-
-        if (Array.isArray(target) && Array.isArray(source)) {
-            for (let key = 0; key < source.length; key++) {
-                this.mergeArrayKey(target, key, source[key], memo)
-            }
-        }
-    }
-
     /**
      * Deep Object.assign.
      */
-    static mergeDeep(target: any, ...sources: any[]): any {
+    public static mergeDeep<T>(
+        target: T,
+        ...sources: (DeepPartial<T> | undefined)[]
+    ): T {
         if (!sources.length) {
             return target
         }
@@ -185,28 +97,42 @@ export class OrmUtils {
     }
 
     /**
+     * Creates a shallow copy of the object, without invoking the constructor
+     */
+    public static cloneObject<T extends object>(object: T): T {
+        if (object === null || object === undefined) {
+            return object
+        }
+
+        return Object.assign(
+            Object.create(Object.getPrototypeOf(object)) as T,
+            object,
+        )
+    }
+
+    /**
      * Deep compare objects.
      *
      * @see http://stackoverflow.com/a/1144249
      */
-    static deepCompare(...args: any[]): boolean {
+    public static deepCompare<T>(...args: T[]): boolean {
         let i: any, l: any, leftChain: any, rightChain: any
 
-        if (arguments.length < 1) {
+        if (args.length < 1) {
             return true // Die silently? Don't know how to handle such case, please help...
             // throw "Need two or more arguments to compare";
         }
 
-        for (i = 1, l = arguments.length; i < l; i++) {
+        for (i = 1, l = args.length; i < l; i++) {
             leftChain = [] // Todo: this can be cached
             rightChain = []
 
             if (
-                !this.compare2Objects(
+                !OrmUtils.compare2Objects(
                     leftChain,
                     rightChain,
-                    arguments[0],
-                    arguments[i],
+                    args[0],
+                    args[i],
                 )
             ) {
                 return false
@@ -219,7 +145,7 @@ export class OrmUtils {
     /**
      * Gets deeper value of object.
      */
-    static deepValue(obj: ObjectLiteral, path: string) {
+    public static deepValue(obj: ObjectLiteral, path: string): any {
         const segments = path.split(".")
         for (let i = 0, len = segments.length; i < len; i++) {
             obj = obj[segments[i]]
@@ -227,19 +153,19 @@ export class OrmUtils {
         return obj
     }
 
-    static replaceEmptyObjectsWithBooleans(obj: any) {
+    public static replaceEmptyObjectsWithBooleans(obj: any) {
         for (const key in obj) {
             if (obj[key] && typeof obj[key] === "object") {
                 if (Object.keys(obj[key]).length === 0) {
                     obj[key] = true
                 } else {
-                    this.replaceEmptyObjectsWithBooleans(obj[key])
+                    OrmUtils.replaceEmptyObjectsWithBooleans(obj[key])
                 }
             }
         }
     }
 
-    static propertyPathsToTruthyObject(paths: string[]) {
+    public static propertyPathsToTruthyObject(paths: string[]) {
         const obj: any = {}
         for (const path of paths) {
             const props = path.split(".")
@@ -263,14 +189,14 @@ export class OrmUtils {
                 }
             }
         }
-        this.replaceEmptyObjectsWithBooleans(obj)
+        OrmUtils.replaceEmptyObjectsWithBooleans(obj)
         return obj
     }
 
     /**
      * Check if two entity-id-maps are the same
      */
-    static compareIds(
+    public static compareIds(
         firstId: ObjectLiteral | undefined,
         secondId: ObjectLiteral | undefined,
     ): boolean {
@@ -300,7 +226,7 @@ export class OrmUtils {
     /**
      * Transforms given value into boolean value.
      */
-    static toBoolean(value: any): boolean {
+    public static toBoolean(value: any): boolean {
         if (typeof value === "boolean") return value
 
         if (typeof value === "string") return value === "true" || value === "1"
@@ -311,26 +237,17 @@ export class OrmUtils {
     }
 
     /**
-     * Composes an object from the given array of keys and values.
+     * Checks if two arrays of unique values contain the same values
      */
-    static zipObject(keys: any[], values: any[]): ObjectLiteral {
-        return keys.reduce((object, column, index) => {
-            object[column] = values[index]
-            return object
-        }, {} as ObjectLiteral)
+    public static isArraysEqual<T>(arr1: T[], arr2: T[]): boolean {
+        if (arr1.length !== arr2.length) {
+            return false
+        }
+
+        return arr1.every((element) => arr2.includes(element))
     }
 
-    /**
-     * Compares two arrays.
-     */
-    static isArraysEqual(arr1: any[], arr2: any[]): boolean {
-        if (arr1.length !== arr2.length) return false
-        return arr1.every((element) => {
-            return arr2.indexOf(element) !== -1
-        })
-    }
-
-    static areMutuallyExclusive<T>(...lists: T[][]): boolean {
+    public static areMutuallyExclusive<T>(...lists: T[][]): boolean {
         const haveSharedObjects = lists.some((list) => {
             const otherLists = lists.filter((otherList) => otherList !== list)
             return list.some((item) =>
@@ -345,7 +262,7 @@ export class OrmUtils {
      * all values allowed by the constraint or undefined if the constraint
      * is not present.
      */
-    static parseSqlCheckExpression(
+    public static parseSqlCheckExpression(
         sql: string,
         columnName: string,
     ): string[] | undefined {
@@ -413,6 +330,49 @@ export class OrmUtils {
             }
         }
         return undefined
+    }
+
+    /**
+     * Checks if given criteria is null or empty.
+     */
+    public static isCriteriaNullOrEmpty(criteria: unknown): boolean {
+        return (
+            criteria === undefined ||
+            criteria === null ||
+            criteria === "" ||
+            (Array.isArray(criteria) && criteria.length === 0) ||
+            (OrmUtils.isPlainObject(criteria) &&
+                Object.keys(criteria).length === 0)
+        )
+    }
+
+    /**
+     * Checks if given criteria is a primitive value.
+     * Primitive values are strings, numbers and dates.
+     */
+    public static isSinglePrimitiveCriteria(
+        criteria: unknown,
+    ): criteria is SinglePrimitiveCriteria {
+        return (
+            typeof criteria === "string" ||
+            typeof criteria === "number" ||
+            criteria instanceof Date
+        )
+    }
+
+    /**
+     * Checks if given criteria is a primitive value or an array of primitive values.
+     */
+    public static isPrimitiveCriteria(
+        criteria: unknown,
+    ): criteria is PrimitiveCriteria {
+        if (Array.isArray(criteria)) {
+            return criteria.every((value) =>
+                OrmUtils.isSinglePrimitiveCriteria(value),
+            )
+        }
+
+        return OrmUtils.isSinglePrimitiveCriteria(criteria)
     }
 
     // -------------------------------------------------------------------------
@@ -503,7 +463,12 @@ export class OrmUtils {
                     rightChain.push(y)
 
                     if (
-                        !this.compare2Objects(leftChain, rightChain, x[p], y[p])
+                        !OrmUtils.compare2Objects(
+                            leftChain,
+                            rightChain,
+                            x[p],
+                            y[p],
+                        )
                     ) {
                         return false
                     }
@@ -521,5 +486,103 @@ export class OrmUtils {
         }
 
         return true
+    }
+
+    // Checks if it's an object made by Object.create(null), {} or new Object()
+    private static isPlainObject(item: any) {
+        if (item === null || item === undefined) {
+            return false
+        }
+
+        return !item.constructor || item.constructor === Object
+    }
+
+    private static mergeArrayKey(
+        target: any,
+        key: number,
+        value: any,
+        memo: Map<any, any>,
+    ) {
+        // Have we seen this before?  Prevent infinite recursion.
+        if (memo.has(value)) {
+            target[key] = memo.get(value)
+            return
+        }
+
+        if (value instanceof Promise) {
+            // Skip promises entirely.
+            // This is a hold-over from the old code & is because we don't want to pull in
+            // the lazy fields.  Ideally we'd remove these promises via another function first
+            // but for now we have to do it here.
+            return
+        }
+
+        if (!OrmUtils.isPlainObject(value) && !Array.isArray(value)) {
+            target[key] = value
+            return
+        }
+
+        if (!target[key]) {
+            target[key] = Array.isArray(value) ? [] : {}
+        }
+
+        memo.set(value, target[key])
+        OrmUtils.merge(target[key], value, memo)
+        memo.delete(value)
+    }
+
+    private static mergeObjectKey(
+        target: any,
+        key: string,
+        value: any,
+        memo: Map<any, any>,
+    ) {
+        // Have we seen this before?  Prevent infinite recursion.
+        if (memo.has(value)) {
+            Object.assign(target, { [key]: memo.get(value) })
+            return
+        }
+
+        if (value instanceof Promise) {
+            // Skip promises entirely.
+            // This is a hold-over from the old code & is because we don't want to pull in
+            // the lazy fields.  Ideally we'd remove these promises via another function first
+            // but for now we have to do it here.
+            return
+        }
+
+        if (!OrmUtils.isPlainObject(value) && !Array.isArray(value)) {
+            Object.assign(target, { [key]: value })
+            return
+        }
+
+        if (!target[key]) {
+            Object.assign(target, { [key]: Array.isArray(value) ? [] : {} })
+        }
+
+        memo.set(value, target[key])
+        OrmUtils.merge(target[key], value, memo)
+        memo.delete(value)
+    }
+
+    private static merge<T>(
+        target: T,
+        source: DeepPartial<T> | undefined,
+        memo: Map<any, any> = new Map(),
+    ): void {
+        if (OrmUtils.isPlainObject(target) && OrmUtils.isPlainObject(source)) {
+            for (const [key, value] of Object.entries(
+                source as ObjectLiteral,
+            )) {
+                if (key === "__proto__") continue
+                OrmUtils.mergeObjectKey(target, key, value, memo)
+            }
+        }
+
+        if (Array.isArray(target) && Array.isArray(source)) {
+            for (let key = 0; key < source.length; key++) {
+                OrmUtils.mergeArrayKey(target, key, source[key], memo)
+            }
+        }
     }
 }

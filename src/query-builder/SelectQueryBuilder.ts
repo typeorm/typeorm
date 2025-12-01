@@ -1875,11 +1875,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 queryRunner,
             )
             this.expressionMap.queryEntity = false
-            const cacheId = this.expressionMap.cacheId
-            // Creates a new cacheId for the count query, or it will retreive the above query results
-            // and count will return 0.
-            this.expressionMap.cacheId = cacheId ? `${cacheId}-count` : cacheId
-            const count = await this.executeCountQuery(queryRunner)
+
+            let count: number | undefined = this.lazyCount(entitiesAndRaw)
+            if (count === undefined) {
+                const cacheId = this.expressionMap.cacheId
+                // Creates a new cacheId for the count query, or it will retrieve the above query results
+                // and count will return 0.
+                if (cacheId) {
+                    this.expressionMap.cacheId = `${cacheId}-count`
+                }
+                count = await this.executeCountQuery(queryRunner)
+            }
             const results: [Entity[], number] = [entitiesAndRaw.entities, count]
 
             // close transaction if we started it
@@ -1901,6 +1907,61 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 // means we created our own query runner
                 await queryRunner.release()
         }
+    }
+
+    private lazyCount(entitiesAndRaw: {
+        entities: Entity[]
+        raw: any[]
+    }): number | undefined {
+        const hasLimit =
+            this.expressionMap.limit !== undefined &&
+            this.expressionMap.limit !== null
+        if (this.expressionMap.joinAttributes.length > 0 && hasLimit) {
+            return undefined
+        }
+
+        const hasTake =
+            this.expressionMap.take !== undefined &&
+            this.expressionMap.take !== null
+
+        // limit overrides take when no join is defined
+        const maxResults = hasLimit
+            ? this.expressionMap.limit
+            : hasTake
+            ? this.expressionMap.take
+            : undefined
+
+        if (
+            maxResults !== undefined &&
+            entitiesAndRaw.entities.length === maxResults
+        ) {
+            // stop here when the result set contains the max number of rows; we need to execute a full count
+            return undefined
+        }
+
+        const hasSkip =
+            this.expressionMap.skip !== undefined &&
+            this.expressionMap.skip !== null &&
+            this.expressionMap.skip > 0
+        const hasOffset =
+            this.expressionMap.offset !== undefined &&
+            this.expressionMap.offset !== null &&
+            this.expressionMap.offset > 0
+
+        if (entitiesAndRaw.entities.length === 0 && (hasSkip || hasOffset)) {
+            // when skip or offset were used and no results found, we need to execute a full count
+            // (the given offset may have exceeded the actual number of rows)
+            return undefined
+        }
+
+        // offset overrides skip when no join is defined
+        const previousResults: number = hasOffset
+            ? this.expressionMap.offset!
+            : hasSkip
+            ? this.expressionMap.skip!
+            : 0
+
+        return entitiesAndRaw.entities.length + previousResults
     }
 
     /**
@@ -2545,13 +2606,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         let offset: number | undefined = this.expressionMap.offset,
             limit: number | undefined = this.expressionMap.limit
         if (
-            !offset &&
-            !limit &&
+            offset === undefined &&
+            limit === undefined &&
             this.expressionMap.joinAttributes.length === 0
         ) {
             offset = this.expressionMap.skip
             limit = this.expressionMap.take
         }
+
+        // Helper functions to check if values are set (including 0)
+        const hasLimit = limit !== undefined && limit !== null
+        const hasOffset = offset !== undefined && offset !== null
 
         if (this.connection.driver.options.type === "mssql") {
             // Due to a limitation in SQL Server's parser implementation it does not support using
@@ -2561,13 +2626,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // https://dba.stackexchange.com/a/193799
             let prefix = ""
             if (
-                (limit || offset) &&
+                (hasLimit || hasOffset) &&
                 Object.keys(this.expressionMap.allOrderBys).length <= 0
             ) {
                 prefix = " ORDER BY (SELECT NULL)"
             }
 
-            if (limit && offset)
+            if (hasLimit && hasOffset)
                 return (
                     prefix +
                     " OFFSET " +
@@ -2576,26 +2641,28 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     limit +
                     " ROWS ONLY"
                 )
-            if (limit)
+            if (hasLimit)
                 return (
                     prefix + " OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY"
                 )
-            if (offset) return prefix + " OFFSET " + offset + " ROWS"
+            if (hasOffset) return prefix + " OFFSET " + offset + " ROWS"
         } else if (
             DriverUtils.isMySQLFamily(this.connection.driver) ||
             this.connection.driver.options.type === "aurora-mysql" ||
             this.connection.driver.options.type === "sap" ||
             this.connection.driver.options.type === "spanner"
         ) {
-            if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
-            if (limit) return " LIMIT " + limit
-            if (offset) throw new OffsetWithoutLimitNotSupportedError()
+            if (hasLimit && hasOffset)
+                return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit) return " LIMIT " + limit
+            if (hasOffset) throw new OffsetWithoutLimitNotSupportedError()
         } else if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
-            if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
-            if (limit) return " LIMIT " + limit
-            if (offset) return " LIMIT -1 OFFSET " + offset
+            if (hasLimit && hasOffset)
+                return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit) return " LIMIT " + limit
+            if (hasOffset) return " LIMIT -1 OFFSET " + offset
         } else if (this.connection.driver.options.type === "oracle") {
-            if (limit && offset)
+            if (hasLimit && hasOffset)
                 return (
                     " OFFSET " +
                     offset +
@@ -2603,12 +2670,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     limit +
                     " ROWS ONLY"
                 )
-            if (limit) return " FETCH NEXT " + limit + " ROWS ONLY"
-            if (offset) return " OFFSET " + offset + " ROWS"
+            if (hasLimit) return " FETCH NEXT " + limit + " ROWS ONLY"
+            if (hasOffset) return " OFFSET " + offset + " ROWS"
         } else {
-            if (limit && offset) return " LIMIT " + limit + " OFFSET " + offset
-            if (limit) return " LIMIT " + limit
-            if (offset) return " OFFSET " + offset
+            if (hasLimit && hasOffset)
+                return " LIMIT " + limit + " OFFSET " + offset
+            if (hasLimit) return " LIMIT " + limit
+            if (hasOffset) return " OFFSET " + offset
         }
 
         return ""
@@ -2903,17 +2971,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         aliasName: string,
         metadata: EntityMetadata,
     ): SelectQuery[] {
-        const mainSelect = this.expressionMap.selects.find(
-            (select) => select.selection === aliasName,
+        return this.expressionMap.selects.filter(
+            (select) =>
+                select.selection === aliasName ||
+                metadata.columns.some(
+                    (column) =>
+                        select.selection ===
+                        aliasName + "." + column.propertyPath,
+                ),
         )
-        if (mainSelect) return [mainSelect]
-
-        return this.expressionMap.selects.filter((select) => {
-            return metadata.columns.some(
-                (column) =>
-                    select.selection === aliasName + "." + column.propertyPath,
-            )
-        })
     }
 
     private computeCountExpression() {
@@ -3099,6 +3165,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             this.selects = []
+
             if (this.findOptions.relations) {
                 const relations = Array.isArray(this.findOptions.relations)
                     ? OrmUtils.propertyPathsToTruthyObject(
@@ -3810,7 +3877,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     {
                         identifier: this.expressionMap.cacheId,
                         query: queryId,
-                        time: new Date().getTime(),
+                        time: Date.now(),
                         duration:
                             this.expressionMap.cacheDuration ||
                             cacheOptions.duration ||
@@ -4238,7 +4305,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         } else {
             const andConditions: string[] = []
             for (const key in where) {
-                if (where[key] === undefined || where[key] === null) continue
+                let parameterValue = where[key]
 
                 const propertyPath = embedPrefix ? embedPrefix + "." + key : key
                 const column =
@@ -4248,21 +4315,56 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 const relation =
                     metadata.findRelationWithPropertyPath(propertyPath)
 
-                if (!embed && !column && !relation)
+                if (!embed && !column && !relation) {
                     throw new EntityPropertyNotFoundError(
                         propertyPath,
                         metadata,
                     )
+                }
+
+                if (parameterValue === undefined) {
+                    const undefinedBehavior =
+                        this.connection.options.invalidWhereValuesBehavior
+                            ?.undefined || "ignore"
+                    if (undefinedBehavior === "throw") {
+                        throw new TypeORMError(
+                            `Undefined value encountered in property '${alias}.${key}' of a where condition. ` +
+                                `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                        )
+                    }
+                    continue
+                }
+
+                if (parameterValue === null) {
+                    const nullBehavior =
+                        this.connection.options.invalidWhereValuesBehavior
+                            ?.null || "ignore"
+                    if (nullBehavior === "ignore") {
+                        continue
+                    } else if (nullBehavior === "throw") {
+                        throw new TypeORMError(
+                            `Null value encountered in property '${alias}.${key}' of a where condition. ` +
+                                `To match with SQL NULL, the IsNull() operator must be used. ` +
+                                `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                        )
+                    }
+                    // 'sql-null' behavior continues to the next logic
+                }
 
                 if (column) {
                     let aliasPath = `${alias}.${propertyPath}`
                     if (column.isVirtualProperty && column.query) {
                         aliasPath = `(${column.query(this.escape(alias))})`
                     }
+
+                    if (parameterValue === null) {
+                        andConditions.push(`${aliasPath} IS NULL`)
+                        continue
+                    }
+
                     // const parameterName = alias + "_" + propertyPath.split(".").join("_") + "_" + parameterIndex;
 
                     // todo: we need to handle other operators as well?
-                    let parameterValue = where[key]
                     if (InstanceChecker.isEqualOperator(where[key])) {
                         parameterValue = where[key].value
                     }
@@ -4280,54 +4382,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                     // MSSQL requires parameters to carry extra type information
                     if (this.connection.driver.options.type === "mssql") {
-                        const driver = this.connection.driver as SqlServerDriver
-                        if (parameterValue instanceof FindOperator) {
-                            if (parameterValue.type !== "raw") {
-                                parameterValue.transformValue({
-                                    to: (v) =>
-                                        driver.parametrizeValue(column, v),
-                                    from: (v) => v,
-                                })
-                            }
-                        } else {
-                            parameterValue = driver.parametrizeValue(
-                                column,
-                                parameterValue,
-                            )
-                        }
+                        parameterValue = (
+                            this.connection.driver as SqlServerDriver
+                        ).parametrizeValues(column, parameterValue)
                     }
-
-                    // if (parameterValue === null) {
-                    //     andConditions.push(`${aliasPath} IS NULL`);
-                    //
-                    // } else if (parameterValue instanceof FindOperator) {
-                    //     // let parameters: any[] = [];
-                    //     // if (parameterValue.useParameter) {
-                    //     //     const realParameterValues: any[] = parameterValue.multipleParameters ? parameterValue.value : [parameterValue.value];
-                    //     //     realParameterValues.forEach((realParameterValue, realParameterValueIndex) => {
-                    //     //
-                    //     //         // don't create parameters for number to prevent max number of variables issues as much as possible
-                    //     //         if (typeof realParameterValue === "number") {
-                    //     //             parameters.push(realParameterValue);
-                    //     //
-                    //     //         } else {
-                    //     //             this.expressionMap.nativeParameters[parameterName + realParameterValueIndex] = realParameterValue;
-                    //     //             parameterIndex++;
-                    //     //             parameters.push(this.connection.driver.createParameter(parameterName + realParameterValueIndex, parameterIndex - 1));
-                    //     //         }
-                    //     //     });
-                    //     // }
-                    //     andConditions.push(
-                    //         this.createWhereConditionExpression(this.getWherePredicateCondition(aliasPath, parameterValue))
-                    //         // parameterValue.toSql(this.connection, aliasPath, parameters));
-                    //     )
-                    //
-                    // } else {
-                    //     this.expressionMap.nativeParameters[parameterName] = parameterValue;
-                    //     parameterIndex++;
-                    //     const parameter = this.connection.driver.createParameter(parameterName, parameterIndex - 1);
-                    //     andConditions.push(`${aliasPath} = ${parameter}`);
-                    // }
 
                     andConditions.push(
                         this.createWhereConditionExpression(
@@ -4350,6 +4408,24 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     )
                     if (condition) andConditions.push(condition)
                 } else if (relation) {
+                    if (where[key] === null) {
+                        const nullBehavior =
+                            this.connection.options.invalidWhereValuesBehavior
+                                ?.null || "ignore"
+                        if (nullBehavior === "sql-null") {
+                            andConditions.push(
+                                `${alias}.${propertyPath} IS NULL`,
+                            )
+                        } else if (nullBehavior === "throw") {
+                            throw new TypeORMError(
+                                `Null value encountered in property '${alias}.${key}' of a where condition. ` +
+                                    `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                            )
+                        }
+                        // 'ignore' behavior falls through to continue
+                        continue
+                    }
+
                     // if all properties of where are undefined we don't need to join anything
                     // this can happen when user defines map with conditional queries inside
                     if (typeof where[key] === "object") {
