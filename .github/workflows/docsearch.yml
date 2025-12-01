@@ -3,7 +3,7 @@ name: Index docs to Typesense
 on:
   push:
     branches:
-      - master
+      - ci/index-docs
 
 jobs:
   index-docs:
@@ -12,6 +12,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+
       - name: Delete unaliased collections
         env:
           TYPESENSE_API_KEY: ${{ secrets.TYPESENSE_API_KEY }}
@@ -41,7 +42,9 @@ jobs:
                 "$TYPESENSE_PROTOCOL://$TYPESENSE_HOST:$TYPESENSE_PORT/collections/$col"
             fi
           done
-      - run: |
+
+      - name: Run DocSearch Scraper
+        run: |
           docker run \
             -e TYPESENSE_API_KEY=${{ secrets.TYPESENSE_API_KEY }} \
             -e TYPESENSE_HOST="${{ secrets.TYPESENSE_HOST }}" \
