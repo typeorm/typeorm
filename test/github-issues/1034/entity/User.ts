@@ -11,7 +11,7 @@ export class User {
     @PrimaryGeneratedColumn({ type: "bigint" })
     private id: string
 
-    @ManyToMany((type: object) => Circle, (circle) => "users")
+    @ManyToMany(() => Circle, () => "users")
     private circles: Promise<Circle[]>
 
     /**
