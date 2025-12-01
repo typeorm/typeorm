@@ -21,9 +21,6 @@ export class UserToOrganizationEntity {
     @ManyToOne(() => UserEntity, (user) => user.organizations)
     user: UserEntity
 
-    @ManyToOne(
-        (type) => OrganizationEntity,
-        (organization) => organization.users,
-    )
+    @ManyToOne(() => OrganizationEntity, (organization) => organization.users)
     organization: OrganizationEntity
 }
