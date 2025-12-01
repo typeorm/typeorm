@@ -13,7 +13,7 @@ export class Subcounters {
     @Column()
     watches: number
 
-    @ManyToOne((type) => User)
+    @ManyToOne(() => User)
     watchedUser: User
 
     watchedUserId: number

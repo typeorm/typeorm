@@ -1,11 +1,14 @@
-import path from "path"
-import fs from "fs"
+import ansi from "ansis"
 import dotenv from "dotenv"
-import chalk from "chalk"
-import { highlight, Theme } from "cli-highlight"
+import fs from "fs"
+import path from "path"
+import { highlight } from "sql-highlight"
+import { format as sqlFormat } from "@sqltools/formatter"
+import { type Config as SqlFormatterConfig } from "@sqltools/formatter/lib/core/types"
+import { type DatabaseType } from "../driver/types/DatabaseType"
 
-export { ReadStream } from "fs"
 export { EventEmitter } from "events"
+export { ReadStream } from "fs"
 export { Readable, Writable } from "stream"
 
 /**
@@ -56,9 +59,6 @@ export class PlatformTools {
 
                 case "@sap/hana-client/extension/Stream":
                     return require("@sap/hana-client/extension/Stream")
-
-                case "hdb-pool":
-                    return require("hdb-pool")
 
                 /**
                  * mysql
@@ -202,60 +202,78 @@ export class PlatformTools {
     }
 
     /**
-     * Highlights sql string to be print in the console.
+     * Highlights sql string to be printed in the console.
      */
     static highlightSql(sql: string) {
-        const theme: Theme = {
-            keyword: chalk.blueBright,
-            literal: chalk.blueBright,
-            string: chalk.white,
-            type: chalk.magentaBright,
-            built_in: chalk.magentaBright,
-            comment: chalk.gray,
-        }
-        return highlight(sql, { theme: theme, language: "sql" })
+        return highlight(sql, {
+            colors: {
+                keyword: ansi.blueBright.open,
+                function: ansi.magentaBright.open,
+                number: ansi.green.open,
+                string: ansi.white.open,
+                identifier: ansi.white.open,
+                special: ansi.white.open,
+                bracket: ansi.white.open,
+                comment: ansi.gray.open,
+                clear: ansi.reset.open,
+            },
+        })
     }
 
     /**
-     * Highlights json string to be print in the console.
+     * Pretty-print sql string to be print in the console.
      */
-    static highlightJson(json: string) {
-        return highlight(json, { language: "json" })
+    static formatSql(sql: string, dataSourceType?: DatabaseType): string {
+        const databaseLanguageMap: Record<
+            string,
+            SqlFormatterConfig["language"]
+        > = {
+            oracle: "pl/sql",
+        }
+
+        const databaseLanguage = dataSourceType
+            ? databaseLanguageMap[dataSourceType] || "sql"
+            : "sql"
+
+        return sqlFormat(sql, {
+            language: databaseLanguage,
+            indent: "    ",
+        })
     }
 
     /**
      * Logging functions needed by AdvancedConsoleLogger
      */
     static logInfo(prefix: string, info: any) {
-        console.log(chalk.gray.underline(prefix), info)
+        console.log(ansi.gray.underline(prefix), info)
     }
 
     static logError(prefix: string, error: any) {
-        console.log(chalk.underline.red(prefix), error)
+        console.log(ansi.underline.red(prefix), error)
     }
 
     static logWarn(prefix: string, warning: any) {
-        console.log(chalk.underline.yellow(prefix), warning)
+        console.log(ansi.underline.yellow(prefix), warning)
     }
 
     static log(message: string) {
-        console.log(chalk.underline(message))
+        console.log(ansi.underline(message))
     }
 
     static info(info: any) {
-        return chalk.gray(info)
+        return ansi.gray(info)
     }
 
     static error(error: any) {
-        return chalk.red(error)
+        return ansi.red(error)
     }
 
     static warn(message: string) {
-        return chalk.yellow(message)
+        return ansi.yellow(message)
     }
 
     static logCmdErr(prefix: string, err?: any) {
-        console.log(chalk.black.bgRed(prefix))
+        console.log(ansi.black.bgRed(prefix))
         if (err) console.error(err)
     }
 }

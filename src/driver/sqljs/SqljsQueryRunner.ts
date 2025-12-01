@@ -1,10 +1,10 @@
+import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { QueryResult } from "../../query-runner/QueryResult"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import { SqljsDriver } from "./SqljsDriver"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import { QueryFailedError } from "../../error/QueryFailedError"
-import { QueryResult } from "../../query-runner/QueryResult"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -85,17 +85,14 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         const command = query.trim().split(" ", 1)[0]
 
         const databaseConnection = this.driver.databaseConnection
-        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-        const queryStartTime = +new Date()
+        const broadcasterResult = new BroadcasterResult()
+        const queryStartTime = Date.now()
         let statement: any
+
         try {
             statement = databaseConnection.prepare(query)
             if (parameters) {
@@ -109,7 +106,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             if (
