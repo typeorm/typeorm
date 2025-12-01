@@ -15,7 +15,7 @@ export class Post {
     @Column()
     name: string
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     @JoinTable({ schema: "yoman" })
     categories: Category[]
 }

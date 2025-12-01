@@ -124,6 +124,12 @@ export class ColumnMetadata {
     comment?: string
 
     /**
+     * Indicates if date values use UTC timezone.
+     * Only applies to "date" column type.
+     */
+    utc: boolean = false
+
+    /**
      * Default database value.
      */
     default?:
@@ -388,6 +394,8 @@ export class ColumnMetadata {
             this.isSelect = options.args.options.select
         if (options.args.options.insert !== undefined)
             this.isInsert = options.args.options.insert
+        if (options.args.options.utc !== undefined)
+            this.utc = options.args.options.utc
         if (options.args.options.update !== undefined)
             this.isUpdate = options.args.options.update
         if (options.args.options.readonly !== undefined)
