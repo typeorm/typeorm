@@ -1,12 +1,11 @@
-import { Gulpclass, Task, SequenceTask, MergedTask } from "gulpclass";
-
 import fs from "fs/promises";
 import gulp from "gulp";
-import shell from "gulp-shell";
-import replace from "gulp-replace";
 import rename from "gulp-rename";
+import replace from "gulp-replace";
+import shell from "gulp-shell";
 import sourcemaps from "gulp-sourcemaps";
 import ts from "gulp-typescript";
+import { Gulpclass, MergedTask, SequenceTask, Task } from "gulpclass";
 import { rimraf } from "rimraf";
 
 @Gulpclass()
@@ -21,7 +20,7 @@ export class Gulpfile {
      */
     @Task()
     async clean() {
-        return rimraf(["./build/**"]);
+        return rimraf(["./build/**"], { glob: true });
     }
 
     /**
@@ -88,7 +87,7 @@ export class Gulpfile {
     async browserClearPackageDirectory() {
         return rimraf([
             "./build/browser/**"
-        ]);
+        ], { glob: true });
     }
 
     // -------------------------------------------------------------------------
@@ -195,7 +194,7 @@ export class Gulpfile {
     async packageClearPackageDirectory() {
         return rimraf([
             "build/package/src/**"
-        ]);
+        ], { glob: true });
     }
 
     /**
@@ -228,6 +227,16 @@ export class Gulpfile {
     }
 
     /**
+     * Move reference to package.json one level up
+     */
+    @Task()
+    movePackageJsonReferenceLevelUp() {
+        return gulp.src("./build/package/commands/InitCommand.js")
+            .pipe(replace(/\.\.\/package.json/g, "package.json"))
+            .pipe(gulp.dest("./build/package/commands"));
+    }
+
+    /**
      * Creates a package that can be published to npm.
      */
     @SequenceTask()
@@ -244,7 +253,8 @@ export class Gulpfile {
                 "packageReplaceReferences",
                 "packagePreparePackageFile",
                 "packageCopyReadme",
-                "packageCopyShims"
+                "packageCopyShims",
+                "movePackageJsonReferenceLevelUp"
             ],
         ];
     }

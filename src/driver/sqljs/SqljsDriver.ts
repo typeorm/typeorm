@@ -231,7 +231,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                 ) {
                     const query = "SELECT last_insert_rowid()"
                     try {
-                        let result = this.databaseConnection.exec(query)
+                        const result = this.databaseConnection.exec(query)
                         this.connection.logger.logQuery(query)
                         return OrmUtils.mergeDeep(
                             map,

@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 import { Category } from "./entity/Category"
@@ -19,29 +19,29 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        let postRepository = dataSource.getRepository(Post)
+        const postRepository = dataSource.getRepository(Post)
 
-        let category1 = new Category()
+        const category1 = new Category()
         category1.name = "category #1"
 
-        let category2 = new Category()
+        const category2 = new Category()
         category2.name = "category #2"
 
-        let post = new Post()
+        const post = new Post()
         post.text = "Hello how are you?"
         post.title = "hello"
         post.categories = [category1, category2]
 
-        let author = new Author()
+        const author = new Author()
         author.name = "Umed"
         post.author = author
 
-        let author2 = new Author()
+        const author2 = new Author()
         author2.name = "Bakhrom"
 
         postRepository
             .save(post)
-            .then((post) => {
+            .then(() => {
                 return postRepository
                     .createQueryBuilder("post")
                     .leftJoin("post.categories", "categories")
@@ -55,7 +55,7 @@ dataSource.initialize().then(
                     "Lets update a post - add a new category and change author",
                 )
 
-                let category3 = new Category()
+                const category3 = new Category()
                 category3.name = "category #3"
                 post.categories.push(category3)
 
@@ -63,7 +63,7 @@ dataSource.initialize().then(
 
                 return postRepository.save(post)
             })
-            .then((updatedPost) => {
+            .then(() => {
                 return postRepository
                     .createQueryBuilder("post")
                     .leftJoinAndSelect("post.author", "author")
@@ -80,7 +80,7 @@ dataSource.initialize().then(
                 loadedPost!.author = author
                 return postRepository.save(loadedPost!)
             })
-            .then((updatedPost) => {
+            .then(() => {
                 return postRepository
                     .createQueryBuilder("post")
                     .leftJoinAndSelect("post.author", "author")
@@ -94,7 +94,7 @@ dataSource.initialize().then(
                 post.author = null
                 return postRepository.save(post)
             })
-            .then((updatedPost) => {
+            .then(() => {
                 return postRepository
                     .createQueryBuilder("post")
                     .leftJoinAndSelect("post.author", "author")
@@ -106,7 +106,7 @@ dataSource.initialize().then(
                 post.author = author2
                 return postRepository.save(post)
             })
-            .then((updatedPost) => {
+            .then(() => {
                 return postRepository
                     .createQueryBuilder("post")
                     .leftJoinAndSelect("post.author", "author")

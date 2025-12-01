@@ -1159,7 +1159,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
         const cteStrings = this.expressionMap.commonTableExpressions.map(
             (cte) => {
-                let cteBodyExpression = typeof cte.queryBuilder === 'string' ? cte.queryBuilder : '';
+                let cteBodyExpression =
+                    typeof cte.queryBuilder === "string" ? cte.queryBuilder : ""
                 if (typeof cte.queryBuilder !== "string") {
                     if (cte.queryBuilder.hasCommonTableExpressions()) {
                         throw new TypeORMError(
@@ -1516,7 +1517,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         parameterValue: any,
     ): WhereClauseCondition {
         if (InstanceChecker.isFindOperator(parameterValue)) {
-            let parameters: any[] = []
+            const parameters: any[] = []
             if (parameterValue.useParameter) {
                 if (parameterValue.objectLiteralParameters) {
                     this.setParameters(parameterValue.objectLiteralParameters)
@@ -1587,18 +1588,37 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     parameters: [aliasPath, ...parameters],
                 }
             }
-            // } else if (parameterValue === null) {
-            //     return {
-            //         operator: "isNull",
-            //         parameters: [
-            //             aliasPath,
-            //         ]
-            //     };
-        } else {
-            return {
-                operator: "equal",
-                parameters: [aliasPath, this.createParameter(parameterValue)],
+        } else if (parameterValue === null) {
+            const nullBehavior =
+                this.connection.options.invalidWhereValuesBehavior?.null ||
+                "ignore"
+            if (nullBehavior === "sql-null") {
+                return {
+                    operator: "isNull",
+                    parameters: [aliasPath],
+                }
+            } else if (nullBehavior === "throw") {
+                throw new TypeORMError(
+                    `Null value encountered in property '${aliasPath}' of a where condition. ` +
+                        `To match with SQL NULL, the IsNull() operator must be used. ` +
+                        `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                )
             }
+        } else if (parameterValue === undefined) {
+            const undefinedBehavior =
+                this.connection.options.invalidWhereValuesBehavior?.undefined ||
+                "ignore"
+            if (undefinedBehavior === "throw") {
+                throw new TypeORMError(
+                    `Undefined value encountered in property '${aliasPath}' of a where condition. ` +
+                        `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                )
+            }
+        }
+
+        return {
+            operator: "equal",
+            parameters: [aliasPath, this.createParameter(parameterValue)],
         }
     }
 

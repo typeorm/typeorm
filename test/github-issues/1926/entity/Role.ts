@@ -10,6 +10,6 @@ export class Role {
     @Column()
     title: string
 
-    @OneToMany((type) => EventRole, (role) => role.role)
+    @OneToMany(() => EventRole, (role) => role.role)
     roles: EventRole[]
 }

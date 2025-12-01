@@ -9,7 +9,7 @@ type XFailFunction = {
 const wrap = (
     fn: Func | AsyncFunc,
     condition: boolean | (() => boolean),
-): Func => {
+): AsyncFunc => {
     return function Wrapped(this: Context): PromiseLike<any> {
         if (typeof condition === "function") {
             if (!condition()) {
@@ -28,8 +28,8 @@ const wrap = (
                 ok((fn as AsyncFunc).call(context as unknown as Context))
             }
         }).then(
-            (e: any) => assert.fail("Expected this test to fail"),
-            (e: any) => {
+            () => assert.fail("Expected this test to fail"),
+            (e) => {
                 if (!(e instanceof AssertionError)) {
                     throw e
                 }
