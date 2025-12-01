@@ -24,7 +24,7 @@ export class User {
     @Column({ name: "user_name" })
     userName: string
 
-    @ManyToMany((type) => Role)
+    @ManyToMany(() => Role)
     @JoinTable({
         name: "user_role",
         joinColumn: {
