@@ -13,13 +13,28 @@ export class TestMigration1610975184784 implements MigrationInterface {
     }
 
 }`,
-    javascript: `module.exports = class TestMigration1610975184784 {
+    javascript: `/**
+ * @typedef {import('typeorm').MigrationInterface} MigrationInterface
+ * @typedef {import('typeorm').QueryRunner} QueryRunner
+ */
+
+/**
+ * @class
+ * @implements {MigrationInterface}
+ */
+module.exports = class TestMigration1610975184784 {
     name = 'TestMigration1610975184784'
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async up(queryRunner) {
         await queryRunner.query(\`CREATE TABLE "post" ("id" SERIAL NOT NULL, "title" character varying NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))\`);
     }
 
+    /**
+     * @param {QueryRunner} queryRunner
+     */
     async down(queryRunner) {
         await queryRunner.query(\`DROP TABLE "post"\`);
     }

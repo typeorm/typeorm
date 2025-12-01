@@ -1,20 +1,17 @@
-import {
-    Entity,
-    ManyToOne,
-    OneToMany,
-    PrimaryColumn
-} from "../../../../../src"
+import { Entity, ManyToOne, OneToMany, PrimaryColumn } from "../../../../../src"
 import { Company } from "./Company"
 import { TimeSheet } from "./TimeSheet"
 
 @Entity({ name: "employees" })
 export class Employee {
-    @PrimaryColumn("varchar", { length: 50 })
+    @PrimaryColumn()
     name: string
 
     @ManyToOne(() => Company, (company) => company.employees)
     company: Company
 
-    @OneToMany(() => TimeSheet, (timesheet) => timesheet.employee)
+    @OneToMany(() => TimeSheet, (timesheet) => timesheet.employee, {
+        cascade: true,
+    })
     timesheets: TimeSheet[]
 }

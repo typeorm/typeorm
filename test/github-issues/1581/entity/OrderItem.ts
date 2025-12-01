@@ -10,10 +10,10 @@ export class OrderItem {
     @PrimaryColumn()
     productId: number
 
-    @ManyToOne((type) => Order, (recurringOrder) => recurringOrder.items)
+    @ManyToOne(() => Order, (recurringOrder) => recurringOrder.items)
     order: Order
 
-    @ManyToOne((type) => Product)
+    @ManyToOne(() => Product)
     product: Product
 
     @Column()
