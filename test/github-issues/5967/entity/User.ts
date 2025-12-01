@@ -17,4 +17,10 @@ export class User {
         default: "{}",
     })
     dates: Date[]
+
+    @Column("time without time zone", {
+        nullable: true,
+        array: true,
+    })
+    nullable_times: string[] | null
 }

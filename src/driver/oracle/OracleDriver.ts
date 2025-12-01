@@ -135,7 +135,7 @@ export class OracleDriver implements Driver {
     /**
      * Returns type of upsert supported by driver if any
      */
-    supportedUpsertTypes: UpsertType[] = []
+    supportedUpsertTypes: UpsertType[] = ["merge-into"]
 
     /**
      * Returns list of supported onDelete types by driver.
@@ -343,8 +343,9 @@ export class OracleDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("oracle"))
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("oracle")
+        }
 
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
@@ -385,16 +386,11 @@ export class OracleDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
-        const parameterIndexMap = new Map<string, number>()
         sql = sql.replace(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
                     return full
-                }
-
-                if (parameterIndexMap.has(key)) {
-                    return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
                 const value: any = parameters[key]
@@ -420,7 +416,7 @@ export class OracleDriver implements Driver {
                 }
 
                 escapedParameters.push(value)
-                parameterIndexMap.set(key, escapedParameters.length)
+
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems
@@ -535,9 +531,9 @@ export class OracleDriver implements Driver {
         } else if (columnMetadata.type === "date") {
             if (typeof value === "string") value = value.replace(/[^0-9-]/g, "")
             return () =>
-                `TO_DATE('${DateUtils.mixedDateToDateString(
-                    value,
-                )}', 'YYYY-MM-DD')`
+                `TO_DATE('${DateUtils.mixedDateToDateString(value, {
+                    utc: columnMetadata.utc,
+                })}', 'YYYY-MM-DD')`
         } else if (
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
@@ -571,7 +567,9 @@ export class OracleDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             value = !!value
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
         } else if (

@@ -1,5 +1,4 @@
 {
-  "extends": "@tsconfig/node16/tsconfig.json",
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "declaration": true,
@@ -15,12 +14,14 @@
     "noUnusedLocals": true,
     "outDir": "build/compiled",
     "pretty": true,
+    "resolveJsonModule": true,
     "sourceMap": true,
     "strictFunctionTypes": false,
     "strictPropertyInitialization": false,
     "stripInternal": true,
     "useUnknownInCatchVariables": false
   },
-  "include": ["sample", "src", "test", "*.ts"],
-  "exclude": ["build", "node_modules", "temp", "tmp", "sample/playground"]
+  "exclude": ["build", "node_modules", "temp", "tmp", "sample/playground"],
+  "extends": "@tsconfig/node16/tsconfig.json",
+  "include": ["sample", "src", "test", "*.ts"]
 }

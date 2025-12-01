@@ -213,14 +213,14 @@ export interface MongoConnectionOptions extends BaseDataSourceOptions {
 
     /**
      * @deprecated A boolean to enable or disables TLS/SSL for the connection.
-     * (The ssl option is equivalent to the tls option.)
+     * (The ssl option is equivalent to the {@link tls} option.)
      */
     readonly ssl?: boolean
 
     /**
      * @deprecated SSL Root Certificate file path.
      *
-     * Will be removed in the next major version. Please use tlsCAFile instead.
+     * Will be removed in the next major version. Please use {@link tlsCAFile} instead.
      */
     readonly sslCA?: string
 
@@ -234,28 +234,28 @@ export interface MongoConnectionOptions extends BaseDataSourceOptions {
     /**
      * @deprecated SSL Certificate file path.
      *
-     * Will be removed in the next major version. Please use tlsCertificateKeyFile instead.
+     * Will be removed in the next major version. Please use {@link tlsCertificateKeyFile} instead.
      */
     readonly sslCert?: string
 
     /**
      * @deprecated SSL Key file file path.
      *
-     * Will be removed in the next major version. Please use tlsCertificateKeyFile instead.
+     * Will be removed in the next major version. Please use {@link tlsCertificateKeyFile} instead.
      */
     readonly sslKey?: string
 
     /**
      * @deprecated SSL Certificate pass phrase.
      *
-     * Will be removed in the next major version. Please use tlsCertificateKeyFilePassword instead.
+     * Will be removed in the next major version. Please use {@link tlsCertificateKeyFilePassword} instead.
      */
     readonly sslPass?: string
 
     /**
      * @deprecated Validate mongod server certificate against Certificate Authority
      *
-     * Will be removed in the next major version. Please use tlsAllowInvalidCertificates instead.
+     * Will be removed in the next major version. Please use {@link tlsAllowInvalidCertificates} instead.
      */
     readonly sslValidate?: boolean
 
@@ -280,14 +280,14 @@ export interface MongoConnectionOptions extends BaseDataSourceOptions {
     readonly tlsCertificateKeyFile?: string
 
     /**
-     * Specifies the password to de-crypt the tlsCertificateKeyFile.
+     * Specifies the password to de-crypt the {@link tlsCertificateKeyFile}.
      */
     readonly tlsCertificateKeyFilePassword?: string
 
     /**
      * @deprecated The write concern w value
      *
-     * Please use the `writeConcern` option instead
+     * Please use the {@link writeConcern} option instead
      */
     readonly w?: string | number
 
@@ -300,7 +300,27 @@ export interface MongoConnectionOptions extends BaseDataSourceOptions {
     /**
      * @deprecated The write concern timeout
      *
-     * Please use the `writeConcern` option instead
+     * Please use the {@link writeConcern} option instead
      */
     readonly wtimeoutMS?: number
+
+    /**
+     * Configures a Socks5 proxy host used for creating TCP connections.
+     */
+    readonly proxyHost?: string
+
+    /**
+     * Configures a Socks5 proxy port used for creating TCP connections.
+     */
+    readonly proxyPort?: number
+
+    /**
+     * Configures a Socks5 proxy username when the proxy in proxyHost requires username/password authentication.
+     */
+    readonly proxyUsername?: string
+
+    /**
+     * Configures a Socks5 proxy password when the proxy in proxyHost requires username/password authentication.
+     */
+    readonly proxyPassword?: string
 }

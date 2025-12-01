@@ -434,7 +434,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Records the delete date of entities by a given criteria.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Executes fast and efficient SOFT-DELETE query.
+     * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      */
     softDelete(
@@ -459,7 +459,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Restores entities by a given criteria.
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Executes fast and efficient SOFT-DELETE query.
+     * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      */
     restore(

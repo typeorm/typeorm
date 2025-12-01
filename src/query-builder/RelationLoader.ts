@@ -439,6 +439,7 @@ export class RelationLoader {
             delete entity[resolveIndex]
             delete entity[dataIndex]
             entity[promiseIndex] = value
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             value.then(
                 // ensure different value is not assigned yet
                 (result) =>
@@ -477,6 +478,7 @@ export class RelationLoader {
             set: function (value: any | Promise<any>) {
                 if (value instanceof Promise) {
                     // if set data is a promise then wait for its resolve and save in the object
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     setPromise(this, value)
                 } else {
                     // if its direct data set (non promise, probably not safe-typed)
