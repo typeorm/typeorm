@@ -11,10 +11,10 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           registry-url: "https://registry.npmjs.org"
       - run: npm ci
       - run: npm run package

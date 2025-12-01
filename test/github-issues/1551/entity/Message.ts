@@ -80,7 +80,7 @@ export class Message {
     })
     recipients: Recipient[]
 
-    @ManyToMany((type) => User, (user) => user.holderMessages, { eager: true })
+    @ManyToMany(() => User, (user) => user.holderMessages, { eager: true })
     @JoinTable()
     holders: User[]
 
