@@ -1,9 +1,10 @@
-import eslint from "@eslint/js"
+import js from "@eslint/js"
+import { defineConfig } from "eslint/config"
 import { jsdoc } from "eslint-plugin-jsdoc"
-import tseslint from "typescript-eslint"
 import globals from "globals"
+import ts from "typescript-eslint"
 
-export default tseslint.config([
+export default defineConfig([
     {
         ignores: [
             "build/**",
@@ -17,7 +18,7 @@ export default tseslint.config([
     {
         files: ["**/*.ts"],
         languageOptions: {
-            parser: tseslint.parser,
+            parser: ts.parser,
             parserOptions: {
                 project: "tsconfig.json",
             },
@@ -26,9 +27,13 @@ export default tseslint.config([
                 ...globals.node,
             },
         },
+        plugins: {
+            js,
+            ts,
+        },
         extends: [
-            eslint.configs.recommended,
-            ...tseslint.configs.recommendedTypeChecked,
+            js.configs.recommended,
+            ...ts.configs.recommendedTypeChecked,
         ],
         rules: {
             // exceptions from typescript-eslint/recommended
@@ -43,7 +48,10 @@ export default tseslint.config([
             "@typescript-eslint/no-unused-expressions": "warn",
             "@typescript-eslint/no-unused-vars": [
                 "warn",
-                { argsIgnorePattern: "^_" },
+                {
+                    argsIgnorePattern: "^_",
+                    destructuredArrayIgnorePattern: "^_"
+                },
             ],
             "@typescript-eslint/no-wrapper-object-types": "off",
             "prefer-const": ["error", { destructuring: "all" }],
@@ -84,7 +92,12 @@ export default tseslint.config([
     },
 
     jsdoc({
-        config: 'flat/recommended-typescript', // change to 'flat/recommended-typescript-error' once warnings are fixed
+        config: "flat/recommended-typescript",
         files: ["src/**/*.ts"],
+        // Temporarily enable individual rules when they are fixed, until all current warnings are gone,
+        // and then remove manual config in favor of `config: "flat/recommended-typescript-error"`
+        rules: {
+            "jsdoc/valid-types": "error"
+        }
     }),
 ])

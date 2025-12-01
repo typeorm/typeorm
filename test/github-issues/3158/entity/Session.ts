@@ -22,7 +22,7 @@ export class Session {
     description?: string
 
     @OneToOne(
-        (type) => SessionSettings,
+        () => SessionSettings,
         (sessionSettings) => sessionSettings.session,
     )
     settings: SessionSettings

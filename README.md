@@ -8,11 +8,11 @@
   </a>
   <br>
   <br>
-    <a href="https://www.npmjs.com/package/typeorm"><img src="https://img.shields.io/npm/v/typeorm" alt="NPM Version" /></a>
-    <a href="https://www.npmjs.com/package/typeorm"><img src="https://img.shields.io/npm/dm/typeorm" alt="NPM Downloads" /></a>
-    <a href="https://github.com/typeorm/typeorm/actions/workflows/commit-validation.yml?query=branch%3Amaster"><img src="https://github.com/typeorm/typeorm/actions/workflows/commit-validation.yml/badge.svg?branch=master" alt="Commit Validation"/></a>
-    <a href="https://coveralls.io/github/typeorm/typeorm?branch=master"><img src="https://coveralls.io/repos/github/typeorm/typeorm/badge.svg?branch=master" alt="Coverage Status" /></a>
-    <a href=""><img src="https://img.shields.io/badge/License-MIT-teal.svg" alt="MIT License" /></a>
+    <a href="https://www.npmjs.com/package/typeorm"><img src="https://img.shields.io/npm/v/typeorm" alt="NPM Version"/></a>
+    <a href="https://www.npmjs.com/package/typeorm"><img src="https://img.shields.io/npm/dm/typeorm" alt="NPM Downloads"/></a>
+    <a href="https://github.com/typeorm/typeorm/actions/workflows/tests.yml?query=branch%3Amaster"><img src="https://github.com/typeorm/typeorm/actions/workflows/tests.yml/badge.svg?branch=master" alt="Commit Validation"/></a>
+    <a href="https://coveralls.io/github/typeorm/typeorm?branch=master"><img src="https://coveralls.io/repos/github/typeorm/typeorm/badge.svg?branch=master" alt="Coverage Status"/></a>
+    <a href=""><img src="https://img.shields.io/badge/License-MIT-teal.svg" alt="MIT License"/></a>
   <br>
   <br>
 </div>
@@ -207,12 +207,28 @@ This project exists thanks to all the people who contribute:
 
 ## Sponsors
 
-Open source is hard and time-consuming. If you want to invest in TypeORM's future, you can become a sponsor and allow our core team to spend more time on TypeORM's improvements and new features. [Become a sponsor](https://opencollective.com/typeorm)
+Open source is hard and time-consuming. If you want to invest in TypeORM's future, you can become a sponsor and allow our core team to spend more time on TypeORM's improvements and new features.
 
-<a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/sponsor.svg?width=890"></a>
+### Champion
 
-## Gold Sponsors
+Become a champion sponsor and get premium technical support from our core contributors. [Become a champion](https://opencollective.com/typeorm)
 
-Become a gold sponsor and get premium technical support from our core contributors. [Become a gold sponsor](https://opencollective.com/typeorm)
+<a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/gold-sponsor.svg?avatarHeight=36"></a>
 
-<a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/gold-sponsor.svg?width=890"></a>
+### Supporter
+
+Support TypeORM's development with a monthly contribution. [Become a supporter](https://opencollective.com/typeorm)
+
+<a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/love.svg?avatarHeight=36"></a>
+
+### Community
+
+Join our community of supporters and help sustain TypeORM. [Become a community supporter](https://opencollective.com/typeorm)
+
+<a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/like.svg?avatarHeight=36"></a>
+
+### Sponsor
+
+Make a one-time or recurring contribution of your choice. [Become a sponsor](https://opencollective.com/typeorm)
+
+<a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/sponsor.svg?avatarHeight=36"></a>

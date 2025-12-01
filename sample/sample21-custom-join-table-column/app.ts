@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 import { Category } from "./entity/Category"
@@ -38,7 +38,7 @@ dataSource.initialize().then(
 
         postRepository
             .save(post)
-            .then((post) => {
+            .then(() => {
                 console.log("Post has been saved. Lets load it now.")
                 return postRepository.find({
                     join: {

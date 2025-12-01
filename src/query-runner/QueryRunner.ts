@@ -385,7 +385,7 @@ export interface QueryRunner {
     ): Promise<void>
 
     /**
-     * Drops an unique constraint.
+     * Drops a unique constraint.
      */
     dropUniqueConstraint(
         table: Table | string,

@@ -1608,7 +1608,7 @@ export class AuroraMysqlQueryRunner
     }
 
     /**
-     * Drops an unique constraint.
+     * Drops a unique constraint.
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
@@ -1620,7 +1620,7 @@ export class AuroraMysqlQueryRunner
     }
 
     /**
-     * Drops an unique constraints.
+     * Drops a unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
