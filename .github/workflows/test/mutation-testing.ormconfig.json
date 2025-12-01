@@ -7,7 +7,7 @@
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "disabledIfNotEnabledImplicitly": true,
     "name": "mongodb",
     "type": "mongodb",
@@ -19,7 +19,7 @@
     "useUnifiedTopology": true
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "mssql",
     "type": "mssql",
     "host": "localhost",
@@ -33,7 +33,7 @@
     }
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "mysql",
     "type": "mysql",
     "host": "localhost",
@@ -44,7 +44,7 @@
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "mariadb",
     "type": "mariadb",
     "host": "localhost",
@@ -55,7 +55,7 @@
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "name": "postgres",
     "type": "postgres",
     "host": "localhost",

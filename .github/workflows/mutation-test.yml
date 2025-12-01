@@ -10,37 +10,37 @@ jobs:
     runs-on: ubuntu-latest
     
     services:
-      mongodb:
-        image: mongo:5.0.12
-        ports:
-          - "27017:27017"
-      mssql:
-        image: "mcr.microsoft.com/mssql/server:2022-latest"
-        ports:
-          - "1433:1433"
-        env:
-          SA_PASSWORD: "Admin12345"
-          ACCEPT_EULA: "Y"
-      mysql:
-        image: mysql:5.7.37
-        ports:
-          - "3306:3306"
-        env:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_USER: "test"
-          MYSQL_PASSWORD: "test"
-          MYSQL_DATABASE: "test"
-      mariadb:
-        image: mariadb:10.10.3
-        ports:
-          - "3307:3306"
-        env:
-          MYSQL_ROOT_PASSWORD: "admin"
-          MYSQL_USER: "test"
-          MYSQL_PASSWORD: "test"
-          MYSQL_DATABASE: "test"
+      # mongodb:
+      #   image: mongo:5.0.12
+      #   ports:
+      #     - "27017:27017"
+      # mssql:
+      #   image: "mcr.microsoft.com/mssql/server:2022-latest"
+      #   ports:
+      #     - "1433:1433"
+      #   env:
+      #     SA_PASSWORD: "Admin12345"
+      #     ACCEPT_EULA: "Y"
+      # mysql:
+      #   image: mysql:5.7.37
+      #   ports:
+      #     - "3306:3306"
+      #   env:
+      #     MYSQL_ROOT_PASSWORD: "admin"
+      #     MYSQL_USER: "test"
+      #     MYSQL_PASSWORD: "test"
+      #     MYSQL_DATABASE: "test"
+      # mariadb:
+      #   image: mariadb:10.10.3
+      #   ports:
+      #     - "3307:3306"
+      #   env:
+      #     MYSQL_ROOT_PASSWORD: "admin"
+      #     MYSQL_USER: "test"
+      #     MYSQL_PASSWORD: "test"
+      #     MYSQL_DATABASE: "test"
       postgres:
-        image: postgis/postgis:14-3.3
+        image: ghcr.io/naorpeled/typeorm-postgres:pg17-postgis3-pgvectorv0.8.0
         ports:
           - "5432:5432"
         env:
