@@ -1,5 +1,9 @@
 name: Tests
 on:
+  push:
+    branches:
+      - master
+      - next
   pull_request:
 
 jobs:
@@ -30,6 +34,7 @@ jobs:
 
             src-or-tests: &src-or-tests
               - *src
+              - test/**/*.ts
               - .github/workflows/test/**/*
               - .github/workflows/test*.yml
               - .mocharc.json

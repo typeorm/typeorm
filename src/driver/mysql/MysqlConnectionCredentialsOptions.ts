@@ -43,4 +43,10 @@ export interface MysqlConnectionCredentialsOptions {
      * Database socket path
      */
     readonly socketPath?: string
+
+    /**
+     * Maximum number of clients the pool should contain.
+     * for each connection
+     */
+    readonly poolSize?: number
 }

@@ -119,34 +119,6 @@ describe("database-schema > vectors > sap", () => {
         })
         after(() => closeTestingConnections(dataSources))
 
-        function deserializeFvecs(buffer: Buffer) {
-            const dataView = new DataView(
-                buffer.buffer,
-                buffer.byteOffset,
-                buffer.byteLength,
-            )
-            const length = dataView.getUint32(0, true)
-            const array = new Array<number>(length)
-            for (let index = 0; index < length; index++) {
-                array[index] = dataView.getFloat32(4 + index * 4, true)
-            }
-
-            return array
-        }
-
-        function serializeFvecs(array: number[]) {
-            const length = array.length
-            const arrayBuffer = new ArrayBuffer(4 + length * 4)
-            const dataView = new DataView(arrayBuffer)
-
-            dataView.setUint32(0, length, true)
-            for (let index = 0; index < length; index++) {
-                dataView.setFloat32(4 + index * 4, array[index], true)
-            }
-
-            return Buffer.from(arrayBuffer)
-        }
-
         it("should work correctly - persist and hydrate ", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
@@ -177,7 +149,7 @@ describe("database-schema > vectors > sap", () => {
                         content:
                             "This is a sample text to be analyzed by SAP Joule AI",
                         metadata: `{"client":"typeorm"}`,
-                        realVector: serializeFvecs(plainVector),
+                        realVector: plainVector,
                     } satisfies DeepPartial<BufferEmbedding>
 
                     const embeddingRepository =
@@ -188,10 +160,9 @@ describe("database-schema > vectors > sap", () => {
                     const loadedEmbedding = await embeddingRepository.findOneBy(
                         { id: 1 },
                     )
-                    const loadedVector = deserializeFvecs(
-                        loadedEmbedding!.realVector,
+                    expect(loadedEmbedding!.realVector).to.deep.equal(
+                        plainVector,
                     )
-                    expect(loadedVector).to.deep.equal(plainVector)
                 }),
             ))
     })
