@@ -21,7 +21,7 @@ export class Post {
     @RelationId((post: Post) => post.categories)
     categoryIds: { firstId: number; secondId: number }[]
 
-    @ManyToMany((type) => Category, (category) => category.manyPosts)
+    @ManyToMany(() => Category, (category) => category.manyPosts)
     @JoinTable()
     manyCategories: Category[]
 

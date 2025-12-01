@@ -1,22 +1,13 @@
+import path from 'path';
+
 import {
-    DatabaseType,
-    DataSource,
-    DataSourceOptions,
-    Driver,
-    EntitySchema,
-    EntitySubscriberInterface,
-    getMetadataArgsStorage,
-    InsertEvent,
-    Logger,
-    NamingStrategyInterface,
-    QueryRunner,
-    Table,
-    MixedList,
-} from "../../src"
-import { QueryResultCache } from "../../src/cache/QueryResultCache"
-import path from "path"
-import { ObjectUtils } from "../../src/util/ObjectUtils"
-import { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
+	DatabaseType, DataSource, DataSourceOptions, Driver, EntitySchema, EntitySubscriberInterface,
+	getMetadataArgsStorage, InsertEvent, Logger, MixedList, NamingStrategyInterface, QueryRunner,
+	Table
+} from '../../src';
+import { QueryResultCache } from '../../src/cache/QueryResultCache';
+import { EntitySubscriberMetadataArgs } from '../../src/metadata-args/EntitySubscriberMetadataArgs';
+import { ObjectUtils } from '../../src/util/ObjectUtils';
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -203,11 +194,11 @@ function getOrmFilepath(): string {
             // first checks build/compiled
             // useful for docker containers in order to provide a custom config
             return require.resolve(__dirname + "/../../ormconfig.json")
-        } catch (err) {
+        } catch {
             // fallbacks to the root config
             return require.resolve(__dirname + "/../../../../ormconfig.json")
         }
-    } catch (err) {
+    } catch {
         throw new Error(
             `Cannot find ormconfig.json file in the root of the project. To run tests please create ormconfig.json file` +
                 ` in the root of the project (near ormconfig.sample.json, you need to copy ormconfig.sample.json into ormconfig.json` +
@@ -484,7 +475,7 @@ export async function createTestingConnections(
                 try {
                     await queryRunner.createSchema(schemaPath, true)
                 } catch {
-                    // ignore
+                    // Do nothing
                 }
             }
 
@@ -571,12 +562,6 @@ export function generateRandomText(length: number): string {
         text += characters.charAt(Math.floor(Math.random() * characters.length))
 
     return text
-}
-
-export function sleep(ms: number): Promise<void> {
-    return new Promise<void>((ok) => {
-        setTimeout(ok, ms)
-    })
 }
 
 /**

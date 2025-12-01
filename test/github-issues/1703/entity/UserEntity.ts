@@ -7,7 +7,7 @@ export class UserEntity {
     id?: number
 
     @OneToMany(
-        (type) => UserToOrganizationEntity,
+        () => UserToOrganizationEntity,
         (userToOrganization) => userToOrganization.user,
     )
     organizations: UserToOrganizationEntity[]

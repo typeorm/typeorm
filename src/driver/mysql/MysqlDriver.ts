@@ -162,6 +162,8 @@ export class MysqlDriver implements Driver {
         "multilinestring",
         "multipolygon",
         "geometrycollection",
+        // vector data types
+        "vector",
         // additional data types for mariadb
         "uuid",
         "inet4",
@@ -196,6 +198,7 @@ export class MysqlDriver implements Driver {
         "nvarchar",
         "binary",
         "varbinary",
+        "vector",
     ]
 
     /**
@@ -285,6 +288,7 @@ export class MysqlDriver implements Driver {
         char: { length: 1 },
         binary: { length: 1 },
         varbinary: { length: 255 },
+        vector: { length: 2048 }, // default length MySQL uses if not provided a value
         decimal: { precision: 10, scale: 0 },
         dec: { precision: 10, scale: 0 },
         numeric: { precision: 10, scale: 0 },
@@ -623,7 +627,9 @@ export class MysqlDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value)
+            return DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedDateToTimeString(value)
         } else if (columnMetadata.type === "json") {
@@ -677,7 +683,9 @@ export class MysqlDriver implements Driver {
         ) {
             value = DateUtils.normalizeHydratedDate(value)
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "json") {
             // mysql2 returns JSON values already parsed, but may still be a string
             // if the JSON value itself is a string (e.g., "\"hello\"")
@@ -1294,7 +1302,7 @@ export class MysqlDriver implements Driver {
                 port: credentials.port,
                 ssl: options.ssl,
                 socketPath: credentials.socketPath,
-                connectionLimit: options.poolSize,
+                connectionLimit: credentials.poolSize ?? options.poolSize,
             },
             options.acquireTimeout === undefined
                 ? {}
