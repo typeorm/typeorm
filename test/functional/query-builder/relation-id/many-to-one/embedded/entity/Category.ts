@@ -12,7 +12,7 @@ export class Category {
     @Column()
     name: string
 
-    @OneToMany((type) => Post, (post) => post.counters.category)
+    @OneToMany(() => Post, (post) => post.counters.category)
     posts: Post[]
 
     postIds: number[]

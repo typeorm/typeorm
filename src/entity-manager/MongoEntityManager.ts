@@ -275,7 +275,7 @@ export class MongoEntityManager extends EntityManager {
         if (Array.isArray(entity)) {
             result.raw = await this.insertMany(target, entity)
             Object.keys(result.raw.insertedIds).forEach((key: any) => {
-                let insertedId = result.raw.insertedIds[key]
+                const insertedId = result.raw.insertedIds[key]
                 result.generatedMaps.push(
                     this.connection.driver.createGeneratedMap(
                         this.connection.getMetadata(target),
@@ -1027,7 +1027,7 @@ export class MongoEntityManager extends EntityManager {
         const queryRunner = this.mongoQueryRunner
 
         ;(cursor as any)["__to_array_func"] = cursor.toArray
-        cursor.toArray = async () =>
+        cursor.toArray = () =>
             ((cursor as any)["__to_array_func"] as CallableFunction)().then(
                 async (results: Entity[]) => {
                     const transformer = new DocumentToEntityTransformer()
@@ -1042,7 +1042,7 @@ export class MongoEntityManager extends EntityManager {
                 },
             )
         ;(cursor as any)["__next_func"] = cursor.next
-        cursor.next = async () =>
+        cursor.next = () =>
             ((cursor as any)["__next_func"] as CallableFunction)().then(
                 async (result: Entity) => {
                     if (!result) {
@@ -1177,7 +1177,7 @@ export class MongoEntityManager extends EntityManager {
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
             )
-        const cursor = await this.createEntityCursor(entityClassOrName, query)
+        const cursor = this.createEntityCursor(entityClassOrName, query)
         const deleteDateColumn =
             this.connection.getMetadata(entityClassOrName).deleteDateColumn
 

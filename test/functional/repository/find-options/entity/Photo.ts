@@ -29,7 +29,7 @@ export class Photo {
     @Column()
     isPublished: boolean
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     @JoinTable()
     categories: Category[]
 }

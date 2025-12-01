@@ -4,7 +4,7 @@ import { User } from "./User"
 
 @ChildEntity()
 export class TournamentUserParticipant extends TournamentParticipant {
-    @OneToOne((type) => User, {
+    @OneToOne(() => User, {
         eager: true,
     })
     @JoinColumn()

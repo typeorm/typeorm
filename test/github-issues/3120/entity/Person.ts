@@ -18,14 +18,14 @@ export class Person {
     @Column()
     name: string
 
-    @ManyToOne((type) => Company)
+    @ManyToOne(() => Company)
     company: Company
 
-    @ManyToMany((type) => Address, (address) => address.people)
+    @ManyToMany(() => Address, (address) => address.people)
     @JoinTable()
     addresses: Address[]
 
-    @OneToOne((type) => Passport, (passport) => passport.owner)
+    @OneToOne(() => Passport, (passport) => passport.owner)
     @JoinColumn()
     passport: Passport
 }
