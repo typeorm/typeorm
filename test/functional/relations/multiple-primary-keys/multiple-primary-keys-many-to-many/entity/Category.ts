@@ -28,21 +28,21 @@ export class Category {
     @Column({ nullable: true })
     description: string
 
-    @ManyToMany((type) => Post, (post) => post.categories)
+    @ManyToMany(() => Post, (post) => post.categories)
     posts: Post[]
 
-    @ManyToMany((type) => Post, (post) => post.categoriesWithOptions)
+    @ManyToMany(() => Post, (post) => post.categoriesWithOptions)
     postsWithOptions: Post[]
 
-    @ManyToMany((type) => Post, (post) => post.categoriesWithNonPKColumns)
+    @ManyToMany(() => Post, (post) => post.categoriesWithNonPKColumns)
     postsWithNonPKColumns: Post[]
 
-    @ManyToMany((type) => Tag, (tag) => tag.categories)
+    @ManyToMany(() => Tag, (tag) => tag.categories)
     tags: Tag[]
 
-    @ManyToMany((type) => Tag, (tag) => tag.categoriesWithOptions)
+    @ManyToMany(() => Tag, (tag) => tag.categoriesWithOptions)
     tagsWithOptions: Tag[]
 
-    @ManyToMany((type) => Tag, (tag) => tag.categoriesWithNonPKColumns)
+    @ManyToMany(() => Tag, (tag) => tag.categoriesWithNonPKColumns)
     tagsWithNonPKColumns: Tag[]
 }
