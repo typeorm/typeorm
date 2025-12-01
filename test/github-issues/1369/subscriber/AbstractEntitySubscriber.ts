@@ -13,15 +13,18 @@ export class AbstractEntitySubscriber
     listenTo() {
         return AbstractEntity
     }
-    async beforeInsert(event: InsertEvent<AbstractEntity>) {
+
+    beforeInsert(event: InsertEvent<AbstractEntity>) {
         this.updateFullName(event.entity)
     }
-    async beforeUpdate(event: UpdateEvent<AbstractEntity>) {
+
+    beforeUpdate(event: UpdateEvent<AbstractEntity>) {
         if (event.entity) {
             this.updateFullName(event.entity)
         }
     }
-    updateFullName(o: Partial<AbstractEntity>) {
+
+    private updateFullName(o: Partial<AbstractEntity>) {
         o.fullname = o.firstname + " " + o.lastname
     }
 }

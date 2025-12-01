@@ -6,7 +6,7 @@ import { JoinTable } from "../../../../../../../src/decorator/relations/JoinTabl
 
 @ChildEntity()
 export class Student extends Person {
-    @ManyToMany((type) => Faculty, (faculty) => faculty.students)
+    @ManyToMany(() => Faculty, (faculty) => faculty.students)
     @JoinTable()
     faculties: Faculty[]
 }
