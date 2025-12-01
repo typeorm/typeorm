@@ -2,7 +2,7 @@
 
 ## Basic options
 
-All repository and manager ` .find*` methods accept special options you can use to query data you need without using `QueryBuilder`:
+All repository and manager `.find*` methods accept special options you can use to query data you need without using `QueryBuilder`:
 
 -   `select` - indicates which properties of the main object must be selected
 

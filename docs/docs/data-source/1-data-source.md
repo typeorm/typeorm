@@ -32,13 +32,12 @@ const AppDataSource = new DataSource({
     database: "test",
 })
 
-AppDataSource.initialize()
-    .then(() => {
-        console.log("Data Source has been initialized!")
-    })
-    .catch((err) => {
-        console.error("Error during Data Source initialization", err)
-    })
+try {
+    await AppDataSource.initialize()
+    console.log("Data Source has been initialized!")
+} catch (error) {
+    console.error("Error during Data Source initialization", error)
+}
 ```
 
 It's a good idea to make `AppDataSource` globally available by `export`-ing it since you'll use this instance across your application.

@@ -18,7 +18,7 @@ export class Post {
     @ManyToOne(() => Category, (category) => category.posts)
     category: Category
 
-    @ManyToMany((type) => Image, (image) => image.posts)
+    @ManyToMany(() => Image, (image) => image.posts)
     @JoinTable()
     images: Image[]
 }

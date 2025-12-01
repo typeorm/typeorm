@@ -80,7 +80,8 @@ export const redirects = [
         from: "/active-record-data-mapper",
         to: "/docs/guides/active-record-data-mapper",
     },
-    { from: "/mongodb", to: "/docs/guides/mongodb" },
+    { from: "/mongodb", to: "/docs/drivers/mongodb" },
+    { from: "/docs/guides/mongodb", to: "/docs/drivers/mongodb" },
     { from: "/validation", to: "/docs/guides/validation" },
     { from: "/example-with-express", to: "/docs/guides/example-with-express" },
     {
@@ -100,7 +101,7 @@ export const redirects = [
     },
     { from: "/data-source-api", to: "/docs/data-source/data-source-api" },
 
-    { from: "/migrations", to: "/docs/advanced-topics/migrations" },
+    { from: "/migrations", to: "/docs/migrations/why" },
     { from: "/transactions", to: "/docs/advanced-topics/transactions" },
     { from: "/indices", to: "/docs/advanced-topics/indices" },
     {
@@ -122,4 +123,5 @@ export const redirects = [
     { from: "/getting-started", to: "/docs/getting-started" },
     { from: "/future-of-typeorm", to: "/docs/future-of-typeorm" },
     { from: "/query-runner", to: "/docs/query-runner" },
+    { from: "/docs/advanced-topics/migrations", to: "/docs/migrations/why" },
 ]

@@ -14,25 +14,29 @@ const users = await dataSource.sql`SELECT * FROM users WHERE name = ${"John"}`
 
 Parameters are automatically escaped and formatted according to your database type:
 
-- **PostgreSQL, CockroachDB, Aurora PostgreSQL, MariaDB**: Uses `$1`, `$2`, etc.
+-   **PostgreSQL**, **CockroachDB**, **Aurora PostgreSQL** uses `$1`, `$2`, etc.:
+
 ```typescript
 // Query becomes: SELECT * FROM users WHERE name = $1
 const users = await dataSource.sql`SELECT * FROM users WHERE name = ${"John"}`
 ```
 
-- **MySQL, SQLite, Aurora MySQL**: Uses `?`
+-   **MySQL**, **MariaDB**, **Aurora MySQL**, **SAP**, **SQLite** use `?`:
+
 ```typescript
 // Query becomes: SELECT * FROM users WHERE name = ?
 const users = await dataSource.sql`SELECT * FROM users WHERE name = ${"John"}`
 ```
 
-- **Oracle**: Uses `:1`, `:2`, etc.
+-   **Oracle** uses `:1`, `:2`, etc.:
+
 ```typescript
 // Query becomes: SELECT * FROM users WHERE name = :1
 const users = await dataSource.sql`SELECT * FROM users WHERE name = ${"John"}`
 ```
 
-- **MSSQL**: Uses `@1`, `@2`, etc.
+-   **MSSQL** uses `@1`, `@2`, etc.:
+
 ```typescript
 // Query becomes: SELECT * FROM users WHERE name = @1
 const users = await dataSource.sql`SELECT * FROM users WHERE name = ${"John"}`
@@ -81,9 +85,9 @@ const rawData = await dataSource.sql`
 
 ## Features
 
-- **SQL Injection Prevention**: Parameters are properly escaped
-- **Database Agnostic**: Parameter formatting is handled based on your database type
-- **Readable Queries**: Template literals can make queries more readable than parameter arrays
+-   **SQL Injection Prevention**: Parameters are properly escaped
+-   **Database Agnostic**: Parameter formatting is handled based on your database type
+-   **Readable Queries**: Template literals can make queries more readable than parameter arrays
 
 ## Comparison with Query Method
 
@@ -91,10 +95,10 @@ The traditional `query` method requires manual parameter placeholder handling:
 
 ```typescript
 // Traditional query method
-await dataSource.query(
-    "SELECT * FROM users WHERE name = $1 AND age > $2",
-    ["John", 30]
-)
+await dataSource.query("SELECT * FROM users WHERE name = $1 AND age > $2", [
+    "John",
+    30,
+])
 
 // SQL tag alternative
 await dataSource.sql`SELECT * FROM users WHERE name = ${"John"} AND age > ${30}`
