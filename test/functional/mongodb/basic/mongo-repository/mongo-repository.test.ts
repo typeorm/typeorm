@@ -265,6 +265,39 @@ describe("mongodb > MongoRepository", () => {
                 ))
         })
     })
+
+    it("should be able to use findBy method", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getMongoRepository(Post)
+
+                // save few posts
+                const firstPost = new Post()
+                firstPost.title = "Post #1"
+                firstPost.text = "Everything about post #1"
+                await postRepository.save(firstPost)
+
+                const secondPost = new Post()
+                secondPost.title = "Post #1"
+                secondPost.text = "Everything about post #2"
+                await postRepository.save(secondPost)
+
+                const thirdPost = new Post()
+                thirdPost.title = "Post #2"
+                thirdPost.text = "Everything about post #3"
+                await postRepository.save(thirdPost)
+
+                const loadedPosts = await postRepository.findBy({
+                    title: "Post #1",
+                })
+
+                expect(loadedPosts).to.have.length(2)
+                expect(loadedPosts[0]).to.be.instanceOf(Post)
+                expect(loadedPosts[1]).to.be.instanceOf(Post)
+                expect(loadedPosts[0].title).to.eql("Post #1")
+                expect(loadedPosts[1].title).to.eql("Post #1")
+            }),
+        ))
 })
 
 async function seedPosts(postRepository: MongoRepository<PostWithDeleted>) {
