@@ -25,7 +25,7 @@ export class Post {
 
     // Post has relation with PostCategory, however inverse relation is not set
     // (category does not have relation with post set)
-    @ManyToMany((type) => PostCategory, {
+    @ManyToMany(() => PostCategory, {
         cascade: true,
     })
     @JoinTable()
@@ -33,7 +33,7 @@ export class Post {
 
     // Post has relation with PostDetails. Cascade insert here means if there is a new PostDetails instance set
     // on this relation, it will be inserted automatically to the db when you save this Post entity
-    @ManyToMany((type) => PostDetails, (details) => details.posts, {
+    @ManyToMany(() => PostDetails, (details) => details.posts, {
         cascade: ["insert"],
     })
     @JoinTable()
@@ -41,7 +41,7 @@ export class Post {
 
     // Post has relation with PostImage. Cascade update here means if there are changes to an existing PostImage, it
     // will be updated automatically to the db when you save this Post entity
-    @ManyToMany((type) => PostImage, (image) => image.posts, {
+    @ManyToMany(() => PostImage, (image) => image.posts, {
         cascade: ["update"],
     })
     @JoinTable()
@@ -49,12 +49,12 @@ export class Post {
 
     // Post has relation with PostMetadata. No cascades here means that when saving a Post entity, there will be
     // no creating/updating/destroying PostMetadata.
-    @ManyToMany((type) => PostMetadata, (metadata) => metadata.posts)
+    @ManyToMany(() => PostMetadata, (metadata) => metadata.posts)
     @JoinTable()
     metadatas: PostMetadata[]
 
     // Post has relation with PostInformation. Full cascades here
-    @ManyToMany((type) => PostInformation, (information) => information.posts, {
+    @ManyToMany(() => PostInformation, (information) => information.posts, {
         cascade: true,
     })
     @JoinTable()
@@ -62,7 +62,7 @@ export class Post {
 
     // Post has relation with author. No cascades here means that when saving a Post entity, there will be
     // no creating/updating/destroying PostAuthor.
-    @ManyToMany((type) => PostAuthor, (author) => author.posts)
+    @ManyToMany(() => PostAuthor, (author) => author.posts)
     @JoinTable()
     authors: PostAuthor[]
 }
