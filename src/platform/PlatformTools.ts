@@ -28,8 +28,8 @@ export class PlatformTools {
     }
 
     /**
-     * Reads package.json of the given package.
-     * This operation only supports on node platform
+     * Reads the version string from package.json of the given package.
+     * This operation is only supported in node.
      */
     static readPackageVersion(name: string): string {
         try {
