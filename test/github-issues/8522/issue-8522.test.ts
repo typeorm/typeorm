@@ -1,18 +1,17 @@
+import { expect } from "chai"
 import "reflect-metadata"
+import { DataSource } from "../../../src/data-source/DataSource"
 import {
-    createTestingConnections,
     closeTestingConnections,
+    createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai"
-import { InternalUser } from "./entity/InternalUser"
-import { InternalRole } from "./entity/InternalRole"
-import { User } from "./entity/User"
-import { Role } from "./entity/Role"
-import { BaseEntity } from "../../../src"
+import { BaseEntity } from "./entity/BaseEntity"
 import { ClientRole } from "./entity/ClientRole"
-import { afterEach } from "mocha"
+import { InternalRole } from "./entity/InternalRole"
+import { InternalUser } from "./entity/InternalUser"
+import { Role } from "./entity/Role"
+import { User } from "./entity/User"
 
 describe("github issues > #8522 Single table inheritance returns the same discriminator value error for unrelated tables where their parents extend from the same entity", () => {
     let connections: DataSource[]
@@ -106,9 +105,7 @@ describe("github issues > #8522 Single table inheritance returns the same discri
                 })
                 // if we have zero data sources - it means we are testing in mongodb-only mode - we are fine here
                 // if we have any data sources - it means test didn't go as we expected
-                if (dataSources.length > 0) {
-                    expect(true).to.be.false
-                }
+                expect(dataSources).to.have.lengthOf(0)
             } catch (err) {
                 expect(err.message).to.contain(
                     "Entities ClientRole and InternalRole have the same discriminator values. Make sure they are different while using the @ChildEntity decorator.",
