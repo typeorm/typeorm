@@ -1094,8 +1094,8 @@ export class EntityManager {
             .setFindOptions({ where })
             .select(
                 `${fnName}(${this.connection.driver.escape(
-                    column.databaseName,
-                )})`,
+                    metadata.name,
+                )}.${this.connection.driver.escape(column.databaseName)})`,
                 fnName,
             )
             .getRawOne()
