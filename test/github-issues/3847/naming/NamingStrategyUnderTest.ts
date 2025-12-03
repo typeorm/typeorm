@@ -10,7 +10,6 @@ export class NamingStrategyUnderTest
         tableOrName: Table | string,
         columnNames: string[],
         referencedTablePath?: string,
-        referencedColumnNames?: string[],
     ): string {
         tableOrName =
             typeof tableOrName === "string" ? tableOrName : tableOrName.name

@@ -12,6 +12,6 @@ export class Category {
     @Column()
     title: string
 
-    @ManyToMany((type) => Post, (post) => post.categories)
+    @ManyToMany(() => Post, (post) => post.categories)
     posts: Post[]
 }

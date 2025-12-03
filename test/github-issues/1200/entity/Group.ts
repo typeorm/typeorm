@@ -6,7 +6,7 @@ export class Group {
         this.post = new Post()
     }
 
-    @Column((type) => Post)
+    @Column(() => Post)
     post: Post
 
     @Column()

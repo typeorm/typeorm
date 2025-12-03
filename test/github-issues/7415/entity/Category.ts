@@ -4,7 +4,7 @@ import { Slug } from "./Slug"
 @Entity()
 @Tree("materialized-path")
 export class Category {
-    @Column((type) => Slug, { prefix: false })
+    @Column(() => Slug, { prefix: false })
     id: Slug
 
     @TreeChildren()

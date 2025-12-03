@@ -14,6 +14,6 @@ export class PostAuthor {
     @Column()
     name: string
 
-    @ManyToMany((type) => Post, (post) => post.authors)
+    @ManyToMany(() => Post, (post) => post.authors)
     posts: Post[]
 }

@@ -11,6 +11,6 @@ export class Foo {
     @Column()
     name: string
 
-    @Column((type) => FooMetadata)
+    @Column(() => FooMetadata)
     metadata?: FooMetadata
 }
