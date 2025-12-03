@@ -43,7 +43,7 @@
     
     <!-- Version number -->
     <text x="0" y="5" text-anchor="middle" font-family="Arial, sans-serif" font-size="88" font-weight="bold" fill="#FF6B35">
-      v0.3.27
+      v0.3.28
     </text>
     
     <!-- NEW RELEASE button - Larger and better positioned -->
