@@ -267,6 +267,13 @@ describe("repository > aggregate methods with relations", () => {
 
                     expect(maxId).to.be.a("number")
                     expect(maxId).to.be.greaterThan(0)
+
+                    // Verify we got the correct max ID from author1's posts, not from author2 or any other table
+                    const author1Posts = await postRepo.find({
+                        where: { author: { id: author1.id } },
+                        order: { id: "DESC" },
+                    })
+                    expect(maxId).to.equal(author1Posts[0].id)
                 }),
             ))
     })

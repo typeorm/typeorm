@@ -1089,12 +1089,12 @@ export class EntityManager {
                 `Column "${columnName}" was not found in table "${metadata.name}"`,
             )
         }
-
-        const result = await this.createQueryBuilder(entityClass, metadata.name)
+        const alias = metadata.name
+        const result = await this.createQueryBuilder(entityClass, alias)
             .setFindOptions({ where })
             .select(
                 `${fnName}(${this.connection.driver.escape(
-                    metadata.name,
+                    alias,
                 )}.${this.connection.driver.escape(column.databaseName)})`,
                 fnName,
             )
