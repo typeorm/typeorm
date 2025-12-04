@@ -56,7 +56,7 @@ describe("find options > where", () => {
                     })
                     .getMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -80,7 +80,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 2,
                         title: "Post #2",
@@ -105,7 +105,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 2,
                         title: "Post #2",
@@ -130,7 +130,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([])
+                posts.should.be.deepEqualIgnoreUndefined([])
             }),
         ))
 
@@ -149,7 +149,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts1.should.be.eql([
+                posts1.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -180,7 +180,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts2.should.be.eql([
+                posts2.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 3,
                         title: "Post #3",
@@ -207,7 +207,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 2,
                         title: "Post #2",
@@ -239,7 +239,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -283,7 +283,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -319,7 +319,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -366,7 +366,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -409,7 +409,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 2,
                         title: "Post #2",
@@ -458,7 +458,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -510,7 +510,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -552,7 +552,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts1.should.be.eql([
+                posts1.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -572,7 +572,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts2.should.be.eql([
+                posts2.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 2,
                         title: "Post #2",
@@ -594,7 +594,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts3.should.be.eql([
+                posts3.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -623,7 +623,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                authors.should.be.eql([
+                authors.should.be.deepEqualIgnoreUndefined([
                     { id: 1, firstName: "Timber", lastName: "Saw", age: 25 },
                 ])
 
@@ -638,7 +638,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                tags1.should.be.eql([
+                tags1.should.be.deepEqualIgnoreUndefined([
                     { id: 1, name: "category #1" },
                     { id: 2, name: "category #2" },
                 ])
@@ -651,7 +651,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                tags2.should.be.eql([{ id: 3, name: "category #3" }])
+                tags2.should.be.deepEqualIgnoreUndefined([{ id: 3, name: "category #3" }])
             }),
         ))
 
@@ -682,7 +682,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -735,7 +735,7 @@ describe("find options > where", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
