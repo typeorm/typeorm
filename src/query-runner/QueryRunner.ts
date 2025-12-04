@@ -194,6 +194,11 @@ export interface QueryRunner extends AsyncDisposable {
     getCurrentSchema(): Promise<string | undefined>
 
     /**
+     * Creates the typeorm_metadata table if it does not already exist.
+     */
+    createTypeormMetadataTable(): Promise<void>
+
+    /**
      * Checks if a table with the given name exist.
      */
     hasTable(table: Table | string): Promise<boolean>
