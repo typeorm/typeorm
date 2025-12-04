@@ -10,7 +10,16 @@ import { Profile } from "./entity/Profile"
 import { Editor } from "./entity/Editor"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("relations > eager relations > lazy nested eager relations", () => {
     let connections: DataSource[]

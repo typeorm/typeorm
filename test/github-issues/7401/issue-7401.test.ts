@@ -1,6 +1,15 @@
 import "reflect-metadata"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe('github issues > #7401 MongoDB replica set connection string not support with method "parseConnectionUrl" & "buildConnectionUrl"', () => {
     it("should parse replicaSet and host list in ConnectionUrl", () => {

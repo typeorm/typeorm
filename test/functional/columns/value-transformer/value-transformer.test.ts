@@ -12,7 +12,16 @@ import { Complex, Post } from "./entity/Post"
 import { User } from "./entity/User"
 import { Category } from "./entity/Category"
 import { View } from "./entity/View"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("columns > value-transformer functionality", () => {
     let connections: DataSource[]

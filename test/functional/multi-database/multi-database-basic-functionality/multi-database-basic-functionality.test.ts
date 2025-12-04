@@ -1,5 +1,14 @@
 import appRoot from "app-root-path"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import fs from "fs/promises"
 import path from "path"
 import { rimraf } from "rimraf"

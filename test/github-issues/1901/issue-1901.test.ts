@@ -5,7 +5,16 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1901 The correct way of adding `ON UPDATE CURRENT_TIMESTAMP` clause to timestamp column", () => {
     let connections: DataSource[]

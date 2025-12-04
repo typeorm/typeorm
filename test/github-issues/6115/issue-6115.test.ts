@@ -6,7 +6,16 @@ import {
     setupSingleTestingConnection,
 } from "../../utils/test-utils"
 import { fail } from "assert"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #6115 Down migration for enums with defaults are wrong", () => {
     let connections: DataSource[]

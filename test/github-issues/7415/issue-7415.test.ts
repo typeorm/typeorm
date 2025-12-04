@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Category } from "./entity/Category"
 import { Slug } from "./entity/Slug"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7415 Tree entities with embedded primary columns are not built correctly", () => {
     let connections: DataSource[]

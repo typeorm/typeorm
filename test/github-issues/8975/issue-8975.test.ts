@@ -1,4 +1,13 @@
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { exec } from "child_process"
 import { readFile, rm, unlink, writeFile } from "fs/promises"
 
@@ -42,17 +51,21 @@ describe("cli init command", () => {
     })
 
     for (const databaseOption of databaseOptions) {
-        it(`should work with ${databaseOption} option`, (done) => {
-            exec(
-                `node ${cliPath} init --name ${testProjectPath} --database ${databaseOption}`,
-                (error, _stdout, stderr) => {
-                    if (error) console.log(error)
-                    expect(error).to.not.exist
-                    expect(stderr).to.be.empty
-
-                    done()
-                },
-            )
-        }).timeout(120000)
+        it(`should work with ${databaseOption} option`, {
+            timeout: 120000,
+        }, async() => {
+            await new Promise((resolve) => {
+                exec(
+                    `node ${cliPath} init --name ${testProjectPath} --database ${databaseOption}`,
+                    (error, _stdout, stderr) => {
+                        if (error) console.log(error)
+                        expect(error).to.not.exist
+                        expect(stderr).to.be.empty
+                        
+                        resolve(undefined);
+                    },
+                )
+            })
+        })
     }
 })

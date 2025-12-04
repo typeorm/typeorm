@@ -2,7 +2,16 @@ import "reflect-metadata"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { ConnectionMetadataBuilder } from "../../../../src/connection/ConnectionMetadataBuilder"
 import { EntityMetadataValidator } from "../../../../src/metadata-builder/EntityMetadataValidator"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { InitializedRelationError } from "../../../../src/error/InitializedRelationError"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"

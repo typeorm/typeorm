@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Dummy } from "./entity/Dummy"
 import { ReadStream } from "fs"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 function ingestStream(stream: ReadStream): Promise<any[]> {
     const chunks: any[] = []

@@ -7,7 +7,16 @@ import {
 } from "../../utils/test-utils"
 import { EntityManager, QueryRunner, SimpleConsoleLogger } from "../../../src"
 import { Foo } from "./entity/Foo"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #2216 - Ability to capture Postgres notifications in logger", () => {
     let connections: DataSource[]

@@ -6,7 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { AbstractLogger, DataSource, LogLevel, LogMessage } from "../../../src"
 import sinon from "sinon"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #10322 logMigration of AbstractLogger has wrong logging condition.", () => {
     let dataSources: DataSource[]

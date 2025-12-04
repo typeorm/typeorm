@@ -2,7 +2,16 @@ import "reflect-metadata"
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import { EntityMetadataValidator } from "../../../../../src/metadata-builder/EntityMetadataValidator"
 import { ConnectionMetadataBuilder } from "../../../../../src/connection/ConnectionMetadataBuilder"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("relations > eager relations > circular eager relations", () => {
     it("should throw error if eager: true is set on both sides of relationship", async () => {

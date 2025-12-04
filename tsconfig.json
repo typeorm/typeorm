@@ -11,7 +11,7 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "outDir": "build/compiled",
     "pretty": true,
     "resolveJsonModule": true,

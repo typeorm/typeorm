@@ -8,7 +8,16 @@ import { Human } from "./entity/Human"
 import { Animal } from "./entity/Animal"
 import { Gender } from "./entity/GenderEnum"
 import { EntityManager } from "../../../src/entity-manager/EntityManager"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #4106 Specify enum type name in postgres", () => {
     let connections: DataSource[]

@@ -5,7 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Connection } from "../../../src/connection/Connection"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { TestEntity } from "./entity/TestEntity"
 
 describe("github issues > #8527 cannot clear database inside a transaction.", () => {

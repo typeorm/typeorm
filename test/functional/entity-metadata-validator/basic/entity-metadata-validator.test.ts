@@ -2,7 +2,16 @@ import "reflect-metadata"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { ConnectionMetadataBuilder } from "../../../../src/connection/ConnectionMetadataBuilder"
 import { EntityMetadataValidator } from "../../../../src/metadata-builder/EntityMetadataValidator"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("entity-metadata-validator", () => {
     it("should throw error if relation count decorator used with ManyToOne or OneToOne relations", async () => {

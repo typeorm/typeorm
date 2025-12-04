@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Ticket } from "./entity/Ticket"
 import { Request } from "./entity/Request"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #161 joinAndSelect can't find entity from inverse side of relation", () => {
     let connections: DataSource[]

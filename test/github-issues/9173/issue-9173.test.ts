@@ -6,7 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource, Table } from "../../../src"
 import { View } from "../../../src/schema-builder/view/View"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #9173 missing typeorm_metadata", () => {
     let connections: DataSource[]

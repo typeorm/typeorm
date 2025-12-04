@@ -89,8 +89,8 @@
     "prepare": "is-ci || husky",
     "publish:preview": "pkg-pr-new publish './build/package' --template='./sample/playground'",
     "test": "npm run compile && npm run test:fast --",
-    "test:ci": "mocha --bail",
-    "test:fast": "mocha",
+    "test:ci": "vitest --bail",
+    "test:fast": "vitest",
     "typecheck": "tsc --noEmit",
     "watch": "tsc --watch"
   },
@@ -122,7 +122,7 @@
     "@types/gulp-rename": "^2.0.7",
     "@types/gulp-sourcemaps": "^0.0.38",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^16.18.126",
+    "@types/node": "^18.0.0",
     "@types/sha.js": "^2.4.4",
     "@types/sinon": "^10.0.20",
     "@types/sinon-chai": "^3.2.12",
@@ -167,7 +167,9 @@
     "standard-changelog": "^7.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.48.0"
+    "typescript-eslint": "^8.48.0",
+    "unplugin-swc": "^1.5.5",
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^5.18.0 || ^6.0.0 || ^7.0.0 || ^8.0.0",

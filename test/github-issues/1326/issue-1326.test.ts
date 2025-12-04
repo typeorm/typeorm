@@ -7,7 +7,16 @@ import {
 import { User } from "./entity/User"
 import { SpecificUser } from "./entity/SpecificUser"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issue > #1326 Wrong behavior w/ the same table names in different databases", () => {
     let connections: DataSource[] = []

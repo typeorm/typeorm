@@ -4,7 +4,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #9399 mssql: Column is dropped and recreated in every migration", () => {
     let dataSources: DataSource[]

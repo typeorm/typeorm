@@ -5,7 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { UserEntitySchema } from "./entity/User"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { Name } from "./entity/Name"
 
 describe("entity-schema > embedded - class-instance", () => {

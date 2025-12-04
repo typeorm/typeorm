@@ -1,5 +1,14 @@
 import { DriverUtils } from "../../../src/driver/DriverUtils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1493 Error parsing pg connection string", () => {
     it("should parse url with empty password", () => {

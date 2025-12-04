@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../src"
 import { Provider } from "./entity/Provider"
 import { Personalization } from "./entity/Personalization"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1788 One to One does not load relationships.", () => {
     let connections: DataSource[]

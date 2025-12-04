@@ -4,7 +4,16 @@ import {
     setupTestingConnections,
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DataSource } from "../../../src"
 
 describe("base entity", () => {

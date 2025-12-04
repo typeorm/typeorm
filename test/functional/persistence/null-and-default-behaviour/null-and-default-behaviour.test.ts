@@ -6,7 +6,16 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("persistence > null and default behaviour", () => {
     let connections: DataSource[]

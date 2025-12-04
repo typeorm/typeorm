@@ -6,7 +6,16 @@ import {
     generateRandomText,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { ThisIsARealLongNameForAnEntityBecauseThisIsNecessary } from "./entity/long-name.entity"
 
 describe("github issues > #8627 junction aliases are not unique", () => {

@@ -5,7 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { DataSource } from "../../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { SapDriver } from "../../../../src/driver/sap/SapDriver"
 import { QueryRunner } from "../../../../src"
 import { ConnectionPool } from "@sap/hana-client"

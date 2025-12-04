@@ -1,4 +1,13 @@
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { writeFile, unlink } from "fs/promises"
 import { ConnectionOptionsReader } from "../../../src/connection/ConnectionOptionsReader"
 import { importClassesFromDirectories } from "../../../src/util/DirectoryExportedClassesLoader"

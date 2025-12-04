@@ -6,7 +6,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Flight } from "./entity/Flight"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe.skip("github issues > #838 Time zones for timestamp columns are incorrectly fetched and persisted in PostgreSQL", () => {
     let connections: DataSource[]
