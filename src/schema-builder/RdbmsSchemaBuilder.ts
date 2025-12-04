@@ -231,6 +231,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.updatePrimaryKeys()
         await this.updateExistColumns()
         await this.createNewIndices()
+        await this.recreateModifiedChecks()
         await this.createNewChecks()
         await this.createNewExclusions()
         await this.createCompositeUniqueConstraints()
@@ -1067,6 +1068,100 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
             await postgresQueryRunner.createViewIndices(view, newIndices)
         }
+    }
+
+    /**
+     * Recreates modified CHECK constraints.
+     */
+    protected async recreateModifiedChecks(): Promise<void> {
+        // Mysql does not support check constraints
+        if (
+            DriverUtils.isMySQLFamily(this.connection.driver) ||
+            this.connection.driver.options.type === "aurora-mysql"
+        )
+            return
+
+        for (const metadata of this.entityToSyncMetadatas) {
+            const table = this.queryRunner.loadedTables.find(
+                (table) =>
+                    this.getTablePath(table) === this.getTablePath(metadata),
+            )
+            if (!table) continue
+
+            // Find CHECK constraints that have the same name but different expression
+            const modifiedChecks: Array<{
+                oldCheck: TableCheck
+                newCheck: TableCheck
+            }> = []
+
+            for (const checkMetadata of metadata.checks) {
+                const existingCheck = table.checks.find(
+                    (tableCheck) => tableCheck.name === checkMetadata.name,
+                )
+
+                if (
+                    existingCheck &&
+                    existingCheck.expression &&
+                    checkMetadata.expression &&
+                    !this.normalizeCheckExpression(
+                        existingCheck.expression,
+                    ).includes(
+                        this.normalizeCheckExpression(checkMetadata.expression),
+                    )
+                ) {
+                    modifiedChecks.push({
+                        oldCheck: existingCheck,
+                        newCheck: TableCheck.create(checkMetadata),
+                    })
+                }
+            }
+
+            if (modifiedChecks.length === 0) continue
+
+            // Drop old checks with modified expressions
+            const checksToModify = modifiedChecks.map((m) => m.oldCheck)
+            this.connection.logger.logSchemaBuild(
+                `updating check constraints: ${checksToModify
+                    .map((check) => `"${check.name}"`)
+                    .join(", ")} in table "${table.name}"`,
+            )
+            await this.queryRunner.dropCheckConstraints(table, checksToModify)
+
+            // Remove the old checks from table object
+            checksToModify.forEach((check) => {
+                table.removeCheckConstraint(check)
+            })
+
+            // Create new checks with updated expressions
+            const newChecks = modifiedChecks.map((m) => m.newCheck)
+            await this.queryRunner.createCheckConstraints(table, newChecks)
+        }
+    }
+
+    /**
+     * Normalizes CHECK constraint expressions for comparison.
+     * Removes extra whitespace and normalizes formatting differences between databases.
+     * @param expression The CHECK constraint expression to normalize
+     * @returns The normalized expression string
+     */
+    protected normalizeCheckExpression(expression: string): string {
+        // Remove extra whitespace, newlines, and tabs
+        let normalized = expression.replace(/\s+/g, " ").trim().toLowerCase()
+
+        // Normalize ARRAY syntax (PostgreSQL) to IN syntax for comparison
+        // e.g., "col = ANY (ARRAY['val1', 'val2'])" -> "col in ('val1', 'val2')"
+        normalized = normalized.replace(
+            /=\s*any\s*\(\s*array\[([^\]]+)\]\s*\)/gi,
+            "in ($1)",
+        )
+
+        // Remove type casts (::text, ::character varying, etc.)
+        normalized = normalized.replace(/::\w+/g, "")
+
+        // Normalize quotes and escape characters
+        normalized = normalized.replace(/\\'/g, "''").replace(/`/g, '"')
+
+        return normalized
     }
 
     protected async createNewChecks(): Promise<void> {
