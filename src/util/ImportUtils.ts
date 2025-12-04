@@ -2,40 +2,46 @@ import fs from "fs/promises"
 import path from "path"
 import { pathToFileURL } from "url"
 
+/**
+ *
+ * @param filePath
+ */
 export async function importOrRequireFile(
     filePath: string,
 ): Promise<[any, "esm" | "commonjs"]> {
-    const tryToImport = async (): Promise<[any, "esm"]> => {
-        // `Function` is required to make sure the `import` statement wil stay `import` after
-        // transpilation and won't be converted to `require`
-        return [
-            // eslint-disable-next-line @typescript-eslint/no-implied-eval
-            await Function("return filePath => import(filePath)")()(
-                filePath.startsWith("file://")
-                    ? filePath
-                    : pathToFileURL(filePath).toString(),
-            ),
-            "esm",
-        ]
+    // FIXME VITEST
+    // const tryToImport = async (): Promise<[any, "esm"]> => {
+    //     // `Function` is required to make sure the `import` statement wil stay `import` after
+    //     // transpilation and won't be converted to `require`
+    //     return [
+    //         // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    //         await Function("return filePath => import(filePath)")()(
+    //             filePath.startsWith("file://")
+    //                 ? filePath
+    //                 : pathToFileURL(filePath).toString(),
+    //         ),
+    //         "esm",
+    //     ]
+    // }
+    const tryToRequire = (): [any, "esm"] => {
+        return [import(filePath), "esm"]
     }
-    const tryToRequire = (): [any, "commonjs"] => {
-        return [require(filePath), "commonjs"]
-    }
 
-    const extension = filePath.substring(filePath.lastIndexOf(".") + ".".length)
+    // FIXME VITEST
+    // const extension = filePath.substring(filePath.lastIndexOf(".") + ".".length)
 
-    if (extension === "mjs" || extension === "mts") return tryToImport()
-    else if (extension === "cjs" || extension === "cts") return tryToRequire()
-    else if (extension === "js" || extension === "ts") {
-        const packageJson = await getNearestPackageJson(filePath)
+    // if (extension === "mjs" || extension === "mts") return tryToImport()
+    // else if (extension === "cjs" || extension === "cts") return tryToRequire()
+    // else if (extension === "js" || extension === "ts") {
+    //     const packageJson = await getNearestPackageJson(filePath)
 
-        if (packageJson != null) {
-            const isModule = (packageJson as any)?.type === "module"
+    //     if (packageJson != null) {
+    //         const isModule = (packageJson as any)?.type === "module"
 
-            if (isModule) return tryToImport()
-            else return tryToRequire()
-        } else return tryToRequire()
-    }
+    //         if (isModule) return tryToImport()
+    //         else return tryToRequire()
+    //     } else return tryToRequire()
+    // }
 
     return tryToRequire()
 }
@@ -43,6 +49,11 @@ export async function importOrRequireFile(
 const packageJsonCache = new Map<string, object | null>()
 const MAX_CACHE_SIZE = 1000
 
+/**
+ *
+ * @param paths
+ * @param packageJson
+ */
 function setPackageJsonCache(paths: string[], packageJson: object | null) {
     for (const path of paths) {
         // Simple LRU-like behavior: if we're at capacity, remove oldest entry
@@ -57,6 +68,10 @@ function setPackageJsonCache(paths: string[], packageJson: object | null) {
     }
 }
 
+/**
+ *
+ * @param filePath
+ */
 async function getNearestPackageJson(filePath: string): Promise<object | null> {
     let currentPath = filePath
     const paths: string[] = []
