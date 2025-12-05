@@ -1,3 +1,31 @@
+## [0.3.28](https://github.com/typeorm/typeorm/compare/0.3.27...0.3.28) (2025-12-02)
+
+
+### Bug Fixes
+
+* add multiSubnetFailover option for mssql ([#10804](https://github.com/typeorm/typeorm/issues/10804)) ([83e3a8a](https://github.com/typeorm/typeorm/commit/83e3a8a3db581a50495fa2d97c8fcd5d603cfd3c))
+* circular import in SapDriver.ts ([#11750](https://github.com/typeorm/typeorm/issues/11750)) ([bed7913](https://github.com/typeorm/typeorm/commit/bed79136230d4ab26cce8cf79071134c75527857))
+* **cli:** init command reading package.json from two folders up ([#11789](https://github.com/typeorm/typeorm/issues/11789)) ([dd55218](https://github.com/typeorm/typeorm/commit/dd55218648eb449937e22e1e7c88182db0048f1d))
+* **deps:** upgrade glob to fix CVE-2025-64756 ([#11784](https://github.com/typeorm/typeorm/issues/11784)) ([dc74f53](https://github.com/typeorm/typeorm/commit/dc74f5374ef5ec83d53045e4bca99cb9ff7d49d4))
+* **mongodb:** add missing `findBy` method to MongoEntityManager ([#11814](https://github.com/typeorm/typeorm/issues/11814)) ([38715bb](https://github.com/typeorm/typeorm/commit/38715bbd4169cae2910aac035cd2b05bddbaec5c))
+* **redis:** version detection logic ([#11815](https://github.com/typeorm/typeorm/issues/11815)) ([6f486e5](https://github.com/typeorm/typeorm/commit/6f486e5a67c007287949be119f233fb2b4fb7a59))
+* typesense doc sync ([#11807](https://github.com/typeorm/typeorm/issues/11807)) ([d0b5454](https://github.com/typeorm/typeorm/commit/d0b54544e9e43a5330c0485d41551128224fe4d3))
+
+
+### Features
+
+* add support for `jsonpath` column type in PostgreSQL ([#11684](https://github.com/typeorm/typeorm/issues/11684)) ([4f05718](https://github.com/typeorm/typeorm/commit/4f05718237a6ef1a3bc623e803536db23f1f327b))
+* **cli/init:** pick dependencies versions from our own package.json ([#11705](https://github.com/typeorm/typeorm/issues/11705)) ([b930909](https://github.com/typeorm/typeorm/commit/b9309098bc00de047a96cba642ea1ed9e730b1fa))
+* entity schema support trees ([#11606](https://github.com/typeorm/typeorm/issues/11606)) ([925dee0](https://github.com/typeorm/typeorm/commit/925dee002b92f1210456dce16c18c6b436e912f3))
+* export QueryPartialEntity and QueryDeepPartialEntity types ([#11748](https://github.com/typeorm/typeorm/issues/11748)) ([ade198c](https://github.com/typeorm/typeorm/commit/ade198c77cda65e86f057f97261073f5ab2b1ed6))
+* init version in postgres driver only if not set ([#11373](https://github.com/typeorm/typeorm/issues/11373)) ([cb1284c](https://github.com/typeorm/typeorm/commit/cb1284c8c0950dcb792e95b889efe1dfafc05aea))
+* manage MongoDB SOCKS5 proxy settings ([#11731](https://github.com/typeorm/typeorm/issues/11731)) ([d7867eb](https://github.com/typeorm/typeorm/commit/d7867ebff173e6cae45e6ce82c9f8890811c4eba))
+* **mssql:** support 'vector' type for MS SQL Server ([#11732](https://github.com/typeorm/typeorm/issues/11732)) ([2681051](https://github.com/typeorm/typeorm/commit/2681051f78c5c284b340e7978f8f337e86c7e915))
+* **mysql:** add pool size options for each connection ([#11810](https://github.com/typeorm/typeorm/issues/11810)) ([67f793f](https://github.com/typeorm/typeorm/commit/67f793feaa976da717175daf152f738793b94ed2))
+* **mysql:** add support for vector columns on MariaDB and MySQL ([#11670](https://github.com/typeorm/typeorm/issues/11670)) ([cfb3d6c](https://github.com/typeorm/typeorm/commit/cfb3d6c015ad648a7ffc08a7a11ce580d108ac69))
+
+
+
 ## [0.3.27](https://github.com/typeorm/typeorm/compare/0.3.26...0.3.27) (2025-09-19)
 
 

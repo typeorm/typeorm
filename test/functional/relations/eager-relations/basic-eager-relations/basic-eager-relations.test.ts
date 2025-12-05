@@ -5,11 +5,9 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { User } from "./entity/User"
-import { Profile } from "./entity/Profile"
+import { Category } from "./entity/Category"
 import { Editor } from "./entity/Editor"
 import { Post } from "./entity/Post"
-import { Category } from "./entity/Category"
 import {
     expect,
     describe,
@@ -20,6 +18,8 @@ import {
     afterAll as after,
     afterEach,
 } from "vitest"
+import { Profile } from "./entity/Profile"
+import { User } from "./entity/User"
 
 describe("relations > eager relations > basic", () => {
     let connections: DataSource[]
@@ -114,6 +114,7 @@ describe("relations > eager relations > basic", () => {
                         id: 1,
                         firstName: "Timber",
                         lastName: "Saw",
+                        deletedAt: null,
                         profile: {
                             id: 1,
                             about: "I cut trees!",
@@ -127,6 +128,7 @@ describe("relations > eager relations > basic", () => {
                                 id: 1,
                                 firstName: "Timber",
                                 lastName: "Saw",
+                                deletedAt: null,
                                 profile: {
                                     id: 1,
                                     about: "I cut trees!",
@@ -151,6 +153,57 @@ describe("relations > eager relations > basic", () => {
                 loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "about eager relations",
+                })
+            }),
+        ))
+
+    it("should preserve manually requested nested relations with DeleteDateColumn", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await prepareData(connection)
+
+                // Prepare test data - reusing existing entities
+                const nestedProfile = new Profile()
+                nestedProfile.about = "I am nested!"
+                await connection.manager.save(nestedProfile)
+
+                const user = (await connection.manager.findOne(User, {
+                    where: { id: 1 },
+                }))!
+                user.nestedProfile = nestedProfile
+                await connection.manager.save(user)
+
+                // Retrieve user with manually specified nested relation
+                const retrievedEditor = await connection.manager.findOne(
+                    Editor,
+                    {
+                        where: { userId: 1 },
+                        relations: {
+                            user: {
+                                nestedProfile: true,
+                            },
+                        },
+                    },
+                )
+
+                // Assertions
+                expect(retrievedEditor).to.deep.equal({
+                    userId: 1,
+                    postId: 1,
+                    user: {
+                        id: 1,
+                        firstName: "Timber",
+                        lastName: "Saw",
+                        deletedAt: null,
+                        nestedProfile: {
+                            id: 2,
+                            about: "I am nested!",
+                        },
+                        profile: {
+                            id: 1,
+                            about: "I cut trees!",
+                        },
+                    },
                 })
             }),
         ))
