@@ -5,6 +5,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { User } from "./entity/UserEntity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7217 Modifying enum fails migration if the enum is used in an array column", () => {
     let connections: DataSource[]

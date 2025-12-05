@@ -11,6 +11,16 @@ import { User } from "./entity/User"
 import { Profile } from "./entity/Profile"
 import { Category } from "./entity/Category"
 import { Question } from "./entity/Question"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("other issues > Relation decorators: allow to pass given table name string instead of typeFunction or entity name", () => {
     let connections: DataSource[]

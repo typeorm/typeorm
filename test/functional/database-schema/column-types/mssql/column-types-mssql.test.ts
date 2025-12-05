@@ -10,6 +10,16 @@ import { PostWithOptions } from "./entity/PostWithOptions"
 import { PostWithoutTypes } from "./entity/PostWithoutTypes"
 import { DateUtils } from "../../../../../src/util/DateUtils"
 import { FruitEnum } from "./enum/FruitEnum"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("database schema > column types > mssql", () => {
     // https://github.com/tediousjs/tedious/issues/722

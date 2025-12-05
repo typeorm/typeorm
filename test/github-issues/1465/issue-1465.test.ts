@@ -8,6 +8,16 @@ import {
 } from "../../utils/test-utils"
 import { Account } from "./entity/Account"
 import { AccountActivationToken } from "./entity/AccountActivationToken"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1465 save child and parent entity", () => {
     let connections: DataSource[] = []

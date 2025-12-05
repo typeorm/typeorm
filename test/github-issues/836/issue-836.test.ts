@@ -8,6 +8,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { UserCredential } from "./entity/UserCredential"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #836 .save won't update entity when it contains OneToOne relationship", () => {
     let connections: DataSource[]

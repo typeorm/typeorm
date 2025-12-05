@@ -7,6 +7,16 @@ import {
 } from "../../utils/test-utils"
 import { Bar } from "./entity/Bar"
 import { Foo } from "./entity/Foo"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 // TODO: this test was broken after removing primary: true from relation decorators
 //  due to complexity of cascades, it was skipped fow now

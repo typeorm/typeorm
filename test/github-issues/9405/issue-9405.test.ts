@@ -8,6 +8,16 @@ import { DataSource } from "../../../src/index"
 import { Email, EmailChanged } from "./entity/EmailChanged"
 import { Change } from "./entity/Change"
 import { Log } from "./entity/Log"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #9405 Incorrect subject sorting with multi-inheritance entities", () => {
     let dataSources: DataSource[]

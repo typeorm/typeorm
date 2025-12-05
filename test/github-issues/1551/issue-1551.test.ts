@@ -9,6 +9,16 @@ import { Message, MessageType } from "./entity/Message"
 import { Recipient } from "./entity/Recipient"
 import { User } from "./entity/User"
 import { Chat } from "./entity/Chat"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1551 complex example of cascades + multiple primary keys = persistence order", () => {
     let connections: DataSource[]

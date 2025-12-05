@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { PersonSchema } from "./entity/Person"
 import { PersonSchema2 } from "./entity/Person2"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("entity-schema > checks", () => {
     describe("entity-schema > checks > postgres, cockroachdb, oracle, mssql", () => {

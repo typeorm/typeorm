@@ -8,6 +8,16 @@ import {
 } from "../../../../utils/test-utils"
 import { PostWithoutTypes } from "./entity/PostWithoutTypes"
 import { Post } from "./entity/Post"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("database schema > column types > postgres", () => {
     let connections: DataSource[]

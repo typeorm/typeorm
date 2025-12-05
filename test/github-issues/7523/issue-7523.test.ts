@@ -5,6 +5,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { ChildEntity1, ChildEntity2 } from "./entity/Test"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7523 Do not create duplicate CREATE TYPE migration query when same 'enumName's are exists", () => {
     let connections: DataSource[]

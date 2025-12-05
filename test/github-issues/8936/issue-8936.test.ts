@@ -12,6 +12,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #8936 DropIndex with a TableIndex without name is not working", () => {
     let connections: DataSource[]

@@ -9,6 +9,16 @@ import { Year } from "./entity/year"
 import { Month } from "./entity/month"
 import { User } from "./entity/user"
 import { UserMonth } from "./entity/user-month"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe.skip("github issues > #1685 JoinColumn from JoinColum is not considered when inserting new value", () => {
     let connections: DataSource[]

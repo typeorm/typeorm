@@ -11,6 +11,16 @@ import { User } from "./entity/User"
 import { Profile } from "./entity/Profile"
 import { Category } from "./entity/Category"
 import { Question } from "./entity/Question"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #4190 Relation decorators: allow to pass string instead of typeFunction", () => {
     let connections: DataSource[]

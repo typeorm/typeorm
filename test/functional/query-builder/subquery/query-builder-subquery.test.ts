@@ -103,7 +103,7 @@ describe("query builder > sub-query", () => {
                     .orderBy("post.id")
                     .getMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     { id: 1, title: "Alex Messer" },
                     { id: 2, title: "Dima Zotov" },
                 ])
@@ -131,7 +131,7 @@ describe("query builder > sub-query", () => {
                     .orderBy("post.id")
                     .getMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     { id: 1, title: "Alex Messer" },
                     { id: 2, title: "Dima Zotov" },
                 ])
@@ -159,7 +159,7 @@ describe("query builder > sub-query", () => {
                     .orderBy("post.id")
                     .getMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     { id: 1, title: "Alex Messer" },
                     { id: 2, title: "Dima Zotov" },
                 ])
@@ -185,7 +185,7 @@ describe("query builder > sub-query", () => {
                     .orderBy("post.id")
                     .getMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     { id: 1, title: "Alex Messer" },
                     { id: 2, title: "Dima Zotov" },
                 ])
@@ -215,7 +215,7 @@ describe("query builder > sub-query", () => {
                     .setParameters(userQb.getParameters())
                     .getRawMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     { name: "Alex Messer" },
                     { name: "Dima Zotov" },
                 ])
@@ -252,7 +252,7 @@ describe("query builder > sub-query", () => {
                     .setParameters(userQb.getParameters())
                     .getRawMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     { name: "Alex Messer" },
                     { name: "Dima Zotov" },
                 ])
@@ -289,7 +289,7 @@ describe("query builder > sub-query", () => {
                     .setParameters(userQb.getParameters())
                     .getRawMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     { name: "Alex Messer" },
                     { name: "Dima Zotov" },
                 ])
@@ -325,7 +325,7 @@ describe("query builder > sub-query", () => {
                     .orderBy("post.id")
                     .getMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     { id: 1, title: "Alex Messer" },
                     { id: 2, title: "Dima Zotov" },
                 ])
@@ -355,13 +355,13 @@ describe("query builder > sub-query", () => {
 
                 // CockroachDB returns numeric data types as string
                 if (connection.driver.options.type === "cockroachdb") {
-                    posts.should.be.eql([
+                    posts.should.be.deepEqualIgnoreUndefined([
                         { id: "1", name: "Alex Messer" },
                         { id: "2", name: "Alex Messer" },
                         { id: "3", name: "Alex Messer" },
                     ])
                 } else {
-                    posts.should.be.eql([
+                    posts.should.be.deepEqualIgnoreUndefined([
                         { id: 1, name: "Alex Messer" },
                         { id: 2, name: "Alex Messer" },
                         { id: 3, name: "Alex Messer" },
@@ -391,13 +391,13 @@ describe("query builder > sub-query", () => {
 
                 // CockroachDB returns numeric data types as string
                 if (connection.driver.options.type === "cockroachdb") {
-                    posts.should.be.eql([
+                    posts.should.be.deepEqualIgnoreUndefined([
                         { id: "1", name: "Alex Messer" },
                         { id: "2", name: "Alex Messer" },
                         { id: "3", name: "Alex Messer" },
                     ])
                 } else {
-                    posts.should.be.eql([
+                    posts.should.be.deepEqualIgnoreUndefined([
                         { id: 1, name: "Alex Messer" },
                         { id: 2, name: "Alex Messer" },
                         { id: 3, name: "Alex Messer" },
@@ -432,7 +432,7 @@ describe("query builder > sub-query", () => {
                     .orderBy("post.id")
                     .getMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     { id: 1, title: "Alex Messer" },
                     { id: 2, title: "Dima Zotov" },
                 ])
@@ -469,7 +469,7 @@ describe("query builder > sub-query", () => {
                     .orderBy("post.id")
                     .getMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     { id: 1, title: "Alex Messer" },
                     { id: 2, title: "Dima Zotov" },
                     { id: 3, title: "Umed Khudoiberdiev" },
@@ -509,7 +509,7 @@ describe("query builder > sub-query", () => {
                     .orderBy("post.id")
                     .getMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     { id: 1, title: "Alex Messer" },
                     { id: 2, title: "Dima Zotov" },
                     { id: 3, title: "Umed Khudoiberdiev" },

@@ -10,6 +10,16 @@ import { Author } from "./entity/Author"
 import { Post } from "./entity/Post"
 import { Tag } from "./entity/Tag"
 import { prepareData } from "./find-options-test-utils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #9977", () => {
     let connections: DataSource[]

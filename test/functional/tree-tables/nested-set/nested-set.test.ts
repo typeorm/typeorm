@@ -55,7 +55,7 @@ describe("tree tables > nested-set", () => {
                 await categoryRepository.save(a12)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -98,7 +98,7 @@ describe("tree tables > nested-set", () => {
                 await categoryRepository.save(a1)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -140,7 +140,7 @@ describe("tree tables > nested-set", () => {
                 await categoryRepository.save(a1)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -188,7 +188,7 @@ describe("tree tables > nested-set", () => {
                 await categoryRepository.save(a1)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -244,7 +244,7 @@ describe("tree tables > nested-set", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql([
+                categoriesTree.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -309,7 +309,7 @@ describe("tree tables > nested-set", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql([
+                categoriesTree.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -350,7 +350,7 @@ describe("tree tables > nested-set", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTreeWithEmptyOptions.should.be.eql([
+                categoriesTreeWithEmptyOptions.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -382,7 +382,7 @@ describe("tree tables > nested-set", () => {
 
                 const categoriesTreeWithDepthZero =
                     await categoryRepository.findTrees({ depth: 0 })
-                categoriesTreeWithDepthZero.should.be.eql([
+                categoriesTreeWithDepthZero.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -398,7 +398,7 @@ describe("tree tables > nested-set", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTreeWithDepthOne.should.be.eql([
+                categoriesTreeWithDepthOne.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -473,7 +473,7 @@ describe("tree tables > nested-set", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql({
+                categoriesTree.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [
@@ -537,7 +537,7 @@ describe("tree tables > nested-set", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql({
+                categoriesTree.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [
@@ -576,7 +576,7 @@ describe("tree tables > nested-set", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTreeWithEmptyOptions.should.be.eql({
+                categoriesTreeWithEmptyOptions.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [
@@ -608,7 +608,7 @@ describe("tree tables > nested-set", () => {
                     await categoryRepository.findDescendantsTree(a1, {
                         depth: 0,
                     })
-                categoriesTreeWithDepthZero.should.be.eql({
+                categoriesTreeWithDepthZero.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [],
@@ -624,7 +624,7 @@ describe("tree tables > nested-set", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTreeWithDepthOne.should.be.eql({
+                categoriesTreeWithDepthOne.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [

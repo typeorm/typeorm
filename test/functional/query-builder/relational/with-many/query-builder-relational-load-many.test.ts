@@ -68,11 +68,11 @@ describe("query builder > relational with many > load many", () => {
                     .of(post1)
                     .loadMany()
 
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1!.images).to.include({
                     id: 1,
                     url: "image #1",
                 })
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1!.images).to.include({
                     id: 2,
                     url: "image #2",
                 })
@@ -122,11 +122,11 @@ describe("query builder > relational with many > load many", () => {
                     .of({ id: 1 })
                     .loadMany()
 
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1!.images).to.include({
                     id: 1,
                     url: "image #1",
                 })
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1!.images).to.include({
                     id: 2,
                     url: "image #2",
                 })
@@ -176,11 +176,11 @@ describe("query builder > relational with many > load many", () => {
                     .of(1)
                     .loadMany()
 
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1!.images).to.include({
                     id: 1,
                     url: "image #1",
                 })
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1!.images).to.include({
                     id: 2,
                     url: "image #2",
                 })

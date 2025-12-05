@@ -10,38 +10,38 @@ export async function importOrRequireFile(
     filePath: string,
 ): Promise<[any, "esm" | "commonjs"]> {
     // FIXME VITEST
-    // const tryToImport = async (): Promise<[any, "esm"]> => {
-    //     // `Function` is required to make sure the `import` statement wil stay `import` after
-    //     // transpilation and won't be converted to `require`
-    //     return [
-    //         // eslint-disable-next-line @typescript-eslint/no-implied-eval
-    //         await Function("return filePath => import(filePath)")()(
-    //             filePath.startsWith("file://")
-    //                 ? filePath
-    //                 : pathToFileURL(filePath).toString(),
-    //         ),
-    //         "esm",
-    //     ]
-    // }
+    const tryToImport = async (): Promise<[any, "esm"]> => {
+        // `Function` is required to make sure the `import` statement wil stay `import` after
+        // transpilation and won't be converted to `require`
+        return [
+            // eslint-disable-next-line @typescript-eslint/no-implied-eval
+            await Function("return filePath => import(filePath)")()(
+                filePath.startsWith("file://")
+                    ? filePath
+                    : pathToFileURL(filePath).toString(),
+            ),
+            "esm",
+        ]
+    }
     const tryToRequire = (): [any, "esm"] => {
         return [import(filePath), "esm"]
     }
 
     // FIXME VITEST
-    // const extension = filePath.substring(filePath.lastIndexOf(".") + ".".length)
+    const extension = filePath.substring(filePath.lastIndexOf(".") + ".".length)
 
-    // if (extension === "mjs" || extension === "mts") return tryToImport()
-    // else if (extension === "cjs" || extension === "cts") return tryToRequire()
-    // else if (extension === "js" || extension === "ts") {
-    //     const packageJson = await getNearestPackageJson(filePath)
+    if (extension === "mjs" || extension === "mts") return tryToImport()
+    else if (extension === "cjs" || extension === "cts") return tryToRequire()
+    else if (extension === "js" || extension === "ts") {
+        const packageJson = await getNearestPackageJson(filePath)
 
-    //     if (packageJson != null) {
-    //         const isModule = (packageJson as any)?.type === "module"
+        if (packageJson != null) {
+            const isModule = (packageJson as any)?.type === "module"
 
-    //         if (isModule) return tryToImport()
-    //         else return tryToRequire()
-    //     } else return tryToRequire()
-    // }
+            if (isModule) return tryToImport()
+            else return tryToRequire()
+        } else return tryToRequire()
+    }
 
     return tryToRequire()
 }

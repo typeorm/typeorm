@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { ClusterCluster as ClusterClusterPg } from "./entity/TestPostgres"
 import { ClusterCluster as ClusterClusterMssql } from "./entity/TestMssql"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7276 Schema sync not able to find diff correctly and executes same queries on every run", () => {
     describe("postgres", () => {

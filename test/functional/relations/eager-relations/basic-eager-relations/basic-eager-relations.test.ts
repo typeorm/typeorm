@@ -10,6 +10,16 @@ import { Profile } from "./entity/Profile"
 import { Editor } from "./entity/Editor"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("relations > eager relations > basic", () => {
     let connections: DataSource[]
@@ -77,7 +87,7 @@ describe("relations > eager relations > basic", () => {
                 loadedPost!.categories1.sort((a, b) => a.id - b.id)
                 loadedPost!.categories2.sort((a, b) => a.id - b.id)
 
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "about eager relations",
                     categories1: [
@@ -138,7 +148,7 @@ describe("relations > eager relations > basic", () => {
                     .where("post.id = :id", { id: 1 })
                     .getOne()
 
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "about eager relations",
                 })

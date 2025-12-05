@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { Customer } from "./entity/Customer"
 import { Profile } from "./entity/Profile"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("indices > embeds index test", () => {
     let connections: DataSource[]

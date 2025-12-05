@@ -9,6 +9,16 @@ import { Student } from "./entity/Student"
 import { Employee } from "./entity/Employee"
 import { Other } from "./entity/Other"
 import { Person } from "./entity/Person"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("table-inheritance > single-table > non-virtual-discriminator-column", () => {
     let connections: DataSource[]

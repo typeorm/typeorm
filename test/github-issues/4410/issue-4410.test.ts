@@ -9,6 +9,16 @@ import {
 } from "../../utils/test-utils"
 import { Username } from "./entity/Username"
 import { PlatformTools } from "../../../src/platform/PlatformTools"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #4410 allow custom filepath for FileLogger", () => {
     let connections: DataSource[]

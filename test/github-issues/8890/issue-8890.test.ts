@@ -9,6 +9,16 @@ import {
 import { Post } from "./entity/Post"
 import { User } from "./entity/User"
 import { prepareDataManyToOne, prepareDataOneToOne } from "./issue-8890-utils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #8890 it should be possible to query IS NULL on ManyToOne relations", () => {
     let dataSources: DataSource[]

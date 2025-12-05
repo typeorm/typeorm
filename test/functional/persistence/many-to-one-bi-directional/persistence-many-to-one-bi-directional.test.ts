@@ -50,7 +50,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory).not.to.be.undefined
-                loadedCategory!.should.be.eql({
+                loadedCategory!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post" },
@@ -78,7 +78,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory).not.to.be.undefined
-                loadedCategory!.should.be.eql({
+                loadedCategory!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post" },
@@ -113,7 +113,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory1).not.to.be.undefined
-                loadedCategory1!.should.be.eql({
+                loadedCategory1!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Updated post" },
@@ -135,7 +135,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory2).not.to.be.undefined
-                loadedCategory2!.should.be.eql({
+                loadedCategory2!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Again Updated post" },
@@ -167,7 +167,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory1).not.to.be.undefined
-                loadedCategory1!.should.be.eql({
+                loadedCategory1!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post" },
@@ -189,7 +189,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory2).not.to.be.undefined
-                loadedCategory2!.should.be.eql({
+                loadedCategory2!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post" },
@@ -201,7 +201,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 })
                 expect(loadedPost).not.to.be.undefined
-                loadedPost!.should.be.eql({ id: 1, title: "Hello Post" })
+                loadedPost!.should.be.deepEqualIgnoreUndefined({ id: 1, title: "Hello Post" })
             }),
         ))
 
@@ -228,7 +228,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory1).not.to.be.undefined
-                loadedCategory1!.should.be.eql({
+                loadedCategory1!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post" },
@@ -250,7 +250,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory2).not.to.be.undefined
-                loadedCategory2!.should.be.eql({
+                loadedCategory2!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "Hello Category",
                     post: null,
@@ -284,7 +284,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory1).not.to.be.undefined
-                loadedCategory1!.should.be.eql({
+                loadedCategory1!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post" },
@@ -306,7 +306,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory2).not.to.be.undefined
-                loadedCategory2!.should.be.eql({
+                loadedCategory2!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "Hello Category",
                     post: null,
@@ -341,7 +341,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory1).not.to.be.undefined
-                loadedCategory1!.should.be.eql({
+                loadedCategory1!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 1, title: "Hello Post #1" },
@@ -364,7 +364,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
                     },
                 )
                 expect(loadedCategory2).not.to.be.undefined
-                loadedCategory2!.should.be.eql({
+                loadedCategory2!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "Hello Category",
                     post: { id: 2, title: "Hello Post #2" },

@@ -7,6 +7,16 @@ import {
 import { Category } from "./entity/Category"
 import { Question } from "./entity/Question"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("schema builder > update primary keys", () => {
     let connections: DataSource[]

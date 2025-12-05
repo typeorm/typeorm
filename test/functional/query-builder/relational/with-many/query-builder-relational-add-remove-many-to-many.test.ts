@@ -66,7 +66,7 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1!.images).to.include({
                     id: 1,
                     url: "image #1",
                 })
@@ -75,13 +75,13 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2!.images).to.be.deepEqualIgnoreUndefined([])
 
                 let loadedPost3 = await connection.manager.findOne(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.be.eql([])
+                expect(loadedPost3!.images).to.be.deepEqualIgnoreUndefined([])
 
                 await connection
                     .createQueryBuilder()
@@ -102,13 +102,13 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2!.images).to.be.deepEqualIgnoreUndefined([])
 
                 loadedPost3 = await connection.manager.findOne(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.be.eql([])
+                expect(loadedPost3!.images).to.be.deepEqualIgnoreUndefined([])
             }),
         ))
 
@@ -149,13 +149,13 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.be.eql([])
+                expect(loadedPost1!.images).to.be.deepEqualIgnoreUndefined([])
 
                 let loadedPost2 = await connection.manager.findOne(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.deep.include({
+                expect(loadedPost2!.images).to.include({
                     id: 2,
                     url: "image #2",
                 })
@@ -164,7 +164,7 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.be.eql([])
+                expect(loadedPost3!.images).to.be.deepEqualIgnoreUndefined([])
 
                 await connection
                     .createQueryBuilder()
@@ -176,7 +176,7 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.be.eql([])
+                expect(loadedPost1!.images).to.be.deepEqualIgnoreUndefined([])
 
                 loadedPost2 = await connection.manager.findOne(Post, {
                     where: { id: 2 },
@@ -191,7 +191,7 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.be.eql([])
+                expect(loadedPost3!.images).to.be.deepEqualIgnoreUndefined([])
             }),
         ))
 
@@ -232,19 +232,19 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.be.eql([])
+                expect(loadedPost1!.images).to.be.deepEqualIgnoreUndefined([])
 
                 let loadedPost2 = await connection.manager.findOne(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2!.images).to.be.deepEqualIgnoreUndefined([])
 
                 let loadedPost3 = await connection.manager.findOne(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.deep.include({
+                expect(loadedPost3!.images).to.include({
                     id: 3,
                     url: "image #3",
                 })
@@ -259,13 +259,13 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.be.eql([])
+                expect(loadedPost1!.images).to.be.deepEqualIgnoreUndefined([])
 
                 loadedPost2 = await connection.manager.findOne(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2!.images).to.be.deepEqualIgnoreUndefined([])
 
                 loadedPost3 = await connection.manager.findOne(Post, {
                     where: { id: 3 },
@@ -315,7 +315,7 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.deep.include({
+                expect(loadedPost1!.images).to.include({
                     id: 3,
                     url: "image #3",
                 })
@@ -324,13 +324,13 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2!.images).to.be.deepEqualIgnoreUndefined([])
 
                 let loadedPost3 = await connection.manager.findOne(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.deep.include({
+                expect(loadedPost3!.images).to.include({
                     id: 3,
                     url: "image #3",
                 })
@@ -354,7 +354,7 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2!.images).to.be.deepEqualIgnoreUndefined([])
 
                 loadedPost3 = await connection.manager.findOne(Post, {
                     where: { id: 3 },
@@ -404,23 +404,23 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.be.eql([])
+                expect(loadedPost1!.images).to.be.deepEqualIgnoreUndefined([])
 
                 let loadedPost2 = await connection.manager.findOne(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2!.images).to.be.deepEqualIgnoreUndefined([])
 
                 let loadedPost3 = await connection.manager.findOne(Post, {
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.deep.include({
+                expect(loadedPost3!.images).to.include({
                     id: 1,
                     url: "image #1",
                 })
-                expect(loadedPost3!.images).to.deep.include({
+                expect(loadedPost3!.images).to.include({
                     id: 3,
                     url: "image #3",
                 })
@@ -435,13 +435,13 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 1 },
                     relations: { images: true },
                 })
-                expect(loadedPost1!.images).to.be.eql([])
+                expect(loadedPost1!.images).to.be.deepEqualIgnoreUndefined([])
 
                 loadedPost2 = await connection.manager.findOne(Post, {
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.be.eql([])
+                expect(loadedPost2!.images).to.be.deepEqualIgnoreUndefined([])
 
                 loadedPost3 = await connection.manager.findOne(Post, {
                     where: { id: 3 },

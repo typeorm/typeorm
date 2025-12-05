@@ -5,6 +5,16 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { TaskNotification } from "./entity/TaskNotification"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7647 Duplicate migrations when using 'enumName' ColumnOption in an 'enum' type Postgres", () => {
     let connections: DataSource[]

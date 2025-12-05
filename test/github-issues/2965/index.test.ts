@@ -8,6 +8,16 @@ import {
 } from "../../utils/test-utils"
 import { Note } from "./entity/note"
 import { Person } from "./entity/person"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #2965 Reuse preloaded lazy relations", () => {
     let connections: DataSource[]

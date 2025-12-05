@@ -109,7 +109,7 @@ describe("query builder > relation-id > one-to-many > embedded", () => {
                 loadedPosts[1].counters.subcounters.watchedUserIds.sort()
 
                 expect(
-                    loadedPosts[0].should.be.eql({
+                    loadedPosts[0].should.be.deepEqualIgnoreUndefined({
                         title: "About BMW",
                         counters: {
                             likes: 1,
@@ -126,7 +126,7 @@ describe("query builder > relation-id > one-to-many > embedded", () => {
                     }),
                 )
                 expect(
-                    loadedPosts[1].should.be.eql({
+                    loadedPosts[1].should.be.deepEqualIgnoreUndefined({
                         title: "About Boeing",
                         counters: {
                             likes: 3,

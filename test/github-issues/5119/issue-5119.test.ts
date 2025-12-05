@@ -6,6 +6,16 @@ import {
     setupSingleTestingConnection,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #5119 migration with foreign key that changes target", () => {
     let dataSources: DataSource[]

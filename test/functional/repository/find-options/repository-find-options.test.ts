@@ -55,7 +55,7 @@ describe("repository > find options", () => {
                 const [loadedPost] = await connection.getRepository(Post).find({
                     relations: { author: true, categories: true },
                 })
-                expect(loadedPost).to.be.eql({
+                expect(loadedPost).to.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "About Alex Messer",
                     author: {
@@ -159,18 +159,18 @@ describe("repository > find options", () => {
                 //     .leftJoin("photo.categories", "category")
                 //     .getMany();
 
-                expect(loadedPhoto).to.be.eql({
+                expect(loadedPhoto).to.be.deepEqualIgnoreUndefined({
                     name: "Me and Bears 5",
                 })
 
-                expect(loadedPhotos1).to.have.deep.members(
+                expect(loadedPhotos1).to.have.members(
                     photos.map((photo) => ({
                         filename: photo.filename,
                         views: photo.views,
                     })),
                 )
 
-                expect(loadedPhotos2).to.have.deep.members(
+                expect(loadedPhotos2).to.have.members(
                     photos.map((photo) => ({
                         id: photo.id,
                         name: photo.name,
@@ -212,7 +212,7 @@ describe("repository > find options", () => {
                         },
                     })
 
-                expect(loadedCategories1).to.be.eql([
+                expect(loadedCategories1).to.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "Bears",
@@ -233,7 +233,7 @@ describe("repository > find options", () => {
                         order: { id: "ASC" },
                     })
 
-                expect(loadedCategories2).to.be.eql([
+                expect(loadedCategories2).to.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "Bears",

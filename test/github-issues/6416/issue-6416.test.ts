@@ -11,6 +11,16 @@ import { assert } from "chai"
 import Post, { PostSchema } from "./entity/Post"
 import PostTag, { PostTagSchema } from "./entity/PostTag"
 import PostAttachment, { PostAttachmentSchema } from "./entity/PostAttachment"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #6399 Combining ManyToOne, Cascade, & Composite Primary Key causes Unique Constraint issues", () => {
     let connections: DataSource[]

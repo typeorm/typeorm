@@ -7,7 +7,6 @@ import {
 import { DataSource, EntityManager } from "../../../src"
 import { Parent } from "./entity/Parent"
 import { Child } from "./entity/Child"
-import { xfail } from "../../utils/xfail"
 import {
     expect,
     describe,
@@ -33,10 +32,9 @@ describe("github issues > #3105 Error with cascading saves using EntityManager i
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    xfail
-        .unless(() => connections.length > 0)
-        .it(
-            "error with cascading saves using EntityManager in a transaction",
+    it.skipIf(() => connections.length === 0).fails(
+        "error with cascading saves using EntityManager in a transaction",
+        () =>
             () =>
                 Promise.all(
                     connections.map(async function (connection) {

@@ -8,6 +8,16 @@ import {
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
 import { prepareData } from "./find-options-test-utils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("find options > select", () => {
     let connections: DataSource[]

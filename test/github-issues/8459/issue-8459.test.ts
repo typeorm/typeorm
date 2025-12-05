@@ -9,6 +9,16 @@ import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryR
 import { TableIndex } from "../../../src"
 import { PostCategory } from "./entity/PostCategory"
 import { IndexMetadata } from "../../../src/metadata/IndexMetadata"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #8459 Can not create indexes of materialized views", () => {
     const tableIndex: TableIndex = new TableIndex({

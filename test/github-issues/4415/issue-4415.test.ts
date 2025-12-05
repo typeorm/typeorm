@@ -15,6 +15,16 @@ import { CommandUtils } from "../../../src/commands/CommandUtils"
 import { MigrationGenerateCommand } from "../../../src/commands/MigrationGenerateCommand"
 import { Post } from "./entity/Post"
 import { resultsTemplates } from "./results-templates"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 // TODO: broken after 0.3.0 changes, fix later
 describe.skip("github issues > #4415 allow beautify generated migrations", () => {

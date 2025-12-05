@@ -7,6 +7,16 @@ import { DataSource } from "../../../src"
 
 import { TournamentGraph } from "./entity/TournamentGraph"
 import { SquadBilliardsTournament } from "./entity/SquadBilliardsTournament"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("other issues > using nested child entities", () => {
     let connections: DataSource[]

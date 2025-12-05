@@ -79,7 +79,7 @@ describe("find options > null and undefined handling", () => {
                         .getMany()
 
                     // This should return post1 since null properties are skipped by default
-                    postsWithQb.should.be.eql([
+                    postsWithQb.should.be.deepEqualIgnoreUndefined([
                         { id: 1, title: "Post #1", text: "About post #1" },
                     ])
 
@@ -115,7 +115,7 @@ describe("find options > null and undefined handling", () => {
                         .getMany()
 
                     // This should return post1 since undefined properties are skipped by default
-                    postsWithQb.should.be.eql([
+                    postsWithQb.should.be.deepEqualIgnoreUndefined([
                         { id: 1, title: "Post #1", text: "About post #1" },
                     ])
 

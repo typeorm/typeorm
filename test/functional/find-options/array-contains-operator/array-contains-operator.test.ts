@@ -7,6 +7,16 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Post, PostStatus } from "./entity/Post"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("find options > find operators > ArrayContains", () => {
     let connections: DataSource[]

@@ -66,7 +66,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 1 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1!.category).to.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "category #1",
                 })
@@ -152,7 +152,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost2!.category).to.be.eql({
+                expect(loadedPost2!.category).to.be.deepEqualIgnoreUndefined({
                     id: 2,
                     name: "category #2",
                 })
@@ -238,7 +238,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 3 },
                     relations: { category: true },
                 })
-                expect(loadedPost3!.category).to.be.eql({
+                expect(loadedPost3!.category).to.be.deepEqualIgnoreUndefined({
                     id: 3,
                     name: "category #3",
                 })
@@ -306,7 +306,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 1 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1!.category).to.be.deepEqualIgnoreUndefined({
                     id: 3,
                     name: "category #3",
                 })
@@ -321,7 +321,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 3 },
                     relations: { category: true },
                 })
-                expect(loadedPost3!.category).to.be.eql({
+                expect(loadedPost3!.category).to.be.deepEqualIgnoreUndefined({
                     id: 3,
                     name: "category #3",
                 })
@@ -390,7 +390,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1!.category).to.be.deepEqualIgnoreUndefined({
                     id: 3,
                     name: "category #3",
                 })
@@ -406,7 +406,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1!.category).to.be.deepEqualIgnoreUndefined({
                     id: 3,
                     name: "category #3",
                 })
@@ -422,7 +422,7 @@ describe("query builder > relational query builder > add operation > one to many
                     Category,
                     { where: { id: 3 }, relations: { posts: true } },
                 )
-                expect(loadedCategory!.posts).to.deep.include({
+                expect(loadedCategory!.posts).to.include({
                     id: 1,
                     title: "post #1",
                 })
@@ -430,7 +430,7 @@ describe("query builder > relational query builder > add operation > one to many
                     id: 2,
                     title: "post #2",
                 })
-                expect(loadedCategory!.posts).to.deep.include({
+                expect(loadedCategory!.posts).to.include({
                     id: 3,
                     title: "post #3",
                 })

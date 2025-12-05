@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { PostDetails } from "./entity/PostDetails"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("cascades > should insert by cascades from both sides (#57)", () => {
     let connections: DataSource[]

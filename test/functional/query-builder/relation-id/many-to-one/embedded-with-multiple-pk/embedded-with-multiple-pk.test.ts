@@ -99,7 +99,7 @@ describe("query builder > relation-id > many-to-one > embedded-with-multiple-pk"
                     .getMany()
 
                 expect(
-                    loadedPosts[0].should.be.eql({
+                    loadedPosts[0].should.be.deepEqualIgnoreUndefined({
                         id: 1,
                         title: "About BMW",
                         counters: {
@@ -117,7 +117,7 @@ describe("query builder > relation-id > many-to-one > embedded-with-multiple-pk"
                     }),
                 )
                 expect(
-                    loadedPosts[1].should.be.eql({
+                    loadedPosts[1].should.be.deepEqualIgnoreUndefined({
                         id: 2,
                         title: "About Boeing",
                         counters: {
@@ -153,7 +153,7 @@ describe("query builder > relation-id > many-to-one > embedded-with-multiple-pk"
                     .getOne()
 
                 expect(
-                    loadedPost!.should.be.eql({
+                    loadedPost!.should.be.deepEqualIgnoreUndefined({
                         id: 1,
                         title: "About BMW",
                         counters: {

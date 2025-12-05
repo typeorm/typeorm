@@ -103,7 +103,7 @@ describe("query builder > relation-id > many-to-many > embedded", () => {
                     .getMany()
 
                 expect(
-                    loadedPosts[0].should.be.eql({
+                    loadedPosts[0].should.be.deepEqualIgnoreUndefined({
                         title: "About BMW",
                         counters: {
                             likes: 1,
@@ -120,7 +120,7 @@ describe("query builder > relation-id > many-to-many > embedded", () => {
                     }),
                 )
                 expect(
-                    loadedPosts[1].should.be.eql({
+                    loadedPosts[1].should.be.deepEqualIgnoreUndefined({
                         title: "About Boeing",
                         counters: {
                             likes: 3,

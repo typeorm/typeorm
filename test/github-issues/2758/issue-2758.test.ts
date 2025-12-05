@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { Person } from "./entity/Person"
 import { User } from "./entity/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe.skip("github issues > #2758 Insert fails when related OneToOne entity's primary key is also a foreign key", () => {
     let connections: DataSource[]

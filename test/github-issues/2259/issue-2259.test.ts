@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { TableColumn } from "../../../src/schema-builder/table/TableColumn"
 import { Table } from "../../../src/schema-builder/table/Table"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #2259 Missing type for generated columns", () => {
     let connections: DataSource[]

@@ -8,6 +8,16 @@ import {
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { User } from "./entity/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("persistence > basic functionality", function () {
     let connections: DataSource[]

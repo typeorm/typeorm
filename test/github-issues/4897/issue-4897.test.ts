@@ -5,6 +5,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { SomeEntity } from "./entity/SomeEntity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #4897 [MSSQL] Enum column definition removes and recreates constraint overwritting existing data", () => {
     let connections: DataSource[]

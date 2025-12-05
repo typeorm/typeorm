@@ -7,6 +7,16 @@ import {
 import { Connection } from "../../../src/connection/Connection"
 import { User } from "./entity/User"
 import { Photo } from "./entity/Photo"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #8723 Fail on Update when reference exists together with FK: multiple assignments to same column ", () => {
     let connections: Connection[]
