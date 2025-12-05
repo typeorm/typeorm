@@ -1093,12 +1093,16 @@ export class EntityManager {
             )
         }
 
-        const result = await this.createQueryBuilder(entityClass, metadata.name)
-            .setFindOptions({ where })
+        const qb = this.createQueryBuilder(entityClass, metadata.name)
+        qb.setFindOptions({ where })
+
+        const alias = qb.alias
+
+        const result = await qb
             .select(
                 `${fnName}(${this.connection.driver.escape(
-                    column.databaseName,
-                )})`,
+                    alias,
+                )}.${this.connection.driver.escape(column.databaseName)})`,
                 fnName,
             )
             .getRawOne()
