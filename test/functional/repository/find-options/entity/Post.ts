@@ -18,7 +18,7 @@ export class Post {
     @ManyToOne(() => User)
     author: User
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     @JoinTable()
     categories: Category[]
 }

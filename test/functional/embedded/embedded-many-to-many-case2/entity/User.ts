@@ -13,7 +13,7 @@ export class User {
     @Column()
     name: string
 
-    @ManyToMany((type) => Post, (post) => post.counters.likedUsers)
+    @ManyToMany(() => Post, (post) => post.counters.likedUsers)
     @JoinTable()
     likedPosts: Post[]
 }
