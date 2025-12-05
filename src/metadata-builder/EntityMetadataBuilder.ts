@@ -523,19 +523,33 @@ export class EntityMetadataBuilder {
         }
 
         // if single table inheritance is used, we need to mark all embedded columns as nullable
+        const embeddedArgs = this.metadataArgsStorage.filterEmbeddeds(
+            entityMetadata.inheritanceTree,
+        )
         entityMetadata.embeddeds = this.createEmbeddedsRecursively(
             entityMetadata,
-            this.metadataArgsStorage.filterEmbeddeds(
-                entityMetadata.inheritanceTree,
-            ),
-        ).map((embedded: EmbeddedMetadata): EmbeddedMetadata => {
+            embeddedArgs,
+        ).map((embedded: EmbeddedMetadata, index: number): EmbeddedMetadata => {
             if (entityMetadata.inheritancePattern === "STI") {
-                embedded.columns = embedded.columns.map(
-                    (column: ColumnMetadata): ColumnMetadata => {
-                        column.isNullable = true
-                        return column
-                    },
-                )
+                // Check if this embedded is defined in a child entity
+                // Only child-specific embeddeds should be forced to nullable
+                const embeddedArg = embeddedArgs[index]
+                const embeddedInSingleTableInheritedChild =
+                    allEntityMetadatas.find(
+                        (otherEntityMetadata) =>
+                            otherEntityMetadata.tableType === "entity-child" &&
+                            otherEntityMetadata.target === embeddedArg.target,
+                    )
+
+                // Only make columns nullable if the embedded is defined in a child entity
+                if (embeddedInSingleTableInheritedChild) {
+                    embedded.columns = embedded.columns.map(
+                        (column: ColumnMetadata): ColumnMetadata => {
+                            column.isNullable = true
+                            return column
+                        },
+                    )
+                }
             }
             return embedded
         })
