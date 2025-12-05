@@ -1,28 +1,28 @@
 import "reflect-metadata"
+import { scheduler } from "timers/promises"
+import { EntitySchema, Like, Repository, TypeORMError } from "../../../../src"
+import { DeepPartial } from "../../../../src/common/DeepPartial"
+import { DataSource } from "../../../../src/data-source/DataSource"
+import { QueryBuilder } from "../../../../src/query-builder/QueryBuilder"
+import { UpsertOptions } from "../../../../src/repository/UpsertOptions"
 import "../../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    sleep,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import { Blog } from "./entity/Blog"
+import { Category } from "./entity/Category"
+import { EmbeddedUQEntity } from "./entity/EmbeddedUQEntity"
+import { ExternalIdPrimaryKeyEntity } from "./entity/ExternalIdPrimaryKeyEntity"
+import { OneToOneRelationEntity } from "./entity/OneToOneRelation"
 import { Post } from "./entity/Post"
-import { QueryBuilder } from "../../../../src/query-builder/QueryBuilder"
-import { User } from "./model/User"
+import { RelationAsPrimaryKey } from "./entity/RelationAsPrimaryKey"
+import { TwoUniqueColumnsEntity } from "./entity/TwoUniqueColumns"
 import questionSchema from "./model-schema/QuestionSchema"
 import userSchema from "./model-schema/UserSchema"
 import { Question } from "./model/Question"
-import { Blog } from "./entity/Blog"
-import { Category } from "./entity/Category"
-import { DeepPartial } from "../../../../src/common/DeepPartial"
-import { EntitySchema, Like, Repository, TypeORMError } from "../../../../src"
-import { ExternalIdPrimaryKeyEntity } from "./entity/ExternalIdPrimaryKeyEntity"
-import { EmbeddedUQEntity } from "./entity/EmbeddedUQEntity"
-import { RelationAsPrimaryKey } from "./entity/RelationAsPrimaryKey"
-import { TwoUniqueColumnsEntity } from "./entity/TwoUniqueColumns"
-import { OneToOneRelationEntity } from "./entity/OneToOneRelation"
-import { UpsertOptions } from "../../../../src/repository/UpsertOptions"
+import { User } from "./model/User"
 
 describe("repository > basic methods", () => {
     const UserEntity = new EntitySchema<any>(userSchema as any)
@@ -465,7 +465,7 @@ describe("repository > basic methods", () => {
 
                     initial.title.should.be.equal("Post title initial")
 
-                    await sleep(1000)
+                    await scheduler.wait(100)
 
                     // update post with externalId
                     await postRepository.upsert(
