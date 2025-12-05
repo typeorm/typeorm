@@ -1,4 +1,3 @@
-// @ts-expect-error: AssertionError exists but is not typed in chai
 import { assert, AssertionError } from "chai"
 import { AsyncFunc, Context, Func, Test, TestFunction } from "mocha"
 
