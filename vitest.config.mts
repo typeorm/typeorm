@@ -22,6 +22,6 @@ export default defineConfig({
         reporters: ['default'],
         passWithNoTests: false,
         pool: "forks",
-        maxWorkers: 2,
+        maxWorkers: 1,
     }
 })

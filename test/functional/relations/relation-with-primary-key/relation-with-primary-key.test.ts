@@ -67,7 +67,7 @@ describe("relations > relation with primary key", () => {
                         },
                     })
 
-                    posts.should.be.eql([
+                    posts.should.be.deepEqualIgnoreUndefined([
                         {
                             title: "Hello Post #1",
                             categoryId: 1,

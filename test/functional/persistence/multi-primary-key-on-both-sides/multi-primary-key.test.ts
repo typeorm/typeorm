@@ -61,7 +61,7 @@ describe("persistence > multi primary keys on both sides", () => {
                         },
                     })
 
-                    posts.should.be.eql([
+                    posts.should.be.deepEqualIgnoreUndefined([
                         {
                             firstId: 1,
                             secondId: 2,

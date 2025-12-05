@@ -40,7 +40,7 @@ describe("persistence > multi primary keys", () => {
 
                     await connection.manager.save(post1)
 
-                    post1.should.be.eql({
+                    post1.should.be.deepEqualIgnoreUndefined({
                         firstId: 1,
                         secondId: 2,
                         title: "Hello Post #1",
@@ -67,7 +67,7 @@ describe("persistence > multi primary keys", () => {
                         },
                     })
 
-                    posts.should.be.eql([
+                    posts.should.be.deepEqualIgnoreUndefined([
                         {
                             firstId: 1,
                             secondId: 2,

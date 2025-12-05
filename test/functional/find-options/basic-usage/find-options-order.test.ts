@@ -421,7 +421,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts.should.have.deep.members([
+                posts.should.have.members([
                     {
                         id: 3,
                         title: "Post #3",
