@@ -151,6 +151,12 @@ const rawData = await dataSource.query(
     ["John", 24],
 )
 
+// mysql2 additionally supports named parameters
+const rawData = await dataSource.query(
+    "SELECT * FROM USERS WHERE name = :name and age = :age",
+    { name: "John", age: 24 },
+)
+
 // aurora-postgres, cockroachdb, postgres
 const rawData = await dataSource.query(
     "SELECT * FROM USERS WHERE name = $1 and age = $2",

@@ -117,14 +117,14 @@ export interface QueryRunner {
      */
     query(
         query: string,
-        parameters: any[] | undefined,
+        parameters: any[] | ObjectLiteral | undefined,
         useStructuredResult: true,
     ): Promise<QueryResult>
 
     /**
      * Executes a given SQL query and returns raw database results.
      */
-    query(query: string, parameters?: any[]): Promise<any>
+    query(query: string, parameters?: any[] | ObjectLiteral): Promise<any>
 
     /**
      * Tagged template function that executes raw SQL query and returns raw database results.
