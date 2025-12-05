@@ -472,8 +472,7 @@ export declare class AggregationCursor<
 
 /** @public */
 export declare interface AggregationCursorOptions
-    extends AbstractCursorOptions,
-        AggregateOptions {}
+    extends AbstractCursorOptions, AggregateOptions {}
 
 /**
  * It is possible to search using alternative types in mongodb e.g.
@@ -486,25 +485,24 @@ export declare type AlternativeType<T> =
 
 /** @public */
 export declare type AnyBulkWriteOperation<TSchema extends Document = Document> =
-
-        | {
-              insertOne: InsertOneModel<TSchema>
-          }
-        | {
-              replaceOne: ReplaceOneModel<TSchema>
-          }
-        | {
-              updateOne: UpdateOneModel<TSchema>
-          }
-        | {
-              updateMany: UpdateManyModel<TSchema>
-          }
-        | {
-              deleteOne: DeleteOneModel<TSchema>
-          }
-        | {
-              deleteMany: DeleteManyModel<TSchema>
-          }
+    | {
+          insertOne: InsertOneModel<TSchema>
+      }
+    | {
+          replaceOne: ReplaceOneModel<TSchema>
+      }
+    | {
+          updateOne: UpdateOneModel<TSchema>
+      }
+    | {
+          updateMany: UpdateManyModel<TSchema>
+      }
+    | {
+          deleteOne: DeleteOneModel<TSchema>
+      }
+    | {
+          deleteMany: DeleteManyModel<TSchema>
+      }
 
 /** @public */
 export declare type AnyError = MongoError | Error
@@ -826,7 +824,8 @@ export { BSONRegExp }
  * @public
  */
 export declare interface BSONSerializeOptions
-    extends Omit<SerializeOptions, "index">,
+    extends
+        Omit<SerializeOptions, "index">,
         Omit<
             DeserializeOptions,
             | "evalFunctions"
@@ -1133,8 +1132,7 @@ export declare class ChangeStream<
  * @see https://www.mongodb.com/docs/manual/reference/change-events/
  */
 export declare interface ChangeStreamCollModDocument
-    extends ChangeStreamDocumentCommon,
-        ChangeStreamDocumentCollectionUUID {
+    extends ChangeStreamDocumentCommon, ChangeStreamDocumentCollectionUUID {
     /** Describes the type of operation represented in this change notification */
     operationType: "modify"
 }
@@ -1144,8 +1142,7 @@ export declare interface ChangeStreamCollModDocument
  * @see https://www.mongodb.com/docs/manual/reference/change-events/
  */
 export declare interface ChangeStreamCreateDocument
-    extends ChangeStreamDocumentCommon,
-        ChangeStreamDocumentCollectionUUID {
+    extends ChangeStreamDocumentCommon, ChangeStreamDocumentCollectionUUID {
     /** Describes the type of operation represented in this change notification */
     operationType: "create"
 }
@@ -1156,7 +1153,8 @@ export declare interface ChangeStreamCreateDocument
  * @see https://www.mongodb.com/docs/manual/reference/change-events/
  */
 export declare interface ChangeStreamCreateIndexDocument
-    extends ChangeStreamDocumentCommon,
+    extends
+        ChangeStreamDocumentCommon,
         ChangeStreamDocumentCollectionUUID,
         ChangeStreamDocumentOperationDescription {
     /** Describes the type of operation represented in this change notification */
@@ -1173,7 +1171,9 @@ export declare interface ChangeStreamCreateIndexDocument
  */
 export declare interface ChangeStreamDeleteDocument<
     TSchema extends Document = Document,
-> extends ChangeStreamDocumentCommon,
+>
+    extends
+        ChangeStreamDocumentCommon,
         ChangeStreamDocumentKey<TSchema>,
         ChangeStreamDocumentCollectionUUID {
     /** Describes the type of operation represented in this change notification */
@@ -1283,8 +1283,7 @@ export declare interface ChangeStreamDocumentOperationDescription {
  * @public
  * @see https://www.mongodb.com/docs/manual/reference/change-events/#dropdatabase-event
  */
-export declare interface ChangeStreamDropDatabaseDocument
-    extends ChangeStreamDocumentCommon {
+export declare interface ChangeStreamDropDatabaseDocument extends ChangeStreamDocumentCommon {
     /** Describes the type of operation represented in this change notification */
     operationType: "dropDatabase"
     /** The database dropped */
@@ -1298,8 +1297,7 @@ export declare interface ChangeStreamDropDatabaseDocument
  * @see https://www.mongodb.com/docs/manual/reference/change-events/#drop-event
  */
 export declare interface ChangeStreamDropDocument
-    extends ChangeStreamDocumentCommon,
-        ChangeStreamDocumentCollectionUUID {
+    extends ChangeStreamDocumentCommon, ChangeStreamDocumentCollectionUUID {
     /** Describes the type of operation represented in this change notification */
     operationType: "drop"
     /** Namespace the drop event occurred on */
@@ -1312,7 +1310,8 @@ export declare interface ChangeStreamDropDocument
  * @see https://www.mongodb.com/docs/manual/reference/change-events/
  */
 export declare interface ChangeStreamDropIndexDocument
-    extends ChangeStreamDocumentCommon,
+    extends
+        ChangeStreamDocumentCommon,
         ChangeStreamDocumentCollectionUUID,
         ChangeStreamDocumentOperationDescription {
     /** Describes the type of operation represented in this change notification */
@@ -1339,7 +1338,9 @@ export declare type ChangeStreamEvents<
  */
 export declare interface ChangeStreamInsertDocument<
     TSchema extends Document = Document,
-> extends ChangeStreamDocumentCommon,
+>
+    extends
+        ChangeStreamDocumentCommon,
         ChangeStreamDocumentKey<TSchema>,
         ChangeStreamDocumentCollectionUUID {
     /** Describes the type of operation represented in this change notification */
@@ -1354,8 +1355,7 @@ export declare interface ChangeStreamInsertDocument<
  * @public
  * @see https://www.mongodb.com/docs/manual/reference/change-events/#invalidate-event
  */
-export declare interface ChangeStreamInvalidateDocument
-    extends ChangeStreamDocumentCommon {
+export declare interface ChangeStreamInvalidateDocument extends ChangeStreamDocumentCommon {
     /** Describes the type of operation represented in this change notification */
     operationType: "invalidate"
 }
@@ -1370,8 +1370,10 @@ export declare interface ChangeStreamNameSpace {
  * Options that can be passed to a ChangeStream. Note that startAfter, resumeAfter, and startAtOperationTime are all mutually exclusive, and the server will error if more than one is specified.
  * @public
  */
-export declare interface ChangeStreamOptions
-    extends Omit<AggregateOptions, "writeConcern"> {
+export declare interface ChangeStreamOptions extends Omit<
+    AggregateOptions,
+    "writeConcern"
+> {
     /**
      * Allowed values: 'updateLookup', 'whenAvailable', 'required'.
      *
@@ -1439,7 +1441,8 @@ export declare interface ChangeStreamOptions
  * @see https://www.mongodb.com/docs/manual/reference/change-events/
  */
 export declare interface ChangeStreamRefineCollectionShardKeyDocument
-    extends ChangeStreamDocumentCommon,
+    extends
+        ChangeStreamDocumentCommon,
         ChangeStreamDocumentCollectionUUID,
         ChangeStreamDocumentOperationDescription {
     /** Describes the type of operation represented in this change notification */
@@ -1451,8 +1454,7 @@ export declare interface ChangeStreamRefineCollectionShardKeyDocument
  * @see https://www.mongodb.com/docs/manual/reference/change-events/#rename-event
  */
 export declare interface ChangeStreamRenameDocument
-    extends ChangeStreamDocumentCommon,
-        ChangeStreamDocumentCollectionUUID {
+    extends ChangeStreamDocumentCommon, ChangeStreamDocumentCollectionUUID {
     /** Describes the type of operation represented in this change notification */
     operationType: "rename"
     /** The new name for the `ns.coll` collection */
@@ -1470,8 +1472,8 @@ export declare interface ChangeStreamRenameDocument
  */
 export declare interface ChangeStreamReplaceDocument<
     TSchema extends Document = Document,
-> extends ChangeStreamDocumentCommon,
-        ChangeStreamDocumentKey<TSchema> {
+>
+    extends ChangeStreamDocumentCommon, ChangeStreamDocumentKey<TSchema> {
     /** Describes the type of operation represented in this change notification */
     operationType: "replace"
     /** The fullDocument of a replace event represents the document after the insert of the replacement document */
@@ -1493,7 +1495,8 @@ export declare interface ChangeStreamReplaceDocument<
  * @see https://www.mongodb.com/docs/manual/reference/change-events/
  */
 export declare interface ChangeStreamReshardCollectionDocument
-    extends ChangeStreamDocumentCommon,
+    extends
+        ChangeStreamDocumentCommon,
         ChangeStreamDocumentCollectionUUID,
         ChangeStreamDocumentOperationDescription {
     /** Describes the type of operation represented in this change notification */
@@ -1505,7 +1508,8 @@ export declare interface ChangeStreamReshardCollectionDocument
  * @see https://www.mongodb.com/docs/manual/reference/change-events/
  */
 export declare interface ChangeStreamShardCollectionDocument
-    extends ChangeStreamDocumentCommon,
+    extends
+        ChangeStreamDocumentCommon,
         ChangeStreamDocumentCollectionUUID,
         ChangeStreamDocumentOperationDescription {
     /** Describes the type of operation represented in this change notification */
@@ -1518,7 +1522,9 @@ export declare interface ChangeStreamShardCollectionDocument
  */
 export declare interface ChangeStreamUpdateDocument<
     TSchema extends Document = Document,
-> extends ChangeStreamDocumentCommon,
+>
+    extends
+        ChangeStreamDocumentCommon,
         ChangeStreamDocumentKey<TSchema>,
         ChangeStreamDocumentCollectionUUID {
     /** Describes the type of operation represented in this change notification */
@@ -2297,8 +2303,7 @@ export declare interface CollectionInfo extends Document {
 
 /** @public */
 export declare interface CollectionOptions
-    extends BSONSerializeOptions,
-        WriteConcernOptions {
+    extends BSONSerializeOptions, WriteConcernOptions {
     /** Specify a read concern for the collection. (only MongoDB 3.2 or higher supported) */
     readConcern?: ReadConcernLike
     /** The preferred read preference (ReadPreference.PRIMARY, ReadPreference.PRIMARY_PREFERRED, ReadPreference.SECONDARY, ReadPreference.SECONDARY_PREFERRED, ReadPreference.NEAREST). */
@@ -2387,9 +2392,7 @@ export declare class CommandFailedEvent {
 
 /** @public */
 export declare interface CommandOperationOptions
-    extends OperationOptions,
-        WriteConcernOptions,
-        ExplainOptions {
+    extends OperationOptions, WriteConcernOptions, ExplainOptions {
     /** Specify a read concern and level for the collection. (only MongoDB 3.2 or higher supported) */
     readConcern?: ReadConcernLike
     /** Collation */
@@ -2553,7 +2556,8 @@ export declare type ConnectionEvents = {
 
 /** @public */
 export declare interface ConnectionOptions
-    extends SupportedNodeConnectionOptions,
+    extends
+        SupportedNodeConnectionOptions,
         StreamDescriptionOptions,
         ProxyOptions {
     id: number | "<monitor>"
@@ -2638,8 +2642,10 @@ export declare class ConnectionPoolMonitoringEvent {
 }
 
 /** @public */
-export declare interface ConnectionPoolOptions
-    extends Omit<ConnectionOptions, "id" | "generation"> {
+export declare interface ConnectionPoolOptions extends Omit<
+    ConnectionOptions,
+    "id" | "generation"
+> {
     /** The maximum number of connections that may be associated with a pool at a given time. This includes in use and available connections. */
     maxPoolSize: number
     /** The minimum number of connections that MUST exist at any moment in a single connection pool. */
@@ -2701,8 +2707,7 @@ export declare interface CountOptions extends CommandOperationOptions {
 }
 
 /** @public */
-export declare interface CreateCollectionOptions
-    extends CommandOperationOptions {
+export declare interface CreateCollectionOptions extends CommandOperationOptions {
     /** Returns an error if the collection does not exist */
     strict?: boolean
     /** Create a capped collection */
@@ -2749,8 +2754,10 @@ export declare interface CreateCollectionOptions
 }
 
 /** @public */
-export declare interface CreateIndexesOptions
-    extends Omit<CommandOperationOptions, "writeConcern"> {
+export declare interface CreateIndexesOptions extends Omit<
+    CommandOperationOptions,
+    "writeConcern"
+> {
     /** Creates the index in the background, yielding whenever possible. */
     background?: boolean
     /** Creates a unique index. */
@@ -3054,8 +3061,7 @@ export declare class Db {
 
 /** @public */
 export declare interface DbOptions
-    extends BSONSerializeOptions,
-        WriteConcernOptions {
+    extends BSONSerializeOptions, WriteConcernOptions {
     /** If the database authentication is dependent on another databaseName. */
     authSource?: string
     /** Force server to assign _id values instead of driver. */
@@ -3103,8 +3109,7 @@ export declare interface DeleteOneModel<TSchema extends Document = Document> {
 
 /** @public */
 export declare interface DeleteOptions
-    extends CommandOperationOptions,
-        WriteConcernOptions {
+    extends CommandOperationOptions, WriteConcernOptions {
     /** If true, when an insert fails, don't execute the remaining writes. If false, continue with remaining inserts when one fails. */
     ordered?: boolean
     /** Specifies the collation to use for the operation */
@@ -3194,8 +3199,7 @@ export declare interface ErrorDescription extends Document {
 }
 
 /** @public */
-export declare interface EstimatedDocumentCountOptions
-    extends CommandOperationOptions {
+export declare interface EstimatedDocumentCountOptions extends CommandOperationOptions {
     /**
      * The maximum amount of time to allow the operation to run.
      *
@@ -3263,8 +3267,9 @@ export declare type FilterOperations<T> =
         : FilterOperators<T>
 
 /** @public */
-export declare interface FilterOperators<TValue>
-    extends NonObjectIdLikeDocument {
+export declare interface FilterOperators<
+    TValue,
+> extends NonObjectIdLikeDocument {
     $eq?: TValue
     $gt?: TValue
     $gte?: TValue
@@ -3459,8 +3464,7 @@ export declare class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
 }
 
 /** @public */
-export declare interface FindOneAndDeleteOptions
-    extends CommandOperationOptions {
+export declare interface FindOneAndDeleteOptions extends CommandOperationOptions {
     /** An optional hint for query optimization. See the {@link https://www.mongodb.com/docs/manual/reference/command/update/#update-command-hint|update command} reference for more information.*/
     hint?: Document
     /** Limits the fields to return for all matching documents. */
@@ -3472,8 +3476,7 @@ export declare interface FindOneAndDeleteOptions
 }
 
 /** @public */
-export declare interface FindOneAndReplaceOptions
-    extends CommandOperationOptions {
+export declare interface FindOneAndReplaceOptions extends CommandOperationOptions {
     /** Allow driver to bypass schema validation in MongoDB 3.2 or higher. */
     bypassDocumentValidation?: boolean
     /** An optional hint for query optimization. See the {@link https://www.mongodb.com/docs/manual/reference/command/update/#update-command-hint|update command} reference for more information.*/
@@ -3491,8 +3494,7 @@ export declare interface FindOneAndReplaceOptions
 }
 
 /** @public */
-export declare interface FindOneAndUpdateOptions
-    extends CommandOperationOptions {
+export declare interface FindOneAndUpdateOptions extends CommandOperationOptions {
     /** Optional list of array filters referenced in filtered positional operators */
     arrayFilters?: Document[]
     /** Allow driver to bypass schema validation in MongoDB 3.2 or higher. */
@@ -3544,8 +3546,9 @@ export declare class FindOperators {
  * @public
  * @typeParam TSchema - Unused schema definition, deprecated usage, only specify `FindOptions` with no generic
  */
-export declare interface FindOptions<TSchema extends Document = Document>
-    extends Omit<CommandOperationOptions, "writeConcern"> {
+export declare interface FindOptions<
+    TSchema extends Document = Document,
+> extends Omit<CommandOperationOptions, "writeConcern"> {
     /** Sets the limit of documents returned in the query. */
     limit?: number
     /** Set to sort the documents coming back from the query. Array of indexes, `[['a', 1]]` etc. */
@@ -3773,8 +3776,7 @@ export declare interface GridFSBucketReadStreamOptions {
 }
 
 /** @public */
-export declare interface GridFSBucketReadStreamOptionsWithRevision
-    extends GridFSBucketReadStreamOptions {
+export declare interface GridFSBucketReadStreamOptionsWithRevision extends GridFSBucketReadStreamOptions {
     /** The revision number relative to the oldest file with the given filename. 0
      * gets you the oldest file, 1 gets you the 2nd oldest, -1 gets you the
      * newest. */
@@ -3868,8 +3870,7 @@ export declare class GridFSBucketWriteStream {
 }
 
 /** @public */
-export declare interface GridFSBucketWriteStreamOptions
-    extends WriteConcernOptions {
+export declare interface GridFSBucketWriteStreamOptions extends WriteConcernOptions {
     /** Overwrite this bucket's chunkSizeBytes for this file */
     chunkSizeBytes?: number
     /** Custom file id for the GridFS file. */
@@ -3939,28 +3940,27 @@ export declare class HostAddress {
 }
 
 /** @public */
-export declare interface IndexDescription
-    extends Pick<
-        CreateIndexesOptions,
-        | "background"
-        | "unique"
-        | "partialFilterExpression"
-        | "sparse"
-        | "hidden"
-        | "expireAfterSeconds"
-        | "storageEngine"
-        | "version"
-        | "weights"
-        | "default_language"
-        | "language_override"
-        | "textIndexVersion"
-        | "2dsphereIndexVersion"
-        | "bits"
-        | "min"
-        | "max"
-        | "bucketSize"
-        | "wildcardProjection"
-    > {
+export declare interface IndexDescription extends Pick<
+    CreateIndexesOptions,
+    | "background"
+    | "unique"
+    | "partialFilterExpression"
+    | "sparse"
+    | "hidden"
+    | "expireAfterSeconds"
+    | "storageEngine"
+    | "version"
+    | "weights"
+    | "default_language"
+    | "language_override"
+    | "textIndexVersion"
+    | "2dsphereIndexVersion"
+    | "bits"
+    | "min"
+    | "max"
+    | "bucketSize"
+    | "wildcardProjection"
+> {
     collation?: CollationOptions
     name?: string
     key:
@@ -4254,8 +4254,10 @@ export declare class ListCollectionsCursor<
 }
 
 /** @public */
-export declare interface ListCollectionsOptions
-    extends Omit<CommandOperationOptions, "writeConcern"> {
+export declare interface ListCollectionsOptions extends Omit<
+    CommandOperationOptions,
+    "writeConcern"
+> {
     /** Since 4.0: If true, will only return the collection name in the response, and will omit additional info */
     nameOnly?: boolean
     /** Since 4.0: If true and nameOnly is true, allows a user without the required privilege (i.e. listCollections action on the database) to run the command when access control is enforced. */
@@ -4296,8 +4298,10 @@ export declare class ListIndexesCursor extends AbstractCursor {
 }
 
 /** @public */
-export declare interface ListIndexesOptions
-    extends Omit<CommandOperationOptions, "writeConcern"> {
+export declare interface ListIndexesOptions extends Omit<
+    CommandOperationOptions,
+    "writeConcern"
+> {
     /** The batchSize for the returned command cursor or if pre 2.8 the systems batch collection */
     batchSize?: number
 }
@@ -4571,8 +4575,7 @@ export declare type MongoClientEvents = Pick<
  * @see https://www.mongodb.com/docs/manual/reference/connection-string
  */
 export declare interface MongoClientOptions
-    extends BSONSerializeOptions,
-        SupportedNodeConnectionOptions {
+    extends BSONSerializeOptions, SupportedNodeConnectionOptions {
     /** Specifies the name of the replica set, if the mongod is a member of a replica set. */
     replicaSet?: string
     /** Enables or disables TLS/SSL for the connection. */
@@ -5044,7 +5047,8 @@ export declare class MongoNotConnectedError extends MongoAPIError {
  * @public
  */
 export declare interface MongoOptions
-    extends Required<
+    extends
+        Required<
             Pick<
                 MongoClientOptions,
                 | "autoEncryption"
@@ -5283,8 +5287,10 @@ export declare type MonitorEvents = {
 /* Excluded from this release type: MonitorIntervalOptions */
 
 /** @public */
-export declare interface MonitorOptions
-    extends Omit<ConnectionOptions, "id" | "generation" | "hostAddress"> {
+export declare interface MonitorOptions extends Omit<
+    ConnectionOptions,
+    "id" | "generation" | "hostAddress"
+> {
     connectTimeoutMS: number
     heartbeatFrequencyMS: number
     minHeartbeatFrequencyMS: number
@@ -5713,8 +5719,7 @@ export declare class ReadPreference {
 }
 
 /** @public */
-export declare interface ReadPreferenceFromOptions
-    extends ReadPreferenceLikeOptions {
+export declare interface ReadPreferenceFromOptions extends ReadPreferenceLikeOptions {
     session?: ClientSession
     readPreferenceTags?: TagSet[]
     hedge?: HedgeOptions
@@ -5724,8 +5729,7 @@ export declare interface ReadPreferenceFromOptions
 export declare type ReadPreferenceLike = ReadPreference | ReadPreferenceMode
 
 /** @public */
-export declare interface ReadPreferenceLikeOptions
-    extends ReadPreferenceOptions {
+export declare interface ReadPreferenceLikeOptions extends ReadPreferenceOptions {
     readPreference?:
         | ReadPreferenceLike
         | {
@@ -6511,8 +6515,9 @@ export declare interface TransactionOptions extends CommandOperationOptions {
  * Typescript type safe event emitter
  * @public
  */
-export declare interface TypedEventEmitter<Events extends EventsDescription>
-    extends EventEmitter {
+export declare interface TypedEventEmitter<
+    Events extends EventsDescription,
+> extends EventEmitter {
     addListener<EventKey extends keyof Events>(
         event: EventKey,
         listener: Events[EventKey],
@@ -6800,8 +6805,7 @@ export declare interface UpdateStatement {
 }
 
 /** @public */
-export declare interface ValidateCollectionOptions
-    extends CommandOperationOptions {
+export declare interface ValidateCollectionOptions extends CommandOperationOptions {
     /** Validates a collection in the background, without interrupting read or write traffic (only in MongoDB 4.4+) */
     background?: boolean
 }
