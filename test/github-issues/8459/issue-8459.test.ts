@@ -4,12 +4,12 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { assert, expect } from "chai"
 import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryRunner"
 import { TableIndex } from "../../../src"
 import { PostCategory } from "./entity/PostCategory"
 import { IndexMetadata } from "../../../src/metadata/IndexMetadata"
 import {
+    assert,
     expect,
     describe,
     afterAll,

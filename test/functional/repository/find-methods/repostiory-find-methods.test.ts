@@ -1,5 +1,4 @@
 import "reflect-metadata"
-import { assert, expect } from "chai"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,6 +10,7 @@ import { User } from "./model/User"
 import { EntityNotFoundError } from "../../../../src/error/EntityNotFoundError"
 import { UserEntity } from "./schema/UserEntity"
 import {
+    assert,
     expect,
     describe,
     afterAll,
