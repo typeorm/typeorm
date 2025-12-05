@@ -2,12 +2,12 @@
 
 ## What is a QueryRunner?
 
-Each new `QueryRunner` instance takes a single connection from connection pool, if RDBMS supports connection pooling.
-For databases not supporting connection pools, it uses the same connection across the entire data source.
+Each new `QueryRunner` instance takes a single connection from the connection pool, if the RDBMS supports connection pooling.
+For databases that do not support connection pools, it uses the same connection across the entire data source.
 
 ## Creating a new `QueryRunner` instance
 
-Use `createQueryRunner` method to create a new `QueryRunner`:
+Use the `createQueryRunner` method to create a new `QueryRunner`:
 
 ```typescript
 const queryRunner = dataSource.createQueryRunner()

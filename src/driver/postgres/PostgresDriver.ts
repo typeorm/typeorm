@@ -73,7 +73,8 @@ export class PostgresDriver implements Driver {
     options: PostgresConnectionOptions
 
     /**
-     * Version of Postgres. Requires a SQL query to the DB, so it is not always set
+     * Version of Postgres. Requires a SQL query to the DB, so it is set on the first
+     * connection attempt.
      */
     version?: string
 
@@ -115,8 +116,7 @@ export class PostgresDriver implements Driver {
     /**
      * Gets list of supported column data types by a driver.
      *
-     * @see https://www.tutorialspoint.com/postgresql/postgresql_data_types.htm
-     * @see https://www.postgresql.org/docs/9.2/static/datatype.html
+     * @see https://www.postgresql.org/docs/current/datatype.html
      */
     supportedDataTypes: ColumnType[] = [
         "int",
@@ -363,19 +363,23 @@ export class PostgresDriver implements Driver {
             this.master = await this.createPool(this.options, this.options)
         }
 
-        const queryRunner = this.createQueryRunner("master")
+        if (!this.version || !this.database || !this.searchSchema) {
+            const queryRunner = this.createQueryRunner("master")
 
-        this.version = await queryRunner.getVersion()
+            if (!this.version) {
+                this.version = await queryRunner.getVersion()
+            }
 
-        if (!this.database) {
-            this.database = await queryRunner.getCurrentDatabase()
+            if (!this.database) {
+                this.database = await queryRunner.getCurrentDatabase()
+            }
+
+            if (!this.searchSchema) {
+                this.searchSchema = await queryRunner.getCurrentSchema()
+            }
+
+            await queryRunner.release()
         }
-
-        if (!this.searchSchema) {
-            this.searchSchema = await queryRunner.getCurrentSchema()
-        }
-
-        await queryRunner.release()
 
         if (!this.schema) {
             this.schema = this.searchSchema
@@ -652,7 +656,9 @@ export class PostgresDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value)
+            return DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedDateToTimeString(value)
         } else if (
@@ -751,7 +757,9 @@ export class PostgresDriver implements Driver {
         ) {
             value = DateUtils.normalizeHydratedDate(value)
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
         } else if (

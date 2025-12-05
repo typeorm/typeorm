@@ -190,6 +190,16 @@ export class Gulpfile {
     }
 
     /**
+     * Move reference to package.json one level up
+     */
+    @Task()
+    movePackageJsonReferenceLevelUp() {
+        return gulp.src("./build/package/commands/InitCommand.js")
+            .pipe(replace(/\.\.\/package.json/g, "package.json"))
+            .pipe(gulp.dest("./build/package/commands"));
+    }
+
+    /**
      * Creates a package that can be published to npm.
      */
     @SequenceTask()
@@ -206,7 +216,8 @@ export class Gulpfile {
                 "packageReplaceReferences",
                 "packagePreparePackageFile",
                 "packageCopyReadme",
-                "packageCopyShims"
+                "packageCopyShims",
+                "movePackageJsonReferenceLevelUp"
             ],
         ];
     }

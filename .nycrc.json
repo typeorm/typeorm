@@ -1,8 +1,0 @@
-{
-  "all": true,
-  "cache": false,
-  "exclude": ["**/*.d.ts"],
-  "extension": [".ts"],
-  "include": ["build/compiled/src/**", "src/**"],
-  "reporter": "lcov"
-}
