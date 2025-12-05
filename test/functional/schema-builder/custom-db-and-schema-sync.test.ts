@@ -8,8 +8,8 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Album } from "./entity/Album"
-import { Photo } from "./entity/Photo"
+import { Album } from "./entity/common/Album"
+import { Photo } from "./entity/common/Photo"
 
 describe("schema builder > custom-db-and-schema-sync", () => {
     describe("custom database", () => {
