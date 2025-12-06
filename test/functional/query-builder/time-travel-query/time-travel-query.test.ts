@@ -1,11 +1,11 @@
 import "reflect-metadata"
+import { scheduler } from "timers/promises"
+import { DataSource } from "../../../../src/index"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    sleep,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/index"
 import { Account } from "./entity/Account"
 import { Person } from "./entity/Person"
 
@@ -40,7 +40,7 @@ describe("query builder > time-travel-query", () => {
                 await repository.save(account)
 
                 // wait for 5 seconds
-                await sleep(5000)
+                await scheduler.wait(5000)
 
                 // update account balance
                 account.balance = 200
@@ -72,7 +72,7 @@ describe("query builder > time-travel-query", () => {
                 await repository.save(account)
 
                 // wait for 2 seconds
-                await sleep(2000)
+                await scheduler.wait(2000)
 
                 // update account balance
                 account.balance = 200
@@ -106,7 +106,7 @@ describe("query builder > time-travel-query", () => {
                 }
 
                 // wait for 2 seconds
-                await sleep(2000)
+                await scheduler.wait(2000)
 
                 let accounts = await repository
                     .createQueryBuilder("account")
@@ -164,7 +164,7 @@ describe("query builder > time-travel-query", () => {
                 }
 
                 // wait for 2 seconds
-                await sleep(2000)
+                await scheduler.wait(2000)
 
                 const accounts = await accountRepository
                     .createQueryBuilder("account")
@@ -224,7 +224,7 @@ describe("query builder > time-travel-query", () => {
                 }
 
                 // wait for 2 seconds
-                await sleep(2000)
+                await scheduler.wait(2000)
 
                 const accounts = await accountRepository
                     .createQueryBuilder("account")

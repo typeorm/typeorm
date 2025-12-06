@@ -1,11 +1,11 @@
 import { expect } from "chai"
 import "reflect-metadata"
+import { scheduler } from "timers/promises"
 import { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    sleep,
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
 
@@ -81,7 +81,7 @@ describe("column kinds > create date column", () => {
                 })
 
                 // wait a second
-                await sleep(1000)
+                await scheduler.wait(1010)
 
                 // create post once again
                 post.title = "Updated Title"
