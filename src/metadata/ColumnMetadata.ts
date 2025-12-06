@@ -257,7 +257,7 @@ export class ColumnMetadata {
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
      * @See https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
-    query?: (alias: string) => string
+    query?: (alias: string, context?: any) => string
 
     /**
      * Indicates if column is discriminator. Discriminator columns are not mapped to the entity.
