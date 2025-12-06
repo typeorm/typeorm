@@ -251,7 +251,7 @@
     },
     "packageManager": {
       "name": "npm",
-      "version": ">=10.1.0",
+      "version": "10",
       "onFail": "error"
     }
   },
