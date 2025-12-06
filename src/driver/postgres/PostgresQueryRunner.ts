@@ -3816,6 +3816,14 @@ export class PostgresQueryRunner
                                 ) {
                                     tableColumn.default =
                                         dbColumn["column_default"]
+                                } else if (
+                                    dbColumn["column_default"].startsWith(
+                                        "ARRAY[]::",
+                                    )
+                                ) {
+                                    // Leave arrays as is???
+                                    tableColumn.default =
+                                        dbColumn["column_default"]
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
