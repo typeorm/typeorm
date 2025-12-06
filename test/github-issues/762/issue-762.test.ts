@@ -8,6 +8,16 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { Foo } from "./entity/Foo"
 import { FooMetadata } from "./entity/FooMetadata"
 import { FooChildMetadata } from "./entity/FooChildMetadata"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
     let connections: DataSource[]

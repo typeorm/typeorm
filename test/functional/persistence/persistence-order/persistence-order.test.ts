@@ -9,7 +9,16 @@ import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { ConnectionMetadataBuilder } from "../../../../src/connection/ConnectionMetadataBuilder"
 import { EntityMetadataValidator } from "../../../../src/metadata-builder/EntityMetadataValidator"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("persistence > order of persistence execution operations", () => {
     describe("should throw exception when non-resolvable circular relations found", function () {

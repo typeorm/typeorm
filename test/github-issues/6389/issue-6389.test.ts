@@ -1,5 +1,14 @@
 import { DriverUtils } from "../../../src/driver/DriverUtils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #6389 MongoDB URI Connection string with query params", () => {
     it("should parse correctly mongodb URI", () => {

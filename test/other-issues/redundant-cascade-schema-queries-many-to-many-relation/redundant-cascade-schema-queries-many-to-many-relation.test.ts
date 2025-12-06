@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../src"
 import { TeamEntity } from "./entity/TeamEntity"
 import { UserEntity } from "./entity/UserEntity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("other issues > redundant cascade schema queries in many-to-many relation", () => {
     let connections: DataSource[]

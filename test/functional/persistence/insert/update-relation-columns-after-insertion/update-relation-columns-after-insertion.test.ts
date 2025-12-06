@@ -7,6 +7,16 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("persistence > insert > update-relation-columns-after-insertion", () => {
     let connections: DataSource[]

@@ -9,6 +9,16 @@ import { Child1 } from "./enity/Child1"
 import { Child2 } from "./enity/Child2"
 import { Root } from "./enity/Root"
 import { Shared } from "./enity/Shared"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #5691 RelationId is too slow", () => {
     const setupFixtures = async (

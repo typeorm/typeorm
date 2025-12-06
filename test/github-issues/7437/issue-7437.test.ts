@@ -1,6 +1,15 @@
 import "reflect-metadata"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7437 MongoDB options never parse in connectionUrl and after my fix was parse incorrect", () => {
     it("should parse options in ConnectionUrl", () => {

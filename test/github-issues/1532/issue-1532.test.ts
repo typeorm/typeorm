@@ -5,6 +5,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1532 Array type default value doesnt work. PostgreSQL", () => {
     let connections: DataSource[]

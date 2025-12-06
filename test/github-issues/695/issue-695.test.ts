@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Device } from "./entity/Device"
 import { DeviceInstance } from "./entity/DeviceInstance"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #695 Join columns are not using correct length", () => {
     let connections: DataSource[]

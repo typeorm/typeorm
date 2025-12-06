@@ -6,7 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src"
 import { Post } from "./entity/Post"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { EntityPropertyNotFoundError } from "../../../src/error/EntityPropertyNotFoundError"
 
 describe("other issues > preventing-injection", () => {
@@ -33,7 +42,7 @@ describe("other issues > preventing-injection", () => {
                         select: { id: true },
                     },
                 )
-                postWithOnlyIdSelected.should.be.eql([{ id: 1 }])
+                postWithOnlyIdSelected.should.be.deepEqualIgnoreUndefined([{ id: 1 }])
 
                 await connection.manager.find(Post, {
                     select: "(WHERE LIMIT 1)" as any,
@@ -56,7 +65,7 @@ describe("other issues > preventing-injection", () => {
                         },
                     },
                 )
-                postWithOnlyIdSelected.should.be.eql([
+                postWithOnlyIdSelected.should.be.deepEqualIgnoreUndefined([
                     { id: 1, title: "hello" },
                 ])
 
@@ -87,7 +96,7 @@ describe("other issues > preventing-injection", () => {
                         title: "DESC",
                     },
                 })
-                loadedPosts.should.be.eql([{ id: 1, title: "hello" }])
+                loadedPosts.should.be.deepEqualIgnoreUndefined([{ id: 1, title: "hello" }])
 
                 await connection.manager.find(Post, {
                     order: {

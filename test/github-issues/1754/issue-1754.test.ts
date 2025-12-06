@@ -7,6 +7,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src"
 import { TipoCliente } from "./entity/tipo-cliente"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issue #1754 Repository.save() always updating ManyToOne relation", () => {
     let connections: DataSource[]

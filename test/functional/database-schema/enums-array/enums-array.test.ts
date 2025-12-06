@@ -14,6 +14,16 @@ import {
     StringEnum,
     StringNumericEnum,
 } from "./entity/EnumArrayEntity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("database schema > enum arrays", () => {
     let connections: DataSource[]

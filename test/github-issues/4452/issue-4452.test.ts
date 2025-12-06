@@ -6,7 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { User } from "./entity/User"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #4452 InsertQueryBuilder fails on some SQL Expressions values", () => {
     let connections: DataSource[]

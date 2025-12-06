@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { Role } from "./entity/Role"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("other issues > auto-increment id as string", () => {
     let connections: DataSource[]

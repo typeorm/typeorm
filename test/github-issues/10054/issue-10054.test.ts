@@ -5,7 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Person } from "./entity/Person"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #10054 Nested 'Or' Condition/Operation Support in Repository Where condition", () => {
     let dataSources: DataSource[]

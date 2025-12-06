@@ -3,7 +3,16 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { City } from "./entity/city"
 import { Zip } from "./entity/zip"
 import { Country } from "./entity/country"

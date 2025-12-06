@@ -1,5 +1,14 @@
 import "reflect-metadata"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DataSource } from "../../src/data-source/DataSource"
 import { Repository } from "../../src/repository/Repository"
 import { PostDetails } from "../../sample/sample4-many-to-many/entity/PostDetails"
@@ -356,7 +365,7 @@ describe("many-to-many", function () {
                         .getOne()
                 })
                 .then((updatedPostReloaded) => {
-                    expect(updatedPostReloaded!.details).to.be.eql([])
+                    expect(updatedPostReloaded!.details).to.be.deepEqualIgnoreUndefined([])
 
                     return postDetailsRepository
                         .createQueryBuilder("details")
@@ -367,7 +376,7 @@ describe("many-to-many", function () {
                 })
                 .then((reloadedDetails) => {
                     expect(reloadedDetails).not.to.be.null
-                    expect(reloadedDetails!.posts).to.be.eql([])
+                    expect(reloadedDetails!.posts).to.be.deepEqualIgnoreUndefined([])
                 })
         })
     })
@@ -463,7 +472,7 @@ describe("many-to-many", function () {
                         .getOne()
                 })
                 .then((reloadedPost) => {
-                    expect(reloadedPost!.metadatas).to.be.eql([])
+                    expect(reloadedPost!.metadatas).to.be.deepEqualIgnoreUndefined([])
                 })
         })
     })

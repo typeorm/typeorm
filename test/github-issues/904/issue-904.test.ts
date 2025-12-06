@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Category } from "./entity/Category"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #904 Using closure tables without @TreeLevelColumn will always fail on insert", () => {
     let connections: DataSource[]

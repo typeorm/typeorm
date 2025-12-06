@@ -4,6 +4,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1139 mysql primary generated uuid ER_TOO_LONG_KEY", () => {
     let connections: DataSource[]

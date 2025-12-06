@@ -5,7 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { Product } from "./entity/product"
 import { Category } from "./entity/category"
 import { FindManyOptions } from "../../../src"

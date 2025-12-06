@@ -8,6 +8,16 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { Animal } from "./entity/Animal"
 import { OffsetWithoutLimitNotSupportedError } from "../../../src/error/OffsetWithoutLimitNotSupportedError"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1099 BUG - QueryBuilder MySQL skip sql is wrong", () => {
     let connections: DataSource[]

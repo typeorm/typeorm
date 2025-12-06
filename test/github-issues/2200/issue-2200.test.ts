@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Booking } from "./entity/Booking"
 import { NamingStrategyUnderTest } from "./naming/NamingStrategyUnderTest"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issue > #2200 Bug - Issue with snake_case naming strategy", () => {
     let connections: DataSource[]

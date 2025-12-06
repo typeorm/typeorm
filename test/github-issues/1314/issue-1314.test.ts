@@ -5,7 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { Record } from "./entity/Record"
 
 describe("github issues > #1314 UPDATE on json column stores string type", () => {

@@ -5,7 +5,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #2376 Naming single column unique constraint with decorator not working as expected", () => {

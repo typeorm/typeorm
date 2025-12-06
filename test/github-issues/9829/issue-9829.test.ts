@@ -5,6 +5,16 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { ExampleEntity } from "./entity/ExampleEntity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #9829 Incorrect default value with concat value of function", () => {
     let connections: DataSource[]

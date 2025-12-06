@@ -5,6 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { ExampleEntity } from "./entity/ExampleEntity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #9927 aggregate function throw error when column alias name is set", () => {
     let dataSources: DataSource[]

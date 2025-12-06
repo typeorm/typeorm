@@ -5,7 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { InsertValuesMissingError } from "../../../src/error/InsertValuesMissingError"
 import { Test, DEFAULT_VALUE } from "./entity/Test"
 

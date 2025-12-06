@@ -6,6 +6,16 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { CreatePost0000000000001 } from "./0000000000001-CreatePost"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("migrations > vector type", () => {
     let connections: DataSource[]

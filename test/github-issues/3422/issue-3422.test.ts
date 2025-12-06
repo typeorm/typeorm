@@ -5,6 +5,16 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #3422 cannot save to nested-tree table if schema is used in postgres", () => {
     let connections: DataSource[]

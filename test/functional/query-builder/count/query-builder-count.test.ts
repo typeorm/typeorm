@@ -4,7 +4,16 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { DataSource } from "../../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { Test } from "./entity/Test"
 import { AmbigiousPrimaryKey } from "./entity/AmbigiousPrimaryKey"
 

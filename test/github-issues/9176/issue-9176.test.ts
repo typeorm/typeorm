@@ -14,7 +14,16 @@ import { CreateUserTable1657066872930 } from "./migration/1657066872930-CreateUs
 import { CreateUniqueConstraintToUser1657067039714 } from "./migration/1657067039714-CreateUniqueConstraintToUser"
 import { CreateCheckedUserTable1657067039715 } from "./migration/1657067039715-CreateCheckedUserTable"
 import { CreateCheckConstraintToUser1657067039716 } from "./migration/1657067039716-CreateCheckConstraintToUser"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #9176 The names of foreign keys created by queryRunner.createForeignKey and schema:sync are different with SQLite", () => {
     describe("github issues > #9176 foreign keys", () => {

@@ -4,7 +4,16 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../../utils/test-utils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("indices > conditional index", () => {
     let connections: DataSource[]

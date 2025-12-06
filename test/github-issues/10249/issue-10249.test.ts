@@ -5,7 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { Example } from "./entity/example"
 
 describe("github issues > #10249 Saving an entity is not possible if only columns with update: false are changed", () => {

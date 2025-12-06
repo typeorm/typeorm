@@ -8,7 +8,16 @@ import {
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
 import { prepareData } from "./find-options-test-utils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("find options > relations", () => {
     let connections: DataSource[]
@@ -37,7 +46,7 @@ describe("find options > relations", () => {
                         },
                     })
                     .getMany()
-                posts1.should.be.eql([
+                posts1.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -97,7 +106,7 @@ describe("find options > relations", () => {
                         },
                     })
                     .getMany()
-                posts2.should.be.eql([
+                posts2.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -180,7 +189,7 @@ describe("find options > relations", () => {
                     })
                     .getMany()
 
-                posts.should.have.deep.members([
+                posts.should.deepEqualIgnoreUndefined([
                     {
                         id: 3,
                         title: "Post #3",
@@ -265,11 +274,11 @@ describe("find options > relations", () => {
                         },
                     },
                 ])
-                expect(posts[0].id).to.be.eql(3)
+                expect(posts[0].id).to.be.deepEqualIgnoreUndefined(3)
                 expect(posts[1].id).to.be.oneOf([1, 2, 4])
                 expect(posts[2].id).to.be.oneOf([1, 2, 4])
                 expect(posts[3].id).to.be.oneOf([1, 2, 4])
-                expect(posts[1].id).to.not.be.eql(posts[2].id)
+                expect(posts[1].id).to.not.be.deepEqualIgnoreUndefined(posts[2].id)
             }),
         ))
 
@@ -305,7 +314,7 @@ describe("find options > relations", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -433,7 +442,7 @@ describe("find options > relations", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",

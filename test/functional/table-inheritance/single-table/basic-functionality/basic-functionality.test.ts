@@ -10,7 +10,16 @@ import { Teacher } from "./entity/Teacher"
 import { Accountant } from "./entity/Accountant"
 import { Employee } from "./entity/Employee"
 import { Person } from "./entity/Person"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("table-inheritance > single-table > basic-functionality", () => {
     let connections: DataSource[]

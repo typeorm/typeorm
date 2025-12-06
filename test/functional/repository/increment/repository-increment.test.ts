@@ -9,6 +9,16 @@ import {
 import { Post } from "./entity/Post"
 import { PostBigInt } from "./entity/PostBigInt"
 import { UserWithEmbededEntity } from "./entity/UserWithEmbededEntity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("repository > increment method", () => {
     describe("basic", () => {

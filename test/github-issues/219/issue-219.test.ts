@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { IsNull } from "../../../src"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #219 FindOptions should be able to resolve null values", () => {
     let connections: DataSource[]

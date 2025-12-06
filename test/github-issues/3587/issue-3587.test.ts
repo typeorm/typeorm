@@ -6,7 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { EquipmentModel } from "./entity/EquipmentModel"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #3587 do not generate change queries for number based enum types every time", () => {
     let connections: DataSource[]

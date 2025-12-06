@@ -5,6 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { DataSource } from "../../../../../src"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("table-inheritance > single-table > database-option-inherited", () => {
     let connections: DataSource[]

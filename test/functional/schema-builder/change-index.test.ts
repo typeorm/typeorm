@@ -9,7 +9,16 @@ import { IndexMetadata } from "../../../src/metadata/IndexMetadata"
 import { Teacher } from "./entity/Teacher"
 import { Student } from "./entity/Student"
 import { TableIndex } from "../../../src/schema-builder/table/TableIndex"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("schema builder > change index", () => {
     let connections: DataSource[]

@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { UserMeta } from "./entity/UserMeta"
 import { User } from "./entity/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #8158 Typeorm creates migration that creates already existing unique constraint", () => {
     let connections: DataSource[]

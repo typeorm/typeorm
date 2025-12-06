@@ -1,4 +1,13 @@
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { EntitySubscriberInterface, EventSubscriber } from "../../../../src"
 import { RecoverEvent } from "../../../../src/subscriber/event/RecoverEvent"
 import { SoftRemoveEvent } from "../../../../src/subscriber/event/SoftRemoveEvent"

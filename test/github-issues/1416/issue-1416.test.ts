@@ -8,7 +8,16 @@ import { Author } from "./entity/Author"
 import { Photo } from "./entity/Photo"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { PhotoMetadata } from "./entity/PhotoMetadata"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issue > #1416 Wrong behavior when fetching an entity that has a relation with its own eager relations", () => {
     let connections: DataSource[] = []

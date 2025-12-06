@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { User } from "./entity/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #948 EntityManager#save always considers a Postgres array-type field to have changed", () => {
     let connections: DataSource[]

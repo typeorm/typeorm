@@ -6,7 +6,16 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DataSource } from "../../../../../src/data-source/DataSource"
 
 describe("query builder > relational query builder > add operation > one to many relation", () => {
@@ -57,7 +66,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 1 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1!.category).to.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "category #1",
                 })
@@ -143,7 +152,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost2!.category).to.be.eql({
+                expect(loadedPost2!.category).to.be.deepEqualIgnoreUndefined({
                     id: 2,
                     name: "category #2",
                 })
@@ -229,7 +238,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 3 },
                     relations: { category: true },
                 })
-                expect(loadedPost3!.category).to.be.eql({
+                expect(loadedPost3!.category).to.be.deepEqualIgnoreUndefined({
                     id: 3,
                     name: "category #3",
                 })
@@ -297,7 +306,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 1 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1!.category).to.be.deepEqualIgnoreUndefined({
                     id: 3,
                     name: "category #3",
                 })
@@ -312,7 +321,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 3 },
                     relations: { category: true },
                 })
-                expect(loadedPost3!.category).to.be.eql({
+                expect(loadedPost3!.category).to.be.deepEqualIgnoreUndefined({
                     id: 3,
                     name: "category #3",
                 })
@@ -381,7 +390,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1!.category).to.be.deepEqualIgnoreUndefined({
                     id: 3,
                     name: "category #3",
                 })
@@ -397,7 +406,7 @@ describe("query builder > relational query builder > add operation > one to many
                     where: { id: 2 },
                     relations: { category: true },
                 })
-                expect(loadedPost1!.category).to.be.eql({
+                expect(loadedPost1!.category).to.be.deepEqualIgnoreUndefined({
                     id: 3,
                     name: "category #3",
                 })
@@ -416,14 +425,20 @@ describe("query builder > relational query builder > add operation > one to many
                 expect(loadedCategory!.posts).to.deep.include({
                     id: 1,
                     title: "post #1",
+                    category: undefined,
+                    images: undefined,
                 })
-                expect(loadedCategory!.posts).to.not.contain({
+                expect(loadedCategory!.posts).to.not.deep.contain({
                     id: 2,
                     title: "post #2",
+                    category: undefined,
+                    images:undefined,
                 })
                 expect(loadedCategory!.posts).to.deep.include({
                     id: 3,
                     title: "post #3",
+                    category: undefined,
+                    images:undefined,
                 })
             }),
         ))

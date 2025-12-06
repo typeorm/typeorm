@@ -4,6 +4,16 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #736 ClosureEntity should set (composite) primary/unique key in the closure table", () => {
     let connections: DataSource[]

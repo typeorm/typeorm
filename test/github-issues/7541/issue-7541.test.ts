@@ -5,6 +5,16 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { TestEntity } from "./entity/Test"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7541 Column of type `enum` throws missing properties error", () => {
     let connections: DataSource[]

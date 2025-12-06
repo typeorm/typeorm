@@ -5,6 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #2006 Columns are being set to null after saving the entity", () => {
     let connections: DataSource[]

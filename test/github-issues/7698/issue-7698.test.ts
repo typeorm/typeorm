@@ -5,6 +5,16 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { Test } from "./entity/Test"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7698 MariaDB STORED columns don't accept [NULL | NOT NULL]", () => {
     let connections: DataSource[]

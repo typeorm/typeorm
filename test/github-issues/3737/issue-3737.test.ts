@@ -1,5 +1,14 @@
 import { DriverUtils } from "../../../src/driver/DriverUtils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #3737 Should URL-decode the user info of a data source URI", () => {
     it("should parse URL with percent-encoded username", () => {

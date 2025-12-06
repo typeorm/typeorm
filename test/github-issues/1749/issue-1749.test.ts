@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Bar } from "./entity/Bar"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1749 Can't delete tables in non-default schema", () => {
     let connections: DataSource[]

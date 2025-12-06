@@ -4,6 +4,16 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { Test } from "./entity/Test"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #2333 datetime column showing changed on every schema:sync run", () => {
     let connections: DataSource[]

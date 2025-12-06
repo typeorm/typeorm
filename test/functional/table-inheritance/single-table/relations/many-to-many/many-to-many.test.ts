@@ -13,6 +13,16 @@ import { Person } from "./entity/Person"
 import { Faculty } from "./entity/Faculty"
 import { Specialization } from "./entity/Specialization"
 import { Department } from "./entity/Department"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("table-inheritance > single-table > relations > many-to-many", () => {
     let connections: DataSource[]

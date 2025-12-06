@@ -8,6 +8,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { PlatformTools } from "../../../src/platform/PlatformTools"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #3302 Tracking query time for slow queries and statsd timers", () => {
     let connections: DataSource[]

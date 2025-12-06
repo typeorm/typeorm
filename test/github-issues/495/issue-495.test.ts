@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Item } from "./entity/Item"
 import { User } from "./entity/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #495 Unable to set multi-column indices", () => {
     let connections: DataSource[]

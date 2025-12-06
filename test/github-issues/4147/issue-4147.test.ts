@@ -6,6 +6,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { EntitySchema } from "../../../src"
 import { Post, PostSchema } from "./entity/Post"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe('github issues > #4147 `SQLITE_ERROR: near "-": syntax error` when use sqlite, simple-enum', () => {
     let connections: DataSource[]

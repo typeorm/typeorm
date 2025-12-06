@@ -1,6 +1,15 @@
 import "reflect-metadata"
 
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { PrimaryColumnOptions, PrimaryColumn } from "../../../src"
 
 describe("github issues > #4570 Fix PrimaryColumn decorator modifies passed option", () => {

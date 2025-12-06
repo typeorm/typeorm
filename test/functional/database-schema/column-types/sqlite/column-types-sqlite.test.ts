@@ -8,6 +8,16 @@ import {
 } from "../../../../utils/test-utils"
 import { PostWithoutTypes } from "./entity/PostWithoutTypes"
 import { FruitEnum } from "./enum/FruitEnum"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("database schema > column types > sqlite", () => {
     let connections: DataSource[]

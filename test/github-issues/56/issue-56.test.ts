@@ -6,7 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { User } from "./entity/User"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { AccessToken } from "./entity/AccessToken"
 
 describe.skip("github issues > #56 relationships only work when both primary keys have the same name", () => {

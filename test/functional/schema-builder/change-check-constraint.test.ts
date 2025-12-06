@@ -9,6 +9,16 @@ import { Teacher } from "./entity/Teacher"
 import { Post } from "./entity/Post"
 import { CheckMetadata } from "../../../src/metadata/CheckMetadata"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("schema builder > change check constraint", () => {
     let connections: DataSource[]

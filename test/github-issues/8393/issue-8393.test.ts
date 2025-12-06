@@ -5,7 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { DataSource, UpdateValuesMissingError } from "../../../src/"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { Post } from "./entity/Post"
 
 describe("github issues > #8393 When trying to update `update: false` column with `@UpdateDateColumn` the update column is updated", () => {

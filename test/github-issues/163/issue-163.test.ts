@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Game } from "./entity/Game"
 import { Platform } from "./entity/Platform"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #163 ManyToMany relation : Cannot read property 'joinColumnName' of undefined", () => {
     let connections: DataSource[]

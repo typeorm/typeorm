@@ -4,7 +4,16 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #108 Error with constraint names on postgres", () => {
     let connections: DataSource[]

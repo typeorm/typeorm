@@ -6,7 +6,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Example } from "./entity/Example"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7867 Column not renamed when schema/database is set", () => {
     describe("schema is set", () => {

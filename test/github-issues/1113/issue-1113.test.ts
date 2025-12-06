@@ -4,6 +4,16 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1113 CreateDateColumn's type is incorrect when using decorator @CreateDateColumn({type: 'timestamp'})", () => {
     let connections: DataSource[]

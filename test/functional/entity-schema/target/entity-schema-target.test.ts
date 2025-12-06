@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../../src"
 import { PostEntity } from "./entity/PostEntity"
 import { Post } from "./model/Post"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("entity schemas > target option", () => {
     let connections: DataSource[]

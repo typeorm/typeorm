@@ -5,6 +5,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { SomeEntity } from "./entity/SomeEntity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #5871 Migration generate does not play well with mysql enum with parentheses in the enum value", () => {
     let connections: DataSource[]

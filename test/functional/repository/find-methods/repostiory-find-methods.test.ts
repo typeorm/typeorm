@@ -1,5 +1,4 @@
 import "reflect-metadata"
-import { assert, expect } from "chai"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -10,6 +9,17 @@ import { Post } from "./entity/Post"
 import { User } from "./model/User"
 import { EntityNotFoundError } from "../../../../src/error/EntityNotFoundError"
 import { UserEntity } from "./schema/UserEntity"
+import {
+    assert,
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("repository > find methods", () => {
     let connections: DataSource[]

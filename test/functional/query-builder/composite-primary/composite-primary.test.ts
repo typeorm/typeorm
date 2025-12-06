@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../../src"
 import { Foo } from "./entity/Foo"
 import { Bar } from "./entity/Bar"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("query builder > composite primary", () => {
     let connections: DataSource[]

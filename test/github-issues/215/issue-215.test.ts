@@ -8,6 +8,16 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 import { Abbreviation } from "./entity/Abbreviation"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #215 invalid replacements of join conditions", () => {
     let connections: DataSource[]

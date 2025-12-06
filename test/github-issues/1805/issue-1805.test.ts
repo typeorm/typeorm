@@ -5,6 +5,16 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { Account } from "./entity/Account"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1805 bigint PK incorrectly returning as a number (expecting a string)", () => {
     let connections: DataSource[]

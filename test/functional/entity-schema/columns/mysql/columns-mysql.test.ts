@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import { PersonSchema } from "./entity/Person"
 import { DriverUtils } from "../../../../../src/driver/DriverUtils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("entity-schema > columns > mysql", () => {
     let connections: DataSource[]

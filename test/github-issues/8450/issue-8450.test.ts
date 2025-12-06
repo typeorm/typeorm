@@ -5,7 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { UserEntity } from "./entity/UserEntity"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DataSource } from "../../../src"
 
 describe("github issues > #8450 Generated column not in RETURNING clause on save", () => {

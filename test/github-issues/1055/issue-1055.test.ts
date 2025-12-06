@@ -8,7 +8,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Parent } from "./entity/Parent"
 import { Child } from "./entity/Child"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1055 ind with relations not working, correct syntax causes type error", () => {
     let connections: DataSource[]

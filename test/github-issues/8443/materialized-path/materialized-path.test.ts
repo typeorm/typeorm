@@ -6,6 +6,16 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #8443 QueryFailedError when tree entity with JoinColumn > materialized-path", () => {
     let connections: DataSource[]
@@ -44,7 +54,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                 await categoryRepository.save(a12)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -85,7 +95,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                 await categoryRepository.save(a1)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -125,7 +135,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                 await categoryRepository.save(a1)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -171,7 +181,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                 await categoryRepository.save(a1)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -227,7 +237,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql([
+                categoriesTree.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -308,7 +318,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql([
+                categoriesTree.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -389,7 +399,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql([
+                categoriesTree.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -430,7 +440,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTreeWithEmptyOptions.should.be.eql([
+                categoriesTreeWithEmptyOptions.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -462,7 +472,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
 
                 const categoriesTreeWithDepthZero =
                     await categoryRepository.findTrees({ depth: 0 })
-                categoriesTreeWithDepthZero.should.be.eql([
+                categoriesTreeWithDepthZero.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -478,7 +488,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTreeWithDepthOne.should.be.eql([
+                categoriesTreeWithDepthOne.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -533,7 +543,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql({
+                categoriesTree.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [
@@ -597,7 +607,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql({
+                categoriesTree.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [
@@ -636,7 +646,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTreeWithEmptyOptions.should.be.eql({
+                categoriesTreeWithEmptyOptions.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [
@@ -668,7 +678,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                     await categoryRepository.findDescendantsTree(a1, {
                         depth: 0,
                     })
-                categoriesTreeWithDepthZero.should.be.eql({
+                categoriesTreeWithDepthZero.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [],
@@ -684,7 +694,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTreeWithDepthOne.should.be.eql({
+                categoriesTreeWithDepthOne.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [

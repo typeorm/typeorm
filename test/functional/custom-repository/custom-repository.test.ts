@@ -6,7 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
 import { DataSource } from "../../../src"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("custom repository", () => {
     let dataSources: DataSource[]

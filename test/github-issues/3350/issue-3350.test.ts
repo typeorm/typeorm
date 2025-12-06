@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #3350 ER_DUP_FIELDNAME with simple find", () => {
     let connections: DataSource[]

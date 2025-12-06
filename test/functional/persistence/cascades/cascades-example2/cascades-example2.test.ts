@@ -9,6 +9,16 @@ import { Question } from "./entity/Question"
 import { Answer } from "./entity/Answer"
 import { Photo } from "./entity/Photo"
 import { User } from "./entity/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("persistence > cascades > example 2", () => {
     let connections: DataSource[]
@@ -52,7 +62,7 @@ describe("persistence > cascades > example 2", () => {
                     .leftJoinAndSelect("answerUser.question", "userQuestion")
                     .getOne()
 
-                loadedQuestion!.should.be.eql({
+                loadedQuestion!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "My question",
                     answers: [

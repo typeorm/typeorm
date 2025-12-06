@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { TestEntity1 } from "./entity/TestEntity1"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1504 Cannot eagerly query Entity with relation more than 3 levels deep", () => {
     let connections: DataSource[]

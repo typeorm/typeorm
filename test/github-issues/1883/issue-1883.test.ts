@@ -4,6 +4,16 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1883 Synchronization error with default value", () => {
     let connections: DataSource[]

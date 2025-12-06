@@ -7,7 +7,16 @@ import {
     reloadTestingDatabases,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #2434 QueryBuilder insert for Oracle failed", () => {
     let connections: DataSource[] = []

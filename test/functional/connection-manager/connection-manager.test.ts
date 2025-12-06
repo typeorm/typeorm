@@ -1,5 +1,14 @@
 import "reflect-metadata"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { setupSingleTestingConnection } from "../../utils/test-utils"
 import { ConnectionManager } from "../../../src/connection/ConnectionManager"
 import { MysqlDriver } from "../../../src/driver/mysql/MysqlDriver"

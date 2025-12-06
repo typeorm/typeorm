@@ -1,5 +1,14 @@
 import "reflect-metadata"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
@@ -106,7 +115,7 @@ describe("columns > embedded columns", () => {
                 const columns = postRepository.metadata.columns
                 const databaseColumns = columns.map((c) => c.databaseName)
 
-                expect(databaseColumns).to.have.members([
+                expect(databaseColumns).to.be.deepEqualIgnoreUndefined([
                     // Post
                     // Post.id
                     "id",

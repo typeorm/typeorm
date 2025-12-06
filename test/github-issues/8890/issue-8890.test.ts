@@ -9,6 +9,16 @@ import {
 import { Post } from "./entity/Post"
 import { User } from "./entity/User"
 import { prepareDataManyToOne, prepareDataOneToOne } from "./issue-8890-utils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #8890 it should be possible to query IS NULL on ManyToOne relations", () => {
     let dataSources: DataSource[]
@@ -36,7 +46,7 @@ describe("github issues > #8890 it should be possible to query IS NULL on ManyTo
                     .orderBy("post.id", "ASC")
                     .getMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 2,
                         title: "Post #2",
@@ -66,7 +76,7 @@ describe("github issues > #8890 it should be possible to query IS NULL on ManyTo
                     .orderBy("post.id", "ASC")
                     .getMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 4,
                         title: "Post #4",
@@ -101,7 +111,7 @@ describe("github issues > #8890 it should be possible to query IS NULL on ManyTo
                     .orderBy("post.id", "ASC")
                     .getMany()
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 2,
                         title: "Post #2",
@@ -153,7 +163,7 @@ describe("github issues > #8890 it should be possible to query IS NULL on OneToO
                     .orderBy("user.id", "ASC")
                     .getMany()
 
-                users.should.be.eql([
+                users.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 4,
                         username: "user #4",
@@ -177,7 +187,7 @@ describe("github issues > #8890 it should be possible to query IS NULL on OneToO
                     .orderBy("user.id", "ASC")
                     .getMany()
 
-                users.should.be.eql([
+                users.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         username: "user #1",
@@ -210,7 +220,7 @@ describe("github issues > #8890 it should be possible to query IS NULL on OneToO
                     .orderBy("user.id", "ASC")
                     .getMany()
 
-                users.should.be.eql([
+                users.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         username: "user #1",

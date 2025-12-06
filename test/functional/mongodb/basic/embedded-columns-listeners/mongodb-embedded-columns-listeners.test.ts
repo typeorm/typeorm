@@ -8,7 +8,16 @@ import {
 import { Post } from "./entity/Post"
 import { Counters } from "./entity/Counters"
 import { Information } from "./entity/Information"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { Tags } from "./entity/Tags"
 
 describe("mongodb > embedded columns listeners", () => {

@@ -6,6 +6,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("query runner > drop check constraint", () => {
     let connections: DataSource[]

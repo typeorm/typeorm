@@ -8,6 +8,16 @@ import { CityEntity } from "./entity/city"
 import { CountryEntity } from "./entity/country"
 import { OrderEntity } from "./entity/order"
 import { UserEntity } from "./entity/user"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("entity-schema > foreign-keys", () => {
     let dataSources: DataSource[]

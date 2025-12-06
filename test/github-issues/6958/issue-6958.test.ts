@@ -6,7 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #6958 Promises never get resolved in specific cases", () => {
     let connections: DataSource[]

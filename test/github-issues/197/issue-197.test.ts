@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../src"
 import { EntityMetadata } from "../../../src"
 import { Person } from "./entity/person"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #197 Fails to drop indexes when removing fields", () => {
     let connections: DataSource[]

@@ -6,6 +6,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Category } from "./entity/Category"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #9534 materialized-path", () => {
     let connections: DataSource[]

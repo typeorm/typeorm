@@ -8,6 +8,16 @@ import {
 import { Role } from "./entity/Role"
 import { Event } from "./entity/Event"
 import { EventRole } from "./entity/EventRole"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 // todo: fix later (refactor persistence)
 describe.skip("github issues > #1926 Update fails for entity with compound relation-based primary key on OneToMany relationship", () => {

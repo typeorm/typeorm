@@ -5,7 +5,16 @@ import {
 } from "../../utils/test-utils"
 import { In, JsonContains, Not } from "../../../src"
 import { ExampleEntity } from "./entity/ExampleEntity"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { JsonExampleEntity } from "./entity/JsonExampleEntity"
 
 describe("github issues > #9381 The column option 《transformer》 affects the result of the query condition generation", () => {
