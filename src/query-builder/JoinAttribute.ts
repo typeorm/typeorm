@@ -51,6 +51,18 @@ export class JoinAttribute {
      */
     mapAsEntity?: Function | string
 
+    /**
+     * Columns that were explicitly selected in a subquery.
+     * Used to respect partial selects in leftJoinAndMapOne/leftJoinAndMapMany.
+     */
+    selectedColumns?: string[]
+
+    /**
+     * Metadata from the subquery's entity, used when the join doesn't have direct metadata.
+     * This is internal and should not be used directly - use the metadata getter instead.
+     */
+    __subqueryMetadata?: EntityMetadata
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -86,6 +98,10 @@ export class JoinAttribute {
     get isSelected(): boolean {
         if (!this.isSelectedEvaluated) {
             const getValue = () => {
+                // If mapToProperty is set (leftJoinAndMapOne/Many), this join is always selected
+                // because the user explicitly requested the mapping
+                if (this.mapToProperty) return true
+
                 for (const select of this.queryExpressionMap.selects) {
                     if (select.selection === this.alias.name) return true
 
