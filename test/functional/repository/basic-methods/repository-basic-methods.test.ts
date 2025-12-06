@@ -873,6 +873,35 @@ describe("repository > basic methods", () => {
                         .should.be.rejectedWith(TypeORMError)
                 }),
             ))
+        it("should upsert with primary key as conflict path", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    if (!connection.driver.supportedUpsertTypes.length) return
+
+                    const postRepository = connection.getRepository(Post)
+
+                    // First upsert - should insert a new post with id=1
+                    await postRepository.upsert(
+                        { id: 1, title: "Upserted post" },
+                        { conflictPaths: ["id"] },
+                    )
+
+                    // Second upsert - should update the existing post with id=1
+                    await postRepository.upsert(
+                        { id: 1, title: "Upserted post2" },
+                        { conflictPaths: ["id"] },
+                    )
+
+                    // Verify only one post exists with the updated title
+                    const posts = await postRepository.find()
+                    posts.length.should.be.equal(
+                        1,
+                        "Should have only one post, not duplicate",
+                    )
+                    posts[0].id!.should.be.equal(1)
+                    posts[0].title.should.be.equal("Upserted post2")
+                }),
+            ))
     })
 
     describe("preload also should also implement merge functionality", function () {

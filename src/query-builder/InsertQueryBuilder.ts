@@ -746,7 +746,10 @@ export class InsertQueryBuilder<
                     !DriverUtils.isMySQLFamily(this.connection.driver) &&
                     !(this.connection.driver.options.type === "aurora-mysql") &&
                     !(
-                        this.connection.driver.options.type === "mssql" &&
+                        (this.connection.driver.options.type === "mssql" ||
+                            DriverUtils.isPostgresFamily(
+                                this.connection.driver,
+                            )) &&
                         this.isOverridingAutoIncrementBehavior(column)
                     )
                 )
