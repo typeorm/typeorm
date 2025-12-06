@@ -163,14 +163,14 @@ describe("repository > find options", () => {
                     name: "Me and Bears 5",
                 })
 
-                expect(loadedPhotos1).to.have.members(
+                expect(loadedPhotos1).to.deepEqualIgnoreUndefined(
                     photos.map((photo) => ({
                         filename: photo.filename,
                         views: photo.views,
                     })),
                 )
 
-                expect(loadedPhotos2).to.have.members(
+                expect(loadedPhotos2).to.deepEqualIgnoreUndefined(
                     photos.map((photo) => ({
                         id: photo.id,
                         name: photo.name,
@@ -179,7 +179,7 @@ describe("repository > find options", () => {
                     })),
                 )
 
-                // expect(loadedPhotos3).to.have.deep.members(photos.map(photo => ({
+                // expect(loadedPhotos3).to.deepEqualIgnoreUndefined(photos.map(photo => ({
                 //     name: photo.name,
                 //     description: photo.description,
                 //     categories: categories.map(category => ({

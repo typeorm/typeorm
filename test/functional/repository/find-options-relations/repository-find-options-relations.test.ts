@@ -116,7 +116,7 @@ describe("repository > find options > relations", () => {
                             id: 1,
                         },
                     })
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "About Timber",
                     counters: {
@@ -150,7 +150,10 @@ describe("repository > find options > relations", () => {
                     counters: {
                         stars: 2,
                         commentCount: 19,
+                        author: undefined,
                     },
+                    user: undefined,
+                    post: undefined,
                 })
                 loadedPost!.photos.should.deep.include({
                     id: 2,
@@ -158,7 +161,10 @@ describe("repository > find options > relations", () => {
                     counters: {
                         stars: 3,
                         commentCount: 20,
+                        author: undefined,
                     },
+                    user: undefined,
+                    post: undefined,
                 })
                 loadedPost!.photos.should.deep.include({
                     id: 3,
@@ -166,7 +172,10 @@ describe("repository > find options > relations", () => {
                     counters: {
                         stars: 4,
                         commentCount: 21,
+                        author: undefined,
                     },
+                    user: undefined,
+                    post: undefined,
                 })
             }),
         ))
@@ -196,7 +205,10 @@ describe("repository > find options > relations", () => {
                     counters: {
                         stars: 2,
                         commentCount: 19,
+                        author: undefined,
                     },
+                    user: undefined,
+                    post: undefined,
                 })
                 loadedPost!.photos.should.deep.include({
                     id: 2,
@@ -204,7 +216,10 @@ describe("repository > find options > relations", () => {
                     counters: {
                         stars: 3,
                         commentCount: 20,
+                        author: undefined,
                     },
+                    user: undefined,
+                    post: undefined,
                 })
                 loadedPost!.photos.should.deep.include({
                     id: 3,
@@ -212,7 +227,10 @@ describe("repository > find options > relations", () => {
                     counters: {
                         stars: 4,
                         commentCount: 21,
+                        author: undefined,
                     },
+                    user: undefined,
+                    post: undefined,
                 })
                 loadedPost!.user.should.be.eql({
                     id: 1,
@@ -256,7 +274,9 @@ describe("repository > find options > relations", () => {
                     counters: {
                         stars: 2,
                         commentCount: 19,
+                        author: undefined
                     },
+                    post: undefined,
                     user: {
                         id: 4,
                         name: "Photo Timber",
@@ -268,7 +288,9 @@ describe("repository > find options > relations", () => {
                     counters: {
                         stars: 3,
                         commentCount: 20,
+                        author: undefined
                     },
+                    post: undefined,
                     user: null,
                 })
                 loadedPost!.photos.should.deep.include({
@@ -277,7 +299,9 @@ describe("repository > find options > relations", () => {
                     counters: {
                         stars: 4,
                         commentCount: 21,
+                        author: undefined
                     },
+                    post: undefined,
                     user: null,
                 })
                 loadedPost!.user.should.be.eql({
@@ -324,7 +348,9 @@ describe("repository > find options > relations", () => {
                     counters: {
                         stars: 2,
                         commentCount: 19,
+                        author: undefined
                     },
+                    post: undefined,
                     user: {
                         id: 4,
                         name: "Photo Timber",
@@ -336,7 +362,9 @@ describe("repository > find options > relations", () => {
                     counters: {
                         stars: 3,
                         commentCount: 20,
+                        author: undefined
                     },
+                    post: undefined,
                     user: null,
                 })
                 loadedPost!.photos.should.deep.include({
@@ -345,7 +373,9 @@ describe("repository > find options > relations", () => {
                     counters: {
                         stars: 4,
                         commentCount: 21,
+                        author: undefined
                     },
+                    post: undefined,
                     user: null,
                 })
                 loadedPost!.user.should.be.eql({
@@ -396,6 +426,7 @@ describe("repository > find options > relations", () => {
                             name: "Photo Counters Timber",
                         },
                     },
+                    post: undefined,
                     user: {
                         id: 4,
                         name: "Photo Timber",
@@ -404,6 +435,7 @@ describe("repository > find options > relations", () => {
                 loadedPost!.photos.should.deep.include({
                     id: 2,
                     filename: "photo2.jpg",
+                    post: undefined,
                     counters: {
                         stars: 3,
                         commentCount: 20,
@@ -414,6 +446,7 @@ describe("repository > find options > relations", () => {
                 loadedPost!.photos.should.deep.include({
                     id: 3,
                     filename: "photo3.jpg",
+                    post: undefined,
                     counters: {
                         stars: 4,
                         commentCount: 21,

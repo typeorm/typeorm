@@ -28,13 +28,13 @@ describe("github issues > #2201 - Create a select query when using a (custom) ju
         const contextMetadata = connections[0].entityMetadatas.find(
             (metadata) => metadata.name === "RecordContext",
         )!
-        const expectedColumnNames = ["record_id", "meta", "user_id"]
+        const expectedColumnNames = ["meta", "record_id", "user_id"]
         const existingColumnNames = contextMetadata.columns.map(
             (col) => col.databaseName,
-        )
+        ).sort((a, b) => a.localeCompare(b))
 
         expect(existingColumnNames.length).to.eql(expectedColumnNames.length)
-        expect(existingColumnNames).have.members(expectedColumnNames)
+        expect(existingColumnNames).be.eql(expectedColumnNames)
 
         await closeTestingConnections(connections)
     })

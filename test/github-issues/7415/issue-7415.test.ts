@@ -77,7 +77,7 @@ describe("github issues > #7415 Tree entities with embedded primary columns are 
                 }
 
                 expect(descendantsTree.id).to.be.eql(expectedDescendantsTree.id)
-                expect(descendantsTree.children).to.have.deep.members(
+                expect(descendantsTree.children).to.deepEqualIgnoreUndefined(
                     expectedDescendantsTree.children,
                 )
 

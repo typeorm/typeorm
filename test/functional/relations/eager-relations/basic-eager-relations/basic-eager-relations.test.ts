@@ -187,7 +187,7 @@ describe("relations > eager relations > basic", () => {
                 )
 
                 // Assertions
-                expect(retrievedEditor).to.deep.equal({
+                expect(retrievedEditor).to.deepEqualIgnoreUndefined({
                     userId: 1,
                     postId: 1,
                     user: {

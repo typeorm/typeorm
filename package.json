@@ -89,7 +89,7 @@
     "prepare": "is-ci || husky",
     "publish:preview": "pkg-pr-new publish './build/package' --template='./sample/playground'",
     "test": "npm run compile && npm run test:fast --",
-    "test:ci": "vitest run --coverage",
+    "test:ci": "vitest run --coverage --bail=5",
     "test:fast": "vitest",
     "typecheck": "tsc --noEmit",
     "watch": "tsc --watch"

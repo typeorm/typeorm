@@ -56,6 +56,7 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
                     {
                         id: 1,
                         name: "Joe Smith",
+                        photos: undefined,
                         profile: {
                             id: 1,
                             gender: "male",
@@ -90,19 +91,19 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
                 })
 
                 // Check one-to-many
-                users[0].photos.should.have.deep.members([
-                    {
-                        id: 1,
-                        url: "me.jpg",
-                    },
+                users[0].photos.should.deepEqualIgnoreUndefined([
                     {
                         id: 2,
                         url: "me-and-bears.jpg",
                     },
+                    {
+                        id: 1,
+                        url: "me.jpg",
+                    },
                 ])
 
                 // Check many-to-one
-                photos.should.have.deep.members([
+                photos.should.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         url: "me.jpg",
@@ -143,7 +144,7 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
                     relations: { categories: true },
                 })
 
-                questions[0].categories.should.have.deep.members([
+                questions[0].categories.should.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "animals",

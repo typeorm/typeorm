@@ -128,7 +128,7 @@ describe("query builder > distinct on", () => {
                     .distinctOn(["category.author"])
                     .getMany()
 
-                expect(result.map(({ author }) => author)).to.have.members([
+                expect(result.map(({ author }) => author)).to.be.deepEqualIgnoreUndefined([
                     "Dion",
                     "Zelda",
                 ])
@@ -147,8 +147,8 @@ describe("query builder > distinct on", () => {
 
                 expect(
                     result.map(({ moderator }) => moderator),
-                ).to.have.members(["Dion", "Sarah", "Dion", "Dion"]) &&
-                    expect(result.map(({ author }) => author)).to.have.members([
+                ).to.be.deepEqualIgnoreUndefined(["Dion", "Sarah", "Dion", "Dion"]) &&
+                    expect(result.map(({ author }) => author)).to.be.deepEqualIgnoreUndefined([
                         "Dion",
                         "Pablo",
                         "Sarah",
@@ -172,7 +172,7 @@ describe("query builder > distinct on", () => {
                     .distinctOn(["post.author", "category.author"])
                     .getMany()
 
-                expect(result.map(({ author }) => author)).to.have.members([
+                expect(result.map(({ author }) => author)).to.be.deepEqualIgnoreUndefined([
                     "Dion",
                     "Pablo",
                     "Sarah",

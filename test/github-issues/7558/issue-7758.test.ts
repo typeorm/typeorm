@@ -69,7 +69,7 @@ describe("github issues > #7558 Child entities' wrong discriminator value when e
                 expect(persons[0].content).not.to.be.undefined
                 expect(persons[0].content).not.to.be.null
                 expect(persons[0].content).to.be.instanceOf(Photo)
-                expect(persons[0].content).to.include(photo)
+                expect(persons[0].content).toMatchObject({...photo, id: 1})
             }),
         ))
 
@@ -128,11 +128,11 @@ describe("github issues > #7558 Child entities' wrong discriminator value when e
                     (entity) => entity instanceof DogEntity,
                 )
                 expect(animalPets.length).to.equal(1)
-                expect(animalPets[0]).to.include(mysteryUnicorn)
+                expect(animalPets[0]).toMatchObject({...mysteryUnicorn, id: 3})
                 expect(catPets.length).to.equal(1)
-                expect(catPets[0]).to.include(felix)
+                expect(catPets[0]).toMatchObject({...felix, id: 2})
                 expect(dogPets.length).to.equal(1)
-                expect(dogPets[0]).to.include(spike)
+                expect(dogPets[0]).toMatchObject({...spike, id: 1})
             }),
         ))
 

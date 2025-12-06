@@ -421,17 +421,11 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts.should.have.members([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 3,
                         title: "Post #3",
                         text: "About post #3",
-                        counters: { likes: 1 },
-                    },
-                    {
-                        id: 4,
-                        title: "Post #4",
-                        text: "About post #4",
                         counters: { likes: 1 },
                     },
                     {
@@ -446,11 +440,17 @@ describe("find options > order", () => {
                         text: "About post #2",
                         counters: { likes: 2 },
                     },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
+                    },
                 ])
-                expect(posts[0].id).to.be.deepEqualIgnoreUndefined(3)
+                expect(posts[0].id).to.be.eql(3)
                 expect(posts[1].id).to.be.oneOf([1, 2, 4])
                 expect(posts[2].id).to.be.oneOf([1, 2, 4])
-                expect(posts[1].id).to.not.be.deepEqualIgnoreUndefined(posts[2].id)
+                expect(posts[1].id).to.not.be.eql(posts[2].id)
             }),
         ))
 
@@ -519,7 +519,7 @@ describe("find options > order", () => {
                     })
                     .getMany()
                 // exact row order depends of settings like NULLS FIRST and NULLS LAST
-                posts.should.have.deep.members([
+                posts.should.deepEqualIgnoreUndefined([
                     {
                         id: 3,
                         title: "Post #3",
@@ -563,7 +563,7 @@ describe("find options > order", () => {
                     })
                     .getMany()
                 // exact row order depends of settings like NULLS FIRST and NULLS LAST
-                posts.should.have.deep.members([
+                posts.should.deepEqualIgnoreUndefined([
                     {
                         id: 4,
                         title: "Post #4",
@@ -661,7 +661,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts.should.have.deep.members([
+                posts.should.deepEqualIgnoreUndefined([
                     {
                         id: 3,
                         title: "Post #3",
@@ -681,10 +681,10 @@ describe("find options > order", () => {
                         counters: { likes: 1 },
                     },
                 ])
-                expect(posts[0].id).to.be.deepEqualIgnoreUndefined(3)
+                expect(posts[0].id).to.be.eql(3)
                 expect(posts[1].id).to.be.oneOf([1, 4])
                 expect(posts[2].id).to.be.oneOf([1, 4])
-                expect(posts[1].id).to.not.be.deepEqualIgnoreUndefined(posts[2].id)
+                expect(posts[1].id).to.not.be.eql(posts[2].id)
             }),
         ))
 })

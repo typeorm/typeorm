@@ -115,7 +115,7 @@ describe("columns > embedded columns", () => {
                 const columns = postRepository.metadata.columns
                 const databaseColumns = columns.map((c) => c.databaseName)
 
-                expect(databaseColumns).to.have.members([
+                expect(databaseColumns).to.be.deepEqualIgnoreUndefined([
                     // Post
                     // Post.id
                     "id",

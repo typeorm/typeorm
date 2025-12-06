@@ -73,7 +73,7 @@ describe("github issues > #7109 stream() bug from 0.2.25 to 0.2.26 with postgres
 
                 // If the runner is properly released, the test is already successful; this assert is just a sanity check.
                 const extractFields = (val: { field: string }) => val.field
-                expect(streamedEntities.map(extractFields)).to.have.members(
+                expect(streamedEntities.map(extractFields)).to.be.deepEqualIgnoreUndefined(
                     values.map(extractFields),
                 )
             }),

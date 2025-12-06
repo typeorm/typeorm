@@ -422,17 +422,23 @@ describe("query builder > relational query builder > add operation > one to many
                     Category,
                     { where: { id: 3 }, relations: { posts: true } },
                 )
-                expect(loadedCategory!.posts).to.include({
+                expect(loadedCategory!.posts).to.deep.include({
                     id: 1,
                     title: "post #1",
+                    category: undefined,
+                    images: undefined,
                 })
-                expect(loadedCategory!.posts).to.not.contain({
+                expect(loadedCategory!.posts).to.not.deep.contain({
                     id: 2,
                     title: "post #2",
+                    category: undefined,
+                    images:undefined,
                 })
-                expect(loadedCategory!.posts).to.include({
+                expect(loadedCategory!.posts).to.deep.include({
                     id: 3,
                     title: "post #3",
+                    category: undefined,
+                    images:undefined,
                 })
             }),
         ))

@@ -62,7 +62,7 @@ describe("sql tag parameters (better-sqlite3)", () => {
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(2)
-                expect(ids).to.have.members(["first", "second"])
+                expect(ids).to.be.deepEqualIgnoreUndefined(["first", "second"])
             }),
         ))
 
@@ -92,7 +92,7 @@ describe("sql tag parameters (better-sqlite3)", () => {
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(2)
-                expect(ids).to.have.members(["child1", "child2"])
+                expect(ids).to.be.deepEqualIgnoreUndefined(["child1", "child2"])
             }),
         ))
 
@@ -138,7 +138,7 @@ describe("sql tag parameters (better-sqlite3)", () => {
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(1)
-                expect(ids).to.have.members(["null1"])
+                expect(ids).to.be.deepEqualIgnoreUndefined(["null1"])
             }),
         ))
 
@@ -161,7 +161,7 @@ describe("sql tag parameters (better-sqlite3)", () => {
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(1)
-                expect(ids).to.have.members(["true1"])
+                expect(ids).to.be.deepEqualIgnoreUndefined(["true1"])
             }),
         ))
 
@@ -190,7 +190,7 @@ describe("sql tag parameters (better-sqlite3)", () => {
                 const ids = examples.map((e: Example) => e.id)
 
                 expect(examples).to.have.length(2)
-                expect(ids).to.have.members(["array1", "array2"])
+                expect(ids).to.be.deepEqualIgnoreUndefined(["array1", "array2"])
             }),
         ))
 })

@@ -55,7 +55,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
                     .getOne()
 
                 expect(loadedPost).not.to.be.null
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "post with categories",
                     categories: [
@@ -100,7 +100,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
                     .getOne()
 
                 expect(loadedPost).not.to.be.null
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "post without categories",
                     categories: [],
@@ -133,7 +133,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
                     .getOne()
 
                 expect(loadedPost).not.to.be.null
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "just post",
                     secondaryCategories: [],

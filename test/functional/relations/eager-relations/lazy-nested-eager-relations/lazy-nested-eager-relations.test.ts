@@ -85,7 +85,7 @@ describe("relations > eager relations > lazy nested eager relations", () => {
 
                 const loadedPost = await loadedEditor?.post
 
-                expect(loadedPost?.categories1).to.have.deep.members([
+                expect(loadedPost?.categories1).to.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "primary category #1",
@@ -96,7 +96,7 @@ describe("relations > eager relations > lazy nested eager relations", () => {
                     },
                 ])
 
-                expect(loadedPost?.categories2).to.have.deep.members([
+                expect(loadedPost?.categories2).to.deepEqualIgnoreUndefined([
                     {
                         id: 3,
                         name: "secondary category #1",
@@ -117,7 +117,7 @@ describe("relations > eager relations > lazy nested eager relations", () => {
                     },
                 })
 
-                expect(loadedPost?.editors).to.have.deep.members([
+                expect(loadedPost?.editors).to.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         user: {

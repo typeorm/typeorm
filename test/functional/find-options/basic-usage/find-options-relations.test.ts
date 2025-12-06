@@ -189,7 +189,7 @@ describe("find options > relations", () => {
                     })
                     .getMany()
 
-                posts.should.have.deep.members([
+                posts.should.deepEqualIgnoreUndefined([
                     {
                         id: 3,
                         title: "Post #3",
