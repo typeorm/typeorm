@@ -102,7 +102,6 @@
     "debug": "^4.4.3",
     "dedent": "^1.7.0",
     "dotenv": "^17.2.3",
-    "glob": "^10.5.0",
     "reflect-metadata": "^0.2.2",
     "sha.js": "^2.4.12",
     "sql-highlight": "^6.1.0",
@@ -248,11 +247,11 @@
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": ">=20.19.0"
+      "version": ">=20.9.0"
     },
     "packageManager": {
       "name": "npm",
-      "version": "^10.8.2",
+      "version": ">=10.1.0",
       "onFail": "error"
     }
   },

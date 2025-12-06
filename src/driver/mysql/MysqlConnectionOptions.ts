@@ -8,8 +8,7 @@ import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsO
  * @see https://github.com/mysqljs/mysql#connection-options
  */
 export interface MysqlConnectionOptions
-    extends BaseDataSourceOptions,
-        MysqlConnectionCredentialsOptions {
+    extends BaseDataSourceOptions, MysqlConnectionCredentialsOptions {
     /**
      * Database type.
      */
