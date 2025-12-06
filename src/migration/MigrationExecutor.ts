@@ -417,6 +417,8 @@ export class MigrationExecutor {
             this.connection.logger.logSchemaBuild(
                 `No migrations were found in the database. Nothing to revert!`,
             )
+            // if query runner was created by us then release it
+            if (!this.queryRunner) await queryRunner.release()
             return
         }
 
