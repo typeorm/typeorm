@@ -31,10 +31,12 @@ describe("github issues > #3302 Tracking query time for slow queries and statsd 
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
         })
+    })
+    beforeEach(async () => {
         sandbox = sinon.createSandbox()
         stub = sandbox.stub(PlatformTools, "appendFileSync")
+        await reloadTestingDatabases(connections)
     })
-    beforeEach(() => reloadTestingDatabases(connections))
     afterEach(async () => {
         stub.resetHistory()
         sandbox.restore()

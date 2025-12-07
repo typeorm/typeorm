@@ -56,7 +56,6 @@ describe("github issues > #4190 Relation decorators: allow to pass string instea
                     {
                         id: 1,
                         name: "Joe Smith",
-                        photos: undefined,
                         profile: {
                             id: 1,
                             gender: "male",

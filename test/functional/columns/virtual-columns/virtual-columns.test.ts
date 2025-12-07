@@ -337,9 +337,9 @@ describe("column > virtual columns", () => {
                     .createQueryBuilder(Company, "company")
                     .where("company.name = :name", { name: companyName })
                     .getOne()
-                expect(foundCompany).to.haveOwnProperty(
+                expect(foundCompany).to.not.haveOwnProperty(
                     "totalReportedHours",
-                ).undefined
+                )
 
                 const foundCompanyWithHours = await connection
                     .createQueryBuilder(Company, "company")

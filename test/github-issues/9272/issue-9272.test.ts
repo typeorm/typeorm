@@ -84,12 +84,12 @@ describe("github issues > #9272 Fix select on deeply nested embedded entities, u
 
                 user.should.haveOwnProperty("id")
                 user.should.haveOwnProperty("address")
-                user.should.haveOwnProperty("firstName").undefined
-                user.should.haveOwnProperty("lastName").undefined
-                user.should.haveOwnProperty("age").undefined
+                user.should.not.haveOwnProperty("firstName")
+                user.should.not.haveOwnProperty("lastName")
+                user.should.not.haveOwnProperty("age")
 
                 user.address.latLong.should.haveOwnProperty("latitude")
-                user.address.latLong.should.haveOwnProperty("longitude").undefined
+                user.address.latLong.should.not.haveOwnProperty("longitude")
 
                 user.address.latLong.latitude.should.equal(-23)
             }),
