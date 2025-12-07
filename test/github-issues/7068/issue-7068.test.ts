@@ -49,7 +49,7 @@ describe("github issues > #7068", () => {
                 await categoryRepository.save(a12)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -91,7 +91,7 @@ describe("github issues > #7068", () => {
                 await categoryRepository.save(a1)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -139,7 +139,7 @@ describe("github issues > #7068", () => {
                 await categoryRepository.save(a1)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",

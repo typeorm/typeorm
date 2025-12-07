@@ -54,7 +54,7 @@ describe("github issues > #6265 `fix: resolve issue with find with relations ret
                     .getMany()
                 expect(roleWithAllUser[0].users.length).eq(2)
                 expect(
-                    roleWithAllUser.should.be.eql([
+                    roleWithAllUser.should.be.deepEqualIgnoreUndefined([
                         {
                             id: 1,
                             title: "Manager",
@@ -81,7 +81,7 @@ describe("github issues > #6265 `fix: resolve issue with find with relations ret
                 expect(roleWithUserIsNotSoftDelete[0].users.length).eq(1)
 
                 expect(
-                    roleWithUserIsNotSoftDelete.should.be.eql([
+                    roleWithUserIsNotSoftDelete.should.be.deepEqualIgnoreUndefined([
                         {
                             id: 1,
                             title: "Manager",

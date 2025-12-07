@@ -60,7 +60,7 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
                     where: { id: 1 },
                     relations: { categories: true },
                 })
-                expect(loadedPost1!.categories).to.deep.include({
+                expect(loadedPost1!.categories).to.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "category #1",
                 })
@@ -87,7 +87,7 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
                     where: { id: 2 },
                     relations: { categories: true },
                 })
-                expect(loadedPost2!.categories).to.deep.include({
+                expect(loadedPost2!.categories).to.deepEqualIgnoreUndefined({
                     id: 2,
                     title: "category #2",
                 })
