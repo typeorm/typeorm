@@ -31,10 +31,7 @@ import { PostgresDriver } from "./PostgresDriver"
 /**
  * Runs queries on a single postgres database connection.
  */
-export class PostgresQueryRunner
-    extends BaseQueryRunner
-    implements QueryRunner
-{
+export class PostgresQueryRunner extends BaseQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
