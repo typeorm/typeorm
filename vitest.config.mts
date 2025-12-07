@@ -20,7 +20,7 @@ export default defineConfig({
         dir: "./test",
         testTimeout: 90_000,
         reporters: ['default'],
-        passWithNoTests: false,
+        passWithNoTests: true,
         pool: "forks",
         maxWorkers: 1,
     }

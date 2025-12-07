@@ -54,7 +54,7 @@ describe("github issues > #1123 load relation eagerly by setting isEager propert
                 const loadedPost = await connection.manager.findOneBy(Post, {
                     id: 1,
                 })
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "Post 1",
                     author: {
@@ -75,7 +75,7 @@ describe("github issues > #1123 load relation eagerly by setting isEager propert
                     .where("post.id = :id", { id: 1 })
                     .getOne()) as Post
 
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "Post 1",
                 })

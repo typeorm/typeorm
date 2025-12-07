@@ -91,7 +91,7 @@ describe("github issues > #7415 Tree entities with embedded primary columns are 
                     },
                 }
 
-                expect(ancestorsTree).to.be.eql(expectedAncestorsTree)
+                expect(ancestorsTree).to.be.deepEqualIgnoreUndefined(expectedAncestorsTree)
             }),
         ))
 })

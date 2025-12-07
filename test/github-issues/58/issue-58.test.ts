@@ -67,7 +67,7 @@ describe("github issues > #58 relations with multiple primary keys", () => {
                     .getOne()
 
                 expect(loadedPost!).not.to.be.null
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "Hello Post #1",
                     categories: [

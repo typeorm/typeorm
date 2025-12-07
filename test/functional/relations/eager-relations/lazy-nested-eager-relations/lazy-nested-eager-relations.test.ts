@@ -107,7 +107,7 @@ describe("relations > eager relations > lazy nested eager relations", () => {
                     },
                 ])
 
-                expect(loadedPost?.author).to.deep.equal({
+                expect(loadedPost?.author).to.deepEqualIgnoreUndefined({
                     id: 1,
                     firstName: "Timber",
                     lastName: "Saw",

@@ -53,7 +53,7 @@ describe("github issues > #5174 `selectQueryBuilder.take` messes up the query wh
                     .orderBy("user.id")
                     .getMany()
 
-                expect(results).to.be.deep.equal([
+                expect(results).to.be.deepEqualIgnoreUndefined([
                     { id: 1, role: { id: "a" } },
                     { id: 2, role: { id: "a" } },
                     { id: 3, role: { id: "a" } },

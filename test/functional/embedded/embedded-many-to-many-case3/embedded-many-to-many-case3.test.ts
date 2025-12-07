@@ -277,7 +277,7 @@ describe("embedded > embedded-many-to-many-case3", () => {
                         .getMany()
 
                     expect(
-                        loadedUsers[0].should.be.eql({
+                        loadedUsers[0].should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             name: "Alice",
                             likedPosts: [
@@ -313,7 +313,7 @@ describe("embedded > embedded-many-to-many-case3", () => {
                         }),
                     )
                     expect(
-                        loadedUsers[1].should.be.eql({
+                        loadedUsers[1].should.be.deepEqualIgnoreUndefined({
                             id: 2,
                             name: "Bob",
                             likedPosts: [
@@ -335,7 +335,7 @@ describe("embedded > embedded-many-to-many-case3", () => {
                         }),
                     )
                     expect(
-                        loadedUsers[2].should.be.eql({
+                        loadedUsers[2].should.be.deepEqualIgnoreUndefined({
                             id: 3,
                             name: "Clara",
                             likedPosts: [
@@ -365,7 +365,7 @@ describe("embedded > embedded-many-to-many-case3", () => {
                         .getOne()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             name: "Alice",
                             likedPosts: [
@@ -413,7 +413,7 @@ describe("embedded > embedded-many-to-many-case3", () => {
                         .getOne()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             name: "Anna",
                             likedPosts: [

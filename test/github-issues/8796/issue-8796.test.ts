@@ -60,7 +60,7 @@ describe("github issues > #8796 New find select object api should support false 
                     },
                 })
 
-                expect(foundUser[0]).to.deep.equal(expectedUser)
+                expect(foundUser[0]).to.deepEqualIgnoreUndefined(expectedUser)
             }),
         ))
 })

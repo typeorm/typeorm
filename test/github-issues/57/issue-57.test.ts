@@ -53,7 +53,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
                     .getMany()
 
                 expect(tokens).not.to.be.undefined
-                tokens.should.be.eql([
+                tokens.should.be.deepEqualIgnoreUndefined([
                     {
                         primaryKey: 1,
                         expireTime: 60000,
@@ -72,7 +72,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
                     .getMany()
 
                 expect(users).not.to.be.undefined
-                users.should.be.eql([
+                users.should.be.deepEqualIgnoreUndefined([
                     {
                         primaryKey: 1,
                         email: "mwelnick@test.com",

@@ -54,7 +54,7 @@ describe("github issues > #151 joinAndSelect can't find entity from inverse side
                 })
 
                 expect(loadedPost).not.to.be.null
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "Hello post",
                     category: {

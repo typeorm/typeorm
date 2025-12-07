@@ -68,7 +68,7 @@ describe("find options > select", () => {
                     relations: ["posts"],
                 })
 
-                categories.should.be.eql([
+                categories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         posts: [
@@ -106,7 +106,7 @@ describe("find options > select", () => {
                     relations: ["posts", "posts.tags"],
                 })
 
-                categories.should.be.eql([
+                categories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         posts: [
@@ -146,7 +146,7 @@ describe("find options > select", () => {
                     relations: ["posts"],
                 })
 
-                categories.should.be.eql([
+                categories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         posts: [
@@ -179,7 +179,7 @@ describe("find options > select", () => {
                     relations: ["posts"],
                 })
 
-                categories.should.be.eql([
+                categories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         posts: [

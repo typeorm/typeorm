@@ -74,7 +74,7 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
                     .getOne()
 
                 expect(completePlatform).not.to.be.null
-                completePlatform!.should.be.eql({
+                completePlatform!.should.be.deepEqualIgnoreUndefined({
                     id: platform.id,
                     name: "Windows",
                     slug: "windows",

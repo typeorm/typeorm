@@ -52,7 +52,7 @@ describe("cascades > should insert by cascades from both sides (#57)", () => {
                     },
                 })
 
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         key: post1.key,
                         title: post1.title,

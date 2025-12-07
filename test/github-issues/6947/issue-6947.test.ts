@@ -49,7 +49,7 @@ describe("github issues > #6947 Custom primary column for TreeRepository based e
                     }))!,
                 )
 
-                tree.should.deep.include({
+                tree.should.deepEqualIgnoreUndefined({
                     cat_id: 1,
                     cat_name: "parent",
                     children: [

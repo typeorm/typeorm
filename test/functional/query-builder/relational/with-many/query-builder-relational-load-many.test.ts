@@ -68,18 +68,19 @@ describe("query builder > relational with many > load many", () => {
                     .of(post1)
                     .loadMany()
 
-                expect(loadedPost1!.images).to.include({
-                    id: 1,
-                    url: "image #1",
-                })
-                expect(loadedPost1!.images).to.include({
-                    id: 2,
-                    url: "image #2",
-                })
-                expect(loadedPost1!.images).to.not.contain({
-                    id: 3,
-                    url: "image #3",
-                })
+                expect(loadedPost1!.images).to.deepEqualIgnoreUndefined([
+                    {
+                        id: 1,
+                        url: "image #1",
+                    }, {
+                        id: 2,
+                        url: "image #2",
+                    }
+                ])
+                // expect(loadedPost1!.images).to.not.contain({
+                //     id: 3,
+                //     url: "image #3",
+                // })
             }),
         ))
 
@@ -122,18 +123,19 @@ describe("query builder > relational with many > load many", () => {
                     .of({ id: 1 })
                     .loadMany()
 
-                expect(loadedPost1!.images).to.include({
-                    id: 1,
-                    url: "image #1",
-                })
-                expect(loadedPost1!.images).to.include({
-                    id: 2,
-                    url: "image #2",
-                })
-                expect(loadedPost1!.images).to.not.contain({
-                    id: 3,
-                    url: "image #3",
-                })
+                expect(loadedPost1!.images).to.deepEqualIgnoreUndefined([
+                    {
+                        id: 1,
+                        url: "image #1",
+                    }, {
+                        id: 2,
+                        url: "image #2",
+                    }
+                ])
+                // expect(loadedPost1!.images).to.not.contain({
+                //     id: 3,
+                //     url: "image #3",
+                // })
             }),
         ))
 
@@ -176,18 +178,19 @@ describe("query builder > relational with many > load many", () => {
                     .of(1)
                     .loadMany()
 
-                expect(loadedPost1!.images).to.include({
-                    id: 1,
-                    url: "image #1",
-                })
-                expect(loadedPost1!.images).to.include({
-                    id: 2,
-                    url: "image #2",
-                })
-                expect(loadedPost1!.images).to.not.contain({
-                    id: 3,
-                    url: "image #3",
-                })
+                expect(loadedPost1!.images).to.deepEqualIgnoreUndefined([
+                    {
+                        id: 1,
+                        url: "image #1",
+                    }, {
+                        id: 2,
+                        url: "image #2",
+                    }
+                ])
+                // expect(loadedPost1!.images).to.not.contain({
+                //     id: 3,
+                //     url: "image #3",
+                // })
             }),
         ))
 })

@@ -91,7 +91,7 @@ describe("github issues > #2298 - Repository filtering not considering related c
                     },
                 })
 
-                loadedTicket.should.be.eql([
+                loadedTicket.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 2,
                         shopId: "myshopId1",

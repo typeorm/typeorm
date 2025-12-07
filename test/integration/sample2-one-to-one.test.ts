@@ -45,7 +45,10 @@ describe("one-to-one", function () {
         await dataSource.initialize()
     })
 
-    after(() => dataSource.destroy())
+    after(async () => {
+        if (!dataSource) return
+        await dataSource.destroy()
+    })
 
     // clean up database before each test
     function reloadDatabase() {

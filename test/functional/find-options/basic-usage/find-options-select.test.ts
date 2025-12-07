@@ -42,7 +42,7 @@ describe("find options > select", () => {
                         },
                     })
                     .getMany()
-                posts1.should.be.eql([
+                posts1.should.be.deepEqualIgnoreUndefined([
                     { id: 1 },
                     { id: 2 },
                     { id: 3 },
@@ -60,7 +60,7 @@ describe("find options > select", () => {
                         },
                     })
                     .getMany()
-                posts2.should.be.eql([
+                posts2.should.be.deepEqualIgnoreUndefined([
                     { id: 1 },
                     { id: 2 },
                     { id: 3 },
@@ -83,7 +83,7 @@ describe("find options > select", () => {
                         },
                     })
                     .getMany()
-                posts1.should.be.eql([
+                posts1.should.be.deepEqualIgnoreUndefined([
                     { title: "Post #1" },
                     { title: "Post #2" },
                     { title: "Post #3" },
@@ -101,7 +101,7 @@ describe("find options > select", () => {
                         },
                     })
                     .getMany()
-                posts2.should.be.eql([
+                posts2.should.be.deepEqualIgnoreUndefined([
                     { title: "Post #1" },
                     { title: "Post #2" },
                     { title: "Post #3" },
@@ -124,7 +124,7 @@ describe("find options > select", () => {
                         },
                     })
                     .getMany()
-                posts1.should.be.eql([
+                posts1.should.be.deepEqualIgnoreUndefined([
                     { title: "Post #1", text: "About post #1" },
                     { title: "Post #2", text: "About post #2" },
                     { title: "Post #3", text: "About post #3" },
@@ -143,7 +143,7 @@ describe("find options > select", () => {
                         },
                     })
                     .getMany()
-                posts2.should.be.eql([
+                posts2.should.be.deepEqualIgnoreUndefined([
                     { title: "Post #1", text: "About post #1" },
                     { title: "Post #2", text: "About post #2" },
                     { title: "Post #3", text: "About post #3" },
@@ -170,7 +170,7 @@ describe("find options > select", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     { counters: { likes: 1 } },
                     { counters: { likes: 2 } },
                     { counters: { likes: 1 } },

@@ -59,7 +59,7 @@ describe("github issues > #9534 materialized-path", () => {
                 // normal part
                 {
                     const rootCategories = await categoryRepository.findRoots()
-                    rootCategories.should.be.eql([
+                    rootCategories.should.be.deepEqualIgnoreUndefined([
                         {
                             id: 1,
                             name: "a1",
@@ -72,54 +72,50 @@ describe("github issues > #9534 materialized-path", () => {
                         a11,
                     )
                     a11Parent.length.should.be.equal(2)
-                    a11Parent.should.deep.include({
+                    a11Parent.should.deepEqualIgnoreUndefined([{
                         id: 1,
                         name: "a1",
                         uid: "a1",
                         parentUid: null,
-                    })
-                    a11Parent.should.deep.include({
+                    }, {
                         id: 2,
                         name: "a11",
                         uid: "a11",
                         parentUid: "a1",
-                    })
+                    }])
 
                     const a1Children = await categoryRepository.findDescendants(
                         a1,
                     )
                     a1Children.length.should.be.equal(4)
-                    a1Children.should.deep.include({
+                    a1Children.should.deepEqualIgnoreUndefined([{
                         id: 1,
                         name: "a1",
                         uid: "a1",
                         parentUid: null,
-                    })
-                    a1Children.should.deep.include({
+                    }, {
                         id: 2,
                         name: "a11",
                         uid: "a11",
                         parentUid: "a1",
-                    })
-                    a1Children.should.deep.include({
+                    }, {
                         id: 3,
                         name: "a111",
                         uid: "a111",
                         parentUid: "a11",
-                    })
-                    a1Children.should.deep.include({
+                    }, {
                         id: 4,
                         name: "a12",
                         uid: "a12",
                         parentUid: "a1",
-                    })
+                    }])
                 }
 
                 a111.parentCategory = null
                 await categoryRepository.save(a111)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -136,39 +132,36 @@ describe("github issues > #9534 materialized-path", () => {
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
                 a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({
+                a11Parent.should.deepEqualIgnoreUndefined([{
                     id: 1,
                     name: "a1",
                     uid: "a1",
                     parentUid: null,
-                })
-                a11Parent.should.deep.include({
+                }, {
                     id: 2,
                     name: "a11",
                     uid: "a11",
                     parentUid: "a1",
-                })
+                }])
 
                 const a1Children = await categoryRepository.findDescendants(a1)
                 a1Children.length.should.be.equal(3)
-                a1Children.should.deep.include({
+                a1Children.should.deepEqualIgnoreUndefined([{
                     id: 1,
                     name: "a1",
                     uid: "a1",
                     parentUid: null,
-                })
-                a1Children.should.deep.include({
+                }, {
                     id: 2,
                     name: "a11",
                     uid: "a11",
                     parentUid: "a1",
-                })
-                a1Children.should.deep.include({
+                }, {
                     id: 4,
                     name: "a12",
                     uid: "a12",
                     parentUid: "a1",
-                })
+                }])
             }),
         ))
     it("findTrees() tests > findTrees should load all category roots", () =>
@@ -208,7 +201,7 @@ describe("github issues > #9534 materialized-path", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql([
+                categoriesTree.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
