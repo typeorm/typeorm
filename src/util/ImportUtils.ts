@@ -22,12 +22,13 @@ export async function importOrRequireFile(
                 importPath
             )
         } catch {
-            try {
-                // This one should work with modern environments
-                importResult = await import(importPath);
-            } catch {
-                throw new Error(`There's no way I can import ${filePath}`)
-            }
+            // Note: it doesn't work
+            // try {
+            //     // This one should work with modern environments
+            //     importResult = await import(importPath);
+            // } catch {
+            //     throw new Error(`There's no way I can import ${filePath}`)
+            // }
         };
         return [
             importResult,
