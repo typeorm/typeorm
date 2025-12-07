@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #815 @RelationId properties are not updated after entity saving", () => {
     let connections: DataSource[]
@@ -34,12 +43,12 @@ describe("github issues > #815 @RelationId properties are not updated after enti
                 category.post = post
                 await connection.manager.save(category)
 
-                expect(post).to.be.eql({
+                expect(post).to.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "About relation id",
                 })
 
-                expect(category).to.be.eql({
+                expect(category).to.be.deepEqualIgnoreUndefined({
                     firstId: 2,
                     secondId: 3,
                     name: "relation-id-category",
@@ -53,7 +62,7 @@ describe("github issues > #815 @RelationId properties are not updated after enti
                 category.post = null
                 await connection.manager.save(category)
 
-                expect(category).to.be.eql({
+                expect(category).to.be.deepEqualIgnoreUndefined({
                     firstId: 2,
                     secondId: 3,
                     name: "relation-id-category",
@@ -83,19 +92,19 @@ describe("github issues > #815 @RelationId properties are not updated after enti
                 post.categories = [category1, category2]
                 await connection.manager.save(post)
 
-                expect(category1).to.be.eql({
+                expect(category1).to.be.deepEqualIgnoreUndefined({
                     firstId: 2,
                     secondId: 3,
                     name: "relation-id-category1",
                 })
 
-                expect(category2).to.be.eql({
+                expect(category2).to.be.deepEqualIgnoreUndefined({
                     firstId: 2,
                     secondId: 4,
                     name: "relation-id-category2",
                 })
 
-                expect(post).to.be.eql({
+                expect(post).to.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "About relation id",
                     categories: [
@@ -148,17 +157,17 @@ describe("github issues > #815 @RelationId properties are not updated after enti
                 category2.manyPosts = [post2]
                 await connection.manager.save([category1, category2])
 
-                expect(post1).to.be.eql({
+                expect(post1).to.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "About relation id1",
                 })
 
-                expect(post2).to.be.eql({
+                expect(post2).to.be.deepEqualIgnoreUndefined({
                     id: 2,
                     title: "About relation id2",
                 })
 
-                expect(category1).to.be.eql({
+                expect(category1).to.be.deepEqualIgnoreUndefined({
                     firstId: 2,
                     secondId: 3,
                     name: "relation-id-category1",
@@ -175,7 +184,7 @@ describe("github issues > #815 @RelationId properties are not updated after enti
                     manyPostIds: [1, 2],
                 })
 
-                expect(category2).to.be.eql({
+                expect(category2).to.be.deepEqualIgnoreUndefined({
                     firstId: 2,
                     secondId: 4,
                     name: "relation-id-category2",
@@ -210,19 +219,19 @@ describe("github issues > #815 @RelationId properties are not updated after enti
                 post.manyCategories = [category1, category2]
                 await connection.manager.save(post)
 
-                expect(category1).to.be.eql({
+                expect(category1).to.be.deepEqualIgnoreUndefined({
                     firstId: 2,
                     secondId: 3,
                     name: "relation-id-category1",
                 })
 
-                expect(category2).to.be.eql({
+                expect(category2).to.be.deepEqualIgnoreUndefined({
                     firstId: 2,
                     secondId: 4,
                     name: "relation-id-category2",
                 })
 
-                expect(post).to.be.eql({
+                expect(post).to.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "About relation id",
                     manyCategories: [

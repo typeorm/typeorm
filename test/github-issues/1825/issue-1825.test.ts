@@ -6,7 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src"
 import { Thing, EmbeddedInThing } from "./entity/thing"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1825 Invalid field values being loaded with long camelCased embedded field names.", () => {
     let connections: DataSource[]

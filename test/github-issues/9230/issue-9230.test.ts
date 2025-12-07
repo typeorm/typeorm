@@ -1,5 +1,14 @@
 import { DateUtils } from "../../../src/util/DateUtils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #9230 Incorrect date parsing for year 1-999", () => {
     describe("mixedDateToDateString", () => {

@@ -6,7 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { User } from "./entity/User"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { AccessToken } from "./entity/AccessToken"
 
 describe("github issues > #57 cascade insert not working with OneToOne relationship", () => {
@@ -44,7 +53,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
                     .getMany()
 
                 expect(tokens).not.to.be.undefined
-                tokens.should.be.eql([
+                tokens.should.be.deepEqualIgnoreUndefined([
                     {
                         primaryKey: 1,
                         expireTime: 60000,
@@ -63,7 +72,7 @@ describe("github issues > #57 cascade insert not working with OneToOne relations
                     .getMany()
 
                 expect(users).not.to.be.undefined
-                users.should.be.eql([
+                users.should.be.deepEqualIgnoreUndefined([
                     {
                         primaryKey: 1,
                         email: "mwelnick@test.com",

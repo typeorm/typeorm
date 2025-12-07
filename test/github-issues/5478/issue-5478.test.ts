@@ -4,7 +4,16 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { UserEntity } from "./entity/UserEntity"
 
 describe("github issues > #5478 Setting enumName doesn't change how migrations get generated", () => {

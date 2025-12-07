@@ -6,7 +6,16 @@ import {
 import { DataSource } from "../../../src"
 import { User } from "./entity/UserEntity"
 
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #5365 Generated Identity for Postgres 10+", () => {
     let connections: DataSource[]

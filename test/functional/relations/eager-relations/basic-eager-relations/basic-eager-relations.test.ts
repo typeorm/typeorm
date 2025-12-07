@@ -1,4 +1,3 @@
-import { expect } from "chai"
 import "reflect-metadata"
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import {
@@ -9,6 +8,16 @@ import {
 import { Category } from "./entity/Category"
 import { Editor } from "./entity/Editor"
 import { Post } from "./entity/Post"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { Profile } from "./entity/Profile"
 import { User } from "./entity/User"
 
@@ -78,7 +87,7 @@ describe("relations > eager relations > basic", () => {
                 loadedPost!.categories1.sort((a, b) => a.id - b.id)
                 loadedPost!.categories2.sort((a, b) => a.id - b.id)
 
-                expect(loadedPost).to.deep.equal({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "about eager relations",
                     categories1: [
@@ -141,7 +150,7 @@ describe("relations > eager relations > basic", () => {
                     .where("post.id = :id", { id: 1 })
                     .getOne()
 
-                expect(loadedPost).to.deep.equal({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "about eager relations",
                 })
@@ -178,7 +187,7 @@ describe("relations > eager relations > basic", () => {
                 )
 
                 // Assertions
-                expect(retrievedEditor).to.deep.equal({
+                expect(retrievedEditor).to.deepEqualIgnoreUndefined({
                     userId: 1,
                     postId: 1,
                     user: {

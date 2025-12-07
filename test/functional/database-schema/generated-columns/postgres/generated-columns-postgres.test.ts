@@ -5,7 +5,16 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { PostgresDriver } from "../../../../../src/driver/postgres/PostgresDriver"
 
 describe("database schema > generated columns > postgres", () => {
@@ -24,7 +33,7 @@ describe("database schema > generated columns > postgres", () => {
             !(dataSources[0].driver as PostgresDriver)
                 .isGeneratedColumnsSupported
         ) {
-            this.skip()
+            dataSources = [];
             return
         }
     })

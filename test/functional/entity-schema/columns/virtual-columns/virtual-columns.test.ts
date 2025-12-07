@@ -7,7 +7,16 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { DataSource } from "../../../../../src"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("entity-schema > columns > virtual column", () => {
     let connections: DataSource[]

@@ -7,6 +7,16 @@ import {
 } from "../../../utils/test-utils"
 import { Post, PostStatus } from "./entity/Post"
 import { ArrayContainedBy } from "../../../../src/find-options/operator/ArrayContainedBy"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("find options > find operators > ArrayContainedBy", () => {
     let connections: DataSource[]

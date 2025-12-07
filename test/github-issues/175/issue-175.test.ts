@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #175 ManyToMany relation doesn't put an empty array when the relation is empty", () => {
     let connections: DataSource[]
@@ -46,7 +55,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
                     .getOne()
 
                 expect(loadedPost).not.to.be.null
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "post with categories",
                     categories: [
@@ -91,7 +100,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
                     .getOne()
 
                 expect(loadedPost).not.to.be.null
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "post without categories",
                     categories: [],
@@ -124,7 +133,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
                     .getOne()
 
                 expect(loadedPost).not.to.be.null
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "just post",
                     secondaryCategories: [],

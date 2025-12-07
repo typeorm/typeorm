@@ -1,5 +1,14 @@
 import "reflect-metadata"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -95,7 +104,7 @@ describe("query builder > joins", () => {
                         loadedPosts![0].categories[0].images.map(
                             (image) => image.id,
                         ),
-                    ).to.have.members([1, 2])
+                    ).to.be.deepEqualIgnoreUndefined([1, 2])
                     expect(loadedPosts![0].author).to.not.be.undefined
                     expect(loadedPosts![0].author.id).to.be.equal(1)
                     expect(loadedPosts![1].categories).to.not.be.eql([])
@@ -139,7 +148,7 @@ describe("query builder > joins", () => {
                         loadedPost!.categories[0].images.map(
                             (image) => image.id,
                         ),
-                    ).to.have.members([1, 2])
+                    ).to.be.deepEqualIgnoreUndefined([1, 2])
                     expect(loadedPost!.categories[1].images).to.be.eql([])
                     expect(loadedPost!.author).to.not.be.undefined
                     expect(loadedPost!.author instanceof User).to.be.true
@@ -448,7 +457,7 @@ describe("query builder > joins", () => {
                         loadedPost!.categories[0].images.map(
                             (image) => image.id,
                         ),
-                    ).to.have.members([1, 2])
+                    ).to.be.deepEqualIgnoreUndefined([1, 2])
                     expect(loadedPost!.author).to.not.be.undefined
                     expect(loadedPost!.author.id).to.be.equal(1)
                 }),
@@ -534,7 +543,7 @@ describe("query builder > joins", () => {
                         loadedPost!.categories[0].images.map(
                             (image) => image.id,
                         ),
-                    ).to.have.members([1, 2])
+                    ).to.be.deepEqualIgnoreUndefined([1, 2])
                     expect(loadedPost!.author).to.not.be.undefined
                     expect(loadedPost!.author.id).to.be.equal(1)
                 }),
@@ -899,7 +908,7 @@ describe("query builder > joins", () => {
                         loadedPost!.categories[0].images.map(
                             (image) => image.id,
                         ),
-                    ).to.have.members([1, 2])
+                    ).to.be.deepEqualIgnoreUndefined([1, 2])
                     expect(loadedPost!.author).to.not.be.undefined
                     expect(loadedPost!.author.id).to.be.equal(1)
                 }),
@@ -985,7 +994,7 @@ describe("query builder > joins", () => {
                         loadedPost!.categories[0].images.map(
                             (image) => image.id,
                         ),
-                    ).to.have.members([1, 2])
+                    ).to.be.deepEqualIgnoreUndefined([1, 2])
                     expect(loadedPost!.author).to.not.be.undefined
                     expect(loadedPost!.author.id).to.be.equal(1)
                 }),

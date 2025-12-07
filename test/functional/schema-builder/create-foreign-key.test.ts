@@ -7,6 +7,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { ForeignKeyMetadata } from "../../../src/metadata/ForeignKeyMetadata"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("schema builder > create foreign key", () => {
     let connections: DataSource[]

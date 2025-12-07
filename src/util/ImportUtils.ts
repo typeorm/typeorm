@@ -2,9 +2,14 @@ import fs from "fs/promises"
 import path from "path"
 import { pathToFileURL } from "url"
 
+/**
+ *
+ * @param filePath
+ */
 export async function importOrRequireFile(
     filePath: string,
 ): Promise<[any, "esm" | "commonjs"]> {
+    // FIXME VITEST
     const tryToImport = async (): Promise<[any, "esm"]> => {
         // `Function` is required to make sure the `import` statement wil stay `import` after
         // transpilation and won't be converted to `require`
@@ -18,10 +23,11 @@ export async function importOrRequireFile(
             "esm",
         ]
     }
-    const tryToRequire = (): [any, "commonjs"] => {
-        return [require(filePath), "commonjs"]
+    const tryToRequire = (): [any, "esm"] => {
+        return [import(filePath), "esm"]
     }
 
+    // FIXME VITEST
     const extension = filePath.substring(filePath.lastIndexOf(".") + ".".length)
 
     if (extension === "mjs" || extension === "mts") return tryToImport()
@@ -43,6 +49,11 @@ export async function importOrRequireFile(
 const packageJsonCache = new Map<string, object | null>()
 const MAX_CACHE_SIZE = 1000
 
+/**
+ *
+ * @param paths
+ * @param packageJson
+ */
 function setPackageJsonCache(paths: string[], packageJson: object | null) {
     for (const path of paths) {
         // Simple LRU-like behavior: if we're at capacity, remove oldest entry
@@ -57,6 +68,10 @@ function setPackageJsonCache(paths: string[], packageJson: object | null) {
     }
 }
 
+/**
+ *
+ * @param filePath
+ */
 async function getNearestPackageJson(filePath: string): Promise<object | null> {
     let currentPath = filePath
     const paths: string[] = []

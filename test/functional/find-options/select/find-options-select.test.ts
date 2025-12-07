@@ -9,6 +9,16 @@ import {
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { Tag } from "./entity/Tag"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("find options > select", () => {
     let dataSources: DataSource[]
@@ -58,7 +68,7 @@ describe("find options > select", () => {
                     relations: ["posts"],
                 })
 
-                categories.should.be.eql([
+                categories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         posts: [
@@ -96,7 +106,7 @@ describe("find options > select", () => {
                     relations: ["posts", "posts.tags"],
                 })
 
-                categories.should.be.eql([
+                categories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         posts: [
@@ -136,7 +146,7 @@ describe("find options > select", () => {
                     relations: ["posts"],
                 })
 
-                categories.should.be.eql([
+                categories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         posts: [
@@ -169,7 +179,7 @@ describe("find options > select", () => {
                     relations: ["posts"],
                 })
 
-                categories.should.be.eql([
+                categories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         posts: [

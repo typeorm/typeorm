@@ -1,4 +1,13 @@
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DataSource } from "../../../src/data-source/DataSource"
 import {
     createTestingConnections,
@@ -7,7 +16,7 @@ import {
 import { MemoryLogger } from "./memory-logger"
 
 describe("github issues > #7662 postgres extensions installation should be optional", function () {
-    it("should NOT install extensions if option is disabled", async function () {
+    it("should NOT install extensions if option is disabled", async function (context) {
         let connection: DataSource | null = null
         try {
             const connections = await createTestingConnections({
@@ -22,7 +31,7 @@ describe("github issues > #7662 postgres extensions installation should be optio
             })
 
             if (connections.length < 1) {
-                this.skip()
+                context.skip()
                 return
             }
 
@@ -43,7 +52,7 @@ describe("github issues > #7662 postgres extensions installation should be optio
         }
     })
 
-    it("should install extensions if option is undefined", async function () {
+    it("should install extensions if option is undefined", async function (context) {
         let connections: DataSource[] = []
         try {
             connections = await createTestingConnections({
@@ -55,7 +64,7 @@ describe("github issues > #7662 postgres extensions installation should be optio
             })
 
             if (connections.length < 1) {
-                this.skip()
+                context.skip()
                 return
             }
 
@@ -72,7 +81,7 @@ describe("github issues > #7662 postgres extensions installation should be optio
         }
     })
 
-    it("should install extensions if option is enabled", async function () {
+    it("should install extensions if option is enabled", async function (context) {
         let connections: DataSource[] = []
         try {
             connections = await createTestingConnections({
@@ -87,7 +96,7 @@ describe("github issues > #7662 postgres extensions installation should be optio
             })
 
             if (connections.length < 1) {
-                this.skip()
+                context.skip()
             }
 
             const connection = connections[0]

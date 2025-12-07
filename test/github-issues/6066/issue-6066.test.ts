@@ -5,7 +5,16 @@ import {
 } from "../../utils/test-utils"
 import { QueryFailedError, DataSource } from "../../../src"
 import { Session } from "./entity/Session"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #6066 Column comment string is not escaped during synchronization", () => {
     let connections: DataSource[]

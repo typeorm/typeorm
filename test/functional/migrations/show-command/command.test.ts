@@ -5,13 +5,23 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { DataSource } from "../../../../src/data-source/DataSource"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("migrations > show command", () => {
     let connections: DataSource[]
     before(
         async () =>
             (connections = await createTestingConnections({
-                migrations: [__dirname + "/migration/*.js"],
+                migrations: [__dirname + "/migration/*.ts"],
                 enabledDrivers: ["postgres", "sqlite"],
                 schemaCreate: true,
                 dropSchema: true,

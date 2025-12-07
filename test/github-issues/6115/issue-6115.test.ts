@@ -6,7 +6,16 @@ import {
     setupSingleTestingConnection,
 } from "../../utils/test-utils"
 import { fail } from "assert"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #6115 Down migration for enums with defaults are wrong", () => {
     let connections: DataSource[]
@@ -60,7 +69,7 @@ describe("github issues > #6115 Down migration for enums with defaults are wrong
 
                 let table = await queryRunner.getTable("metric")
                 let defaultOperator = table!.findColumnByName("defaultOperator")
-                expect(defaultOperator!.enum).to.have.members([
+                expect(defaultOperator!.enum).to.be.deepEqualIgnoreUndefined([
                     "lessthan",
                     "lessequal",
                     "equal",

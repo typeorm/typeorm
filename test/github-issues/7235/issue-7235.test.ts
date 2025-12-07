@@ -6,7 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { Animal } from "./entity/Animal"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { VersionUtils } from "../../../src/util/VersionUtils"
 
 describe('github issues > #7235 Use "INSERT...RETURNING" in MariaDB.', () => {

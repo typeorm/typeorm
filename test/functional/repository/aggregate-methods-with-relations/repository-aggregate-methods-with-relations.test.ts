@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../../src"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("repository > aggregate methods with relations", () => {
     let connections: DataSource[]

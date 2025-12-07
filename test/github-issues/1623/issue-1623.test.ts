@@ -7,6 +7,16 @@ import {
 import { ColumnMetadata } from "../../../src/metadata/ColumnMetadata"
 import { ColumnMetadataArgs } from "../../../src/metadata-args/ColumnMetadataArgs"
 import { User } from "./entity/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1623 NOT NULL constraint failed after a new column is added (SQLite)", () => {
     let connections: DataSource[]

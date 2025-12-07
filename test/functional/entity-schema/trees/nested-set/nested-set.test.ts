@@ -7,6 +7,16 @@ import {
     reloadTestingDatabases,
     closeTestingConnections,
 } from "../../../../utils/test-utils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("entity-schema > tree tables > nested-set", () => {
     let connections: DataSource[]

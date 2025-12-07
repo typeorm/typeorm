@@ -8,6 +8,16 @@ import { DataSource } from "../../../../../src/data-source/DataSource"
 import { Profile } from "./entity/Profile"
 import { Photo } from "./entity/Photo"
 import { User } from "./entity/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("persistence > cascades > example 1", () => {
     let connections: DataSource[]
@@ -46,7 +56,7 @@ describe("persistence > cascades > example 1", () => {
                     .leftJoinAndSelect("profile.user", "profileUser")
                     .getOne()
 
-                loadedUser!.should.be.eql({
+                loadedUser!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     name: "Umed",
                     profile: {

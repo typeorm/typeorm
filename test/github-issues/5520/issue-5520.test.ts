@@ -10,6 +10,16 @@ import {
 } from "../../utils/test-utils"
 import { TestChild } from "./entity/TestChild"
 import { TestParent } from "./entity/TestParent"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #5520 save does not return generated id if object to save contains a many to one relationship with an undefined id", () => {
     let connections: DataSource[]

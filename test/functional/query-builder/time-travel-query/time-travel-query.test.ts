@@ -8,6 +8,16 @@ import {
 } from "../../../utils/test-utils"
 import { Account } from "./entity/Account"
 import { Person } from "./entity/Person"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("query builder > time-travel-query", () => {
     // -------------------------------------------------------------------------

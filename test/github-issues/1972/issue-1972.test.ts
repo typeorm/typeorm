@@ -8,6 +8,16 @@ import { assert } from "chai"
 import { User } from "./entity/User"
 import { TournamentUserParticipant } from "./entity/TournamentUserParticipant"
 import { TournamentSquadParticipant } from "./entity/TournamentSquadParticipant"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1972 STI problem - empty columns", () => {
     let connections: DataSource[]

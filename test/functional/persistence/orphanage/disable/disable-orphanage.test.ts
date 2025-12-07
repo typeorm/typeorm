@@ -1,4 +1,13 @@
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import "reflect-metadata"
 
 import { DataSource, Repository } from "../../../../../src/index"
@@ -36,9 +45,9 @@ describe("persistence > orphanage > disable", () => {
         let settingRepo: Repository<Setting>
         let userId: number
 
-        beforeEach(async function () {
+        beforeEach(async function (context) {
             if (connections.length === 0) {
-                this.skip()
+                context.skip()
             }
 
             await Promise.all(

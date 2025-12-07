@@ -7,6 +7,16 @@ import {
 } from "../../utils/test-utils"
 
 import { Foo } from "./entity/foo.entity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7110: Typeorm Migrations ignore existing default value on column`", () => {
     describe("double type conversion in default value", () => {

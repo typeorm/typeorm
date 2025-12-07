@@ -10,6 +10,16 @@ import { Post as MysqlPost } from "./entity/mysql/Post"
 import { Post as PostgresPost } from "./entity/postgres/Post"
 import { Post as OraclePost } from "./entity/oracle/Post"
 import { Post as SqlitePost } from "./entity/sqlite/Post"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@UpdateDateColumn timestamp column to same definition", () => {
     describe("postgres", () => {

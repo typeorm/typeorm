@@ -5,6 +5,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { SomeEntity, CreationMechanism } from "./entity/SomeEntity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #3076 Postgres enum in schema with default is recreated in every new generated migration", () => {
     let connections: DataSource[]

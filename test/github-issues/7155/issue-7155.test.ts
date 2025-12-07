@@ -27,6 +27,16 @@ import {
     SqlServerSingleIdMaterialized,
     SqlServerSingleIdNested,
 } from "./entity/SqlServerTreeEntities"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7155", () => {
     let connections: DataSource[]

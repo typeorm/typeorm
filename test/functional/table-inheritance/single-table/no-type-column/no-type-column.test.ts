@@ -9,6 +9,16 @@ import { Author } from "./entity/Author"
 import { Employee } from "./entity/Employee"
 import { PostItNote } from "./entity/PostItNote"
 import { StickyNote } from "./entity/StickyNote"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("table-inheritance > single-table > no-type-column", () => {
     let connections: DataSource[]

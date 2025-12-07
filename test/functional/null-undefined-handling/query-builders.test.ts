@@ -8,7 +8,16 @@ import {
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("query builder > invalidWhereValuesBehavior", () => {
     let connections: DataSource[]

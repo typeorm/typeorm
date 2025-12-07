@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { Order } from "./entity/order.entity.ts"
 import { OrderProduct } from "./entity/order-product.entity.ts"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #6540 Enum not resolved if it is from an external file", () => {
     let connections: DataSource[]

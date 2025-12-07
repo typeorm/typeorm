@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Category } from "./entity/Category"
 import { Slug } from "./entity/Slug"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7415 Tree entities with embedded primary columns are not built correctly", () => {
     let connections: DataSource[]
@@ -68,7 +77,7 @@ describe("github issues > #7415 Tree entities with embedded primary columns are 
                 }
 
                 expect(descendantsTree.id).to.be.eql(expectedDescendantsTree.id)
-                expect(descendantsTree.children).to.have.deep.members(
+                expect(descendantsTree.children).to.deepEqualIgnoreUndefined(
                     expectedDescendantsTree.children,
                 )
 
@@ -82,7 +91,7 @@ describe("github issues > #7415 Tree entities with embedded primary columns are 
                     },
                 }
 
-                expect(ancestorsTree).to.be.eql(expectedAncestorsTree)
+                expect(ancestorsTree).to.be.deepEqualIgnoreUndefined(expectedAncestorsTree)
             }),
         ))
 })

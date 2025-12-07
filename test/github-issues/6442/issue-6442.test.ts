@@ -10,6 +10,16 @@ import { fail } from "assert"
 import { Query } from "../../../src/driver/Query"
 import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #6442 JoinTable does not respect inverseJoinColumns referenced column width", () => {
     let connections: DataSource[]

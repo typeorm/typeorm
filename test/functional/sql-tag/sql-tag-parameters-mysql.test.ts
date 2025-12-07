@@ -5,7 +5,16 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DataSource } from "../../../src"
 
 describe("sql tag parameters (mysql)", () => {
@@ -53,7 +62,7 @@ describe("sql tag parameters (mysql)", () => {
                 const ids = examples.map((e: MysqlExample) => e.id)
 
                 expect(examples).to.have.length(2)
-                expect(ids).to.have.members(["first", "second"])
+                expect(ids).to.be.deepEqualIgnoreUndefined(["first", "second"])
             }),
         ))
 
@@ -99,7 +108,7 @@ describe("sql tag parameters (mysql)", () => {
                 const ids = examples.map((e: MysqlExample) => e.id)
 
                 expect(examples).to.have.length(1)
-                expect(ids).to.have.members(["null1"])
+                expect(ids).to.be.deepEqualIgnoreUndefined(["null1"])
             }),
         ))
 
@@ -122,7 +131,7 @@ describe("sql tag parameters (mysql)", () => {
                 const ids = examples.map((e: MysqlExample) => e.id)
 
                 expect(examples).to.have.length(1)
-                expect(ids).to.have.members(["true1"])
+                expect(ids).to.be.deepEqualIgnoreUndefined(["true1"])
             }),
         ))
 
@@ -146,7 +155,7 @@ describe("sql tag parameters (mysql)", () => {
                     (e: MysqlExample) => e.tags?.split(",") ?? [],
                 )
 
-                expect(tags).to.have.members(["tag1", "tag2", "tag3", "tag4"])
+                expect(tags).to.be.deepEqualIgnoreUndefined(["tag1", "tag2", "tag3", "tag4"])
             }),
         ))
 })

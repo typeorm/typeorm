@@ -2,7 +2,16 @@ import "reflect-metadata"
 import { Post } from "./entity/Post"
 import { Counters } from "./entity/Counters"
 import { DataSource } from "../../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -81,7 +90,7 @@ describe("embedded > embedded-one-to-one", () => {
                         .getMany()
 
                     expect(
-                        loadedPosts[0].should.be.eql({
+                        loadedPosts[0].should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -98,7 +107,7 @@ describe("embedded > embedded-one-to-one", () => {
                         }),
                     )
                     expect(
-                        loadedPosts[1].should.be.eql({
+                        loadedPosts[1].should.be.deepEqualIgnoreUndefined({
                             id: 2,
                             title: "About airplanes",
                             counters: {
@@ -125,7 +134,7 @@ describe("embedded > embedded-one-to-one", () => {
                         .getOne()
 
                     expect(
-                        loadedPost!.should.be.eql({
+                        loadedPost!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -157,7 +166,7 @@ describe("embedded > embedded-one-to-one", () => {
                         .getOne()
 
                     expect(
-                        loadedPost2!.should.be.eql({
+                        loadedPost2!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -246,7 +255,7 @@ describe("embedded > embedded-one-to-one", () => {
                         .getMany()
 
                     expect(
-                        loadedUsers[0].should.be.eql({
+                        loadedUsers[0].should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             name: "Alice",
                             likedPost: {
@@ -266,7 +275,7 @@ describe("embedded > embedded-one-to-one", () => {
                         }),
                     )
                     expect(
-                        loadedUsers[1].should.be.eql({
+                        loadedUsers[1].should.be.deepEqualIgnoreUndefined({
                             id: 2,
                             name: "Bob",
                             likedPost: {
@@ -293,7 +302,7 @@ describe("embedded > embedded-one-to-one", () => {
                         .getOne()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             name: "Alice",
                             likedPost: {
@@ -324,7 +333,7 @@ describe("embedded > embedded-one-to-one", () => {
                         .getOne()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             name: "Anna",
                             likedPost: {

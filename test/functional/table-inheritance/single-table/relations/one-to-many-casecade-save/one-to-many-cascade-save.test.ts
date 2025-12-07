@@ -4,7 +4,16 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../../utils/test-utils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DataSource } from "../../../../../../src/data-source/DataSource"
 import { Faculty } from "./entity/Faculty"
 import { Professor } from "./entity/Professor"

@@ -7,6 +7,16 @@ import {
 } from "../../utils/test-utils"
 import { Order } from "./entity/order"
 import { OrderTestEntity } from "./entity/order-test.entity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7651 Enum that contains functions is not accordingly translated to SQL", () => {
     describe("entity", () => {

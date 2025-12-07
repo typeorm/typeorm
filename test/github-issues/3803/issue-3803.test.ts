@@ -6,7 +6,16 @@ import {
 import { DataSource } from "../../../src"
 import { EntitySchema } from "../../../src"
 import { Post, PostSchema } from "./entity/Post"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #3803 column option unique sqlite error", () => {

@@ -8,6 +8,16 @@ import { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { EntitySchema } from "../../../../../src"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 /**
  * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.

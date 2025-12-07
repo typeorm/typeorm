@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../src"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1720 Listener not invoked when relation loaded through getter", () => {
     let connections: DataSource[]

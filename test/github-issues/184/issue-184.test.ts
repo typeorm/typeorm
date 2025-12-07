@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Employee } from "./entity/Employee"
 import { Person } from "./entity/Person"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #184 [Postgres] Single-Inheritance not working with integer type field", () => {
     let connections: DataSource[]

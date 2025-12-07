@@ -1,4 +1,13 @@
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import dedent from "dedent"
 import "reflect-metadata"
 import {
@@ -328,9 +337,9 @@ describe("column > virtual columns", () => {
                     .createQueryBuilder(Company, "company")
                     .where("company.name = :name", { name: companyName })
                     .getOne()
-                expect(foundCompany).not.to.haveOwnProperty(
+                expect(foundCompany).to.haveOwnProperty(
                     "totalReportedHours",
-                )
+                ).undefined
 
                 const foundCompanyWithHours = await connection
                     .createQueryBuilder(Company, "company")

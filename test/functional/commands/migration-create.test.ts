@@ -15,6 +15,16 @@ import { CommandUtils } from "../../../src/commands/CommandUtils"
 import { MigrationCreateCommand } from "../../../src/commands/MigrationCreateCommand"
 import { Post } from "./entity/Post"
 import { resultsTemplates } from "./templates/result-templates-create"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("commands - migration create", () => {
     let connectionOptions: DataSourceOptions[]

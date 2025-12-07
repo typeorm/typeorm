@@ -4,7 +4,16 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { DataSource, TypeORMError } from "../../../src"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #9189 check invalid constraint options", () => {
     let dataSources: DataSource[] = []

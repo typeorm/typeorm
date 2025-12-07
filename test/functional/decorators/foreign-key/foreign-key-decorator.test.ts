@@ -10,6 +10,16 @@ import { Country } from "./entity/country"
 import { Order } from "./entity/order"
 import { User } from "./entity/user"
 import { WrongCity } from "./wrong-city"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("decorators > foreign-key", () => {
     let dataSources: DataSource[]

@@ -6,6 +6,16 @@ import {
 } from "../../../../utils/test-utils"
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe(`query builder > find with the global condition of "non-deleted"`, () => {
     let connections: DataSource[]

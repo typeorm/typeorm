@@ -7,6 +7,16 @@ import {
 } from "../../utils/test-utils"
 
 import { Foo } from "./entity/foo.entity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #5132: Default of -1 (minus 1) generates useless migrations`", () => {
     describe("-1 (minus 1) in default value", () => {

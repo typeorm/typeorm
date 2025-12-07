@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Cat } from "./entity/Cat"
 import { Dog } from "./entity/Dog"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #620 Feature Request: Flexibility in Foreign Key names", () => {
     let connections: DataSource[]

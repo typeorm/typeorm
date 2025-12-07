@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource, Table } from "../../../src"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #3379 Migration will keep create and drop indexes if index name is the same across tables", () => {
     let connections: DataSource[]

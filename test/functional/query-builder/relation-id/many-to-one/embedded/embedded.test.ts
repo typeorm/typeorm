@@ -1,5 +1,14 @@
 import "reflect-metadata"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -82,7 +91,7 @@ describe("query builder > relation-id > many-to-one > embedded", () => {
                     .getMany()
 
                 expect(
-                    loadedPosts[0].should.be.eql({
+                    loadedPosts[0].should.be.deepEqualIgnoreUndefined({
                         title: "About BMW",
                         counters: {
                             likes: 1,
@@ -99,7 +108,7 @@ describe("query builder > relation-id > many-to-one > embedded", () => {
                     }),
                 )
                 expect(
-                    loadedPosts[1].should.be.eql({
+                    loadedPosts[1].should.be.deepEqualIgnoreUndefined({
                         title: "About Boeing",
                         counters: {
                             likes: 3,

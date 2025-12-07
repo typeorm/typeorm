@@ -22,7 +22,16 @@ import {
 import { Post } from "./entity/Post"
 import { Raw } from "../../../../src/find-options/operator/Raw"
 import { PersonAR } from "./entity/PersonAR"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("repository > find options > operators", () => {
     let connections: DataSource[]

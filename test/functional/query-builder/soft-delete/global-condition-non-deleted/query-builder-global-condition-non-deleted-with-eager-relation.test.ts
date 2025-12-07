@@ -6,6 +6,16 @@ import {
 } from "../../../../utils/test-utils"
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import { PostWithRelation } from "./entity/PostWithRelation"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 // This test is neccessary because finding with eager relation will be run in the different way
 describe(`query builder > find with the global condition of "non-deleted" and eager relation`, () => {

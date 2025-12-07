@@ -6,7 +6,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { EntityNotFoundError } from "../../../src/error/EntityNotFoundError"
 
 describe("github issues > #2313 - BaseEntity has no findOneOrFail() method", () => {

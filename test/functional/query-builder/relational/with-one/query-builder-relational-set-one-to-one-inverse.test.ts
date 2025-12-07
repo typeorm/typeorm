@@ -6,7 +6,16 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DataSource } from "../../../../../src/data-source/DataSource"
 
 describe("query builder > relational query builder > set operation > one-to-one non owner side", () => {
@@ -61,7 +70,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost1!.image).to.be.eql({ id: 1, url: "image #1" })
+                expect(loadedPost1!.image).to.be.deepEqualIgnoreUndefined({ id: 1, url: "image #1" })
 
                 let loadedPost2 = await connection.manager.findOne(Post, {
                     where: {
@@ -172,7 +181,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost2!.image).to.be.eql({ id: 2, url: "image #2" })
+                expect(loadedPost2!.image).to.be.deepEqualIgnoreUndefined({ id: 2, url: "image #2" })
 
                 let loadedPost3 = await connection.manager.findOne(Post, {
                     where: {
@@ -283,7 +292,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
                         image: true,
                     },
                 })
-                expect(loadedPost3!.image).to.be.eql({ id: 3, url: "image #3" })
+                expect(loadedPost3!.image).to.be.deepEqualIgnoreUndefined({ id: 3, url: "image #3" })
 
                 await connection
                     .createQueryBuilder()

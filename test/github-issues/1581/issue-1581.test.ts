@@ -10,6 +10,16 @@ import { Product } from "./entity/Product"
 import { DeliverySlot } from "./entity/DeliverySlot"
 import { Order } from "./entity/Order"
 import { OrderItem } from "./entity/OrderItem"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe.skip("github issues > #1581 Composite key breaks OneToMany relation", () => {
     let connections: DataSource[]

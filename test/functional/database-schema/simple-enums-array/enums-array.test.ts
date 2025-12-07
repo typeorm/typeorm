@@ -12,6 +12,16 @@ import {
     HeterogeneousEnum,
     StringNumericEnum,
 } from "./entity/EnumArrayEntity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("database schema > simple enum arrays", () => {
     let connections: DataSource[]

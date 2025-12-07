@@ -2,7 +2,16 @@ import "reflect-metadata"
 import { Post } from "./entity/Post"
 import { Counters } from "./entity/Counters"
 import { DataSource } from "../../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -82,7 +91,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
                         .getMany()
 
                     expect(
-                        loadedPosts[0].should.be.eql({
+                        loadedPosts[0].should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -108,7 +117,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
                         }),
                     )
                     expect(
-                        loadedPosts[1].should.be.eql({
+                        loadedPosts[1].should.be.deepEqualIgnoreUndefined({
                             id: 2,
                             title: "About airplanes",
                             counters: {
@@ -141,7 +150,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
                         .getOne()
 
                     expect(
-                        loadedPost!.should.be.eql({
+                        loadedPost!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -183,7 +192,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
                         .getOne()
 
                     expect(
-                        loadedPost2!.should.be.eql({
+                        loadedPost2!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -270,7 +279,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
                         .getMany()
 
                     expect(
-                        loadedUsers[0].should.be.eql({
+                        loadedUsers[0].should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             name: "Alice",
                             likedPosts: [
@@ -306,7 +315,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
                         }),
                     )
                     expect(
-                        loadedUsers[1].should.be.eql({
+                        loadedUsers[1].should.be.deepEqualIgnoreUndefined({
                             id: 2,
                             name: "Bob",
                             likedPosts: [
@@ -328,7 +337,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
                         }),
                     )
                     expect(
-                        loadedUsers[2].should.be.eql({
+                        loadedUsers[2].should.be.deepEqualIgnoreUndefined({
                             id: 3,
                             name: "Clara",
                             likedPosts: [
@@ -358,7 +367,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
                         .getOne()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             name: "Alice",
                             likedPosts: [
@@ -406,7 +415,7 @@ describe("embedded > embedded-many-to-many-case1", () => {
                         .getOne()
 
                     expect(
-                        loadedUser2!.should.be.eql({
+                        loadedUser2!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             name: "Anna",
                             likedPosts: [

@@ -8,7 +8,16 @@ import {
 import { Book } from "./entity/Book"
 import { User } from "./entity/User"
 import { BorrowedSubscriber } from "./subscriber/BorrrowedSubscriber"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #9965", () => {
     let dataSources: DataSource[]

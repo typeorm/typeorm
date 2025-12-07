@@ -1,6 +1,13 @@
 import "reflect-metadata"
 import { DataSource } from "../../../src"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+} from "vitest"
 import {
     closeTestingConnections,
     createTestingConnections,
