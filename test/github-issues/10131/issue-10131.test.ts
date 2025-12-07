@@ -8,6 +8,16 @@ import {
 import { Example } from "./entity/Example"
 import { SqlServerDriver } from "../../../src/driver/sqlserver/SqlServerDriver"
 import sinon from "sinon"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #10131 optional to disable ascii to unicode parameter conversion", () => {
     let connections: DataSource[]

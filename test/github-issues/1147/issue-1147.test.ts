@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe.skip("github issues > #1147 FindOptions should be able to accept custom where condition", () => {
     let connections: DataSource[]

@@ -8,6 +8,16 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { Policy } from "./entity/Policy"
 import { Group } from "./entity/Group"
 import { PolicyGroup } from "./entity/PolicyGroup"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("other issues > composite keys doesn't work as expected in 0.3 compared to 0.2", () => {
     let connections: DataSource[]

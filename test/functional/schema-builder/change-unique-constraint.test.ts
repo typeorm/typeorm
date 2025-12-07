@@ -10,6 +10,16 @@ import {
 import { Post } from "./entity/Post"
 import { Teacher } from "./entity/Teacher"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("schema builder > change unique constraint", () => {
     let connections: DataSource[]

@@ -7,7 +7,16 @@ import {
 } from "../../../../utils/test-utils"
 import { Post } from "./entity/Post"
 import { PostWithUnderscoreId } from "./entity/PostWithUnderscoreId"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("mongodb > object id columns", () => {
     let connections: DataSource[]

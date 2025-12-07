@@ -6,7 +6,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { View } from "../../../src/schema-builder/view/View"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("query runner > create view", () => {
     let connections: DataSource[]

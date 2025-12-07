@@ -1,4 +1,13 @@
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DataSource, DeepPartial } from "../../../../../src"
 import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 import {

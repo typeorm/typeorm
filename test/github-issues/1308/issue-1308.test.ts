@@ -7,6 +7,16 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { EntitySchema } from "../../../src"
 import { Author, AuthorSchema } from "./entity/Author"
 import { Post, PostSchema } from "./entity/Post"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1308 Raw Postgresql Update query result is always an empty array", () => {
     let connections: DataSource[]

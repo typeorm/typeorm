@@ -8,7 +8,16 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/post.entity"
 import { Comment } from "./entity/comment"
 import { Value } from "./entity/value"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #9049 mongodb entities with 2 level-nested arrays throws an 'document[embedded.prefix].map is not a function' error", () => {
     let connections: DataSource[]

@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #2632 createQueryBuilder relation remove works only if using ID", () => {
     let connections: DataSource[]
@@ -51,10 +60,10 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
                     where: { id: 1 },
                     relations: { categories: true },
                 })
-                expect(loadedPost1!.categories).to.deep.include({
+                expect(loadedPost1!.categories).to.deepEqualIgnoreUndefined([{
                     id: 1,
                     title: "category #1",
-                })
+                }])
 
                 await connection
                     .createQueryBuilder()
@@ -78,10 +87,10 @@ describe("github issues > #2632 createQueryBuilder relation remove works only if
                     where: { id: 2 },
                     relations: { categories: true },
                 })
-                expect(loadedPost2!.categories).to.deep.include({
+                expect(loadedPost2!.categories).to.deepEqualIgnoreUndefined([{
                     id: 2,
                     title: "category #2",
-                })
+                }])
 
                 await connection
                     .createQueryBuilder()

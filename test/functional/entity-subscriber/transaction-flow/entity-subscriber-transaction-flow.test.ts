@@ -9,7 +9,16 @@ import {
 } from "../../../utils/test-utils"
 import { Example } from "../query-data/entity/Example"
 import sinon from "sinon"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("entity subscriber > transaction flow", () => {
     const beforeTransactionStart = sinon.spy()

@@ -7,6 +7,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("entity-model", () => {
     let connections: DataSource[]
@@ -115,7 +125,7 @@ describe("entity-model", () => {
             await post.reload()
 
             const assertReloadedCategory = Object.assign({}, post.categories[0])
-            assertReloadedCategory.should.be.eql({
+            assertReloadedCategory.should.be.deepEqualIgnoreUndefined({
                 id: 1,
                 name: "Persistence and Entity",
             })
@@ -135,7 +145,7 @@ describe("entity-model", () => {
             post1.externalId = "some external id 1"
             await post1.save()
 
-            post1.should.be.eql({
+            post1.should.be.deepEqualIgnoreUndefined({
                 id: 1,
                 title: "About ActiveRecord 1",
                 text: "This is default text.",
@@ -143,7 +153,7 @@ describe("entity-model", () => {
             })
             await post1.reload()
 
-            post1.should.be.eql({
+            post1.should.be.deepEqualIgnoreUndefined({
                 id: 1,
                 title: "About ActiveRecord 1",
                 text: "This is default text.",
@@ -156,7 +166,7 @@ describe("entity-model", () => {
             post2.externalId = "some external id 2"
             await post2.save()
 
-            post2.should.be.eql({
+            post2.should.be.deepEqualIgnoreUndefined({
                 id: 2,
                 title: "About ActiveRecord 2",
                 text: "This is default text.",
@@ -164,7 +174,7 @@ describe("entity-model", () => {
             })
             await post2.reload()
 
-            post2.should.be.eql({
+            post2.should.be.deepEqualIgnoreUndefined({
                 id: 2,
                 title: "About ActiveRecord 2",
                 text: "This is default text.",

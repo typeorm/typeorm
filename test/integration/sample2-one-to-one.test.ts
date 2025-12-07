@@ -1,5 +1,14 @@
 import "reflect-metadata"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DataSource } from "../../src/data-source/DataSource"
 import { Repository } from "../../src/repository/Repository"
 import { PostDetails } from "../../sample/sample2-one-to-one/entity/PostDetails"
@@ -36,7 +45,10 @@ describe("one-to-one", function () {
         await dataSource.initialize()
     })
 
-    after(() => dataSource.destroy())
+    after(async () => {
+        if (!dataSource) return
+        await dataSource.destroy()
+    })
 
     // clean up database before each test
     function reloadDatabase() {

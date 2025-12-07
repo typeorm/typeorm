@@ -6,6 +6,16 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../test/utils/test-utils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #6947 Custom primary column for TreeRepository based entities unable to get tree descendants", () => {
     let connections: DataSource[]
@@ -39,7 +49,7 @@ describe("github issues > #6947 Custom primary column for TreeRepository based e
                     }))!,
                 )
 
-                tree.should.deep.include({
+                tree.should.deepEqualIgnoreUndefined({
                     cat_id: 1,
                     cat_name: "parent",
                     children: [

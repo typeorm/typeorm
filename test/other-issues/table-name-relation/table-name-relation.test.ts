@@ -11,6 +11,16 @@ import { User } from "./entity/User"
 import { Profile } from "./entity/Profile"
 import { Category } from "./entity/Category"
 import { Question } from "./entity/Question"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("other issues > Relation decorators: allow to pass given table name string instead of typeFunction or entity name", () => {
     let connections: DataSource[]
@@ -42,7 +52,7 @@ describe("other issues > Relation decorators: allow to pass given table name str
                     relations: { profile: true },
                 })
 
-                users.should.eql([
+                users.should.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "Joe Smith",
@@ -84,7 +94,8 @@ describe("other issues > Relation decorators: allow to pass given table name str
                 })
 
                 // Check one-to-many
-                users[0].photos.should.have.deep.members([
+                // We need to sort because the initial order is undeterminable if we don't provide order key
+                users[0].photos.sort((a, b) => a.id - b.id).should.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         url: "me.jpg",
@@ -96,10 +107,11 @@ describe("other issues > Relation decorators: allow to pass given table name str
                 ])
 
                 // Check many-to-one
-                photos.should.have.deep.members([
+                photos.should.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         url: "me.jpg",
+                        photots: undefined,
                         user: {
                             id: 1,
                             name: "John",
@@ -108,6 +120,7 @@ describe("other issues > Relation decorators: allow to pass given table name str
                     {
                         id: 2,
                         url: "me-and-bears.jpg",
+                        photots: undefined,
                         user: {
                             id: 1,
                             name: "John",
@@ -137,7 +150,7 @@ describe("other issues > Relation decorators: allow to pass given table name str
                     relations: { categories: true },
                 })
 
-                questions[0].categories.should.have.deep.members([
+                questions[0].categories.should.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "animals",

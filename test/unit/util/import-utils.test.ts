@@ -1,4 +1,13 @@
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import fs from "fs/promises"
 import path from "path"
 import { strict as assert } from "assert"
@@ -8,7 +17,7 @@ import fsAsync from "fs"
 import { importOrRequireFile } from "../../../src/util/ImportUtils"
 
 describe("ImportUtils.importOrRequireFile", () => {
-    it("should import .js file as ESM", async () => {
+    it.sequential("should import .js file as ESM", async () => {
         const testDir = path.join(__dirname, "testJsEsm")
         const srcDir = path.join(testDir, "src")
 
@@ -47,7 +56,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         await fs.rm(testDir, { recursive: true, force: true })
     })
 
-    it("should import .js file as CommonJS", async () => {
+    it.sequential("should import .js file as CommonJS", async () => {
         const testDir = path.join(__dirname, "testJsCommonJs")
         const srcDir = path.join(testDir, "src")
 
@@ -88,7 +97,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         await fs.rm(testDir, { recursive: true, force: true })
     })
 
-    it("should import .mjs file as ESM", async () => {
+    it.sequential("should import .mjs file as ESM", async () => {
         const testDir = path.join(__dirname, "testMjsEsm")
         const srcDir = path.join(testDir, "src")
 
@@ -119,7 +128,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         await fs.rm(testDir, { recursive: true, force: true })
     })
 
-    it("should import .cjs file as CommonJS", async () => {
+    it.sequential("should import .cjs file as CommonJS", async () => {
         const testDir = path.join(__dirname, "testCjsCommonJs")
         const srcDir = path.join(testDir, "src")
 
@@ -152,7 +161,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         await fs.rm(testDir, { recursive: true, force: true })
     })
 
-    it("should import .json file as CommonJS", async () => {
+    it.sequential("should import .json file as CommonJS", async () => {
         const testDir = path.join(__dirname, "testJsonCommonJS")
 
         const jsonFilePath = path.join(testDir, "file.json")
@@ -181,7 +190,7 @@ describe("ImportUtils.importOrRequireFile", () => {
         await fs.rm(testDir, { recursive: true, force: true })
     })
 
-    it("Should use cache to find package.json", async () => {
+    it.sequential("Should use cache to find package.json", async () => {
         // Create package.json if not exists
         const packageJsonPath = path.join(__dirname, "package.json")
         const packageJsonAlreadyExisted = fsAsync.existsSync(packageJsonPath)

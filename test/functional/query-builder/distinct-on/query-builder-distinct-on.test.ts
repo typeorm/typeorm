@@ -1,5 +1,14 @@
 import "reflect-metadata"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -119,7 +128,7 @@ describe("query builder > distinct on", () => {
                     .distinctOn(["category.author"])
                     .getMany()
 
-                expect(result.map(({ author }) => author)).to.have.members([
+                expect(result.map(({ author }) => author)).to.be.deepEqualIgnoreUndefined([
                     "Dion",
                     "Zelda",
                 ])
@@ -164,7 +173,7 @@ describe("query builder > distinct on", () => {
                     .distinctOn(["post.author", "category.author"])
                     .getMany()
 
-                expect(result.map(({ author }) => author)).to.have.members([
+                expect(result.map(({ author }) => author)).to.be.deepEqualIgnoreUndefined([
                     "Dion",
                     "Pablo",
                     "Sarah",

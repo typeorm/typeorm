@@ -1,4 +1,13 @@
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import "reflect-metadata"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { Repository } from "../../../../src/repository/Repository"
@@ -22,7 +31,10 @@ describe("persistence > custom-column-names", function () {
 
         dataSource = new DataSource(options)
     })
-    after(() => dataSource.close())
+    after(async () => {
+        if (!dataSource) return;
+        await dataSource.close()
+    })
 
     // clean up database before each test
     function reloadDatabase() {

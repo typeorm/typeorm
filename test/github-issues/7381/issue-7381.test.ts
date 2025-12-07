@@ -4,6 +4,16 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { PushLog } from "./entity/PushLog"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7381 Infinite same ALTERs upon startup (mysql, ver 0.2.30)", () => {
     let connections: DataSource[]

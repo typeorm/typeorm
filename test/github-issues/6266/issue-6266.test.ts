@@ -9,6 +9,16 @@ import { Post } from "./entity/Post"
 import sinon from "sinon"
 import { SelectQueryBuilder } from "../../../src"
 import { assert } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #6266 Many identical selects after insert bunch of items", () => {
     let connections: DataSource[]

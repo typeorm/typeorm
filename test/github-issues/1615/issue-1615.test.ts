@@ -4,6 +4,16 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1615 Datetime2 with any precision result in datetime2(7) in database", () => {
     let connections: DataSource[]

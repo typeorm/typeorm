@@ -7,6 +7,16 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { EntitySchema, In } from "../../../src"
 import { Author, AuthorSchema } from "./entity/Author"
 import { Post, PostSchema } from "./entity/Post"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #4156 QueryExpressionMap doesn't clone all values correctly", () => {
     let connections: DataSource[]

@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { Photo } from "./entity/Photo"
 import { User } from "./entity/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #3997 synchronize=true always failing when using decimal column type with a foreign key constraint", () => {
     let connections: DataSource[]

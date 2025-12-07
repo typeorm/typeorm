@@ -8,6 +8,16 @@ import {
 import { Table } from "../../../src/schema-builder/table/Table"
 import { TableIndex } from "../../../src/schema-builder/table/TableIndex"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("query runner > create index", () => {
     let connections: DataSource[]

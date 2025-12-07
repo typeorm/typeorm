@@ -6,7 +6,16 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { Information } from "./entity/Information"
 
 describe("mongodb > embeddeds indices", () => {

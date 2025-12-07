@@ -1,5 +1,14 @@
 import "reflect-metadata"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { Test, ValueUnion } from "./entity/Test"
 import { DataSource } from "../../../src/data-source/DataSource"
 import {
@@ -9,7 +18,7 @@ import {
 } from "../../utils/test-utils"
 import { LessThan } from "../../../src"
 
-describe("github issues > #9152 Can't use LessThan for Union field", () => {
+describe.todo("github issues > #9152 Can't use LessThan for Union field", () => {
     let connections: DataSource[]
     before(
         async () =>

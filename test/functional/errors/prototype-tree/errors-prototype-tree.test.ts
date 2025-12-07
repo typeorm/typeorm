@@ -1,4 +1,13 @@
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 import { AlreadyHasActiveConnectionError } from "../../../../src/error/AlreadyHasActiveConnectionError"
 import { CannotGetEntityManagerNotConnectedError } from "../../../../src/error/CannotGetEntityManagerNotConnectedError"

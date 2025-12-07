@@ -5,6 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Limit, MyTable } from "./entity/my-table.entity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #8644 BUG - Special keyword column name for simple-enum in sqlite", () => {
     let connections: DataSource[]

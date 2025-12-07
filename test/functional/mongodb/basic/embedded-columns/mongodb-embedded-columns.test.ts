@@ -10,7 +10,16 @@ import { Counters } from "./entity/Counters"
 import { Information } from "./entity/Information"
 import { ExtraInformation } from "./entity/ExtraInformation"
 import { EditHistory } from "./entity/EditHistory"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("mongodb > embedded columns", () => {
     let connections: DataSource[]

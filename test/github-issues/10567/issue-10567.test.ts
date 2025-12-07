@@ -4,6 +4,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/index.js"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #10567 Postgres: Gist index on daterange column recreated every migration", () => {
     let dataSources: DataSource[]

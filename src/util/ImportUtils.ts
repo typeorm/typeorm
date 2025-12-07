@@ -2,19 +2,36 @@ import fs from "fs/promises"
 import path from "path"
 import { pathToFileURL } from "url"
 
+/**
+ *
+ * @param filePath
+ */
 export async function importOrRequireFile(
     filePath: string,
 ): Promise<[any, "esm" | "commonjs"]> {
     const tryToImport = async (): Promise<[any, "esm"]> => {
         // `Function` is required to make sure the `import` statement wil stay `import` after
         // transpilation and won't be converted to `require`
-        return [
+        let importResult;
+        const importPath = filePath.startsWith("file://")
+                ? filePath
+                : pathToFileURL(filePath).toString();
+        try {
             // eslint-disable-next-line @typescript-eslint/no-implied-eval
-            await Function("return filePath => import(filePath)")()(
-                filePath.startsWith("file://")
-                    ? filePath
-                    : pathToFileURL(filePath).toString(),
-            ),
+            importResult = await Function("return filePath => import(filePath)")()(
+                importPath
+            )
+        } catch {
+            // Note: it doesn't work
+            // try {
+            //     // This one should work with modern environments
+            //     importResult = await import(importPath);
+            // } catch {
+            //     throw new Error(`There's no way I can import ${filePath}`)
+            // }
+        };
+        return [
+            importResult,
             "esm",
         ]
     }
@@ -43,6 +60,11 @@ export async function importOrRequireFile(
 const packageJsonCache = new Map<string, object | null>()
 const MAX_CACHE_SIZE = 1000
 
+/**
+ *
+ * @param paths
+ * @param packageJson
+ */
 function setPackageJsonCache(paths: string[], packageJson: object | null) {
     for (const path of paths) {
         // Simple LRU-like behavior: if we're at capacity, remove oldest entry
@@ -57,6 +79,10 @@ function setPackageJsonCache(paths: string[], packageJson: object | null) {
     }
 }
 
+/**
+ *
+ * @param filePath
+ */
 async function getNearestPackageJson(filePath: string): Promise<object | null> {
     let currentPath = filePath
     const paths: string[] = []

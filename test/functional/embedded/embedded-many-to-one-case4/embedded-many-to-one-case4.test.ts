@@ -2,7 +2,16 @@ import "reflect-metadata"
 import { Post } from "./entity/Post"
 import { Counters } from "./entity/Counters"
 import { DataSource } from "../../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -84,7 +93,7 @@ describe("embedded > embedded-many-to-one-case4", () => {
                         .getMany()
 
                     expect(
-                        loadedPosts[0].should.be.eql({
+                        loadedPosts[0].should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -105,7 +114,7 @@ describe("embedded > embedded-many-to-one-case4", () => {
                         }),
                     )
                     expect(
-                        loadedPosts[1].should.be.eql({
+                        loadedPosts[1].should.be.deepEqualIgnoreUndefined({
                             id: 2,
                             title: "About airplanes",
                             counters: {
@@ -132,7 +141,7 @@ describe("embedded > embedded-many-to-one-case4", () => {
                         .getOne()
 
                     expect(
-                        loadedPost!.should.be.eql({
+                        loadedPost!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -168,7 +177,7 @@ describe("embedded > embedded-many-to-one-case4", () => {
                         .getOne()
 
                     expect(
-                        loadedPost!.should.be.eql({
+                        loadedPost!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             title: "About cars",
                             counters: {
@@ -262,7 +271,7 @@ describe("embedded > embedded-many-to-one-case4", () => {
                         .getMany()
 
                     expect(
-                        loadedUsers[0].should.be.eql({
+                        loadedUsers[0].should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             personId: 1,
                             name: "Alice",
@@ -299,7 +308,7 @@ describe("embedded > embedded-many-to-one-case4", () => {
                         }),
                     )
                     expect(
-                        loadedUsers[1].should.be.eql({
+                        loadedUsers[1].should.be.deepEqualIgnoreUndefined({
                             id: 2,
                             personId: 2,
                             name: "Bob",
@@ -330,7 +339,7 @@ describe("embedded > embedded-many-to-one-case4", () => {
                         .getOne()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             personId: 1,
                             name: "Alice",
@@ -379,7 +388,7 @@ describe("embedded > embedded-many-to-one-case4", () => {
                         .getOne()
 
                     expect(
-                        loadedUser!.should.be.eql({
+                        loadedUser!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             personId: 1,
                             name: "Anna",

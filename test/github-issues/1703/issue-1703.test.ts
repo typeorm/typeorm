@@ -8,6 +8,16 @@ import { DataSource } from "../../../src"
 import { UserEntity } from "./entity/UserEntity"
 import { UserToOrganizationEntity } from "./entity/UserToOrganizationEntity"
 import { OrganizationEntity } from "./entity/OrganizationEntity"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1703 Many to Many with association table returns odd values.", () => {
     let connections: DataSource[]

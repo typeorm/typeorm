@@ -6,7 +6,16 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DataSource } from "../../../../../src/data-source/DataSource"
 
 describe("query builder > relational with many > add and remove many to many", () => {
@@ -173,7 +182,7 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 2 },
                     relations: { images: true },
                 })
-                expect(loadedPost2!.images).to.not.contain({
+                expect(loadedPost2!.images).to.not.deep.contain({
                     id: 2,
                     url: "image #2",
                 })
@@ -262,7 +271,7 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.not.contain({
+                expect(loadedPost3!.images).to.not.deep.contain({
                     id: 3,
                     url: "image #3",
                 })
@@ -407,7 +416,7 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.deep.include({
+                expect(loadedPost3!.images).to.deep.include({ 
                     id: 1,
                     url: "image #1",
                 })
@@ -438,11 +447,11 @@ describe("query builder > relational with many > add and remove many to many", (
                     where: { id: 3 },
                     relations: { images: true },
                 })
-                expect(loadedPost3!.images).to.not.contain({
+                expect(loadedPost3!.images).to.not.deep.contain({
                     id: 1,
                     url: "image #1",
                 })
-                expect(loadedPost3!.images).to.not.contain({
+                expect(loadedPost3!.images).to.not.deep.contain({
                     id: 3,
                     url: "image #3",
                 })

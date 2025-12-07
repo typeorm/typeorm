@@ -1,6 +1,15 @@
 import "reflect-metadata"
 import fs from "fs/promises"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import {
     closeTestingConnections,
     createTestingConnections,

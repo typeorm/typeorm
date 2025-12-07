@@ -6,7 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { AccessEvent } from "./entity/AccessEvent"
 import { Employee } from "./entity/Employee"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7283 Generating Migration on ManyToOne/OneToMany + Primary enum column results in missing enum type in migration output", () => {
     let connections: DataSource[]

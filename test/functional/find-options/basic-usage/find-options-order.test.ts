@@ -8,7 +8,16 @@ import {
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
 import { prepareData } from "./find-options-test-utils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("find options > order", () => {
     let connections: DataSource[]
@@ -34,7 +43,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts1.should.be.eql([
+                posts1.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -69,7 +78,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts2.should.be.eql([
+                posts2.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -104,7 +113,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts3.should.be.eql([
+                posts3.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -141,7 +150,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts4.should.be.eql([
+                posts4.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -176,7 +185,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts5.should.be.eql([
+                posts5.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 4,
                         title: "Post #4",
@@ -211,7 +220,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts6.should.be.eql([
+                posts6.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 4,
                         title: "Post #4",
@@ -246,7 +255,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts7.should.be.eql([
+                posts7.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 4,
                         title: "Post #4",
@@ -283,7 +292,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts8.should.be.eql([
+                posts8.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 4,
                         title: "Post #4",
@@ -325,7 +334,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 4,
                         title: "Post #4",
@@ -368,7 +377,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 4,
                         title: "Post #4",
@@ -412,17 +421,11 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts.should.have.deep.members([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 3,
                         title: "Post #3",
                         text: "About post #3",
-                        counters: { likes: 1 },
-                    },
-                    {
-                        id: 4,
-                        title: "Post #4",
-                        text: "About post #4",
                         counters: { likes: 1 },
                     },
                     {
@@ -436,6 +439,12 @@ describe("find options > order", () => {
                         title: "Post #2",
                         text: "About post #2",
                         counters: { likes: 2 },
+                    },
+                    {
+                        id: 4,
+                        title: "Post #4",
+                        text: "About post #4",
+                        counters: { likes: 1 },
                     },
                 ])
                 expect(posts[0].id).to.be.eql(3)
@@ -466,7 +475,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         title: "Post #1",
@@ -510,7 +519,7 @@ describe("find options > order", () => {
                     })
                     .getMany()
                 // exact row order depends of settings like NULLS FIRST and NULLS LAST
-                posts.should.have.deep.members([
+                posts.should.deepEqualIgnoreUndefined([
                     {
                         id: 3,
                         title: "Post #3",
@@ -554,7 +563,7 @@ describe("find options > order", () => {
                     })
                     .getMany()
                 // exact row order depends of settings like NULLS FIRST and NULLS LAST
-                posts.should.have.deep.members([
+                posts.should.deepEqualIgnoreUndefined([
                     {
                         id: 4,
                         title: "Post #4",
@@ -603,7 +612,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts.should.be.eql([
+                posts.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 2,
                         title: "Post #2",
@@ -652,7 +661,7 @@ describe("find options > order", () => {
                         },
                     })
                     .getMany()
-                posts.should.have.deep.members([
+                posts.should.deepEqualIgnoreUndefined([
                     {
                         id: 3,
                         title: "Post #3",

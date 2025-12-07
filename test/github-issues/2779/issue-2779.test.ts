@@ -5,7 +5,16 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { Role } from "./set"
 
 describe("github issues > #2779 Could we add support for the MySQL/MariaDB SET data type?", () => {

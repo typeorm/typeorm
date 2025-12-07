@@ -8,6 +8,16 @@ import { TestEntity } from "./entity/Test"
 import { ViewA } from "./entity/ViewA"
 import { ViewB } from "./entity/ViewB"
 import { ViewC } from "./entity/ViewC"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #7586 Oddly indexed views are not dropped in migration", () => {
     let connections: DataSource[]

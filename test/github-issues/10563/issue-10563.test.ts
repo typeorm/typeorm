@@ -7,6 +7,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Dog } from "./entity/family"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #10653 Default value in child table/entity column decorator for multiple table inheritance is ignored for inherited columns", () => {
     let dataSources: DataSource[]

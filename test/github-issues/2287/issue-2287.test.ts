@@ -6,6 +6,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #2287 - QueryBuilder IN and ANY Fail with .where - Postgres", () => {
     let connections: DataSource[]

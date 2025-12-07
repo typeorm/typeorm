@@ -6,7 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { Author } from "./entity/Author"
 import { Book } from "./entity/Book"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #4980 (Postgres) onUpdate: 'CASCADE' doesn't work on many-to-many relation", () => {
     let connections: DataSource[]

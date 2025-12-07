@@ -7,6 +7,16 @@ import {
 } from "../../utils/test-utils"
 import { Table } from "../../../src/schema-builder/table/Table"
 import { TableUnique } from "../../../src/schema-builder/table/TableUnique"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("query runner > create unique constraint", () => {
     let connections: DataSource[]

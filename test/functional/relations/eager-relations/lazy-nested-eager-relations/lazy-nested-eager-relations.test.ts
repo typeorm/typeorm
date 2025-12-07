@@ -10,7 +10,16 @@ import { Profile } from "./entity/Profile"
 import { Editor } from "./entity/Editor"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("relations > eager relations > lazy nested eager relations", () => {
     let connections: DataSource[]
@@ -76,7 +85,7 @@ describe("relations > eager relations > lazy nested eager relations", () => {
 
                 const loadedPost = await loadedEditor?.post
 
-                expect(loadedPost?.categories1).to.have.deep.members([
+                expect(loadedPost?.categories1).to.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "primary category #1",
@@ -87,7 +96,7 @@ describe("relations > eager relations > lazy nested eager relations", () => {
                     },
                 ])
 
-                expect(loadedPost?.categories2).to.have.deep.members([
+                expect(loadedPost?.categories2).to.deepEqualIgnoreUndefined([
                     {
                         id: 3,
                         name: "secondary category #1",
@@ -98,7 +107,7 @@ describe("relations > eager relations > lazy nested eager relations", () => {
                     },
                 ])
 
-                expect(loadedPost?.author).to.deep.equal({
+                expect(loadedPost?.author).to.deepEqualIgnoreUndefined({
                     id: 1,
                     firstName: "Timber",
                     lastName: "Saw",
@@ -108,7 +117,7 @@ describe("relations > eager relations > lazy nested eager relations", () => {
                     },
                 })
 
-                expect(loadedPost?.editors).to.have.deep.members([
+                expect(loadedPost?.editors).to.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         user: {

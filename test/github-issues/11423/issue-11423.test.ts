@@ -1,4 +1,13 @@
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { DataSource, Repository } from "../../../src"
 import { PostgresConnectionOptions } from "../../../src/driver/postgres/PostgresConnectionOptions"
 import {

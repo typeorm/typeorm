@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { Car } from "./entity/Car"
 import { Plane } from "./entity/Plane"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #2800 - Can't override embedded entities in STI implementation", () => {
     let connections: DataSource[]

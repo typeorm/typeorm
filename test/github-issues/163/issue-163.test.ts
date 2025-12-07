@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Game } from "./entity/Game"
 import { Platform } from "./entity/Platform"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #163 ManyToMany relation : Cannot read property 'joinColumnName' of undefined", () => {
     let connections: DataSource[]
@@ -65,7 +74,7 @@ describe("github issues > #163 ManyToMany relation : Cannot read property 'joinC
                     .getOne()
 
                 expect(completePlatform).not.to.be.null
-                completePlatform!.should.be.eql({
+                completePlatform!.should.be.deepEqualIgnoreUndefined({
                     id: platform.id,
                     name: "Windows",
                     slug: "windows",

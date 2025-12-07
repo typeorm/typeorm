@@ -5,7 +5,16 @@ import {
 } from "../../utils/test-utils"
 import { UserProfile } from "./entity/UserProfile"
 import { User } from "./entity/User"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #8485 second migration is generated for a combination of PrimaryColumn and JoinColumn", () => {
     let dataSources: DataSource[]

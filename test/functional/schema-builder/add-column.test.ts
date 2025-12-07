@@ -8,6 +8,16 @@ import {
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("schema builder > add column", () => {
     let connections: DataSource[]

@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("persistence > multi primary keys", () => {
     let connections: DataSource[]
@@ -30,7 +40,7 @@ describe("persistence > multi primary keys", () => {
 
                     await connection.manager.save(post1)
 
-                    post1.should.be.eql({
+                    post1.should.be.deepEqualIgnoreUndefined({
                         firstId: 1,
                         secondId: 2,
                         title: "Hello Post #1",
@@ -57,7 +67,7 @@ describe("persistence > multi primary keys", () => {
                         },
                     })
 
-                    posts.should.be.eql([
+                    posts.should.be.deepEqualIgnoreUndefined([
                         {
                             firstId: 1,
                             secondId: 2,

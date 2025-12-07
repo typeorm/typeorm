@@ -8,6 +8,16 @@ import {
 import { Product } from "./entity/Product"
 import { Ticket } from "./entity/Ticket"
 import { TicketProduct } from "./entity/TicketProduct"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #2298 - Repository filtering not considering related columns as filter", () => {
     let connections: DataSource[]
@@ -81,7 +91,7 @@ describe("github issues > #2298 - Repository filtering not considering related c
                     },
                 })
 
-                loadedTicket.should.be.eql([
+                loadedTicket.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 2,
                         shopId: "myshopId1",

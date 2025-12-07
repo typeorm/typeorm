@@ -23,6 +23,16 @@ import questionSchema from "./model-schema/QuestionSchema"
 import userSchema from "./model-schema/UserSchema"
 import { Question } from "./model/Question"
 import { User } from "./model/User"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("repository > basic methods", () => {
     const UserEntity = new EntitySchema<any>(userSchema as any)

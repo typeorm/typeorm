@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import { EntityMetadata } from "../../../../../src/metadata/EntityMetadata"
 import { IndexMetadata } from "../../../../../src/metadata/IndexMetadata"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { PersonSchema } from "./entity/Person"
 
 describe("entity-schema > indices > basic", () => {

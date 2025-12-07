@@ -12,6 +12,16 @@ import { Post } from "./entity/Post"
 import { Photo } from "./entity/Photo"
 import { Counters } from "./entity/Counters"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("repository > find options > relations", () => {
     // -------------------------------------------------------------------------
@@ -106,7 +116,7 @@ describe("repository > find options > relations", () => {
                             id: 1,
                         },
                     })
-                loadedPost!.should.be.eql({
+                loadedPost!.should.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "About Timber",
                     counters: {

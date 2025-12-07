@@ -6,6 +6,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Post } from "./entity/Post"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #3949 sqlite date hydration is susceptible to corruption", () => {
     let connections: DataSource[]

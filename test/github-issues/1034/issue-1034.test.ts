@@ -7,7 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { Circle } from "./entity/Circle"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #1034 Issue using setter with promises", () => {
     let connections: DataSource[]

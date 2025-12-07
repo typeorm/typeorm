@@ -4,7 +4,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #9457 No changes in database schema were found, when simple-enum is changed.", () => {
     let dataSources: DataSource[]

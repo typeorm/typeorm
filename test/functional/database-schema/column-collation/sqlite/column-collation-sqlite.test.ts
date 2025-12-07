@@ -6,6 +6,16 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 // skipped because there is no way to get column collation from SQLite table schema
 describe.skip("database schema > column collation > sqlite", () => {

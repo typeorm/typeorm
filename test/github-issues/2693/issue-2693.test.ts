@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Migration } from "../../../src/migration/Migration"
 import { QueryFailedError } from "../../../src/error/QueryFailedError"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #2875 Option to run migrations in 1-transaction-per-migration mode", () => {
     let connections: DataSource[]

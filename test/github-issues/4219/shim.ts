@@ -1,7 +1,7 @@
 let _Shim: any
 try {
     // We're in /test
-    _Shim = require("../../../../extra/typeorm-class-transformer-shim")
+    _Shim = require("../../../extra/typeorm-class-transformer-shim")
 } catch {
     // We're in /build/compiled/test
     _Shim = require("../../../../../extra/typeorm-class-transformer-shim")

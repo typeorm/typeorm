@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { Category } from "./entity/Category"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #904 Using closure tables without @TreeLevelColumn will always fail on insert", () => {
     let connections: DataSource[]
@@ -49,7 +59,7 @@ describe("github issues > #904 Using closure tables without @TreeLevelColumn wil
                 await categoryRepository.save(c12)
 
                 const roots = await categoryRepository.findRoots()
-                roots.should.be.eql([
+                roots.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -66,7 +76,7 @@ describe("github issues > #904 Using closure tables without @TreeLevelColumn wil
 
                 const c1Tree = await categoryRepository.findDescendantsTree(c1)
                 c1Tree.should.be.equal(c1)
-                c1Tree!.should.be.eql({
+                c1Tree!.should.be.deepEqualIgnoreUndefined({
                     id: 3,
                     name: "c1",
                     childCategories: [
@@ -118,7 +128,7 @@ describe("github issues > #904 Using closure tables without @TreeLevelColumn wil
                 // await categoryRepository.save(c12);
 
                 const roots = await categoryRepository.findRoots()
-                roots.should.be.eql([
+                roots.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -135,7 +145,7 @@ describe("github issues > #904 Using closure tables without @TreeLevelColumn wil
 
                 const c1Tree = await categoryRepository.findDescendantsTree(c1)
                 c1Tree.should.be.equal(c1)
-                c1Tree!.should.be.eql({
+                c1Tree!.should.be.deepEqualIgnoreUndefined({
                     id: 3,
                     name: "c1",
                     childCategories: [
@@ -185,7 +195,7 @@ describe("github issues > #904 Using closure tables without @TreeLevelColumn wil
                 await categoryRepository.save(c1)
 
                 const tree = await categoryRepository.findTrees()
-                tree!.should.be.eql([
+                tree!.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",

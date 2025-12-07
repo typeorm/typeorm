@@ -7,6 +7,16 @@ import {
 import { DataSource } from "../../../src"
 import { Simple } from "./entity/Simple"
 import { Complex } from "./entity/Complex"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #2103 query builder regression", () => {
     let connections: DataSource[]

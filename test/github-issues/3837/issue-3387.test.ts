@@ -5,9 +5,17 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { Table } from "../../../src"
-import { xfail } from "../../utils/xfail"
 
 describe("github issues > #3837 named columns", () => {
     let connections: DataSource[]
@@ -21,9 +29,9 @@ describe("github issues > #3837 named columns", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    xfail
-        .unless(() => connections.length > 0)
-        .it("should allow inserting named columns", () =>
+    it.skipIf(() => connections.length === 0).fails(
+        "should allow inserting named columns",
+        () =>
             Promise.all(
                 connections.map(async (connection) => {
                     // Create the categories table.

@@ -6,6 +6,16 @@ import {
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
 import { Photo } from "./entity/Photo"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #2044 Should not double get embedded column value", () => {
     let connections: DataSource[]

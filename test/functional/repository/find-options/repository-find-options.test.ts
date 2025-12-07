@@ -1,4 +1,13 @@
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import fs from "fs/promises"
 import "reflect-metadata"
 import sinon from "sinon"
@@ -46,7 +55,7 @@ describe("repository > find options", () => {
                 const [loadedPost] = await connection.getRepository(Post).find({
                     relations: { author: true, categories: true },
                 })
-                expect(loadedPost).to.be.eql({
+                expect(loadedPost).to.be.deepEqualIgnoreUndefined({
                     id: 1,
                     title: "About Alex Messer",
                     author: {
@@ -150,18 +159,18 @@ describe("repository > find options", () => {
                 //     .leftJoin("photo.categories", "category")
                 //     .getMany();
 
-                expect(loadedPhoto).to.be.eql({
+                expect(loadedPhoto).to.be.deepEqualIgnoreUndefined({
                     name: "Me and Bears 5",
                 })
 
-                expect(loadedPhotos1).to.have.deep.members(
+                expect(loadedPhotos1).to.deepEqualIgnoreUndefined(
                     photos.map((photo) => ({
                         filename: photo.filename,
                         views: photo.views,
                     })),
                 )
 
-                expect(loadedPhotos2).to.have.deep.members(
+                expect(loadedPhotos2).to.deepEqualIgnoreUndefined(
                     photos.map((photo) => ({
                         id: photo.id,
                         name: photo.name,
@@ -170,7 +179,7 @@ describe("repository > find options", () => {
                     })),
                 )
 
-                // expect(loadedPhotos3).to.have.deep.members(photos.map(photo => ({
+                // expect(loadedPhotos3).to.deepEqualIgnoreUndefined(photos.map(photo => ({
                 //     name: photo.name,
                 //     description: photo.description,
                 //     categories: categories.map(category => ({
@@ -203,7 +212,7 @@ describe("repository > find options", () => {
                         },
                     })
 
-                expect(loadedCategories1).to.be.eql([
+                expect(loadedCategories1).to.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "Bears",
@@ -224,7 +233,7 @@ describe("repository > find options", () => {
                         order: { id: "ASC" },
                     })
 
-                expect(loadedCategories2).to.be.eql([
+                expect(loadedCategories2).to.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "Bears",

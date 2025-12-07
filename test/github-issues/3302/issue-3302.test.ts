@@ -8,6 +8,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { PlatformTools } from "../../../src/platform/PlatformTools"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #3302 Tracking query time for slow queries and statsd timers", () => {
     let connections: DataSource[]
@@ -21,12 +31,14 @@ describe("github issues > #3302 Tracking query time for slow queries and statsd 
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
         })
+    })
+    beforeEach(async () => {
         sandbox = sinon.createSandbox()
         stub = sandbox.stub(PlatformTools, "appendFileSync")
+        await reloadTestingDatabases(connections)
     })
-    beforeEach(() => reloadTestingDatabases(connections))
     afterEach(async () => {
-        stub.resetHistory()
+        stub?.resetHistory()
         sandbox.restore()
         await closeTestingConnections(connections)
     })

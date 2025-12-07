@@ -5,7 +5,16 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Connection } from "../../../src/connection/Connection"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { User } from "../8796/entity/User"
 
 describe("github issues > #8796 New find select object api should support false values as expected", () => {
@@ -51,7 +60,7 @@ describe("github issues > #8796 New find select object api should support false 
                     },
                 })
 
-                expect(foundUser[0]).to.deep.equal(expectedUser)
+                expect(foundUser[0]).to.deepEqualIgnoreUndefined(expectedUser)
             }),
         ))
 })

@@ -1,5 +1,14 @@
 import { isAbsolute, toPortablePath } from "../../../src/util/PathUtils"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import { withPlatform } from "../../utils/test-utils"
 
 describe(`path-utils`, () => {

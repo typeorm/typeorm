@@ -6,8 +6,16 @@ import {
 } from "../../utils/test-utils"
 
 import { DataSource } from "../../../src/data-source/DataSource"
-import { afterEach } from "mocha"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach
+} from "vitest"
 
 describe("github issues > #4956 create typeorm_metatable when running migrations.", () => {
     let connections: DataSource[]

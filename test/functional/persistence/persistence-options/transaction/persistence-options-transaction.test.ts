@@ -7,7 +7,16 @@ import {
 import { Post } from "./entity/Post"
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import sinon from "sinon"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("persistence > persistence options > transaction", () => {
     // -------------------------------------------------------------------------

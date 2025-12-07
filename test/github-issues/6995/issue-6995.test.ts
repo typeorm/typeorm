@@ -5,6 +5,16 @@ import {
     closeTestingConnections,
 } from "../../utils/test-utils"
 import { DefaultUpdateDate } from "./entity/default-update-date"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #6995 Generating migrations for UpdateDateColumn should generate on update clause", () => {
     let connections: DataSource[]

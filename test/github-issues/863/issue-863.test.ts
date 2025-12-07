@@ -8,6 +8,16 @@ import { DataSource } from "../../../src/data-source/DataSource"
 
 import { Master } from "./entities/master"
 import { Detail } from "./entities/detail"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #863 indices > create schema", () => {
     let connections: DataSource[]

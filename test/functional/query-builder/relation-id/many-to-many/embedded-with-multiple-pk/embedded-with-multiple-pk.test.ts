@@ -1,5 +1,14 @@
 import "reflect-metadata"
-import { expect } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -106,7 +115,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         .getMany()
 
                     expect(
-                        loadedPosts[0].should.be.eql({
+                        loadedPosts[0].should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             title: "About BMW",
                             counters: {
@@ -130,7 +139,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         }),
                     )
                     expect(
-                        loadedPosts[1].should.be.eql({
+                        loadedPosts[1].should.be.deepEqualIgnoreUndefined({
                             id: 2,
                             title: "About Boeing",
                             counters: {
@@ -169,7 +178,7 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         .getOne()
 
                     expect(
-                        loadedPost!.should.be.eql({
+                        loadedPost!.should.be.deepEqualIgnoreUndefined({
                             id: 1,
                             title: "About BMW",
                             counters: {
@@ -285,23 +294,23 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         .orderBy("category.id")
                         .getMany()
 
-                    expect(loadedCategories[0].postIds).to.not.be.eql([])
+                    expect(loadedCategories[0].postIds).to.not.be.deepEqualIgnoreUndefined([])
                     expect(loadedCategories[0].postIds.length).to.be.equal(2)
-                    expect(loadedCategories[0].postIds[0]).to.be.eql({
+                    expect(loadedCategories[0].postIds[0]).to.be.deepEqualIgnoreUndefined({
                         id: 1,
                         counters: { code: 111, subcntrs: { version: 1 } },
                     })
-                    expect(loadedCategories[0].postIds[1]).to.be.eql({
+                    expect(loadedCategories[0].postIds[1]).to.be.deepEqualIgnoreUndefined({
                         id: 2,
                         counters: { code: 222, subcntrs: { version: 1 } },
                     })
-                    expect(loadedCategories[1].postIds).to.not.be.eql([])
+                    expect(loadedCategories[1].postIds).to.not.be.deepEqualIgnoreUndefined([])
                     expect(loadedCategories[1].postIds.length).to.be.equal(2)
-                    expect(loadedCategories[1].postIds[0]).to.be.eql({
+                    expect(loadedCategories[1].postIds[0]).to.be.deepEqualIgnoreUndefined({
                         id: 3,
                         counters: { code: 333, subcntrs: { version: 2 } },
                     })
-                    expect(loadedCategories[1].postIds[1]).to.be.eql({
+                    expect(loadedCategories[1].postIds[1]).to.be.deepEqualIgnoreUndefined({
                         id: 4,
                         counters: { code: 444, subcntrs: { version: 3 } },
                     })
@@ -316,13 +325,13 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         .andWhere("category.name = :name", { name: "cars" })
                         .getOne()
 
-                    expect(loadedCategory!.postIds).to.not.be.eql([])
+                    expect(loadedCategory!.postIds).to.not.be.deepEqualIgnoreUndefined([])
                     expect(loadedCategory!.postIds.length).to.be.equal(2)
-                    expect(loadedCategory!.postIds[0]).to.be.eql({
+                    expect(loadedCategory!.postIds[0]).to.be.deepEqualIgnoreUndefined({
                         id: 1,
                         counters: { code: 111, subcntrs: { version: 1 } },
                     })
-                    expect(loadedCategory!.postIds[1]).to.be.eql({
+                    expect(loadedCategory!.postIds[1]).to.be.deepEqualIgnoreUndefined({
                         id: 2,
                         counters: { code: 222, subcntrs: { version: 1 } },
                     })
@@ -333,23 +342,23 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         .orderBy("user.id")
                         .getMany()
 
-                    expect(loadedUsers[0].postIds).to.not.be.eql([])
+                    expect(loadedUsers[0].postIds).to.not.be.deepEqualIgnoreUndefined([])
                     expect(loadedUsers[0].postIds.length).to.be.equal(2)
-                    expect(loadedUsers[0].postIds[0]).to.be.eql({
+                    expect(loadedUsers[0].postIds[0]).to.be.deepEqualIgnoreUndefined({
                         id: 1,
                         counters: { code: 111, subcntrs: { version: 1 } },
                     })
-                    expect(loadedUsers[0].postIds[1]).to.be.eql({
+                    expect(loadedUsers[0].postIds[1]).to.be.deepEqualIgnoreUndefined({
                         id: 2,
                         counters: { code: 222, subcntrs: { version: 1 } },
                     })
-                    expect(loadedUsers[1].postIds).to.not.be.eql([])
+                    expect(loadedUsers[1].postIds).to.not.be.deepEqualIgnoreUndefined([])
                     expect(loadedUsers[1].postIds.length).to.be.equal(2)
-                    expect(loadedUsers[1].postIds[0]).to.be.eql({
+                    expect(loadedUsers[1].postIds[0]).to.be.deepEqualIgnoreUndefined({
                         id: 3,
                         counters: { code: 333, subcntrs: { version: 2 } },
                     })
-                    expect(loadedUsers[1].postIds[1]).to.be.eql({
+                    expect(loadedUsers[1].postIds[1]).to.be.deepEqualIgnoreUndefined({
                         id: 4,
                         counters: { code: 444, subcntrs: { version: 3 } },
                     })
@@ -361,13 +370,13 @@ describe("query builder > relation-id > many-to-many > embedded-with-multiple-pk
                         .andWhere("user.name = :name", { name: "Alice" })
                         .getOne()
 
-                    expect(loadedUser!.postIds).to.not.be.eql([])
+                    expect(loadedUser!.postIds).to.not.be.deepEqualIgnoreUndefined([])
                     expect(loadedUser!.postIds.length).to.be.equal(2)
-                    expect(loadedUser!.postIds[0]).to.be.eql({
+                    expect(loadedUser!.postIds[0]).to.be.deepEqualIgnoreUndefined({
                         id: 1,
                         counters: { code: 111, subcntrs: { version: 1 } },
                     })
-                    expect(loadedUser!.postIds[1]).to.be.eql({
+                    expect(loadedUser!.postIds[1]).to.be.deepEqualIgnoreUndefined({
                         id: 2,
                         counters: { code: 222, subcntrs: { version: 1 } },
                     })

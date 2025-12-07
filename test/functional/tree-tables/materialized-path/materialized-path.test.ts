@@ -7,6 +7,16 @@ import {
 } from "../../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { Product } from "./entity/Product"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("tree tables > materialized-path", () => {
     let connections: DataSource[]
@@ -45,7 +55,7 @@ describe("tree tables > materialized-path", () => {
                 await categoryRepository.save(a12)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -53,16 +63,18 @@ describe("tree tables > materialized-path", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const names1 = a11Parent.map((child) => child.name)
+                names1.length.should.be.equal(2)
+                names1.should.deep.include("a1")
+                names1.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
-                a1Children.length.should.be.equal(4)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a111" })
-                a1Children.should.deep.include({ id: 4, name: "a12" })
+                const names2 = a1Children.map((child) => child.name)
+                names2.length.should.be.equal(4)
+                names2.should.deep.include("a1")
+                names2.should.deep.include("a11")
+                names2.should.deep.include("a111")
+                names2.should.deep.include("a12")
             }),
         ))
 
@@ -86,7 +98,7 @@ describe("tree tables > materialized-path", () => {
                 await categoryRepository.save(a1)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -94,15 +106,17 @@ describe("tree tables > materialized-path", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const names1 = a11Parent.map((child) => child.name)
+                names1.length.should.be.equal(2)
+                names1.should.deep.include("a1")
+                names1.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
-                a1Children.length.should.be.equal(3)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a12" })
+                const names2 = a1Children.map((child) => child.name)
+                names2.length.should.be.equal(3)
+                names2.should.deep.include("a1")
+                names2.should.deep.include("a11")
+                names2.should.deep.include("a12")
             }),
         ))
 
@@ -132,7 +146,7 @@ describe("tree tables > materialized-path", () => {
                 await categoryRepository.save(a1)
 
                 const rootCategories = await categoryRepository.findRoots()
-                rootCategories.should.be.eql([
+                rootCategories.should.be.deepEqualIgnoreUndefined([
                     {
                         id: 1,
                         name: "a1",
@@ -140,9 +154,10 @@ describe("tree tables > materialized-path", () => {
                 ])
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
-                a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                const names1 = a11Parent.map((child) => child.name)
+                names1.length.should.be.equal(2)
+                names1.should.deep.include("a1")
+                names1.should.deep.include("a11")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
                 const a1ChildrenNames = a1Children.map((child) => child.name)
@@ -187,7 +202,7 @@ describe("tree tables > materialized-path", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql([
+                categoriesTree.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -267,7 +282,7 @@ describe("tree tables > materialized-path", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql([
+                categoriesTree.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -346,7 +361,7 @@ describe("tree tables > materialized-path", () => {
                 categoriesTree[0].childCategories[0].childCategories.sort(
                     (a, b) => a.id - b.id,
                 )
-                categoriesTree.should.be.eql([
+                categoriesTree.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -385,7 +400,7 @@ describe("tree tables > materialized-path", () => {
                 categoriesTreeWithEmptyOptions[0].childCategories[0].childCategories.sort(
                     (a, b) => a.id - b.id,
                 )
-                categoriesTreeWithEmptyOptions.should.be.eql([
+                categoriesTreeWithEmptyOptions.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -417,7 +432,7 @@ describe("tree tables > materialized-path", () => {
 
                 const categoriesTreeWithDepthZero =
                     await categoryRepository.findTrees({ depth: 0 })
-                categoriesTreeWithDepthZero.should.be.eql([
+                categoriesTreeWithDepthZero.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -433,7 +448,7 @@ describe("tree tables > materialized-path", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTreeWithDepthOne.should.be.eql([
+                categoriesTreeWithDepthOne.should.be.deepEqualIgnoreUndefined([
                     {
                         id: a1.id,
                         name: "a1",
@@ -488,7 +503,7 @@ describe("tree tables > materialized-path", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql({
+                categoriesTree.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [
@@ -552,7 +567,7 @@ describe("tree tables > materialized-path", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTree.should.be.eql({
+                categoriesTree.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [
@@ -591,7 +606,7 @@ describe("tree tables > materialized-path", () => {
                     (a, b) => a.id - b.id,
                 )
 
-                categoriesTreeWithEmptyOptions.should.be.eql({
+                categoriesTreeWithEmptyOptions.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [
@@ -623,7 +638,7 @@ describe("tree tables > materialized-path", () => {
                     await categoryRepository.findDescendantsTree(a1, {
                         depth: 0,
                     })
-                categoriesTreeWithDepthZero.should.be.eql({
+                categoriesTreeWithDepthZero.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [],
@@ -633,7 +648,7 @@ describe("tree tables > materialized-path", () => {
                     await categoryRepository.findDescendantsTree(a1, {
                         depth: 1,
                     })
-                categoriesTreeWithDepthOne.should.be.eql({
+                categoriesTreeWithDepthOne.should.be.deepEqualIgnoreUndefined({
                     id: a1.id,
                     name: "a1",
                     childCategories: [

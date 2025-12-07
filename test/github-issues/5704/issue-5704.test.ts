@@ -8,6 +8,16 @@ import { DataSource } from "../../../src"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { assert } from "chai"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("github issues > #5704 Many-to-many gives error ER_DUP_ENTRY everytime I save. This one also related to inverseJoinColumn.", () => {
     let connections: DataSource[]

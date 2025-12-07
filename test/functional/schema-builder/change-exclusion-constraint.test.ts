@@ -8,6 +8,16 @@ import {
 import { Teacher } from "./entity/Teacher"
 import { Post } from "./entity/Post"
 import { ExclusionMetadata } from "../../../src/metadata/ExclusionMetadata"
+import {
+    expect,
+    describe,
+    afterAll,
+    it,
+    beforeAll as before,
+    beforeEach,
+    afterAll as after,
+    afterEach,
+} from "vitest"
 
 describe("schema builder > change exclusion constraint", () => {
     let connections: DataSource[]
