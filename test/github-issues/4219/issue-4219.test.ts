@@ -4,7 +4,7 @@ import { plainToClass } from "class-transformer"
 import { Photo } from "./entity/Photo"
 import { User } from "./entity/User"
 
-describe.todo("github issues > #4219 class-transformer-shim: support metadata reflection", () => {
+describe.skip("github issues > #4219 class-transformer-shim: support metadata reflection", () => {
     it("should create instances with the correct property types", () => {
         const photoLiteral = {
             url: "typeorm.io",
