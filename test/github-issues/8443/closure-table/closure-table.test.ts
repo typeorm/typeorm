@@ -58,14 +58,18 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
                 a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                a11Parent.sort((a, b) => a.id - b.id).should.deepEqualIgnoreUndefined([
+                    { id: 1, name: "a1" },
+                    { id: 2, name: "a11" },
+                ])
 
                 const a1Children = await categoryRepository.findDescendants(a1)
                 a1Children.length.should.be.equal(3)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a12" })
+                a1Children.sort((a, b) => a.id - b.id).should.deepEqualIgnoreUndefined([
+                    { id: 1, name: "a1" },
+                    { id: 2, name: "a11" },
+                    { id: 3, name: "a12" },
+                ])
             }),
         ))
 
@@ -98,14 +102,18 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
                 a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                a11Parent.sort((a, b) => a.id - b.id).should.deepEqualIgnoreUndefined([
+                    { id: 1, name: "a1" },
+                    { id: 2, name: "a11" },
+                ])
 
                 const a1Children = await categoryRepository.findDescendants(a1)
                 a1Children.length.should.be.equal(3)
-                a1Children.should.deep.include({ id: 1, name: "a1" })
-                a1Children.should.deep.include({ id: 2, name: "a11" })
-                a1Children.should.deep.include({ id: 3, name: "a12" })
+                a1Children.sort((a, b) => a.id - b.id).should.deepEqualIgnoreUndefined([
+                    { id: 1, name: "a1" },
+                    { id: 2, name: "a11" },
+                    { id: 3, name: "a12" },
+                ])
             }),
         ))
 
@@ -144,8 +152,10 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
                 a11Parent.length.should.be.equal(2)
-                a11Parent.should.deep.include({ id: 1, name: "a1" })
-                a11Parent.should.deep.include({ id: 2, name: "a11" })
+                a11Parent.sort((a, b) => a.id - b.id).should.deepEqualIgnoreUndefined([
+                    { id: 1, name: "a1" },
+                    { id: 2, name: "a11" },
+                ])
 
                 const a1Children = await categoryRepository.findDescendants(a1)
                 const a1ChildrenNames = a1Children.map((child) => child.name)
