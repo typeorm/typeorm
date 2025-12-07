@@ -1268,8 +1268,7 @@ export class MysqlDriver implements Driver {
             connection.on("error", (error: any) =>
                 logger.log(
                     "warn",
-                    `
-        }MySQL connection raised an error. ${error}`,
+                    `MySQL connection raised an error. ${error}`,
                 ),
             )
         }
