@@ -130,7 +130,7 @@
     "@vitest/coverage-v8": "^4.0.15",
     "better-sqlite3": "^12.4.1",
     "c8": "^10.1.3",
-    "chai": "^6.2.0",
+    "chai": "^4.0.0",
     "chai-as-promised": "^8.0.2",
     "chai-deep-equal-ignore-undefined": "^1.1.1",
     "class-transformer": "^0.5.1",
