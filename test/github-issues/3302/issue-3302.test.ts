@@ -38,7 +38,7 @@ describe("github issues > #3302 Tracking query time for slow queries and statsd 
         await reloadTestingDatabases(connections)
     })
     afterEach(async () => {
-        stub.resetHistory()
+        stub?.resetHistory()
         sandbox.restore()
         await closeTestingConnections(connections)
     })

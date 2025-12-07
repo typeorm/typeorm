@@ -69,7 +69,6 @@ describe("query builder > relational with many > add and remove many to many inv
                 expect(loadedPost1!.images).to.deep.include({
                     id: 1,
                     url: "image #1",
-                    posts: undefined,
                 })
 
                 let loadedPost2 = await connection.manager.findOne(Post, {
@@ -97,7 +96,6 @@ describe("query builder > relational with many > add and remove many to many inv
                 expect(loadedPost1!.images).to.not.contain({
                     id: 1,
                     url: "image #1",
-                    posts: undefined,
                 })
 
                 loadedPost2 = await connection.manager.findOne(Post, {
@@ -160,7 +158,6 @@ describe("query builder > relational with many > add and remove many to many inv
                 expect(loadedPost2!.images).to.deep.include({
                     id: 2,
                     url: "image #2",
-                    posts: undefined,
                 })
 
                 let loadedPost3 = await connection.manager.findOne(Post, {
@@ -188,7 +185,6 @@ describe("query builder > relational with many > add and remove many to many inv
                 expect(loadedPost2!.images).to.not.contain({
                     id: 2,
                     url: "image #2",
-                    posts: undefined,
                 })
 
                 loadedPost3 = await connection.manager.findOne(Post, {
@@ -251,7 +247,6 @@ describe("query builder > relational with many > add and remove many to many inv
                 expect(loadedPost3!.images).to.deep.include({
                     id: 3,
                     url: "image #3",
-                    posts: undefined,
                 })
 
                 await connection
@@ -279,7 +274,6 @@ describe("query builder > relational with many > add and remove many to many inv
                 expect(loadedPost3!.images).to.not.contain({
                     id: 3,
                     url: "image #3",
-                    posts: undefined,
                 })
             }),
         ))
@@ -336,12 +330,10 @@ describe("query builder > relational with many > add and remove many to many inv
                 expect(loadedPost3!.images).to.deep.include({
                     id: 1,
                     url: "image #1",
-                    posts: undefined,
                 })
                 expect(loadedPost3!.images).to.deep.include({
                     id: 3,
                     url: "image #3",
-                    posts: undefined,
                 })
 
                 await connection
@@ -369,12 +361,10 @@ describe("query builder > relational with many > add and remove many to many inv
                 expect(loadedPost3!.images).to.not.contain({
                     id: 1,
                     url: "image #1",
-                    posts: undefined,
                 })
                 expect(loadedPost3!.images).to.not.contain({
                     id: 3,
                     url: "image #3",
-                    posts: undefined,
                 })
             }),
         ))
@@ -419,7 +409,6 @@ describe("query builder > relational with many > add and remove many to many inv
                 expect(loadedPost1!.images).to.deep.include({
                     id: 3,
                     url: "image #3",
-                    posts: undefined,
                 })
 
                 let loadedPost2 = await connection.manager.findOne(Post, {
@@ -435,7 +424,6 @@ describe("query builder > relational with many > add and remove many to many inv
                 expect(loadedPost3!.images).to.deep.include({
                     id: 3,
                     url: "image #3",
-                    posts: undefined,
                 })
 
                 await connection

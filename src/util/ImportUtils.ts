@@ -9,25 +9,35 @@ import { pathToFileURL } from "url"
 export async function importOrRequireFile(
     filePath: string,
 ): Promise<[any, "esm" | "commonjs"]> {
-    // FIXME VITEST
     const tryToImport = async (): Promise<[any, "esm"]> => {
         // `Function` is required to make sure the `import` statement wil stay `import` after
         // transpilation and won't be converted to `require`
-        return [
+        let importResult;
+        const importPath = filePath.startsWith("file://")
+                ? filePath
+                : pathToFileURL(filePath).toString();
+        try {
             // eslint-disable-next-line @typescript-eslint/no-implied-eval
-            await Function("return filePath => import(filePath)")()(
-                filePath.startsWith("file://")
-                    ? filePath
-                    : pathToFileURL(filePath).toString(),
-            ),
+            importResult = await Function("return filePath => import(filePath)")()(
+                importPath
+            )
+        } catch {
+            try {
+                // This one should work with modern environments
+                importResult = await import(importPath);
+            } catch {
+                throw new Error(`There's no way I can import ${filePath}`)
+            }
+        };
+        return [
+            importResult,
             "esm",
         ]
     }
-    const tryToRequire = (): [any, "esm"] => {
-        return [import(filePath), "esm"]
+    const tryToRequire = (): [any, "commonjs"] => {
+        return [require(filePath), "commonjs"]
     }
 
-    // FIXME VITEST
     const extension = filePath.substring(filePath.lastIndexOf(".") + ".".length)
 
     if (extension === "mjs" || extension === "mts") return tryToImport()

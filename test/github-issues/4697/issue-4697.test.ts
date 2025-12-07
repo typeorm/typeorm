@@ -22,7 +22,7 @@ describe("github issues > #4697 Revert migrations running in reverse order.", ()
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                migrations: [__dirname + "/migration/*.js"],
+                migrations: [__dirname + "/migration/*{.js,.ts}"],
                 enabledDrivers: ["mongodb"],
                 schemaCreate: true,
                 dropSchema: true,

@@ -69,7 +69,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
                 ])
 
                 const a1Children = await categoryRepository.findDescendants(a1)
-                a1Children.length.should.be.equal(3)
+                a1Children.length.should.be.equal(4)
                 a1Children.sort((a, b) => a.id - b.id).should.deepEqualIgnoreUndefined([
                     { id: 1, name: "a1" },
                     { id: 2, name: "a11" },

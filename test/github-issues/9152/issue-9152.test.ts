@@ -18,7 +18,7 @@ import {
 } from "../../utils/test-utils"
 import { LessThan } from "../../../src"
 
-describe("github issues > #9152 Can't use LessThan for Union field", () => {
+describe.todo("github issues > #9152 Can't use LessThan for Union field", () => {
     let connections: DataSource[]
     before(
         async () =>

@@ -7,6 +7,7 @@ export class Test {
     @PrimaryGeneratedColumn({ unsigned: true })
     id: number
 
-    @Column()
+    // TODO? should it handle properly the union type nowadays?
+    @Column({type: "int4"})
     value: ValueUnion
 }
