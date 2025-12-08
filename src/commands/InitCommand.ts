@@ -195,11 +195,7 @@ export class InitCommand implements yargs.CommandModule {
                 ]
                 break
             case "sqlite":
-            case "better-sqlite3":
-                dbSettings = [
-                    'type: "better-sqlite3"',
-                    'database: "database.sqlite"',
-                ]
+                dbSettings = ['type: "sqlite"', 'database: "database.sqlite"']
                 break
             case "postgres":
                 dbSettings = [
@@ -721,7 +717,6 @@ Steps to run this project:
                     ourPackageJson.devDependencies.pg
                 break
             case "sqlite":
-            case "better-sqlite3":
                 packageJson.dependencies["better-sqlite3"] =
                     ourPackageJson.devDependencies["better-sqlite3"]
                 break
