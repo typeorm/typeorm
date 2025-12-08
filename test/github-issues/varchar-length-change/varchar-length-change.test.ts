@@ -55,7 +55,7 @@ describe("github issues > varchar length change should use ALTER COLUMN TYPE (no
                 const metadata = connection.getMetadata(BugTestEntity)
                 const exampleColumn =
                     metadata.findColumnWithPropertyName("example")!
-                exampleColumn.length = 100
+                exampleColumn.length = "100"
                 exampleColumn.build(connection)
 
                 // Synchronize the schema - this should use ALTER COLUMN TYPE, not DROP/ADD
@@ -91,7 +91,7 @@ describe("github issues > varchar length change should use ALTER COLUMN TYPE (no
                 // Change from 50 to 100
                 let metadata = connection.getMetadata(BugTestEntity)
                 let exampleColumn = metadata.findColumnWithPropertyName("example")!
-                exampleColumn.length = 100
+                exampleColumn.length = "100"
                 exampleColumn.build(connection)
                 await connection.synchronize(false)
 
@@ -104,7 +104,7 @@ describe("github issues > varchar length change should use ALTER COLUMN TYPE (no
                 // Change from 100 to 255
                 metadata = connection.getMetadata(BugTestEntity)
                 exampleColumn = metadata.findColumnWithPropertyName("example")!
-                exampleColumn.length = 255
+                exampleColumn.length = "255"
                 exampleColumn.build(connection)
                 await connection.synchronize(false)
 
@@ -136,14 +136,14 @@ describe("github issues > varchar length change should use ALTER COLUMN TYPE (no
                 // Change from 50 to 100 first
                 let metadata = connection.getMetadata(BugTestEntity)
                 let exampleColumn = metadata.findColumnWithPropertyName("example")!
-                exampleColumn.length = 100
+                exampleColumn.length = "100"
                 exampleColumn.build(connection)
                 await connection.synchronize(false)
 
                 // Now decrease from 100 back to 50
                 metadata = connection.getMetadata(BugTestEntity)
                 exampleColumn = metadata.findColumnWithPropertyName("example")!
-                exampleColumn.length = 50
+                exampleColumn.length = "50"
                 exampleColumn.build(connection)
                 await connection.synchronize(false)
 
