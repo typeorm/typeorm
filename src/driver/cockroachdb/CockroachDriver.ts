@@ -826,7 +826,11 @@ export class CockroachDriver implements Driver {
 
         return new Promise((ok, fail) => {
             this.master.connect((err: any, connection: any, release: any) => {
-                err ? fail(err) : ok([connection, release])
+                if (err) {
+                    fail(err)
+                } else {
+                    ok([connection, release])
+                }
             })
         })
     }
@@ -844,7 +848,11 @@ export class CockroachDriver implements Driver {
         return new Promise((ok, fail) => {
             this.slaves[random].connect(
                 (err: any, connection: any, release: any) => {
-                    err ? fail(err) : ok([connection, release])
+                    if (err) {
+                        fail(err)
+                    } else {
+                        ok([connection, release])
+                    }
                 },
             )
         })
