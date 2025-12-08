@@ -59,6 +59,20 @@ jobs:
       - run: npm run lint
       - run: npm run format:ci
 
+  lock-file:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - run: npm install
+      - run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "package-lock.json is not up to date or was generated with a different npm version than the one shipped with Node.js $(cat .nvmrc)"
+            exit 1
+          fi
+
   docs:
     if: contains(needs.detect-changes.outputs.changes, 'docs')
     needs: detect-changes
@@ -126,6 +140,7 @@ jobs:
       - coverage
       - docs
       - formatting
+      - lock-file
       - tests-linux
       - tests-windows
     steps:
