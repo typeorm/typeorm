@@ -161,7 +161,6 @@
     "sort-package-json": "^3.4.0",
     "source-map-support": "^0.5.21",
     "sql.js": "^1.13.0",
-    "sqlite3": "^5.1.7",
     "standard-changelog": "^7.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
@@ -181,7 +180,6 @@
     "pg-query-stream": "^4.0.0",
     "redis": "^5.0.14",
     "sql.js": "^1.4.0",
-    "sqlite3": "^5.0.3",
     "ts-node": "^10.9.2",
     "typeorm-aurora-data-api-driver": "^3.0.0"
   },
@@ -223,9 +221,6 @@
       "optional": true
     },
     "sql.js": {
-      "optional": true
-    },
-    "sqlite3": {
       "optional": true
     },
     "ts-node": {

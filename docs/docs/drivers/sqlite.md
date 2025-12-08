@@ -2,12 +2,6 @@
 
 ## Installation
 
--   for **SQLite**:
-
-```shell
-npm install sqlite3
-```
-
 -   for **Better SQLite**:
 
 ```shell
@@ -25,10 +19,6 @@ npm install sql.js
 ## Data Source Options
 
 See [Data Source Options](../data-source/2-data-source-options.md) for the common data source options.
-
-### `sqlite` data source options
-
--   `database` - Database path. For example, "mydb.sql"
 
 ### `better-sqlite3` data source options
 

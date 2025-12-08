@@ -117,12 +117,6 @@ export class PlatformTools {
                     return require("better-sqlite3")
 
                 /**
-                 * sqlite
-                 */
-                case "sqlite3":
-                    return require("sqlite3")
-
-                /**
                  * sql.js
                  */
                 case "sql.js":

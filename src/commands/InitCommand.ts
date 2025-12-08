@@ -171,80 +171,96 @@ export class InitCommand implements yargs.CommandModule {
         isEsm: boolean,
         database: string,
     ): string {
-        let dbSettings = ""
+        let dbSettings: string[]
+
         switch (database) {
             case "mysql":
-                dbSettings = `type: "mysql",
-    host: "localhost",
-    port: 3306,
-    username: "test",
-    password: "test",
-    database: "test",`
+                dbSettings = [
+                    'type: "mysql"',
+                    'host: "localhost"',
+                    "port: 3306",
+                    'username: "test"',
+                    'password: "test"',
+                    'database: "test"',
+                ]
                 break
             case "mariadb":
-                dbSettings = `type: "mariadb",
-    host: "localhost",
-    port: 3306,
-    username: "test",
-    password: "test",
-    database: "test",`
+                dbSettings = [
+                    'type: "mariadb"',
+                    'host: "localhost"',
+                    "port: 3306",
+                    'username: "test"',
+                    'password: "test"',
+                    'database: "test"',
+                ]
                 break
             case "sqlite":
-                dbSettings = `type: "sqlite",
-    database: "database.sqlite",`
-                break
             case "better-sqlite3":
-                dbSettings = `type: "better-sqlite3",
-    database: "database.sqlite",`
+                dbSettings = [
+                    'type: "better-sqlite3"',
+                    'database: "database.sqlite"',
+                ]
                 break
             case "postgres":
-                dbSettings = `type: "postgres",
-    host: "localhost",
-    port: 5432,
-    username: "test",
-    password: "test",
-    database: "test",`
+                dbSettings = [
+                    'type: "postgres"',
+                    'host: "localhost"',
+                    "port: 5432",
+                    'username: "test"',
+                    'password: "test"',
+                    'database: "test"',
+                ]
                 break
             case "cockroachdb":
-                dbSettings = `type: "cockroachdb",
-    host: "localhost",
-    port: 26257,
-    username: "root",
-    password: "",
-    database: "defaultdb",`
+                dbSettings = [
+                    'type: "cockroachdb"',
+                    'host: "localhost"',
+                    "port: 26257",
+                    'username: "root"',
+                    'password: ""',
+                    'database: "defaultdb"',
+                ]
                 break
             case "mssql":
-                dbSettings = `type: "mssql",
-    host: "localhost",
-    username: "sa",
-    password: "Admin12345",
-    database: "tempdb",`
+                dbSettings = [
+                    'type: "mssql"',
+                    'host: "localhost"',
+                    'username: "sa"',
+                    'password: "Admin12345"',
+                    'database: "tempdb"',
+                ]
                 break
             case "oracle":
-                dbSettings = `type: "oracle",
-host: "localhost",
-username: "system",
-password: "oracle",
-port: 1521,
-sid: "xe.oracle.docker",`
+                dbSettings = [
+                    'type: "oracle"',
+                    'host: "localhost"',
+                    'username: "system"',
+                    'password: "oracle"',
+                    "port: 1521",
+                    'sid: "xe.oracle.docker"',
+                ]
                 break
             case "mongodb":
-                dbSettings = `type: "mongodb",
-    database: "test",`
+                dbSettings = ['type: "mongodb"', 'database: "test"']
                 break
             case "spanner":
-                dbSettings = `type: "spanner",
-    projectId: "test",
-    instanceId: "test",
-    databaseId: "test",`
+                dbSettings = [
+                    'type: "spanner"',
+                    'projectId: "test"',
+                    'instanceId: "test"',
+                    'databaseId: "test"',
+                ]
                 break
+            default:
+                throw new Error(`Unknown database "${database}"`)
         }
+
         return `import "reflect-metadata"
 import { DataSource } from "typeorm"
 import { User } from "./entity/User${isEsm ? ".js" : ""}"
 
 export const AppDataSource = new DataSource({
-    ${dbSettings}
+${dbSettings.map((s) => `  ${s},`).join("\n")}
     synchronize: true,
     logging: false,
     entities: [User],
@@ -598,10 +614,6 @@ AppDataSource.initialize().then(async () => {
       - "26257:26257"
 
 `
-            case "sqlite":
-            case "better-sqlite3":
-                return `services:
-`
             case "oracle":
                 throw new TypeORMError(
                     `You cannot initialize a project with docker for Oracle driver yet.`,
@@ -709,9 +721,6 @@ Steps to run this project:
                     ourPackageJson.devDependencies.pg
                 break
             case "sqlite":
-                packageJson.dependencies["sqlite3"] =
-                    ourPackageJson.devDependencies.sqlite3
-                break
             case "better-sqlite3":
                 packageJson.dependencies["better-sqlite3"] =
                     ourPackageJson.devDependencies["better-sqlite3"]
