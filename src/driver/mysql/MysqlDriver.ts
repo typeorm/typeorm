@@ -57,11 +57,6 @@ export class MysqlDriver implements Driver {
      */
     poolCluster: any
 
-    /**
-     * The actual connector package that was loaded ("mysql" or "mysql2").
-     */
-    private loadedConnectorPackage: "mysql" | "mysql2" | undefined
-
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
@@ -594,14 +589,6 @@ export class MysqlDriver implements Driver {
     }
 
     /**
-     * Checks if the driver is using mysql2 package.
-     */
-    protected isUsingMysql2(): boolean {
-        // Check which package was actually loaded during initialization
-        return this.loadedConnectorPackage === "mysql2"
-    }
-
-    /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
@@ -676,27 +663,19 @@ export class MysqlDriver implements Driver {
                 utc: columnMetadata.utc,
             })
         } else if (columnMetadata.type === "json") {
-            // mysql2 returns JSON values already parsed, but may still be a string
-            // if the JSON value itself is a string (e.g., "\"hello\"")
-            // mysql (classic) always returns JSON as strings that need parsing
-            if (this.isUsingMysql2()) {
-                // With mysql2, only parse if it's a valid JSON string representation
-                // but not if it's already an object or a JSON primitive
-                if (typeof value === "string") {
-                    try {
-                        // Try to parse it - if it fails, it's already a parsed string value
-                        const parsed = JSON.parse(value)
-                        value = parsed
-                    } catch {
-                        // It's a string that's not valid JSON, which means mysql2
-                        // already parsed it and it's just a string value
-                        // Keep value as is
-                    }
+            // mysql2 only parse if it's a valid JSON string representation
+            // but not if it's already an object or a JSON primitive
+            // If it's not a string, mysql2 has already parsed it correctly
+            if (typeof value === "string") {
+                try {
+                    // Try to parse it - if it fails, it's already a parsed string value
+                    const parsed = JSON.parse(value)
+                    value = parsed
+                } catch {
+                    // It's a string that's not valid JSON, which means mysql2
+                    // already parsed it and it's just a string value
+                    // Keep value as is
                 }
-                // If it's not a string, mysql2 has already parsed it correctly
-            } else {
-                // Classic mysql always returns JSON as strings
-                value = typeof value === "string" ? JSON.parse(value) : value
             }
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
@@ -1196,64 +1175,10 @@ export class MysqlDriver implements Driver {
      * Loads all driver dependencies.
      */
     protected loadDependencies(): void {
-        // Warn if driver is provided directly but connectorPackage is not specified
-        if (this.options.driver && !this.options.connectorPackage) {
-            console.warn(
-                "Warning: MySQL driver instance provided directly without specifying connectorPackage. " +
-                    "This may lead to unexpected JSON parsing behavior differences between mysql and mysql2. " +
-                    "Consider explicitly setting connectorPackage: 'mysql' or 'mysql2' in your configuration.",
-            )
-        }
-
-        const connectorPackage = this.options.connectorPackage ?? "mysql"
-        const fallbackConnectorPackage =
-            connectorPackage === "mysql"
-                ? ("mysql2" as const)
-                : ("mysql" as const)
         try {
-            // try to load first supported package
-            const mysql =
-                this.options.driver || PlatformTools.load(connectorPackage)
-            this.mysql = mysql
-            /*
-             * Some frameworks (such as Jest) may mess up Node's require cache and provide garbage for the 'mysql' module
-             * if it was not installed. We check that the object we got actually contains something otherwise we treat
-             * it as if the `require` call failed.
-             *
-             * @see https://github.com/typeorm/typeorm/issues/1373
-             */
-            if (Object.keys(this.mysql).length === 0) {
-                throw new TypeORMError(
-                    `'${connectorPackage}' was found but it is empty. Falling back to '${fallbackConnectorPackage}'.`,
-                )
-            }
-            // Successfully loaded the requested package
-            // If driver was provided directly, try to detect which package it is
-            if (this.options.driver && !this.options.connectorPackage) {
-                // Try to detect if it's mysql2 based on unique properties
-                if (
-                    this.mysql.version ||
-                    (this.mysql.Connection &&
-                        this.mysql.Connection.prototype.execute)
-                ) {
-                    this.loadedConnectorPackage = "mysql2"
-                } else {
-                    this.loadedConnectorPackage = "mysql"
-                }
-            } else {
-                this.loadedConnectorPackage = connectorPackage
-            }
+            this.mysql = this.options.driver || PlatformTools.load("mysql2")
         } catch (e) {
-            try {
-                this.mysql = PlatformTools.load(fallbackConnectorPackage) // try to load second supported package
-                // Successfully loaded the fallback package
-                this.loadedConnectorPackage = fallbackConnectorPackage
-            } catch (e) {
-                throw new DriverPackageNotInstalledError(
-                    "Mysql",
-                    connectorPackage,
-                )
-            }
+            throw new DriverPackageNotInstalledError("Mysql", "mysql2")
         }
     }
 
