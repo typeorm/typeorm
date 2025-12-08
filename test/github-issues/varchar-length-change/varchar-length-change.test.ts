@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../src"
+import { Column, Entity, PrimaryGeneratedColumn, TableColumn } from "../../../src"
 
 @Entity("bug_test_table")
 class BugTestEntity {
@@ -148,7 +148,7 @@ describe("github issues > varchar length change should use ALTER COLUMN TYPE (no
                 await connection.synchronize(false)
 
                 // Verify data preserved (since it fits in 50 chars)
-                let result = await queryRunner.query(
+                const result = await queryRunner.query(
                     `SELECT "example" FROM "bug_test_table" WHERE "id" = 1`,
                 )
                 expect(result[0].example).to.equal("Short")
