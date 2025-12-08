@@ -1099,7 +1099,12 @@ export class PostgresQueryRunner
                 new Query(
                     `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${
                         uniqueConstraint.name
-                    }" UNIQUE ("${column.name}")`,
+                    }" UNIQUE ${
+                        column.isNullsNotDistinct &&
+                        this.driver.isNullsNotDistinctSupported()
+                            ? "NULLS NOT DISTINCT"
+                            : ""
+                    } ("${column.name}")`,
                 ),
             )
             downQueries.push(
@@ -1851,7 +1856,10 @@ export class PostgresQueryRunner
                 }
             }
 
-            if (newColumn.isUnique !== oldColumn.isUnique) {
+            if (
+                newColumn.isUnique !== oldColumn.isUnique ||
+                newColumn.isNullsNotDistinct !== oldColumn.isNullsNotDistinct
+            ) {
                 if (newColumn.isUnique === true) {
                     const uniqueConstraint = new TableUnique({
                         name: this.connection.namingStrategy.uniqueConstraintName(
@@ -1867,7 +1875,12 @@ export class PostgresQueryRunner
                                 table,
                             )} ADD CONSTRAINT "${
                                 uniqueConstraint.name
-                            }" UNIQUE ("${newColumn.name}")`,
+                            }" UNIQUE ${
+                                newColumn.isNullsNotDistinct &&
+                                this.driver.isNullsNotDistinctSupported()
+                                    ? "NULLS NOT DISTINCT"
+                                    : ""
+                            } ("${newColumn.name}")`,
                         ),
                     )
                     downQueries.push(
@@ -3231,9 +3244,19 @@ export class PostgresQueryRunner
                       })
                       .join(" OR ")
 
+        // Postgres 15 introduced index nulls not distinct, previous versions do not support it.
+        const indNullsNotDistinctCondition =
+            this.driver.isNullsNotDistinctSupported({
+                throwOnUnsupported: false,
+            })
+                ? `CASE "ix"."indnullsnotdistinct" WHEN 't' THEN 'TRUE' ELSE 'FALSE' END AS "is_nulls_not_distinct"`
+                : "'FALSE' AS is_nulls_not_distinct"
+
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
-            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
+            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", ` +
+            `${indNullsNotDistinctCondition}, ` +
+            `pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
             `"types"."typname" AS "type_name" ` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
@@ -3293,6 +3316,8 @@ export class PostgresQueryRunner
                     name: constraint["constraint_name"],
                     columnNames: indices.map((i) => i["column_name"]),
                     isUnique: constraint["is_unique"] === "TRUE",
+                    isNullsNotDistinct:
+                        constraint["is_nulls_not_distinct"] === "TRUE",
                     where: constraint["condition"],
                     isFulltext: false,
                 })
@@ -3383,9 +3408,19 @@ export class PostgresQueryRunner
             `LEFT JOIN "pg_attribute" "a" ON "a"."attrelid" = "cnst"."conrelid" AND "a"."attnum" = ANY ("cnst"."conkey") ` +
             `WHERE "t"."relkind" IN ('r', 'p') AND (${constraintsCondition})`
 
+        // Postgres 15 introduced index nulls not distinct, previous versions do not support it.
+        const indNullsNotDistinctCondition =
+            this.driver.isNullsNotDistinctSupported({
+                throwOnUnsupported: false,
+            })
+                ? `CASE "ix"."indnullsnotdistinct" WHEN 't' THEN 'TRUE' ELSE 'FALSE' END AS "is_nulls_not_distinct"`
+                : "'FALSE' AS is_nulls_not_distinct"
+
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
-            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
+            `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", ` +
+            `${indNullsNotDistinctCondition}, ` +
+            `pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
             `"types"."typname" AS "type_name", "am"."amname" AS "index_type" ` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
@@ -3894,6 +3929,10 @@ export class PostgresQueryRunner
                         deferrable: constraint["deferrable"]
                             ? constraint["deferred"]
                             : undefined,
+                        nullsNotDistinct:
+                            constraint["expression"].includes(
+                                "NULLS NOT DISTINCT",
+                            ),
                     })
                 })
 
@@ -4027,6 +4066,8 @@ export class PostgresQueryRunner
                         name: constraint["constraint_name"],
                         columnNames: indices.map((i) => i["column_name"]),
                         isUnique: constraint["is_unique"] === "TRUE",
+                        isNullsNotDistinct:
+                            constraint["is_nulls_not_distinct"] === "TRUE",
                         where: constraint["condition"],
                         isSpatial: constraint["index_type"] === "gist",
                         isFulltext: false,
@@ -4063,6 +4104,7 @@ export class PostgresQueryRunner
                                 [column.name],
                             ),
                             columnNames: [column.name],
+                            nullsNotDistinct: column.isNullsNotDistinct,
                         }),
                     )
             })
@@ -4079,7 +4121,12 @@ export class PostgresQueryRunner
                     const columnNames = unique.columnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
-                    let constraint = `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`
+                    let constraint = `CONSTRAINT "${uniqueName}" UNIQUE ${
+                        unique.nullsNotDistinct &&
+                        this.driver.isNullsNotDistinctSupported()
+                            ? "NULLS NOT DISTINCT"
+                            : ""
+                    } (${columnNames})`
                     if (unique.deferrable)
                         constraint += ` DEFERRABLE ${unique.deferrable}`
                     return constraint
@@ -4357,7 +4404,12 @@ export class PostgresQueryRunner
                 index.isConcurrent ? " CONCURRENTLY" : ""
             } "${index.name}" ON ${this.escapePath(table)} ${
                 index.isSpatial ? "USING GiST " : ""
-            }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
+            }(${columns}) ${
+                index.isNullsNotDistinct &&
+                this.driver.isNullsNotDistinctSupported()
+                    ? "NULLS NOT DISTINCT"
+                    : ""
+            } ${index.where ? "WHERE " + index.where : ""}`,
         )
     }
 
@@ -4372,8 +4424,11 @@ export class PostgresQueryRunner
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
                 index.name
             }" ON ${this.escapePath(view)} (${columns}) ${
-                index.where ? "WHERE " + index.where : ""
-            }`,
+                index.isNullsNotDistinct &&
+                this.driver.isNullsNotDistinctSupported()
+                    ? "NULLS NOT DISTINCT"
+                    : ""
+            } ${index.where ? "WHERE " + index.where : ""}`,
         )
     }
 
@@ -4459,7 +4514,12 @@ export class PostgresQueryRunner
             .join(", ")
         let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${
             uniqueConstraint.name
-        }" UNIQUE (${columnNames})`
+        }" UNIQUE ${
+            uniqueConstraint.nullsNotDistinct &&
+            this.driver.isNullsNotDistinctSupported()
+                ? "NULLS NOT DISTINCT"
+                : ""
+        } (${columnNames})`
         if (uniqueConstraint.deferrable)
             sql += ` DEFERRABLE ${uniqueConstraint.deferrable}`
         return new Query(sql)
