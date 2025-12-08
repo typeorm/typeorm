@@ -384,24 +384,6 @@ export class RelationIdLoader {
             }
         }
 
-        // qb.from(junctionMetadata.target, mainAlias)
-        //     .where(condition1 + (condition2 ? " AND " + condition2 : ""));
-        //
-        // // execute query
-        // const { values1, values2 } = qb.getParameters();
-        // console.log(`I can do it`, { values1, values2 });
-        // if (inverseColumns.length === 1 &&
-        //     columns.length === 1 &&
-        //     this.connection.driver instanceof SqliteDriver &&
-        //     (values1.length + values2.length) > 500 &&
-        //     values1.length === values2.length) {
-        //     console.log(`I can do it`);
-        //     return qb.getRawMany();
-        //
-        // } else {
-        //     return qb.getRawMany();
-        // }
-
         // execute query
         const condition = [condition1, condition2]
             .filter((v) => v.length > 0)
