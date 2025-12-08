@@ -30,10 +30,7 @@ export default defineConfig([
             js,
             ts,
         },
-        extends: [
-            js.configs.recommended,
-            ...ts.configs.recommendedTypeChecked,
-        ],
+        extends: [js.configs.recommended, ...ts.configs.recommendedTypeChecked],
         rules: {
             // exceptions from typescript-eslint/recommended
             "@typescript-eslint/ban-ts-comment": "warn",
@@ -48,7 +45,7 @@ export default defineConfig([
                 "warn",
                 {
                     argsIgnorePattern: "^_",
-                    destructuredArrayIgnorePattern: "^_"
+                    destructuredArrayIgnorePattern: "^_",
                 },
             ],
             "@typescript-eslint/no-wrapper-object-types": "off",
@@ -88,15 +85,14 @@ export default defineConfig([
             "no-regex-spaces": "warn",
         },
     },
-
     jsdoc({
         files: ["src/**/*.ts"],
         config: "flat/recommended-typescript", // change to 'flat/recommended-typescript-error' once warnings are fixed
         // Temporarily enable individual rules when they are fixed, until all current warnings are gone,
         // and then remove manual config in favor of `config: "flat/recommended-typescript-error"`
         rules: {
-            "jsdoc/valid-types": "error"
-        }
+            "jsdoc/valid-types": "error",
+        },
     }),
 
     {
