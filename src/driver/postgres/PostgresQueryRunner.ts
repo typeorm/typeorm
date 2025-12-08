@@ -1233,7 +1233,6 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1241,6 +1240,7 @@ export class PostgresQueryRunner
                 newColumn.generatedType === "STORED")
         ) {
             // To avoid data conversion, we just recreate column
+            // Note: length and precision/scale changes are handled below via ALTER COLUMN ... TYPE
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1526,6 +1526,30 @@ export class PostgresQueryRunner
             if (
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
+            ) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+            }
+
+            // Handle length changes for varchar, char, and similar types
+            // This is a safe change that doesn't require column recreation
+            if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length &&
+                !newColumn.isArray &&
+                oldColumn.isArray === newColumn.isArray
             ) {
                 upQueries.push(
                     new Query(
