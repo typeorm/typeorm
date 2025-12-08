@@ -1248,6 +1248,19 @@ export class InsertQueryBuilder<
         if (this.connection.driver.options.type === "mssql") {
             query += `;`
         }
+
+        // Inserting a specific value for an auto-increment primary key in mssql requires enabling IDENTITY_INSERT
+        // IDENTITY_INSERT can only be enabled for tables where there is an IDENTITY column and only if there is a value to be inserted (i.e. supplying DEFAULT is prohibited if IDENTITY_INSERT is enabled)
+        if (
+            this.connection.driver.options.type === "mssql" &&
+            this.expressionMap.mainAlias!.hasMetadata &&
+            columns.some((column) =>
+                this.isOverridingAutoIncrementBehavior(column),
+            )
+        ) {
+            query = `SET IDENTITY_INSERT ${tableName} ON; ${query}; SET IDENTITY_INSERT ${tableName} OFF`
+        }
+
         return query
     }
 
