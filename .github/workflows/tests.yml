@@ -44,19 +44,6 @@ jobs:
               - .prettierrc.json
               - eslint.config.mjs
 
-  formatting:
-    if: contains(needs.detect-changes.outputs.changes, 'lint')
-    needs: detect-changes
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: .nvmrc
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run format:ci
-
   docs:
     if: contains(needs.detect-changes.outputs.changes, 'docs')
     needs: detect-changes
@@ -88,6 +75,30 @@ jobs:
           name: build
           path: build/
           retention-days: 1
+
+  format:
+    if: contains(needs.detect-changes.outputs.changes, 'lint')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci
+      - run: npm run format:ci
+
+  lint:
+    if: contains(needs.detect-changes.outputs.changes, 'lint')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci
+      - run: npm run lint
 
   tests-linux:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
@@ -123,7 +134,8 @@ jobs:
       - build
       - coverage
       - docs
-      - formatting
+      - format
+      - lint
       - tests-linux
       - tests-windows
     steps:
