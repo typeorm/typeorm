@@ -1286,9 +1286,11 @@ export class MysqlDriver implements Driver {
                     options.bigNumberStrings !== undefined
                         ? options.bigNumberStrings
                         : true,
-                decimalNumbers: (options.supportBigNumbers !== undefined
+                decimalNumbers:
+                    (options.supportBigNumbers !== undefined
                         ? options.supportBigNumbers
-                        : true) && !(options.bigNumberStrings !== undefined
+                        : true) &&
+                    !(options.bigNumberStrings !== undefined
                         ? options.bigNumberStrings
                         : true),
                 dateStrings: options.dateStrings,
