@@ -11,7 +11,7 @@ export class Category {
     @PrimaryColumn()
     name: string
 
-    @ManyToMany((type) => Post, (post) => post.counters.categories)
+    @ManyToMany(() => Post, (post) => post.counters.categories)
     posts: Post[]
 
     postIds: number[]

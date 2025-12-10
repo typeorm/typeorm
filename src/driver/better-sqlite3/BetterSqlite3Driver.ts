@@ -1,4 +1,4 @@
-import mkdirp from "mkdirp"
+import fs from "fs/promises"
 import path from "path"
 import { DriverPackageNotInstalledError } from "../../error"
 import { PlatformTools } from "../../platform/PlatformTools"
@@ -138,7 +138,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
             nativeBinding = null,
             prepareDatabase,
         } = this.options
-        const databaseConnection = this.sqlite(database, {
+        const databaseConnection = new this.sqlite(database, {
             readonly,
             fileMustExist,
             timeout,
@@ -148,23 +148,23 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         // in the options, if encryption key for SQLCipher is setted.
         // Must invoke key pragma before trying to do any other interaction with the database.
         if (this.options.key) {
-            databaseConnection.exec(
-                `PRAGMA key = ${JSON.stringify(this.options.key)}`,
+            databaseConnection.pragma(
+                `key = ${JSON.stringify(this.options.key)}`,
             )
         }
 
         // function to run before a database is used in typeorm.
         if (typeof prepareDatabase === "function") {
-            prepareDatabase(databaseConnection)
+            await prepareDatabase(databaseConnection)
         }
 
         // we need to enable foreign keys in sqlite to make sure all foreign key related features
         // working properly. this also makes onDelete to work with sqlite.
-        databaseConnection.exec(`PRAGMA foreign_keys = ON`)
+        databaseConnection.pragma("foreign_keys = ON")
 
         // turn on WAL mode to enhance performance
         if (this.options.enableWAL) {
-            databaseConnection.exec(`PRAGMA journal_mode = WAL`)
+            databaseConnection.pragma("journal_mode = WAL")
         }
 
         return databaseConnection
@@ -187,7 +187,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      * Auto creates database directory if it does not exist.
      */
     protected async createDatabaseDirectory(dbPath: string): Promise<void> {
-        await mkdirp(dbPath)
+        await fs.mkdir(dbPath, { recursive: true })
     }
 
     /**
@@ -198,10 +198,9 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      */
     protected async attachDatabases() {
         // @todo - possibly check number of databases (but unqueriable at runtime sadly) - https://www.sqlite.org/limits.html#max_attached
-        for await (const {
-            attachHandle,
-            attachFilepathAbsolute,
-        } of Object.values(this.attachedDatabases)) {
+        for (const { attachHandle, attachFilepathAbsolute } of Object.values(
+            this.attachedDatabases,
+        )) {
             await this.createDatabaseDirectory(
                 path.dirname(attachFilepathAbsolute),
             )

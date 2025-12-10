@@ -15,18 +15,18 @@ export class Post {
     @Column()
     title: string
 
-    @OneToOne((type) => Category, (category) => category.post, {
+    @OneToOne(() => Category, (category) => category.post, {
         nullable: true,
     })
     @JoinColumn()
     category: Category
 
-    @OneToOne((type) => Details, (details) => details.post, {
+    @OneToOne(() => Details, (details) => details.post, {
         nullable: false,
     })
     @JoinColumn()
     details: Details
 
-    @OneToOne((type) => Photo, (photo) => photo.post)
+    @OneToOne(() => Photo, (photo) => photo.post)
     photo: Photo
 }

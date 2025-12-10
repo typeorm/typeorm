@@ -1,0 +1,6 @@
+build/
+coverage/
+node_modules/
+
+gulpfile.ts
+package-lock.json
