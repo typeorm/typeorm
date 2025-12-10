@@ -247,14 +247,8 @@
     "logo": "https://opencollective.com/opencollective/logo.txt"
   },
   "devEngines": {
-    "runtime": {
-      "name": "node",
-      "version": ">=20.19.0"
-    },
     "packageManager": {
-      "name": "npm",
-      "version": "^10.8.2",
-      "onFail": "error"
+      "name": "npm"
     }
   },
   "readmeFilename": "README.md",
