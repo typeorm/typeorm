@@ -57,8 +57,7 @@ export class InitCommand implements yargs.CommandModule {
             const database: string = (args.database as any) || "postgres"
             const isExpress = args.express !== undefined ? true : false
             const isDocker = args.docker !== undefined ? true : false
-            const canSkipInstall = args.noInstall !== undefined ? true : false
-            const canInstall = canSkipInstall === true ? false : true
+            const skipInstall = args.noInstall === true
             const basePath = process.cwd() + (args.name ? "/" + args.name : "")
             const projectName = args.name
                 ? path.basename(args.name as any)
@@ -140,7 +139,7 @@ export class InitCommand implements yargs.CommandModule {
                 )
             }
 
-            if (canInstall) {
+            if (!skipInstall) {
                 console.log(
                     ansi.green(`Please wait, installing dependencies...`),
                 )
