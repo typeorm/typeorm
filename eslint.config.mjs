@@ -1,20 +1,18 @@
 import js from "@eslint/js"
-import { defineConfig } from "eslint/config"
+import pluginChaiFriendly from "eslint-plugin-chai-friendly"
 import { jsdoc } from "eslint-plugin-jsdoc"
+import { defineConfig, globalIgnores } from "eslint/config"
 import globals from "globals"
 import ts from "typescript-eslint"
 
 export default defineConfig([
-    {
-        ignores: [
-            "build/**",
-            "docs/**",
-            "node_modules/**",
-            "sample/playground/**",
-            "temp/**",
-        ],
-    },
-
+    globalIgnores([
+        "build/**",
+        "docs/**",
+        "node_modules/**",
+        "sample/playground/**",
+        "temp/**",
+    ]),
     {
         files: ["**/*.ts"],
         languageOptions: {
@@ -31,10 +29,7 @@ export default defineConfig([
             js,
             ts,
         },
-        extends: [
-            js.configs.recommended,
-            ...ts.configs.recommendedTypeChecked,
-        ],
+        extends: [js.configs.recommended, ...ts.configs.recommendedTypeChecked],
         rules: {
             // exceptions from typescript-eslint/recommended
             "@typescript-eslint/ban-ts-comment": "warn",
@@ -45,12 +40,11 @@ export default defineConfig([
             "@typescript-eslint/no-unnecessary-type-constraint": "warn",
             "@typescript-eslint/no-unsafe-declaration-merging": "warn",
             "@typescript-eslint/no-unsafe-function-type": "warn",
-            "@typescript-eslint/no-unused-expressions": "warn",
             "@typescript-eslint/no-unused-vars": [
                 "warn",
                 {
                     argsIgnorePattern: "^_",
-                    destructuredArrayIgnorePattern: "^_"
+                    destructuredArrayIgnorePattern: "^_",
                 },
             ],
             "@typescript-eslint/no-wrapper-object-types": "off",
@@ -90,14 +84,17 @@ export default defineConfig([
             "no-regex-spaces": "warn",
         },
     },
-
     jsdoc({
-        config: "flat/recommended-typescript",
         files: ["src/**/*.ts"],
+        config: "flat/recommended-typescript",
         // Temporarily enable individual rules when they are fixed, until all current warnings are gone,
         // and then remove manual config in favor of `config: "flat/recommended-typescript-error"`
         rules: {
-            "jsdoc/valid-types": "error"
-        }
+            "jsdoc/valid-types": "error",
+        },
     }),
+    {
+        files: ["test/**/*.ts"],
+        ...pluginChaiFriendly.configs.recommendedFlat,
+    },
 ])
