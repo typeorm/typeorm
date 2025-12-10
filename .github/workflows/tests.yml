@@ -1,14 +1,12 @@
 name: Tests
 on:
   push:
-    branches:
-      - master
-      - next
   pull_request:
 
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
+    if: ${{ (github.event_name != 'pull_request') || (github.event.pull_request.head.repo.fork) }}
     outputs:
       changes: ${{ steps.detect-changes.outputs.changes }}
     steps:
@@ -34,12 +32,12 @@ jobs:
 
             src-or-tests: &src-or-tests
               - *src
-              - test/**/*.ts
+              - test/**/*
+              - .c8rc.json
               - .github/workflows/test/**/*
               - .github/workflows/test*.yml
               - .mocharc.json
               - .nvmrc
-              - .nycrc.json
 
             lint: &lint
               - *src-or-tests
