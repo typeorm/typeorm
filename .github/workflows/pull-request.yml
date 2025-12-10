@@ -28,8 +28,11 @@ jobs:
             test
           subjectPattern: ^[a-z][a-zA-Z0-9 \-\/()*.@,_`']+$
           subjectPatternError: |
-            The subject "{subject}" found in the pull request title "{title}"
-            didn't match the configured pattern. Please ensure that the subject
-            doesn't start with an uppercase character.
+            Our pull requests titles should follow Conventional Commits spec:
+            https://www.conventionalcommits.org 
+            
+            The description "{subject}" found in this pull request title "{title}"
+            didn't match the configured pattern. Please ensure that it doesn't
+            start with an uppercase character and contain only allowed characters.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
