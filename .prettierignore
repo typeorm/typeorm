@@ -1,6 +1,3 @@
-build/
-coverage/
-node_modules/
-
+extra/
 gulpfile.ts
 package-lock.json
