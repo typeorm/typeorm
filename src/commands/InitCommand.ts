@@ -57,7 +57,7 @@ export class InitCommand implements yargs.CommandModule {
             const database: string = (args.database as any) || "postgres"
             const isExpress = args.express !== undefined ? true : false
             const isDocker = args.docker !== undefined ? true : false
-            const skipInstall = args.noInstall === true
+            const skipInstall = args.noInstall !== undefined ? true : false;
             const basePath = process.cwd() + (args.name ? "/" + args.name : "")
             const projectName = args.name
                 ? path.basename(args.name as any)
