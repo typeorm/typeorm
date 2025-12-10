@@ -43,7 +43,7 @@ jobs:
               - .editorconfig
               - .prettierignore
               - .prettierrc.json
-              - **/*.ts
+              - '**/*.ts'
 
             lint:
               - *src-or-tests
