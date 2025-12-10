@@ -142,7 +142,7 @@ export class InitCommand implements yargs.CommandModule {
 
             if (canInstall) {
                 console.log(
-                    chalk.green(`Please wait, installing dependencies...`),
+                    ansi.green(`Please wait, installing dependencies...`),
                 )
                 if (args.pm && installNpm) {
                     await InitCommand.executeCommand("npm install", basePath)
@@ -150,10 +150,10 @@ export class InitCommand implements yargs.CommandModule {
                     await InitCommand.executeCommand("yarn install", basePath)
                 }
                 console.log(
-                    chalk.green(`Done! Start playing with a new project!`),
+                    ansi.green(`Done! Start playing with a new project!`),
                 )
             } else {
-                console.log(chalk.green(`Done! Dependencies were skipped,`));
+                console.log(ansi.green(`Done! Dependencies were skipped,`));
                 console.log(ansi.bold`Run one of the following commands to install dependencies manually:`);
                 console.log('');
                 console.log(`  ${ansi.cyan("npm install")}`);
@@ -163,7 +163,7 @@ export class InitCommand implements yargs.CommandModule {
                 console.log('');
                 console.log(ansi.dim`# Tip: you can also use "ni" from https://github.com/antfu/ni if you have it installed`);
                 console.log(
-                    chalk.green(`Done! Start playing with a new project!`),
+                    ansi.green(`Done! Start playing with a new project!`),
                 )
             }
         } catch (err) {
