@@ -41,6 +41,7 @@ jobs:
 
             lint: &lint
               - *src-or-tests
+              - .prettierignore
               - .prettierrc.js
               - eslint.config.mjs
 
