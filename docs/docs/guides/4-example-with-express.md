@@ -85,8 +85,8 @@ npm install express
 npm install @types/express --save-dev
 ```
 
--   `express` is the express engine itself. It allows us to create a web api
--   `@types/express` is used to have a type information when using express
+- `express` is the express engine itself. It allows us to create a web api
+- `@types/express` is used to have a type information when using express
 
 Let's edit the `src/app.ts` file and add express-related logic:
 
@@ -140,9 +140,9 @@ Let's install the required packages first:
 npm install typeorm reflect-metadata mysql
 ```
 
--   `typeorm` is the typeorm package itself
--   `reflect-metadata` is required to make decorators to work properly. Remember to import it before your TypeORM code.
--   `mysql` is the underlying database driver. If you are using a different database system, you must install the appropriate package
+- `typeorm` is the typeorm package itself
+- `reflect-metadata` is required to make decorators to work properly. Remember to import it before your TypeORM code.
+- `mysql` is the underlying database driver. If you are using a different database system, you must install the appropriate package
 
 Let's create `app-data-source.ts` where we set up initial database connection options:
 

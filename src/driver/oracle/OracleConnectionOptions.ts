@@ -13,8 +13,7 @@ export interface OracleThickModeOptions {
  * Oracle-specific connection options.
  */
 export interface OracleConnectionOptions
-    extends BaseDataSourceOptions,
-        OracleConnectionCredentialsOptions {
+    extends BaseDataSourceOptions, OracleConnectionCredentialsOptions {
     /**
      * Database type.
      */

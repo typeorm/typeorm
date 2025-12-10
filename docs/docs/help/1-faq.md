@@ -5,7 +5,7 @@
 One of the main responsibilities of TypeORM is to keep your database tables in sync with your entities.
 There are two ways that help you achieve this:
 
--   Use `synchronize: true` in data source options:
+- Use `synchronize: true` in data source options:
 
     ```typescript
     import { DataSource } from "typeorm"
@@ -19,7 +19,7 @@ There are two ways that help you achieve this:
     This option automatically syncs your database tables with the given entities each time you run this code.
     This option is perfect during development, but in production you may not want this option to be enabled.
 
--   Use command line tools and run schema sync manually in the command line:
+- Use command line tools and run schema sync manually in the command line:
 
     ```shell
     typeorm schema:sync
