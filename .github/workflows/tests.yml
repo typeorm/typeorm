@@ -24,38 +24,30 @@ jobs:
               - docs/**/*
 
             src: &src
+              - *package-json
               - extra/**/*.js
               - src/**/*.ts
               - gulpfile.js
               - tsconfig.json
-              - *package-json
 
             src-or-tests: &src-or-tests
               - *src
-              - test/**/*
-              - .c8rc.json
               - .github/workflows/test/**/*
               - .github/workflows/test*.yml
+              - test/**/*
+              - .c8rc.json
               - .mocharc.json
-              - .nvmrc
 
-            lint: &lint
-              - *src-or-tests
+            format:
+              - *package-json
+              - .editorconfig
+              - .prettierignore
               - .prettierrc.json
-              - eslint.config.mjs
+              - '**/*.ts'
 
-  formatting:
-    if: contains(needs.detect-changes.outputs.changes, 'lint')
-    needs: detect-changes
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: .nvmrc
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run format:ci
+            lint:
+              - *src-or-tests
+              - eslint.config.mjs
 
   docs:
     if: contains(needs.detect-changes.outputs.changes, 'docs')
@@ -88,6 +80,30 @@ jobs:
           name: build
           path: build/
           retention-days: 1
+
+  format:
+    if: contains(needs.detect-changes.outputs.changes, 'format')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci
+      - run: npm run format:ci
+
+  lint:
+    if: contains(needs.detect-changes.outputs.changes, 'lint')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci
+      - run: npm run lint
 
   tests-linux:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
@@ -123,7 +139,8 @@ jobs:
       - build
       - coverage
       - docs
-      - formatting
+      - format
+      - lint
       - tests-linux
       - tests-windows
     steps:
