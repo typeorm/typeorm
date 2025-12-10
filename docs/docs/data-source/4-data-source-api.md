@@ -1,26 +1,26 @@
 # DataSource API
 
--   `options` - Options used to create this dataSource.
-    Learn more about [Data Source Options](./2-data-source-options.md).
+- `options` - Options used to create this dataSource.
+  Learn more about [Data Source Options](./2-data-source-options.md).
 
 ```typescript
 const dataSourceOptions: DataSourceOptions = dataSource.options
 ```
 
--   `isInitialized` - Indicates if DataSource was initialized and initial connection / connection pool with database was established or not.
+- `isInitialized` - Indicates if DataSource was initialized and initial connection / connection pool with database was established or not.
 
 ```typescript
 const isInitialized: boolean = dataSource.isInitialized
 ```
 
--   `driver` - Underlying database driver used in this dataSource.
+- `driver` - Underlying database driver used in this dataSource.
 
 ```typescript
 const driver: Driver = dataSource.driver
 ```
 
--   `manager` - `EntityManager` used to work with entities.
-    Learn more about [Entity Manager](../working-with-entity-manager/1-working-with-entity-manager.md) and [Repository](../working-with-entity-manager/2-working-with-repository.md).
+- `manager` - `EntityManager` used to work with entities.
+  Learn more about [Entity Manager](../working-with-entity-manager/1-working-with-entity-manager.md) and [Repository](../working-with-entity-manager/2-working-with-repository.md).
 
 ```typescript
 const manager: EntityManager = dataSource.manager
@@ -28,8 +28,8 @@ const manager: EntityManager = dataSource.manager
 const users = await manager.find()
 ```
 
--   `mongoManager` - `MongoEntityManager` used to work with entities for mongodb data source.
-    For more information about MongoEntityManager see [MongoDB](../drivers/mongodb.md) documentation.
+- `mongoManager` - `MongoEntityManager` used to work with entities for mongodb data source.
+  For more information about MongoEntityManager see [MongoDB](../drivers/mongodb.md) documentation.
 
 ```typescript
 const manager: MongoEntityManager = dataSource.mongoManager
@@ -37,64 +37,64 @@ const manager: MongoEntityManager = dataSource.mongoManager
 const users = await manager.find()
 ```
 
--   `initialize` - Initializes data source and opens connection pool to the database.
+- `initialize` - Initializes data source and opens connection pool to the database.
 
 ```typescript
 await dataSource.initialize()
 ```
 
--   `destroy` - Destroys the DataSource and closes all database connections.
-    Usually, you call this method when your application is shutting down.
+- `destroy` - Destroys the DataSource and closes all database connections.
+  Usually, you call this method when your application is shutting down.
 
 ```typescript
 await dataSource.destroy()
 ```
 
--   `synchronize` - Synchronizes database schema. When `synchronize: true` is set in data source options it calls this method.
-    Usually, you call this method when your application is starting.
+- `synchronize` - Synchronizes database schema. When `synchronize: true` is set in data source options it calls this method.
+  Usually, you call this method when your application is starting.
 
 ```typescript
 await dataSource.synchronize()
 ```
 
--   `dropDatabase` - Drops the database and all its data.
-    Be careful with this method on production since this method will erase all your database tables and their data.
-    Can be used only after connection to the database is established.
+- `dropDatabase` - Drops the database and all its data.
+  Be careful with this method on production since this method will erase all your database tables and their data.
+  Can be used only after connection to the database is established.
 
 ```typescript
 await dataSource.dropDatabase()
 ```
 
--   `runMigrations` - Runs all pending migrations.
+- `runMigrations` - Runs all pending migrations.
 
 ```typescript
 await dataSource.runMigrations()
 ```
 
--   `undoLastMigration` - Reverts last executed migration.
+- `undoLastMigration` - Reverts last executed migration.
 
 ```typescript
 await dataSource.undoLastMigration()
 ```
 
--   `hasMetadata` - Checks if metadata for a given entity is registered.
+- `hasMetadata` - Checks if metadata for a given entity is registered.
 
 ```typescript
 if (dataSource.hasMetadata(User))
     const userMetadata = dataSource.getMetadata(User)
 ```
 
--   `getMetadata` - Gets `EntityMetadata` of the given entity.
-    You can also specify a table name and if entity metadata with such table name is found it will be returned.
+- `getMetadata` - Gets `EntityMetadata` of the given entity.
+  You can also specify a table name and if entity metadata with such table name is found it will be returned.
 
 ```typescript
 const userMetadata = dataSource.getMetadata(User)
 // now you can get any information about User entity
 ```
 
--   `getRepository` - Gets `Repository` of the given entity.
-    You can also specify a table name and if repository for given table is found it will be returned.
-    Learn more about [Repositories](../working-with-entity-manager/2-working-with-repository.md).
+- `getRepository` - Gets `Repository` of the given entity.
+  You can also specify a table name and if repository for given table is found it will be returned.
+  Learn more about [Repositories](../working-with-entity-manager/2-working-with-repository.md).
 
 ```typescript
 const repository = dataSource.getRepository(User)
@@ -102,9 +102,9 @@ const repository = dataSource.getRepository(User)
 const users = await repository.find()
 ```
 
--   `getTreeRepository` - Gets `TreeRepository` of the given entity.
-    You can also specify a table name and if repository for given table is found it will be returned.
-    Learn more about [Repositories](../working-with-entity-manager/2-working-with-repository.md).
+- `getTreeRepository` - Gets `TreeRepository` of the given entity.
+  You can also specify a table name and if repository for given table is found it will be returned.
+  Learn more about [Repositories](../working-with-entity-manager/2-working-with-repository.md).
 
 ```typescript
 const repository = dataSource.getTreeRepository(Category)
@@ -112,9 +112,9 @@ const repository = dataSource.getTreeRepository(Category)
 const categories = await repository.findTrees()
 ```
 
--   `getMongoRepository` - Gets `MongoRepository` of the given entity.
-    This repository is used for entities in MongoDB dataSource.
-    Learn more about [MongoDB support](../drivers/mongodb.md).
+- `getMongoRepository` - Gets `MongoRepository` of the given entity.
+  This repository is used for entities in MongoDB dataSource.
+  Learn more about [MongoDB support](../drivers/mongodb.md).
 
 ```typescript
 const repository = dataSource.getMongoRepository(User)
@@ -124,8 +124,8 @@ const category1 = await categoryCursor.next()
 const category2 = await categoryCursor.next()
 ```
 
--   `transaction` - Provides a single transaction where multiple database requests will be executed in a single database transaction.
-    Learn more about [Transactions](../advanced-topics/2-transactions.md).
+- `transaction` - Provides a single transaction where multiple database requests will be executed in a single database transaction.
+  Learn more about [Transactions](../advanced-topics/2-transactions.md).
 
 ```typescript
 await dataSource.transaction(async (manager) => {
@@ -135,7 +135,7 @@ await dataSource.transaction(async (manager) => {
 })
 ```
 
--   `query` - Executes a raw SQL query.
+- `query` - Executes a raw SQL query.
 
 ```typescript
 const rawData = await dataSource.query(`SELECT * FROM USERS`)
@@ -176,7 +176,7 @@ const rawData = await dataSource.query(
 )
 ```
 
--   `sql` - Executes a raw SQL query using template literals.
+- `sql` - Executes a raw SQL query using template literals.
 
 ```typescript
 const rawData =
@@ -185,8 +185,8 @@ const rawData =
 
 Learn more about using the [SQL Tag syntax](../guides/7-sql-tag.md).
 
--   `createQueryBuilder` - Creates a query builder, which can be used to build queries.
-    Learn more about [QueryBuilder](../query-builder/1-select-query-builder.md).
+- `createQueryBuilder` - Creates a query builder, which can be used to build queries.
+  Learn more about [QueryBuilder](../query-builder/1-select-query-builder.md).
 
 ```typescript
 const users = await dataSource
@@ -197,8 +197,8 @@ const users = await dataSource
     .getMany()
 ```
 
--   `createQueryRunner` - Creates a query runner used to manage and work with a single real database dataSource.
-    Learn more about [QueryRunner](../query-runner.md).
+- `createQueryRunner` - Creates a query runner used to manage and work with a single real database dataSource.
+  Learn more about [QueryRunner](../query-runner.md).
 
 ```typescript
 const queryRunner = dataSource.createQueryRunner()

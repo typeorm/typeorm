@@ -374,9 +374,9 @@ Make sure your `subscribers` property is set in your [DataSourceOptions](../data
 
 Excluding `listenTo`, all `EntitySubscriberInterface` methods are passed an event object that has the following base properties:
 
--   `dataSource: DataSource` - DataSource used in the event.
--   `queryRunner: QueryRunner` - QueryRunner used in the event transaction.
--   `manager: EntityManager` - EntityManager used in the event transaction.
+- `dataSource: DataSource` - DataSource used in the event.
+- `queryRunner: QueryRunner` - QueryRunner used in the event transaction.
+- `manager: EntityManager` - EntityManager used in the event transaction.
 
 See each [Event's interface](https://github.com/typeorm/typeorm/tree/master/src/subscriber/event) for additional properties.
 

@@ -12,6 +12,8 @@ export class OrmUtils {
 
     /**
      * Chunks array into pieces.
+     * @param array
+     * @param size
      */
     public static chunk<T>(array: T[], size: number): T[][] {
         return Array.from(Array(Math.ceil(array.length / size)), (_, i) => {
@@ -36,16 +38,19 @@ export class OrmUtils {
         array: T[],
         propertyCallback: (item: T) => R,
     ): { id: R; items: T[] }[] {
-        return array.reduce((groupedArray, value) => {
-            const key = propertyCallback(value)
-            let grouped = groupedArray.find((i) => i.id === key)
-            if (!grouped) {
-                grouped = { id: key, items: [] }
-                groupedArray.push(grouped)
-            }
-            grouped.items.push(value)
-            return groupedArray
-        }, [] as Array<{ id: R; items: T[] }>)
+        return array.reduce(
+            (groupedArray, value) => {
+                const key = propertyCallback(value)
+                let grouped = groupedArray.find((i) => i.id === key)
+                if (!grouped) {
+                    grouped = { id: key, items: [] }
+                    groupedArray.push(grouped)
+                }
+                grouped.items.push(value)
+                return groupedArray
+            },
+            [] as Array<{ id: R; items: T[] }>,
+        )
     }
 
     public static uniq<T>(array: T[], criteria?: (item: T) => unknown): T[]
@@ -80,6 +85,8 @@ export class OrmUtils {
 
     /**
      * Deep Object.assign.
+     * @param target
+     * @param sources
      */
     public static mergeDeep<T>(
         target: T,
@@ -98,6 +105,7 @@ export class OrmUtils {
 
     /**
      * Creates a shallow copy of the object, without invoking the constructor
+     * @param object
      */
     public static cloneObject<T extends object>(object: T): T {
         if (object === null || object === undefined) {
@@ -112,7 +120,7 @@ export class OrmUtils {
 
     /**
      * Deep compare objects.
-     *
+     * @param args
      * @see http://stackoverflow.com/a/1144249
      */
     public static deepCompare<T>(...args: T[]): boolean {
@@ -144,6 +152,8 @@ export class OrmUtils {
 
     /**
      * Gets deeper value of object.
+     * @param obj
+     * @param path
      */
     public static deepValue(obj: ObjectLiteral, path: string): any {
         const segments = path.split(".")
@@ -195,6 +205,8 @@ export class OrmUtils {
 
     /**
      * Check if two entity-id-maps are the same
+     * @param firstId
+     * @param secondId
      */
     public static compareIds(
         firstId: ObjectLiteral | undefined,
@@ -225,6 +237,7 @@ export class OrmUtils {
 
     /**
      * Transforms given value into boolean value.
+     * @param value
      */
     public static toBoolean(value: any): boolean {
         if (typeof value === "boolean") return value
@@ -238,6 +251,8 @@ export class OrmUtils {
 
     /**
      * Checks if two arrays of unique values contain the same values
+     * @param arr1
+     * @param arr2
      */
     public static isArraysEqual<T>(arr1: T[], arr2: T[]): boolean {
         if (arr1.length !== arr2.length) {
@@ -261,6 +276,8 @@ export class OrmUtils {
      * Parses the CHECK constraint on the specified column and returns
      * all values allowed by the constraint or undefined if the constraint
      * is not present.
+     * @param sql
+     * @param columnName
      */
     public static parseSqlCheckExpression(
         sql: string,
@@ -282,8 +299,8 @@ export class OrmUtils {
             const chars = afterMatch
 
             /**
-             * * When outside quotes: empty string
-             * * When inside single quotes: `'`
+             * When outside quotes: empty string
+             * When inside single quotes: `'`
              */
             let currentQuotes = ""
             let nextValue = ""
@@ -334,6 +351,7 @@ export class OrmUtils {
 
     /**
      * Checks if given criteria is null or empty.
+     * @param criteria
      */
     public static isCriteriaNullOrEmpty(criteria: unknown): boolean {
         return (
@@ -349,6 +367,7 @@ export class OrmUtils {
     /**
      * Checks if given criteria is a primitive value.
      * Primitive values are strings, numbers and dates.
+     * @param criteria
      */
     public static isSinglePrimitiveCriteria(
         criteria: unknown,
@@ -362,6 +381,7 @@ export class OrmUtils {
 
     /**
      * Checks if given criteria is a primitive value or an array of primitive values.
+     * @param criteria
      */
     public static isPrimitiveCriteria(
         criteria: unknown,

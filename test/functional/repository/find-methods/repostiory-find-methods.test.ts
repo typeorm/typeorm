@@ -669,9 +669,8 @@ describe("repository > find methods", () => {
                     savedUsers.length.should.be.equal(users.length) // check if they all are saved
 
                     const loadIds = [1, 2, 4]
-                    const loadedUsers = (await userRepository.findByIds(
-                        loadIds,
-                    ))!
+                    const loadedUsers =
+                        (await userRepository.findByIds(loadIds))!
 
                     loadedUsers
                         .sort((a, b) => a.id - b.id)

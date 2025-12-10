@@ -14,78 +14,77 @@ npm install mongodb
 
 ## Data Source Options
 
--   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
+- `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
--   `host` - Database host.
+- `host` - Database host.
 
--   `port` - Database host port. Default mongodb port is `27017`.
+- `port` - Database host port. Default mongodb port is `27017`.
 
--   `username` - Database username (replacement for `auth.user`).
+- `username` - Database username (replacement for `auth.user`).
 
--   `password` - Database password (replacement for `auth.password`).
+- `password` - Database password (replacement for `auth.password`).
 
--   `database` - Database name.
+- `database` - Database name.
 
--   `poolSize` - Set the maximum pool size for each server or proxy connection.
+- `poolSize` - Set the maximum pool size for each server or proxy connection.
 
--   `tls` - Use a TLS/SSL connection (needs a mongod server with ssl support, 2.4 or higher). Default: `false`.
+- `tls` - Use a TLS/SSL connection (needs a mongod server with ssl support, 2.4 or higher). Default: `false`.
 
--   `tlsAllowInvalidCertificates` - Specifies whether the driver generates an error when the server's TLS certificate is invalid. Default: `false`.
+- `tlsAllowInvalidCertificates` - Specifies whether the driver generates an error when the server's TLS certificate is invalid. Default: `false`.
 
--   `tlsCAFile` - Specifies the location of a local .pem file that contains the root certificate chain from the Certificate Authority.
+- `tlsCAFile` - Specifies the location of a local .pem file that contains the root certificate chain from the Certificate Authority.
 
--   `tlsCertificateKeyFile` - Specifies the location of a local .pem file that contains the client's TLS/SSL certificate and key.
+- `tlsCertificateKeyFile` - Specifies the location of a local .pem file that contains the client's TLS/SSL certificate and key.
 
--   `tlsCertificateKeyFilePassword` - Specifies the password to decrypt the `tlsCertificateKeyFile`.
+- `tlsCertificateKeyFilePassword` - Specifies the password to decrypt the `tlsCertificateKeyFile`.
 
--   `keepAlive` - The number of milliseconds to wait before initiating keepAlive on the TCP socket. Default: `30000`.
+- `keepAlive` - The number of milliseconds to wait before initiating keepAlive on the TCP socket. Default: `30000`.
 
--   `connectTimeoutMS` - TCP Connection timeout setting. Default: `30000`.
+- `connectTimeoutMS` - TCP Connection timeout setting. Default: `30000`.
 
--   `socketTimeoutMS` - TCP Socket timeout setting. Default: `360000`.
+- `socketTimeoutMS` - TCP Socket timeout setting. Default: `360000`.
 
--   `replicaSet` - The name of the replica set to connect to.
+- `replicaSet` - The name of the replica set to connect to.
 
--   `authSource` - If the database authentication is dependent on another databaseName.
+- `authSource` - If the database authentication is dependent on another databaseName.
 
--   `writeConcern` - The write concern.
+- `writeConcern` - The write concern.
 
--   `forceServerObjectId` - Force server to assign \_id values instead of driver. Default: `false`.
+- `forceServerObjectId` - Force server to assign \_id values instead of driver. Default: `false`.
 
--   `serializeFunctions` - Serialize functions on any object. Default: `false`.
+- `serializeFunctions` - Serialize functions on any object. Default: `false`.
 
--   `ignoreUndefined` - Specify if the BSON serializer should ignore undefined fields. Default: `false`.
+- `ignoreUndefined` - Specify if the BSON serializer should ignore undefined fields. Default: `false`.
 
--   `raw` - Return document results as raw BSON buffers. Default: `false`.
+- `raw` - Return document results as raw BSON buffers. Default: `false`.
 
--   `promoteLongs` - Promotes Long values to number if they fit inside the 53-bit resolution. Default: `true`.
+- `promoteLongs` - Promotes Long values to number if they fit inside the 53-bit resolution. Default: `true`.
 
--   `promoteBuffers` - Promotes Binary BSON values to native Node Buffers. Default: `false`.
+- `promoteBuffers` - Promotes Binary BSON values to native Node Buffers. Default: `false`.
 
--   `promoteValues` - Promotes BSON values to native types where possible, set to false to only receive wrapper types.
-    Default: `true`.
+- `promoteValues` - Promotes BSON values to native types where possible, set to false to only receive wrapper types.
+  Default: `true`.
 
--   `readPreference` - The preferred read preference.
+- `readPreference` - The preferred read preference.
+    - `ReadPreference.PRIMARY`
+    - `ReadPreference.PRIMARY_PREFERRED`
+    - `ReadPreference.SECONDARY`
+    - `ReadPreference.SECONDARY_PREFERRED`
+    - `ReadPreference.NEAREST`
 
-    -   `ReadPreference.PRIMARY`
-    -   `ReadPreference.PRIMARY_PREFERRED`
-    -   `ReadPreference.SECONDARY`
-    -   `ReadPreference.SECONDARY_PREFERRED`
-    -   `ReadPreference.NEAREST`
+- `pkFactory` - A primary key factory object for generation of custom \_id keys.
 
--   `pkFactory` - A primary key factory object for generation of custom \_id keys.
+- `readConcern` - Specify a read concern for the collection. (only MongoDB 3.2 or higher supported).
 
--   `readConcern` - Specify a read concern for the collection. (only MongoDB 3.2 or higher supported).
+- `maxStalenessSeconds` - Specify a maxStalenessSeconds value for secondary reads, minimum is 90 seconds.
 
--   `maxStalenessSeconds` - Specify a maxStalenessSeconds value for secondary reads, minimum is 90 seconds.
+- `appName` - The name of the application that created this MongoClient instance. MongoDB 3.4 and newer will print this
+  value in the server log upon establishing each connection. It is also recorded in the slow query log and profile
+  collections
 
--   `appName` - The name of the application that created this MongoClient instance. MongoDB 3.4 and newer will print this
-    value in the server log upon establishing each connection. It is also recorded in the slow query log and profile
-    collections
+- `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
 
--   `authMechanism` - Sets the authentication mechanism that MongoDB will use to authenticate the connection.
-
--   `directConnection` - Specifies whether to force-dispatch all operations to the specified host.
+- `directConnection` - Specifies whether to force-dispatch all operations to the specified host.
 
 Additional options can be added to the `extra` object and will be passed directly to the client library. See more in `mongodb`'s documentation for [Connection Options](https://mongodb-node.netlify.app/docs/drivers/node/current/connect/connection-options/).
 

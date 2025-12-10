@@ -40,9 +40,8 @@ describe("github issues > #7266 rename table typeorm_metadata name.", () => {
 
                 expect(hasCustomMetadataTableName).to.be.true
 
-                const hasDefaultMetadataTableName = await queryRunner.hasTable(
-                    "typeorm_metadata",
-                )
+                const hasDefaultMetadataTableName =
+                    await queryRunner.hasTable("typeorm_metadata")
 
                 expect(hasDefaultMetadataTableName).to.be.false
 

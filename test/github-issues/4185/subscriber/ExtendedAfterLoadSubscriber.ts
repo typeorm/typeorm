@@ -3,9 +3,7 @@ import { EntitySubscriberInterface, EventSubscriber } from "../../../../src"
 import { LoadEvent } from "../../../../src/subscriber/event/LoadEvent"
 
 @EventSubscriber()
-export class ExtendedAfterLoadSubscriber
-    implements EntitySubscriberInterface<Post>
-{
+export class ExtendedAfterLoadSubscriber implements EntitySubscriberInterface<Post> {
     listenTo() {
         return Post
     }

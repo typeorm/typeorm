@@ -6,12 +6,14 @@ Before working with migrations you need to setup your [DataSource](../data-sourc
 export default new DataSource({
     // basic setup
     synchronize: false,
-    migrations: [ /*...*/ ],
+    migrations: [
+        /*...*/
+    ],
 
     // optional
     migrationsRun: false,
-    migrationsTableName: 'migrations',
-    migrationsTransactionMode: 'all'
+    migrationsTableName: "migrations",
+    migrationsTransactionMode: "all",
 
     // other options...
 })
@@ -28,7 +30,7 @@ Defines list of migrations that need to be loaded by TypeORM. It accepts both mi
 The easiest is to specify the directory where your migration files are located (glob patterns are supported):
 
 ```ts
-migrations: [__dirname + '/migration/**/*{.js,.ts}']
+migrations: [__dirname + "/migration/**/*{.js,.ts}"]
 ```
 
 Defining both `.js` and `.ts` extensions would allow you to run migrations in development and from compiled to JavaScript for production (eg. from Docker image).
@@ -36,17 +38,17 @@ Defining both `.js` and `.ts` extensions would allow you to run migrations in de
 Alternatively you could also specify exact classes to get more fine grained control:
 
 ```ts
-import FirstMigration from 'migrations/TIMESTAMP-first-migration'
-import SecondMigration from 'migrations/TIMESTAMP-second-migration'
+import FirstMigration from "migrations/TIMESTAMP-first-migration"
+import SecondMigration from "migrations/TIMESTAMP-second-migration"
 
 export default new DataSource({
-  migrations: [FirstMigration, SecondMigration]
+    migrations: [FirstMigration, SecondMigration],
 })
 ```
 
 but it also requires more manual work and can be error prone.
 
--   `migrationsRun` - Indicates if [migrations](../migrations/01-why.md) should be auto-run on every application launch.
+- `migrationsRun` - Indicates if [migrations](../migrations/01-why.md) should be auto-run on every application launch.
 
 ## Optional settings
 
@@ -59,7 +61,7 @@ Indicates if migrations should be auto-run on every application launch. Default:
 You might want to specify the name of the table that will store information about executed migrations. By default it is called `'migrations'`.
 
 ```ts
-migrationsTableName: 'some_custom_migrations_table'
+migrationsTableName: "some_custom_migrations_table"
 ```
 
 ### `migrationsTransactionMode`

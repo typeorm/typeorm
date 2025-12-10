@@ -39,19 +39,19 @@ TypeORM is a TypeScript-based Object-Relational Mapping (ORM) library that suppo
 ### Code Style
 
 - **Formatting**: Use Prettier with these settings:
-  - No semicolons (`"semi": false`)
-  - Arrow function parentheses always (`"arrowParens": "always"`)
-  - Trailing commas everywhere (`"trailingComma": "all"`)
+    - No semicolons (`"semi": false`)
+    - Arrow function parentheses always (`"arrowParens": "always"`)
+    - Trailing commas everywhere (`"trailingComma": "all"`)
 - **Linting**: ESLint with TypeScript support
-  - Use `@typescript-eslint` rules
-  - Warnings allowed for some `@typescript-eslint/no-*` rules
-  - Unused variables starting with `_` are ignored
+    - Use `@typescript-eslint` rules
+    - Warnings allowed for some `@typescript-eslint/no-*` rules
+    - Unused variables starting with `_` are ignored
 - **Naming Conventions**:
-  - Classes: PascalCase (e.g., `DataSource`, `EntityManager`)
-  - Interfaces: PascalCase (e.g., `ColumnOptions`, `RelationOptions`)
-  - Variables/functions: camelCase
-  - Constants: UPPER_SNAKE_CASE for true constants
-  - Private members: Use standard camelCase (no underscore prefix)
+    - Classes: PascalCase (e.g., `DataSource`, `EntityManager`)
+    - Interfaces: PascalCase (e.g., `ColumnOptions`, `RelationOptions`)
+    - Variables/functions: camelCase
+    - Constants: UPPER_SNAKE_CASE for true constants
+    - Private members: Use standard camelCase (no underscore prefix)
 
 ### TypeScript Patterns
 
@@ -67,6 +67,7 @@ TypeORM is a TypeScript-based Object-Relational Mapping (ORM) library that suppo
 ### Test Structure
 
 Tests are organized in `test/` directory:
+
 - **`test/functional/`** - Feature and integration tests organized by functionality (preferred)
 - **`test/github-issues/`** - Tests for specific GitHub issues
 - **`test/unit/`** - Unit tests for individual components
@@ -77,50 +78,62 @@ Tests are organized in `test/` directory:
 ### Test Writing Guidelines
 
 1. **Use the standard test template**:
+
 ```typescript
 import "reflect-metadata"
-import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils"
+import {
+    createTestingConnections,
+    closeTestingConnections,
+    reloadTestingDatabases,
+} from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 
 describe("description of functionality", () => {
     let dataSources: DataSource[]
-    before(async () => dataSources = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
-    }))
+    before(
+        async () =>
+            (dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                schemaCreate: true,
+                dropSchema: true,
+            })),
+    )
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should do something specific", () => Promise.all(dataSources.map(async dataSource => {
-        // Test implementation
-    })))
+    it("should do something specific", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Test implementation
+            }),
+        ))
 })
 ```
 
 2. **Test Configuration**:
-   - Tests run against multiple databases (as configured in `ormconfig.json`)
-   - Each test should work across all supported databases unless database-specific
-   - Place entity files in `./entity/` relative to test file for automatic loading
-   - Use `Promise.all(dataSources.map(...))` pattern to test against all databases
+    - Tests run against multiple databases (as configured in `ormconfig.json`)
+    - Each test should work across all supported databases unless database-specific
+    - Place entity files in `./entity/` relative to test file for automatic loading
+    - Use `Promise.all(dataSources.map(...))` pattern to test against all databases
 
 3. **Test Naming**:
-   - Use descriptive `describe()` blocks for features
-   - Use "should..." format for `it()` descriptions
-   - Reference GitHub issue numbers when fixing specific issues
+    - Use descriptive `describe()` blocks for features
+    - Use "should..." format for `it()` descriptions
+    - Reference GitHub issue numbers when fixing specific issues
 
 4. **Running Tests**:
-   - Full test suite: `npm test` (compiles then runs tests)
-   - Fast iteration: `npm run test:fast` (runs without recompiling)
-   - Specific tests: `npm run test:fast -- --grep "pattern"`
-   - Watch mode: `npm run compile -- --watch` + `npm run test:fast`
+    - Full test suite: `npm test` (compiles then runs tests)
+    - Fast iteration: `npm run test:fast` (runs without recompiling)
+    - Specific tests: `npm run test:fast -- --grep "pattern"`
+    - Watch mode: `npm run compile -- --watch` + `npm run test:fast`
 
 ## Database-Specific Considerations
 
 ### Multi-Database Support
 
 When writing code or tests:
+
 - Ensure compatibility across all supported databases
 - Use driver-specific code only in `src/driver/` directory
 - Test database-agnostic code against multiple databases
@@ -130,6 +143,7 @@ When writing code or tests:
 ### Driver Implementation
 
 Each driver in `src/driver/` implements common interfaces:
+
 - Connection management
 - Query execution
 - Schema synchronization
@@ -194,6 +208,7 @@ Each driver in `src/driver/` implements common interfaces:
 ### Commit Message Format
 
 Follow conventional commits:
+
 ```
 <type>: <subject>
 
@@ -204,7 +219,8 @@ Follow conventional commits:
 
 **Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `chore`, `revert`
 
-**Subject**: 
+**Subject**:
+
 - Use imperative, present tense
 - Don't capitalize first letter
 - No period at the end
@@ -232,7 +248,7 @@ export class User {
     @Column()
     name: string
 
-    @OneToMany(() => Photo, photo => photo.user)
+    @OneToMany(() => Photo, (photo) => photo.user)
     photos: Photo[]
 }
 ```
