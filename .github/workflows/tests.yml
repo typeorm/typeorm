@@ -95,7 +95,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18, 20]
+        node-version: [20, 24]
     uses: ./.github/workflows/tests-linux.yml
     with:
       node-version: ${{matrix.node-version}}
@@ -105,7 +105,7 @@ jobs:
     needs: [detect-changes, build]
     uses: ./.github/workflows/tests-windows.yml
     with:
-      node-version: 20
+      node-version: 22
 
   coverage:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
