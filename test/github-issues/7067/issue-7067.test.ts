@@ -9,7 +9,7 @@ import {
 } from "../../utils/test-utils"
 import { Order } from "./entity"
 
-describe("github issues > #7067 MySQL2 driver won't cast DECIMAL to number (missing mysql2 specific config)", () => {
+describe("driver > mysql > driver > decimal numbers", () => {
     let connections: DataSource[]
     before(
         async () =>
