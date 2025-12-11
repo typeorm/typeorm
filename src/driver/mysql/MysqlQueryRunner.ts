@@ -2276,9 +2276,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
             const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
@@ -2288,9 +2287,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`
 
             await this.query(disableForeignKeysCheckQuery)
-            const dropQueries: ObjectLiteral[] = await this.query(
-                dropTablesQuery,
-            )
+            const dropQueries: ObjectLiteral[] =
+                await this.query(dropTablesQuery)
             await Promise.all(
                 dropQueries.map((query) => this.query(query["query"])),
             )
@@ -3129,14 +3127,26 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!table.partition) return ""
 
         const partition = table.partition
-        let sql = ` PARTITION BY ${partition.type}`
+        let sql = ` PARTITION BY`
+
+        // For RANGE and LIST with columns (not expression), use COLUMNS syntax
+        // This allows non-integer column types (VARCHAR, DATE, etc.)
+        if (
+            (partition.type === "RANGE" || partition.type === "LIST") &&
+            partition.columns &&
+            !partition.expression
+        ) {
+            sql += ` ${partition.type} COLUMNS`
+        } else {
+            sql += ` ${partition.type}`
+        }
 
         // Partition key (columns or expression)
         if (partition.expression) {
             sql += ` (${partition.expression})`
         } else if (partition.columns) {
             const columns = partition.columns
-                .map((col) => `\`${col}\``)
+                .map((col) => `\`${col.replace(/`/g, "``")}\``)
                 .join(", ")
             sql += ` (${columns})`
         } else {
@@ -3148,26 +3158,59 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // MySQL requires partition definitions in CREATE TABLE for RANGE/LIST
         if (partition.partitions && partition.partitions.length > 0) {
             if (partition.type === "HASH") {
-                // HASH partitioning: PARTITIONS N
-                sql += ` PARTITIONS ${partition.partitions.length}`
+                const count = parseInt(String(partition.partitions.length), 10)
+                if (isNaN(count) || count <= 0 || count > 1024) {
+                    throw new TypeORMError(
+                        "HASH partition count must be between 1 and 1024",
+                    )
+                }
+                if (
+                    partition.partitions.some(
+                        (p) => p.values && p.values.length > 0,
+                    )
+                ) {
+                    throw new TypeORMError(
+                        "MySQL HASH partitions should not specify values in partition definitions",
+                    )
+                }
+                sql += ` PARTITIONS ${count}`
             } else {
                 // RANGE and LIST partitioning
                 sql += " ("
                 const partitionDefs = partition.partitions
                     .map((p) => {
-                        let partDef = `PARTITION \`${p.name}\``
+                        const escapedName = p.name.replace(/`/g, "``")
+                        let partDef = `PARTITION \`${escapedName}\``
 
                         if (partition.type === "RANGE") {
                             if (p.values.length === 1) {
-                                // Single value is the upper bound (VALUES LESS THAN)
-                                partDef += ` VALUES LESS THAN (${p.values[0]})`
+                                let value: string
+                                if (p.values[0] === "MAXVALUE") {
+                                    value = "MAXVALUE"
+                                } else if (/^\d+$/.test(p.values[0])) {
+                                    value = p.values[0]
+                                } else {
+                                    const escaped = p.values[0].replace(
+                                        /'/g,
+                                        "''",
+                                    )
+                                    value = `'${escaped}'`
+                                }
+                                partDef += ` VALUES LESS THAN (${value})`
                             } else {
                                 throw new TypeORMError(
                                     "MySQL RANGE partition requires 1 value (upper bound)",
                                 )
                             }
                         } else if (partition.type === "LIST") {
-                            const values = p.values.join(", ")
+                            if (p.values.length === 0) {
+                                throw new TypeORMError(
+                                    "LIST partition requires at least one value",
+                                )
+                            }
+                            const values = p.values
+                                .map((v) => `'${v.replace(/'/g, "''")}'`)
+                                .join(", ")
                             partDef += ` VALUES IN (${values})`
                         }
 
@@ -3190,19 +3233,36 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         partition: PartitionDefinition,
         partitionType: PartitionType,
     ): Promise<void> {
+        const escapedPartitionName = partition.name.replace(/`/g, "``")
         let sql = `ALTER TABLE ${this.escapePath(tableName)} ADD PARTITION (`
 
         if (partitionType === "RANGE") {
             if (partition.values.length === 1) {
-                sql += `PARTITION \`${partition.name}\` VALUES LESS THAN (${partition.values[0]})`
+                let value: string
+                if (partition.values[0] === "MAXVALUE") {
+                    value = "MAXVALUE"
+                } else if (/^\d+$/.test(partition.values[0])) {
+                    value = partition.values[0]
+                } else {
+                    const escaped = partition.values[0].replace(/'/g, "''")
+                    value = `'${escaped}'`
+                }
+                sql += `PARTITION \`${escapedPartitionName}\` VALUES LESS THAN (${value})`
             } else {
                 throw new TypeORMError(
                     "MySQL RANGE partition requires 1 value (upper bound)",
                 )
             }
         } else if (partitionType === "LIST") {
-            const values = partition.values.join(", ")
-            sql += `PARTITION \`${partition.name}\` VALUES IN (${values})`
+            if (partition.values.length === 0) {
+                throw new TypeORMError(
+                    "LIST partition requires at least one value",
+                )
+            }
+            const values = partition.values
+                .map((v) => `'${v.replace(/'/g, "''")}'`)
+                .join(", ")
+            sql += `PARTITION \`${escapedPartitionName}\` VALUES IN (${values})`
         } else {
             throw new TypeORMError(
                 "MySQL does not support adding individual HASH partitions dynamically",
@@ -3220,9 +3280,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableName: string,
         partitionName: string,
     ): Promise<void> {
+        const escapedPartitionName = partitionName.replace(/`/g, "``")
         const sql = `ALTER TABLE ${this.escapePath(
             tableName,
-        )} DROP PARTITION \`${partitionName}\``
+        )} DROP PARTITION \`${escapedPartitionName}\``
         await this.query(sql)
     }
 
@@ -3235,11 +3296,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             SELECT PARTITION_NAME
             FROM INFORMATION_SCHEMA.PARTITIONS
             WHERE TABLE_SCHEMA = DATABASE()
-              AND TABLE_NAME = '${parsed.tableName}'
+              AND TABLE_NAME = ?
               AND PARTITION_NAME IS NOT NULL
         `
 
-        const results = await this.query(sql)
+        const results = await this.query(sql, [parsed.tableName])
         return results.map((row: any) => row.PARTITION_NAME)
     }
 
@@ -3499,9 +3560,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     async getVersion(): Promise<string> {
-        const result: [{ "version()": string }] = await this.query(
-            "SELECT version()",
-        )
+        const result: [{ "version()": string }] =
+            await this.query("SELECT version()")
 
         // MariaDB: https://mariadb.com/kb/en/version/
         // - "10.2.27-MariaDB-10.2.27+maria~jessie-log"

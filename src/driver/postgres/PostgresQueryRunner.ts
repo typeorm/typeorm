@@ -29,6 +29,7 @@ import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { PostgresDriver } from "./PostgresDriver"
+import { PostgresPartitionUtils } from "./PostgresPartitionUtils"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -4198,26 +4199,7 @@ export class PostgresQueryRunner
      * Builds PostgreSQL PARTITION BY clause.
      */
     protected buildPartitionClauseSql(table: Table): string {
-        if (!table.partition) return ""
-
-        const partition = table.partition
-        let sql = ` PARTITION BY ${partition.type}`
-
-        // Partition key (columns or expression)
-        if (partition.expression) {
-            sql += ` (${partition.expression})`
-        } else if (partition.columns) {
-            const columns = partition.columns
-                .map((col) => `"${col}"`)
-                .join(", ")
-            sql += ` (${columns})`
-        } else {
-            throw new TypeORMError(
-                "Partition configuration must specify either 'columns' or 'expression'",
-            )
-        }
-
-        return sql
+        return PostgresPartitionUtils.buildPartitionClauseSql(table)
     }
 
     /**
@@ -4228,43 +4210,17 @@ export class PostgresQueryRunner
         partition: PartitionDefinition,
         partitionType: PartitionType,
     ): Promise<void> {
-        let sql = `CREATE TABLE ${this.escapePath(
-            partition.name,
-        )} PARTITION OF ${this.escapePath(tableName)}`
-
-        if (partitionType === "RANGE") {
-            if (
-                partition.values.length === 1 &&
-                (partition.values[0] === "MAXVALUE" ||
-                    partition.values[0] === "DEFAULT")
-            ) {
-                sql += ` DEFAULT`
-            } else if (partition.values.length === 2) {
-                sql += ` FOR VALUES FROM ('${partition.values[0]}') TO ('${partition.values[1]}')`
-            } else {
-                throw new TypeORMError(
-                    "RANGE partition requires 2 values [from, to] or ['MAXVALUE'] / ['DEFAULT']",
-                )
-            }
-        } else if (partitionType === "LIST") {
-            const values = partition.values.map((v) => `'${v}'`).join(", ")
-            sql += ` FOR VALUES IN (${values})`
-        } else if (partitionType === "HASH") {
-            if (partition.values.length === 2) {
-                const [modulus, remainder] = partition.values
-                sql += ` FOR VALUES WITH (MODULUS ${modulus}, REMAINDER ${remainder})`
-            } else {
-                throw new TypeORMError(
-                    "HASH partition requires 2 values [modulus, remainder]",
-                )
-            }
-        }
-
-        if (partition.tablespace) {
-            sql += ` TABLESPACE ${partition.tablespace}`
-        }
-
-        await this.query(sql)
+        await PostgresPartitionUtils.createPartition(
+            this,
+            tableName,
+            partition,
+            partitionType,
+            {
+                escapePath: (target) => this.escapePath(target),
+                includeTablespace: true,
+                escapeIdentifier: (name) => this.driver.escape(name),
+            },
+        )
     }
 
     /**
@@ -4274,31 +4230,18 @@ export class PostgresQueryRunner
         tableName: string,
         partitionName: string,
     ): Promise<void> {
-        const sql = `DROP TABLE ${this.escapePath(partitionName)}`
-        await this.query(sql)
+        await PostgresPartitionUtils.dropPartition(
+            this,
+            partitionName,
+            (target) => this.escapePath(target),
+        )
     }
 
     /**
      * Lists all partitions of a table in PostgreSQL.
      */
     async getPartitions(tableName: string): Promise<string[]> {
-        const parsedTableName = this.driver.parseTableName(tableName)
-        const schema = parsedTableName.schema || (await this.getCurrentSchema())
-        const name = parsedTableName.tableName
-
-        const sql = `
-            SELECT
-                child.relname AS partition_name
-            FROM pg_inherits
-            JOIN pg_class parent ON pg_inherits.inhparent = parent.oid
-            JOIN pg_class child ON pg_inherits.inhrelid = child.oid
-            JOIN pg_namespace nmsp_parent ON nmsp_parent.oid = parent.relnamespace
-            WHERE parent.relname = '${name}'
-              AND nmsp_parent.nspname = '${schema}'
-        `
-
-        const results = await this.query(sql)
-        return results.map((row: any) => row.partition_name)
+        return PostgresPartitionUtils.getPartitions(this, tableName)
     }
 
     /**

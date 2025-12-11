@@ -1,4 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "../../../../../src"
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    PrimaryColumn,
+    Column,
+} from "../../../../../src"
 
 @Entity({
     name: "sale",
@@ -15,7 +20,7 @@ export class Sale {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column("date")
+    @PrimaryColumn("date")
     sale_date: Date
 
     @Column("decimal", { precision: 10, scale: 2 })

@@ -96,9 +96,8 @@ describe("database schema > partitioning > mysql > list and hash", () => {
                     )
 
                     // Verify partition exists
-                    const partitions = await queryRunner.getPartitions!(
-                        "product",
-                    )
+                    const partitions =
+                        await queryRunner.getPartitions!("product")
                     expect(partitions).to.have.lengthOf(3)
                     expect(partitions).to.include.members([
                         "p_electronics",
@@ -119,13 +118,61 @@ describe("database schema > partitioning > mysql > list and hash", () => {
                     await queryRunner.dropPartition!("product", "p_clothing")
 
                     // Verify partition was dropped
-                    const partitions = await queryRunner.getPartitions!(
-                        "product",
-                    )
+                    const partitions =
+                        await queryRunner.getPartitions!("product")
                     expect(partitions).to.have.lengthOf(1)
                     expect(partitions).to.include("p_electronics")
                     expect(partitions).to.not.include("p_clothing")
 
+                    await queryRunner.release()
+                }),
+            ))
+
+        it("should handle LIST with expression vs LIST COLUMNS with column", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const queryRunner = connection.createQueryRunner()
+
+                    // Test 1: LIST COLUMNS (category) - for VARCHAR columns
+                    // This is what Product entity uses
+                    const listColumnsResult = await queryRunner.query(`
+                        SHOW CREATE TABLE product
+                    `)
+                    const listColumnsCreateTable =
+                        listColumnsResult[0]["Create Table"]
+
+                    // Verify it uses LIST COLUMNS syntax for VARCHAR column
+                    expect(listColumnsCreateTable).to.include(
+                        "PARTITION BY LIST COLUMNS",
+                    )
+                    expect(listColumnsCreateTable).to.include("`category`")
+
+                    // Test 2: LIST (expression) - for integer expressions
+                    // Create a table with LIST partitioning on an integer expression
+                    await queryRunner.query(`
+                        CREATE TABLE list_expr_test (
+                            id INT PRIMARY KEY,
+                            status_code INT,
+                            name VARCHAR(100)
+                        ) PARTITION BY LIST (status_code) (
+                            PARTITION p_active VALUES IN (1, 2),
+                            PARTITION p_inactive VALUES IN (0, 3)
+                        )
+                    `)
+
+                    const listExprResult = await queryRunner.query(`
+                        SHOW CREATE TABLE list_expr_test
+                    `)
+                    const listExprCreateTable =
+                        listExprResult[0]["Create Table"]
+
+                    // Verify it uses LIST (not LIST COLUMNS) for integer expression
+                    expect(listExprCreateTable).to.include("PARTITION BY LIST")
+                    expect(listExprCreateTable).to.not.include("LIST COLUMNS")
+                    expect(listExprCreateTable).to.include("status_code")
+
+                    // Cleanup
+                    await queryRunner.query(`DROP TABLE list_expr_test`)
                     await queryRunner.release()
                 }),
             ))
