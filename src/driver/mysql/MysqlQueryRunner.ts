@@ -1,8 +1,10 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { PartitionDefinition } from "../../decorator/options/PartitionOptions"
 import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import type { PartitionType } from "../../metadata/types/PartitionTypes"
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
@@ -3112,7 +3114,133 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             sql += ` COMMENT="${table.comment}"`
         }
 
+        // Add partition clause if table is partitioned
+        if (table.partition) {
+            sql += this.buildMysqlPartitionClauseSql(table)
+        }
+
         return new Query(sql)
+    }
+
+    /**
+     * Builds MySQL PARTITION BY clause with partition definitions.
+     */
+    protected buildMysqlPartitionClauseSql(table: Table): string {
+        if (!table.partition) return ""
+
+        const partition = table.partition
+        let sql = ` PARTITION BY ${partition.type}`
+
+        // Partition key (columns or expression)
+        if (partition.expression) {
+            sql += ` (${partition.expression})`
+        } else if (partition.columns) {
+            const columns = partition.columns
+                .map((col) => `\`${col}\``)
+                .join(", ")
+            sql += ` (${columns})`
+        } else {
+            throw new TypeORMError(
+                "Partition configuration must specify either 'columns' or 'expression'",
+            )
+        }
+
+        // MySQL requires partition definitions in CREATE TABLE for RANGE/LIST
+        if (partition.partitions && partition.partitions.length > 0) {
+            if (partition.type === "HASH") {
+                // HASH partitioning: PARTITIONS N
+                sql += ` PARTITIONS ${partition.partitions.length}`
+            } else {
+                // RANGE and LIST partitioning
+                sql += " ("
+                const partitionDefs = partition.partitions
+                    .map((p) => {
+                        let partDef = `PARTITION \`${p.name}\``
+
+                        if (partition.type === "RANGE") {
+                            if (p.values.length === 1) {
+                                // Single value is the upper bound (VALUES LESS THAN)
+                                partDef += ` VALUES LESS THAN (${p.values[0]})`
+                            } else {
+                                throw new TypeORMError(
+                                    "MySQL RANGE partition requires 1 value (upper bound)",
+                                )
+                            }
+                        } else if (partition.type === "LIST") {
+                            const values = p.values.join(", ")
+                            partDef += ` VALUES IN (${values})`
+                        }
+
+                        return partDef
+                    })
+                    .join(", ")
+
+                sql += partitionDefs + ")"
+            }
+        }
+
+        return sql
+    }
+
+    /**
+     * Adds a partition to a partitioned table in MySQL.
+     */
+    async createPartition(
+        tableName: string,
+        partition: PartitionDefinition,
+        partitionType: PartitionType,
+    ): Promise<void> {
+        let sql = `ALTER TABLE ${this.escapePath(tableName)} ADD PARTITION (`
+
+        if (partitionType === "RANGE") {
+            if (partition.values.length === 1) {
+                sql += `PARTITION \`${partition.name}\` VALUES LESS THAN (${partition.values[0]})`
+            } else {
+                throw new TypeORMError(
+                    "MySQL RANGE partition requires 1 value (upper bound)",
+                )
+            }
+        } else if (partitionType === "LIST") {
+            const values = partition.values.join(", ")
+            sql += `PARTITION \`${partition.name}\` VALUES IN (${values})`
+        } else {
+            throw new TypeORMError(
+                "MySQL does not support adding individual HASH partitions dynamically",
+            )
+        }
+
+        sql += ")"
+        await this.query(sql)
+    }
+
+    /**
+     * Drops a partition from a partitioned table in MySQL.
+     */
+    async dropPartition(
+        tableName: string,
+        partitionName: string,
+    ): Promise<void> {
+        const sql = `ALTER TABLE ${this.escapePath(
+            tableName,
+        )} DROP PARTITION \`${partitionName}\``
+        await this.query(sql)
+    }
+
+    /**
+     * Lists all partitions of a table in MySQL.
+     */
+    async getPartitions(tableName: string): Promise<string[]> {
+        const parsed = this.driver.parseTableName(tableName)
+        const sql = `
+            SELECT PARTITION_NAME
+            FROM INFORMATION_SCHEMA.PARTITIONS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = '${parsed.tableName}'
+              AND PARTITION_NAME IS NOT NULL
+        `
+
+        const results = await this.query(sql)
+        return results.map((row: any) => row.PARTITION_NAME)
     }
 
     /**

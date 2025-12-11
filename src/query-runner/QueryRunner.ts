@@ -1,20 +1,22 @@
-import { TableColumn } from "../schema-builder/table/TableColumn"
+import { ObjectLiteral } from "../common/ObjectLiteral"
+import { DataSource } from "../data-source/DataSource"
+import type { PartitionDefinition } from "../decorator/options/PartitionOptions"
+import { SqlInMemory } from "../driver/SqlInMemory"
+import { IsolationLevel } from "../driver/types/IsolationLevel"
+import { ReplicationMode } from "../driver/types/ReplicationMode"
+import { EntityManager } from "../entity-manager/EntityManager"
+import type { PartitionType } from "../metadata/types/PartitionTypes"
+import { ReadStream } from "../platform/PlatformTools"
 import { Table } from "../schema-builder/table/Table"
+import { TableCheck } from "../schema-builder/table/TableCheck"
+import { TableColumn } from "../schema-builder/table/TableColumn"
+import { TableExclusion } from "../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../schema-builder/table/TableIndex"
-import { DataSource } from "../data-source/DataSource"
-import { ReadStream } from "../platform/PlatformTools"
-import { EntityManager } from "../entity-manager/EntityManager"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { SqlInMemory } from "../driver/SqlInMemory"
 import { TableUnique } from "../schema-builder/table/TableUnique"
 import { View } from "../schema-builder/view/View"
 import { Broadcaster } from "../subscriber/Broadcaster"
-import { TableCheck } from "../schema-builder/table/TableCheck"
-import { IsolationLevel } from "../driver/types/IsolationLevel"
-import { TableExclusion } from "../schema-builder/table/TableExclusion"
 import { QueryResult } from "./QueryResult"
-import { ReplicationMode } from "../driver/types/ReplicationMode"
 
 /**
  * Runs queries on a single database connection.
@@ -290,6 +292,28 @@ export interface QueryRunner {
         tableOrName: Table | string,
         comment?: string,
     ): Promise<void>
+
+    /**
+     * Creates a new partition for a partitioned table.
+     * Supported by PostgreSQL, MySQL, and CockroachDB.
+     */
+    createPartition?(
+        tableName: string,
+        partition: PartitionDefinition,
+        partitionType: PartitionType,
+    ): Promise<void>
+
+    /**
+     * Drops a partition from a partitioned table.
+     * Supported by PostgreSQL, MySQL, and CockroachDB.
+     */
+    dropPartition?(tableName: string, partitionName: string): Promise<void>
+
+    /**
+     * Gets list of all partitions for a given table.
+     * Supported by PostgreSQL, MySQL, and CockroachDB.
+     */
+    getPartitions?(tableName: string): Promise<string[]>
 
     /**
      * Adds a new column.
