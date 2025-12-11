@@ -64,6 +64,11 @@ export interface MysqlConnectionOptions
      * disabled will return big numbers as String objects only when they cannot be accurately represented with
      * [JavaScript Number objects](http://ecma262-5.com/ELS5_HTML.htm#Section_8.5) (which happens when they exceed the [-2^53, +2^53] range),
      * otherwise they will be returned as Number objects. This option is ignored if supportBigNumbers is disabled.
+     *
+     * When using the Mysql2 driver, when `supportBigNumbers` is enabled (`true`) and `bigNumberStrings` is disabled (`false`),
+     * big numbers (DECIMAL and NEWDECIMAL) will be forced to be returned as JavaScript Number objects.
+     * The other three combinations will force big numbers to be returned as JavaScript String objects.
+     * Refer to [Known incompatibilities with Node MySQL](https://sidorares.github.io/node-mysql2/docs/documentation#known-incompatibilities-with-node-mysql).
      */
     readonly bigNumberStrings?: boolean
 
