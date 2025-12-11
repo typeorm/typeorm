@@ -17,7 +17,6 @@ describe("github issues > #7067 MySQL2 driver won't cast DECIMAL to number (miss
                 entities: [Order],
                 schemaCreate: true,
                 dropSchema: true,
-                relationLoadStrategy: "join",
                 enabledDrivers: ["mysql"],
                 driverSpecific: {
                     supportBigNumbers: true,
