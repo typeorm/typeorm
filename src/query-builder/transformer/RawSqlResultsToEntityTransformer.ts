@@ -115,19 +115,14 @@ export class RawSqlResultsToEntityTransformer {
         }
 
         // Check if primary key columns are actually selected in the raw results
-        const hasValidKeys =
-            keys.length > 0 &&
-            rawResults.length > 0 &&
-            keys.some(
-                (key) =>
-                    rawResults[0].hasOwnProperty(key) &&
-                    rawResults[0][key] !== undefined,
-            )
+        const primaryKeysSelected = keys.some(
+            (key) => key in (rawResults[0] ?? {}),
+        )
 
         for (const rawResult of rawResults) {
             let id: string
 
-            if (hasValidKeys) {
+            if (primaryKeysSelected) {
                 // Use primary key based grouping when available
                 id = keys
                     .map((key) => {
