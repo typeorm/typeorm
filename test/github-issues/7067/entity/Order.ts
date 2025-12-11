@@ -2,7 +2,6 @@ import {
     Column,
     Entity,
     PrimaryGeneratedColumn,
-    TableInheritance,
 } from "../../../../src"
 
 @Entity()
