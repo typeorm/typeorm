@@ -5,7 +5,6 @@ import {
 } from "../../../../src"
 
 @Entity()
-@TableInheritance({ column: { type: String, name: "type" } })
 export class Order {
     @PrimaryGeneratedColumn()
     id: number
