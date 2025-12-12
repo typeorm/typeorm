@@ -3222,6 +3222,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 )
             }
 
+            if (this.findOptions.groupBy) {
+                if (Array.isArray(this.findOptions.groupBy)) {
+                    this.findOptions.groupBy.forEach((groupByItem, index) => {
+                        if (index === 0) {
+                            this.groupBy(groupByItem)
+                        } else {
+                            this.addGroupBy(groupByItem)
+                        }
+                    })
+                } else {
+                    this.groupBy(this.findOptions.groupBy)
+                }
+            }
+
             // apply joins
             if (this.joins.length) {
                 this.joins.forEach((join) => {
