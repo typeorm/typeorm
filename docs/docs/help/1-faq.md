@@ -181,21 +181,22 @@ module.exports = {
 By default Webpack tries to bundle everything into one file. This can be problematic when your project has migration files which are meant to be executed after bundled code is deployed to production. To make sure all your [migrations](../migrations/01-why.md) can be recognized and executed by TypeORM, you may need to use "Object Syntax" for the `entry` configuration for the migration files only.
 
 ```javascript
-const glob = require("glob")
-const path = require("path")
+const { globSync } = require("node:fs")
+const path = require("node:path")
 
 module.exports = {
     // ... your webpack configurations here...
     // Dynamically generate a `{ [name]: sourceFileName }` map for the `entry` option
     // change `src/db/migrations` to the relative path to your migration folder
-    entry: glob
-        .sync(path.resolve("src/db/migrations/*.ts"))
-        .reduce((entries, filename) => {
+    entry: globSync(path.resolve("src/db/migrations/*.ts")).reduce(
+        (entries, filename) => {
             const migrationName = path.basename(filename, ".ts")
             return Object.assign({}, entries, {
                 [migrationName]: filename,
             })
-        }, {}),
+        },
+        {},
+    ),
     resolve: {
         // assuming all your migration files are written in TypeScript
         extensions: [".ts"],

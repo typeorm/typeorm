@@ -81,7 +81,7 @@ You can link (or simply copy/paste) this directory into your project and test Ty
 To build the distribution package of TypeORM packed into a `.tgz`, run:
 
 ```shell
-npm run pack
+cd build/package && npm pack
 ```
 
 This command will generate a distribution package tar in the `build` directory (`build/typeorm-x.x.x.tgz`).
