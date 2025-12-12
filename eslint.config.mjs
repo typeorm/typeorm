@@ -82,6 +82,14 @@ export default defineConfig([
             "no-loss-of-precision": "warn",
             "no-prototype-builtins": "warn",
             "no-regex-spaces": "warn",
+
+            "@typescript-eslint/consistent-type-imports": [
+                "warn", // Start with "warn", change to "error" after migration (--fix)
+                {
+                    prefer: "type-imports",
+                    disallowTypeAnnotations: false,
+                },
+            ],
         },
     },
     jsdoc({
