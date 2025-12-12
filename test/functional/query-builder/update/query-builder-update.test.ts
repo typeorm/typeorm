@@ -14,6 +14,7 @@ import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropert
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import { PostWithOnUpdate } from "./entity/PostWithOnUpdate"
 import { In } from "../../../../src"
+import { setTimeout } from "timers/promises"
 
 const onUpdateExpressionByDriver: Record<string, string | undefined> = {
     postgres: "clock_timestamp()",
@@ -346,6 +347,7 @@ describe("query builder > update", () => {
                 .set({ title: () => "title || '_updated'" })
 
             await qb.clone().where("id = :id", { id: post1Id }).execute()
+            await setTimeout(10)
             await qb.clone().where("id = :id", { id: post2Id }).execute()
 
             await queryRunner.commitTransaction()
