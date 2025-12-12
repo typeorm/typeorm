@@ -336,17 +336,17 @@ describe("query builder > update", () => {
             post2.title = "second"
             post2.updatedAt = new Date(Date.now() - 2000)
 
-            await queryRunner.manager.save(post1)
-            await queryRunner.manager.save(post2)
+            await queryRunner.manager.save([post1, post2])
             post1Id = post1.id
             post2Id = post2.id
 
-            await queryRunner.manager
+            const qb = queryRunner.manager
                 .createQueryBuilder()
                 .update(PostWithOnUpdate)
                 .set({ title: () => "title || '_updated'" })
-                .where("id IN (:...ids)", { ids: [post1.id, post2.id] })
-                .execute()
+
+            await qb.clone().where("id = :id", { id: post1Id }).execute()
+            await qb.clone().where("id = :id", { id: post2Id }).execute()
 
             await queryRunner.commitTransaction()
         } catch (err) {
