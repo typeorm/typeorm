@@ -3134,9 +3134,8 @@ export class PostgresQueryRunner
             const selectViewDropsQuery =
                 `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
@@ -4197,9 +4196,8 @@ export class PostgresQueryRunner
         // see:
         //  - https://github.com/typeorm/typeorm/pull/9319
         //  - https://docs.aws.amazon.com/redshift/latest/dg/c_unsupported-postgresql-functions.html
-        const result: [{ version: string }] = await this.query(
-            `SELECT version()`,
-        )
+        const result: [{ version: string }] =
+            await this.query(`SELECT version()`)
 
         // Examples:
         // Postgres: "PostgreSQL 14.10 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 8.5.0 20210514 (Red Hat 8.5.0-20), 64-bit"
