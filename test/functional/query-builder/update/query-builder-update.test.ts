@@ -12,6 +12,30 @@ import { Photo } from "./entity/Photo"
 import { UpdateValuesMissingError } from "../../../../src/error/UpdateValuesMissingError"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { PostWithOnUpdate } from "./entity/PostWithOnUpdate"
+
+const onUpdateExpressionByDriver: Record<string, string | undefined> = {
+    postgres: "clock_timestamp()",
+    cockroachdb: "clock_timestamp()",
+    mysql: "CURRENT_TIMESTAMP(6)",
+    mariadb: "CURRENT_TIMESTAMP(6)",
+    "aurora-mysql": "CURRENT_TIMESTAMP(6)",
+    sqlite: "datetime('now')",
+    "better-sqlite3": "datetime('now')",
+    cordova: "datetime('now')",
+    capacitor: "datetime('now')",
+    "react-native": "datetime('now')",
+    mssql: "getdate()",
+    sap: "CURRENT_TIMESTAMP",
+    oracle: "CURRENT_TIMESTAMP",
+}
+
+function getOnUpdateExpression(connection: DataSource) {
+    return (
+        onUpdateExpressionByDriver[connection.driver.options.type] ||
+        connection.driver.mappedDataTypes.updateDateDefault
+    )
+}
 
 describe("query builder > update", () => {
     let connections: DataSource[]
@@ -243,6 +267,46 @@ describe("query builder > update", () => {
                     error = err
                 }
                 expect(error).to.be.an.instanceof(UpdateValuesMissingError)
+            }),
+        ))
+
+    it("should respect onUpdate expression for update date columns", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const expression = getOnUpdateExpression(connection)
+                if (!expression) return
+
+                const metadata = connection
+                    .getMetadata(PostWithOnUpdate)
+                    .findColumnWithPropertyName("updatedAt")!
+                metadata.onUpdate = expression
+
+                const post = new PostWithOnUpdate()
+                post.title = "initial"
+                await connection.manager.save(post)
+
+                const initialDate = post.updatedAt
+
+                const qb = connection
+                    .createQueryBuilder()
+                    .update(PostWithOnUpdate)
+                    .set({ title: "updated" })
+                    .where("id = :id", { id: post.id })
+
+                expect(qb.getQuery()).to.contain(expression)
+
+                await qb.execute()
+
+                const updated = await connection.manager.findOneBy(
+                    PostWithOnUpdate,
+                    { id: post.id },
+                )
+
+                expect(updated).to.exist
+                expect(updated!.updatedAt).to.be.instanceof(Date)
+                expect(
+                    (updated!.updatedAt as Date).getTime(),
+                ).to.be.greaterThan(initialDate.getTime())
             }),
         ))
 
