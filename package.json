@@ -244,12 +244,6 @@
     "url": "https://opencollective.com/typeorm",
     "logo": "https://opencollective.com/opencollective/logo.txt"
   },
-  "devEngines": {
-    "packageManager": {
-      "name": "npm"
-    }
-  },
-  "readmeFilename": "README.md",
   "tags": [
     "orm",
     "typescript",
