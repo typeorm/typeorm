@@ -175,12 +175,10 @@ describe("multi-database > basic-functionality", () => {
                     const queryRunner = connection.createQueryRunner()
                     const tablePathCategory = `${attachCategoryHandle}.category`
                     const tablePathPost = `${attachCategoryHandle}.post`
-                    const tableCategory = (await queryRunner.getTable(
-                        tablePathCategory,
-                    ))!
-                    const tablePost = (await queryRunner.getTable(
-                        tablePathPost,
-                    ))!
+                    const tableCategory =
+                        (await queryRunner.getTable(tablePathCategory))!
+                    const tablePost =
+                        (await queryRunner.getTable(tablePathPost))!
                     await queryRunner.release()
 
                     expect(tableCategory.foreignKeys.length).to.eq(1)
