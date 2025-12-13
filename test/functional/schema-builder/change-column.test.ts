@@ -112,9 +112,8 @@ describe("schema builder > change column", () => {
                 await connection.synchronize()
 
                 const queryRunner = connection.createQueryRunner()
-                const postVersionTable = await queryRunner.getTable(
-                    "post_version",
-                )
+                const postVersionTable =
+                    await queryRunner.getTable("post_version")
                 await queryRunner.release()
 
                 postVersionTable!.foreignKeys.length.should.be.equal(1)
@@ -464,9 +463,8 @@ describe("schema builder > change column", () => {
                 await connection.synchronize()
 
                 const queryRunner = connection.createQueryRunner()
-                const postVersionTable = await queryRunner.getTable(
-                    "post_version",
-                )
+                const postVersionTable =
+                    await queryRunner.getTable("post_version")
                 await queryRunner.release()
 
                 postVersionTable!.foreignKeys.length.should.be.equal(1)

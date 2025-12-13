@@ -177,9 +177,8 @@ describe("query runner > drop foreign key", () => {
                     )
 
                     // Verify all test foreign keys were dropped
-                    const finalTable = await queryRunner.getTable(
-                        "test_fk_table",
-                    )
+                    const finalTable =
+                        await queryRunner.getTable("test_fk_table")
                     if (!finalTable) {
                         throw new Error("Final test table not found")
                     }
