@@ -17,7 +17,7 @@ import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { ObjectUtils } from "../../util/ObjectUtils"
 import { OrmUtils } from "../../util/OrmUtils"
-import { Driver } from "../Driver"
+import { Driver, ReturningType } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
 import { ColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
@@ -972,7 +972,7 @@ export class CockroachDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(returningType: ReturningType): boolean {
         return true
     }
 

@@ -1,4 +1,4 @@
-import { Driver } from "../Driver"
+import { Driver, ReturningType } from "../Driver"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { CteCapabilities } from "../types/CteCapabilities"
@@ -919,7 +919,7 @@ export class OracleDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(returningType: ReturningType): boolean {
         return true
     }
 

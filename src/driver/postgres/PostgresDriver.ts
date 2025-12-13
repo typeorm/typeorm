@@ -11,7 +11,7 @@ import { TableColumn } from "../../schema-builder/table/TableColumn"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { OrmUtils } from "../../util/OrmUtils"
-import { Driver } from "../Driver"
+import { Driver, ReturningType } from "../Driver"
 import { ColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
@@ -1438,7 +1438,7 @@ export class PostgresDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(returningType: ReturningType): boolean {
         return true
     }
 

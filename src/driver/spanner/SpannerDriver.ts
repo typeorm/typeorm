@@ -1,4 +1,4 @@
-import { Driver } from "../Driver"
+import { Driver, ReturningType } from "../Driver"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { SpannerQueryRunner } from "./SpannerQueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
@@ -696,7 +696,7 @@ export class SpannerDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(returningType: ReturningType): boolean {
         return true
     }
 
