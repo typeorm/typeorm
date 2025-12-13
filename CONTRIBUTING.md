@@ -136,7 +136,6 @@ The documentation uses versioning to maintain multiple versions:
     - Make the fix in `docs/docs/` first (so it is present in `next`).
     - Apply the same minimal fix to the corresponding file in `docs/versioned_docs/version-v0.3/` (or the relevant stable version directory). Keep changes scoped to the exact fix; avoid broad refactors in snapshots.
     - Ensure both versions stay aligned where applicable, then run a docs build locally to confirm there are no errors.
-    - Mention in the PR description that the change was backported to the stable docs and list which versions you touched.
 
 For more details about the documentation setup, see [`docs/README.md`](docs/README.md).
 
