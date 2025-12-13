@@ -71,4 +71,29 @@ describe("repository > returning", () => {
                 })
             }),
         ))
+
+    it("allows specifying RETURNING via repository.updateAll options", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (!connection.driver.isReturningSqlSupported("update")) {
+                    return
+                }
+
+                const repo = connection.getRepository(User)
+                const user1 = await repo.save({ name: "user1" })
+                const user2 = await repo.save({ name: "user2" })
+
+                const result = await repo.updateAll(
+                    { name: "updated-all" },
+                    { returning: ["id", "name"] },
+                )
+
+                expect(result.raw).to.be.an("array")
+                expect(result.raw.length).to.equal(2)
+                expect(result.raw).to.deep.include.members([
+                    { id: user1.id, name: "updated-all" },
+                    { id: user2.id, name: "updated-all" },
+                ])
+            }),
+        ))
 })
