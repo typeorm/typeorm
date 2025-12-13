@@ -132,6 +132,11 @@ The documentation uses versioning to maintain multiple versions:
 - Stable versions (e.g., **"v0.3 (stable)"**) are snapshots created when releasing a new version
 - Users can switch between versions using the version dropdown in the documentation navbar
 - When contributing, always edit the **"next"** version unless you're specifically updating a stable version snapshot (which should be rare and typically done by maintainers)
+- **Backporting important fixes to stable docs** (for critical corrections that users on the stable version must see):
+    - Make the fix in `docs/docs/` first (so it is present in `next`).
+    - Apply the same minimal fix to the corresponding file in `docs/versioned_docs/version-v0.3/` (or the relevant stable version directory). Keep changes scoped to the exact fix; avoid broad refactors in snapshots.
+    - Ensure both versions stay aligned where applicable, then run a docs build locally to confirm there are no errors.
+    - Mention in the PR description that the change was backported to the stable docs and list which versions you touched.
 
 For more details about the documentation setup, see [`docs/README.md`](docs/README.md).
 
