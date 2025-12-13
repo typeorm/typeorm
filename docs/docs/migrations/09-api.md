@@ -436,7 +436,7 @@ createCheckConstraint(table: Table|string, checkConstraint: TableCheck): Promise
 
 Creates a new check constraint.
 
-> Note: MySQL supports CHECK constraints starting from version 8.0.16. For earlier MySQL versions CHECK definitions are parsed but ignored by the server, so TypeORM will skip creating them. Ensure your MySQL server is >= 8.0.16 to use CHECK constraints.
+> Note: MySQL supports CHECK constraints starting from version 8.0.16. For earlier MySQL versions CHECK definitions are parsed but ignored by the server. Ensure your MySQL server is >= 8.0.16 to use CHECK constraints.
 
 ---
 
