@@ -1438,7 +1438,7 @@ export class PostgresDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(returningType: ReturningType): boolean {
+    isReturningSqlSupported(_returningType: ReturningType): boolean {
         return true
     }
 
