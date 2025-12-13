@@ -81,6 +81,53 @@ Before you submit your Pull Request (PR) consider the following guidelines:
 
 That's it! Thank you for your contribution!
 
+### <a name="submit-docs"></a> Contributing to Documentation
+
+TypeORM documentation is built using [Docusaurus](https://docusaurus.io/) and is located in the `docs/` directory.
+
+#### Documentation Structure
+
+The documentation uses versioning to maintain multiple versions:
+
+* **`docs/docs/`** - Contains the in-development documentation (labeled as **"next"**)
+  * This is where you should make changes for new features or updates
+  * Changes here will appear in the "next" version of the docs
+* **`docs/versioned_docs/version-v0.3/`** - Contains the stable snapshot for v0.3 (labeled as **"v0.3 (stable)"**)
+  * This is a snapshot and should not be edited directly
+  * Only maintainers create new version snapshots when releasing stable versions
+
+#### Making Documentation Changes
+
+1. Navigate to the `docs/` directory:
+   ```shell
+   cd docs
+   ```
+
+2. Make your changes to files in `docs/docs/` (the "next" version)
+
+3. Test your changes locally:
+   ```shell
+   npm install
+   npm run start
+   ```
+   This will start a local development server where you can preview your changes.
+
+4. Build the documentation to ensure there are no errors:
+   ```shell
+   npm run build
+   ```
+
+5. Commit your changes and submit a pull request following the same guidelines as code contributions.
+
+#### Documentation Versioning
+
+* The **"next"** version (`docs/docs/`) represents the in-development documentation and is the default version shown at `/docs`
+* Stable versions (e.g., **"v0.3 (stable)"**) are snapshots created when releasing a new version
+* Users can switch between versions using the version dropdown in the documentation navbar
+* When contributing, always edit the **"next"** version unless you're specifically updating a stable version snapshot (which should be rare and typically done by maintainers)
+
+For more details about the documentation setup, see [`docs/README.md`](docs/README.md).
+
 #### After your pull request is merged
 
 After your pull request is merged, you can safely delete your branch and pull the changes

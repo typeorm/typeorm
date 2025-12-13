@@ -54,6 +54,14 @@ const config: Config = {
                     // Remove this to remove the "edit this page" links.
                     editUrl:
                         "https://github.com/typeorm/typeorm/tree/master/docs/",
+                    versions: {
+                        current: {
+                            label: "next",
+                        },
+                        "v0.3": {
+                            label: "v0.3 (stable)",
+                        },
+                    },
                 },
                 sitemap: {
                     lastmod: "datetime",
@@ -97,6 +105,10 @@ const config: Config = {
                     sidebarId: "tutorialSidebar",
                     position: "left",
                     label: "Docs",
+                },
+                {
+                    type: "docsVersionDropdown",
+                    position: "right",
                 },
                 {
                     href: "https://github.com/typeorm/typeorm",
