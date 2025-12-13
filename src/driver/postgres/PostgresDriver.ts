@@ -1485,8 +1485,8 @@ export class PostgresDriver implements Driver {
     }
 
     compareTableIndexTypes = (indexA: IndexMetadata, indexB: TableIndex) => {
-        const normalizedA = indexA.isSpatial ? "gist" : indexA.type ?? "btree"
-        const normalizedB = indexB.isSpatial ? "gist" : indexB.type ?? "btree"
+        const normalizedA = indexA.isSpatial ? "gist" : (indexA.type ?? "btree")
+        const normalizedB = indexB.isSpatial ? "gist" : (indexB.type ?? "btree")
 
         return normalizedA.toLowerCase() === normalizedB.toLowerCase()
     }
