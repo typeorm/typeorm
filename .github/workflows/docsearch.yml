@@ -3,7 +3,7 @@ name: Index docs to Typesense
 on:
   push:
     branches:
-      - master
+      - v0.3
 
 jobs:
   index-docs:
