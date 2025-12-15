@@ -25,7 +25,7 @@ describe("github issues > #8828 Widen query parameters type to support named pla
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("can use named parameters in a sql query", async () => {
+    it("can use named placeholders in a sql query", async () => {
         await Promise.all(
             dataSources.map(async (dataSource) => {
                 const foo = new ExampleEntity()
