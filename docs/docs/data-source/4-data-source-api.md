@@ -152,6 +152,7 @@ const rawData = await dataSource.query(
 )
 
 // mysql2 additionally supports named parameters
+// when extras.namedPlaceholders is true
 const rawData = await dataSource.query(
     "SELECT * FROM USERS WHERE name = :name and age = :age",
     { name: "John", age: 24 },
