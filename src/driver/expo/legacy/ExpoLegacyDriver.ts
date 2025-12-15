@@ -6,7 +6,7 @@ import { DataSource } from "../../../data-source/DataSource"
 import { ReplicationMode } from "../../types/ReplicationMode"
 
 export class ExpoLegacyDriver extends AbstractSqliteDriver {
-    options: ExpoConnectionOptions
+    declare options: ExpoConnectionOptions
 
     // -------------------------------------------------------------------------
     // Constructor
