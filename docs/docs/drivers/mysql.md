@@ -4,14 +4,6 @@ MySQL, MariaDB and Amazon Aurora MySQL are supported as TypeORM drivers.
 
 ## Installation
 
-Either `mysql` or `mysql2` are required to connect to a MySQL/MariaDB data source. Only `mysql2` can connect to MySQL 8.0 or later and is recommended because it is still maintained. See more about [mysql2](https://sidorares.github.io/node-mysql2/docs/history-and-why-mysq2).
-
-```shell
-npm install mysql
-```
-
-or:
-
 ```shell
 npm install mysql2
 ```
@@ -19,8 +11,6 @@ npm install mysql2
 ## Data Source Options
 
 See [Data Source Options](../data-source/2-data-source-options.md) for the common data source options. You can use the data source types `mysql`, `mariadb` and `aurora-mysql` to connect to the respective databases.
-
--   `connectorPackage` - The database client, either `mysql` or `mysql2`. If the specified client cannot be loaded, it will fall back to the alternative. (Current default: `mysql`)
 
 -   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
@@ -33,6 +23,10 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 -   `password` - Database password.
 
 -   `database` - Database name.
+
+-   `socketPath` - Database socket path.
+
+-   `poolSize` - Maximum number of clients the pool should contain for each connection.
 
 -   `charset` and `collation` - The charset/collation for the connection. If an SQL-level charset is specified (like utf8mb4) then the default collation for that charset is used.
 
@@ -82,7 +76,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 -   `enableQueryTimeout` - If a value is specified for maxQueryExecutionTime, in addition to generating a warning log when a query exceeds this time limit, the specified maxQueryExecutionTime value is also used as the timeout for the query. For more information, check [mysql timeouts](https://github.com/mysqljs/mysql#timeouts).
 
-Additional options can be added to the `extra` object and will be passed directly to the client library. See more in the [mysql connection options](https://github.com/mysqljs/mysql#connection-options) or the [mysql2 documentation](https://sidorares.github.io/node-mysql2/docs).
+Additional options can be added to the `extra` object and will be passed directly to the client library. See more in the [mysql2 documentation](https://sidorares.github.io/node-mysql2/docs).
 
 ## Column Types
 
@@ -139,3 +133,7 @@ export class User {
     roles: UserRoleType[]
 }
 ```
+
+### Vector Types
+
+MySQL supports the [VECTOR type](https://dev.mysql.com/doc/refman/en/vector.html) since version 9.0, while in MariaDB, [vectors](https://mariadb.com/docs/server/reference/sql-structure/vectors/vector-overview) are available since 11.7.

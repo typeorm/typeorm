@@ -15,46 +15,46 @@ import { DeleteResult } from "../query-builder/result/DeleteResult"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 
 import {
-    BulkWriteResult,
-    AggregationCursor,
-    Collection,
-    FindCursor,
-    Document,
     AggregateOptions,
+    AggregationCursor,
     AnyBulkWriteOperation,
     BulkWriteOptions,
-    Filter,
-    CountOptions,
-    IndexSpecification,
-    CreateIndexesOptions,
-    IndexDescription,
-    DeleteResult as DeleteResultMongoDb,
-    DeleteOptions,
-    CommandOperationOptions,
-    FindOneAndDeleteOptions,
-    FindOneAndReplaceOptions,
-    UpdateFilter,
-    FindOneAndUpdateOptions,
-    RenameOptions,
-    ReplaceOptions,
-    UpdateResult as UpdateResultMongoDb,
+    BulkWriteResult,
+    ChangeStream,
+    ChangeStreamOptions,
+    Collection,
     CollStats,
     CollStatsOptions,
-    ChangeStreamOptions,
-    ChangeStream,
-    UpdateOptions,
-    ListIndexesOptions,
-    ListIndexesCursor,
-    OptionalId,
+    CommandOperationOptions,
+    CountDocumentsOptions,
+    CountOptions,
+    CreateIndexesOptions,
+    DeleteOptions,
+    DeleteResult as DeleteResultMongoDb,
+    Document,
+    Filter,
+    FilterOperators,
+    FindCursor,
+    FindOneAndDeleteOptions,
+    FindOneAndReplaceOptions,
+    FindOneAndUpdateOptions,
+    IndexDescription,
+    IndexInformationOptions,
+    IndexSpecification,
+    InsertManyResult,
     InsertOneOptions,
     InsertOneResult,
-    InsertManyResult,
-    UnorderedBulkOperation,
-    OrderedBulkOperation,
-    IndexInformationOptions,
+    ListIndexesCursor,
+    ListIndexesOptions,
     ObjectId,
-    FilterOperators,
-    CountDocumentsOptions,
+    OptionalId,
+    OrderedBulkOperation,
+    RenameOptions,
+    ReplaceOptions,
+    UnorderedBulkOperation,
+    UpdateFilter,
+    UpdateOptions,
+    UpdateResult as UpdateResultMongoDb,
 } from "../driver/mongodb/typings"
 import { DataSource } from "../data-source/DataSource"
 import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
@@ -162,6 +162,16 @@ export class MongoEntityManager extends EntityManager {
         where: any,
     ): Promise<[Entity[], number]> {
         return this.executeFindAndCount(entityClassOrName, where)
+    }
+
+    /**
+     * Finds entities that match given WHERE conditions.
+     */
+    async findBy<Entity>(
+        entityClassOrName: EntityTarget<Entity>,
+        where: any,
+    ): Promise<Entity[]> {
+        return this.executeFind(entityClassOrName, where)
     }
 
     /**

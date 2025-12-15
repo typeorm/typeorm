@@ -2274,9 +2274,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
             const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
@@ -2286,9 +2285,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`
 
             await this.query(disableForeignKeysCheckQuery)
-            const dropQueries: ObjectLiteral[] = await this.query(
-                dropTablesQuery,
-            )
+            const dropQueries: ObjectLiteral[] =
+                await this.query(dropTablesQuery)
             await Promise.all(
                 dropQueries.map((query) => this.query(query["query"])),
             )
@@ -2802,17 +2800,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 ) !== -1 &&
                                 dbColumn["CHARACTER_MAXIMUM_LENGTH"]
                             ) {
-                                const length =
-                                    dbColumn[
-                                        "CHARACTER_MAXIMUM_LENGTH"
-                                    ].toString()
+                                let length: number =
+                                    dbColumn["CHARACTER_MAXIMUM_LENGTH"]
+                                if (tableColumn.type === "vector") {
+                                    // MySQL and MariaDb store the vector length in bytes, not in number of dimensions.
+                                    length = length / 4
+                                }
                                 tableColumn.length =
                                     !this.isDefaultColumnLength(
                                         table,
                                         tableColumn,
-                                        length,
+                                        length.toString(),
                                     )
-                                        ? length
+                                        ? length.toString()
                                         : ""
                             }
 
@@ -3369,9 +3369,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     async getVersion(): Promise<string> {
-        const result: [{ "version()": string }] = await this.query(
-            "SELECT version()",
-        )
+        const result: [{ "version()": string }] =
+            await this.query("SELECT version()")
 
         // MariaDB: https://mariadb.com/kb/en/version/
         // - "10.2.27-MariaDB-10.2.27+maria~jessie-log"

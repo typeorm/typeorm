@@ -2,11 +2,11 @@
 
 This document describes how to set up your development environment and run TypeORM test cases.
 
-* [Prerequisite Software](#prerequisite-software)
-* [Getting the Sources](#getting-the-sources)
-* [Installing NPM Modules](#installing-npm-modules)
-* [Building](#building)
-* [Running Tests Locally](#running-tests-locally)
+-   [Prerequisite Software](#prerequisite-software)
+-   [Getting the Sources](#getting-the-sources)
+-   [Installing NPM Modules](#installing-npm-modules)
+-   [Building](#building)
+-   [Running Tests Locally](#running-tests-locally)
 
 See the [contribution guidelines](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md)
 if you'd like to contribute to TypeORM.
@@ -16,19 +16,19 @@ if you'd like to contribute to TypeORM.
 Before you can build and test TypeORM, you must install and configure the
 following products on your development machine:
 
-* [Git](http://git-scm.com) and/or the **GitHub app** (for [Mac](http://mac.github.com) or
-  [Windows](http://windows.github.com)); [GitHub's Guide to Installing
-  Git](https://help.github.com/articles/set-up-git) is a good source of information.
-* [Node.js](http://nodejs.org), (better to install latest version) which is used to run a development web server,
-  run tests, and generate distributable files.
-  Depending on your system, you can install Node either from source or as a pre-packaged bundle.
-* [Mysql](https://www.mysql.com/) is required to run tests on this platform (or docker)
-* [MariaDB](https://mariadb.com/) is required to run tests on this platform (or docker)
-* [Postgres](https://www.postgresql.org/) is required to run tests on this platform (or docker)
-* [Oracle](https://www.oracle.com/database/index.html) is required to run tests on this platform
-* [Microsoft SQL Server](https://www.microsoft.com/en-us/cloud-platform/sql-server) is required to run tests on this platform
-* For MySQL, MariaDB and Postgres you can use [docker](https://www.docker.com/) instead (docker configuration is
- [here](https://github.com/typeorm/typeorm/blob/master/docker-compose.yml))
+-   [Git](http://git-scm.com) and/or the **GitHub app** (for [Mac](http://mac.github.com) or [Windows](http://windows.github.com)); [GitHub's Guide to Installing Git](https://docs.github.com/get-started/git-basics/set-up-git) is a good source of information.
+-   [Node.js](https://nodejs.org) can be installed using a Node.js version manager like [fnm](https://fnm.vercel.app) or [nvm](https://github.com/nvm-sh/nvm).
+-   [Mysql](https://www.mysql.com/) is required to run tests on this platform (or docker)
+-   [MariaDB](https://mariadb.com/) is required to run tests on this platform (or docker)
+-   [Postgres](https://www.postgresql.org/) is required to run tests on this platform (or docker)
+-   [Oracle](https://www.oracle.com/database/index.html) is required to run tests on this platform
+-   [Microsoft SQL Server](https://www.microsoft.com/en-us/cloud-platform/sql-server) is required to run tests on this platform
+
+For convenience, you can also use the [Docker](https://www.docker.com/) images provided in [docker-compose.yml](https://github.com/typeorm/typeorm/blob/master/docker-compose.yml) to run databases locally:
+
+```shell
+docker compose up postgres-17
+```
 
 ## Getting the Sources
 
@@ -49,16 +49,6 @@ cd typeorm
 # Add the main TypeORM repository as an upstream remote to your repository:
 git remote add upstream https://github.com/typeorm/typeorm.git
 ```
-
-## Node
-
-You should have node installed in the version described in [.nvmrc](.nvmrc).
-
-It is recommended to configure your OS to automatically switch to use this version whenever you enter project folder. This can be achieved in many ways:
-
-* [`fnm`](https://github.com/Schniz/fnm)
-* [`zsh-nvm`](https://github.com/lukechilds/zsh-nvm#auto-use)
-* [`asdf`](https://asdf-vm.com) with `asdf-nodejs` plugin and [`legacy_version_file = true`](https://asdf-vm.com/manage/configuration.html#legacy-version-file) option
 
 ## Installing package dependencies
 
@@ -91,7 +81,7 @@ You can link (or simply copy/paste) this directory into your project and test Ty
 To build the distribution package of TypeORM packed into a `.tgz`, run:
 
 ```shell
-npm run pack
+cd build/package && npm pack
 ```
 
 This command will generate a distribution package tar in the `build` directory (`build/typeorm-x.x.x.tgz`).
@@ -101,36 +91,46 @@ You can copy this tar into your project and run `npm install ./typeorm-x.x.x.tgz
 
 It is greatly appreciated if PRs that change code come with appropriate tests.
 
-To create a new test, check the [relevant functional tests](https://github.com/typeorm/typeorm/tree/master/test/functional). Depending on the test, you may need to create a new test file or modify an existing one.
+To create a new test, check the [relevant functional tests](https://github.com/typeorm/typeorm/tree/master/test/functional). Depending on the test, you may need to create a new `.test.ts` file or modify an existing one.
 
 If the test is for a specific regression or issue opened on GitHub, add a comment to the tests mentioning the issue number.
 
 Most tests will benefit from using this template as a starting point:
 
-```ts
-import "reflect-metadata";
-import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai";
+```typescript
+import { expect } from "chai"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import { DataSource } from "../../../../src/data-source/DataSource"
 
 describe("description of the functionality you're testing", () => {
+    let dataSources: DataSource[]
 
-    let dataSources: DataSource[];
-    before(async () => dataSources = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
-    }));
-    beforeEach(() => reloadTestingDatabases(dataSources));
-    after(() => closeTestingConnections(dataSources));
+    before(
+        async () =>
+            (dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                schemaCreate: true,
+                dropSchema: true,
+            })),
+    )
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // optional: test fix for issue https://github.com/typeorm/typeorm/issues/<issue-number>
-    it("should <put a detailed description of what it should do here>", () => Promise.all(dataSources.map(async dataSource => {
-       // tests go here
-    })));
+    it("should <put a detailed description of what it should do here>", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // tests go here:
+                expect(result).to.equal(expected)
+            }),
+        ))
 
-// you can add additional tests if needed
-});
+    // you can add additional tests if needed
+})
 ```
 
 If you place entities in `./entity/<entity-name>.ts` relative to your test file,
@@ -173,8 +173,8 @@ Once TypeScript finishes compiling your changes, you can run `npm run test:fast`
 To run your tests you need the Database Management Systems (DBMS) installed on your machine. Alternatively, you can use docker with the DBMS running in containers. To have docker run all the DBMS for you simply run `docker-compose up`
 in the root of the project. Once all images are fetched and are running, you can run the tests.
 
-- The docker image of mssql-server needs at least 3.25GB of RAM.
-- Make sure to assign enough memory to the Docker VM if you're running on Docker for Mac or Windows
+-   The docker image of mssql-server needs at least 3.25GB of RAM.
+-   Make sure to assign enough memory to the Docker VM if you're running on Docker for Mac or Windows
 
 ## Release Process
 
