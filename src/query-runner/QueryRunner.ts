@@ -54,14 +54,12 @@ export interface QueryRunner {
 
     /**
      * All synchronized tables in the database.
-     *
      * @deprecated Call `getTables()`
      */
     loadedTables: Table[]
 
     /**
      * All synchronized views in the database.
-     *
      * @deprecated Call `getViews()`
      */
     loadedViews: View[]
@@ -114,6 +112,15 @@ export interface QueryRunner {
 
     /**
      * Executes a given SQL query and returns raw database results.
+     *
+     * Note: Parameters may be named if using mysql2 with extras.namedPlaceholders set:
+     * Example:
+     * ```ts
+     * query(
+     *   "SELECT * FROM USERS WHERE name = :name and age = :age",
+     *   { name: "John", age: 24 },
+     * )
+     * ```
      */
     query(
         query: string,
