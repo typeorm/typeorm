@@ -7,7 +7,7 @@ import {
 import { ExampleEntity } from "./entity/ExampleEntity"
 import { expect } from "chai"
 
-describe.only("github issues > #8828 Widen query parameters type to support named placeholders?", () => {
+describe("github issues > #8828 Widen query parameters type to support named placeholders?", () => {
     let dataSources: DataSource[]
 
     before(async () => {
