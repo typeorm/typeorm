@@ -1,3 +1,5 @@
+import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
+
 /**
  * Describes all index options.
  */
@@ -63,4 +65,11 @@ export interface IndexOptions {
      * This option is only supported for mongodb database.
      */
     expireAfterSeconds?: number
+
+    /**
+     * The `type` option defines the type of the index being created.
+     * Supported types include B-tree, Hash, GiST, SP-GiST, GIN, and BRIN
+     * This option is only applicable in PostgreSQL.
+     */
+    type?: TableIndexTypes
 }

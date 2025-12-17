@@ -38,6 +38,8 @@ import { UpsertOptions } from "../repository/UpsertOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
+import { buildSqlTag } from "../util/SqlTagUtils"
+import { OrmUtils } from "../util/OrmUtils"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -169,9 +171,31 @@ export class EntityManager {
 
     /**
      * Executes raw SQL query and returns raw database results.
+     *
+     * @see [Official docs](https://typeorm.io/docs/Working%20with%20Entity%20Manager/entity-manager-api/) for examples.
      */
     async query<T = any>(query: string, parameters?: any[]): Promise<T> {
         return this.connection.query(query, parameters, this.queryRunner)
+    }
+
+    /**
+     * Tagged template function that executes raw SQL query and returns raw database results.
+     * Template expressions are automatically transformed into database parameters.
+     * Raw query execution is supported only by relational databases (MongoDB is not supported).
+     * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
+     * Example: entityManager.sql`SELECT * FROM table_name WHERE id = ${id}`
+     */
+    async sql<T = any>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+    ): Promise<T> {
+        const { query, parameters } = buildSqlTag({
+            driver: this.connection.driver,
+            strings: strings,
+            expressions: values,
+        })
+
+        return await this.query(query, parameters)
     }
 
     /**
@@ -759,12 +783,7 @@ export class EntityManager {
         partialEntity: QueryDeepPartialEntity<Entity>,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0)
-        ) {
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
                     `Empty criteria(s) are not allowed for the update method.`,
@@ -772,12 +791,7 @@ export class EntityManager {
             )
         }
 
-        if (
-            typeof criteria === "string" ||
-            typeof criteria === "number" ||
-            criteria instanceof Date ||
-            Array.isArray(criteria)
-        ) {
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
@@ -790,6 +804,23 @@ export class EntityManager {
                 .where(criteria)
                 .execute()
         }
+    }
+
+    /**
+     * Updates all entities of target type, setting fields from supplied partial entity.
+     * This is a primitive operation without cascades, relations or other operations included.
+     * Executes fast and efficient UPDATE query without WHERE clause.
+     *
+     * WARNING! This method updates ALL rows in the target table.
+     */
+    updateAll<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+        partialEntity: QueryDeepPartialEntity<Entity>,
+    ): Promise<UpdateResult> {
+        return this.createQueryBuilder()
+            .update(target)
+            .set(partialEntity)
+            .execute()
     }
 
     /**
@@ -813,12 +844,7 @@ export class EntityManager {
             | any,
     ): Promise<DeleteResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0)
-        ) {
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
                     `Empty criteria(s) are not allowed for the delete method.`,
@@ -826,12 +852,7 @@ export class EntityManager {
             )
         }
 
-        if (
-            typeof criteria === "string" ||
-            typeof criteria === "number" ||
-            criteria instanceof Date ||
-            Array.isArray(criteria)
-        ) {
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
                 .delete()
                 .from(targetOrEntity)
@@ -847,9 +868,22 @@ export class EntityManager {
     }
 
     /**
+     * Deletes all entities of target type.
+     * This is a primitive operation without cascades, relations or other operations included.
+     * Executes fast and efficient DELETE query without WHERE clause.
+     *
+     * WARNING! This method deletes ALL rows in the target table.
+     */
+    deleteAll<Entity extends ObjectLiteral>(
+        targetOrEntity: EntityTarget<Entity>,
+    ): Promise<DeleteResult> {
+        return this.createQueryBuilder().delete().from(targetOrEntity).execute()
+    }
+
+    /**
      * Records the delete date of entities by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Executes fast and efficient DELETE query.
+     * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
@@ -867,25 +901,15 @@ export class EntityManager {
             | any,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0)
-        ) {
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
-                    `Empty criteria(s) are not allowed for the delete method.`,
+                    `Empty criteria(s) are not allowed for the softDelete method.`,
                 ),
             )
         }
 
-        if (
-            typeof criteria === "string" ||
-            typeof criteria === "number" ||
-            criteria instanceof Date ||
-            Array.isArray(criteria)
-        ) {
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
                 .softDelete()
                 .from(targetOrEntity)
@@ -903,7 +927,7 @@ export class EntityManager {
     /**
      * Restores entities by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
-     * Executes fast and efficient DELETE query.
+     * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
@@ -921,25 +945,15 @@ export class EntityManager {
             | any,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
-        if (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0)
-        ) {
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
-                    `Empty criteria(s) are not allowed for the delete method.`,
+                    `Empty criteria(s) are not allowed for the restore method.`,
                 ),
             )
         }
 
-        if (
-            typeof criteria === "string" ||
-            typeof criteria === "number" ||
-            criteria instanceof Date ||
-            Array.isArray(criteria)
-        ) {
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
                 .restore()
                 .from(targetOrEntity)
@@ -957,7 +971,7 @@ export class EntityManager {
     /**
      * Checks whether any entity exists with the given options.
      */
-    exists<Entity extends ObjectLiteral>(
+    async exists<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<boolean> {
@@ -988,7 +1002,7 @@ export class EntityManager {
      * Counts entities that match given options.
      * Useful for pagination.
      */
-    count<Entity extends ObjectLiteral>(
+    async count<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<number> {
@@ -1006,7 +1020,7 @@ export class EntityManager {
      * Counts entities that match given conditions.
      * Useful for pagination.
      */
-    countBy<Entity extends ObjectLiteral>(
+    async countBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number> {
@@ -1076,12 +1090,16 @@ export class EntityManager {
             )
         }
 
-        const result = await this.createQueryBuilder(entityClass, metadata.name)
-            .setFindOptions({ where })
+        const qb = this.createQueryBuilder(entityClass, metadata.name)
+        qb.setFindOptions({ where })
+
+        const alias = qb.alias
+
+        const result = await qb
             .select(
                 `${fnName}(${this.connection.driver.escape(
-                    column.databaseName,
-                )})`,
+                    alias,
+                )}.${this.connection.driver.escape(column.databaseName)})`,
                 fnName,
             )
             .getRawOne()
@@ -1126,7 +1144,7 @@ export class EntityManager {
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    findAndCount<Entity extends ObjectLiteral>(
+    async findAndCount<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<[Entity[], number]> {
@@ -1145,7 +1163,7 @@ export class EntityManager {
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
      */
-    findAndCountBy<Entity extends ObjectLiteral>(
+    async findAndCountBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<[Entity[], number]> {
@@ -1335,11 +1353,11 @@ export class EntityManager {
         if (isNaN(Number(value)))
             throw new TypeORMError(`Value "${value}" is not a number.`)
 
-        // convert possible embeded path "social.likes" into object { social: { like: () => value } }
+        // convert possible embedded path "social.likes" into object { social: { like: () => value } }
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
-                (value, key) => ({ [key]: value } as any),
+                (value, key) => ({ [key]: value }) as any,
                 () =>
                     this.connection.driver.escape(column.databaseName) +
                     " + " +
@@ -1372,11 +1390,11 @@ export class EntityManager {
         if (isNaN(Number(value)))
             throw new TypeORMError(`Value "${value}" is not a number.`)
 
-        // convert possible embeded path "social.likes" into object { social: { like: () => value } }
+        // convert possible embedded path "social.likes" into object { social: { like: () => value } }
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
-                (value, key) => ({ [key]: value } as any),
+                (value, key) => ({ [key]: value }) as any,
                 () =>
                     this.connection.driver.escape(column.databaseName) +
                     " - " +

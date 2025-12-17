@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/mocharc",
+  "check-leaks": true,
+  "color": true,
+  "exit": true,
+  "file": ["./build/compiled/test/utils/test-setup.js"],
+  "recursive": true,
+  "spec": ["./build/compiled/test/**/*.test.{js,ts}"],
+  "timeout": 90000
+}

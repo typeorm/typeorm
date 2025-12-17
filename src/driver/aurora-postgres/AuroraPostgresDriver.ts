@@ -10,7 +10,7 @@ import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DriverUtils } from "../DriverUtils"
 
 abstract class PostgresWrapper extends PostgresDriver {
-    options: any
+    declare options: any
 
     abstract createQueryRunner(mode: ReplicationMode): any
 }

@@ -1,32 +1,33 @@
+import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { TypeORMError } from "../../error"
+import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { ReadStream } from "../../platform/PlatformTools"
+import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
+import { TableCheck } from "../../schema-builder/table/TableCheck"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableExclusion } from "../../schema-builder/table/TableExclusion"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
-import { View } from "../../schema-builder/view/View"
-import { Query } from "../Query"
-import { MysqlDriver } from "./MysqlDriver"
-import { ReadStream } from "../../platform/PlatformTools"
-import { OrmUtils } from "../../util/OrmUtils"
-import { QueryFailedError } from "../../error/QueryFailedError"
-import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
-import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
-import { ColumnType } from "../types/ColumnTypes"
-import { TableCheck } from "../../schema-builder/table/TableCheck"
-import { IsolationLevel } from "../types/IsolationLevel"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
-import { VersionUtils } from "../../util/VersionUtils"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { TypeORMError } from "../../error"
-import { MetadataTableType } from "../types/MetadataTableType"
-import { InstanceChecker } from "../../util/InstanceChecker"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import { VersionUtils } from "../../util/VersionUtils"
+import { DriverUtils } from "../DriverUtils"
+import { Query } from "../Query"
+import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
+import { IsolationLevel } from "../types/IsolationLevel"
+import { MetadataTableType } from "../types/MetadataTableType"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { MysqlDriver } from "./MysqlDriver"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -119,7 +120,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw err
         }
         if (this.transactionDepth === 0) {
-            this.transactionDepth += 1
             if (isolationLevel) {
                 await this.query(
                     "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
@@ -127,9 +127,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
             await this.query("START TRANSACTION")
         } else {
-            this.transactionDepth += 1
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
         }
+        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -144,15 +144,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
-            this.transactionDepth -= 1
             await this.query("COMMIT")
             this.isTransactionActive = false
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -167,15 +166,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
-            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.isTransactionActive = false
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -190,28 +188,32 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
+        const databaseConnection = await this.connect()
+
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const broadcasterResult = new BroadcasterResult()
+        const queryStartTime = Date.now()
+
         return new Promise(async (ok, fail) => {
-            const broadcasterResult = new BroadcasterResult()
-
             try {
-                const databaseConnection = await this.connect()
-
-                this.driver.connection.logger.logQuery(query, parameters, this)
-                this.broadcaster.broadcastBeforeQueryEvent(
-                    broadcasterResult,
-                    query,
-                    parameters,
-                )
-
-                const queryStartTime = +new Date()
+                const enableQueryTimeout =
+                    this.driver.options.enableQueryTimeout
+                const maxQueryExecutionTime =
+                    this.driver.options.maxQueryExecutionTime
+                const queryPayload =
+                    enableQueryTimeout && maxQueryExecutionTime
+                        ? { sql: query, timeout: maxQueryExecutionTime }
+                        : query
                 databaseConnection.query(
-                    query,
+                    queryPayload,
                     parameters,
-                    async (err: any, raw: any) => {
+                    (err: any, raw: any) => {
                         // log slow queries if maxQueryExecution time is set
                         const maxQueryExecutionTime =
                             this.driver.options.maxQueryExecutionTime
-                        const queryEndTime = +new Date()
+                        const queryEndTime = Date.now()
                         const queryExecutionTime = queryEndTime - queryStartTime
 
                         if (
@@ -1798,7 +1800,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -1992,7 +1994,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraint.
+     * Drops a unique constraint.
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
@@ -2004,7 +2006,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraints.
+     * Drops a unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
@@ -2272,9 +2274,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
             const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
@@ -2284,9 +2285,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`
 
             await this.query(disableForeignKeysCheckQuery)
-            const dropQueries: ObjectLiteral[] = await this.query(
-                dropTablesQuery,
-            )
+            const dropQueries: ObjectLiteral[] =
+                await this.query(dropTablesQuery)
             await Promise.all(
                 dropQueries.map((query) => this.query(query["query"])),
             )
@@ -2558,7 +2558,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         ])
 
         const isMariaDb = this.driver.options.type === "mariadb"
-        const dbVersion = await this.getVersion()
+        const dbVersion = this.driver.version
 
         // create tables for loaded tables
         return Promise.all(
@@ -2653,17 +2653,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                             }
 
                             tableColumn.zerofill =
-                                dbColumn["COLUMN_TYPE"].indexOf("zerofill") !==
-                                -1
-                            tableColumn.unsigned = tableColumn.zerofill
-                                ? true
-                                : dbColumn["COLUMN_TYPE"].indexOf(
-                                      "unsigned",
-                                  ) !== -1
+                                dbColumn["COLUMN_TYPE"].includes("zerofill")
+                            tableColumn.unsigned =
+                                tableColumn.zerofill ||
+                                dbColumn["COLUMN_TYPE"].includes("unsigned")
                             if (
-                                this.driver.withWidthColumnTypes.indexOf(
-                                    tableColumn.type as ColumnType,
-                                ) !== -1
+                                this.driver.unsignedColumnTypes.includes(
+                                    tableColumn.type as UnsignedColumnType,
+                                )
                             ) {
                                 const width = dbColumn["COLUMN_TYPE"].substring(
                                     dbColumn["COLUMN_TYPE"].indexOf("(") + 1,
@@ -2803,17 +2800,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 ) !== -1 &&
                                 dbColumn["CHARACTER_MAXIMUM_LENGTH"]
                             ) {
-                                const length =
-                                    dbColumn[
-                                        "CHARACTER_MAXIMUM_LENGTH"
-                                    ].toString()
+                                let length: number =
+                                    dbColumn["CHARACTER_MAXIMUM_LENGTH"]
+                                if (tableColumn.type === "vector") {
+                                    // MySQL and MariaDb store the vector length in bytes, not in number of dimensions.
+                                    length = length / 4
+                                }
                                 tableColumn.length =
                                     !this.isDefaultColumnLength(
                                         table,
                                         tableColumn,
-                                        length,
+                                        length.toString(),
                                     )
-                                        ? length
+                                        ? length.toString()
                                         : ""
                             }
 
@@ -3203,7 +3202,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         table: Table,
         indexOrName: TableIndex | string,
     ): Query {
-        let indexName = InstanceChecker.isTableIndex(indexOrName)
+        const indexName = InstanceChecker.isTableIndex(indexOrName)
             ? indexOrName.name
             : indexOrName
         return new Query(
@@ -3369,19 +3368,39 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         return c
     }
 
-    protected async getVersion(): Promise<string> {
-        const result = await this.query(`SELECT VERSION() AS \`version\``)
-        return result[0]["version"]
+    async getVersion(): Promise<string> {
+        const result: [{ "version()": string }] =
+            await this.query("SELECT version()")
+
+        // MariaDB: https://mariadb.com/kb/en/version/
+        // - "10.2.27-MariaDB-10.2.27+maria~jessie-log"
+
+        // MySQL: https://dev.mysql.com/doc/refman/8.4/en/information-functions.html#function_version
+        // - "8.4.3"
+        // - "8.4.4-standard"
+
+        const versionString = result[0]["version()"]
+
+        return versionString.replace(/^([\d.]+).*$/, "$1")
     }
 
     /**
      * Checks if column display width is by default.
+     * @deprecated MySQL no longer supports column width in newer versions.
      */
     protected isDefaultColumnWidth(
         table: Table,
         column: TableColumn,
         width: number,
     ): boolean {
+        // Skip the whole check on servers that no longer expose width metadata.
+        if (
+            this.driver.options.type === "mysql" &&
+            DriverUtils.isReleaseVersionOrGreater(this.driver, "8.0.0")
+        ) {
+            return true
+        }
+
         // if table have metadata, we check if length is specified in column metadata
         if (this.connection.hasMetadata(table.name)) {
             const metadata = this.connection.getMetadata(table.name)
