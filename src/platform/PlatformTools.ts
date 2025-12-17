@@ -77,9 +77,6 @@ export class PlatformTools {
                 /**
                  * mysql
                  */
-                case "mysql":
-                    return require("mysql")
-
                 case "mysql2":
                     return require("mysql2")
 
@@ -144,9 +141,9 @@ export class PlatformTools {
                     return require("react-native-sqlite-storage")
             }
         } catch (err) {
-            return require(path.resolve(
-                process.cwd() + "/node_modules/" + name,
-            ))
+            return require(
+                path.resolve(process.cwd() + "/node_modules/" + name),
+            )
         }
 
         // If nothing above matched and we get here, the package was not listed within PlatformTools

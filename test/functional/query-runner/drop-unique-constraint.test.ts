@@ -130,9 +130,8 @@ describe("query runner > drop unique constraint", () => {
                     )
 
                     // Get the table with unique constraints
-                    const table = await queryRunner.getTable(
-                        "test_unique_table",
-                    )
+                    const table =
+                        await queryRunner.getTable("test_unique_table")
                     if (!table) {
                         throw new Error("Test table not found")
                     }
@@ -156,9 +155,8 @@ describe("query runner > drop unique constraint", () => {
                     )
 
                     // Verify all test unique constraints were dropped
-                    const finalTable = await queryRunner.getTable(
-                        "test_unique_table",
-                    )
+                    const finalTable =
+                        await queryRunner.getTable("test_unique_table")
                     if (!finalTable) {
                         throw new Error("Final test table not found")
                     }
