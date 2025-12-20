@@ -61,7 +61,11 @@ export class CockroachQueryRunner
     /**
      * Stores all executed queries to be able to run them again if transaction fails.
      */
-    protected queries: { query: string; parameters?: any[] }[] = []
+    protected queries: {
+        query: string
+        parameters?: any[]
+        useStructuredResult: boolean
+    }[] = []
 
     /**
      * Indicates if running queries must be stored
@@ -278,7 +282,7 @@ export class CockroachQueryRunner
         const queryStartTime = Date.now()
 
         if (this.isTransactionActive && this.storeQueries) {
-            this.queries.push({ query, parameters })
+            this.queries.push({ query, parameters, useStructuredResult })
         }
 
         try {
@@ -358,15 +362,34 @@ export class CockroachQueryRunner
                     1000
                 await new Promise((resolve) => setTimeout(resolve, sleepTime))
 
-                let result = undefined
-                for (const q of this.queries) {
+                // During a retry we need to return the result for the query that
+                // initiated the retry (the current query call), not the last
+                // statement in the transaction.
+                const originalQuery = this.queries[this.queries.length - 1]
+
+                for (const q of this.queries.slice(0, -1)) {
                     this.driver.connection.logger.logQuery(
                         `Retrying transaction for query "${q.query}"`,
                         q.parameters,
                         this,
                     )
-                    result = await this.query(q.query, q.parameters)
+                    await this.query(
+                        q.query,
+                        q.parameters,
+                        q.useStructuredResult,
+                    )
                 }
+
+                this.driver.connection.logger.logQuery(
+                    `Retrying transaction for query "${originalQuery.query}"`,
+                    originalQuery.parameters,
+                    this,
+                )
+                const result = await this.query(
+                    originalQuery.query,
+                    originalQuery.parameters,
+                    originalQuery.useStructuredResult,
+                )
                 this.transactionRetries = 0
                 this.storeQueries = true
 
