@@ -1,5 +1,6 @@
 import { expect } from "chai"
 import { camelCase, snakeCase, hash } from "../../../src/util/StringUtils"
+import { RandomGenerator } from "../../../src/util/RandomGenerator"
 
 describe("StringUtils", () => {
     describe("snakeCase", () => {
@@ -121,8 +122,19 @@ describe("StringUtils", () => {
     })
 
     describe("hash", () => {
-        it("should return a SHA1 hash in hex format", () => {
+        it("should return a SHA1 hash in hex format using Crypto", () => {
             const result = hash("hello")
+            // Precomputed SHA1 of "hello"
+            expect(result).to.be.equal(
+                "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d",
+            )
+            // Defensive checks against encoding/length regressions
+            expect(result).to.have.lengthOf(40)
+            expect(result).to.match(/^[0-9a-f]{40}$/)
+        })
+
+        it("should return a SHA1 hash in hex format using RandomGenerator", () => {
+            const result = RandomGenerator.sha1("hello")
             // Precomputed SHA1 of "hello"
             expect(result).to.be.equal(
                 "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d",

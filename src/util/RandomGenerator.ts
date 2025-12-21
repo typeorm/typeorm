@@ -10,17 +10,19 @@ export class RandomGenerator {
      *      note 1: in a steaming fashion for faster and more efficient hashing
      *   example 1: sha1('Kevin van Zonneveld')
      *   returns 1: '54916d2e62f65b3afa6e192e6a601cdbe5cb5897'
+     * @param str String to be hashed.
+     * @returns SHA-1 hex digest
      */
     static sha1(str: string) {
-        const _rotLeft = function (n: any, s: any) {
+        const _rotLeft = function (n: number, s: number): number {
             const t4 = (n << s) | (n >>> (32 - s))
             return t4
         }
 
-        const _cvtHex = function (val: any) {
+        const _cvtHex = function (val: number): string {
             let str = ""
-            let i
-            let v
+            let i: number
+            let v: number
 
             for (i = 7; i >= 0; i--) {
                 v = (val >>> (i * 4)) & 0x0f
@@ -29,22 +31,24 @@ export class RandomGenerator {
             return str
         }
 
-        let blockstart
-        let i, j
-        const W = new Array(80)
+        let blockstart: number
+        let i: number, j: number
+        const W: number[] = new Array(80)
         let H0 = 0x67452301
         let H1 = 0xefcdab89
         let H2 = 0x98badcfe
         let H3 = 0x10325476
         let H4 = 0xc3d2e1f0
-        let A, B, C, D, E
-        let temp
+        let A: number, B: number, C: number, D: number, E: number
+        let temp: number
 
         // utf8_encode
-        str = /*unescape*/ encodeURIComponent(str)
+        const bytes = new TextEncoder().encode(str)
+        str = String.fromCharCode(...bytes)
+
         const strLen = str.length
 
-        const wordArray = []
+        const wordArray: number[] = []
         for (i = 0; i < strLen - 3; i += 4) {
             j =
                 (str.charCodeAt(i) << 24) |
@@ -158,8 +162,8 @@ export class RandomGenerator {
             H4 = (H4 + E) & 0x0ffffffff
         }
 
-        temp =
+        const ans =
             _cvtHex(H0) + _cvtHex(H1) + _cvtHex(H2) + _cvtHex(H3) + _cvtHex(H4)
-        return temp.toLowerCase()
+        return ans.toLowerCase()
     }
 }
