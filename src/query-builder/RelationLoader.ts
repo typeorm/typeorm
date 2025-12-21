@@ -81,7 +81,6 @@ export class RelationLoader {
             ? entityOrEntities
             : [entityOrEntities]
 
-        const joinAliasName = relation.entityMetadata.name
         const qb = queryBuilder
             ? queryBuilder
             : this.connection
@@ -90,13 +89,25 @@ export class RelationLoader {
                   .from(relation.type, relation.propertyName)
 
         const mainAlias = qb.expressionMap.mainAlias!.name
+        let joinAliasName = relation.entityMetadata.name
+        for (let i = 1; ; ++i) {
+            if (
+                qb.expressionMap.aliases.some(
+                    ({ name }) => name === joinAliasName,
+                )
+            ) {
+                joinAliasName = relation.entityMetadata.name + i
+            } else {
+                break
+            }
+        }
         const columns = relation.entityMetadata.primaryColumns
         const joinColumns = relation.isOwning
             ? relation.joinColumns
             : relation.inverseRelation!.joinColumns
         const conditions = joinColumns
             .map((joinColumn) => {
-                return `${relation.entityMetadata.name}.${
+                return `${joinAliasName}.${
                     joinColumn.propertyName
                 } = ${mainAlias}.${joinColumn.referencedColumn!.propertyName}`
             })
