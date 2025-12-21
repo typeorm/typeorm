@@ -144,6 +144,26 @@ describe("StringUtils", () => {
             expect(result).to.match(/^[0-9a-f]{40}$/)
         })
 
+        it("should correctly handle non-ASCII characters using Crypto", () => {
+            const result = hash("Hello 世界 🚀")
+            // Precomputed SHA1 of "Hello 世界 🚀" (UTF-8 encoded)
+            expect(result).to.be.equal(
+                "19a7cb569225354be51f904259a633be7c57c251",
+            )
+            expect(result).to.have.lengthOf(40)
+            expect(result).to.match(/^[0-9a-f]{40}$/)
+        })
+
+        it("should correctly handle non-ASCII characters using RandomGenerator", () => {
+            const result = RandomGenerator.sha1("Hello 世界 🚀")
+            // Precomputed SHA1 of "Hello 世界 🚀" (UTF-8 encoded)
+            expect(result).to.be.equal(
+                "19a7cb569225354be51f904259a633be7c57c251",
+            )
+            expect(result).to.have.lengthOf(40)
+            expect(result).to.match(/^[0-9a-f]{40}$/)
+        })
+
         it("should respect options.length and return truncated hash", () => {
             const result = hash("hello", { length: 8 })
             expect(result).to.be.equal("aaf4c61d") // first 8 chars of SHA1("hello")
