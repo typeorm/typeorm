@@ -23,6 +23,14 @@ export class CommandUtils {
         }
 
         if (
+            dataSourceFileExports !== null &&
+            typeof dataSourceFileExports === "object" &&
+            typeof dataSourceFileExports.then === "function"
+        ) {
+            dataSourceFileExports = await dataSourceFileExports
+        }
+
+        if (
             !dataSourceFileExports ||
             typeof dataSourceFileExports !== "object"
         ) {
