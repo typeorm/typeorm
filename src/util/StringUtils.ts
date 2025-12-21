@@ -1,4 +1,11 @@
-import crypto from "crypto"
+import { RandomGenerator } from "./RandomGenerator"
+let crypto: typeof import("node:crypto") | undefined
+try {
+    crypto = await import("node:crypto")
+} catch {
+    crypto = undefined
+}
+
 /**
  * Converts string into camelCase.
  * @param str String to be converted.
@@ -121,11 +128,18 @@ interface IHashOptions {
  * @returns SHA-1 hex digest
  */
 export function hash(input: string, options: IHashOptions = {}): string {
-    const hashFunction = crypto.createHash("sha1")
-    hashFunction.update(input, "utf8")
-    const hashedInput = hashFunction.digest("hex")
-    if (options.length && options.length > 0) {
-        return hashedInput.slice(0, options.length)
+    let sha1: string
+    if (typeof crypto === "undefined") {
+        sha1 = RandomGenerator.sha1(input)
+    } else {
+        const hashFunction = crypto.createHash("sha1")
+        hashFunction.update(input, "utf8")
+        sha1 = hashFunction.digest("hex")
     }
-    return hashedInput
+
+    if (options.length && options.length > 0) {
+        return sha1.slice(0, options.length)
+    }
+
+    return sha1
 }
