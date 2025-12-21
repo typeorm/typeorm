@@ -252,17 +252,42 @@ export class DateUtils {
         return typeof value === "string" ? JSON.parse(value) : value
     }
 
-    static simpleEnumToString(value: any) {
+    /**
+     * Converts given simple enum or array of enums to string.
+     */
+    static simpleEnumToString(value: any): string {
+        if (Array.isArray(value)) {
+            return value.join(",")
+        }
         return "" + value
     }
 
+    /**
+     *  Converts given string to simple enum or array of enums based on the column metadata.
+     */
     static stringToSimpleEnum(value: any, columnMetadata: ColumnMetadata) {
+        if (columnMetadata.isArray && typeof value === "string") {
+            if (value === "") {
+                return []
+            }
+            return value.split(",").map((v: string): string | number => {
+                if (
+                    columnMetadata.enum &&
+                    !isNaN(v as any) &&
+                    columnMetadata.enum.indexOf(parseInt(v)) >= 0
+                ) {
+                    return parseInt(v)
+                }
+                return v
+            })
+        }
+
         if (
             columnMetadata.enum &&
             !isNaN(value) &&
             columnMetadata.enum.indexOf(parseInt(value)) >= 0
         ) {
-            // convert to number if that exists in poosible enum options
+            // convert to number if that exists in possible enum options
             value = parseInt(value)
         }
 
