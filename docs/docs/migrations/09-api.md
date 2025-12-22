@@ -568,10 +568,12 @@ Drops an indices.
 ---
 
 ```ts
-clearTable(tableName: string): Promise<void>
+clearTable(tableName: string, options?: { cascade?: boolean }): Promise<void>
 ```
 
 -   `tableName` - table name
+-   `options` - optional parameters.
+    -   `cascade` - If `true`, will also clear all tables that have foreign keys to this table. Supported only by some databases (e.g., PostgreSQL, Oracle)
 
 Clears all table contents.
 
