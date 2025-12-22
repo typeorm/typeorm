@@ -291,6 +291,10 @@ export class SapDriver implements Driver {
                 (this.options.pool?.idleTimeout
                     ? this.options.pool.idleTimeout / 1000
                     : 30),
+            maxWaitTimeoutIfPoolExhausted:
+                this.options.pool?.maxWaitTimeoutIfPoolExhausted ??
+                this.options.pool?.requestTimeout ??
+                0,
         }
         if (this.options.pool?.pingCheck) {
             poolOptions.pingCheck = this.options.pool.pingCheck

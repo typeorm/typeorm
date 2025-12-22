@@ -25,6 +25,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 -   `pool` — Connection pool configuration object:
     -   `maxConnectedOrPooled` (number) — Max active or idle connections in the pool (default: 10).
     -   `maxPooledIdleTime` (seconds) — Time before an idle connection is closed (default: 30).
+    -   `maxWaitTimeoutIfPoolExhausted` (milliseconds) - Time to wait for a connection to become available (default: 0, no wait). Requires `@sap/hana-client` version `2.27` or later.
     -   `pingCheck` (boolean) — Whether to validate connections before use (default: false).
     -   `poolCapacity` (number) — Maximum number of connections to be kept available (default: no limit).
 
