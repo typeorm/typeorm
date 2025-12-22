@@ -406,15 +406,7 @@ export class SapDriver implements Driver {
         nativeParameters: ObjectLiteral,
     ): [string, any[]] {
         const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => {
-                if (nativeParameters[key] instanceof Date)
-                    return DateUtils.mixedDateToDatetimeString(
-                        nativeParameters[key],
-                        true,
-                    )
-
-                return nativeParameters[key]
-            },
+            (key) => nativeParameters[key],
         )
 
         if (!parameters || !Object.keys(parameters).length)
@@ -443,10 +435,6 @@ export class SapDriver implements Driver {
 
                 if (typeof value === "function") {
                     return value()
-                }
-
-                if (value instanceof Date) {
-                    return DateUtils.mixedDateToDatetimeString(value, true)
                 }
 
                 escapedParameters.push(value)
