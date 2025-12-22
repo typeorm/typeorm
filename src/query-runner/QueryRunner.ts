@@ -522,7 +522,10 @@ export interface QueryRunner extends AsyncDisposable {
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    clearTable(tableName: string): Promise<void>
+    clearTable(
+        tableName: string,
+        options?: { cascade?: boolean },
+    ): Promise<void>
 
     /**
      * Enables special query runner mode in which sql queries won't be executed,

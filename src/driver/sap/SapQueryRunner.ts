@@ -2432,7 +2432,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    async clearTable(tablePath: string): Promise<void> {
+    async clearTable(
+        tablePath: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
         await this.query(`TRUNCATE TABLE ${this.escapePath(tablePath)}`)
     }
 
