@@ -1436,20 +1436,21 @@ export class EntityManager {
         options?: { cascade?: boolean },
     ): Promise<void> {
         const metadata = this.connection.getMetadata(entityClass)
+        if (options?.cascade) {
+            // only PostgreSQL and Oracle support TRUNCATE ... CASCADE
+            if (
+                this.connection.options.type !== "postgres" &&
+                this.connection.options.type !== "oracle"
+            ) {
+                throw new TypeORMError(
+                    `Truncate with cascade is only supported by Postgres and Oracle databases.`,
+                )
+            }
+        }
+
         const queryRunner =
             this.queryRunner || this.connection.createQueryRunner()
         try {
-            if (options?.cascade) {
-                // only PostgreSQL and Oracle support TRUNCATE ... CASCADE
-                if (
-                    this.connection.options.type !== "postgres" &&
-                    this.connection.options.type !== "oracle"
-                ) {
-                    throw new TypeORMError(
-                        `Truncate with cascade is only supported by Postgres and Oracle databases.`,
-                    )
-                }
-            }
             return await queryRunner.clearTable(metadata.tablePath, options)
         } finally {
             if (!this.queryRunner) await queryRunner.release()
