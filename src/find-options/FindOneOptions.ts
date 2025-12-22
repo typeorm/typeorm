@@ -58,6 +58,11 @@ export interface FindOneOptions<Entity = any> {
     order?: FindOptionsOrder<Entity>
 
     /**
+     * Group by condition in which entities should be grouped.
+     */
+    groupBy?: string | string[]
+
+    /**
      * Enables or disables query result caching.
      */
     cache?: boolean | number | { id: any; milliseconds: number }

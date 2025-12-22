@@ -28,12 +28,14 @@ export class FindOptionsUtils {
             possibleOptions &&
             (Array.isArray(possibleOptions.select) ||
                 Array.isArray(possibleOptions.relations) ||
+                Array.isArray(possibleOptions.groupBy) ||
                 typeof possibleOptions.select === "object" ||
                 typeof possibleOptions.relations === "object" ||
                 typeof possibleOptions.where === "object" ||
                 // typeof possibleOptions.where === "string" ||
                 typeof possibleOptions.join === "object" ||
                 typeof possibleOptions.order === "object" ||
+                typeof possibleOptions.groupBy === "string" ||
                 typeof possibleOptions.cache === "object" ||
                 typeof possibleOptions.cache === "boolean" ||
                 typeof possibleOptions.cache === "number" ||
