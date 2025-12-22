@@ -2357,7 +2357,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      * @param tableOrName
      */
-    async clearTable(tableOrName: Table | string): Promise<void> {
+    async clearTable(
+        tableOrName: Table | string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
         await this.query(`TRUNCATE TABLE ${this.escapePath(tableOrName)}`)
     }
 

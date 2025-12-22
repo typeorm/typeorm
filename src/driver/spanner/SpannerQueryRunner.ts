@@ -1532,7 +1532,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Spanner does not support TRUNCATE TABLE statement, so we use DELETE FROM.
      * @param tableName
      */
-    async clearTable(tableName: string): Promise<void> {
+    async clearTable(
+        tableName: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
         await this.query(`DELETE FROM ${this.escapePath(tableName)} WHERE true`)
     }
 

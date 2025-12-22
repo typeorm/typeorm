@@ -2722,7 +2722,10 @@ export class SqlServerQueryRunner
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      * @param tablePath
      */
-    async clearTable(tablePath: string): Promise<void> {
+    async clearTable(
+        tablePath: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
         await this.query(`TRUNCATE TABLE ${this.escapePath(tablePath)}`)
     }
 

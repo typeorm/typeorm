@@ -764,8 +764,8 @@ export class Repository<Entity extends ObjectLiteral> {
      * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
      * @see https://stackoverflow.com/a/5972738/925151
      */
-    clear(): Promise<void> {
-        return this.manager.clear(this.metadata.target)
+    clear(options?: { cascade?: boolean }): Promise<void> {
+        return this.manager.clear(this.metadata.target, options)
     }
 
     /**
