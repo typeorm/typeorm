@@ -3,7 +3,7 @@ import { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
 import { RelationOptions } from "../options/RelationOptions"
 
 /**
- * Marks a entity property as a children of the tree.
+ * Marks an entity property as a children of the tree.
  * "Tree children" will contain all children (bind) of this entity.
  */
 export function TreeChildren(options?: {

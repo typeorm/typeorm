@@ -28,6 +28,20 @@ export class PlatformTools {
     }
 
     /**
+     * Reads the version string from package.json of the given package.
+     * This operation is only supported in node.
+     */
+    static readPackageVersion(name: string): string {
+        try {
+            return require(`${name}/package.json`).version
+        } catch (err) {
+            throw new TypeError(
+                `Failed to read package.json for "${name}": ${err.message}`,
+            )
+        }
+    }
+
+    /**
      * Loads ("require"-s) given file or package.
      * This operation only supports on node platform
      */
@@ -63,9 +77,6 @@ export class PlatformTools {
                 /**
                  * mysql
                  */
-                case "mysql":
-                    return require("mysql")
-
                 case "mysql2":
                     return require("mysql2")
 
@@ -130,9 +141,9 @@ export class PlatformTools {
                     return require("react-native-sqlite-storage")
             }
         } catch (err) {
-            return require(path.resolve(
-                process.cwd() + "/node_modules/" + name,
-            ))
+            return require(
+                path.resolve(process.cwd() + "/node_modules/" + name),
+            )
         }
 
         // If nothing above matched and we get here, the package was not listed within PlatformTools

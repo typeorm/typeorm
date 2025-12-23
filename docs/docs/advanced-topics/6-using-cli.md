@@ -124,66 +124,15 @@ typeorm subscriber:create path-to-subscriber-dir/subscriber
 
 Learn more about [Subscribers](./4-listeners-and-subscribers.md).
 
-## Create a new migration
+## Manage migrations
 
-You can create a new migration using CLI:
+* `typeorm migration:create` - [create](../migrations/03-creating.md) empty migration
+* `typeorm migration:generate` - [generate](../migrations/04-generating.md) migration comparing entities with actual database schema
+* `typeorm migration:run` - [execute](../migrations/05-executing.md) all migrations
+* `typeorm migration:revert` - [revert](../migrations/06-reverting.md) last migration
+* `typeorm migration:show` - [list](../migrations/07-status.md) all migrations with their execution status
 
-```shell
-typeorm migration:create path-to-migrations-dir/migrationName
-```
-
-Learn more about [Migrations](./1-migrations.md).
-
-## Generate a migration from existing table schema
-
-Automatic migration generation creates a new migration file
-and writes all sql queries that must be executed to update the database.
-
-If no there were no changes generated, the command will exit with code 1.
-
-```shell
-typeorm migration:generate path/to/Migration -d path/to/datasource
-```
-
-The rule of thumb is to generate a migration after each entity change.
-the -d argument value should specify the path where your DataSource instance is defined.
-You can specify the path and name of the migration with the first argument.
-
-Learn more about [Migrations](./1-migrations.md).
-
-## Run migrations
-
-To execute all pending migrations use following command:
-
-```shell
-typeorm migration:run -- -d path-to-datasource-config
-```
-
-Learn more about [Migrations](./1-migrations.md).
-
-## Revert migrations
-
-To revert the most recently executed migration use the following command:
-
-```shell
-typeorm migration:revert -- -d path-to-datasource-config
-```
-
-This command will undo only the last executed migration.
-You can execute this command multiple times to revert multiple migrations.
-Learn more about [Migrations](./1-migrations.md).
-
-## Show migrations
-
-To show all migrations and whether they've been run or not use following command:
-
-```shell
-typeorm migration:show  -- -d path-to-datasource-config
-```
-
-[X] = Migration has been ran
-
-[ ] = Migration is pending/unapplied
+Learn more about [Migrations](../migrations/01-why.md).
 
 ## Sync database schema
 
