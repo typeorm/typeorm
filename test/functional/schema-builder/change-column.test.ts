@@ -6,15 +6,16 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Post } from "./entity/Post"
-import { PostVersion } from "./entity/PostVersion"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("schema builder > change column", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [
+                __dirname + "/entity/common/*{.js,.ts}",
+                __dirname + "/entity/:driver:/*{.js,.ts}",
+            ],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -25,7 +26,7 @@ describe("schema builder > change column", () => {
     it("should correctly change column name", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = connection.getMetadata("Post")
                 const nameColumn =
                     postMetadata.findColumnWithPropertyName("name")!
                 nameColumn.propertyName = "title"
@@ -49,7 +50,7 @@ describe("schema builder > change column", () => {
     it("should correctly change column length", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = connection.getMetadata("Post")
                 const nameColumn =
                     postMetadata.findColumnWithPropertyName("name")!
                 const textColumn =
@@ -90,7 +91,7 @@ describe("schema builder > change column", () => {
     it("should correctly change column type", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = connection.getMetadata("Post")
                 const versionColumn =
                     postMetadata.findColumnWithPropertyName("version")!
                 versionColumn.type =
@@ -99,7 +100,8 @@ describe("schema builder > change column", () => {
                         : "int"
 
                 // in test we must manually change referenced column too, but in real sync, it changes automatically
-                const postVersionMetadata = connection.getMetadata(PostVersion)
+                const postVersionMetadata =
+                    connection.getMetadata("PostVersion")
                 const postVersionColumn =
                     postVersionMetadata.findColumnWithPropertyName("post")!
                 postVersionColumn.type =
@@ -136,7 +138,7 @@ describe("schema builder > change column", () => {
                 // Spanner does not support DEFAULT
                 if (connection.driver.options.type === "spanner") return
 
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = connection.getMetadata("Post")
                 const nameColumn =
                     postMetadata.findColumnWithPropertyName("name")!
 
@@ -165,7 +167,7 @@ describe("schema builder > change column", () => {
                 )
                     return
 
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = connection.getMetadata("Post")
                 const idColumn = postMetadata.findColumnWithPropertyName("id")!
                 const versionColumn =
                     postMetadata.findColumnWithPropertyName("version")!
@@ -249,7 +251,7 @@ describe("schema builder > change column", () => {
                         `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`,
                     )
 
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = connection.getMetadata("Post")
                 const idColumn = postMetadata.findColumnWithPropertyName("id")!
                 idColumn.isGenerated = true
                 idColumn.generationStrategy = "uuid"
@@ -435,7 +437,7 @@ describe("schema builder > change column", () => {
     it("should correctly change column type when FK relationships impact it", () =>
         Promise.all(
             connections.map(async (connection) => {
-                await connection.getRepository(Post).insert({
+                await connection.getRepository("Post").insert({
                     id: 1234,
                     version: "5",
                     text: "a",
@@ -444,16 +446,16 @@ describe("schema builder > change column", () => {
                 })
 
                 const post = await connection
-                    .getRepository(Post)
+                    .getRepository("Post")
                     .findOneByOrFail({ id: 1234 })
 
-                await connection.getRepository(PostVersion).insert({
+                await connection.getRepository("PostVersion").insert({
                     id: 1,
                     post,
                     details: "Example",
                 })
 
-                const postMetadata = connection.getMetadata(Post)
+                const postMetadata = connection.getMetadata("Post")
                 const nameColumn =
                     postMetadata.findColumnWithPropertyName("name")!
                 nameColumn.length = "500"

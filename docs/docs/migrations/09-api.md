@@ -436,7 +436,7 @@ createCheckConstraint(table: Table|string, checkConstraint: TableCheck): Promise
 
 Creates a new check constraint.
 
-> Note: MySQL does not support check constraints.
+> Note: MySQL supports CHECK constraints starting from version 8.0.16. For earlier MySQL versions CHECK definitions are parsed but ignored by the server. Ensure your MySQL server is >= 8.0.16 to use CHECK constraints.
 
 ---
 
@@ -449,7 +449,7 @@ createCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Pro
 
 Creates a new check constraint.
 
-> Note: MySQL does not support check constraints.
+> Note: MySQL supports CHECK constraints starting from version 8.0.16. Older versions silently ignore them.
 
 ---
 
@@ -462,7 +462,7 @@ dropCheckConstraint(table: Table|string, checkOrName: TableCheck|string): Promis
 
 Drops check constraint.
 
-> Note: MySQL does not support check constraints.
+> Note: MySQL supports CHECK constraints starting from version 8.0.16. Older versions silently ignore them.
 
 ---
 
@@ -475,7 +475,7 @@ dropCheckConstraints(table: Table|string, checkConstraints: TableCheck[]): Promi
 
 Drops check constraints.
 
-> Note: MySQL does not support check constraints.
+> Note: MySQL supports CHECK constraints starting from version 8.0.16. Older versions silently ignore them.
 
 ---
 
