@@ -758,6 +758,21 @@ export class EntityManager {
                         )}`,
                     )
                 }
+
+                const conflictPaths = new Set(
+                    conflictColumns.map((c) => c.propertyPath),
+                )
+                const overlapping = requestedColumnPaths.filter((p) =>
+                    conflictPaths.has(p),
+                )
+
+                if (overlapping.length > 0) {
+                    throw new TypeORMError(
+                        `updateOnly cannot include conflict columns: ${overlapping.join(
+                            ", ",
+                        )}`,
+                    )
+                }
                 return updateOnlyColumns.filter(
                     (col) => !conflictColumns.includes(col) && hasDefined(col),
                 )

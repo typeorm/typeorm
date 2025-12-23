@@ -1038,6 +1038,32 @@ describe("repository > basic methods", () => {
                         .should.be.rejectedWith(TypeORMError)
                 }),
             ))
+        it("should throw error when updateOnly contains conflict columns", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    if (!connection.driver.supportedUpsertTypes.length) return
+
+                    const postRepository = connection.getRepository(Post)
+                    const externalId =
+                        "external-updateonly-conflict-overlap-test"
+
+                    await postRepository
+                        .upsert(
+                            {
+                                externalId,
+                                title: "Test title",
+                            },
+                            {
+                                conflictPaths: ["externalId"],
+                                updateOnly: ["externalId", "title"], // containing conflict column in updateOnly
+                            },
+                        )
+                        .should.be.rejectedWith(
+                            TypeORMError,
+                            /updateOnly cannot include conflict columns: externalId/,
+                        )
+                }),
+            ))
     })
 
     describe("preload also should also implement merge functionality", function () {
