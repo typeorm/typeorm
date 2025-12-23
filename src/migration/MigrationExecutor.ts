@@ -247,8 +247,7 @@ export class MigrationExecutor {
         )
         if (lastTimeExecutedMigration)
             this.connection.logger.logSchemaBuild(
-                `${
-                    lastTimeExecutedMigration.name
+                `${lastTimeExecutedMigration.name
                 } is the last executed migration. It was executed on ${new Date(
                     lastTimeExecutedMigration.timestamp,
                 ).toString()}.`,
@@ -356,8 +355,7 @@ export class MigrationExecutor {
                         // informative log about migration success
                         successMigrations.push(migration)
                         this.connection.logger.logSchemaBuild(
-                            `Migration ${migration.name} has been ${
-                                this.fake ? "(fake) " : ""
+                            `Migration ${migration.name} has been ${this.fake ? "(fake) " : ""
                             }executed successfully.`,
                         )
                     })
@@ -374,7 +372,7 @@ export class MigrationExecutor {
                 try {
                     // we throw original error even if rollback thrown an error
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                } catch (rollbackError) { }
             }
 
             throw err
@@ -438,8 +436,7 @@ export class MigrationExecutor {
             `${executedMigrations.length} migrations are already loaded in the database.`,
         )
         this.connection.logger.logSchemaBuild(
-            `${
-                lastTimeExecutedMigration.name
+            `${lastTimeExecutedMigration.name
             } is the last executed migration. It was executed on ${new Date(
                 lastTimeExecutedMigration.timestamp,
             ).toString()}.`,
@@ -462,8 +459,7 @@ export class MigrationExecutor {
 
             await this.deleteExecutedMigration(queryRunner, migrationToRevert)
             this.connection.logger.logSchemaBuild(
-                `Migration ${migrationToRevert.name} has been ${
-                    this.fake ? "(fake) " : ""
+                `Migration ${migrationToRevert.name} has been ${this.fake ? "(fake) " : ""
                 }reverted successfully.`,
             )
 
@@ -475,7 +471,7 @@ export class MigrationExecutor {
                 try {
                     // we throw original error even if rollback thrown an error
                     await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                } catch (rollbackError) { }
             }
 
             throw err
@@ -550,7 +546,7 @@ export class MigrationExecutor {
         if (this.connection.driver.options.type === "mongodb") {
             const mongoRunner = queryRunner as MongoQueryRunner
             return mongoRunner
-                .cursor(this.migrationsTableName, {})
+                .cursor(this.connection.driver.database!, this.migrationsTableName, {})
                 .sort({ _id: -1 })
                 .toArray()
         } else {
