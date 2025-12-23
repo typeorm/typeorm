@@ -167,7 +167,7 @@ await repository.upsert(
  *  VALUES
  *      (externalId = abc123, firstName = Rizzrak),
  *      (externalId = cba321, firstName = Karzzir),
- *  ON CONFLICT (externalId) DO UPDATE 
+ *  ON CONFLICT (externalId) DO UPDATE
  *  SET firstName = EXCLUDED.firstName,
  *      updatedDate = CURRENT_TIMESTAMP,
  *      version = version + 1
@@ -443,6 +443,13 @@ const rawData = await repository.query(
 const rawData = await repository.query(
     "SELECT * FROM USERS WHERE name = @0 and age = @1",
     ["John", 24],
+)
+
+// mysql2 additionally supports named placeholders
+// when extras.namedPlaceholders is true
+const rawData = await repository.query(
+    "SELECT * FROM USERS WHERE name = :name and age = :age",
+    { name: "John", age: 24 },
 )
 ```
 
