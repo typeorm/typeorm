@@ -698,6 +698,19 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         return statement
     }
 
+    protected maskStrings(statement: string) {
+        const strings: string[] = []
+        const masked = statement.replace(/'(?:[^']|'{2})*'/g, (match) => {
+            strings.push(match)
+            return `__STR_${strings.length - 1}__`
+        })
+        return { masked, strings }
+    }
+
+    protected unmaskStrings(statement: string, strings: string[]) {
+        return statement.replace(/__STR_(\d+)__/g, (_, i) => strings[+i])
+    }
+
     /**
      * Replaces all entity's propertyName to name in the given SQL string.
      */
@@ -766,6 +779,10 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             .map((key) => escapeRegExp(key))
             .join("|")
 
+        // do not make replacements inside literal strings
+        const { masked, strings } = this.maskStrings(statement)
+        statement = masked
+
         if (replacementKeys.length > 0) {
             statement = statement.replace(
                 new RegExp(
@@ -807,7 +824,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             )
         }
 
-        return statement
+        return this.unmaskStrings(statement, strings)
     }
 
     protected createComment(): string {
