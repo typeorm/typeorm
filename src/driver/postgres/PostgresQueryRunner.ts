@@ -3769,8 +3769,6 @@ export class PostgresQueryRunner
                             tableColumn.isUnique =
                                 uniqueConstraints.length > 0 &&
                                 !isConstraintComposite
-                            tableColumn.isNullsNotDistinct =
-                                dbColumn["nulls_not_distinct"]
 
                             if (dbColumn.is_identity === "YES") {
                                 // Postgres 10+ Identity column
