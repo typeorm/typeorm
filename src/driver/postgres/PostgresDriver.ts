@@ -1471,6 +1471,13 @@ export class PostgresDriver implements Driver {
         return false
     }
 
+    /**
+     * Returns true if driver supports UNIQUE NULLS NOT DISTINCT constraints.
+     */
+    isNullsNotDistinctSupported(): boolean {
+        return VersionUtils.isGreaterOrEqual(this.version, "15")
+    }
+
     get uuidGenerator(): string {
         return this.options.uuidExtension === "pgcrypto"
             ? "gen_random_uuid()"

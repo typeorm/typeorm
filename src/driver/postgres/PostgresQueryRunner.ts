@@ -4379,7 +4379,12 @@ export class PostgresQueryRunner
                 index.isConcurrent ? " CONCURRENTLY" : ""
             } "${index.name}" ON ${this.escapePath(table)} ${
                 indexTypeClause ?? ""
-            } (${columns}) ${index.isNullsNotDistinct ? "NULLS NOT DISTINCT" : ""} ${index.where ? "WHERE " + index.where : ""}`,
+            } (${columns}) ${
+                index.isNullsNotDistinct &&
+                this.driver.isNullsNotDistinctSupported()
+                    ? "NULLS NOT DISTINCT"
+                    : ""
+            } ${index.where ? "WHERE " + index.where : ""}`,
         )
     }
 
@@ -4483,7 +4488,12 @@ export class PostgresQueryRunner
             .join(", ")
         let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${
             uniqueConstraint.name
-        }" UNIQUE ${uniqueConstraint.isNullsNotDistinct ? "NULLS NOT DISTINCT" : ""} (${columnNames})`
+        }" UNIQUE ${
+            uniqueConstraint.isNullsNotDistinct &&
+            this.driver.isNullsNotDistinctSupported()
+                ? "NULLS NOT DISTINCT"
+                : ""
+        } (${columnNames})`
         if (uniqueConstraint.deferrable)
             sql += ` DEFERRABLE ${uniqueConstraint.deferrable}`
         return new Query(sql)
