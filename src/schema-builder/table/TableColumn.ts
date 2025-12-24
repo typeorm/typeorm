@@ -57,6 +57,12 @@ export class TableColumn {
     isUnique: boolean = false
 
     /**
+     * UNIQUE NULLS NOT DISTINCT constraint allows only a single NULL value to appear in a UNIQUE index.
+     * This option is only applicable in PostgreSQL.
+     */
+    isNullsNotDistinct: boolean = false
+
+    /**
      * Indicates if column stores array.
      */
     isArray: boolean = false
@@ -175,6 +181,7 @@ export class TableColumn {
             this.generatedIdentity = options.generatedIdentity
             this.isPrimary = options.isPrimary || false
             this.isUnique = options.isUnique || false
+            this.isNullsNotDistinct = options.isNullsNotDistinct || false
             this.isArray = options.isArray || false
             this.comment = options.comment
             this.enum = options.enum
@@ -219,6 +226,7 @@ export class TableColumn {
             generatedIdentity: this.generatedIdentity,
             isPrimary: this.isPrimary,
             isUnique: this.isUnique,
+            isNullsNotDistinct: this.isNullsNotDistinct,
             isArray: this.isArray,
             comment: this.comment,
             spatialFeatureType: this.spatialFeatureType,

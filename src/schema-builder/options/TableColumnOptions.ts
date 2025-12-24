@@ -52,6 +52,12 @@ export interface TableColumnOptions {
     isUnique?: boolean
 
     /**
+     * UNIQUE NULLS NOT DISTINCT constraint allows only a single NULL value to appear in a UNIQUE index.
+     * This option is only applicable in PostgreSQL.
+     */
+    isNullsNotDistinct?: boolean
+
+    /**
      * Indicates if column stores array.
      */
     isArray?: boolean

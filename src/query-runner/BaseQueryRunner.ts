@@ -558,6 +558,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
             (checkDefault && oldColumn.default !== newColumn.default) ||
             oldColumn.onUpdate !== newColumn.onUpdate || // MySQL only
             oldColumn.isNullable !== newColumn.isNullable ||
+            oldColumn.isNullsNotDistinct !== newColumn.isNullsNotDistinct ||
             (checkComment && oldColumn.comment !== newColumn.comment) ||
             (checkEnum && this.isEnumChanged(oldColumn, newColumn))
         )
