@@ -3,6 +3,7 @@ import fs from "fs/promises"
 
 import { ConnectionOptionsReader } from "../../../src/connection/ConnectionOptionsReader"
 import { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
+import { PlatformTools } from "../../../src/platform/PlatformTools"
 
 describe("ConnectionOptionsReader", () => {
     before(async () => {
@@ -112,19 +113,35 @@ describe("ConnectionOptionsReader", () => {
     })
 
     it("should log warning when ormconfig file fails to load", async () => {
-        const connectionOptionsReader = new ConnectionOptionsReader({
-            root: __dirname,
-            configName: "configs/nonexistent-config",
-        })
+        // Create a malformed JS config file
+        await fs.writeFile(
+            "./temp/configs/malformed-config.js",
+            "module.exports = { invalid syntax here",
+        )
 
-        try {
-            await connectionOptionsReader.all()
-        } catch (err: any) {
-            // Expected to throw because no valid config was found
-            expect(err.message).to.include("No connection options were found")
+        // Spy on logWarn
+        const originalLogWarn = PlatformTools.logWarn
+        let warnCalled = false
+        let warnMessage = ""
+        PlatformTools.logWarn = (...args: any[]) => {
+            warnCalled = true
+            warnMessage = args.join(" ")
         }
 
-        // When no config file is found, no warning is logged
-        // Warning only logs when file exists but fails to load
+        try {
+            const reader = new ConnectionOptionsReader({
+                root: "./temp",
+                configName: "configs/malformed-config",
+            })
+            await reader.all()
+        } catch (err: any) {
+            expect(err.message).to.include("No connection options were found")
+        } finally {
+            PlatformTools.logWarn = originalLogWarn
+            await fs.unlink("./temp/configs/malformed-config.js")
+        }
+
+        expect(warnCalled).to.be.true
+        expect(warnMessage).to.include("Could not load ormconfig file")
     })
 })

@@ -132,7 +132,7 @@ export class ConnectionOptionsReader {
                 PlatformTools.dotenv(configFile)
             } catch (err) {
                 PlatformTools.logWarn(
-                    "Warning: Could not load environment variables from .env file",
+                    `Warning: Could not load environment variables from .env file at ${configFile}`,
                     err instanceof Error ? err.message : String(err),
                 )
             }
@@ -141,7 +141,7 @@ export class ConnectionOptionsReader {
                 PlatformTools.dotenv(this.baseDirectory + "/.env")
             } catch (err) {
                 PlatformTools.logWarn(
-                    "Warning: Could not load environment variables from .env file",
+                    `Warning: Could not load environment variables from .env file at ${this.baseDirectory + "/.env"}`,
                     err instanceof Error ? err.message : String(err),
                 )
             }
