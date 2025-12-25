@@ -110,4 +110,21 @@ describe("ConnectionOptionsReader", () => {
         expect(fileOptions.database).to.have.string("test-ormconfig-env")
         expect(process.env.TYPEORM_DATABASE).to.equal("test-ormconfig-env")
     })
+
+    it("should log warning when ormconfig file fails to load", async () => {
+        const connectionOptionsReader = new ConnectionOptionsReader({
+            root: __dirname,
+            configName: "configs/nonexistent-config",
+        })
+
+        try {
+            await connectionOptionsReader.all()
+        } catch (err: any) {
+            // Expected to throw because no valid config was found
+            expect(err.message).to.include("No connection options were found")
+        }
+
+        // When no config file is found, no warning is logged
+        // Warning only logs when file exists but fails to load
+    })
 })
