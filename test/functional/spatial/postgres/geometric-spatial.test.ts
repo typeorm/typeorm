@@ -1,3 +1,4 @@
+import "reflect-metadata"
 import { expect } from "chai"
 import { DataSource } from "../../../../src"
 import {
@@ -171,6 +172,7 @@ describe("standard geometric types", () => {
                         where: { id: entity.id },
                     })
                     expect(loaded.line).to.be.a("string")
+                    expect(loaded.line).to.equal("{1,-1,1}") // Postgres converts line to its canonical form Ax + By + C = 0 {A,B,C}
 
                     await expect(repo.save(loaded)).to.be.fulfilled
                 }),

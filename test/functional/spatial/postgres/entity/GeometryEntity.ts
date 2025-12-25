@@ -6,23 +6,23 @@ export class GeometryEntity {
     id: number
 
     @Column({ type: "point", nullable: true })
-    point: string | object
+    point: string | { x: number; y: number } | null
 
     @Column({ type: "line", nullable: true })
-    line: string | object
+    line: string | null
 
     @Column({ type: "lseg", nullable: true })
-    lseg: string | object
+    lseg: string | null
 
     @Column({ type: "box", nullable: true })
-    box: string | object
+    box: string | null
 
     @Column({ type: "path", nullable: true })
-    path: string | object
+    path: string | null
 
     @Column({ type: "polygon", nullable: true })
-    polygon: string | object
+    polygon: string | null
 
     @Column({ type: "circle", nullable: true })
-    circle: string | object
+    circle: string | { x: number; y: number; radius: number } | null
 }
