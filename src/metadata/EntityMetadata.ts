@@ -1,11 +1,15 @@
 import { QueryRunner, SelectQueryBuilder } from ".."
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { DataSource } from "../data-source/DataSource"
+import type { PartitionByConfig } from "../decorator/options/PartitionOptions"
 import { CannotCreateEntityIdMapError } from "../error/CannotCreateEntityIdMapError"
+import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { OrderByCondition } from "../find-options/OrderByCondition"
 import { TableMetadataArgs } from "../metadata-args/TableMetadataArgs"
 import { TreeMetadataArgs } from "../metadata-args/TreeMetadataArgs"
+import { ObjectUtils } from "../util/ObjectUtils"
 import { OrmUtils } from "../util/OrmUtils"
+import { shorten } from "../util/StringUtils"
 import { CheckMetadata } from "./CheckMetadata"
 import { ColumnMetadata } from "./ColumnMetadata"
 import { EmbeddedMetadata } from "./EmbeddedMetadata"
@@ -16,13 +20,10 @@ import { IndexMetadata } from "./IndexMetadata"
 import { RelationCountMetadata } from "./RelationCountMetadata"
 import { RelationIdMetadata } from "./RelationIdMetadata"
 import { RelationMetadata } from "./RelationMetadata"
+import { ClosureTreeOptions } from "./types/ClosureTreeOptions"
 import { TableType } from "./types/TableTypes"
 import { TreeType } from "./types/TreeTypes"
 import { UniqueMetadata } from "./UniqueMetadata"
-import { ClosureTreeOptions } from "./types/ClosureTreeOptions"
-import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
-import { ObjectUtils } from "../util/ObjectUtils"
-import { shorten } from "../util/StringUtils"
 
 /**
  * Contains all entity metadata.
@@ -159,6 +160,11 @@ export class EntityMetadata {
      * Schema name. Used in Postgres and Sql Server.
      */
     schema?: string
+
+    /**
+     * Table partitioning configuration.
+     */
+    partition?: PartitionByConfig
 
     /**
      * Specifies a default order by used for queries from this table when no explicit order by is specified.
@@ -546,6 +552,7 @@ export class EntityMetadata {
         this.tableType = this.tableMetadataArgs.type
         this.expression = this.tableMetadataArgs.expression
         this.withoutRowid = this.tableMetadataArgs.withoutRowid
+        this.partition = this.tableMetadataArgs.partition
         this.dependsOn = this.tableMetadataArgs.dependsOn
     }
 
@@ -1071,6 +1078,7 @@ export class EntityMetadata {
             this.tableMetadataArgs.type === "closure-junction"
 
         this.comment = this.tableMetadataArgs.comment
+        this.partition = this.tableMetadataArgs.partition
     }
 
     /**
