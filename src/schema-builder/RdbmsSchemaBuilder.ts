@@ -1103,11 +1103,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     existingCheck &&
                     existingCheck.expression &&
                     checkMetadata.expression &&
-                    !this.normalizeCheckExpression(
-                        existingCheck.expression,
-                    ).includes(
-                        this.normalizeCheckExpression(checkMetadata.expression),
-                    )
+                    this.normalizeCheckExpression(existingCheck.expression) !==
+                        this.normalizeCheckExpression(checkMetadata.expression)
                 ) {
                     modifiedChecks.push({
                         oldCheck: existingCheck,
@@ -1148,6 +1145,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         // Remove extra whitespace, newlines, and tabs
         let normalized = expression.replace(/\s+/g, " ").trim().toLowerCase()
 
+        // Remove parentheses wrapping the entire expression
+        normalized = normalized.replace(/^\(\s*(.+)\s*\)$/g, "$1")
+
         // Normalize ARRAY syntax (PostgreSQL) to IN syntax for comparison
         // e.g., "col = ANY (ARRAY['val1', 'val2'])" -> "col in ('val1', 'val2')"
         normalized = normalized.replace(
@@ -1158,8 +1158,48 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         // Remove type casts (::text, ::character varying, etc.)
         normalized = normalized.replace(/::\w+/g, "")
 
-        // Normalize quotes and escape characters
-        normalized = normalized.replace(/\\'/g, "''").replace(/`/g, '"')
+        // Normalize SQL Server brackets [col] to plain identifiers
+        normalized = normalized.replace(/\[([^\]]+)\]/g, "$1")
+
+        // Normalize all identifier quotes to plain identifiers for comparison
+        normalized = normalized.replace(/"([^"]+)"/g, "$1")
+        normalized = normalized.replace(/`([^`]+)`/g, "$1")
+
+        // Normalize OR chains with IN syntax for comparison
+        // e.g., "col='a' OR col='b' OR col='c'" -> "col in ('a','b','c')"
+        const orMatches = Array.from(
+            normalized.matchAll(
+                /(\w+)\s*=\s*'([^']+)'(\s+or\s+\1\s*=\s*'[^']+')+/gi,
+            ),
+        )
+        for (const match of orMatches) {
+            const orChain = match[0]
+            const colName = match[1]
+            const values = (orChain.match(/'([^']+)'/g) || [])
+                .map((v) => v.replace(/'/g, ""))
+                .sort()
+            const inExpr = `${colName} in ('${values.join("','")}')`
+            normalized = normalized.replace(orChain, inExpr)
+        }
+
+        // Normalize IN expressions by sorting values for comparison
+        const inMatches = Array.from(
+            normalized.matchAll(
+                /(\w+)\s+in\s*\('[^']+'\s*(?:,\s*'[^']+'\s*)*\)/gi,
+            ),
+        )
+        for (const match of inMatches) {
+            const inExpr = match[0]
+            const colName = match[1]
+            const values = (inExpr.match(/'([^']+)'/g) || [])
+                .map((v) => v.replace(/'/g, ""))
+                .sort()
+            const normalizedIn = `${colName} in ('${values.join("','")}')`
+            normalized = normalized.replace(inExpr, normalizedIn)
+        }
+
+        // Normalize escape characters
+        normalized = normalized.replace(/\\'/g, "''")
 
         return normalized
     }
