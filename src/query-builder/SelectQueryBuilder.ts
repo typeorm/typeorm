@@ -2347,6 +2347,37 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             // if real entity relation is involved
             if (relation.isManyToOne || relation.isOneToOneOwner) {
+                // polymorphic relation: join using type + id discriminator instead of FK
+                if (relation.isPolymorphic) {
+                const { idField, typeField, value } = relation.polymorphicOptions!;
+
+                const condition =
+                    destinationTableAlias +
+                    ".id = " +
+                    parentAlias +
+                    "." +
+                    idField +
+                    " AND " +
+                    parentAlias +
+                    "." +
+                    typeField +
+                    " = " +
+                    this.createParameter(value);
+
+                return (
+                    " " +
+                    joinAttr.direction +
+                    " JOIN " +
+                    this.getTableName(destinationTableName) +
+                    " " +
+                    this.escape(destinationTableAlias) +
+                    this.createTableLockExpression() +
+                    " ON " +
+                    this.replacePropertyNames(condition + appendedCondition)
+                );
+                }
+
+
                 // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
                 const condition = relation.joinColumns
                     .map((joinColumn) => {

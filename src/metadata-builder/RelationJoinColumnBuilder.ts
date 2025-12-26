@@ -69,7 +69,7 @@ export class RelationJoinColumnBuilder {
             relation,
             referencedColumns,
         )
-        if (!referencedColumns.length || !relation.createForeignKeyConstraints)
+        if (!referencedColumns.length || !relation.createForeignKeyConstraints || relation.isPolymorphic)
             return {
                 foreignKey: undefined,
                 columns,

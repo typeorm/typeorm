@@ -72,5 +72,19 @@ export interface RelationOptions {
      * nullify will remove the relation key.
      * disable will keep the relation intact. Removal of related item is only possible through its own repo.
      */
-    orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable"
+    orphanedRowAction?: "nullify" | "delete" | "soft-delete" | "disable",
+
+
+
+    /**
+     * Enables polymorphic behavior on existing relations (OneToOne / ManyToOne).
+     * Uses type + id columns instead of foreign keys. lazy loading is not supported for polymorphic relations.
+     * @typeField is name of table
+     * @idField is name of id column
+     */
+    polymorphic?: boolean | {
+        typeField: string;
+        idField: string;
+        value: string;
+    };
 }
