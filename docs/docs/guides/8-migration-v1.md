@@ -15,3 +15,9 @@ The `connectorPackage` option was removed, together with the support for the old
 ## Expo
 
 Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52, so you'll need to use Expo SDK v52 or later with the modern async SQLite API.
+
+## hashing
+
+Historically TypeORM used a non-standard SHA-1 implementation for hashing. This has been changed to use the built-in `crypto` module from Node.js.
+
+For browser environments `RandomGenerator.sha1` was fixed to the standard implementation.
