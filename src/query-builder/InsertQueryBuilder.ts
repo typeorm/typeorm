@@ -767,15 +767,15 @@ export class InsertQueryBuilder<
                 .map((column) => this.escape(column.databaseName))
                 .join(", ")
 
-        // in the case if there are no insert columns specified and table without metadata used
-        // we get columns from the inserted value map, in the case if only one inserted map is specified
+        // No metadata and no explicit insertColumns: derive column names from provided value sets
         if (
             !this.expressionMap.mainAlias!.hasMetadata &&
             !this.expressionMap.insertColumns.length
         ) {
             const valueSets = this.getValueSets()
-            if (valueSets.length === 1)
-                return Object.keys(valueSets[0])
+            const columnNames = this.getColumnNamesFromValueSets(valueSets)
+            if (columnNames.length > 0)
+                return columnNames
                     .map((columnName) => this.escape(columnName))
                     .join(", ")
         }
@@ -861,10 +861,10 @@ export class InsertQueryBuilder<
             // for tables without metadata
             // get values needs to be inserted
             let expression = ""
+            const columnNames = this.getColumnNamesFromValueSets(valueSets)
 
             valueSets.forEach((valueSet, insertionIndex) => {
-                const columns = Object.keys(valueSet)
-                columns.forEach((columnName, columnIndex) => {
+                columnNames.forEach((columnName, columnIndex) => {
                     if (columnIndex === 0) {
                         expression += "("
                     }
@@ -899,7 +899,7 @@ export class InsertQueryBuilder<
                         expression += this.createParameter(value)
                     }
 
-                    if (columnIndex === Object.keys(valueSet).length - 1) {
+                    if (columnIndex === columnNames.length - 1) {
                         if (insertionIndex === valueSets.length - 1) {
                             expression += ")"
                         } else {
@@ -926,6 +926,23 @@ export class InsertQueryBuilder<
             return [this.expressionMap.valuesSet]
 
         throw new InsertValuesMissingError()
+    }
+
+    /**
+     * Derive a stable, deduplicated column list from provided value sets (for tables without metadata).
+     */
+    protected getColumnNamesFromValueSets(
+        valueSets: ObjectLiteral[],
+    ): string[] {
+        const columns: string[] = []
+        valueSets.forEach((valueSet) => {
+            Object.keys(valueSet).forEach((columnName) => {
+                if (columns.indexOf(columnName) === -1) {
+                    columns.push(columnName)
+                }
+            })
+        })
+        return columns
     }
 
     /**
