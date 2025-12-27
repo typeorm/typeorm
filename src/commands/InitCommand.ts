@@ -47,6 +47,9 @@ export class InitCommand implements yargs.CommandModule {
                 describe:
                     "Module system to use for project, expected values are commonjs or esm.",
             })
+            .option("no-install", {
+                describe: "Skip install packages.",
+            })
     }
 
     async handler(args: yargs.Arguments) {
@@ -54,6 +57,7 @@ export class InitCommand implements yargs.CommandModule {
             const database: string = (args.database as any) || "postgres"
             const isExpress = args.express !== undefined ? true : false
             const isDocker = args.docker !== undefined ? true : false
+            const skipInstall = args.noInstall !== undefined ? true : false;
             const basePath = process.cwd() + (args.name ? "/" + args.name : "")
             const projectName = args.name
                 ? path.basename(args.name as any)
@@ -135,14 +139,32 @@ export class InitCommand implements yargs.CommandModule {
                 )
             }
 
-            console.log(ansi.green`Please wait, installing dependencies...`)
-            if (args.pm && installNpm) {
-                await InitCommand.executeCommand("npm install", basePath)
+            if (!skipInstall) {
+                console.log(
+                    ansi.green(`Please wait, installing dependencies...`),
+                )
+                if (args.pm && installNpm) {
+                    await InitCommand.executeCommand("npm install", basePath)
+                } else {
+                    await InitCommand.executeCommand("yarn install", basePath)
+                }
+                console.log(
+                    ansi.green(`Done! Start playing with a new project!`),
+                )
             } else {
-                await InitCommand.executeCommand("yarn install", basePath)
+                console.log(ansi.green(`Done! Dependencies were skipped,`));
+                console.log(ansi.bold`Run one of the following commands to install dependencies manually:`);
+                console.log('');
+                console.log(`  ${ansi.cyan("npm install")}`);
+                console.log(`  ${ansi.cyan("yarn install")}`);
+                console.log(`  ${ansi.cyan("pnpm install")}`);
+                console.log(`  ${ansi.cyan("bun install")}`);
+                console.log('');
+                console.log(ansi.dim`# Tip: you can also use "ni" from https://github.com/antfu/ni if you have it installed`);
+                console.log(
+                    ansi.green(`Done! Start playing with a new project!`),
+                )
             }
-
-            console.log(ansi.green`Done! Start playing with a new project!`)
         } catch (err) {
             PlatformTools.logCmdErr("Error during project initialization:", err)
             process.exit(1)
