@@ -21,61 +21,47 @@ export class RandomGenerator {
 
         const _cvtHex = function (val: number): string {
             let str = ""
-            let i: number
-            let v: number
 
-            for (i = 7; i >= 0; i--) {
-                v = (val >>> (i * 4)) & 0x0f
+            for (let i = 7; i >= 0; i--) {
+                const v = (val >>> (i * 4)) & 0x0f
                 str += v.toString(16)
             }
             return str
         }
 
-        let blockstart: number
-        let i: number, j: number
-        const W: number[] = new Array(80)
-        let H0 = 0x67452301
-        let H1 = 0xefcdab89
-        let H2 = 0x98badcfe
-        let H3 = 0x10325476
-        let H4 = 0xc3d2e1f0
-        let A: number, B: number, C: number, D: number, E: number
-        let temp: number
-
         // utf8_encode
         const bytes = new TextEncoder().encode(str)
-        str = String.fromCharCode(...bytes)
-
-        const strLen = str.length
+        const bytesLength = bytes.length
 
         const wordArray: number[] = []
-        for (i = 0; i < strLen - 3; i += 4) {
-            j =
-                (str.charCodeAt(i) << 24) |
-                (str.charCodeAt(i + 1) << 16) |
-                (str.charCodeAt(i + 2) << 8) |
-                str.charCodeAt(i + 3)
+        for (let i = 0; i < bytesLength - 3; i += 4) {
+            const j =
+                (bytes[i] << 24) |
+                (bytes[i + 1] << 16) |
+                (bytes[i + 2] << 8) |
+                bytes[i + 3]
             wordArray.push(j)
         }
 
-        switch (strLen % 4) {
+        let i: number = 0
+        switch (bytesLength % 4) {
             case 0:
                 i = 0x080000000
                 break
             case 1:
-                i = (str.charCodeAt(strLen - 1) << 24) | 0x0800000
+                i = (bytes[bytesLength - 1] << 24) | 0x0800000
                 break
             case 2:
                 i =
-                    (str.charCodeAt(strLen - 2) << 24) |
-                    (str.charCodeAt(strLen - 1) << 16) |
+                    (bytes[bytesLength - 2] << 24) |
+                    (bytes[bytesLength - 1] << 16) |
                     0x08000
                 break
             case 3:
                 i =
-                    (str.charCodeAt(strLen - 3) << 24) |
-                    (str.charCodeAt(strLen - 2) << 16) |
-                    (str.charCodeAt(strLen - 1) << 8) |
+                    (bytes[bytesLength - 3] << 24) |
+                    (bytes[bytesLength - 2] << 16) |
+                    (bytes[bytesLength - 1] << 8) |
                     0x80
                 break
         }
@@ -86,25 +72,36 @@ export class RandomGenerator {
             wordArray.push(0)
         }
 
-        wordArray.push(strLen >>> 29)
-        wordArray.push((strLen << 3) & 0x0ffffffff)
+        wordArray.push(bytesLength >>> 29)
+        wordArray.push((bytesLength << 3) & 0x0ffffffff)
 
-        for (blockstart = 0; blockstart < wordArray.length; blockstart += 16) {
-            for (i = 0; i < 16; i++) {
+        let H0 = 0x67452301
+        let H1 = 0xefcdab89
+        let H2 = 0x98badcfe
+        let H3 = 0x10325476
+        let H4 = 0xc3d2e1f0
+
+        for (
+            let blockstart = 0;
+            blockstart < wordArray.length;
+            blockstart += 16
+        ) {
+            const W: number[] = new Array(80)
+            for (let i = 0; i < 16; i++) {
                 W[i] = wordArray[blockstart + i]
             }
-            for (i = 16; i <= 79; i++) {
+            for (let i = 16; i <= 79; i++) {
                 W[i] = _rotLeft(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16], 1)
             }
 
-            A = H0
-            B = H1
-            C = H2
-            D = H3
-            E = H4
+            let A = H0
+            let B = H1
+            let C = H2
+            let D = H3
+            let E = H4
 
-            for (i = 0; i <= 19; i++) {
-                temp =
+            for (let i = 0; i <= 19; i++) {
+                const temp =
                     (_rotLeft(A, 5) +
                         ((B & C) | (~B & D)) +
                         E +
@@ -118,8 +115,8 @@ export class RandomGenerator {
                 A = temp
             }
 
-            for (i = 20; i <= 39; i++) {
-                temp =
+            for (let i = 20; i <= 39; i++) {
+                const temp =
                     (_rotLeft(A, 5) + (B ^ C ^ D) + E + W[i] + 0x6ed9eba1) &
                     0x0ffffffff
                 E = D
@@ -129,8 +126,8 @@ export class RandomGenerator {
                 A = temp
             }
 
-            for (i = 40; i <= 59; i++) {
-                temp =
+            for (let i = 40; i <= 59; i++) {
+                const temp =
                     (_rotLeft(A, 5) +
                         ((B & C) | (B & D) | (C & D)) +
                         E +
@@ -144,8 +141,8 @@ export class RandomGenerator {
                 A = temp
             }
 
-            for (i = 60; i <= 79; i++) {
-                temp =
+            for (let i = 60; i <= 79; i++) {
+                const temp =
                     (_rotLeft(A, 5) + (B ^ C ^ D) + E + W[i] + 0xca62c1d6) &
                     0x0ffffffff
                 E = D
