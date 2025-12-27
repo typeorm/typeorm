@@ -28,6 +28,7 @@ import { Brackets } from "./Brackets"
 import { QueryResultCacheOptions } from "../cache/QueryResultCacheOptions"
 import { OffsetWithoutLimitNotSupportedError } from "../error/OffsetWithoutLimitNotSupportedError"
 import { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
+import { parseRawIdentifier } from "../util/IdentifierUtils"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { DriverUtils } from "../driver/DriverUtils"
 import { EntityNotFoundError } from "../error/EntityNotFoundError"
@@ -2138,12 +2139,33 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 typeof entityOrProperty === "function" ||
                 (entityOrProperty.substr(0, 1) === "(" &&
                     entityOrProperty.substr(-1) === ")")
+
+            let tablePath: string | undefined = undefined
+            if (isSubQuery === false) {
+                const raw = entityOrProperty as string
+                const alreadyQualified = raw.includes(".")
+                const parsed = parseRawIdentifier(raw, this.connection.driver)
+                if (parsed.isSimple && !alreadyQualified) {
+                    const currentSchema =
+                        this.expressionMap.mainAlias?.metadata?.schema ||
+                        (this.connection.options as any).schema
+                    if (currentSchema && parsed.baseName) {
+                        tablePath = this.connection.driver.buildTableName(
+                            parsed.baseName,
+                            currentSchema,
+                        )
+                    }
+                }
+            }
+            if (tablePath) {
+                joinAttribute.entityOrProperty = tablePath
+            }
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
                 name: aliasName,
                 tablePath:
                     isSubQuery === false
-                        ? (entityOrProperty as string)
+                        ? (tablePath ?? (entityOrProperty as string))
                         : undefined,
                 subQuery: isSubQuery === true ? subQuery : undefined,
             })
