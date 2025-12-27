@@ -2814,7 +2814,10 @@ export class CockroachQueryRunner
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    async clearTable(tableName: string): Promise<void> {
+    async clearTable(
+        tableName: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
         await this.query(`TRUNCATE TABLE ${this.escapePath(tableName)}`)
     }
 

@@ -1862,7 +1862,10 @@ export class AuroraMysqlQueryRunner
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    async clearTable(tableOrName: Table | string): Promise<void> {
+    async clearTable(
+        tableOrName: Table | string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
         await this.query(`TRUNCATE TABLE ${this.escapePath(tableOrName)}`)
     }
 

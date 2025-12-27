@@ -1202,7 +1202,10 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops collection.
      */
-    async clearTable(collectionName: string): Promise<void> {
+    async clearTable(
+        collectionName: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
         await this.databaseConnection
             .db(this.connection.driver.database!)
             .dropCollection(collectionName)
