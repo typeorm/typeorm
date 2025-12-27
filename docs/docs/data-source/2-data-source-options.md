@@ -81,14 +81,14 @@ Different RDBMS-es have their own specific options.
 -   `invalidWhereValuesBehavior` - Controls how null and undefined values are handled in where conditions across all TypeORM operations (find operations, query builders, repository methods).
 
     -   `null` behavior options:
-        -   `'ignore'` (default) - skips null properties
+        -   `'ignore'` - skips null properties
         -   `'sql-null'` - transforms null to SQL NULL
-        -   `'throw'` - throws an error
+        -   `'throw'` (default) - throws an error
     -   `undefined` behavior options:
-        -   `'ignore'` (default) - skips undefined properties
-        -   `'throw'` - throws an error
+        -   `'ignore'` - skips undefined properties
+        -   `'throw'` (default) - throws an error
 
-    Example: `invalidWhereValuesBehavior: { null: 'sql-null', undefined: 'throw' }`.
+    Example: `invalidWhereValuesBehavior: { null: 'sql-null', undefined: 'ignore' }`.
 
     Learn more about [Null and Undefined Handling](./5-null-and-undefined-handling.md).
 
