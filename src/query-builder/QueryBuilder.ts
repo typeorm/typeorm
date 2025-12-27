@@ -411,6 +411,36 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         return this
     }
 
+    /**
+     * Validates parameters for null/undefined values based on invalidWhereValuesBehavior config.
+     * Should be called before setParameters in where/andWhere/orWhere methods.
+     */
+    protected validateWhereParameters(parameters?: ObjectLiteral): void {
+        if (!parameters) return
+
+        const nullBehavior =
+            this.connection.options.invalidWhereValuesBehavior?.null || "ignore"
+        const undefinedBehavior =
+            this.connection.options.invalidWhereValuesBehavior?.undefined ||
+            "ignore"
+
+        for (const [key, value] of Object.entries(parameters)) {
+            if (value === null && nullBehavior === "throw") {
+                throw new TypeORMError(
+                    `Null value encountered in parameter ':${key}' of a where condition. ` +
+                        `To match with SQL NULL, the IsNull() operator must be used. ` +
+                        `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                )
+            }
+            if (value === undefined && undefinedBehavior === "throw") {
+                throw new TypeORMError(
+                    `Undefined value encountered in parameter ':${key}' of a where condition. ` +
+                        `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                )
+            }
+        }
+    }
+
     protected createParameter(value: any): string {
         let parameterName
 

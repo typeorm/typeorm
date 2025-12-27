@@ -1162,6 +1162,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 { type: "simple", condition: condition },
             ]
         }
+        this.validateWhereParameters(parameters)
         if (parameters) this.setParameters(parameters)
         return this
     }
@@ -1183,6 +1184,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             type: "and",
             condition: this.getWhereCondition(where),
         })
+        this.validateWhereParameters(parameters)
         if (parameters) this.setParameters(parameters)
         return this
     }
@@ -1204,6 +1206,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             type: "or",
             condition: this.getWhereCondition(where),
         })
+        this.validateWhereParameters(parameters)
         if (parameters) this.setParameters(parameters)
         return this
     }
@@ -1871,9 +1874,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             this.expressionMap.queryEntity = true
-            const entitiesAndRaw = await this.executeEntitiesAndRawResults(
-                queryRunner,
-            )
+            const entitiesAndRaw =
+                await this.executeEntitiesAndRawResults(queryRunner)
             this.expressionMap.queryEntity = false
 
             let count: number | undefined = this.lazyCount(entitiesAndRaw)
@@ -1928,8 +1930,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const maxResults = hasLimit
             ? this.expressionMap.limit
             : hasTake
-            ? this.expressionMap.take
-            : undefined
+              ? this.expressionMap.take
+              : undefined
 
         if (
             maxResults !== undefined &&
@@ -1958,8 +1960,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const previousResults: number = hasOffset
             ? this.expressionMap.offset!
             : hasSkip
-            ? this.expressionMap.skip!
-            : 0
+              ? this.expressionMap.skip!
+              : 0
 
         return entitiesAndRaw.entities.length + previousResults
     }
@@ -3617,9 +3619,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (rawResults.length > 0) {
             // transform raw results into entities
             const rawRelationIdResults = await relationIdLoader.load(rawResults)
-            const rawRelationCountResults = await relationCountLoader.load(
-                rawResults,
-            )
+            const rawRelationCountResults =
+                await relationCountLoader.load(rawResults)
             const transformer = new RawSqlResultsToEntityTransformer(
                 this.expressionMap,
                 this.connection.driver,
@@ -4211,8 +4212,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     nulls?.toLowerCase() === "first"
                         ? "NULLS FIRST"
                         : nulls?.toLowerCase() === "last"
-                        ? "NULLS LAST"
-                        : undefined
+                          ? "NULLS LAST"
+                          : undefined
 
                 const aliasPath = `${alias}.${propertyPath}`
                 // const selection = this.expressionMap.selects.find(
@@ -4429,10 +4430,25 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     // if all properties of where are undefined we don't need to join anything
                     // this can happen when user defines map with conditional queries inside
                     if (typeof where[key] === "object") {
-                        const allAllUndefined = Object.keys(where[key]).every(
+                        const undefinedKeys = Object.keys(where[key]).filter(
                             (k) => where[key][k] === undefined,
                         )
+                        const allAllUndefined =
+                            undefinedKeys.length ===
+                            Object.keys(where[key]).length
                         if (allAllUndefined) {
+                            const undefinedBehavior =
+                                this.connection.options
+                                    .invalidWhereValuesBehavior?.undefined ||
+                                "ignore"
+                            if (undefinedBehavior === "throw") {
+                                // Report nested path for first undefined key
+                                const firstUndefinedKey = undefinedKeys[0]
+                                throw new TypeORMError(
+                                    `Undefined value encountered in property '${alias}.${key}.${firstUndefinedKey}' of a where condition. ` +
+                                        `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                                )
+                            }
                             continue
                         }
                     }
@@ -4487,7 +4503,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                             .inverseRelation!.inverseJoinColumns.map(
                                                 (column) => {
                                                     return `${
-                                                        relation.inverseRelation!
+                                                        relation
+                                                            .inverseRelation!
                                                             .joinTableName
                                                     }.${
                                                         column.propertyName

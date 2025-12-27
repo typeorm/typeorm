@@ -156,6 +156,76 @@ describe("query builder > invalidWhereValuesBehavior", () => {
             }
         }
     })
+
+    it("should throw error for undefined values in string where parameters", async () => {
+        for (const connection of connections) {
+            await prepareData(connection)
+
+            // Test where() with string and undefined parameter
+            try {
+                await connection
+                    .createQueryBuilder(Post, "post")
+                    .where("post.title = :title", { title: undefined })
+                    .getMany()
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Undefined value encountered in parameter ':title'",
+                )
+            }
+
+            // Test andWhere() with string and undefined parameter
+            try {
+                await connection
+                    .createQueryBuilder(Post, "post")
+                    .where("post.id > 0")
+                    .andWhere("post.title = :title", { title: undefined })
+                    .getMany()
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Undefined value encountered in parameter ':title'",
+                )
+            }
+
+            // Test orWhere() with string and undefined parameter
+            try {
+                await connection
+                    .createQueryBuilder(Post, "post")
+                    .where("post.id > 0")
+                    .orWhere("post.title = :title", { title: undefined })
+                    .getMany()
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Undefined value encountered in parameter ':title'",
+                )
+            }
+        }
+    })
+
+    it("should throw error for null values in string where parameters", async () => {
+        for (const connection of connections) {
+            await prepareData(connection)
+
+            // Test where() with string and null parameter
+            try {
+                await connection
+                    .createQueryBuilder(Post, "post")
+                    .where("post.title = :title", { title: null })
+                    .getMany()
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Null value encountered in parameter ':title'",
+                )
+            }
+        }
+    })
 })
 
 describe("query builder > invalidWhereValuesBehavior sql-null", () => {

@@ -436,6 +436,61 @@ describe("find options > null and undefined handling", () => {
                 }),
             ))
 
+        it("should throw an error when undefined is encountered in nested relation object with other valid predicates", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    // Create test data
+                    const category = new Category()
+                    category.name = "Category #1"
+                    await connection.manager.save(category)
+
+                    const post1 = new Post()
+                    post1.title = "Post #1"
+                    post1.text = "Some text"
+                    post1.category = category
+                    await connection.manager.save(post1)
+
+                    // This is the regression test for issue #11818
+                    // When a valid predicate exists alongside a relation object with all undefined values,
+                    // the error should still be thrown
+                    try {
+                        await connection.getRepository(Post).findOne({
+                            where: {
+                                title: "Post #1",
+                                category: {
+                                    id: undefined,
+                                },
+                            },
+                        })
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.equal(
+                            "Undefined value encountered in property 'Post.category.id' of a where condition. Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
+                        )
+                    }
+
+                    // Also test with QueryBuilder
+                    try {
+                        await connection
+                            .createQueryBuilder(Post, "post")
+                            .where({
+                                title: "Post #1",
+                                category: {
+                                    id: undefined,
+                                },
+                            })
+                            .getMany()
+                        expect.fail("Expected query to throw an error")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.equal(
+                            "Undefined value encountered in property 'post.category.id' of a where condition. Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
+                        )
+                    }
+                }),
+            ))
+
         it("should not throw when a property is not provided", () =>
             Promise.all(
                 connections.map(async (connection) => {
