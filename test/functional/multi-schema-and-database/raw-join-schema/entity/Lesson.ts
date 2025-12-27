@@ -8,6 +8,6 @@ export class Lesson {
     @Column()
     courseId: string
 
-    @Column({ type: "int" })
+    @Column()
     duration: number
 }

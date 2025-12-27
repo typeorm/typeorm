@@ -28,6 +28,7 @@ import { Brackets } from "./Brackets"
 import { QueryResultCacheOptions } from "../cache/QueryResultCacheOptions"
 import { OffsetWithoutLimitNotSupportedError } from "../error/OffsetWithoutLimitNotSupportedError"
 import { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
+import { parseRawIdentifier } from "../util/IdentifierUtils"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { DriverUtils } from "../driver/DriverUtils"
 import { EntityNotFoundError } from "../error/EntityNotFoundError"
@@ -2143,16 +2144,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (isSubQuery === false) {
                 const raw = entityOrProperty as string
                 const alreadyQualified = raw.includes(".")
-                const quotedSimpleMatch = raw.match(/^"([A-Za-z0-9_]+)"$/)
-                const looksLikeSimpleName =
-                    quotedSimpleMatch !== null || /^[A-Za-z0-9_]+$/.test(raw)
-                const baseName = quotedSimpleMatch ? quotedSimpleMatch[1] : raw
-                if (looksLikeSimpleName && !alreadyQualified) {
+                const parsed = parseRawIdentifier(raw, this.connection.driver)
+                if (parsed.isSimple && !alreadyQualified) {
                     const currentSchema =
                         this.expressionMap.mainAlias?.metadata?.schema ||
                         (this.connection.options as any).schema
-                    if (currentSchema) {
-                        tablePath = `${currentSchema}.${baseName}`
+                    if (currentSchema && parsed.baseName) {
+                        tablePath = this.connection.driver.buildTableName(
+                            parsed.baseName,
+                            currentSchema,
+                        )
                     }
                 }
             }
