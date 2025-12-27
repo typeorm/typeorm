@@ -1,4 +1,3 @@
-import { PlatformTools } from "../platform/PlatformTools"
 import { RandomGenerator } from "./RandomGenerator"
 
 /**
@@ -111,6 +110,14 @@ export function shorten(input: string, options: IShortenOptions = {}): string {
     return shortSegments.join(separator)
 }
 
+/**
+ * Checks if the current environment is Node.js.
+ * @returns `true` if the current environment is Node.js, `false` otherwise.
+ */
+function isNode(): boolean {
+    return typeof process !== "undefined" && !!process.versions?.node
+}
+
 interface IHashOptions {
     length?: number
 }
@@ -124,7 +131,7 @@ interface IHashOptions {
  */
 export function hash(input: string, options: IHashOptions = {}): string {
     let sha1: string
-    if (PlatformTools.isNode()) {
+    if (isNode()) {
         const crypto = require("node:crypto") as typeof import("node:crypto")
         const hashFunction = crypto.createHash("sha1")
         hashFunction.update(input, "utf8")

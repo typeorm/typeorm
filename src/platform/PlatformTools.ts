@@ -299,12 +299,4 @@ export class PlatformTools {
         console.log(ansi.black.bgRed(prefix))
         if (err) console.error(err)
     }
-
-    /**
-     * Checks if the current environment is Node.js.
-     * @returns `true` if the current environment is Node.js, `false` otherwise.
-     */
-    static isNode(): boolean {
-        return typeof process !== "undefined" && !!process.versions?.node
-    }
 }
