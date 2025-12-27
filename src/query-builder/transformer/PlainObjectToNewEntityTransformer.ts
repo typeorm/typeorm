@@ -49,8 +49,20 @@ export class PlainObjectToNewEntityTransformer {
         // copy regular column properties from the given object
         metadata.nonVirtualColumns.forEach((column) => {
             const objectColumnValue = column.getEntityValue(object)
-            if (objectColumnValue !== undefined)
+            // Skip copying if the value is undefined AND the property doesn't exist in the source object.
+            // This is important for ES2022+ where class fields may be initialized as undefined,
+            // but we only want to copy properties that actually exist in the source object.
+            if (objectColumnValue !== undefined) {
                 column.setEntityValue(entity, objectColumnValue)
+            } else {
+                // Check if the property exists in the source object
+                // The object may contain properties with database names or property names depending on the source
+                const hasProperty = column.propertyName in object || column.databaseName in object
+                
+                if (hasProperty) {
+                    column.setEntityValue(entity, objectColumnValue)
+                }
+            }
         })
 
         // // copy relation properties from the given object
