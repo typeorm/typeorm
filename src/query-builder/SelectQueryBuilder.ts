@@ -73,6 +73,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         nulls?: "NULLS FIRST" | "NULLS LAST"
     }[] = []
     protected relationMetadatas: RelationMetadata[] = []
+    public context: any | undefined = undefined
 
     // -------------------------------------------------------------------------
     // Public Implemented Methods
@@ -2899,7 +2900,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 escapedAliasName + "." + this.escape(column.databaseName)
 
             if (column.isVirtualProperty && column.query) {
-                selectionPath = `(${column.query(escapedAliasName)})`
+                selectionPath = `(${column.query(
+                    escapedAliasName,
+                    this.context,
+                )})`
             }
 
             if (
@@ -4229,7 +4233,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 //     // selection.aliasName = aliasPath
                 // } else {
                 //     if (column.isVirtualProperty && column.query) {
-                //         aliasPath = `(${column.query(alias)})`
+                //         aliasPath = `(${column.query(alias, this.context)})`
                 //     }
                 // }
 
@@ -4352,7 +4356,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 if (column) {
                     let aliasPath = `${alias}.${propertyPath}`
                     if (column.isVirtualProperty && column.query) {
-                        aliasPath = `(${column.query(this.escape(alias))})`
+                        aliasPath = `(${column.query(
+                            this.escape(alias),
+                            this.context,
+                        )})`
                     }
 
                     if (parameterValue === null) {
@@ -4604,5 +4611,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 : andConditions.join(" AND ")
         }
         return condition.length ? "(" + condition + ")" : condition
+    }
+
+    public override clone() {
+        const c = super.clone()
+        c.context = this.context
+        return c
     }
 }

@@ -367,6 +367,21 @@ export class Employee extends BaseEntity {
 }
 ```
 
+It is also possible to pass contextual information to the query function when using a manually created QueryBuilder. For example:
+
+```typescript
+const queryBuilder = entityManager.createQueryBuilder()
+queryBuilder.context = { minimumAge: 30 }
+queryBuilder.getMany()
+```
+
+This could then be used to modify the above query function to exclude employees under 30
+
+```typescript
+@VirtualColumn({ query: (alias, context) => `SELECT COUNT("name") FROM "employees" WHERE "companyName" = ${alias}."name" AND "age" > ${context.minimumAge}` })
+totalEmployeesCount: number;
+```
+
 ## Relation decorators
 
 #### `@OneToOne`
