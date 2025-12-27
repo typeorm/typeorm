@@ -1414,6 +1414,30 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             if (metadata.hasRelationWithPropertyPath(path)) {
                 const relation = metadata.findRelationWithPropertyPath(path)!
 
+                // Check if all properties of the nested relation object are undefined
+                // This handles the case when user defines conditional queries with undefined values
+                if (typeof entity[key] === "object") {
+                    const undefinedKeys = Object.keys(entity[key]).filter(
+                        (k) => entity[key][k] === undefined,
+                    )
+                    const allAllUndefined =
+                        undefinedKeys.length === Object.keys(entity[key]).length
+                    if (allAllUndefined) {
+                        const undefinedBehavior =
+                            this.connection.options.invalidWhereValuesBehavior
+                                ?.undefined || "ignore"
+                        if (undefinedBehavior === "throw") {
+                            const firstUndefinedKey = undefinedKeys[0]
+                            throw new TypeORMError(
+                                `Undefined value encountered in property '${this.alias}.${path}.${firstUndefinedKey}' of a where condition. ` +
+                                    `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                            )
+                        }
+                        // Skip this relation if behavior is 'ignore'
+                        continue
+                    }
+                }
+
                 // There's also cases where we don't want to return back all of the properties.
                 // These handles the situation where someone passes the model & we don't need to make
                 // a HUGE `where` to uniquely look up the entity.
