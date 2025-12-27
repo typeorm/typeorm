@@ -1967,8 +1967,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             this.expressionMap.queryEntity = true
-            const entitiesAndRaw =
-                await this.executeEntitiesAndRawResults(queryRunner)
+            const entitiesAndRaw = await this.executeEntitiesAndRawResults(
+                queryRunner,
+            )
             this.expressionMap.queryEntity = false
 
             let count: number | undefined = this.lazyCount(entitiesAndRaw)
@@ -2023,8 +2024,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const maxResults = hasLimit
             ? this.expressionMap.limit
             : hasTake
-              ? this.expressionMap.take
-              : undefined
+            ? this.expressionMap.take
+            : undefined
 
         if (
             maxResults !== undefined &&
@@ -2053,8 +2054,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const previousResults: number = hasOffset
             ? this.expressionMap.offset!
             : hasSkip
-              ? this.expressionMap.skip!
-              : 0
+            ? this.expressionMap.skip!
+            : 0
 
         return entitiesAndRaw.entities.length + previousResults
     }
@@ -3716,8 +3717,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (rawResults.length > 0) {
             // transform raw results into entities
             const rawRelationIdResults = await relationIdLoader.load(rawResults)
-            const rawRelationCountResults =
-                await relationCountLoader.load(rawResults)
+            const rawRelationCountResults = await relationCountLoader.load(
+                rawResults,
+            )
             const transformer = new RawSqlResultsToEntityTransformer(
                 this.expressionMap,
                 this.connection.driver,
@@ -4312,8 +4314,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     nulls?.toLowerCase() === "first"
                         ? "NULLS FIRST"
                         : nulls?.toLowerCase() === "last"
-                          ? "NULLS LAST"
-                          : undefined
+                        ? "NULLS LAST"
+                        : undefined
 
                 const aliasPath = `${alias}.${propertyPath}`
                 // const selection = this.expressionMap.selects.find(
@@ -4603,8 +4605,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                             .inverseRelation!.inverseJoinColumns.map(
                                                 (column) => {
                                                     return `${
-                                                        relation
-                                                            .inverseRelation!
+                                                        relation.inverseRelation!
                                                             .joinTableName
                                                     }.${
                                                         column.propertyName
