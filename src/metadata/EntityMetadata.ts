@@ -1003,9 +1003,11 @@ export class EntityMetadata {
         this.synchronize =
             this.tableMetadataArgs.synchronize === false ? false : true
         this.targetName =
-            typeof this.tableMetadataArgs.target === "function"
-                ? (this.tableMetadataArgs.target as any).name
-                : this.tableMetadataArgs.target
+            this.tableMetadataArgs.targetName ??
+            (typeof this.tableMetadataArgs.target === "function"
+                ? (this.tableMetadataArgs.target as any).displayName ??
+                  (this.tableMetadataArgs.target as any).name
+                : this.tableMetadataArgs.target)
         if (this.tableMetadataArgs.type === "closure-junction") {
             this.tableNameWithoutPrefix =
                 namingStrategy.closureJunctionTableName(this.givenTableName!)
