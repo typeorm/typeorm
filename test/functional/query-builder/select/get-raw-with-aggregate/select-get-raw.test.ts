@@ -1,3 +1,4 @@
+import "reflect-metadata"
 import { expect } from "chai"
 import { DataSource } from "../../../../../src"
 import {
@@ -5,7 +6,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { Course } from "./entity/Lesson"
+import { Course } from "./entity/Course"
 
 describe("should return aggregate values using getRaw methods", () => {
     let connections: DataSource[]

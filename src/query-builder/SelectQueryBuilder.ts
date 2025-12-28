@@ -3853,7 +3853,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         savedQueryResultCacheOptions,
                     )
                 ) {
-                    return JSON.parse(savedQueryResultCacheOptions.result)
+                    const cached = JSON.parse(
+                        savedQueryResultCacheOptions.result,
+                    )
+                    return OrmUtils.normalizeRawResultsNumericStrings(cached)
                 }
             } catch (error) {
                 if (!cacheOptions.ignoreErrors) {
