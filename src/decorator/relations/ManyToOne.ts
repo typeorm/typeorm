@@ -58,7 +58,14 @@ export function ManyToOne<T>(
             const { entityColumnName, idColumnName, value } =
                 options.polymorphic
 
-            if (!entityColumnName || !idColumnName || !value) {
+            if (
+                !entityColumnName ||
+                !idColumnName ||
+                !value ||
+                typeof entityColumnName !== "string" ||
+                typeof idColumnName !== "string" ||
+                typeof value !== "string"
+            ) {
                 throw new TypeORMError(
                     `Invalid polymorphic configuration on "${object.constructor.name}.${propertyName}". ` +
                         `Required fields: entityColumnName, idColumnName, value.`,

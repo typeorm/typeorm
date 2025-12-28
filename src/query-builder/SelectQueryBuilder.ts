@@ -2351,8 +2351,24 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     const { idColumnName, entityColumnName, value } =
                         relation.polymorphicOptions!
 
-                    const primaryColumn =
-                        relation.inverseEntityMetadata.primaryColumns[0]
+                    const primaryColumns =
+                        relation.inverseEntityMetadata.primaryColumns
+
+                    if (primaryColumns.length === 0) {
+                        throw new TypeORMError(
+                            `Polymorphic relation ${relation.entityMetadata.name}.${relation.propertyName} ` +
+                                `requires the target entity to have a primary column.`,
+                        )
+                    }
+
+                    if (primaryColumns.length > 1) {
+                        throw new TypeORMError(
+                            `Polymorphic relation ${relation.entityMetadata.name}.${relation.propertyName} ` +
+                                `does not support composite primary keys.`,
+                        )
+                    }
+
+                    const primaryColumn = primaryColumns[0]
 
                     if (!primaryColumn) {
                         throw new TypeORMError(
