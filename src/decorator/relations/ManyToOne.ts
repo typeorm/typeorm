@@ -62,9 +62,9 @@ export function ManyToOne<T>(
                 typeof entityColumnName !== "string" ||
                 typeof idColumnName !== "string" ||
                 typeof value !== "string" ||
-                !entityColumnName ||
-                !idColumnName ||
-                !value
+                !entityColumnName.trim() ||
+                !idColumnName.trim() ||
+                !value.trim()
             ) {
                 throw new TypeORMError(
                     `Invalid polymorphic configuration on "${object.constructor.name}.${propertyName}". ` +

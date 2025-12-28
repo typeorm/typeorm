@@ -69,7 +69,13 @@ export class RelationJoinColumnBuilder {
             relation,
             referencedColumns,
         )
-        if (!referencedColumns.length || !relation.createForeignKeyConstraints || relation.isPolymorphic)
+        if (relation.isPolymorphic && relation.createForeignKeyConstraints) {
+            throw new TypeORMError(
+                `Polymorphic relation ${relation.entityMetadata.name}.${relation.propertyName} ` +
+                    `cannot have foreign key constraints enabled.`,
+            )
+        }
+        if (!referencedColumns.length || !relation.createForeignKeyConstraints)
             return {
                 foreignKey: undefined,
                 columns,
