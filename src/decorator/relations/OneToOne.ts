@@ -43,6 +43,13 @@ export function OneToOne<T>(
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions
 
+
+        if (options.polymorphic) {
+            options.createForeignKeyConstraints = false;
+            options.cascade = false;
+            options.lazy = false;
+        }
+
         // now try to determine it its lazy relation
         let isLazy = options && options.lazy === true ? true : false
         if (!isLazy && Reflect && (Reflect as any).getMetadata) {

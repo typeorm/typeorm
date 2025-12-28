@@ -46,6 +46,12 @@ export function ManyToOne<T>(
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions
 
+        if (options.polymorphic) {
+            options.createForeignKeyConstraints = false;
+            options.cascade = false;
+            options.lazy = false;
+        }
+
         // Now try to determine if it is a lazy relation.
         let isLazy = options && options.lazy === true
         if (!isLazy && Reflect && (Reflect as any).getMetadata) {
