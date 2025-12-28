@@ -41,8 +41,6 @@ describe("polymorphic find", () => {
             order: { id: "ASC" },
         })
 
-        console.log(comments)
-
         expect(comments[0].article).to.exist
         expect(comments[0].video).to.be.null
 
