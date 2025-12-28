@@ -3,6 +3,7 @@ import { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
 import { ObjectType } from "../../common/ObjectType"
 import { RelationOptions } from "../options/RelationOptions"
 import { ObjectUtils } from "../../util/ObjectUtils"
+import { TypeORMError } from "../../error"
 
 /**
  * A many-to-one relation allows creating the type of relation where Entity1 can have a single instance of Entity2, but
@@ -47,9 +48,26 @@ export function ManyToOne<T>(
         if (!options) options = {} as RelationOptions
 
         if (options.polymorphic) {
-            options.createForeignKeyConstraints = false;
-            options.cascade = false;
-            options.lazy = false;
+            if (typeof options.polymorphic !== "object") {
+                throw new TypeORMError(
+                    `Polymorphic relation on "${object.constructor.name}.${propertyName}" ` +
+                        `must be an object containing "entityColumnName", "idColumnName", and "value".`,
+                )
+            }
+
+            const { entityColumnName, idColumnName, value } =
+                options.polymorphic
+
+            if (!entityColumnName || !idColumnName || !value) {
+                throw new TypeORMError(
+                    `Invalid polymorphic configuration on "${object.constructor.name}.${propertyName}". ` +
+                        `Required fields: entityColumnName, idColumnName, value.`,
+                )
+            }
+
+            options.createForeignKeyConstraints = false
+            options.cascade = false
+            options.lazy = false
         }
 
         // Now try to determine if it is a lazy relation.

@@ -1124,14 +1124,20 @@ export class EntityMetadataBuilder {
                         (m.targetName === relation.type ||
                             m.givenTableName === relation.type)),
             )
-            if (!inverseEntityMetadata){
-                if (relation.isPolymorphic) return;
+            if (!inverseEntityMetadata) {
+                if (relation.isPolymorphic) {
+                    throw new TypeORMError(
+                        `Polymorphic relation target "${relation.polymorphicOptions?.value}" ` +
+                            `was not found for relation "${entityMetadata.name}.${relation.propertyName}". ` +
+                            `Ensure the target entity is registered in the DataSource entities array.`,
+                    )
+                }
                 throw new TypeORMError(
                     "Entity metadata for " +
-                    entityMetadata.name +
-                    "#" +
-                    relation.propertyPath +
-                    " was not found. Check if you specified a correct entity object and if it's connected in the connection options.",
+                        entityMetadata.name +
+                        "#" +
+                        relation.propertyPath +
+                        " was not found. Check if you specified a correct entity object and if it's connected in the connection options.",
                 )
             }
 

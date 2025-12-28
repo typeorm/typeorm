@@ -2351,17 +2351,26 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     const { idColumnName, entityColumnName, value } =
                         relation.polymorphicOptions!
 
+                    const primaryColumn =
+                        relation.inverseEntityMetadata.primaryColumns[0]
+
+                    if (!primaryColumn) {
+                        throw new TypeORMError(
+                            `Polymorphic relation ${relation.entityMetadata.name}.${relation.propertyName} ` +
+                                `requires the target entity to have a primary column.`,
+                        )
+                    }
+
                     const condition =
-                        destinationTableAlias +
-                        ".id = " +
-                        parentAlias +
-                        "." +
-                        idColumnName +
-                        " AND " +
-                        parentAlias +
-                        "." +
-                        entityColumnName +
-                        " = " +
+                        `${this.escape(destinationTableAlias)}.${this.escape(
+                            primaryColumn.databaseName,
+                        )} = ` +
+                        `${this.escape(parentAlias)}.${this.escape(
+                            idColumnName,
+                        )} AND ` +
+                        `${this.escape(parentAlias)}.${this.escape(
+                            entityColumnName,
+                        )} = ` +
                         this.createParameter(value)
 
                     return (
