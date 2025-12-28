@@ -3892,7 +3892,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
         }
 
-        return results.records
+        return OrmUtils.normalizeRawResultsNumericStrings(results.records)
     }
 
     /**

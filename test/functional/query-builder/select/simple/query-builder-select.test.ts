@@ -1,17 +1,17 @@
-import "../../../utils/test-setup"
+import "../../../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource, In, IsNull, Raw } from "../../../../src"
+import { DataSource, In, IsNull, Raw } from "../../../../../src"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Tag } from "./entity/Tag"
 import { HeroImage } from "./entity/HeroImage"
 import { ExternalPost } from "./entity/ExternalPost"
-import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 
 describe("query builder > select", () => {
     let connections: DataSource[]

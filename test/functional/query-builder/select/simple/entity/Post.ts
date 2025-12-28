@@ -8,7 +8,7 @@ import {
     OneToOne,
     PrimaryColumn,
     VersionColumn,
-} from "../../../../../src"
+} from "../../../../../../src"
 import { Tag } from "./Tag"
 import { Category } from "./Category"
 import { HeroImage } from "./HeroImage"

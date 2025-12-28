@@ -4,7 +4,7 @@ import {
     Entity,
     ManyToMany,
     PrimaryGeneratedColumn,
-} from "../../../../../src"
+} from "../../../../../../src"
 
 @Entity()
 export class Tag {

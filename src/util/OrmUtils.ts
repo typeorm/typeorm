@@ -588,4 +588,26 @@ export class OrmUtils {
             }
         }
     }
+
+    /**
+     * Normalizes numeric string values to numbers in raw query results.
+     * This ensures consistent numeric type handling across different database drivers.
+     */
+    public static normalizeRawResultsNumericStrings<T extends ObjectLiteral>(
+        records: T[],
+    ): T[] {
+        return records.map((record) => {
+            const normalizedRecord = { ...record }
+            for (const key in normalizedRecord) {
+                const value = normalizedRecord[key]
+                if (typeof value === "string" && value !== "") {
+                    const numValue = Number(value)
+                    if (!isNaN(numValue) && /^-?\d+(\.\d+)?$/.test(value)) {
+                        normalizedRecord[key] = numValue as any
+                    }
+                }
+            }
+            return normalizedRecord
+        })
+    }
 }
