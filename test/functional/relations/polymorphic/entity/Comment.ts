@@ -20,8 +20,8 @@ export class Comment {
 
     @ManyToOne(() => Article, {
         polymorphic: {
-            idField: "targetId",
-            typeField: "targetType",
+            idColumnName: "targetId",
+            entityColumnName: "targetType",
             value: "articles",
         },
         createForeignKeyConstraints: false,
@@ -31,8 +31,8 @@ export class Comment {
 
     @ManyToOne(() => Video, {
         polymorphic: {
-            idField: "targetId",
-            typeField: "targetType",
+            idColumnName: "targetId",
+            entityColumnName: "targetType",
             value: "videos",
         },
         createForeignKeyConstraints: false,

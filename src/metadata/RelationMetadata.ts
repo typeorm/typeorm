@@ -277,13 +277,12 @@ export class RelationMetadata {
      */
     inverseJoinColumns: ColumnMetadata[] = []
 
-
-    isPolymorphic: boolean = false;
+    isPolymorphic: boolean = false
     polymorphicOptions?: {
-        typeField: string;
-        idField: string;
-        value: string;
-    };
+        entityColumnName: string
+        idColumnName: string
+        value: string
+    }
 
     // ---------------------------------------------------------------------
     // Constructor
@@ -346,12 +345,11 @@ export class RelationMetadata {
         this.isTreeChildren = args.isTreeChildren || false
 
         if (args.options?.polymorphic) {
-            this.isPolymorphic = true;
-            this.createForeignKeyConstraints = false;
-
+            this.isPolymorphic = true
+            this.createForeignKeyConstraints = false
 
             if (typeof args.options.polymorphic === "object") {
-                this.polymorphicOptions = args.options.polymorphic;
+                this.polymorphicOptions = args.options.polymorphic
             }
         }
 
