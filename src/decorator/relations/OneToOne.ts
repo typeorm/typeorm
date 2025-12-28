@@ -56,12 +56,15 @@ export function OneToOne<T>(
                 options.polymorphic
 
             if (
+                typeof entityColumnName !== "string" ||
+                typeof idColumnName !== "string" ||
+                typeof value !== "string" ||
                 !entityColumnName ||
                 !idColumnName ||
                 !value ||
-                typeof entityColumnName !== "string" ||
-                typeof idColumnName !== "string" ||
-                typeof value !== "string"
+                value === "" ||
+                idColumnName === "" ||
+                entityColumnName === ""
             ) {
                 throw new TypeORMError(
                     `Invalid polymorphic configuration on "${object.constructor.name}.${propertyName}". ` +

@@ -2370,13 +2370,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                     const primaryColumn = primaryColumns[0]
 
-                    if (!primaryColumn) {
-                        throw new TypeORMError(
-                            `Polymorphic relation ${relation.entityMetadata.name}.${relation.propertyName} ` +
-                                `requires the target entity to have a primary column.`,
-                        )
-                    }
-
                     const condition =
                         `${this.escape(destinationTableAlias)}.${this.escape(
                             primaryColumn.databaseName,
