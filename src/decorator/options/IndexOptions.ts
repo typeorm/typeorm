@@ -72,4 +72,59 @@ export interface IndexOptions {
      * This option is only applicable in PostgreSQL.
      */
     type?: TableIndexTypes
+
+    /**
+     * Specifies the sort order of the index.
+     * Works only in PostgreSQL and CockroachDB.
+     *
+     * For property-level (single-column) indexes, can be used as shorthand:
+     * @example
+     * ```typescript
+     * @Column()
+     * @Index("IDX_NAME", { order: "ASC" })
+     * name: string
+     * ```
+     *
+     * For multi-column indexes, use columnOptions instead.
+     */
+    order?: "ASC" | "DESC"
+
+    /**
+     * Specifies the nulls ordering of the index.
+     * Works only in PostgreSQL and CockroachDB.
+     *
+     * For property-level (single-column) indexes, can be used as shorthand:
+     * @example
+     * ```typescript
+     * @Column({ nullable: true })
+     * @Index("IDX_INFO", { nulls: "NULLS FIRST" })
+     * info: string | null
+     * ```
+     *
+     * For multi-column indexes, use columnOptions instead.
+     */
+    nulls?: "NULLS FIRST" | "NULLS LAST"
+
+    /**
+     * Per-column options for the index.
+     * Allows specifying sort order (ASC/DESC) and null ordering (NULLS FIRST/NULLS LAST) for each column.
+     * Works only in PostgreSQL and CockroachDB.
+     *
+     * For multi-column indexes (class-level @Index), use column names as keys:
+     * @example
+     * ```typescript
+     * @Index(["firstName", "lastName"], {
+     *   columnOptions: {
+     *     firstName: { order: "ASC", nulls: "NULLS FIRST" },
+     *     lastName: { order: "DESC", nulls: "NULLS LAST" }
+     *   }
+     * })
+     * ```
+     */
+    columnOptions?: {
+        [columnName: string]: {
+            order?: "ASC" | "DESC"
+            nulls?: "NULLS FIRST" | "NULLS LAST"
+        }
+    }
 }

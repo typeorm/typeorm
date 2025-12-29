@@ -4015,7 +4015,19 @@ export class CockroachQueryRunner
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
-            .map((columnName) => `"${columnName}"`)
+            .map((columnName) => {
+                let columnExpression = `"${columnName}"`
+
+                // add per-column options if specified
+                if (index.columnOptions && index.columnOptions[columnName]) {
+                    const options = index.columnOptions[columnName]
+                    if (options.order) {
+                        columnExpression += ` ${options.order}`
+                    }
+                }
+
+                return columnExpression
+            })
             .join(", ")
         return new Query(
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
