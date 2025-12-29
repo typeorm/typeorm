@@ -257,7 +257,7 @@ describe("indices > ordered index > cockroachdb > column options in index (ASC/D
         )
     })
 
-    it("should support property-level index with shorthand nulls syntax", () =>
+    it("should support property-level index with shorthand order syntax", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const postMetadata = dataSource.getMetadata(Post)
@@ -286,7 +286,7 @@ describe("indices > ordered index > cockroachdb > column options in index (ASC/D
             }),
         ))
 
-    it("should support shorthand order and nulls syntax for property-level index", () =>
+    it("should support shorthand order syntax for property-level index", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const postMetadata = dataSource.getMetadata(Post)

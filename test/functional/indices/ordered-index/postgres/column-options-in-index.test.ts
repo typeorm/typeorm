@@ -282,8 +282,7 @@ describe("indices > ordered index > postgres > column options in index (NULLS FI
 
     it("should throw error when columnOptions has more keys than columns", async () => {
         // Dynamically import the entity with too many options
-        const { InvalidPost } =
-            await import("../cockroachdb/entity/InvalidPost")
+        const { InvalidPost } = await import("./entity/InvalidPost")
         const { getMetadataArgsStorage } =
             await import("../../../../../src/globals")
 
