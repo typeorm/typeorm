@@ -44,6 +44,7 @@
     "@docusaurus/types": "3.9.2",
     "typescript": "~5.9.3"
   },
+  "packageManager": "pnpm@10.26.2",
   "engines": {
     "node": ">=20.0"
   }

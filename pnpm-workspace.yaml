@@ -1,3 +1,8 @@
+packages:
+    - docs
+
+sharedWorkspaceLockfile: false
+
 ignoredBuiltDependencies:
     - "@sap/hana-client"
     - es5-ext
