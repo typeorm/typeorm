@@ -244,6 +244,20 @@
       "onFail": "error"
     }
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "sqlite3"
+    ],
+    "ignoredBuiltDependencies": [
+      "@sap/hana-client",
+      "es5-ext",
+      "libpq",
+      "oracledb",
+      "protobufjs"
+    ],
+    "minimumReleaseAge": 1440
+  },
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/typeorm",
