@@ -47,5 +47,14 @@
   "packageManager": "pnpm@10.26.2",
   "engines": {
     "node": ">=20.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "typesense-instantsearch-adapter"
+    ],
+    "ignoredBuiltDependencies": [
+      "core-js-pure",
+      "core-js"
+    ]
   }
 }
