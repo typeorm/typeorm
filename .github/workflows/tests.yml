@@ -69,12 +69,13 @@ jobs:
         working-directory: ./docs
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: 20
 
-      - run: npm ci
-      - run: npm run build
+      - run: pnpm install
+      - run: pnpm run build
 
   build:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
