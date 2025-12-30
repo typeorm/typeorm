@@ -5,6 +5,8 @@
 Each new `QueryRunner` instance takes a single connection from the connection pool, if the RDBMS supports connection pooling.
 For databases that do not support connection pools, it uses the same connection across the entire data source.
 
+The full QueryRunner API is documented in the [migrations section](./migrations/09-api.md).
+
 ## Creating a new `QueryRunner` instance
 
 Use the `createQueryRunner` method to create a new `QueryRunner`:
