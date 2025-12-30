@@ -88,7 +88,7 @@ export class Gulpfile {
     packagePublishNext() {
         return gulp.src("package.json", { read: false })
             .pipe(shell([
-                "cd ./build/package && npm publish --tag next"
+                "cd ./build/package && pnpm publish --tag next"
             ]));
     }
 
