@@ -49,10 +49,8 @@
     "node": ">=20.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": [
-      "typesense-instantsearch-adapter"
-    ],
     "ignoredBuiltDependencies": [
+      "typesense-instantsearch-adapter",
       "core-js-pure",
       "core-js"
     ]
