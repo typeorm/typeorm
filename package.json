@@ -84,10 +84,9 @@
     "format:ci": "prettier --check \"./**/*.ts\"",
     "lint": "eslint",
     "package": "gulp package",
-    "pre-commit": "lint-staged",
     "prepare": "is-ci || husky",
     "publish:preview": "pkg-pr-new publish './build/package' --template='./sample/playground'",
-    "test": "npm run compile && npm run test:fast --",
+    "test": "pnpm run compile && pnpm run test:fast --",
     "test:ci": "mocha --bail",
     "test:fast": "mocha",
     "typecheck": "tsc --noEmit",
@@ -117,6 +116,7 @@
     "@types/chai": "^5.2.3",
     "@types/chai-as-promised": "^8.0.2",
     "@types/debug": "^4.1.12",
+    "@types/gulp": "^4.0.18",
     "@types/gulp-rename": "^2.0.7",
     "@types/gulp-sourcemaps": "^0.0.38",
     "@types/mocha": "^10.0.10",
@@ -156,7 +156,7 @@
     "redis": "^5.10.0",
     "sinon": "^21.0.0",
     "sinon-chai": "^4.0.1",
-    "sort-package-json": "^3.5.1",
+    "sort-package-json": "^3.6.0",
     "source-map-support": "^0.5.21",
     "sql.js": "^1.13.0",
     "sqlite3": "^5.1.7",
@@ -233,8 +233,16 @@
       "optional": true
     }
   },
+  "packageManager": "pnpm@10.26.2",
   "engines": {
     "node": "^20.19.0 || ^22.12.0 || >=24.11.0"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^10.26.2",
+      "onFail": "error"
+    }
   },
   "collective": {
     "type": "opencollective",
