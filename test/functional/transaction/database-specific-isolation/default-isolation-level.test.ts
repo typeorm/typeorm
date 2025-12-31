@@ -41,12 +41,7 @@ describe("transaction > default isolation level from connection options", () => 
                             .find((call) => {
                                 return (
                                     call.args[0] ===
-                                        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ" ||
-                                    // MySQL sets it before START TRANSACTION
-                                    (call.args[0]?.includes(
-                                        "SET TRANSACTION ISOLATION LEVEL",
-                                    ) &&
-                                        call.args[0]?.includes("REPEATABLE"))
+                                    "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ"
                                 )
                             })
 
@@ -141,11 +136,7 @@ describe("transaction > default isolation level from connection options", () => 
                             .find((call) => {
                                 return (
                                     call.args[0] ===
-                                        "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE" ||
-                                    (call.args[0]?.includes(
-                                        "SET TRANSACTION ISOLATION LEVEL",
-                                    ) &&
-                                        call.args[0]?.includes("SERIALIZABLE"))
+                                    "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
                                 )
                             })
 
@@ -264,7 +255,8 @@ describe("transaction > default isolation level from connection options", () => 
             async () =>
                 (connections = await createTestingConnections({
                     entities: [__dirname + "/entity/*{.js,.ts}"],
-                    enabledDrivers: ["mysql", "postgres", "sap"],
+                    // SAP HANA doesn't support nested transactions (transactionSupport="simple")
+                    enabledDrivers: ["mysql", "postgres"],
                     driverSpecific: {
                         isolationLevel: "READ COMMITTED",
                     },
@@ -445,15 +437,20 @@ describe("transaction > default isolation level from connection options", () => 
                 (connections = await createTestingConnections({
                     entities: [__dirname + "/entity/*{.js,.ts}"],
                     enabledDrivers: ["oracle"],
+                    // Use READ COMMITTED as default. Per Oracle docs:
+                    // - READ COMMITTED is Oracle's default transaction behavior
+                    // - SERIALIZABLE is very strict and will fail with ORA-08177
+                    //   if DML attempts to update any resource that may have been
+                    //   updated in an uncommitted transaction
                     driverSpecific: {
-                        isolationLevel: "SERIALIZABLE",
+                        isolationLevel: "READ COMMITTED",
                     },
                 })),
         )
         beforeEach(() => reloadTestingDatabases(connections))
         after(() => closeTestingConnections(connections))
 
-        it("should use SERIALIZABLE as default for Oracle", () =>
+        it("should use READ COMMITTED as default for Oracle", () =>
             Promise.all(
                 connections.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
@@ -462,18 +459,19 @@ describe("transaction > default isolation level from connection options", () => 
                     try {
                         await queryRunner.startTransaction()
 
-                        // Oracle should set SERIALIZABLE
+                        // Oracle should set READ COMMITTED
                         const isolationQuery = querySpy
                             .getCalls()
                             .find((call) => {
                                 return (
                                     call.args[0] ===
-                                    "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
+                                    "SET TRANSACTION ISOLATION LEVEL READ COMMITTED"
                                 )
                             })
 
                         expect(isolationQuery).to.not.be.undefined
 
+                        // Test with actual data - READ COMMITTED is safe
                         const post = new Post()
                         post.title = "Oracle Default Test"
                         await queryRunner.manager.save(post)
@@ -492,37 +490,47 @@ describe("transaction > default isolation level from connection options", () => 
                 }),
             ))
 
-        it("should allow override with READ COMMITTED", () =>
+        it("should allow override with SERIALIZABLE", () =>
             Promise.all(
                 connections.map(async (connection) => {
+                    // Initial inserts are required to prevent ORA-08177 errors in Oracle 21c
+                    // when using a serializable connection immediately after DDL statements.
+                    await connection.manager
+                        .getRepository(Post)
+                        .save({ title: "Post #0" })
+                    await connection.manager
+                        .getRepository(Category)
+                        .save({ name: "Category #0" })
+
                     const queryRunner = connection.createQueryRunner()
                     const querySpy = sinon.spy(queryRunner, "query")
 
                     try {
-                        // Override default SERIALIZABLE with READ COMMITTED
-                        await queryRunner.startTransaction("READ COMMITTED")
+                        // Override default READ COMMITTED with SERIALIZABLE
+                        await queryRunner.startTransaction("SERIALIZABLE")
 
-                        // Verify READ COMMITTED was set
+                        // Verify SERIALIZABLE was set
                         const isolationQuery = querySpy
                             .getCalls()
                             .find((call) => {
                                 return (
                                     call.args[0] ===
-                                    "SET TRANSACTION ISOLATION LEVEL READ COMMITTED"
+                                    "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
                                 )
                             })
 
                         expect(isolationQuery).to.not.be.undefined
 
+                        // Now we can safely do data operations with SERIALIZABLE
                         const post = new Post()
-                        post.title = "Oracle Override Test"
+                        post.title = "Oracle SERIALIZABLE Test"
                         await queryRunner.manager.save(post)
 
                         await queryRunner.commitTransaction()
 
                         const savedPost = await connection.manager.findOne(
                             Post,
-                            { where: { title: "Oracle Override Test" } },
+                            { where: { title: "Oracle SERIALIZABLE Test" } },
                         )
                         expect(savedPost).to.not.be.null
                     } finally {
