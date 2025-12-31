@@ -112,13 +112,19 @@ export class SqlServerQueryRunner
                     : this.driver.obtainMasterConnection())
                 this.databaseConnection = pool.transaction()
                 this.connection.logger.logQuery("BEGIN TRANSACTION")
-                if (isolationLevel) {
+                const effectiveIsolationLevel =
+                    isolationLevel ||
+                    this.convertSqlServerIsolationToStandard(
+                        this.driver.options.options?.isolation,
+                    )
+                if (effectiveIsolationLevel) {
                     this.databaseConnection.begin(
-                        this.convertIsolationLevel(isolationLevel),
+                        this.convertIsolationLevel(effectiveIsolationLevel),
                         transactionCallback,
                     )
                     this.connection.logger.logQuery(
-                        "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
+                        "SET TRANSACTION ISOLATION LEVEL " +
+                            effectiveIsolationLevel,
                     )
                 } else {
                     this.databaseConnection.begin(transactionCallback)
@@ -4177,6 +4183,30 @@ export class SqlServerQueryRunner
             case "READ COMMITTED":
             default:
                 return ISOLATION_LEVEL.READ_COMMITTED
+        }
+    }
+
+    /**
+     * Converts SQL Server isolation level strings to standard isolation level strings.
+     */
+    convertSqlServerIsolationToStandard(
+        isolation?:
+            | "READ_UNCOMMITTED"
+            | "READ_COMMITTED"
+            | "REPEATABLE_READ"
+            | "SERIALIZABLE"
+            | "SNAPSHOT",
+    ): IsolationLevel | undefined {
+        if (!isolation) return undefined
+        switch (isolation) {
+            case "READ_UNCOMMITTED":
+                return "READ UNCOMMITTED"
+            case "REPEATABLE_READ":
+                return "REPEATABLE READ"
+            case "SERIALIZABLE":
+                return "SERIALIZABLE"
+            default:
+                return "READ COMMITTED"
         }
     }
 

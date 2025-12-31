@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { IsolationLevel } from "../types/IsolationLevel"
 import { SapConnectionCredentialsOptions } from "./SapConnectionCredentialsOptions"
 
 /**
@@ -106,4 +107,10 @@ export interface SapConnectionOptions
          */
         readonly poolErrorHandler?: (err: any) => any
     }
+
+    /**
+     * Sets the default transaction isolation level for new connections.
+     * You can override this value on a per-transaction basis using queryRunner.startTransaction(isolationLevel).
+     */
+    readonly isolationLevel?: IsolationLevel
 }

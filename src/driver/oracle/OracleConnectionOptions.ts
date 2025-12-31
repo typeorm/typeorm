@@ -57,4 +57,10 @@ export interface OracleConnectionOptions
          */
         readonly slaves: OracleConnectionCredentialsOptions[]
     }
+
+    /**
+     * Sets the default transaction isolation level for new connections.
+     * You can override this value on a per-transaction basis using queryRunner.startTransaction(isolationLevel).
+     */
+    readonly isolationLevel?: "READ COMMITTED" | "SERIALIZABLE"
 }

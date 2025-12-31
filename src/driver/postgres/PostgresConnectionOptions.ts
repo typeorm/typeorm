@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { IsolationLevel } from "../types/IsolationLevel"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 

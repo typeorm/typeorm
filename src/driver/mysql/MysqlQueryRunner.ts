@@ -120,9 +120,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw err
         }
         if (this.transactionDepth === 0) {
-            if (isolationLevel) {
+            const effectiveIsolationLevel =
+                isolationLevel || this.driver.options.isolationLevel
+
+            if (effectiveIsolationLevel) {
                 await this.query(
-                    "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
+                    "SET TRANSACTION ISOLATION LEVEL " +
+                        effectiveIsolationLevel,
                 )
             }
             await this.query("START TRANSACTION")
