@@ -5,7 +5,7 @@ import { QueryRunner } from "../query-runner/QueryRunner"
 import { Table } from "../schema-builder/table/Table"
 import { QueryResultCache } from "./QueryResultCache"
 import { QueryResultCacheOptions } from "./QueryResultCacheOptions"
-import { v4 as uuidv4 } from "uuid"
+import { PlatformTools } from "../platform/PlatformTools"
 
 /**
  * Caches query result into current database, into separate table called "query-result-cache".
@@ -268,7 +268,7 @@ export class DbQueryResultCache implements QueryResultCache {
                 this.connection.driver.options.type === "spanner" &&
                 !insertedValues.id
             ) {
-                insertedValues.id = uuidv4()
+                insertedValues.id = PlatformTools.generateUuid()
             }
 
             // otherwise insert

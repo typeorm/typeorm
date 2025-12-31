@@ -139,6 +139,14 @@ export class PlatformTools {
     static warn(message: string) {
         return message;
     }
+
+    /**
+     * Generates UUID v4 with fallback for environments without crypto support.
+     */
+    static generateUuid(): string {
+        const { RandomGenerator } = require("../util/RandomGenerator")
+        return RandomGenerator.uuidv4()
+    }
 }
 
 /**

@@ -53,9 +53,6 @@ importers:
       typeorm-aurora-data-api-driver:
         specifier: ^3.0.0
         version: 3.0.2(@aws-sdk/client-rds-data@3.957.0)
-      uuid:
-        specifier: ^11.1.0
-        version: 11.1.0
       yargs:
         specifier: ^18.0.0
         version: 18.0.0
