@@ -15,6 +15,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 -   `sid` - The System Identifier (SID) identifies a specific database instance. For example, "sales".
 -   `serviceName` - The Service Name is an identifier of a database service. For example, `sales.us.example.com`.
+-   `isolationLevel` - Sets the default transaction isolation level for new connections. You can override this value on a per-transaction basis using `queryRunner.startTransaction(isolationLevel)`. Oracle only supports `READ COMMITTED` and `SERIALIZABLE`. See [Transactions](../advanced-topics/2-transactions.md) for more information.
 
 ## Column Types
 

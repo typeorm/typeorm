@@ -76,6 +76,8 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 -   `enableQueryTimeout` - If a value is specified for maxQueryExecutionTime, in addition to generating a warning log when a query exceeds this time limit, the specified maxQueryExecutionTime value is also used as the timeout for the query. For more information, check [mysql timeouts](https://github.com/mysqljs/mysql#timeouts).
 
+-   `isolationLevel` - Sets the default transaction isolation level for new connections. You can override this value on a per-transaction basis using `queryRunner.startTransaction(isolationLevel)`. Supported values: `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`. See [Transactions](../advanced-topics/2-transactions.md) for more information.
+
 Additional options can be added to the `extra` object and will be passed directly to the client library. See more in the [mysql2 documentation](https://sidorares.github.io/node-mysql2/docs).
 
 ## Column Types
