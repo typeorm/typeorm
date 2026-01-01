@@ -27,6 +27,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
     -   `maxPooledIdleTime` (seconds) — Time before an idle connection is closed (default: 30).
     -   `pingCheck` (boolean) — Whether to validate connections before use (default: false).
     -   `poolCapacity` (number) — Maximum number of connections to be kept available (default: no limit).
+-   `isolationLevel` - Sets the default transaction isolation level for new connections. You can override this value on a per-transaction basis using `queryRunner.startTransaction(isolationLevel)`. Supported values: `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`. See [Transactions](../advanced-topics/2-transactions.md) for more information.
 
 See the official documentation of SAP HANA Client for more details as well as the `extra` properties: [Node.js Connection Properties](https://help.sap.com/docs/SAP_HANA_CLIENT/f1b440ded6144a54ada97ff95dac7adf/4fe9978ebac44f35b9369ef5a4a26f4c.html).
 
