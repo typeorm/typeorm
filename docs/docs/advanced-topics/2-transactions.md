@@ -58,10 +58,10 @@ The following database drivers support the standard isolation levels (`READ UNCO
 
 **SAP HANA** only supports the `READ COMMITTED`, `REPEATABLE READ`, and `SERIALIZABLE` isolation levels.
 
-**CockroachDB** supports all four standard isolation levels. By default, CockroachDB executes all transactions at `SERIALIZABLE` isolation. Under certain conditions, transactions issued at weaker isolation levels are automatically upgraded to stronger isolation levels:
+**CockroachDB** only supports the `READ COMMITTED`, `REPEATABLE READ`, and `SERIALIZABLE` isolation levels. By default, CockroachDB executes all transactions at `SERIALIZABLE` isolation. Under certain conditions, transactions issued at weaker isolation levels are automatically upgraded to stronger isolation levels:
 
-- If `sql.txn.read_committed_isolation.enabled` is set to `true` (enabling `READ COMMITTED` isolation), `READ UNCOMMITTED` transactions are upgraded to `READ COMMITTED` isolation.
-- If `sql.txn.read_committed_isolation.enabled` is set to `false` (disabling `READ COMMITTED` isolation), all transactions are upgraded to `SERIALIZABLE` isolation regardless of the isolation level requested.
+- If `sql.txn.read_committed_isolation.enabled` is set to `true` (enabling `READ COMMITTED` isolation), `READ COMMITTED` transactions are executed at the requested isolation level.
+- If `sql.txn.repeatable_read_isolation.enabled` is set to `true` (enabling `REPEATABLE READ` isolation), `REPEATABLE READ` transactions are executed at the requested isolation level.
 
 For more information, see the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stable/transactions).
 

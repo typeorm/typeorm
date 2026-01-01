@@ -10,7 +10,14 @@ import { ColumnType } from "../types/ColumnTypes"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { SqliteConnectionOptions } from "../sqlite/SqliteConnectionOptions"
+import { BetterSqlite3ConnectionOptions } from "../better-sqlite3/BetterSqlite3ConnectionOptions"
+import { CapacitorConnectionOptions } from "../capacitor/CapacitorConnectionOptions"
+import { CordovaConnectionOptions } from "../cordova/CordovaConnectionOptions"
+import { ExpoConnectionOptions } from "../expo/ExpoConnectionOptions"
+import { NativescriptConnectionOptions } from "../nativescript/NativescriptConnectionOptions"
+import { ReactNativeConnectionOptions } from "../react-native/ReactNativeConnectionOptions"
+import { SqljsConnectionOptions } from "../sqljs/SqljsConnectionOptions"
 import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { OrmUtils } from "../../util/OrmUtils"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
@@ -62,7 +69,15 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Connection options.
      */
-    options: BaseDataSourceOptions
+    options:
+        | SqliteConnectionOptions
+        | BetterSqlite3ConnectionOptions
+        | CapacitorConnectionOptions
+        | CordovaConnectionOptions
+        | ExpoConnectionOptions
+        | NativescriptConnectionOptions
+        | ReactNativeConnectionOptions
+        | SqljsConnectionOptions
 
     /**
      * Master database used to perform all write queries.
@@ -246,7 +261,9 @@ export abstract class AbstractSqliteDriver implements Driver {
 
     constructor(connection: DataSource) {
         this.connection = connection
-        this.options = connection.options as BaseDataSourceOptions
+        this.options = connection.options as
+            | SqliteConnectionOptions
+            | BetterSqlite3ConnectionOptions
 
         this.database = DriverUtils.buildDriverOptions(this.options).database
     }

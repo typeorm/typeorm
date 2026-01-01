@@ -135,7 +135,7 @@ describe("transaction > mssql specific isolation levels", () => {
                     enabledDrivers: ["mssql"],
                     driverSpecific: {
                         options: {
-                            isolation: "READ COMMITTED",
+                            isolation: "READ_COMMITTED",
                         },
                     },
                 })),
@@ -273,7 +273,7 @@ describe("transaction > mssql specific isolation levels", () => {
                     enabledDrivers: ["mssql"],
                     driverSpecific: {
                         options: {
-                            isolation: "REPEATABLE READ",
+                            isolation: "REPEATABLE_READ",
                         },
                     },
                 })),
@@ -342,7 +342,7 @@ describe("transaction > mssql specific isolation levels", () => {
                     enabledDrivers: ["mssql"],
                     driverSpecific: {
                         options: {
-                            isolation: "READ UNCOMMITTED",
+                            isolation: "READ_UNCOMMITTED",
                         },
                     },
                 })),

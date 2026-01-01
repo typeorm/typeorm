@@ -58,7 +58,9 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 -   `isolationLevel` - Sets the default transaction isolation level for new connections. You can override this value on a per-transaction basis using `queryRunner.startTransaction(isolationLevel)`. Supported values: `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`. See [Transactions](../advanced-topics/2-transactions.md) for more information.
 
-    **Note for CockroachDB:** CockroachDB only supports `SERIALIZABLE` (default) and `READ COMMITTED` isolation levels. Other isolation levels are automatically upgraded: `READ UNCOMMITTED` upgrades to `READ COMMITTED` (if enabled) or `SERIALIZABLE`, and `REPEATABLE READ` upgrades to `SERIALIZABLE`. READ COMMITTED isolation requires the `sql.txn.read_committed_isolation.enabled` cluster setting to be true.
+    **Note for CockroachDB:** CockroachDB only supports `SERIALIZABLE` (default), `REPEATABLE READ` and `READ COMMITTED` isolation levels.
+    - `REPEATABLE READ` requires `sql.txn.repeatead_read_isolation.enabled=true`, otherwise, it will be interpreted as `SERIALIZABLE`.
+    - `READ COMMITTED` requires `sql.txn.read_committed_isolation.enabled=true`, otherwise, it will be interpreted as `SERIALIZABLE`.
 
 Additional options can be added to the `extra` object and will be passed directly to the client library. See more in `pg`'s documentation for [Pool](https://node-postgres.com/apis/pool#new-pool) and [Client](https://node-postgres.com/apis/client#new-client).
 
