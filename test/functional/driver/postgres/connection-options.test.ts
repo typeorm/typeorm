@@ -32,3 +32,33 @@ describe("driver > postgres > connection options", () => {
             }),
         ))
 })
+
+describe("driver > postgres > connection options > custom extension installation", () => {
+    let connections: DataSource[]
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                enabledDrivers: ["postgres"],
+                driverSpecific: {
+                    extensions: ["pgcrypto", "uuid-ossp", "tablefunc", "xml2"],
+                },
+            })),
+    )
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
+
+    it("should install specified extensions after connection", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const result = await connection.query(
+                    "SELECT extname FROM pg_extension WHERE extname IN ('pgcrypto', 'uuid-ossp', 'tablefunc', 'xml2')",
+                )
+                expect(result.length).equals(4)
+                const installedExtensions = result.map((r: any) => r.extname)
+                expect(installedExtensions).to.include("pgcrypto")
+                expect(installedExtensions).to.include("uuid-ossp")
+                expect(installedExtensions).to.include("tablefunc")
+                expect(installedExtensions).to.include("xml2")
+            }),
+        ))
+})
