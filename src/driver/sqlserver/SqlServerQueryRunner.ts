@@ -4196,6 +4196,8 @@ export class SqlServerQueryRunner
                 return "REPEATABLE READ"
             case "SERIALIZABLE":
                 return "SERIALIZABLE"
+
+            case "READ_COMMITTED":
             default:
                 return "READ COMMITTED"
         }
