@@ -4,12 +4,10 @@ import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsO
 
 /**
  * MySQL specific connection options.
- *
  * @see https://github.com/mysqljs/mysql#connection-options
  */
 export interface MysqlConnectionOptions
-    extends BaseDataSourceOptions,
-        MysqlConnectionCredentialsOptions {
+    extends BaseDataSourceOptions, MysqlConnectionCredentialsOptions {
     /**
      * Database type.
      */
@@ -17,8 +15,7 @@ export interface MysqlConnectionOptions
 
     /**
      * The driver object
-     * This defaults to require("mysql").
-     * Falls back to require("mysql2")
+     * This defaults to require("mysql2").
      */
     readonly driver?: any
 
@@ -107,12 +104,6 @@ export interface MysqlConnectionOptions
      * For more information, check https://github.com/mysqljs/mysql#connection-flags.
      */
     readonly flags?: string[]
-
-    /**
-     * TypeORM will automatically use package found in your node_modules, prioritizing mysql over mysql2,
-     * but you can specify it manually
-     */
-    readonly connectorPackage?: "mysql" | "mysql2"
 
     /**
      * If a value is specified for maxQueryExecutionTime, in addition to generating a warning log when a query exceeds this time limit,
