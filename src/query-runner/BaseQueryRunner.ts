@@ -287,7 +287,14 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
      * Gets view from previously loaded views, otherwise loads it from database.
      */
     protected async getCachedView(viewName: string): Promise<View> {
-        const view = this.loadedViews.find((view) => view.name === viewName)
+        const view = this.loadedViews.find(
+            (view) =>
+                this.connection.driver.buildTableName(
+                    view.name,
+                    view.schema,
+                    view.database,
+                ) === viewName,
+        )
         if (view) return view
 
         const foundViews = await this.loadViews([viewName])

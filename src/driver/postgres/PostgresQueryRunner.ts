@@ -3213,7 +3213,7 @@ export class PostgresQueryRunner
                                   this.driver.options.schema || currentSchema
                           }
 
-                          return `("t"."schema" = '${schema}' AND "t"."name" = '${tableName}')`
+                          return `(COALESCE("v"."schemaname", "mv"."schemaname") = '${schema}' AND "i"."relname" = '${tableName}')`
                       })
                       .join(" OR ")
 
@@ -3246,15 +3246,14 @@ export class PostgresQueryRunner
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
             `WHERE "t"."relkind" IN ('m') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`
 
-        const query =
-            `SELECT "t".* FROM ${this.escapePath(
-                this.getTypeormMetadataTableName(),
-            )} "t" ` +
-            `INNER JOIN "pg_catalog"."pg_class" "c" ON "c"."relname" = "t"."name" ` +
-            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "c"."relnamespace" AND "n"."nspname" = "t"."schema" ` +
-            `WHERE "t"."type" IN ('${MetadataTableType.VIEW}', '${
-                MetadataTableType.MATERIALIZED_VIEW
-            }') ${viewsCondition ? `AND (${viewsCondition})` : ""}`
+        const query = `SELECT CASE WHEN "relkind" = 'm' THEN '${MetadataTableType.MATERIALIZED_VIEW}' ELSE '${MetadataTableType.VIEW}' END AS "type",
+                COALESCE(v."schemaname", "mv"."schemaname")   AS "schema",
+                "relname"                                     AS "name",
+                COALESCE("v"."definition", "mv"."definition") AS "value"
+            FROM "pg_class" "i"
+                    LEFT JOIN "pg_views" "v" ON "v"."viewname" = "i"."relname"
+                    LEFT JOIN "pg_matviews" "mv" ON "mv"."matviewname" = "i"."relname"
+            WHERE ${viewsCondition ? `(${viewsCondition})` : ""}`
 
         const dbViews = await this.query(query)
         const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
