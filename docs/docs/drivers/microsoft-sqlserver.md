@@ -207,7 +207,7 @@ const queryEmbedding = [
 const results = await dataSource.query(
     `
     DECLARE @question AS VECTOR (1998) = @0;
-    SELECT TOP (10) dc.*, 
+    SELECT TOP (10) dc.*,
            VECTOR_DISTANCE('cosine', @question, embedding) AS distance
     FROM document_chunk dc
     ORDER BY VECTOR_DISTANCE('cosine', @question, embedding)
