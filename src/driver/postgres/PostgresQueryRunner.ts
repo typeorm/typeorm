@@ -711,7 +711,9 @@ export class PostgresQueryRunner
      * Drops the view.
      */
     async dropView(target: View | string): Promise<void> {
-        const viewName = InstanceChecker.isView(target) ? target.name : target
+        const viewName = InstanceChecker.isView(target)
+            ? [target.schema, target.name].filter(Boolean).join(".")
+            : target
         const view = await this.getCachedView(viewName)
 
         const upQueries: Query[] = []
