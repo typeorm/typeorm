@@ -153,9 +153,8 @@ export class MigrationExecutor {
         await this.createMigrationsTableIfNotExist(queryRunner)
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations(
-            queryRunner,
-        )
+        const executedMigrations =
+            await this.loadExecutedMigrations(queryRunner)
 
         // get all user's migrations in the source code
         const allMigrations = this.getMigrations()
@@ -201,12 +200,11 @@ export class MigrationExecutor {
         }
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations(
-            queryRunner,
-        )
+        const executedMigrations =
+            await this.loadExecutedMigrations(queryRunner)
 
         // get the time when last migration was executed
-        let lastTimeExecutedMigration =
+        const lastTimeExecutedMigration =
             this.getLatestTimestampMigration(executedMigrations)
 
         // get all user's migrations in the source code
@@ -359,8 +357,8 @@ export class MigrationExecutor {
                         successMigrations.push(migration)
                         this.connection.logger.logSchemaBuild(
                             `Migration ${migration.name} has been ${
-                                this.fake ? "(fake)" : ""
-                            } executed successfully.`,
+                                this.fake ? "(fake) " : ""
+                            }executed successfully.`,
                         )
                     })
             }
@@ -404,12 +402,11 @@ export class MigrationExecutor {
         }
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations(
-            queryRunner,
-        )
+        const executedMigrations =
+            await this.loadExecutedMigrations(queryRunner)
 
         // get the time when last migration was executed
-        let lastTimeExecutedMigration =
+        const lastTimeExecutedMigration =
             this.getLatestExecutedMigration(executedMigrations)
 
         // if no migrations found in the database then nothing to revert
@@ -417,6 +414,8 @@ export class MigrationExecutor {
             this.connection.logger.logSchemaBuild(
                 `No migrations were found in the database. Nothing to revert!`,
             )
+            // if query runner was created by us then release it
+            if (!this.queryRunner) await queryRunner.release()
             return
         }
 
@@ -464,8 +463,8 @@ export class MigrationExecutor {
             await this.deleteExecutedMigration(queryRunner, migrationToRevert)
             this.connection.logger.logSchemaBuild(
                 `Migration ${migrationToRevert.name} has been ${
-                    this.fake ? "(fake)" : ""
-                } reverted successfully.`,
+                    this.fake ? "(fake) " : ""
+                }reverted successfully.`,
             )
 
             // commit transaction if we started it

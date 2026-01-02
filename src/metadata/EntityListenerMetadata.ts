@@ -75,8 +75,30 @@ export class EntityListenerMetadata {
      * Executes listener method of the given entity.
      */
     execute(entity: ObjectLiteral) {
-        if (!this.embeddedMetadata) return entity[this.propertyName]()
+        // Check if the Embedded Metadata does not exist
+        if (!this.embeddedMetadata) {
+            // Get the Entity's Method
+            const entityMethod = entity[this.propertyName]
 
+            // Check if the Entity Method does not exist
+            if (!entityMethod)
+                throw new Error(
+                    `Entity listener method "${this.propertyName}" does not exist in entity "${entity.constructor.name}".`,
+                )
+
+            // Check if the Entity Method is not a function
+            if (typeof entityMethod !== "function")
+                throw new Error(
+                    `Entity listener method "${this.propertyName}" in entity "${
+                        entity.constructor.name
+                    }" must be a function but got "${typeof entityMethod}".`,
+                )
+
+            // Call and return the Entity Method
+            return entityMethod.call(entity)
+        }
+
+        // Call the Embedded Method
         this.callEntityEmbeddedMethod(
             entity,
             this.embeddedMetadata.propertyPath.split("."),

@@ -113,22 +113,38 @@ export class RawSqlResultsToEntityTransformer {
                 ),
             )
         }
+
+        // Check if primary key columns are actually selected in the raw results
+        const primaryKeysSelected = keys.some(
+            (key) => key in (rawResults[0] ?? {}),
+        )
+
         for (const rawResult of rawResults) {
-            const id = keys
-                .map((key) => {
-                    const keyValue = rawResult[key]
+            let id: string
 
-                    if (Buffer.isBuffer(keyValue)) {
-                        return keyValue.toString("hex")
-                    }
+            if (primaryKeysSelected) {
+                // Use primary key based grouping when available
+                id = keys
+                    .map((key) => {
+                        const keyValue = rawResult[key]
 
-                    if (ObjectUtils.isObject(keyValue)) {
-                        return JSON.stringify(keyValue)
-                    }
+                        if (Buffer.isBuffer(keyValue)) {
+                            return keyValue.toString("hex")
+                        }
 
-                    return keyValue
-                })
-                .join("_") // todo: check partial
+                        if (ObjectUtils.isObject(keyValue)) {
+                            return JSON.stringify(keyValue)
+                        }
+
+                        return keyValue
+                    })
+                    .join("_")
+            } else {
+                // Fallback: use row index when primary keys are not available
+                // This ensures each row gets its own group for proper entity mapping
+                const rowIndex = rawResults.indexOf(rawResult)
+                id = `row_${rowIndex}`
+            }
 
             const items = map.get(id)
             if (!items) {
@@ -173,7 +189,7 @@ export class RawSqlResultsToEntityTransformer {
             )
             if (discriminatorMetadata) metadata = discriminatorMetadata
         }
-        let entity: any = metadata.create(this.queryRunner, {
+        const entity: any = metadata.create(this.queryRunner, {
             fromDeserializer: true,
             pojo: this.pojo,
         })
@@ -239,7 +255,7 @@ export class RawSqlResultsToEntityTransformer {
 
             if (value === undefined) continue
             // we don't mark it as has data because if we will have all nulls in our object - we don't need such object
-            else if (value !== null) hasData = true
+            else if (value !== null && !column.isVirtualProperty) hasData = true
 
             column.setEntityValue(
                 entity,
@@ -589,7 +605,9 @@ export class RawSqlResultsToEntityTransformer {
                 }
 
                 // Calculate the idMaps for the rawRelationIdResult
-                return rawRelationIdResult.results.reduce((agg, result) => {
+                return rawRelationIdResult.results.reduce<{
+                    [idHash: string]: any[]
+                }>((agg, result) => {
                     let idMap = columns.reduce((idMap, column) => {
                         let value = result[column.databaseName]
                         if (
@@ -620,7 +638,7 @@ export class RawSqlResultsToEntityTransformer {
                         ) {
                             // if column is a relation
                             value =
-                                column.referencedColumn!.referencedColumn!.createValueMap(
+                                column.referencedColumn!.referencedColumn.createValueMap(
                                     value,
                                 )
                         }
