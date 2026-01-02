@@ -14,7 +14,6 @@ describe("github issues > #10685 Regression in 0.3.11: postgres number arrays wi
         async () =>
             (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
