@@ -34,13 +34,13 @@ describe("github issues > #2955 updates not cascading correctly", () => {
                 let foo: Foo | null = new Foo()
                 foo.bars = [bar1, bar2]
 
-                let saveResult = await fooRepo.save(foo)
+                const saveResult = await fooRepo.save(foo)
                 foo = await fooRepo.findOne({
                     where: { id: saveResult.id },
                     relations: ["bars"],
                 })
                 expect(foo!.bars.length).to.equal(2)
-                let bars = await barRepo.find()
+                const bars = await barRepo.find()
                 expect(bars.length).to.equal(2)
                 expect(bars[0].isTrapazoidal).to.be.false
             }),
@@ -110,7 +110,7 @@ describe("github issues > #2955 updates not cascading correctly", () => {
 
                 const bar1 = new Bar()
                 const bar2 = new Bar()
-                let foo: Foo | undefined = new Foo()
+                const foo: Foo | undefined = new Foo()
                 foo.bars = [bar1, bar2]
 
                 await fooRepo.save(foo)
