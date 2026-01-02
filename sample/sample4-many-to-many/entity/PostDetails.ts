@@ -29,7 +29,7 @@ export class PostDetails {
     })
     metadata: string | null
 
-    @ManyToMany((type) => Post, (post) => post.details, {
+    @ManyToMany(() => Post, (post) => post.details, {
         cascade: true,
     })
     posts: Post[]

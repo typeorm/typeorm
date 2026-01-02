@@ -75,7 +75,7 @@ export type WithLengthColumnType =
     | "binary" // mssql
     | "varbinary" // mssql, sap
     | "string" // cockroachdb, spanner
-    | "vector" // postgres, sap
+    | "vector" // mariadb, mysql, mssql, postgres, sap
     | "halfvec" // postgres, sap
     | "half_vector" // sap
     | "real_vector" // sap
@@ -203,6 +203,7 @@ export type SimpleColumnType =
     | "xml" // mssql, postgres
     | "json" // mysql, postgres, cockroachdb, spanner
     | "jsonb" // postgres, cockroachdb
+    | "jsonpath" // postgres
     | "varbinary" // mssql, sap
     | "hierarchyid" // mssql
     | "sql_variant" // mssql

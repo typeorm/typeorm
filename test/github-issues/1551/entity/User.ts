@@ -61,19 +61,19 @@ export class User {
     @Column({ nullable: true })
     phone?: string
 
-    @ManyToMany((type) => Chat, (chat) => chat.allTimeMembers)
+    @ManyToMany(() => Chat, (chat) => chat.allTimeMembers)
     allTimeMemberChats: Chat[]
 
-    @ManyToMany((type) => Chat, (chat) => chat.listingMembers)
+    @ManyToMany(() => Chat, (chat) => chat.listingMembers)
     listedMemberChats: Chat[]
 
-    @ManyToMany((type) => Chat, (chat) => chat.actualGroupMembers)
+    @ManyToMany(() => Chat, (chat) => chat.actualGroupMembers)
     actualGroupMemberChats: Chat[]
 
-    @ManyToMany((type) => Chat, (chat) => chat.admins)
+    @ManyToMany(() => Chat, (chat) => chat.admins)
     adminChats: Chat[]
 
-    @ManyToMany((type) => Message, (message) => message.holders)
+    @ManyToMany(() => Message, (message) => message.holders)
     holderMessages: Message[]
 
     @OneToMany(() => Chat, (chat) => chat.owner)
