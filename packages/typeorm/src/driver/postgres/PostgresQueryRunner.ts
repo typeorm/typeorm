@@ -779,7 +779,9 @@ export class PostgresQueryRunner
      * @param ifExists
      */
     async dropView(target: View | string, ifExists?: boolean): Promise<void> {
-        const viewName = InstanceChecker.isView(target) ? target.name : target
+        const viewName = InstanceChecker.isView(target)
+            ? [target.schema, target.name].filter(Boolean).join(".")
+            : target
 
         let view: View
         try {
