@@ -53,9 +53,8 @@ describe("view entity > oracle", () => {
                 post2.categoryId = category2.id
                 await connection.manager.save(post2)
 
-                const postCategories = await connection.manager.find(
-                    PostCategory,
-                )
+                const postCategories =
+                    await connection.manager.find(PostCategory)
                 postCategories.length.should.be.equal(2)
 
                 postCategories[0].id.should.be.equal(1)

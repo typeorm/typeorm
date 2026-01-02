@@ -144,6 +144,15 @@ TypeORM supports generating SQL with this option when the concurrent option is s
 
 For more information see the [Postgres documentation](https://www.postgresql.org/docs/current/sql-createindex.html).
 
+## Index Type
+If you need to specify a custom type for the index, you can use the `type` property. If the `spatial` property is set, this field will be ignored.
+
+```typescript
+@Index({ type: 'hash' })
+```
+
+This feature is currently supported only for PostgreSQL.
+
 ## Disabling synchronization
 
 TypeORM does not support some index options and definitions (e.g. `lower`, `pg_trgm`) due to many database-specific differences and multiple
