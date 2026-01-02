@@ -14,7 +14,7 @@ export class Post {
     @Column()
     count: number
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     @JoinTable()
     categories: Category[]
 }

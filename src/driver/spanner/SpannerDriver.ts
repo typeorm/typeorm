@@ -113,11 +113,6 @@ export class SpannerDriver implements Driver {
     withLengthColumnTypes: ColumnType[] = ["string", "bytes"]
 
     /**
-     * Gets list of column data types that support length by a driver.
-     */
-    withWidthColumnTypes: ColumnType[] = []
-
-    /**
      * Gets list of column data types that support precision by a driver.
      */
     withPrecisionColumnTypes: ColumnType[] = []
@@ -404,7 +399,9 @@ export class SpannerDriver implements Driver {
             const lib = this.options.driver || PlatformTools.load("spanner")
             return lib.Spanner.numeric(value.toString())
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value)
+            return DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "json") {
             return value
         } else if (
@@ -439,7 +436,9 @@ export class SpannerDriver implements Driver {
         } else if (columnMetadata.type === "numeric") {
             value = value.value
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "json") {
             value = typeof value === "string" ? JSON.parse(value) : value
         } else if (columnMetadata.type === Number) {

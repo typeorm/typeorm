@@ -11,15 +11,18 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           registry-url: "https://registry.npmjs.org"
-      - run: npm ci
-      - run: npm run package
+          cache: "pnpm"
+
+      - run: pnpm install
+      - run: pnpm run package
       - run: |
           cd build/package
-          npm publish --provenance --access public
+          pnpm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

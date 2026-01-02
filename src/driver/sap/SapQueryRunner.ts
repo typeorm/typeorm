@@ -1828,7 +1828,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -2145,7 +2145,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraints.
+     * Drops unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,

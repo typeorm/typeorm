@@ -284,9 +284,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         this.driver.connection.logger.logQuery(query, parameters, this)
         try {
             const queryStartTime = Date.now()
-            const [operation] = await this.driver.instanceDatabase.updateSchema(
-                query,
-            )
+            const [operation] =
+                await this.driver.instanceDatabase.updateSchema(query)
             await operation.promise()
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
@@ -1052,7 +1051,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -1145,7 +1144,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates new check constraint.
+     * Creates a new check constraint.
      */
     async createCheckConstraint(
         tableOrName: Table | string,
@@ -1342,7 +1341,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
     ): Promise<void> {
-        for (const foreignKey of foreignKeys) {
+        for (const foreignKey of [...foreignKeys]) {
             await this.dropForeignKey(tableOrName, foreignKey)
         }
     }
@@ -1416,7 +1415,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         indices: TableIndex[],
     ): Promise<void> {
-        for (const index of indices) {
+        for (const index of [...indices]) {
             await this.dropIndex(tableOrName, index)
         }
     }
@@ -1447,9 +1446,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             `SELECT concat('ALTER TABLE \`', TABLE_NAME, '\`', ' DROP CONSTRAINT \`', CONSTRAINT_NAME, '\`') AS \`query\` ` +
             `FROM \`INFORMATION_SCHEMA\`.\`TABLE_CONSTRAINTS\` ` +
             `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`CONSTRAINT_TYPE\` = 'FOREIGN KEY'`
-        const dropFKQueries: ObjectLiteral[] = await this.query(
-            selectFKDropsQuery,
-        )
+        const dropFKQueries: ObjectLiteral[] =
+            await this.query(selectFKDropsQuery)
 
         // drop view queries
         // const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``
@@ -1462,9 +1460,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             `SELECT concat('DROP TABLE \`', TABLE_NAME, '\`') AS \`query\` ` +
             `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
             `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE'`
-        const dropTableQueries: ObjectLiteral[] = await this.query(
-            dropTablesQuery,
-        )
+        const dropTableQueries: ObjectLiteral[] =
+            await this.query(dropTablesQuery)
 
         if (
             !dropIndexQueries.length &&

@@ -19,7 +19,7 @@ export class User {
     @OneToMany(() => Photo, (photo) => photo.user, { cascade: true })
     manyPhotos: Photo[]
 
-    @ManyToMany((type) => Photo, { cascade: true })
+    @ManyToMany(() => Photo, { cascade: true })
     @JoinTable()
     manyToManyPhotos: Photo[]
 }

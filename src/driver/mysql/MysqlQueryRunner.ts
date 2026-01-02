@@ -21,8 +21,9 @@ import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
+import { DriverUtils } from "../DriverUtils"
 import { Query } from "../Query"
-import { ColumnType } from "../types/ColumnTypes"
+import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
@@ -1799,7 +1800,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -1993,7 +1994,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraint.
+     * Drops a unique constraint.
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
@@ -2005,7 +2006,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraints.
+     * Drops a unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
@@ -2273,9 +2274,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
             const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
@@ -2285,9 +2285,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`
 
             await this.query(disableForeignKeysCheckQuery)
-            const dropQueries: ObjectLiteral[] = await this.query(
-                dropTablesQuery,
-            )
+            const dropQueries: ObjectLiteral[] =
+                await this.query(dropTablesQuery)
             await Promise.all(
                 dropQueries.map((query) => this.query(query["query"])),
             )
@@ -2654,17 +2653,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                             }
 
                             tableColumn.zerofill =
-                                dbColumn["COLUMN_TYPE"].indexOf("zerofill") !==
-                                -1
-                            tableColumn.unsigned = tableColumn.zerofill
-                                ? true
-                                : dbColumn["COLUMN_TYPE"].indexOf(
-                                      "unsigned",
-                                  ) !== -1
+                                dbColumn["COLUMN_TYPE"].includes("zerofill")
+                            tableColumn.unsigned =
+                                tableColumn.zerofill ||
+                                dbColumn["COLUMN_TYPE"].includes("unsigned")
                             if (
-                                this.driver.withWidthColumnTypes.indexOf(
-                                    tableColumn.type as ColumnType,
-                                ) !== -1
+                                this.driver.unsignedColumnTypes.includes(
+                                    tableColumn.type as UnsignedColumnType,
+                                )
                             ) {
                                 const width = dbColumn["COLUMN_TYPE"].substring(
                                     dbColumn["COLUMN_TYPE"].indexOf("(") + 1,
@@ -2804,17 +2800,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 ) !== -1 &&
                                 dbColumn["CHARACTER_MAXIMUM_LENGTH"]
                             ) {
-                                const length =
-                                    dbColumn[
-                                        "CHARACTER_MAXIMUM_LENGTH"
-                                    ].toString()
+                                let length: number =
+                                    dbColumn["CHARACTER_MAXIMUM_LENGTH"]
+                                if (tableColumn.type === "vector") {
+                                    // MySQL and MariaDb store the vector length in bytes, not in number of dimensions.
+                                    length = length / 4
+                                }
                                 tableColumn.length =
                                     !this.isDefaultColumnLength(
                                         table,
                                         tableColumn,
-                                        length,
+                                        length.toString(),
                                     )
-                                        ? length
+                                        ? length.toString()
                                         : ""
                             }
 
@@ -3371,28 +3369,38 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     async getVersion(): Promise<string> {
-        const result: [{ version: string }] = await this.query(
-            `SELECT VERSION() AS \`version\``,
-        )
+        const result: [{ "version()": string }] =
+            await this.query("SELECT version()")
 
         // MariaDB: https://mariadb.com/kb/en/version/
         // - "10.2.27-MariaDB-10.2.27+maria~jessie-log"
+
         // MySQL: https://dev.mysql.com/doc/refman/8.4/en/information-functions.html#function_version
         // - "8.4.3"
         // - "8.4.4-standard"
-        const versionString = result[0].version
+
+        const versionString = result[0]["version()"]
 
         return versionString.replace(/^([\d.]+).*$/, "$1")
     }
 
     /**
      * Checks if column display width is by default.
+     * @deprecated MySQL no longer supports column width in newer versions.
      */
     protected isDefaultColumnWidth(
         table: Table,
         column: TableColumn,
         width: number,
     ): boolean {
+        // Skip the whole check on servers that no longer expose width metadata.
+        if (
+            this.driver.options.type === "mysql" &&
+            DriverUtils.isReleaseVersionOrGreater(this.driver, "8.0.0")
+        ) {
+            return true
+        }
+
         // if table have metadata, we check if length is specified in column metadata
         if (this.connection.hasMetadata(table.name)) {
             const metadata = this.connection.getMetadata(table.name)

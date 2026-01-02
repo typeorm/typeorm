@@ -8,6 +8,7 @@
     "username": "root",
     "password": "admin",
     "database": "test",
+    "legacySpatialSupport": false,
     "logging": false
   },
   {
@@ -19,6 +20,7 @@
     "username": "root",
     "password": "admin",
     "database": "test",
+    "legacySpatialSupport": false,
     "logging": false
   },
   {
@@ -62,7 +64,7 @@
     "logging": false
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mssql",
     "type": "mssql",
     "host": "localhost",

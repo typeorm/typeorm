@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 import { Category } from "./entity/Category"
@@ -47,13 +47,13 @@ dataSource.initialize().then(
 
                 return authorRepository.save(author)
             })
-            .then((author: any) => {
+            .then((author) => {
                 // temporary
                 console.log(
                     "Author with a new post has been saved. Lets try to update post in the author",
                 )
 
-                return author.posts!.then((posts: any) => {
+                return author.posts!.then((posts) => {
                     // temporary
                     posts![0]!.title = "should be updated second post"
                     return authorRepository.save(author!)
@@ -76,7 +76,7 @@ dataSource.initialize().then(
                 posts[1].author = Promise.resolve(null)
                 return postRepository.save(posts[0])
             })
-            .then((posts) => {
+            .then(() => {
                 console.log("Two post's author has been removed.")
                 console.log("Now lets check many-to-many relations")
 
@@ -93,7 +93,7 @@ dataSource.initialize().then(
 
                 return postRepository.save(post)
             })
-            .then((posts) => {
+            .then(() => {
                 console.log("Post has been saved with its categories. ")
                 console.log("Lets find it now. ")
                 return postRepository.find({
@@ -106,14 +106,13 @@ dataSource.initialize().then(
             .then((posts) => {
                 console.log("Post with categories are loaded: ", posts)
                 console.log("Lets remove one of the categories: ")
-                return posts[0].categories.then((categories: any) => {
+                return posts[0].categories.then((categories) => {
                     // temporary
                     categories!.splice(0, 1)
-                    // console.log(posts[0]);
                     return postRepository.save(posts[0])
                 })
             })
-            .then((posts) => {
+            .then(() => {
                 console.log("One of the post category has been removed.")
             })
             .catch((error) => console.log(error.stack))
