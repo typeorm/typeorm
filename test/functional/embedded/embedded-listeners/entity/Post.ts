@@ -16,6 +16,6 @@ export class Post {
     @Column()
     text: string
 
-    @Column((type) => PostInformation, { prefix: "info" })
+    @Column(() => PostInformation, { prefix: "info" })
     information: PostInformation = new PostInformation()
 }

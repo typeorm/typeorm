@@ -21,7 +21,7 @@ export class Person {
     @ManyToOne(() => Company)
     company: Company
 
-    @ManyToMany((type) => Address, (address) => address.people)
+    @ManyToMany(() => Address, (address) => address.people)
     @JoinTable()
     addresses: Address[]
 

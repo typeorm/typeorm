@@ -1901,7 +1901,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraint.
+     * Drops a unique constraint.
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
@@ -1925,7 +1925,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Creates an unique constraints.
+     * Creates a unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
@@ -2217,27 +2217,24 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         try {
             // drop views
             const dropViewsQuery = `SELECT 'DROP VIEW "' || VIEW_NAME || '"' AS "query" FROM "USER_VIEWS"`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                dropViewsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(dropViewsQuery)
             await Promise.all(
                 dropViewQueries.map((query) => this.query(query["query"])),
             )
 
             // drop materialized views
             const dropMatViewsQuery = `SELECT 'DROP MATERIALIZED VIEW "' || MVIEW_NAME || '"' AS "query" FROM "USER_MVIEWS"`
-            const dropMatViewQueries: ObjectLiteral[] = await this.query(
-                dropMatViewsQuery,
-            )
+            const dropMatViewQueries: ObjectLiteral[] =
+                await this.query(dropMatViewsQuery)
             await Promise.all(
                 dropMatViewQueries.map((query) => this.query(query["query"])),
             )
 
             // drop tables
             const dropTablesQuery = `SELECT 'DROP TABLE "' || TABLE_NAME || '" CASCADE CONSTRAINTS' AS "query" FROM "USER_TABLES"`
-            const dropTableQueries: ObjectLiteral[] = await this.query(
-                dropTablesQuery,
-            )
+            const dropTableQueries: ObjectLiteral[] =
+                await this.query(dropTablesQuery)
             await Promise.all(
                 dropTableQueries.map((query) => this.query(query["query"])),
             )
