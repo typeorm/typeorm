@@ -128,12 +128,14 @@ export class OracleDriver implements Driver {
         "nclob",
         "rowid",
         "urowid",
+        "simple-json",
+        "json",
     ]
 
     /**
      * Returns type of upsert supported by driver if any
      */
-    supportedUpsertTypes: UpsertType[] = []
+    supportedUpsertTypes: UpsertType[] = ["merge-into"]
 
     /**
      * Returns list of supported onDelete types by driver.
@@ -299,8 +301,8 @@ export class OracleDriver implements Driver {
      * either create a pool and create connection when needed.
      */
     async connect(): Promise<void> {
-        this.oracle.fetchAsString = [this.oracle.CLOB]
-        this.oracle.fetchAsBuffer = [this.oracle.BLOB]
+        this.oracle.fetchAsString = [this.oracle.DB_TYPE_CLOB]
+        this.oracle.fetchAsBuffer = [this.oracle.DB_TYPE_BLOB]
         if (this.options.replication) {
             this.slaves = await Promise.all(
                 this.options.replication.slaves.map((slave) => {
@@ -316,7 +318,7 @@ export class OracleDriver implements Driver {
         }
 
         if (!this.database || !this.schema) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
             if (!this.database) {
                 this.database = await queryRunner.getCurrentDatabase()
@@ -341,8 +343,9 @@ export class OracleDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("oracle"))
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("oracle")
+        }
 
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
@@ -383,7 +386,6 @@ export class OracleDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
-        const parameterIndexMap = new Map<string, number>()
         sql = sql.replace(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
@@ -391,11 +393,7 @@ export class OracleDriver implements Driver {
                     return full
                 }
 
-                if (parameterIndexMap.has(key)) {
-                    return this.parametersPrefix + parameterIndexMap.get(key)
-                }
-
-                let value: any = parameters[key]
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -418,7 +416,7 @@ export class OracleDriver implements Driver {
                 }
 
                 escapedParameters.push(value)
-                parameterIndexMap.set(key, escapedParameters.length)
+
                 return this.createParameter(key, escapedParameters.length - 1)
             },
         ) // todo: make replace only in value statements, otherwise problems
@@ -441,7 +439,7 @@ export class OracleDriver implements Driver {
         schema?: string,
         database?: string,
     ): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)
@@ -533,9 +531,9 @@ export class OracleDriver implements Driver {
         } else if (columnMetadata.type === "date") {
             if (typeof value === "string") value = value.replace(/[^0-9-]/g, "")
             return () =>
-                `TO_DATE('${DateUtils.mixedDateToDateString(
-                    value,
-                )}', 'YYYY-MM-DD')`
+                `TO_DATE('${DateUtils.mixedDateToDateString(value, {
+                    utc: columnMetadata.utc,
+                })}', 'YYYY-MM-DD')`
         } else if (
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
@@ -546,6 +544,8 @@ export class OracleDriver implements Driver {
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value)
         } else if (columnMetadata.type === "simple-json") {
+            return DateUtils.simpleJsonToString(value)
+        } else if (columnMetadata.type === "json") {
             return DateUtils.simpleJsonToString(value)
         }
 
@@ -567,7 +567,9 @@ export class OracleDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             value = !!value
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
         } else if (
@@ -577,8 +579,6 @@ export class OracleDriver implements Driver {
             columnMetadata.type === "timestamp with local time zone"
         ) {
             value = DateUtils.normalizeHydratedDate(value)
-        } else if (columnMetadata.type === "json") {
-            value = JSON.parse(value)
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value)
         } else if (columnMetadata.type === "simple-json") {
@@ -635,6 +635,8 @@ export class OracleDriver implements Driver {
             return "clob"
         } else if (column.type === "simple-json") {
             return "clob"
+        } else if (column.type === "json") {
+            return "json"
         } else {
             return (column.type as string) || ""
         }
@@ -954,21 +956,24 @@ export class OracleDriver implements Driver {
             case "smallint":
             case "dec":
             case "decimal":
-                return this.oracle.NUMBER
+                return this.oracle.DB_TYPE_NUMBER
             case "char":
             case "nchar":
             case "nvarchar2":
             case "varchar2":
-                return this.oracle.STRING
+                return this.oracle.DB_TYPE_VARCHAR
             case "blob":
-                return this.oracle.BLOB
+                return this.oracle.DB_TYPE_BLOB
+            case "simple-json":
             case "clob":
-                return this.oracle.CLOB
+                return this.oracle.DB_TYPE_CLOB
             case "date":
             case "timestamp":
             case "timestamp with time zone":
             case "timestamp with local time zone":
-                return this.oracle.DATE
+                return this.oracle.DB_TYPE_TIMESTAMP
+            case "json":
+                return this.oracle.DB_TYPE_JSON
         }
     }
 
@@ -983,14 +988,16 @@ export class OracleDriver implements Driver {
         try {
             const oracle = this.options.driver || PlatformTools.load("oracledb")
             this.oracle = oracle
-        } catch (e) {
+        } catch {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb")
         }
         const thickMode = this.options.thickMode
         if (thickMode) {
-            typeof thickMode === "object"
-                ? this.oracle.initOracleClient(thickMode)
-                : this.oracle.initOracleClient()
+            if (typeof thickMode === "object") {
+                this.oracle.initOracleClient(thickMode)
+            } else {
+                this.oracle.initOracleClient()
+            }
         }
     }
 

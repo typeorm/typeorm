@@ -24,7 +24,7 @@ export abstract class Tournament {
     @Column()
     public name: string
 
-    @OneToOne((type) => TournamentGraph, (graph) => graph.tournament)
+    @OneToOne(() => TournamentGraph, (graph) => graph.tournament)
     @JoinColumn()
     public graph: TournamentGraph
 

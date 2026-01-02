@@ -1,0 +1,377 @@
+name: tests-linux
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: true
+        type: number
+
+jobs:
+  cockroachdb:
+    # CockroachDB is slow, run less often so it doesn't block other workflows
+    if: ${{ inputs.node-version >= 22 }}
+    runs-on: ubuntu-latest
+
+    services:
+      cockroachdb:
+        image: cockroachdb/cockroach:v24.3.8
+        ports:
+          - "26257:26257"
+        env:
+          COCKROACH_ARGS: "start-single-node --insecure --cache=1GB --store=type=mem,size=4GB"
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
+        with:
+          name: build
+          path: build/
+
+      - run: pnpm install
+      - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: crdb-node:${{ inputs.node-version }}
+          parallel: true
+
+  mongodb:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:8
+        ports:
+          - "27017:27017"
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
+        with:
+          name: build
+          path: build/
+
+      - run: pnpm install
+      - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: mongodb-node:${{ inputs.node-version }}
+          parallel: true
+
+  mssql:
+    runs-on: ubuntu-latest
+
+    services:
+      mssql:
+        image: "mcr.microsoft.com/mssql/server:2025-latest"
+        ports:
+          - "1433:1433"
+        env:
+          SA_PASSWORD: "Admin12345"
+          ACCEPT_EULA: "Y"
+          MSSQL_PID: "Express"
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
+        with:
+          name: build
+          path: build/
+
+      - run: pnpm install
+      - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: mssql-node:${{ inputs.node-version }}
+          parallel: true
+
+  mysql_mariadb:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:5.7.44
+        ports:
+          - "3306:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
+          MYSQL_DATABASE: "test"
+      mariadb:
+        image: mariadb:10.6.22-jammy
+        ports:
+          - "3307:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
+          MYSQL_DATABASE: "test"
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
+        with:
+          name: build
+          path: build/
+
+      - run: pnpm install
+      - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: mysql_mariadb-node:${{ inputs.node-version }}
+          parallel: true
+
+  mysql_mariadb_latest:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:9.4.0
+        ports:
+          - "3306:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
+          MYSQL_DATABASE: "test"
+      mariadb:
+        image: mariadb:12.0.1-rc
+        ports:
+          - "3307:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: "admin"
+          MYSQL_USER: "test"
+          MYSQL_PASSWORD: "test"
+          MYSQL_DATABASE: "test"
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
+        with:
+          name: build
+          path: build/
+
+      - run: pnpm install
+      - run: cp .github/workflows/test/mysql-mariadb-latest.ormconfig.json ormconfig.json
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: mysql_mariadb_latest-node:${{ inputs.node-version }}
+          parallel: true
+
+  better-sqlite3:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
+        with:
+          name: build
+          path: build/
+
+      - run: pnpm install
+      - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: better-sqlite3-node:${{ inputs.node-version }}
+          parallel: true
+
+  sqlite:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
+        with:
+          name: build
+          path: build/
+
+      - run: pnpm install
+      - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: sqlite-node:${{ inputs.node-version }}
+          parallel: true
+
+  sqljs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
+        with:
+          name: build
+          path: build/
+
+      - run: pnpm install
+      - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: sqljs-node:${{ inputs.node-version }}
+          parallel: true
+
+  postgres:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres-version: ["14", "17"]
+
+    services:
+      postgres:
+        image: ghcr.io/naorpeled/typeorm-postgres:pg${{ matrix.postgres-version }}-postgis3-pgvectorv0.8.0
+        ports:
+          - "5432:5432"
+        env:
+          POSTGRES_USERNAME: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
+        with:
+          name: build
+          path: build/
+
+      - run: pnpm install
+      - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: postgres:${{ matrix.postgres-version }}-node:${{ inputs.node-version }}
+          parallel: true
+
+  oracle:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - run: docker compose up oracle --detach
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
+        with:
+          name: build
+          path: build/
+
+      - run: pnpm install
+      - run: cat ormconfig.sample.json | jq 'map(select(.name == "oracle"))' > ormconfig.json
+      - run: docker compose up oracle --no-recreate --wait
+      - run: sleep 3 # wait for oracle to be fully ready
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: oracle-node:${{ inputs.node-version }}
+          parallel: true
+
+  sap:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - run: docker compose up hanaexpress --detach
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
+        with:
+          name: build
+          path: build/
+
+      - run: pnpm install
+      - run: cat ormconfig.sample.json | jq 'map(select(.name == "hanaexpress"))' > ormconfig.json
+      - run: docker compose up hanaexpress --no-recreate --wait
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v2
+        with:
+          flag-name: sap-node:${{ inputs.node-version }}
+          parallel: true

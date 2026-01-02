@@ -124,6 +124,12 @@ export class ColumnMetadata {
     comment?: string
 
     /**
+     * Indicates if date values use UTC timezone.
+     * Only applies to "date" column type.
+     */
+    utc: boolean = false
+
+    /**
      * Default database value.
      */
     default?:
@@ -242,14 +248,14 @@ export class ColumnMetadata {
     /**
      * Indicates if column is a virtual property. Virtual properties are not mapped to the entity.
      * This property is used in tandem the virtual column decorator.
-     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
+     * @See https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     isVirtualProperty: boolean = false
 
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
-     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
+     * @See https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     query?: (alias: string) => string
 
@@ -388,6 +394,8 @@ export class ColumnMetadata {
             this.isSelect = options.args.options.select
         if (options.args.options.insert !== undefined)
             this.isInsert = options.args.options.insert
+        if (options.args.options.utc !== undefined)
+            this.utc = options.args.options.utc
         if (options.args.options.update !== undefined)
             this.isUpdate = options.args.options.update
         if (options.args.options.readonly !== undefined)
@@ -569,7 +577,7 @@ export class ColumnMetadata {
             const extractEmbeddedColumnValue = (
                 propertyNames: string[],
                 map: ObjectLiteral,
-            ): any => {
+            ) => {
                 const propertyName = propertyNames.shift()
                 if (propertyName) {
                     map[propertyName] = {}
@@ -694,19 +702,29 @@ export class ColumnMetadata {
                 entity[this.relationMetadata.propertyName] &&
                 ObjectUtils.isObject(entity[this.relationMetadata.propertyName])
             ) {
-                const map = this.relationMetadata.joinColumns.reduce(
-                    (map, joinColumn) => {
-                        const value =
-                            joinColumn.referencedColumn!.getEntityValueMap(
-                                entity[this.relationMetadata!.propertyName],
-                            )
-                        if (value === undefined) return map
-                        return OrmUtils.mergeDeep(map, value)
-                    },
-                    {},
-                )
-                if (Object.keys(map).length > 0)
-                    return { [this.propertyName]: map }
+                if (this.relationMetadata.joinColumns.length > 1) {
+                    const map = this.relationMetadata.joinColumns.reduce(
+                        (map, joinColumn) => {
+                            const value =
+                                joinColumn.referencedColumn!.getEntityValueMap(
+                                    entity[this.relationMetadata!.propertyName],
+                                )
+                            if (value === undefined) return map
+                            return OrmUtils.mergeDeep(map, value)
+                        },
+                        {},
+                    )
+                    if (Object.keys(map).length > 0)
+                        return { [this.propertyName]: map }
+                } else {
+                    const value =
+                        this.relationMetadata.joinColumns[0].referencedColumn!.getEntityValue(
+                            entity[this.relationMetadata!.propertyName],
+                        )
+                    if (value) {
+                        return { [this.propertyName]: value }
+                    }
+                }
 
                 return undefined
             } else {
@@ -714,8 +732,9 @@ export class ColumnMetadata {
                     entity[this.propertyName] !== undefined &&
                     (returnNulls === false ||
                         entity[this.propertyName] !== null)
-                )
+                ) {
                     return { [this.propertyName]: entity[this.propertyName] }
+                }
 
                 return undefined
             }
@@ -905,7 +924,7 @@ export class ColumnMetadata {
      */
     compareEntityValue(entity: any, valueToCompareWith: any) {
         const columnValue = this.getEntityValue(entity)
-        if (ObjectUtils.isObject(columnValue)) {
+        if (typeof columnValue?.equals === "function") {
             return columnValue.equals(valueToCompareWith)
         }
         return columnValue === valueToCompareWith

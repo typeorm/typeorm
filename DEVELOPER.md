@@ -2,12 +2,6 @@
 
 This document describes how to set up your development environment and run TypeORM test cases.
 
-* [Prerequisite Software](#prerequisite-software)
-* [Getting the Sources](#getting-the-sources)
-* [Installing NPM Modules](#installing-npm-modules)
-* [Building](#building)
-* [Running Tests Locally](#running-tests-locally)
-
 See the [contribution guidelines](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md)
 if you'd like to contribute to TypeORM.
 
@@ -16,19 +10,19 @@ if you'd like to contribute to TypeORM.
 Before you can build and test TypeORM, you must install and configure the
 following products on your development machine:
 
-* [Git](http://git-scm.com) and/or the **GitHub app** (for [Mac](http://mac.github.com) or
-  [Windows](http://windows.github.com)); [GitHub's Guide to Installing
-  Git](https://help.github.com/articles/set-up-git) is a good source of information.
-* [Node.js](http://nodejs.org), (better to install latest version) which is used to run a development web server,
-  run tests, and generate distributable files.
-  Depending on your system, you can install Node either from source or as a pre-packaged bundle.
-* [Mysql](https://www.mysql.com/) is required to run tests on this platform (or docker)
-* [MariaDB](https://mariadb.com/) is required to run tests on this platform (or docker)
-* [Postgres](https://www.postgresql.org/) is required to run tests on this platform (or docker)
-* [Oracle](https://www.oracle.com/database/index.html) is required to run tests on this platform
-* [Microsoft SQL Server](https://www.microsoft.com/en-us/cloud-platform/sql-server) is required to run tests on this platform
-* For MySQL, MariaDB and Postgres you can use [docker](https://www.docker.com/) instead (docker configuration is
- [here](https://github.com/typeorm/typeorm/blob/master/docker-compose.yml))
+- [Git](http://git-scm.com) and/or the **GitHub app** (for [Mac](http://mac.github.com) or [Windows](http://windows.github.com)); [GitHub's Guide to Installing Git](https://docs.github.com/get-started/git-basics/set-up-git) is a good source of information.
+- [Node.js](https://nodejs.org) can be installed using a Node.js version manager like [fnm](https://fnm.vercel.app) or [nvm](https://github.com/nvm-sh/nvm).
+- [Mysql](https://www.mysql.com/) is required to run tests on this platform (or docker)
+- [MariaDB](https://mariadb.com/) is required to run tests on this platform (or docker)
+- [Postgres](https://www.postgresql.org/) is required to run tests on this platform (or docker)
+- [Oracle](https://www.oracle.com/database/index.html) is required to run tests on this platform
+- [Microsoft SQL Server](https://www.microsoft.com/en-us/cloud-platform/sql-server) is required to run tests on this platform
+
+For convenience, you can also use the [Docker](https://www.docker.com/) images provided in [docker-compose.yml](https://github.com/typeorm/typeorm/blob/master/docker-compose.yml) to run databases locally:
+
+```shell
+docker compose up postgres-17
+```
 
 ## Getting the Sources
 
@@ -49,24 +43,21 @@ cd typeorm
 # Add the main TypeORM repository as an upstream remote to your repository:
 git remote add upstream https://github.com/typeorm/typeorm.git
 ```
-## Installing NPM Modules
+
+## Installing package dependencies
 
 Install all TypeORM dependencies by running this command:
 
 ```shell
-npm install
+pnpm install
 ```
-
-During installation, you may have some problems with some dependencies.
-For example to properly install oracle driver you need to follow all instructions from
- [node-oracle documentation](https://github.com/oracle/node-oracledb).
 
 ## ORM config
 
 To create an initial `ormconfig.json` file, run the following command:
 
 ```shell
-cp ormconfig.json.dist ormconfig.json
+cp ormconfig.sample.json ormconfig.json
 ```
 
 ## Building
@@ -74,141 +65,117 @@ cp ormconfig.json.dist ormconfig.json
 To build a distribution package of TypeORM run:
 
 ```shell
-npm run package
+pnpm run package
 ```
 
-This command will generate you a distribution package in the `build/package` directory.
+This command will generate a distribution package in the `build/package` directory.
 You can link (or simply copy/paste) this directory into your project and test TypeORM there
 (but make sure to keep all node_modules required by TypeORM).
 
 To build the distribution package of TypeORM packed into a `.tgz`, run:
 
 ```shell
-npm run pack
+cd build/package && pnpm pack
 ```
 
-This command will generate you a distribution package tar in the `build` directory (`build/typeorm-x.x.x.tgz`).
+This command will generate a distribution package tar in the `build` directory (`build/typeorm-x.x.x.tgz`).
 You can copy this tar into your project and run `npm install ./typeorm-x.x.x.tgz` to bundle your build of TypeORM in your project.
 
 ## Running Tests Locally
 
-It would be greatly appreciated if PRs that change code come with appropriate tests.
+It is greatly appreciated if PRs that change code come with appropriate tests.
 
-To create a test for a specific issue opened on github, create a file: `test/github-issues/<num>/issue-<num>.ts` where
-`<num>` is the corresponding github issue. For example, if you were creating a PR to fix github issue #363, you'd
-create `test/github-issues/363/issue-363.ts`.
+To create a new test, check the [relevant functional tests](https://github.com/typeorm/typeorm/tree/master/test/functional). Depending on the test, you may need to create a new `.test.ts` file or modify an existing one.
+
+If the test is for a specific regression or issue opened on GitHub, add a comment to the tests mentioning the issue number.
 
 Most tests will benefit from using this template as a starting point:
 
-```ts
-import "reflect-metadata";
-import { createTestingConnections, closeTestingConnections, reloadTestingDatabases } from "../../utils/test-utils";
-import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai";
+```typescript
+import { expect } from "chai"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import { DataSource } from "../../../../src/data-source/DataSource"
 
-describe("github issues > #<issue number> <issue title>", () => {
+describe("description of the functionality you're testing", () => {
+    let dataSources: DataSource[]
 
-    let dataSources: DataSource[];
-    before(async () => dataSources = await createTestingConnections({
-        entities: [__dirname + "/entity/*{.js,.ts}"],
-        schemaCreate: true,
-        dropSchema: true,
-    }));
-    beforeEach(() => reloadTestingDatabases(dataSources));
-    after(() => closeTestingConnections(dataSources));
+    before(
+        async () =>
+            (dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                schemaCreate: true,
+                dropSchema: true,
+            })),
+    )
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
-    it("should <put a detailed description of what it should do here>", () => Promise.all(dataSources.map(async dataSource => {
-
-       // tests go here
-
-    })));
+    // optional: test fix for issue https://github.com/typeorm/typeorm/issues/<issue-number>
+    it("should <put a detailed description of what it should do here>", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // tests go here:
+                expect(result).to.equal(expected)
+            }),
+        ))
 
     // you can add additional tests if needed
-
-});
+})
 ```
 
-If you place entities in `./entity/<entity-name>.ts` relative to your `issue-<num>.ts` file,
+If you place entities in `./entity/<entity-name>.ts` relative to your test file,
 they will automatically be loaded.
 
-To run the tests, setup your environment configuration by copying `ormconfig.json.dist` into `ormconfig.json` and
-replacing parameters with your own.
+To run the tests, setup your environment configuration by copying `ormconfig.sample.json` into `ormconfig.json` and replacing parameters with your own. The tests will be run for each database that is defined in that file. If you're working on something that's not database specific and you want to speed things up, you can pick which objects in the file make sense for you to keep.
 
-Then run tests:
+Run the tests as follows:
 
 ```shell
-npm test
+pnpm run test
 ```
 
-You should execute test suites before submitting a PR to github.
-All the tests are executed on our Continuous Integration infrastructure and a PR could only be merged once the tests pass.
+You should make sure the test suites pass before submitting a PR to GitHub. Tests are run on PRs via GitHub Actions after approval, but your fork repository should be able to run CI as well. All tests need to pass before a PR will be merged.
 
-**Executing only some tests**: When you are creating tests to some specific code, you may want only execute the tests that you're creating, so you waste less time to verify your code. To do this, you can temporarily modify your tests definitions adding `.only` *mocha* commands **(describe, it)**. Example:
+**Executing only some tests**: When you are creating tests to some specific code, you may want to only execute the tests that you're creating.
+
+To do this, you can temporarily modify your test definitions by adding [`.only` _mocha_ commands](https://mochajs.org/#exclusive-tests) to `describe` and `it`. For example:
 
 ```
 describe.only('your describe test', ....)
 ```
 
->**Hint:** you can use the `--grep` flag to pass a Regex to `gulp-mocha`. Only the tests have have `describe`/`it`
->statements that match the Regex will be run. For example:
->
->```shell
->npm test -- --grep="github issues > #363"
->```
->
->This is useful when trying to get a specific test or subset of tests to pass.
+Alternatively, you can use the `--grep` flag to pass a regex to `mocha`. Only the tests that have `describe`/`it` statements that match the regex will be run. For example:
+
+```shell
+pnpm run test -- --grep "your test name"
+```
 
 ### Faster developer cycle for editing code and running tests
 
-The `npm test` script works by deleting built TypeScript code, rebuilding the codebase, and then running tests. This can take a long time.
+The `pnpm run test` script works by deleting built TypeScript code, rebuilding the codebase, and then running tests. This can take a long time.
 
-Instead, for a quicker feedback cycle, you can run `npm run compile -- --watch` to make a fresh build and instruct TypeScript to watch for changes and only compile what code you've changed.
+Instead, for a quicker feedback cycle, you can run `pnpm run compile -- --watch` to make a fresh build and instruct TypeScript to watch for changes and only compile what code you've changed.
 
-Once TypeScript finishes compiling your changes, you can run `npm run test-fast` (instead of `test`), to trigger a test without causing a full recompile, which allows you to edit and check your changes much faster.
+Once TypeScript finishes compiling your changes, you can run `pnpm run test:fast` (instead of `test`), to trigger a test without causing a full recompile, which allows you to edit and check your changes much faster.
 
 ## Using Docker
 
-To run your tests you need dbms installed on your machine. Alternatively, you can use docker
-with all dbms images inside it. To use dbms for your tests from docker simply run `docker-compose up`
-in the root of the project. Once all images are fetched and run you can run tests.
+To run your tests you need the Database Management Systems (DBMS) installed on your machine. Alternatively, you can use docker with the DBMS running in containers. To have docker run all the DBMS for you simply run `docker compose up` in the root of the project. Once all images are fetched and are running, you can run the tests.
 
 - The docker image of mssql-server needs at least 3.25GB of RAM.
 - Make sure to assign enough memory to the Docker VM if you're running on Docker for Mac or Windows
 
-### Oracle XE
+## Release Process
 
-In order to run tests on Oracle XE locally, we need to start 2 docker containers:
+To create a new release, follow these steps:
 
-- a container with Oracle XE database
-- a container with typeorm and its tests
-
-#### 1. Booting Oracle XE database
-
-Execute in shell the next command:
-
-```shell
-docker-compose up -d oracle
-```
-
-It will start an oracle instance only.
-The instance will be run in background,
-therefore, we need to stop it later on.
-
-#### 2. Booting typeorm for Oracle
-
-Execute in shell the next command:
-
-```shell
-docker-compose -f docker-compose.oracle.yml up
-```
-
-it will start a nodejs instance which builds typeorm and executes unit tests.
-The instance exits after the run.
-
-#### 3. Shutting down Oracle XE database
-
-Execute in shell the next command:
-
-```shell
-docker-compose down
-```
+1. Create a new branch from `master` with the format `release-x.x.x` (e.g. `release-0.3.23`).
+2. Update the version in `package.json` and run `pnpm install` to update the lock file.
+3. Run the `pnpm run changelog` command to generate the changelog for the new version.
+4. Commit the changes and create a pull request to merge the release branch into `master`.
+5. Once the pull request is approved and merged, create a new release on GitHub with the same version number.
+6. The `publish-package.yml` script will then run a GitHub Actions workflow that will publish the new version to npm.

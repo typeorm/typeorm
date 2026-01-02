@@ -47,7 +47,7 @@ export type WithPrecisionColumnType =
     | "time" // mysql, postgres, mssql, cockroachdb
     | "time with time zone" // postgres, cockroachdb
     | "time without time zone" // postgres
-    | "timestamp" // mysql, postgres, mssql, oracle, cockroachdb, spanner
+    | "timestamp" // mysql, postgres, mssql, oracle, cockroachdb, sap, spanner
     | "timestamp without time zone" // postgres, cockroachdb
     | "timestamp with time zone" // postgres, oracle, cockroachdb
     | "timestamp with local time zone" // oracle
@@ -75,12 +75,17 @@ export type WithLengthColumnType =
     | "binary" // mssql
     | "varbinary" // mssql, sap
     | "string" // cockroachdb, spanner
+    | "vector" // mariadb, mysql, mssql, postgres, sap
+    | "halfvec" // postgres, sap
+    | "half_vector" // sap
+    | "real_vector" // sap
 
-export type WithWidthColumnType =
+export type UnsignedColumnType =
     | "tinyint" // mysql
     | "smallint" // mysql
     | "mediumint" // mysql
     | "int" // mysql
+    | "integer" // mysql
     | "bigint" // mysql
 
 /**
@@ -172,6 +177,14 @@ export type SimpleColumnType =
     | "tstzrange" // postgres
     | "daterange" // postgres
 
+    // multirange types
+    | "int4multirange" // postgres
+    | "int8multirange" // postgres
+    | "nummultirange" // postgres
+    | "tsmultirange" // postgres
+    | "tstzmultirange" // postgres
+    | "datemultirange" // postgres
+
     // other types
     | "enum" // mysql, postgres
     | "set" // mysql
@@ -180,6 +193,7 @@ export type SimpleColumnType =
     | "inet4" // mariadb
     | "inet6" // mariadb
     | "macaddr" // postgres
+    | "macaddr8" // postgres
     | "bit" // postgres, mssql
     | "bit varying" // postgres
     | "varbit" // postgres
@@ -189,6 +203,7 @@ export type SimpleColumnType =
     | "xml" // mssql, postgres
     | "json" // mysql, postgres, cockroachdb, spanner
     | "jsonb" // postgres, cockroachdb
+    | "jsonpath" // postgres
     | "varbinary" // mssql, sap
     | "hierarchyid" // mssql
     | "sql_variant" // mssql
@@ -206,7 +221,7 @@ export type SimpleColumnType =
 export type ColumnType =
     | WithPrecisionColumnType
     | WithLengthColumnType
-    | WithWidthColumnType
+    | UnsignedColumnType
     | SpatialColumnType
     | SimpleColumnType
     | BooleanConstructor

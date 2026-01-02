@@ -17,6 +17,7 @@ import { QueryBuilder } from "./QueryBuilder"
 import { QueryDeepPartialEntity } from "./QueryPartialEntity"
 import { InsertResult } from "./result/InsertResult"
 import { ReturningResultsEntityUpdator } from "./ReturningResultsEntityUpdator"
+import { WhereClause } from "./WhereClause"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -374,6 +375,15 @@ export class InsertQueryBuilder<
         conflictTarget?: string | string[],
         orUpdateOptions?: InsertOrUpdateOptions,
     ): this {
+        const { where, parameters } = orUpdateOptions?.overwriteCondition ?? {}
+        let wheres: WhereClause[] | undefined
+        if (where) {
+            const condition = this.getWhereCondition(where)
+            if (Array.isArray(condition) ? condition.length !== 0 : condition)
+                wheres = [{ type: "simple", condition: condition }]
+        }
+        if (parameters) this.setParameters(parameters)
+
         if (!Array.isArray(statementOrOverwrite)) {
             this.expressionMap.onUpdate = {
                 conflict: statementOrOverwrite?.conflict_target,
@@ -382,6 +392,7 @@ export class InsertQueryBuilder<
                 skipUpdateIfNoValuesChanged:
                     orUpdateOptions?.skipUpdateIfNoValuesChanged,
                 upsertType: orUpdateOptions?.upsertType,
+                overwriteCondition: wheres,
             }
             return this
         }
@@ -393,6 +404,7 @@ export class InsertQueryBuilder<
                 orUpdateOptions?.skipUpdateIfNoValuesChanged,
             indexPredicate: orUpdateOptions?.indexPredicate,
             upsertType: orUpdateOptions?.upsertType,
+            overwriteCondition: wheres,
         }
         return this
     }
@@ -405,7 +417,21 @@ export class InsertQueryBuilder<
      * Creates INSERT express used to perform insert query.
      */
     protected createInsertExpression() {
+        if (this.expressionMap.onUpdate || this.expressionMap.onIgnore) {
+            if (
+                (this.expressionMap.onUpdate?.upsertType ?? "merge-into") ===
+                    "merge-into" &&
+                this.connection.driver.supportedUpsertTypes.includes(
+                    "merge-into",
+                )
+            )
+                return this.createMergeExpression()
+        }
         const tableName = this.getTableName(this.getMainTableName())
+        const tableOrAliasName =
+            this.alias !== this.getMainTableName()
+                ? this.escape(this.alias)
+                : tableName
         const valuesExpression = this.createValuesExpression() // its important to get values before returning expression because oracle rely on native parameters and ordering of them is important
         const returningExpression =
             this.connection.driver.options.type === "oracle" &&
@@ -459,7 +485,8 @@ export class InsertQueryBuilder<
         // add VALUES expression
         if (valuesExpression) {
             if (
-                this.connection.driver.options.type === "oracle" &&
+                (this.connection.driver.options.type === "oracle" ||
+                    this.connection.driver.options.type === "sap") &&
                 this.getValueSets().length > 1
             ) {
                 query += ` ${valuesExpression}`
@@ -516,9 +543,7 @@ export class InsertQueryBuilder<
                             indexPredicate &&
                             DriverUtils.isPostgresFamily(this.connection.driver)
                         ) {
-                            conflictTarget += ` WHERE ( ${this.escape(
-                                indexPredicate,
-                            )} )`
+                            conflictTarget += ` WHERE ( ${indexPredicate} )`
                         }
                     } else if (conflict) {
                         conflictTarget += ` ON CONSTRAINT ${this.escape(
@@ -530,7 +555,7 @@ export class InsertQueryBuilder<
 
                     if (Array.isArray(overwrite)) {
                         updatePart.push(
-                            ...overwrite?.map(
+                            ...overwrite.map(
                                 (column) =>
                                     `${this.escape(
                                         column,
@@ -580,26 +605,33 @@ export class InsertQueryBuilder<
                         )
 
                         query += updatePart.join(", ")
-                        query += " "
                     }
 
                     if (
                         Array.isArray(overwrite) &&
-                        skipUpdateIfNoValuesChanged &&
-                        DriverUtils.isPostgresFamily(this.connection.driver)
+                        skipUpdateIfNoValuesChanged
                     ) {
-                        query += ` WHERE (`
-                        query += overwrite
-                            .map(
-                                (column) =>
-                                    `${tableName}.${this.escape(
-                                        column,
-                                    )} IS DISTINCT FROM EXCLUDED.${this.escape(
-                                        column,
-                                    )}`,
-                            )
-                            .join(" OR ")
-                        query += ") "
+                        this.expressionMap.onUpdate.overwriteCondition ??= []
+                        const wheres = overwrite.map<WhereClause>((column) => ({
+                            type: "or",
+                            condition: `${tableOrAliasName}.${this.escape(
+                                column,
+                            )} IS DISTINCT FROM EXCLUDED.${this.escape(
+                                column,
+                            )}`,
+                        }))
+                        this.expressionMap.onUpdate.overwriteCondition.push({
+                            type: "and",
+                            condition: wheres,
+                        })
+                    }
+                    if (
+                        DriverUtils.isPostgresFamily(this.connection.driver) &&
+                        this.expressionMap.onUpdate.overwriteCondition &&
+                        this.expressionMap.onUpdate.overwriteCondition.length >
+                            0
+                    ) {
+                        query += ` WHERE ${this.createUpsertConditionExpression()}`
                     }
                 }
             } else if (
@@ -650,6 +682,13 @@ export class InsertQueryBuilder<
                 DriverUtils.isMySQLFamily(this.connection.driver))
         ) {
             query += ` RETURNING ${returningExpression}`
+        }
+
+        if (
+            returningExpression &&
+            this.connection.driver.options.type === "spanner"
+        ) {
+            query += ` THEN RETURN ${returningExpression}`
         }
 
         // Inserting a specific value for an auto-increment primary key in mssql requires enabling IDENTITY_INSERT
@@ -775,209 +814,37 @@ export class InsertQueryBuilder<
                         }
                     }
 
-                    // extract real value from the entity
-                    let value = column.getEntityValue(valueSet)
-
-                    // if column is relational and value is an object then get real referenced column value from this object
-                    // for example column value is { question: { id: 1 } }, value will be equal to { id: 1 }
-                    // and we extract "1" from this object
-                    /*if (column.referencedColumn && value instanceof Object && !(typeof value === "function")) { // todo: check if we still need it since getEntityValue already has similar code
-                        value = column.referencedColumn.getEntityValue(value);
-                    }*/
-
-                    if (!(typeof value === "function")) {
-                        // make sure our value is normalized by a driver
-                        value = this.connection.driver.preparePersistentValue(
-                            value,
-                            column,
-                        )
-                    }
-
-                    // newly inserted entities always have a version equal to 1 (first version)
-                    // also, user-specified version must be empty
-                    if (column.isVersion && value === undefined) {
-                        expression += "1"
-
-                        // } else if (column.isNestedSetLeft) {
-                        //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
-                        //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
-                        //     const subQuery = `(SELECT c.max + 1 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
-                        //     expression += subQuery;
-                        //
-                        // } else if (column.isNestedSetRight) {
-                        //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
-                        //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
-                        //     const subQuery = `(SELECT c.max + 2 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
-                        //     expression += subQuery;
-                    } else if (column.isDiscriminator) {
-                        expression += this.createParameter(
-                            this.expressionMap.mainAlias!.metadata
-                                .discriminatorValue,
-                        )
-                        // return "1";
-
-                        // for create and update dates we insert current date
-                        // no, we don't do it because this constant is already in "default" value of the column
-                        // with extended timestamp functionality, like CURRENT_TIMESTAMP(6) for example
-                        // } else if (column.isCreateDate || column.isUpdateDate) {
-                        //     return "CURRENT_TIMESTAMP";
-
-                        // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
-                    } else if (
-                        column.isGenerated &&
-                        column.generationStrategy === "uuid" &&
-                        !this.connection.driver.isUUIDGenerationSupported() &&
-                        value === undefined
-                    ) {
-                        value = uuidv4()
-                        expression += this.createParameter(value)
-
-                        if (
-                            !(
-                                valueSetIndex in
-                                this.expressionMap.locallyGenerated
-                            )
-                        ) {
-                            this.expressionMap.locallyGenerated[valueSetIndex] =
-                                {}
-                        }
-                        column.setEntityValue(
-                            this.expressionMap.locallyGenerated[valueSetIndex],
-                            value,
-                        )
-
-                        // if value for this column was not provided then insert default value
-                    } else if (value === undefined) {
-                        if (
-                            (this.connection.driver.options.type === "oracle" &&
-                                valueSets.length > 1) ||
-                            DriverUtils.isSQLiteFamily(
-                                this.connection.driver,
-                            ) ||
-                            this.connection.driver.options.type === "sap" ||
-                            this.connection.driver.options.type === "spanner"
-                        ) {
-                            // unfortunately sqlite does not support DEFAULT expression in INSERT queries
-                            if (
-                                column.default !== undefined &&
-                                column.default !== null
-                            ) {
-                                // try to use default defined in the column
-                                expression +=
-                                    this.connection.driver.normalizeDefault(
-                                        column,
-                                    )
-                            } else {
-                                expression += "NULL" // otherwise simply use NULL and pray if column is nullable
-                            }
-                        } else {
-                            expression += "DEFAULT"
-                        }
-                    } else if (
-                        value === null &&
-                        this.connection.driver.options.type === "spanner"
-                    ) {
-                        expression += "NULL"
-
-                        // support for SQL expressions in queries
-                    } else if (typeof value === "function") {
-                        expression += value()
-
-                        // just any other regular value
-                    } else {
-                        if (this.connection.driver.options.type === "mssql")
-                            value = (
-                                this.connection.driver as SqlServerDriver
-                            ).parametrizeValue(column, value)
-
-                        // we need to store array values in a special class to make sure parameter replacement will work correctly
-                        // if (value instanceof Array)
-                        //     value = new ArrayParameter(value);
-
-                        const paramName = this.createParameter(value)
-
-                        if (
-                            (DriverUtils.isMySQLFamily(
-                                this.connection.driver,
-                            ) ||
-                                this.connection.driver.options.type ===
-                                    "aurora-mysql") &&
-                            this.connection.driver.spatialTypes.indexOf(
-                                column.type,
-                            ) !== -1
-                        ) {
-                            const useLegacy = (
-                                this.connection.driver as
-                                    | MysqlDriver
-                                    | AuroraMysqlDriver
-                            ).options.legacySpatialSupport
-                            const geomFromText = useLegacy
-                                ? "GeomFromText"
-                                : "ST_GeomFromText"
-                            if (column.srid != null) {
-                                expression += `${geomFromText}(${paramName}, ${column.srid})`
-                            } else {
-                                expression += `${geomFromText}(${paramName})`
-                            }
-                        } else if (
-                            DriverUtils.isPostgresFamily(
-                                this.connection.driver,
-                            ) &&
-                            this.connection.driver.spatialTypes.indexOf(
-                                column.type,
-                            ) !== -1
-                        ) {
-                            if (column.srid != null) {
-                                expression += `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
-                            } else {
-                                expression += `ST_GeomFromGeoJSON(${paramName})::${column.type}`
-                            }
-                        } else if (
-                            this.connection.driver.options.type === "mssql" &&
-                            this.connection.driver.spatialTypes.indexOf(
-                                column.type,
-                            ) !== -1
-                        ) {
-                            expression +=
-                                column.type +
-                                "::STGeomFromText(" +
-                                paramName +
-                                ", " +
-                                (column.srid || "0") +
-                                ")"
-                        } else {
-                            expression += paramName
-                        }
-                    }
+                    expression += this.createColumnValueExpression(
+                        valueSets,
+                        valueSetIndex,
+                        column,
+                    )
 
                     if (columnIndex === columns.length - 1) {
                         if (valueSetIndex === valueSets.length - 1) {
                             if (
-                                this.connection.driver.options.type ===
-                                    "oracle" &&
+                                ["oracle", "sap"].includes(
+                                    this.connection.driver.options.type,
+                                ) &&
                                 valueSets.length > 1
                             ) {
-                                expression += " FROM DUAL "
-                            } else if (
-                                this.connection.driver.options.type === "sap" &&
-                                valueSets.length > 1
-                            ) {
-                                expression += " FROM dummy "
+                                expression +=
+                                    " FROM " +
+                                    this.connection.driver.dummyTableName
                             } else {
                                 expression += ")"
                             }
                         } else {
                             if (
-                                this.connection.driver.options.type ===
-                                    "oracle" &&
+                                ["oracle", "sap"].includes(
+                                    this.connection.driver.options.type,
+                                ) &&
                                 valueSets.length > 1
                             ) {
-                                expression += " FROM DUAL UNION ALL "
-                            } else if (
-                                this.connection.driver.options.type === "sap" &&
-                                valueSets.length > 1
-                            ) {
-                                expression += " FROM dummy UNION ALL "
+                                expression +=
+                                    " FROM " +
+                                    this.connection.driver.dummyTableName +
+                                    " UNION ALL "
                             } else {
                                 expression += "), "
                             }
@@ -1079,5 +946,568 @@ export class InsertQueryBuilder<
                     column.getEntityValue(valueSet) !== null,
             )
         )
+    }
+
+    /**
+     * Creates MERGE express used to perform insert query.
+     */
+    protected createMergeExpression() {
+        if (!this.connection.driver.supportedUpsertTypes.includes("merge-into"))
+            throw new TypeORMError(
+                `Upsert type "merge-into" is not supported by current database driver`,
+            )
+
+        if (
+            this.expressionMap.onUpdate?.upsertType &&
+            this.expressionMap.onUpdate.upsertType !== "merge-into"
+        ) {
+            throw new TypeORMError(
+                `Upsert type "${this.expressionMap.onUpdate.upsertType}" is not supported by current database driver`,
+            )
+        }
+        // const mainAlias = this.expressionMap.mainAlias!
+        const tableName = this.getTableName(this.getMainTableName())
+        const tableAlias = this.escape(this.alias)
+        const columns = this.getInsertedColumns()
+        const columnsExpression = this.createColumnNamesExpression()
+
+        let query = `MERGE INTO ${tableName} ${this.escape(this.alias)}`
+
+        const mergeSourceAlias = this.escape("mergeIntoSource")
+
+        const mergeSourceExpression =
+            this.createMergeIntoSourceExpression(mergeSourceAlias)
+
+        query += ` ${mergeSourceExpression}`
+
+        // build on condition
+        if (this.expressionMap.onIgnore) {
+            const primaryKey = columns.find((column) => column.isPrimary)
+            if (primaryKey) {
+                query += ` ON (${tableAlias}.${this.escape(
+                    primaryKey.databaseName,
+                )} = ${mergeSourceAlias}.${this.escape(
+                    primaryKey.databaseName,
+                )})`
+            } else {
+                query += `ON (${this.expressionMap
+                    .mainAlias!.metadata.uniques.map((unique) => {
+                        return `(${unique.columns
+                            .map((column) => {
+                                return `${tableAlias}.${this.escape(
+                                    column.databaseName,
+                                )} = ${mergeSourceAlias}.${this.escape(
+                                    column.databaseName,
+                                )}`
+                            })
+                            .join(" AND ")})`
+                    })
+                    .join(" OR ")})`
+            }
+        } else if (this.expressionMap.onUpdate) {
+            const { conflict, indexPredicate } = this.expressionMap.onUpdate
+
+            if (indexPredicate) {
+                throw new TypeORMError(
+                    `indexPredicate option is not supported by upsert type "merge-into"`,
+                )
+            }
+
+            if (Array.isArray(conflict)) {
+                query += ` ON (${conflict
+                    .map(
+                        (column) =>
+                            `${tableAlias}.${this.escape(
+                                column,
+                            )} = ${mergeSourceAlias}.${this.escape(column)}`,
+                    )
+                    .join(" AND ")})`
+            } else if (conflict) {
+                query += ` ON (${tableAlias}.${this.escape(
+                    conflict,
+                )} = ${mergeSourceAlias}.${this.escape(conflict)})`
+            } else {
+                query += `ON (${this.expressionMap
+                    .mainAlias!.metadata.uniques.map((unique) => {
+                        return `(${unique.columns
+                            .map((column) => {
+                                return `${tableAlias}.${this.escape(
+                                    column.databaseName,
+                                )} = ${mergeSourceAlias}.${this.escape(
+                                    column.databaseName,
+                                )}`
+                            })
+                            .join(" AND ")})`
+                    })
+                    .join(" OR ")})`
+            }
+        }
+
+        if (this.expressionMap.onUpdate) {
+            const {
+                overwrite,
+                columns,
+                conflict,
+                skipUpdateIfNoValuesChanged,
+            } = this.expressionMap.onUpdate
+            let updateExpression = ""
+
+            if (Array.isArray(overwrite)) {
+                updateExpression += (overwrite || columns)
+                    ?.filter((column) => !conflict?.includes(column))
+                    .map(
+                        (column) =>
+                            `${tableAlias}.${this.escape(
+                                column,
+                            )} = ${mergeSourceAlias}.${this.escape(column)}`,
+                    )
+                    .join(", ")
+            }
+
+            if (Array.isArray(overwrite) && skipUpdateIfNoValuesChanged) {
+                this.expressionMap.onUpdate.overwriteCondition ??= []
+                const wheres = overwrite.map<WhereClause>((column) => ({
+                    type: "or",
+                    condition: {
+                        operator: "notEqual",
+                        parameters: [
+                            `${tableAlias}.${this.escape(column)}`,
+                            `${mergeSourceAlias}.${this.escape(column)}`,
+                        ],
+                    },
+                }))
+                this.expressionMap.onUpdate.overwriteCondition.push({
+                    type: "and",
+                    condition: wheres,
+                })
+            }
+            const mergeCondition = this.createUpsertConditionExpression()
+            if (updateExpression.trim()) {
+                if (
+                    (this.connection.driver.options.type === "mssql" ||
+                        this.connection.driver.options.type === "sap") &&
+                    mergeCondition != ""
+                ) {
+                    query += ` WHEN MATCHED AND ${mergeCondition} THEN UPDATE SET ${updateExpression}`
+                } else {
+                    query += ` WHEN MATCHED THEN UPDATE SET ${updateExpression}`
+                    if (mergeCondition != "") {
+                        query += ` WHERE ${mergeCondition}`
+                    }
+                }
+            }
+        }
+
+        const valuesExpression =
+            this.createMergeIntoInsertValuesExpression(mergeSourceAlias)
+        const returningExpression =
+            this.connection.driver.options.type === "mssql"
+                ? this.createReturningExpression("insert")
+                : null
+
+        query += " WHEN NOT MATCHED THEN INSERT"
+
+        // add columns expression
+        if (columnsExpression) {
+            query += `(${columnsExpression})`
+        }
+
+        // add VALUES expression
+        if (valuesExpression) {
+            query += ` VALUES ${valuesExpression}`
+        }
+
+        // add OUTPUT expression
+        if (
+            returningExpression &&
+            this.connection.driver.options.type === "mssql"
+        ) {
+            query += ` OUTPUT ${returningExpression}`
+        }
+        if (this.connection.driver.options.type === "mssql") {
+            query += `;`
+        }
+        return query
+    }
+
+    /**
+     * Creates list of values needs to be inserted in the VALUES expression.
+     */
+    protected createMergeIntoSourceExpression(
+        mergeSourceAlias: string,
+    ): string {
+        const valueSets = this.getValueSets()
+        const columns = this.getInsertedColumns()
+
+        let expression = "USING ("
+        // if column metadatas are given then apply all necessary operations with values
+        if (columns.length > 0) {
+            if (this.connection.driver.options.type === "mssql") {
+                expression += "VALUES "
+            }
+            valueSets.forEach((valueSet, valueSetIndex) => {
+                columns.forEach((column, columnIndex) => {
+                    if (columnIndex === 0) {
+                        if (this.connection.driver.options.type === "mssql") {
+                            expression += "("
+                        } else {
+                            expression += "SELECT "
+                        }
+                    }
+
+                    const value = column.getEntityValue(valueSet)
+
+                    if (
+                        value === undefined &&
+                        !(
+                            column.isGenerated &&
+                            column.generationStrategy === "uuid" &&
+                            !this.connection.driver.isUUIDGenerationSupported()
+                        )
+                    ) {
+                        if (
+                            column.default !== undefined &&
+                            column.default !== null
+                        ) {
+                            // try to use default defined in the column
+                            expression +=
+                                this.connection.driver.normalizeDefault(column)
+                        } else {
+                            expression += "NULL" // otherwise simply use NULL and pray if column is nullable
+                        }
+                    } else if (value === null) {
+                        expression += "NULL"
+                    } else {
+                        expression += this.createColumnValueExpression(
+                            valueSets,
+                            valueSetIndex,
+                            column,
+                        )
+                    }
+
+                    if (this.connection.driver.options.type !== "mssql")
+                        expression += ` AS ${this.escape(column.databaseName)}`
+
+                    if (columnIndex === columns.length - 1) {
+                        if (valueSetIndex === valueSets.length - 1) {
+                            if (
+                                ["oracle", "sap"].includes(
+                                    this.connection.driver.options.type,
+                                )
+                            ) {
+                                expression +=
+                                    " FROM " +
+                                    this.connection.driver.dummyTableName
+                            } else if (
+                                this.connection.driver.options.type === "mssql"
+                            ) {
+                                expression += ")"
+                            }
+                        } else {
+                            if (
+                                ["oracle", "sap"].includes(
+                                    this.connection.driver.options.type,
+                                ) &&
+                                valueSets.length > 1
+                            ) {
+                                expression +=
+                                    " FROM " +
+                                    this.connection.driver.dummyTableName +
+                                    " UNION ALL "
+                            } else if (
+                                this.connection.driver.options.type === "mssql"
+                            ) {
+                                expression += "), "
+                            } else {
+                                expression += " UNION ALL "
+                            }
+                        }
+                    } else {
+                        expression += ", "
+                    }
+                })
+            })
+        } else {
+            // for tables without metadata
+            throw new TypeORMError(
+                'Upsert type "merge-into" is not supported without metadata tables',
+            )
+        }
+        expression += `) ${mergeSourceAlias}`
+        if (this.connection.driver.options.type === "mssql")
+            expression += ` (${columns
+                .map((column) => this.escape(column.databaseName))
+                .join(", ")})`
+        return expression
+    }
+
+    /**
+     * Creates list of values needs to be inserted in the VALUES expression.
+     */
+    protected createMergeIntoInsertValuesExpression(
+        mergeSourceAlias: string,
+    ): string {
+        const columns = this.getInsertedColumns()
+
+        let expression = ""
+        // if column metadatas are given then apply all necessary operations with values
+        if (columns.length > 0) {
+            columns.forEach((column, columnIndex) => {
+                if (columnIndex === 0) {
+                    expression += "("
+                }
+
+                if (
+                    (column.isGenerated &&
+                        column.generationStrategy === "uuid" &&
+                        this.connection.driver.isUUIDGenerationSupported()) ||
+                    (column.isGenerated && column.generationStrategy !== "uuid")
+                ) {
+                    expression += `DEFAULT`
+                } else {
+                    expression += `${mergeSourceAlias}.${this.escape(
+                        column.databaseName,
+                    )}`
+                }
+
+                if (columnIndex === columns.length - 1) {
+                    expression += ")"
+                } else {
+                    expression += ", "
+                }
+            })
+        } else {
+            // for tables without metadata
+            throw new TypeORMError(
+                'Upsert type "merge-into" is not supported without metadata tables',
+            )
+        }
+        if (expression === "()") return ""
+        return expression
+    }
+
+    /**
+     * Create upsert search condition expression.
+     */
+    protected createUpsertConditionExpression() {
+        if (!this.expressionMap.onUpdate.overwriteCondition) return ""
+        const conditionsArray = []
+
+        const whereExpression = this.createWhereClausesExpression(
+            this.expressionMap.onUpdate.overwriteCondition,
+        )
+
+        if (whereExpression.length > 0 && whereExpression !== "1=1") {
+            conditionsArray.push(whereExpression)
+        }
+
+        if (this.expressionMap.mainAlias!.hasMetadata) {
+            const metadata = this.expressionMap.mainAlias!.metadata
+            // Adds the global condition of "non-deleted" for the entity with delete date columns in select query.
+            if (
+                this.expressionMap.queryType === "select" &&
+                !this.expressionMap.withDeleted &&
+                metadata.deleteDateColumn
+            ) {
+                const column = this.expressionMap.aliasNamePrefixingEnabled
+                    ? this.expressionMap.mainAlias!.name +
+                      "." +
+                      metadata.deleteDateColumn.propertyName
+                    : metadata.deleteDateColumn.propertyName
+
+                const condition = `${column} IS NULL`
+                conditionsArray.push(condition)
+            }
+
+            if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
+                const column = this.expressionMap.aliasNamePrefixingEnabled
+                    ? this.expressionMap.mainAlias!.name +
+                      "." +
+                      metadata.discriminatorColumn.databaseName
+                    : metadata.discriminatorColumn.databaseName
+
+                const condition = `${column} IN (:...discriminatorColumnValues)`
+                conditionsArray.push(condition)
+            }
+        }
+
+        if (this.expressionMap.extraAppendedAndWhereCondition) {
+            const condition = this.expressionMap.extraAppendedAndWhereCondition
+            conditionsArray.push(condition)
+        }
+
+        let condition = ""
+
+        if (!conditionsArray.length) {
+            condition += ""
+        } else if (conditionsArray.length === 1) {
+            condition += `${conditionsArray[0]}`
+        } else {
+            condition += `( ${conditionsArray.join(" ) AND ( ")} )`
+        }
+
+        return condition
+    }
+
+    protected createColumnValueExpression(
+        valueSets: ObjectLiteral[],
+        valueSetIndex: number,
+        column: ColumnMetadata,
+    ): string {
+        const valueSet = valueSets[valueSetIndex]
+        let expression = ""
+
+        // extract real value from the entity
+        let value = column.getEntityValue(valueSet)
+
+        // if column is relational and value is an object then get real referenced column value from this object
+        // for example column value is { question: { id: 1 } }, value will be equal to { id: 1 }
+        // and we extract "1" from this object
+        /*if (column.referencedColumn && value instanceof Object && !(typeof value === "function")) { // todo: check if we still need it since getEntityValue already has similar code
+            value = column.referencedColumn.getEntityValue(value);
+        }*/
+
+        if (!(typeof value === "function")) {
+            // make sure our value is normalized by a driver
+            value = this.connection.driver.preparePersistentValue(value, column)
+        }
+
+        // newly inserted entities always have a version equal to 1 (first version)
+        // also, user-specified version must be empty
+        if (column.isVersion && value === undefined) {
+            expression += "1"
+
+            // } else if (column.isNestedSetLeft) {
+            //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
+            //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
+            //     const subQuery = `(SELECT c.max + 1 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
+            //     expression += subQuery;
+            //
+            // } else if (column.isNestedSetRight) {
+            //     const tableName = this.connection.driver.escape(column.entityMetadata.tablePath);
+            //     const rightColumnName = this.connection.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
+            //     const subQuery = `(SELECT c.max + 2 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
+            //     expression += subQuery;
+        } else if (column.isDiscriminator) {
+            expression += this.createParameter(
+                this.expressionMap.mainAlias!.metadata.discriminatorValue,
+            )
+            // return "1";
+
+            // for create and update dates we insert current date
+            // no, we don't do it because this constant is already in "default" value of the column
+            // with extended timestamp functionality, like CURRENT_TIMESTAMP(6) for example
+            // } else if (column.isCreateDate || column.isUpdateDate) {
+            //     return "CURRENT_TIMESTAMP";
+
+            // if column is generated uuid and database does not support its generation and custom generated value was not provided by a user - we generate a new uuid value for insertion
+        } else if (
+            column.isGenerated &&
+            column.generationStrategy === "uuid" &&
+            !this.connection.driver.isUUIDGenerationSupported() &&
+            value === undefined
+        ) {
+            value = uuidv4()
+            expression += this.createParameter(value)
+
+            if (!(valueSetIndex in this.expressionMap.locallyGenerated)) {
+                this.expressionMap.locallyGenerated[valueSetIndex] = {}
+            }
+            column.setEntityValue(
+                this.expressionMap.locallyGenerated[valueSetIndex],
+                value,
+            )
+
+            // if value for this column was not provided then insert default value
+        } else if (value === undefined) {
+            if (
+                (this.connection.driver.options.type === "oracle" &&
+                    valueSets.length > 1) ||
+                DriverUtils.isSQLiteFamily(this.connection.driver) ||
+                this.connection.driver.options.type === "sap" ||
+                this.connection.driver.options.type === "spanner"
+            ) {
+                // unfortunately sqlite does not support DEFAULT expression in INSERT queries
+                if (column.default !== undefined && column.default !== null) {
+                    // try to use default defined in the column
+                    expression +=
+                        this.connection.driver.normalizeDefault(column)
+                } else if (
+                    this.connection.driver.options.type === "spanner" &&
+                    column.isGenerated &&
+                    column.generationStrategy === "uuid"
+                ) {
+                    expression += "GENERATE_UUID()" // Produces a random universally unique identifier (UUID) as a STRING value.
+                } else {
+                    expression += "NULL" // otherwise simply use NULL and pray if column is nullable
+                }
+            } else {
+                expression += "DEFAULT"
+            }
+        } else if (
+            value === null &&
+            (this.connection.driver.options.type === "spanner" ||
+                this.connection.driver.options.type === "oracle")
+        ) {
+            expression += "NULL"
+
+            // support for SQL expressions in queries
+        } else if (typeof value === "function") {
+            expression += value()
+
+            // just any other regular value
+        } else {
+            if (this.connection.driver.options.type === "mssql")
+                value = (
+                    this.connection.driver as SqlServerDriver
+                ).parametrizeValue(column, value)
+
+            // we need to store array values in a special class to make sure parameter replacement will work correctly
+            // if (value instanceof Array)
+            //     value = new ArrayParameter(value);
+
+            const paramName = this.createParameter(value)
+
+            if (
+                (DriverUtils.isMySQLFamily(this.connection.driver) ||
+                    this.connection.driver.options.type === "aurora-mysql") &&
+                this.connection.driver.spatialTypes.includes(column.type)
+            ) {
+                const useLegacy = (
+                    this.connection.driver as MysqlDriver | AuroraMysqlDriver
+                ).options.legacySpatialSupport
+                const geomFromText = useLegacy
+                    ? "GeomFromText"
+                    : "ST_GeomFromText"
+                if (column.srid != null) {
+                    expression += `${geomFromText}(${paramName}, ${column.srid})`
+                } else {
+                    expression += `${geomFromText}(${paramName})`
+                }
+            } else if (
+                DriverUtils.isPostgresFamily(this.connection.driver) &&
+                this.connection.driver.spatialTypes.includes(column.type)
+            ) {
+                if (column.srid != null) {
+                    expression += `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
+                } else {
+                    expression += `ST_GeomFromGeoJSON(${paramName})::${column.type}`
+                }
+            } else if (
+                this.connection.driver.options.type === "mssql" &&
+                this.connection.driver.spatialTypes.includes(column.type)
+            ) {
+                expression +=
+                    column.type +
+                    "::STGeomFromText(" +
+                    paramName +
+                    ", " +
+                    (column.srid || "0") +
+                    ")"
+            } else {
+                expression += paramName
+            }
+        }
+        return expression
     }
 }

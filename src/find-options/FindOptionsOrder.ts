@@ -3,29 +3,28 @@ import { ObjectId } from "../driver/mongodb/typings"
 /**
  * A single property handler for FindOptionsOrder.
  */
-export type FindOptionsOrderProperty<Property> = Property extends Promise<
-    infer I
->
-    ? FindOptionsOrderProperty<NonNullable<I>>
-    : Property extends Array<infer I>
-    ? FindOptionsOrderProperty<NonNullable<I>>
-    : Property extends Function
-    ? never
-    : Property extends string
-    ? FindOptionsOrderValue
-    : Property extends number
-    ? FindOptionsOrderValue
-    : Property extends boolean
-    ? FindOptionsOrderValue
-    : Property extends Buffer
-    ? FindOptionsOrderValue
-    : Property extends Date
-    ? FindOptionsOrderValue
-    : Property extends ObjectId
-    ? FindOptionsOrderValue
-    : Property extends object
-    ? FindOptionsOrder<Property> | FindOptionsOrderValue
-    : FindOptionsOrderValue
+export type FindOptionsOrderProperty<Property> =
+    Property extends Promise<infer I>
+        ? FindOptionsOrderProperty<NonNullable<I>>
+        : Property extends Array<infer I>
+          ? FindOptionsOrderProperty<NonNullable<I>>
+          : Property extends Function
+            ? never
+            : Property extends string
+              ? FindOptionsOrderValue
+              : Property extends number
+                ? FindOptionsOrderValue
+                : Property extends boolean
+                  ? FindOptionsOrderValue
+                  : Property extends Buffer
+                    ? FindOptionsOrderValue
+                    : Property extends Date
+                      ? FindOptionsOrderValue
+                      : Property extends ObjectId
+                        ? FindOptionsOrderValue
+                        : Property extends object
+                          ? FindOptionsOrder<Property> | FindOptionsOrderValue
+                          : FindOptionsOrderValue
 
 /**
  * Order by find options.

@@ -13,6 +13,8 @@ import { EntitySchemaCheckOptions } from "./EntitySchemaCheckOptions"
 import { EntitySchemaExclusionOptions } from "./EntitySchemaExclusionOptions"
 import { EntitySchemaInheritanceOptions } from "./EntitySchemaInheritanceOptions"
 import { EntitySchemaRelationIdOptions } from "./EntitySchemaRelationIdOptions"
+import { EntitySchemaForeignKeyOptions } from "./EntitySchemaForeignKeyOptions"
+import { TreeMetadataArgs } from "../metadata-args/TreeMetadataArgs"
 
 /**
  * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.
@@ -80,6 +82,11 @@ export class EntitySchemaOptions<T> {
     indices?: EntitySchemaIndexOptions[]
 
     /**
+     * Entity foreign keys options.
+     */
+    foreignKeys?: EntitySchemaForeignKeyOptions[]
+
+    /**
      * Entity uniques options.
      */
     uniques?: EntitySchemaUniqueOptions[]
@@ -129,4 +136,6 @@ export class EntitySchemaOptions<T> {
      * Custom discriminator value for Single Table Inheritance.
      */
     discriminatorValue?: string
+
+    trees?: Omit<TreeMetadataArgs, "target">[]
 }

@@ -13,7 +13,7 @@ export class User {
     @Column()
     name: string
 
-    @ManyToOne((type) => Post)
+    @ManyToOne(() => Post)
     @JoinColumn()
     likedPost: Post
 }
