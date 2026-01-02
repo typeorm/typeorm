@@ -27,3 +27,6 @@ node_modules/
 ormlogs.log
 
 /test/github-issues/799/tmp/*
+
+/test/github-issues/11875/*
+!/test/github-issues/11875/issue-11875.test.ts
