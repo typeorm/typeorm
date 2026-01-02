@@ -46,13 +46,15 @@ describe("query runner > stream", () => {
                 const readStream = await queryRunner.stream(query)
 
                 if (!(connection.driver.options.type === "spanner"))
-                    await new Promise((ok) => readStream.once("readable", ok))
+                    await new Promise<void>((ok) =>
+                        readStream.once("readable", ok),
+                    )
 
                 const data: any[] = []
 
                 readStream.on("data", (row) => data.push(row))
 
-                await new Promise((ok, fail) => {
+                await new Promise<void>((ok, fail) => {
                     readStream.once("end", ok)
                     readStream.once("error", fail)
                 })
