@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src"
 import { Post } from "./entity/Post"
 import { PostCategory } from "./entity/PostCategory"
 import { PostAuthor } from "./entity/PostAuthor"
@@ -66,7 +66,7 @@ dataSource.initialize().then(
                 console.log("update finished. Now lets remove entity")
                 return postRepository.remove(loadedPost)
             })
-            .then((loadedPost) => {
+            .then(() => {
                 console.log("---------------------------")
                 console.log("post removed.")
             })
