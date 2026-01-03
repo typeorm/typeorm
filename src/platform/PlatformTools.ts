@@ -254,6 +254,8 @@ export class PlatformTools {
 
     /**
      * Logging functions needed by AdvancedConsoleLogger
+     * @param prefix
+     * @param info
      */
     static logInfo(prefix: string, info: any) {
         console.log(ansi.gray.underline(prefix), info)
@@ -286,14 +288,5 @@ export class PlatformTools {
     static logCmdErr(prefix: string, err?: any) {
         console.log(ansi.black.bgRed(prefix))
         if (err) console.error(err)
-    }
-
-    /**
-     * Generates UUID v4 using native crypto API with fallback for environments
-     * that don't support it (e.g., React Native, Hermes).
-     */
-    static generateUuid(): string {
-        const { RandomGenerator } = require("../util/RandomGenerator")
-        return RandomGenerator.uuidv4()
     }
 }

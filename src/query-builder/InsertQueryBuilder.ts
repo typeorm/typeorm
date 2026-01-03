@@ -11,7 +11,7 @@ import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { BroadcasterResult } from "../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectUtils } from "../util/ObjectUtils"
-import { PlatformTools } from "../platform/PlatformTools"
+import { RandomGenerator } from "../util/RandomGenerator"
 import { InsertOrUpdateOptions } from "./InsertOrUpdateOptions"
 import { QueryBuilder } from "./QueryBuilder"
 import { QueryDeepPartialEntity } from "./QueryPartialEntity"
@@ -1407,7 +1407,7 @@ export class InsertQueryBuilder<
             !this.connection.driver.isUUIDGenerationSupported() &&
             value === undefined
         ) {
-            value = PlatformTools.generateUuid()
+            value = RandomGenerator.uuidv4()
             expression += this.createParameter(value)
 
             if (!(valueSetIndex in this.expressionMap.locallyGenerated)) {

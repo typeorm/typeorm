@@ -7,41 +7,17 @@ export class RandomGenerator {
      * @returns A version 4 UUID string
      */
     static uuidv4(): string {
-        // Try Node.js native crypto
-        if (typeof process !== "undefined" && process.versions?.node) {
-            try {
-                // Use dynamic import to avoid bundler issues
-                const crypto = require("crypto")
-                if (crypto.randomUUID) {
-                    return crypto.randomUUID()
-                }
-            } catch (e) {
-                // Fall through to custom implementation
-            }
-        }
-
-        // Try browser/modern environment crypto
-        if (
-            typeof globalThis !== "undefined" &&
-            globalThis.crypto &&
-            typeof globalThis.crypto.randomUUID === "function"
-        ) {
-            try {
-                return globalThis.crypto.randomUUID()
-            } catch (e) {
-                // Fall through to custom implementation
-            }
+        // Try native crypto.randomUUID() (available in Node.js 19+ and modern browsers)
+        const uuid = globalThis.crypto?.randomUUID?.()
+        if (uuid) {
+            return uuid
         }
 
         // Custom implementation using crypto.getRandomValues()
         // Based on RFC 4122 version 4 UUID specification
         const randomBytes = new Uint8Array(16)
 
-        if (
-            typeof globalThis !== "undefined" &&
-            globalThis.crypto &&
-            typeof globalThis.crypto.getRandomValues === "function"
-        ) {
+        if (globalThis.crypto?.getRandomValues) {
             globalThis.crypto.getRandomValues(randomBytes)
         } else {
             // Fallback for React Native/Hermes and environments without crypto support

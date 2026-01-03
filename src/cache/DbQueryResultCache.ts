@@ -3,9 +3,9 @@ import { DataSource } from "../data-source/DataSource"
 import { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
 import { QueryRunner } from "../query-runner/QueryRunner"
 import { Table } from "../schema-builder/table/Table"
+import { RandomGenerator } from "../util/RandomGenerator"
 import { QueryResultCache } from "./QueryResultCache"
 import { QueryResultCacheOptions } from "./QueryResultCacheOptions"
-import { PlatformTools } from "../platform/PlatformTools"
 
 /**
  * Caches query result into current database, into separate table called "query-result-cache".
@@ -268,7 +268,7 @@ export class DbQueryResultCache implements QueryResultCache {
                 this.connection.driver.options.type === "spanner" &&
                 !insertedValues.id
             ) {
-                insertedValues.id = PlatformTools.generateUuid()
+                insertedValues.id = RandomGenerator.uuidv4()
             }
 
             // otherwise insert
