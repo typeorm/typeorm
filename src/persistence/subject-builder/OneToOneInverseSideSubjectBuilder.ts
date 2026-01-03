@@ -33,7 +33,15 @@ export class OneToOneInverseSideSubjectBuilder {
             subject.metadata.oneToOneRelations.forEach((relation) => {
                 // we don't need owning relations, this operation is only for inverse side of one-to-one relations
                 // skip relations for which persistence is disabled
-                if (relation.isOwning || relation.persistenceEnabled === false)
+                // don't skip if we need to remove orphaned related entities
+                if (
+                    (relation.isOwning &&
+                        (!relation.orphanedRowAction ||
+                            !["delete", "soft-delete"].includes(
+                                relation.orphanedRowAction,
+                            ))) ||
+                    relation.persistenceEnabled === false
+                )
                     return
 
                 this.buildForSubjectRelation(subject, relation)
@@ -168,6 +176,23 @@ export class OneToOneInverseSideSubjectBuilder {
                     identifier: relationIdMap,
                 })
                 this.subjects.push(relatedEntitySubject)
+            } else if (
+                relation.orphanedRowAction &&
+                ["delete", "soft-delete"].includes(relation.orphanedRowAction)
+            ) {
+                const removedRelatedEntitySubject = new Subject({
+                    metadata: relation.inverseEntityMetadata,
+                    parentSubject: subject,
+                    identifier: relatedEntityDatabaseRelationId,
+                })
+
+                if (relation.orphanedRowAction === "delete") {
+                    removedRelatedEntitySubject.mustBeRemoved = true
+                } else if (relation.orphanedRowAction === "soft-delete") {
+                    removedRelatedEntitySubject.canBeSoftRemoved = true
+                }
+
+                this.subjects.push(removedRelatedEntitySubject)
             }
 
             relatedEntitySubject.changeMaps.push({
