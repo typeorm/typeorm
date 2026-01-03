@@ -23,14 +23,14 @@ export class Category {
     @OneToOne(() => Post, (post) => post.oneCategory)
     onePost: Promise<Post>
 
-    @ManyToMany((type) => Post, (post) => post.twoSideCategories)
+    @ManyToMany(() => Post, (post) => post.twoSideCategories)
     twoSidePosts: Promise<Post[]>
 
     @OneToMany(() => Post, (post) => post.twoSideCategory)
     twoSidePosts2: Promise<Post[]>
 
     // ManyToMany with named properties
-    @ManyToMany((type) => Post, (post) => post.categoriesNamedAll)
+    @ManyToMany(() => Post, (post) => post.categoriesNamedAll)
     postsNamedAll: Promise<Post[]>
 
     // OneToMany with named properties

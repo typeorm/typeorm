@@ -8,6 +8,7 @@ import { OneToOne } from "../../../../../src/decorator/relations/OneToOne"
 import { JoinColumn } from "../../../../../src/decorator/relations/JoinColumn"
 import { User } from "./User"
 import { Category } from "./Category"
+import { CategoryWithCompositePK } from "./CategoryWithCompositePK"
 import { Tag } from "./Tag"
 import { Image } from "./Image"
 
@@ -26,9 +27,13 @@ export class Post {
     @JoinColumn()
     author: User
 
-    @ManyToMany((type) => Category, (category) => category.posts)
+    @ManyToMany(() => Category, (category) => category.posts)
     @JoinTable()
     categories: Category[]
+
+    @ManyToMany(() => CategoryWithCompositePK, (category) => category.posts)
+    @JoinTable()
+    compositePKCategories: CategoryWithCompositePK[]
 
     subcategories: Category[]
 

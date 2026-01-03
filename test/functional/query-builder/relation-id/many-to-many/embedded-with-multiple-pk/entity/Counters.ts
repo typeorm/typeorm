@@ -18,7 +18,7 @@ export class Counters {
     @Column()
     favorites: number
 
-    @ManyToMany((type) => Category, (category) => category.posts)
+    @ManyToMany(() => Category, (category) => category.posts)
     @JoinTable({ name: "counter_categories" })
     categories: Category[]
 
