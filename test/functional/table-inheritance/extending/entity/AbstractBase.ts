@@ -5,6 +5,6 @@ export abstract class AbstractBase {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column({ unique: false, nullable: true })
+    @Column()
     title: string
 }

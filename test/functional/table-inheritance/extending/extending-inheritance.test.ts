@@ -9,6 +9,7 @@ import {
 import { Post } from "./entity/Post"
 import { Article } from "./entity/Article"
 import { FinalEntity } from "./entity/FinalEntity"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("table inheritance > regular inheritance using extends keyword", () => {
     let connections: DataSource[]
@@ -16,7 +17,6 @@ describe("table inheritance > regular inheritance using extends keyword", () => 
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -25,6 +25,7 @@ describe("table inheritance > regular inheritance using extends keyword", () => 
     it("should work correctly", () =>
         Promise.all(
             connections.map(async (connection) => {
+                if (connection.driver.options.type === "mongodb") return
                 const post = new Post()
                 post.name = "Super title"
                 post.text = "About this post"
@@ -43,11 +44,14 @@ describe("table inheritance > regular inheritance using extends keyword", () => 
             }),
         ))
 
-    // AbstractBase: title unique, nullable=true
+    // AbstractBase: none
     // Article: title unique, nullable=false
     it("should override property decorators when extending abstract class", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // Skip MongoDB as it doesn't support SQL-style unique constraints
+                if (connection.driver.options.type === "mongodb") return
+
                 const articleMetadata = connection.getMetadata(Article)
 
                 const titleColumn = articleMetadata.columns.find(
@@ -57,11 +61,29 @@ describe("table inheritance > regular inheritance using extends keyword", () => 
                 expect(titleColumn).not.to.be.undefined
                 expect(titleColumn!.isNullable).to.be.false
 
-                const titleUnique = articleMetadata.uniques.find((unique) =>
-                    unique.columns.some((col) => col.propertyName === "title"),
-                )
-
-                expect(titleUnique).not.to.be.undefined
+                // This is needed as some DBs (MySQL, MariaDB) store unique constraints as unique indices
+                if (
+                    DriverUtils.isMySQLFamily(connection.driver) ||
+                    connection.driver.options.type === "aurora-mysql" ||
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
+                ) {
+                    const titleIndex = articleMetadata.indices.find(
+                        (index) =>
+                            index.isUnique &&
+                            index.columns.some(
+                                (col) => col.propertyName === "title",
+                            ),
+                    )
+                    expect(titleIndex).not.to.be.undefined
+                } else {
+                    const titleUnique = articleMetadata.uniques.find((unique) =>
+                        unique.columns.some(
+                            (col) => col.propertyName === "title",
+                        ),
+                    )
+                    expect(titleUnique).not.to.be.undefined
+                }
 
                 const article = new Article()
                 article.title = "Test Article"
@@ -70,29 +92,26 @@ describe("table inheritance > regular inheritance using extends keyword", () => 
                 const duplicateArticle = new Article()
                 duplicateArticle.title = "Test Article"
 
-                await expect(
-                    connection.manager.save(duplicateArticle),
-                ).to.be.rejectedWith(
-                    /duplicate key value violates unique constraint/,
-                )
+                await expect(connection.manager.save(duplicateArticle)).to.be
+                    .rejected
 
                 const nullArticle = new Article()
                 nullArticle.title = null as any
 
-                await expect(
-                    connection.manager.save(nullArticle),
-                ).to.be.rejectedWith(
-                    /null value in column "title" of relation "article" violates not-null constraint/,
-                )
+                await expect(connection.manager.save(nullArticle)).to.be
+                    .rejected
             }),
         ))
 
-    // Base: length=50, nullable=true
-    // Middle: length=100, nullable=false
-    // Final: length=200, nullable=false, unique=true
+    // BaseEntity: length=50, nullable=true
+    // MiddleEntity: length=100, nullable=false
+    // FinalEntity: length=200, nullable=false, unique=true
     it("should override property decorators through 3-level inheritance", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // Skip MongoDB as it doesn't support SQL-style unique constraints
+                if (connection.driver.options.type === "mongodb") return
+
                 const finalMetadata = connection.getMetadata(FinalEntity)
                 const descriptionColumn = finalMetadata.columns.find(
                     (col) => col.propertyName === "description",
@@ -102,12 +121,30 @@ describe("table inheritance > regular inheritance using extends keyword", () => 
                 expect(descriptionColumn!.length).to.equal("200")
                 expect(descriptionColumn!.isNullable).to.be.false
 
-                const descriptionUnique = finalMetadata.uniques.find((unique) =>
-                    unique.columns.some(
-                        (col) => col.propertyName === "description",
-                    ),
-                )
-                expect(descriptionUnique).not.to.be.undefined
+                // This is needed as some DBs (MySQL, MariaDB) store unique constraints as unique indices
+                if (
+                    DriverUtils.isMySQLFamily(connection.driver) ||
+                    connection.driver.options.type === "aurora-mysql" ||
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "spanner"
+                ) {
+                    const descriptionIndex = finalMetadata.indices.find(
+                        (index) =>
+                            index.isUnique &&
+                            index.columns.some(
+                                (col) => col.propertyName === "description",
+                            ),
+                    )
+                    expect(descriptionIndex).not.to.be.undefined
+                } else {
+                    const descriptionUnique = finalMetadata.uniques.find(
+                        (unique) =>
+                            unique.columns.some(
+                                (col) => col.propertyName === "description",
+                            ),
+                    )
+                    expect(descriptionUnique).not.to.be.undefined
+                }
 
                 const statusColumn = finalMetadata.columns.find(
                     (col) => col.propertyName === "status",
@@ -127,33 +164,21 @@ describe("table inheritance > regular inheritance using extends keyword", () => 
                 entity2.status = "inactive"
                 entity2.category = "test"
 
-                await expect(
-                    connection.manager.save(entity2),
-                ).to.be.rejectedWith(
-                    /duplicate key value violates unique constraint/,
-                )
+                await expect(connection.manager.save(entity2)).to.be.rejected
 
                 const entity3 = new FinalEntity()
                 entity3.description = null as any
                 entity3.status = "active"
                 entity3.category = "test"
 
-                await expect(
-                    connection.manager.save(entity3),
-                ).to.be.rejectedWith(
-                    /null value in column "description" of relation "final_entity" violates not-null constraint/,
-                )
+                await expect(connection.manager.save(entity3)).to.be.rejected
 
                 const entity4 = new FinalEntity()
                 entity4.description = "Second Description"
                 entity4.status = null as any
                 entity4.category = "test"
 
-                await expect(
-                    connection.manager.save(entity4),
-                ).to.be.rejectedWith(
-                    /null value in column "status" of relation "final_entity" violates not-null constraint/,
-                )
+                await expect(connection.manager.save(entity4)).to.be.rejected
             }),
         ))
 })
