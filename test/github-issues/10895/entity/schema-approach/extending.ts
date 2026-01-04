@@ -1,4 +1,3 @@
-import { Extendable } from './extendable';
+import { Extendable } from "./extendable"
 
-export class Extending extends Extendable {
-}
+export class Extending extends Extendable {}

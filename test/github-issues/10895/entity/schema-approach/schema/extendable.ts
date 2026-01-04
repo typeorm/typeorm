@@ -1,5 +1,5 @@
-import {EntitySchema} from '../../../../../../src';
-import {Extendable} from '../extendable';
+import { EntitySchema } from "../../../../../../src"
+import { Extendable } from "../extendable"
 
 export const ExtendableSchema = new EntitySchema<Extendable>({
     target: Extendable,
@@ -11,7 +11,7 @@ export const ExtendableSchema = new EntitySchema<Extendable>({
             generated: "increment",
         },
         value: {
-            type: Number
-        }
-    }
+            type: Number,
+        },
+    },
 })

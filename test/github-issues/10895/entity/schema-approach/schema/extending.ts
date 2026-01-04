@@ -1,6 +1,6 @@
-import { EntitySchema } from '../../../../../../src';
-import { Extending } from '../extending';
-import {ExtendableSchema} from './extendable';
+import { EntitySchema } from "../../../../../../src"
+import { Extending } from "../extending"
+import { ExtendableSchema } from "./extendable"
 
 export const ExtendingSchema = new EntitySchema<Extending>({
     target: Extending,
@@ -8,10 +8,10 @@ export const ExtendingSchema = new EntitySchema<Extending>({
     columns: {
         ...ExtendableSchema.options.columns,
         value: {
-            type: 'decimal',
+            type: "decimal",
             precision: 4,
             scale: 2,
-            unique: true
-        }
+            unique: true,
+        },
     },
 })

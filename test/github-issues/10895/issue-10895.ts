@@ -4,11 +4,13 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { Extending as ExtendingDecoratorApproach } from "./entity/decorator-approach"
-import { Extending as ExtendingSchemaApproach, ExtendingSchema } from './entity/schema-approach';
+import {
+    Extending as ExtendingSchemaApproach,
+    ExtendingSchema,
+} from "./entity/schema-approach"
 import { expect } from "chai"
 
 describe("github issues > #10895 Property metadata override does not work when extending an entity class", () => {
-
     describe("decorator approach", () => {
         let dataSources: DataSource[]
 
@@ -27,7 +29,9 @@ describe("github issues > #10895 Property metadata override does not work when e
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     const queryRunner = dataSource.createQueryRunner()
-                    const table = await queryRunner.getTable(ExtendingDecoratorApproach.name.toLowerCase())
+                    const table = await queryRunner.getTable(
+                        ExtendingDecoratorApproach.name.toLowerCase(),
+                    )
 
                     const valueColumn = table!.columns.find(
                         (column) => column.name === "value",
@@ -37,8 +41,8 @@ describe("github issues > #10895 Property metadata override does not work when e
                         dataSource.options.type === "postgres"
                             ? "numeric"
                             : dataSource.options.type === "oracle"
-                                ? "number"
-                                : "decimal"
+                              ? "number"
+                              : "decimal"
 
                     expect(valueColumn!.type).to.eq(expectedType)
                     expect(valueColumn!.scale).to.eq(2)
@@ -52,7 +56,9 @@ describe("github issues > #10895 Property metadata override does not work when e
         it("should use overridden column metadata while creating and getting entity", async () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const repository = dataSource.getRepository(ExtendingDecoratorApproach)
+                    const repository = dataSource.getRepository(
+                        ExtendingDecoratorApproach,
+                    )
 
                     const expectedValue = 1.5
                     const entity = repository.create({ value: expectedValue })
@@ -90,7 +96,9 @@ describe("github issues > #10895 Property metadata override does not work when e
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     const queryRunner = dataSource.createQueryRunner()
-                    const table = await queryRunner.getTable(ExtendingSchemaApproach.name.toLowerCase())
+                    const table = await queryRunner.getTable(
+                        ExtendingSchemaApproach.name.toLowerCase(),
+                    )
 
                     const valueColumn = table!.columns.find(
                         (column) => column.name === "value",
@@ -100,8 +108,8 @@ describe("github issues > #10895 Property metadata override does not work when e
                         dataSource.options.type === "postgres"
                             ? "numeric"
                             : dataSource.options.type === "oracle"
-                                ? "number"
-                                : "decimal"
+                              ? "number"
+                              : "decimal"
 
                     expect(valueColumn!.type).to.eq(expectedType)
                     expect(valueColumn!.scale).to.eq(2)
@@ -115,7 +123,9 @@ describe("github issues > #10895 Property metadata override does not work when e
         it("should use overridden column metadata while creating and getting entity", async () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const repository = dataSource.getRepository(ExtendingSchemaApproach)
+                    const repository = dataSource.getRepository(
+                        ExtendingSchemaApproach,
+                    )
 
                     const expectedValue = 1.5
                     const entity = repository.create({ value: expectedValue })
