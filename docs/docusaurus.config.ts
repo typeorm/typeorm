@@ -1,6 +1,7 @@
-import { themes as prismThemes } from "prism-react-renderer"
-import type { Config } from "@docusaurus/types"
 import type * as Preset from "@docusaurus/preset-classic"
+import type { Config } from "@docusaurus/types"
+import { PluginOptions as LLMsTXTPluginOptions } from "@signalwire/docusaurus-plugin-llms-txt"
+import { themes as prismThemes } from "prism-react-renderer"
 import { redirects } from "./redirects"
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
@@ -22,7 +23,6 @@ const config: Config = {
     projectName: "typeorm", // Usually your repo name.
 
     onBrokenLinks: "throw",
-    onBrokenMarkdownLinks: "warn",
 
     // Even if you don't use internationalization, you can use this field to set
     // useful metadata like html lang. For example, if your site is Chinese, you
@@ -97,6 +97,21 @@ const config: Config = {
                     sidebarId: "tutorialSidebar",
                     position: "left",
                     label: "Docs",
+                },
+                {
+                    type: "dropdown",
+                    label: "Version",
+                    position: "right",
+                    items: [
+                        {
+                            label: "Stable (v0.3)",
+                            href: "https://typeorm.io",
+                        },
+                        {
+                            label: "Dev (master)",
+                            href: "https://dev.typeorm.io",
+                        },
+                    ],
                 },
                 {
                     href: "https://github.com/typeorm/typeorm",
@@ -197,7 +212,33 @@ const config: Config = {
                 redirects,
             },
         ],
-        "@signalwire/docusaurus-plugin-llms-txt",
+        [
+            "@signalwire/docusaurus-plugin-llms-txt",
+            {
+                content: {
+                    // https://www.npmjs.com/package/@signalwire/docusaurus-plugin-llms-txt#content-selectors
+                    contentSelectors: [
+                        ".theme-doc-markdown", // Docusaurus main content area
+                        "main .container .col", // Bootstrap-style layout
+                        "main .theme-doc-wrapper", // Docusaurus wrapper
+                        "article", // Semantic article element
+                        "main .container", // Broader container
+                        "main", // Fallback to main element
+                        ".code-example",
+                    ],
+                    enableLlmsFullTxt: true,
+                    includeGeneratedIndex: false,
+                    includePages: true,
+                    includeVersionedDocs: false,
+                    relativePaths: false,
+                },
+                depth: 3,
+                onRouteError: "throw",
+                siteTitle: "TypeORM",
+                siteDescription:
+                    "TypeORM is an ORM that can run in NodeJS, Browser, Cordova, Ionic, React Native, NativeScript, Expo, and Electron platforms and can be used with TypeScript and JavaScript.",
+            } satisfies LLMsTXTPluginOptions,
+        ],
     ],
 }
 

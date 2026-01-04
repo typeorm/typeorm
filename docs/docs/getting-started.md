@@ -34,7 +34,7 @@ TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate
 -   Cascades.
 -   Indices.
 -   Transactions.
--   Migrations and automatic migrations generation.
+-   [Migrations](/docs/migrations/why) with automatic generation.
 -   Connection pooling.
 -   Replication.
 -   Using multiple database instances.
@@ -1195,7 +1195,7 @@ There are several extensions that simplify working with TypeORM and integrating 
 -   ER Diagram generator - [typeorm-uml](https://github.com/eugene-manuilov/typeorm-uml/)
 -   another ER Diagram generator - [erdia](https://www.npmjs.com/package/erdia/)
 -   Create, drop and seed database - [typeorm-extension](https://github.com/tada5hi/typeorm-extension)
--   Automatically update `data-source.ts` after generating migrations/entities - [typeorm-codebase-sync](https://www.npmjs.com/package/typeorm-codebase-sync)
+-   Automatically update `data-source.ts` after generating [migrations](/docs/migrations/why)/entities - [typeorm-codebase-sync](https://www.npmjs.com/package/typeorm-codebase-sync)
 -   Easy manipulation of `relations` objects - [typeorm-relations](https://npmjs.com/package/typeorm-relations)
 -   Automatically generate `relations` based on a GraphQL query - [typeorm-relations-graphql](https://npmjs.com/package/typeorm-relations-graphql)
 

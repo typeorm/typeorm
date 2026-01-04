@@ -24,10 +24,10 @@ export class Post {
     @ManyToOne(() => User)
     user: User
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     @JoinTable()
     categories: Category[]
 
-    @Column((type) => Counters)
+    @Column(() => Counters)
     counters: Counters
 }

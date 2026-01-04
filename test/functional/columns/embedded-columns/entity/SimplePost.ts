@@ -14,6 +14,6 @@ export class SimplePost {
     @Column()
     text: string
 
-    @Column((type) => SimpleCounters)
+    @Column(() => SimpleCounters)
     counters: SimpleCounters
 }
