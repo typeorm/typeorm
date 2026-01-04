@@ -35,7 +35,7 @@ export class Post {
     // @JoinTable() // uncomment this and you'll get an error because JoinTable is not allowed here (only many-to-many)
     editors: PostAuthor[]
 
-    @ManyToMany((type) => PostAuthor, (author) => author.manyPosts)
+    @ManyToMany(() => PostAuthor, (author) => author.manyPosts)
     @JoinTable() // comment this and you'll get an error because JoinTable must be at least on one side of the many-to-many relationship
     manyAuthors: PostAuthor[]
 }
