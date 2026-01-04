@@ -12,6 +12,9 @@ export function ObjectIdColumn(options?: ColumnOptions): PropertyDecorator {
         // if column options are not given then create a new empty options
         if (!options) options = {} as ColumnOptions
         options.primary = true
+
+        options.nullable = false
+
         if (!options.name) options.name = "_id"
 
         // create and register a new column metadata

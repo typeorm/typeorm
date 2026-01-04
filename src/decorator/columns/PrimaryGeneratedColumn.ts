@@ -110,6 +110,8 @@ export function PrimaryGeneratedColumn(
         // explicitly set a primary and generated to column options
         options.primary = true
 
+        options.nullable = false
+
         // register column metadata args
         getMetadataArgsStorage().columns.push({
             target: object.constructor,
