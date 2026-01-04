@@ -28,12 +28,6 @@ Different RDBMS-es have their own specific options.
     Example: `subscribers: [PostSubscriber, AppSubscriber, "subscriber/*.js", "modules/**/subscriber/*.js"]`.
     Learn more about [Subscribers](../advanced-topics/4-listeners-and-subscribers.md).
 
--   `migrations` - Migrations to be loaded and used for this data source.
-    It accepts both migration classes and directories from which to load.
-    Directories support glob patterns.
-    Example: `migrations: [FirstMigration, SecondMigration, "migration/*.js", "modules/**/migration/*.js"]`.
-    Learn more about [Migrations](../advanced-topics/1-migrations.md).
-
 -   `logging` - Indicates if logging is enabled or not.
     If set to `true` then query and error logging will be enabled.
     You can also specify different types of logging to be enabled, for example `["query", "error", "schema"]`.
@@ -67,13 +61,13 @@ Different RDBMS-es have their own specific options.
     Note that for MongoDB database it does not create schema, because MongoDB is schemaless.
     Instead, it syncs just by creating indices.
 
--   `migrationsRun` - Indicates if migrations should be auto run on every application launch.
-    As an alternative, you can use CLI and run migration:run command.
+-   `migrations` - [Migrations](../migrations/01-why.md) to be loaded and used for this data source
 
--   `migrationsTableName` - Name of the table in the database which is going to contain information about executed migrations.
-    By default, this table is called "migrations".
+-   `migrationsRun` - Indicates if [migrations](../migrations/01-why.md) should be auto-run on every application launch.
 
--   `migrationsTransactionMode` - Control transactions for migrations (default: `all`), can be one of `all` | `none` | `each`
+-   `migrationsTableName` - Name of the table in the database which is going to contain information about executed [migrations](../migrations/01-why.md).
+
+-   `migrationsTransactionMode` - Controls transaction mode when running [migrations](../migrations/01-why.md).
 
 -   `metadataTableName` - Name of the table in the database which is going to contain information about table metadata.
     By default, this table is called "typeorm_metadata".
@@ -85,7 +79,7 @@ Different RDBMS-es have their own specific options.
     eg. `.where("user.firstName = :search OR user.lastName = :search")` becomes `WHERE (user.firstName = ? OR user.lastName = ?)` instead of `WHERE user.firstName = ? OR user.lastName = ?`
 
 -   `invalidWhereValuesBehavior` - Controls how null and undefined values are handled in where conditions across all TypeORM operations (find operations, query builders, repository methods).
-    
+
     -   `null` behavior options:
         -   `'ignore'` (default) - skips null properties
         -   `'sql-null'` - transforms null to SQL NULL
