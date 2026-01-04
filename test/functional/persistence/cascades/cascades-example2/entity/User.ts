@@ -8,7 +8,7 @@ export class User {
     @PrimaryGeneratedColumn()
     id: number
 
-    @ManyToOne((type) => Question, {
+    @ManyToOne(() => Question, {
         cascade: ["insert"],
         nullable: true,
     })

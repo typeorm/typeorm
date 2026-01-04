@@ -14,11 +14,11 @@ export class Post {
     @Column()
     title: string
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     @JoinColumn()
     category: Category
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     @JoinColumn({ referencedColumnName: "name" })
     categoryByName: Category
 

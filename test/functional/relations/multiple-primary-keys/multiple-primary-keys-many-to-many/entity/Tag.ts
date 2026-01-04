@@ -20,11 +20,11 @@ export class Tag {
     })
     description: string
 
-    @ManyToMany((type) => Category, (category) => category.tags)
+    @ManyToMany(() => Category, (category) => category.tags)
     @JoinTable()
     categories: Category[]
 
-    @ManyToMany((type) => Category, (category) => category.tagsWithOptions)
+    @ManyToMany(() => Category, (category) => category.tagsWithOptions)
     @JoinTable({
         name: "tag_categories",
         joinColumns: [
@@ -50,7 +50,7 @@ export class Tag {
     })
     categoriesWithOptions: Category[]
 
-    @ManyToMany((type) => Category, (category) => category.tagsWithNonPKColumns)
+    @ManyToMany(() => Category, (category) => category.tagsWithNonPKColumns)
     @JoinTable({
         name: "tag_categories_non_primary",
         joinColumns: [

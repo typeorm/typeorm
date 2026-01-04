@@ -16,7 +16,7 @@ export class Photo {
     @DeleteDateColumn()
     deletedAt: Date
 
-    @ManyToOne((type) => User, (user) => user.manyPhotos)
+    @ManyToOne(() => User, (user) => user.manyPhotos)
     user: User
 
     constructor(name: string) {

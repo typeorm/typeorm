@@ -62,14 +62,16 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
      * Called before migrations are run.
      */
     async beforeMigration(): Promise<void> {
-        await this.query(`PRAGMA foreign_keys = OFF`)
+        const databaseConnection = await this.connect()
+        databaseConnection.pragma("foreign_keys = OFF")
     }
 
     /**
      * Called after migrations are run.
      */
     async afterMigration(): Promise<void> {
-        await this.query(`PRAGMA foreign_keys = ON`)
+        const databaseConnection = await this.connect()
+        databaseConnection.pragma("foreign_keys = ON")
     }
 
     /**
@@ -77,7 +79,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
      */
     async query(
         query: string,
-        parameters?: any[],
+        parameters: any[] = [],
         useStructuredResult = false,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
@@ -92,7 +94,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             query,
             parameters,
         )
-        const queryStartTime = +new Date()
+        const queryStartTime = Date.now()
 
         const stmt = await this.getStmt(query)
 
@@ -100,7 +102,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             const result = new QueryResult()
 
             if (stmt.reader) {
-                const raw = stmt.all.apply(stmt, parameters)
+                const raw = stmt.all(...parameters)
 
                 result.raw = raw
 
@@ -108,7 +110,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
                     result.records = raw
                 }
             } else {
-                const raw = stmt.run.apply(stmt, parameters)
+                const raw = stmt.run(...parameters)
                 result.affected = raw.changes
                 result.raw = raw.lastInsertRowid
             }
@@ -116,7 +118,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
             if (
                 maxQueryExecutionTime &&
@@ -172,10 +174,9 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
     }
     protected async loadPragmaRecords(tablePath: string, pragma: string) {
         const [database, tableName] = this.splitTablePath(tablePath)
-        const res = await this.query(
-            `PRAGMA ${
-                database ? `"${database}".` : ""
-            }${pragma}("${tableName}")`,
+        const databaseConnection = await this.connect()
+        const res = databaseConnection.pragma(
+            `${database ? `"${database}".` : ""}${pragma}("${tableName}")`,
         )
         return res
     }

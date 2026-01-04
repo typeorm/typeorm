@@ -20,10 +20,12 @@ export class PlatformTools {
     static getGlobalVariable(): any {
         if (typeof window !== "undefined") {
             return window
-        } else {
-            // NativeScript uses global, not window
-            return global
         }
+        if (typeof globalThis !== "undefined") {
+            return globalThis
+        }
+        // NativeScript uses global, not window
+        return global
     }
 
     /**
@@ -116,7 +118,7 @@ export class PlatformTools {
     }
 
     /**
-     * Logging functions needed by AdvancedConsoleLogger (but here without chalk)
+     * Logging functions needed by AdvancedConsoleLogger (but here without ANSI colors)
      */
     static logInfo(prefix: string, info: any) {
         console.info(prefix + " ", info);
@@ -161,6 +163,9 @@ interface Window {
 declare var window: Window;
 if (typeof window !== "undefined") {
     window.Buffer = Buffer;
+}
+if (typeof globalThis !== "undefined") {
+    globalThis.Buffer = Buffer;
 }
 // NativeScript uses global, not window
 if (typeof global !== "undefined" && typeof require !== "undefined") {

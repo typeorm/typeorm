@@ -15,6 +15,6 @@ export class Category {
     @Column()
     position: number
 
-    @ManyToMany((type) => Post, (post) => post.categories)
+    @ManyToMany(() => Post, (post) => post.categories)
     posts: Post[]
 }
