@@ -332,6 +332,50 @@ Besides "uuid" there is also "increment", "identity" (Postgres 10+ only) and "ro
 on some database platforms with this type of generation (for example some databases can only have one increment column,
 or some of them require increment to be a primary key).
 
+### Vector columns
+
+Vector columns are supported on MariaDB/MySQL, Microsoft SQL Server, PostgreSQL (via [`pgvector`](https://github.com/pgvector/pgvector) extension) and SAP HANA Cloud, enabling storing and querying vector embeddings for similarity search and machine learning applications.
+
+TypeORM supports both `vector` and `halfvec` column types across databases:
+
+-   `vector` - stores vectors as 4-byte floats (single precision)
+    -   MariaDB/MySQL: native `vector` type
+    -   Microsoft SQL Server: native `vector` type
+    -   PostgreSQL: `vector` type, available via `pgvector` extension
+    -   SAP HANA Cloud: alias for `real_vector` type
+-   `halfvec` - stores vectors as 2-byte floats (half precision) for memory efficiency
+    -   PostgreSQL: `halfvec` type, available via `pgvector` extension
+    -   SAP HANA Cloud: alias for `half_vector` type
+
+You can specify the number of vector dimensions using the `length` option:
+
+```typescript
+@Entity()
+export class Post {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    // Vector without specified dimensions
+    @Column("vector")
+    embedding: number[] | Buffer
+
+    // Vector with 3 dimensions: vector(3)
+    @Column("vector", { length: 3 })
+    embedding_3d: number[] | Buffer
+
+    // Half-precision vector with 4 dimensions: halfvec(4) (works on PostgreSQL and SAP HANA only)
+    @Column("halfvec", { length: 4 })
+    halfvec_embedding: number[] | Buffer
+}
+```
+
+> **Note**:
+>
+> -   **MariaDB/MySQL**: Vectors are supported since MariaDB 11.7 and MySQL 9
+> -   **Microsoft SQL Server**: Vector type support requires SQL Server 2025 (17.x) or newer.
+> -   **PostgreSQL**: Vector columns require the `pgvector` extension to be installed. The extension provides the vector data types and similarity operators.
+> -   **SAP HANA**: Vector columns require SAP HANA Cloud (2024Q1+) and a supported version of `@sap/hana-client`.
+
 ### Spatial columns
 
 Microsoft SQLServer, MySQL/MariaDB, PostgreSQL/CockroachDB and SAP HANA all support spatial columns. TypeORM's support for each varies slightly between databases, particularly as the column names vary between databases.
@@ -409,6 +453,7 @@ List of available options in `ColumnOptions`:
 -   `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
 -   `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[])
 -   `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database. Array of transformers are also supported and will be applied in natural order when writing, and in reverse order when reading. e.g. `[lowercase, encrypt]` will first lowercase the string then encrypt it when writing, and will decrypt then do nothing when reading.
+-   `utc: boolean` - Indicates if date values should be stored and retrieved in UTC timezone instead of local timezone. Only applies to `date` column type. Default value is `false` (uses local timezone for backward compatibility).
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.
 

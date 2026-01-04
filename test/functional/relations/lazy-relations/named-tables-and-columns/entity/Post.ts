@@ -26,11 +26,11 @@ export class Post {
     @Column()
     text: string
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     @JoinTable()
     categories: Promise<Category[]>
 
-    @ManyToMany((type) => Category, (category) => category.twoSidePosts)
+    @ManyToMany(() => Category, (category) => category.twoSidePosts)
     @JoinTable()
     twoSideCategories: Promise<Category[]>
 
@@ -48,7 +48,7 @@ export class Post {
     twoSideCategory: Promise<Category>
 
     // ManyToMany with named properties
-    @ManyToMany((type) => Category, (category) => category.postsNamedAll)
+    @ManyToMany(() => Category, (category) => category.postsNamedAll)
     @JoinTable()
     categoriesNamedAll: Promise<Category[]>
 

@@ -6,7 +6,6 @@ import shell from "gulp-shell";
 import sourcemaps from "gulp-sourcemaps";
 import ts from "gulp-typescript";
 import { Gulpclass, MergedTask, SequenceTask, Task } from "gulpclass";
-import { rimraf } from "rimraf";
 
 @Gulpclass()
 export class Gulpfile {
@@ -20,16 +19,7 @@ export class Gulpfile {
      */
     @Task()
     async clean() {
-        return rimraf(["./build/**"], { glob: true });
-    }
-
-    /**
-     * Runs typescript files compilation.
-     */
-    @Task()
-    compile() {
-        return gulp.src("package.json", { read: false })
-            .pipe(shell(["npm run compile"]));
+        await fs.rm("./build", { recursive: true, force: true });
     }
 
     // -------------------------------------------------------------------------
@@ -64,8 +54,7 @@ export class Gulpfile {
     @MergedTask()
     browserCompile() {
         const tsProject = ts.createProject("tsconfig.json", {
-            module: "es2020",
-            lib: ["es2021", "dom"],
+            lib: ["es2023", "dom"],
             typescript: require("typescript")
         });
         const tsResult = gulp.src([
@@ -85,36 +74,12 @@ export class Gulpfile {
 
     @Task()
     async browserClearPackageDirectory() {
-        return rimraf([
-            "./build/browser/**"
-        ], { glob: true });
+        await fs.rm("./build/browser/", { recursive: true, force: true });
     }
 
     // -------------------------------------------------------------------------
     // Main Packaging and Publishing tasks
     // -------------------------------------------------------------------------
-
-    /**
-     * Publishes a package to npm from ./build/package directory.
-     */
-    @Task()
-    packagePublish() {
-        return gulp.src("package.json", { read: false })
-            .pipe(shell([
-                "cd ./build/package && npm publish"
-            ]));
-    }
-
-    /**
-     * Packs a .tgz from ./build/package directory.
-     */
-    @Task()
-    packagePack() {
-        return gulp.src("package.json", { read: false })
-            .pipe(shell([
-                "cd ./build/package && npm pack && mv -f typeorm-*.tgz .."
-            ]));
-    }
 
     /**
      * Publishes a package to npm from ./build/package directory with @next tag.
@@ -123,7 +88,7 @@ export class Gulpfile {
     packagePublishNext() {
         return gulp.src("package.json", { read: false })
             .pipe(shell([
-                "cd ./build/package && npm publish --tag next"
+                "cd ./build/package && pnpm publish --tag next"
             ]));
     }
 
@@ -192,9 +157,7 @@ export class Gulpfile {
      */
     @Task()
     async packageClearPackageDirectory() {
-        return rimraf([
-            "build/package/src/**"
-        ], { glob: true });
+        await fs.rm("./build/package/src/", { recursive: true, force: true });
     }
 
     /**
@@ -227,6 +190,16 @@ export class Gulpfile {
     }
 
     /**
+     * Move reference to package.json one level up
+     */
+    @Task()
+    movePackageJsonReferenceLevelUp() {
+        return gulp.src("./build/package/commands/InitCommand.js")
+            .pipe(replace(/\.\.\/package.json/g, "package.json"))
+            .pipe(gulp.dest("./build/package/commands"));
+    }
+
+    /**
      * Creates a package that can be published to npm.
      */
     @SequenceTask()
@@ -243,25 +216,10 @@ export class Gulpfile {
                 "packageReplaceReferences",
                 "packagePreparePackageFile",
                 "packageCopyReadme",
-                "packageCopyShims"
+                "packageCopyShims",
+                "movePackageJsonReferenceLevelUp"
             ],
         ];
-    }
-
-    /**
-     * Creates a package .tgz
-     */
-    @SequenceTask()
-    pack() {
-        return ["package", "packagePack"];
-    }
-
-    /**
-     * Creates a package and publishes it to npm.
-     */
-    @SequenceTask()
-    publish() {
-        return ["package", "packagePublish"];
     }
 
     /**
@@ -271,5 +229,4 @@ export class Gulpfile {
     publishNext() {
         return ["package", "packagePublishNext"];
     }
-
 }

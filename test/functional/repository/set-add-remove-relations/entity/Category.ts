@@ -16,6 +16,6 @@ export class Category {
     @ManyToOne(() => Post, (post) => post.categories)
     post: Post
 
-    @ManyToMany((type) => Post, (post) => post.manyCategories)
+    @ManyToMany(() => Post, (post) => post.manyCategories)
     manyPosts: Post[]
 }

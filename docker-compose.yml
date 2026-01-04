@@ -12,7 +12,7 @@ services:
       MYSQL_DATABASE: "test"
 
   mysql-9:
-    image: "mysql:9.4.0"
+    image: "mysql:9.5.0"
     container_name: "typeorm-mysql-9"
     ports:
       - "3306:3306"
@@ -24,7 +24,7 @@ services:
 
   # mariadb
   mariadb-10:
-    image: "mariadb:10.6.22-jammy"
+    image: "mariadb:10.6.24-jammy"
     container_name: "typeorm-mariadb-10"
     ports:
       - "3307:3306"
@@ -35,7 +35,7 @@ services:
       MYSQL_DATABASE: "test"
 
   mariadb-12:
-    image: "mariadb:12.0.1-rc"
+    image: "mariadb:12.1.2"
     container_name: "typeorm-mariadb-12"
     ports:
       - "3307:3306"
@@ -49,7 +49,7 @@ services:
   postgres-14:
     # postgis is postgres + PostGIS (only). If you need additional extensions,
     # it's probably time to create a purpose-built image.
-    image: "postgis/postgis:14-3.5"
+    image: "ghcr.io/naorpeled/typeorm-postgres:pg14-postgis3-pgvectorv0.8.0"
     container_name: "typeorm-postgres-14"
     ports:
       - "5432:5432"
@@ -62,7 +62,7 @@ services:
   postgres-17:
     # postgis is postgres + PostGIS (only). If you need additional extensions,
     # it's probably time to create a purpose-built image.
-    image: "postgis/postgis:17-3.5"
+    image: "ghcr.io/naorpeled/typeorm-postgres:pg17-postgis3-pgvectorv0.8.0"
     container_name: "typeorm-postgres-17"
     ports:
       - "5432:5432"
@@ -73,13 +73,14 @@ services:
 
   # mssql
   mssql:
-    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    image: "mcr.microsoft.com/mssql/server:2025-latest"
     container_name: "typeorm-mssql"
     ports:
       - "1433:1433"
     environment:
       SA_PASSWORD: "Admin12345"
       ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
 
   # cockroachdb
   cockroachdb:
@@ -142,7 +143,7 @@ services:
 
   # mongodb
   mongodb:
-    image: "mongo:5.0.31"
+    image: "mongo:8"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"

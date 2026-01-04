@@ -19,11 +19,11 @@ export class Post {
     @Column()
     text: string
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     @JoinTable()
     categories: Promise<Category[]>
 
-    @ManyToMany((type) => Category, (category) => category.twoSidePosts)
+    @ManyToMany(() => Category, (category) => category.twoSidePosts)
     @JoinTable()
     twoSideCategories: Promise<Category[]>
 

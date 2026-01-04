@@ -1,3 +1,62 @@
+## [0.3.28](https://github.com/typeorm/typeorm/compare/0.3.27...0.3.28) (2025-12-02)
+
+
+### Bug Fixes
+
+* add multiSubnetFailover option for mssql ([#10804](https://github.com/typeorm/typeorm/issues/10804)) ([83e3a8a](https://github.com/typeorm/typeorm/commit/83e3a8a3db581a50495fa2d97c8fcd5d603cfd3c))
+* circular import in SapDriver.ts ([#11750](https://github.com/typeorm/typeorm/issues/11750)) ([bed7913](https://github.com/typeorm/typeorm/commit/bed79136230d4ab26cce8cf79071134c75527857))
+* **cli:** init command reading package.json from two folders up ([#11789](https://github.com/typeorm/typeorm/issues/11789)) ([dd55218](https://github.com/typeorm/typeorm/commit/dd55218648eb449937e22e1e7c88182db0048f1d))
+* **deps:** upgrade glob to fix CVE-2025-64756 ([#11784](https://github.com/typeorm/typeorm/issues/11784)) ([dc74f53](https://github.com/typeorm/typeorm/commit/dc74f5374ef5ec83d53045e4bca99cb9ff7d49d4))
+* **mongodb:** add missing `findBy` method to MongoEntityManager ([#11814](https://github.com/typeorm/typeorm/issues/11814)) ([38715bb](https://github.com/typeorm/typeorm/commit/38715bbd4169cae2910aac035cd2b05bddbaec5c))
+* **redis:** version detection logic ([#11815](https://github.com/typeorm/typeorm/issues/11815)) ([6f486e5](https://github.com/typeorm/typeorm/commit/6f486e5a67c007287949be119f233fb2b4fb7a59))
+* typesense doc sync ([#11807](https://github.com/typeorm/typeorm/issues/11807)) ([d0b5454](https://github.com/typeorm/typeorm/commit/d0b54544e9e43a5330c0485d41551128224fe4d3))
+
+
+### Features
+
+* add support for `jsonpath` column type in PostgreSQL ([#11684](https://github.com/typeorm/typeorm/issues/11684)) ([4f05718](https://github.com/typeorm/typeorm/commit/4f05718237a6ef1a3bc623e803536db23f1f327b))
+* **cli/init:** pick dependencies versions from our own package.json ([#11705](https://github.com/typeorm/typeorm/issues/11705)) ([b930909](https://github.com/typeorm/typeorm/commit/b9309098bc00de047a96cba642ea1ed9e730b1fa))
+* entity schema support trees ([#11606](https://github.com/typeorm/typeorm/issues/11606)) ([925dee0](https://github.com/typeorm/typeorm/commit/925dee002b92f1210456dce16c18c6b436e912f3))
+* export QueryPartialEntity and QueryDeepPartialEntity types ([#11748](https://github.com/typeorm/typeorm/issues/11748)) ([ade198c](https://github.com/typeorm/typeorm/commit/ade198c77cda65e86f057f97261073f5ab2b1ed6))
+* init version in postgres driver only if not set ([#11373](https://github.com/typeorm/typeorm/issues/11373)) ([cb1284c](https://github.com/typeorm/typeorm/commit/cb1284c8c0950dcb792e95b889efe1dfafc05aea))
+* manage MongoDB SOCKS5 proxy settings ([#11731](https://github.com/typeorm/typeorm/issues/11731)) ([d7867eb](https://github.com/typeorm/typeorm/commit/d7867ebff173e6cae45e6ce82c9f8890811c4eba))
+* **mssql:** support 'vector' type for MS SQL Server ([#11732](https://github.com/typeorm/typeorm/issues/11732)) ([2681051](https://github.com/typeorm/typeorm/commit/2681051f78c5c284b340e7978f8f337e86c7e915))
+* **mysql:** add pool size options for each connection ([#11810](https://github.com/typeorm/typeorm/issues/11810)) ([67f793f](https://github.com/typeorm/typeorm/commit/67f793feaa976da717175daf152f738793b94ed2))
+* **mysql:** add support for vector columns on MariaDB and MySQL ([#11670](https://github.com/typeorm/typeorm/issues/11670)) ([cfb3d6c](https://github.com/typeorm/typeorm/commit/cfb3d6c015ad648a7ffc08a7a11ce580d108ac69))
+
+
+
+## [0.3.27](https://github.com/typeorm/typeorm/compare/0.3.26...0.3.27) (2025-09-19)
+
+
+### Bug Fixes
+
+* Add package.json exports for react-native ([#11623](https://github.com/typeorm/typeorm/issues/11623)) ([6965fa2](https://github.com/typeorm/typeorm/commit/6965fa20827dcbf95125a9c9a06e7fc3ed36d689))
+* JSON parsing for mysql2 client library ([#8319](https://github.com/typeorm/typeorm/issues/8319)) ([#11659](https://github.com/typeorm/typeorm/issues/11659)) ([974ead2](https://github.com/typeorm/typeorm/commit/974ead202d8eef099257c0ec2a90f9aacfd92b16))
+* **query-builder:** handle empty result set when offset exceeds total ([#11634](https://github.com/typeorm/typeorm/issues/11634)) ([1f90467](https://github.com/typeorm/typeorm/commit/1f904675f4a26ac35049664986a939f4e5d15468))
+* update tests to reflect migration template changes ([#11653](https://github.com/typeorm/typeorm/issues/11653)) ([3fac86b](https://github.com/typeorm/typeorm/commit/3fac86b60e412ad9f1b6e5eb72f5218e47fac93f))
+
+
+### Features
+
+* add new undefined and null behavior flags ([#11332](https://github.com/typeorm/typeorm/issues/11332)) ([96ea431](https://github.com/typeorm/typeorm/commit/96ea431eb758694e9f9cb979a810f37885289358))
+* allow `VirtualColumn`s to be initially non-selectable ([#11586](https://github.com/typeorm/typeorm/issues/11586)) ([22b26d1](https://github.com/typeorm/typeorm/commit/22b26d11535752003eff1d89ee764becb3f0f221))
+* **migration:** improve JSDoc types in generated migration templates ([#11490](https://github.com/typeorm/typeorm/issues/11490)) ([fa3cd43](https://github.com/typeorm/typeorm/commit/fa3cd436a28e8a9dacb9be3da7f2896478d0bccd))
+* **mysql:** add support for MySQL 9 / MariaDB 12 ([#11575](https://github.com/typeorm/typeorm/issues/11575)) ([8b76e1a](https://github.com/typeorm/typeorm/commit/8b76e1af74245c5a1bf1abf5a5d16f57ac732732))
+* **postgres:** support vector/halfvec data types ([#11437](https://github.com/typeorm/typeorm/issues/11437)) ([a49f612](https://github.com/typeorm/typeorm/commit/a49f6122891db715885c2faf4974d3def2f541ea))
+
+
+### Performance Improvements
+
+* Cache package.json location between getNearestPackageJson invocations ([#11580](https://github.com/typeorm/typeorm/issues/11580)) ([b6ffd46](https://github.com/typeorm/typeorm/commit/b6ffd462dd0296edf693ccf68dc7879582437a63)), closes [#4136](https://github.com/typeorm/typeorm/issues/4136)
+
+
+### Reverts
+
+* Revert "fix: do not create junction table metadata when it already exists (#11114)" (#11660) ([34d8714](https://github.com/typeorm/typeorm/commit/34d87149ec1b2a727f0ebcbc878d37a12c4a97bb)), closes [#11114](https://github.com/typeorm/typeorm/issues/11114) [#11660](https://github.com/typeorm/typeorm/issues/11660)
+
+
+
 ## [0.3.26](https://github.com/typeorm/typeorm/compare/0.3.25...0.3.26) (2025-08-16)
 
 Notes:
