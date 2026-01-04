@@ -5,7 +5,7 @@
  */
 export interface MysqlConnectionCredentialsOptions {
     /**
-     * Connection url where perform connection to.
+     * Connection url where the connection is performed.
      */
     readonly url?: string
 
@@ -43,4 +43,10 @@ export interface MysqlConnectionCredentialsOptions {
      * Database socket path
      */
     readonly socketPath?: string
+
+    /**
+     * Maximum number of clients the pool should contain.
+     * for each connection
+     */
+    readonly poolSize?: number
 }

@@ -20,7 +20,7 @@ export class Post {
     @UpdateDateColumn()
     updateDate: Date
 
-    @OneToOne((type) => PostCategory)
+    @OneToOne(() => PostCategory)
     @JoinColumn()
     category: PostCategory
 

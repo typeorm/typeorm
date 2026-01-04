@@ -11,7 +11,7 @@ export class Subcounters {
     @Column()
     watches: number
 
-    @OneToOne((type) => User)
+    @OneToOne(() => User)
     @JoinColumn()
     watchedUser: User
 

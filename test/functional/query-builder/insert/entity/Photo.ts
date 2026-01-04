@@ -11,6 +11,6 @@ export class Photo {
     @Column()
     url: string
 
-    @Column((type) => Counters)
+    @Column(() => Counters)
     counters: Counters
 }

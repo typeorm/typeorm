@@ -12,9 +12,9 @@ export class EventMember {
     @PrimaryColumn()
     eventId: number
 
-    @ManyToOne((type) => Event, (event) => event.members)
+    @ManyToOne(() => Event, (event) => event.members)
     event: Event
 
-    @ManyToOne((type) => User, (user) => user.members)
+    @ManyToOne(() => User, (user) => user.members)
     user: User
 }

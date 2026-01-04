@@ -29,21 +29,21 @@ export class Post {
     })
     text: string
 
-    @OneToOne((type) => PostDetails, (details) => details.post, {
+    @OneToOne(() => PostDetails, (details) => details.post, {
         cascade: true,
     })
     @JoinColumn()
     details: PostDetails
 
-    @OneToMany((type) => Image, (image) => image.post, {
+    @OneToMany(() => Image, (image) => image.post, {
         cascade: true,
     })
     images: Image[] = []
 
-    @OneToMany((type) => Image, (image) => image.secondaryPost)
+    @OneToMany(() => Image, (image) => image.secondaryPost)
     secondaryImages: Image[]
 
-    @ManyToOne((type) => Cover, (cover) => cover.posts, {
+    @ManyToOne(() => Cover, (cover) => cover.posts, {
         cascade: ["insert"],
     })
     @JoinColumn({ name: "coverId" })
@@ -54,7 +54,7 @@ export class Post {
     })
     coverId: number
 
-    @ManyToMany((type) => Category, (category) => category.posts, {
+    @ManyToMany(() => Category, (category) => category.posts, {
         cascade: true,
     })
     @JoinTable()
