@@ -26,11 +26,11 @@ export class User {
 
 This will create following database table:
 
-```shell
+```text
 +-------------+--------------+----------------------------+
 |                          user                           |
 +-------------+--------------+----------------------------+
-| id          | int(11)      | PRIMARY KEY AUTO_INCREMENT |
+| id          | int          | PRIMARY KEY AUTO_INCREMENT |
 | firstName   | varchar(255) |                            |
 | lastName    | varchar(255) |                            |
 | isActive    | boolean      |                            |
@@ -171,13 +171,13 @@ There are several special column types with additional functionality available:
     You don't need to set this column - it will be automatically set.
 
 -   `@UpdateDateColumn` is a special column that is automatically set to the entity's update time
-    each time you call `save` of entity manager or repository.
+    each time you call `save` of entity manager or repository, or during `upsert` operations when an update occurs.
     You don't need to set this column - it will be automatically set.
 
 -   `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set. If the @DeleteDateColumn is set, the default scope will be "non-deleted".
 
 -   `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)
-    each time you call `save` of entity manager or repository.
+    each time you call `save` of entity manager or repository, or during `upsert` operations when an update occurs.
     You don't need to set this column - it will be automatically set.
 
 ## Column types
@@ -203,12 +203,6 @@ For example:
 
 ```typescript
 @Column("varchar", { length: 200 })
-```
-
-or
-
-```typescript
-@Column({ type: "int", width: 200 })
 ```
 
 > Note about `bigint` type: `bigint` column type, used in SQL databases, doesn't fit into the regular `number` type and maps property to a `string` instead.
@@ -338,6 +332,50 @@ Besides "uuid" there is also "increment", "identity" (Postgres 10+ only) and "ro
 on some database platforms with this type of generation (for example some databases can only have one increment column,
 or some of them require increment to be a primary key).
 
+### Vector columns
+
+Vector columns are supported on MariaDB/MySQL, Microsoft SQL Server, PostgreSQL (via [`pgvector`](https://github.com/pgvector/pgvector) extension) and SAP HANA Cloud, enabling storing and querying vector embeddings for similarity search and machine learning applications.
+
+TypeORM supports both `vector` and `halfvec` column types across databases:
+
+-   `vector` - stores vectors as 4-byte floats (single precision)
+    -   MariaDB/MySQL: native `vector` type
+    -   Microsoft SQL Server: native `vector` type
+    -   PostgreSQL: `vector` type, available via `pgvector` extension
+    -   SAP HANA Cloud: alias for `real_vector` type
+-   `halfvec` - stores vectors as 2-byte floats (half precision) for memory efficiency
+    -   PostgreSQL: `halfvec` type, available via `pgvector` extension
+    -   SAP HANA Cloud: alias for `half_vector` type
+
+You can specify the number of vector dimensions using the `length` option:
+
+```typescript
+@Entity()
+export class Post {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    // Vector without specified dimensions
+    @Column("vector")
+    embedding: number[] | Buffer
+
+    // Vector with 3 dimensions: vector(3)
+    @Column("vector", { length: 3 })
+    embedding_3d: number[] | Buffer
+
+    // Half-precision vector with 4 dimensions: halfvec(4) (works on PostgreSQL and SAP HANA only)
+    @Column("halfvec", { length: 4 })
+    halfvec_embedding: number[] | Buffer
+}
+```
+
+> **Note**:
+>
+> -   **MariaDB/MySQL**: Vectors are supported since MariaDB 11.7 and MySQL 9
+> -   **Microsoft SQL Server**: Vector type support requires SQL Server 2025 (17.x) or newer.
+> -   **PostgreSQL**: Vector columns require the `pgvector` extension to be installed. The extension provides the vector data types and similarity operators.
+> -   **SAP HANA**: Vector columns require SAP HANA Cloud (2024Q1+) and a supported version of `@sap/hana-client`.
+
 ### Spatial columns
 
 Microsoft SQLServer, MySQL/MariaDB, PostgreSQL/CockroachDB and SAP HANA all support spatial columns. TypeORM's support for each varies slightly between databases, particularly as the column names vary between databases.
@@ -393,7 +431,6 @@ List of available options in `ColumnOptions`:
     You can change it by specifying your own name.
 
 -   `length: number` - Column type's length. For example if you want to create `varchar(150)` type you specify column type and length options.
--   `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
 -   `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
 -   `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. By default column is `nullable: false`.
 -   `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object. Default value is `true`.
@@ -406,7 +443,6 @@ List of available options in `ColumnOptions`:
 -   `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
     number of digits that are stored for the values. Used in some column types.
 -   `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), which represents the number of digits to the right of the decimal point and must not be greater than precision. Used in some column types.
--   `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
 -   `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
 -   `charset: string` - Defines a column character set. Not supported by all database types.
 -   `collation: string` - Defines a column collation.
@@ -417,6 +453,7 @@ List of available options in `ColumnOptions`:
 -   `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
 -   `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[])
 -   `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database. Array of transformers are also supported and will be applied in natural order when writing, and in reverse order when reading. e.g. `[lowercase, encrypt]` will first lowercase the string then encrypt it when writing, and will decrypt then do nothing when reading.
+-   `utc: boolean` - Indicates if date values should be stored and retrieved in UTC timezone instead of local timezone. Only applies to `date` column type. Default value is `false` (uses local timezone for backward compatibility).
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.
 

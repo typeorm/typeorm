@@ -315,19 +315,7 @@ export class EntityMetadataBuilder {
                             junctionEntityMetadata,
                             entityMetadatas,
                         )
-
-                        // check if there's already a user-defined entity with the same table name
-                        // if so, don't add the auto-generated junction entity to avoid duplicates
-                        const hasUserDefinedTable = entityMetadatas.some(
-                            (metadata) =>
-                                metadata.tableName ===
-                                    junctionEntityMetadata.tableName &&
-                                !metadata.isJunction,
-                        )
-
-                        if (!hasUserDefinedTable) {
-                            entityMetadatas.push(junctionEntityMetadata)
-                        }
+                        entityMetadatas.push(junctionEntityMetadata)
                     })
             })
 
@@ -1209,9 +1197,9 @@ export class EntityMetadataBuilder {
                         ? m.targetName === foreignKeyType ||
                           m.givenTableName === foreignKeyType
                         : InstanceChecker.isEntitySchema(foreignKeyType)
-                        ? m.target === foreignKeyType.options.name ||
-                          m.target === foreignKeyType.options.target
-                        : m.target === foreignKeyType,
+                          ? m.target === foreignKeyType.options.name ||
+                            m.target === foreignKeyType.options.target
+                          : m.target === foreignKeyType,
                 )
 
                 if (!referencedEntityMetadata) {

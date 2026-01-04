@@ -27,23 +27,32 @@
     ]
   },
   "dependencies": {
-    "@docusaurus/core": "3.8.1",
-    "@docusaurus/plugin-client-redirects": "^3.8.1",
-    "@docusaurus/preset-classic": "3.8.1",
-    "@mdx-js/react": "^3.1.0",
+    "@docusaurus/core": "3.9.2",
+    "@docusaurus/plugin-client-redirects": "^3.9.2",
+    "@docusaurus/preset-classic": "3.9.2",
+    "@mdx-js/react": "^3.1.1",
+    "@signalwire/docusaurus-plugin-llms-txt": "^1.2.2",
     "clsx": "^2.1.1",
-    "docusaurus-theme-search-typesense": "^0.25.0",
+    "docusaurus-theme-search-typesense": "^0.26.0",
     "prism-react-renderer": "^2.4.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.8.1",
-    "@docusaurus/tsconfig": "3.8.1",
-    "@docusaurus/types": "3.8.1",
-    "typescript": "~5.8.3"
+    "@docusaurus/module-type-aliases": "3.9.2",
+    "@docusaurus/tsconfig": "3.9.2",
+    "@docusaurus/types": "3.9.2",
+    "typescript": "~5.9.3"
   },
+  "packageManager": "pnpm@10.26.2",
   "engines": {
-    "node": ">=18.0"
+    "node": ">=20.0"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "typesense-instantsearch-adapter",
+      "core-js-pure",
+      "core-js"
+    ]
   }
 }

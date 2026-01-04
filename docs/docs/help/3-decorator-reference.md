@@ -134,7 +134,7 @@ export class User {
     You can change it by specifying your own name.
 -   `length: string|number` - Column type's length. For example, if you want to create `varchar(150)` type
     you specify column type and length options.
--   `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html)
+-   `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html). _Deprecated_ in newer MySQL versions, will be removed from TypeORM in an upcoming version.
 -   `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
 -   `nullable: boolean` - determines whether the column can become `NULL` or always has to be `NOT NULL`. By default column is `nullable: false`.
 -   `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object.
@@ -150,8 +150,7 @@ export class User {
 -   `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column),
     which represents the number of digits to the right of the decimal point and must not be greater than precision.
     Used in some column types.
--   `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL.
-    If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column.
+-   `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column. _Deprecated_ in newer MySQL versions, will be removed from TypeORM in an upcoming version. Use a character column and the `LPAD` function as suggested by MySQL.
 -   `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
 -   `charset: string` - Defines a column character set. Not supported by all database types.
 -   `collation: string` - Defines a column collation.
@@ -280,6 +279,8 @@ Special column that is automatically set to the entity's update time
 each time you call `save` from entity manager or repository.
 You don't need to write a value into this column - it will be automatically set.
 
+This column is also automatically updated during `upsert` operations when an update occurs due to a conflict.
+
 ```typescript
 @Entity()
 export class User {
@@ -309,6 +310,8 @@ export class User {
 Special column that is automatically set to the entity's version (incremental number)
 each time you call `save` from entity manager or repository.
 You don't need to write a value into this column - it will be automatically set.
+
+This column is also automatically updated during `upsert` operations when an update occurs due to a conflict.
 
 ```typescript
 @Entity()
@@ -659,7 +662,7 @@ Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 #### `@BeforeRemove`
 
 You can define a method with any name in the entity and mark it with `@BeforeRemove`
-and TypeORM will call it before a entity is removed using repository/manager `remove`.
+and TypeORM will call it before an entity is removed using repository/manager `remove`.
 Example:
 
 ```typescript
@@ -695,7 +698,7 @@ Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 #### `@BeforeSoftRemove`
 
 You can define a method with any name in the entity and mark it with `@BeforeSoftRemove`
-and TypeORM will call it before a entity is soft removed using repository/manager `softRemove`.
+and TypeORM will call it before an entity is soft removed using repository/manager `softRemove`.
 Example:
 
 ```typescript
@@ -731,7 +734,7 @@ Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 #### `@BeforeRecover`
 
 You can define a method with any name in the entity and mark it with `@BeforeRecover`
-and TypeORM will call it before a entity is recovered using repository/manager `recover`.
+and TypeORM will call it before an entity is recovered using repository/manager `recover`.
 Example:
 
 ```typescript

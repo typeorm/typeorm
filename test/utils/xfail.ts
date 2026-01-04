@@ -21,15 +21,16 @@ const wrap = (
 
         return new Promise<void>((ok, fail) => {
             if (fn.length > 1) {
-                ;(fn as Func).call(context as unknown as Context, (err: any) =>
-                    err ? fail(err) : ok(),
+                ;(fn as Func).call(
+                    context as unknown as Context,
+                    (err: unknown) => (err ? fail(err) : ok()),
                 )
             } else {
                 ok((fn as AsyncFunc).call(context as unknown as Context))
             }
         }).then(
-            (e: any) => assert.fail("Expected this test to fail"),
-            (e: any) => {
+            () => assert.fail("Expected this test to fail"),
+            (e) => {
                 if (!(e instanceof AssertionError)) {
                     throw e
                 }
@@ -79,9 +80,10 @@ function unless(condition: boolean | (() => boolean)): { it: TestFunction } {
     return { it: xfailIt }
 }
 
-const xfail: XFailFunction = {
+/**
+ * XFail is used to mark tests that are expected to fail.
+ */
+export const xfail: XFailFunction = {
     ...unless(true),
     unless,
 }
-
-export { xfail }

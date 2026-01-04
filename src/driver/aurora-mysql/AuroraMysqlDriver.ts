@@ -1,29 +1,29 @@
+import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { DataSource } from "../../data-source"
+import { TypeORMError } from "../../error"
+import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
+import { PlatformTools } from "../../platform/PlatformTools"
+import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
+import { Table } from "../../schema-builder/table/Table"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import { View } from "../../schema-builder/view/View"
+import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
+import { DateUtils } from "../../util/DateUtils"
+import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
 import { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
+import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
-import { AuroraMysqlQueryRunner } from "./AuroraMysqlQueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { DateUtils } from "../../util/DateUtils"
-import { PlatformTools } from "../../platform/PlatformTools"
-import { DataSource } from "../../data-source"
-import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import { AuroraMysqlConnectionOptions } from "./AuroraMysqlConnectionOptions"
-import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ColumnType } from "../types/ColumnTypes"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { AuroraMysqlConnectionCredentialsOptions } from "./AuroraMysqlConnectionCredentialsOptions"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { OrmUtils } from "../../util/OrmUtils"
-import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
+import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
-import { TypeORMError } from "../../error"
-import { Table } from "../../schema-builder/table/Table"
-import { View } from "../../schema-builder/view/View"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { AuroraMysqlConnectionCredentialsOptions } from "./AuroraMysqlConnectionCredentialsOptions"
+import { AuroraMysqlConnectionOptions } from "./AuroraMysqlConnectionOptions"
+import { AuroraMysqlQueryRunner } from "./AuroraMysqlQueryRunner"
 
 /**
  * Organizes communication with MySQL DBMS.
@@ -181,10 +181,9 @@ export class AuroraMysqlDriver implements Driver {
     ]
 
     /**
-     * Gets list of column data types that support length by a driver.
+     * Gets list of column data types that support unsigned by a driver.
      */
-    withWidthColumnTypes: ColumnType[] = [
-        "bit",
+    unsignedColumnTypes: UnsignedColumnType[] = [
         "tinyint",
         "smallint",
         "mediumint",
@@ -214,26 +213,6 @@ export class AuroraMysqlDriver implements Driver {
      * Gets list of column data types that supports scale by a driver.
      */
     withScaleColumnTypes: ColumnType[] = [
-        "decimal",
-        "dec",
-        "numeric",
-        "fixed",
-        "float",
-        "double",
-        "double precision",
-        "real",
-    ]
-
-    /**
-     * Gets list of column data types that supports UNSIGNED and ZEROFILL attributes.
-     */
-    unsignedAndZerofillTypes: ColumnType[] = [
-        "int",
-        "integer",
-        "smallint",
-        "tinyint",
-        "mediumint",
-        "bigint",
         "decimal",
         "dec",
         "numeric",
@@ -554,7 +533,9 @@ export class AuroraMysqlDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value)
+            return DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedDateToTimeString(value)
         } else if (columnMetadata.type === "json") {
@@ -613,7 +594,9 @@ export class AuroraMysqlDriver implements Driver {
         ) {
             value = DateUtils.normalizeHydratedDate(value)
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "json") {
             value = typeof value === "string" ? JSON.parse(value) : value
         } else if (columnMetadata.type === "time") {
@@ -823,14 +806,20 @@ export class AuroraMysqlDriver implements Driver {
                 this.poolCluster.getConnection(
                     "MASTER",
                     (err: any, dbConnection: any) => {
-                        err
-                            ? fail(err)
-                            : ok(this.prepareDbConnection(dbConnection))
+                        if (err) {
+                            fail(err)
+                        } else {
+                            ok(this.prepareDbConnection(dbConnection))
+                        }
                     },
                 )
             } else if (this.pool) {
                 this.pool.getConnection((err: any, dbConnection: any) => {
-                    err ? fail(err) : ok(this.prepareDbConnection(dbConnection))
+                    if (err) {
+                        fail(err)
+                    } else {
+                        ok(this.prepareDbConnection(dbConnection))
+                    }
                 })
             } else {
                 fail(
@@ -854,7 +843,11 @@ export class AuroraMysqlDriver implements Driver {
             this.poolCluster.getConnection(
                 "SLAVE*",
                 (err: any, dbConnection: any) => {
-                    err ? fail(err) : ok(this.prepareDbConnection(dbConnection))
+                    if (err) {
+                        fail(err)
+                    } else {
+                        ok(this.prepareDbConnection(dbConnection))
+                    }
                 },
             )
         })

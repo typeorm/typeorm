@@ -13,7 +13,7 @@ export class Post {
     title: string
 
     @OneToMany(
-        (type) => PostCategory,
+        () => PostCategory,
         (postCategoryRelation) => postCategoryRelation.post,
     )
     categories: PostCategory[]

@@ -3134,9 +3134,8 @@ export class PostgresQueryRunner
             const selectViewDropsQuery =
                 `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
@@ -3234,13 +3233,14 @@ export class PostgresQueryRunner
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
-            `"types"."typname" AS "type_name" ` +
+            `"types"."typname" AS "type_name", "am"."amname" AS "index_type" ` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
             `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
             `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
             `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
             `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
+            `INNER JOIN "pg_am" "am" ON "i"."relam" = "am"."oid" ` +
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
             `WHERE "t"."relkind" IN ('m') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`
 
@@ -3288,13 +3288,16 @@ export class PostgresQueryRunner
                             constraint["constraint_name"]
                     )
                 })
+
                 return new TableIndex(<TableIndexOptions>{
                     view: view,
                     name: constraint["constraint_name"],
                     columnNames: indices.map((i) => i["column_name"]),
                     isUnique: constraint["is_unique"] === "TRUE",
                     where: constraint["condition"],
+                    isSpatial: constraint["index_type"] === "gist",
                     isFulltext: false,
+                    type: constraint["index_type"],
                 })
             })
             return view
@@ -3490,6 +3493,18 @@ export class PostgresQueryRunner
                             const tableColumn = new TableColumn()
                             tableColumn.name = dbColumn["column_name"]
                             tableColumn.type = dbColumn["regtype"].toLowerCase()
+
+                            if (
+                                tableColumn.type === "vector" ||
+                                tableColumn.type === "halfvec"
+                            ) {
+                                const lengthMatch = dbColumn[
+                                    "format_type"
+                                ].match(/^(?:vector|halfvec)\((\d+)\)$/)
+                                if (lengthMatch && lengthMatch[1]) {
+                                    tableColumn.length = lengthMatch[1]
+                                }
+                            }
 
                             if (
                                 tableColumn.type === "numeric" ||
@@ -4017,6 +4032,7 @@ export class PostgresQueryRunner
                         isUnique: constraint["is_unique"] === "TRUE",
                         where: constraint["condition"],
                         isSpatial: constraint["index_type"] === "gist",
+                        type: constraint["index_type"],
                         isFulltext: false,
                     })
                 })
@@ -4185,9 +4201,8 @@ export class PostgresQueryRunner
         // see:
         //  - https://github.com/typeorm/typeorm/pull/9319
         //  - https://docs.aws.amazon.com/redshift/latest/dg/c_unsupported-postgresql-functions.html
-        const result: [{ version: string }] = await this.query(
-            `SELECT version()`,
-        )
+        const result: [{ version: string }] =
+            await this.query(`SELECT version()`)
 
         // Examples:
         // Postgres: "PostgreSQL 14.10 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 8.5.0 20210514 (Red Hat 8.5.0-20), 64-bit"
@@ -4334,9 +4349,23 @@ export class PostgresQueryRunner
     }
 
     /**
+     * Builds the SQL `USING <index_type>` clause based on the index type, prioritizing `isSpatial` as `GiST`.
+     */
+
+    private buildIndexTypeClause(index: TableIndex) {
+        const type = index.isSpatial ? "gist" : index.type
+
+        if (typeof type !== "string") return null
+
+        return `USING ${type}`
+    }
+
+    /**
      * Builds create index sql.
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
+        const indexTypeClause = this.buildIndexTypeClause(index)
+
         const columns = index.columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
@@ -4344,8 +4373,8 @@ export class PostgresQueryRunner
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX${
                 index.isConcurrent ? " CONCURRENTLY" : ""
             } "${index.name}" ON ${this.escapePath(table)} ${
-                index.isSpatial ? "USING GiST " : ""
-            }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
+                indexTypeClause ?? ""
+            } (${columns}) ${index.where ? "WHERE " + index.where : ""}`,
         )
     }
 
@@ -4353,15 +4382,17 @@ export class PostgresQueryRunner
      * Builds create view index sql.
      */
     protected createViewIndexSql(view: View, index: TableIndex): Query {
+        const indexTypeClause = this.buildIndexTypeClause(index)
+
         const columns = index.columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
         return new Query(
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
                 index.name
-            }" ON ${this.escapePath(view)} (${columns}) ${
-                index.where ? "WHERE " + index.where : ""
-            }`,
+            }" ON ${this.escapePath(view)} ${
+                indexTypeClause ?? ""
+            } (${columns}) ${index.where ? "WHERE " + index.where : ""}`,
         )
     }
 
