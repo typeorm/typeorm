@@ -37,8 +37,8 @@ export class RelationIdLoader {
         const relatedEntities = Array.isArray(relatedEntityOrRelatedEntities)
             ? relatedEntityOrRelatedEntities
             : relatedEntityOrRelatedEntities
-            ? [relatedEntityOrRelatedEntities]
-            : undefined
+              ? [relatedEntityOrRelatedEntities]
+              : undefined
 
         // load relation ids depend of relation type
         if (relation.isManyToMany) {

@@ -88,9 +88,8 @@ describe("view entity > general", () => {
                 photo3.albumId = album2.id
                 await connection.manager.save(photo3)
 
-                const postCategories = await connection.manager.find(
-                    PostCategory,
-                )
+                const postCategories =
+                    await connection.manager.find(PostCategory)
                 postCategories.length.should.be.equal(2)
 
                 const postId1 =
@@ -105,9 +104,8 @@ describe("view entity > general", () => {
                 postCategories[1].name.should.be.equal("About Boeing")
                 postCategories[1].categoryName.should.be.equal("Airplanes")
 
-                const photoAlbumCategories = await connection.manager.find(
-                    PhotoAlbumCategory,
-                )
+                const photoAlbumCategories =
+                    await connection.manager.find(PhotoAlbumCategory)
                 photoAlbumCategories.length.should.be.equal(2)
 
                 const photoId1 =

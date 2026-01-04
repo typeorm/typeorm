@@ -42,9 +42,8 @@ describe("github issues > #3246 Saving an entity with a 1:1 cascading insert doe
 
                 const myCompanyRepository =
                     connection.manager.getCustomRepository(BrokerRepository)
-                const createdCompany = await myCompanyRepository.createBroker(
-                    company,
-                )
+                const createdCompany =
+                    await myCompanyRepository.createBroker(company)
                 const myOrderRepository =
                     connection.manager.getCustomRepository(OrderRepository)
                 order.company = createdCompany

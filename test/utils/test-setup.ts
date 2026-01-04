@@ -1,3 +1,4 @@
+import "chai/register-should"
 import "source-map-support/register"
 import "reflect-metadata"
 

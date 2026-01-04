@@ -211,9 +211,8 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
         await this.query(`PRAGMA foreign_keys = OFF`)
         try {
             const selectViewDropsQuery = `SELECT 'DROP VIEW "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'view'`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
 
             const selectTableDropsQuery = `SELECT 'DROP TABLE "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'table' AND "name" != 'sqlite_sequence'`
             const dropTableQueries: ObjectLiteral[] = await this.query(
