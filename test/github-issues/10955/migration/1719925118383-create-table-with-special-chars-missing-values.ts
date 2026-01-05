@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from "../../../../src"
 
-export class CreateTableWithSpecialCharsMissingValues1719925118383
-    implements MigrationInterface
-{
+export class CreateTableWithSpecialCharsMissingValues1719925118383 implements MigrationInterface {
     name = "CreateTableWithSpecialCharsMissingValues1719925118383"
 
     public async up(queryRunner: QueryRunner): Promise<void> {
