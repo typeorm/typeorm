@@ -17,11 +17,11 @@ export class Post {
     @Column()
     title: string
 
-    @ManyToMany((type) => Category, { eager: true })
+    @ManyToMany(() => Category, { eager: true })
     @JoinTable()
     categories1: Category[]
 
-    @ManyToMany((type) => Category, (category) => category.posts2, {
+    @ManyToMany(() => Category, (category) => category.posts2, {
         eager: true,
     })
     categories2: Category[]

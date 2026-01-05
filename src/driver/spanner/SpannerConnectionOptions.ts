@@ -6,8 +6,7 @@ import { SpannerConnectionCredentialsOptions } from "./SpannerConnectionCredenti
  * Spanner specific connection options.
  */
 export interface SpannerConnectionOptions
-    extends BaseConnectionOptions,
-        SpannerConnectionCredentialsOptions {
+    extends BaseConnectionOptions, SpannerConnectionCredentialsOptions {
     /**
      * Database type.
      */
