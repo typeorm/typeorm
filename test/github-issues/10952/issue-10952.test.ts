@@ -1,14 +1,14 @@
+import { expect } from "chai"
 import "reflect-metadata"
 import {
-    createTestingConnections,
     closeTestingConnections,
+    createTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/index.js"
-import { Example } from "./entity/example"
+import { DataSource } from "../../../src"
 import { Dependency } from "./entity/dependency"
-import { expect } from "chai"
+import { Example } from "./entity/example"
 
-describe("github issues > #10952 Incorrect entity identification and persistence on composite foreign primary key endorelation entities", () => {
+describe("github issues > #10952 Incorrect entity identification and persistence on composite foreign primary key endo-relation entities", () => {
     let dataSources: DataSource[]
 
     before(
@@ -21,7 +21,7 @@ describe("github issues > #10952 Incorrect entity identification and persistence
     )
     after(() => closeTestingConnections(dataSources))
 
-    it("should persist composite foreign primary keyed endorelations correctly", () =>
+    it("should persist composite foreign primary keyed endo-relations correctly", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const example1 = new Example()
