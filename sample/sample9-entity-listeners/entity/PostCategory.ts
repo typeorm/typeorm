@@ -20,7 +20,7 @@ export class PostCategory {
     @Column()
     name: string
 
-    @ManyToMany((type) => Post, (post) => post.categories, {
+    @ManyToMany(() => Post, (post) => post.categories, {
         cascade: true,
     })
     posts: Post[] = []

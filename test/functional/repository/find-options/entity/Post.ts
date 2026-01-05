@@ -15,10 +15,10 @@ export class Post {
     @Column()
     title: string
 
-    @ManyToOne((type) => User)
+    @ManyToOne(() => User)
     author: User
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     @JoinTable()
     categories: Category[]
 }

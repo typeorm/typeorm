@@ -14,6 +14,6 @@ export class PostImage {
     @Column()
     url: string
 
-    @OneToOne((type) => Post, (post) => post.image)
+    @OneToOne(() => Post, (post) => post.image)
     post: Post
 }
