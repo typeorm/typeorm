@@ -11,7 +11,7 @@ export class Animal {
     @Column()
     name: string
 
-    @ManyToMany((type) => Category, { eager: true })
+    @ManyToMany(() => Category, { eager: true })
     @JoinTable()
     categories: Category[]
 }

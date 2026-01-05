@@ -17,7 +17,7 @@ export class TournamentSquadParticipant extends TournamentParticipant {
     @JoinColumn()
     public owner: User
 
-    @ManyToMany((type) => User, {
+    @ManyToMany(() => User, {
         eager: true,
     })
     @JoinTable({ name: "tournament_squad_participants" })

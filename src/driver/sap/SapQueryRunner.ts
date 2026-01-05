@@ -2145,7 +2145,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * Drops an unique constraints.
+     * Drops unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
@@ -2335,6 +2335,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
+
+        if (!foreignKey.name) {
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+                table,
+                foreignKey.columnNames,
+                this.getTablePath(foreignKey),
+                foreignKey.referencedColumnNames,
+            )
+        }
 
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
