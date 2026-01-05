@@ -13,12 +13,12 @@ export class PostCategory {
     @PrimaryColumn()
     categoryId: number
 
-    @ManyToOne((type) => Post, (post) => post.categories, {
+    @ManyToOne(() => Post, (post) => post.categories, {
         cascade: ["insert"],
     })
     post: Post
 
-    @ManyToOne((type) => Category, (category) => category.posts, {
+    @ManyToOne(() => Category, (category) => category.posts, {
         cascade: ["insert"],
     })
     category: Category

@@ -1,11 +1,14 @@
-import * as path from "path"
-import * as fs from "fs"
+import ansi from "ansis"
 import dotenv from "dotenv"
-import chalk from "chalk"
-import { highlight, Theme } from "cli-highlight"
+import fs from "fs"
+import path from "path"
+import { highlight } from "sql-highlight"
+import { format as sqlFormat } from "@sqltools/formatter"
+import { type Config as SqlFormatterConfig } from "@sqltools/formatter/lib/core/types"
+import { type DatabaseType } from "../driver/types/DatabaseType"
 
-export { ReadStream } from "fs"
 export { EventEmitter } from "events"
+export { ReadStream } from "fs"
 export { Readable, Writable } from "stream"
 
 /**
@@ -25,8 +28,24 @@ export class PlatformTools {
     }
 
     /**
+     * Reads the version string from package.json of the given package.
+     * This operation is only supported in node.
+     * @param name
+     */
+    static readPackageVersion(name: string): string {
+        try {
+            return require(`${name}/package.json`).version
+        } catch (err) {
+            throw new TypeError(
+                `Failed to read package.json for "${name}": ${err.message}`,
+            )
+        }
+    }
+
+    /**
      * Loads ("require"-s) given file or package.
      * This operation only supports on node platform
+     * @param name
      */
     static load(name: string): any {
         // if name is not absolute or relative, then try to load package from the node_modules of the directory we are currently in
@@ -57,15 +76,9 @@ export class PlatformTools {
                 case "@sap/hana-client/extension/Stream":
                     return require("@sap/hana-client/extension/Stream")
 
-                case "hdb-pool":
-                    return require("hdb-pool")
-
                 /**
                  * mysql
                  */
-                case "mysql":
-                    return require("mysql")
-
                 case "mysql2":
                     return require("mysql2")
 
@@ -130,9 +143,9 @@ export class PlatformTools {
                     return require("react-native-sqlite-storage")
             }
         } catch (err) {
-            return require(path.resolve(
-                process.cwd() + "/node_modules/" + name,
-            ))
+            return require(
+                path.resolve(process.cwd() + "/node_modules/" + name),
+            )
         }
 
         // If nothing above matched and we get here, the package was not listed within PlatformTools
@@ -144,6 +157,7 @@ export class PlatformTools {
 
     /**
      * Normalizes given path. Does "path.normalize" and replaces backslashes with forward slashes on Windows.
+     * @param pathStr
      */
     static pathNormalize(pathStr: string): string {
         let normalizedPath = path.normalize(pathStr)
@@ -154,6 +168,7 @@ export class PlatformTools {
 
     /**
      * Gets file extension. Does "path.extname".
+     * @param pathStr
      */
     static pathExtname(pathStr: string): string {
         return path.extname(pathStr)
@@ -161,6 +176,7 @@ export class PlatformTools {
 
     /**
      * Resolved given path. Does "path.resolve".
+     * @param pathStr
      */
     static pathResolve(pathStr: string): string {
         return path.resolve(pathStr)
@@ -168,6 +184,7 @@ export class PlatformTools {
 
     /**
      * Synchronously checks if file exist. Does "fs.existsSync".
+     * @param pathStr
      */
     static fileExist(pathStr: string): boolean {
         return fs.existsSync(pathStr)
@@ -182,18 +199,13 @@ export class PlatformTools {
     }
 
     static async writeFile(path: string, data: any): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            fs.writeFile(path, data, (err) => {
-                if (err) fail(err)
-                ok()
-            })
-        })
+        return fs.promises.writeFile(path, data)
     }
 
     /**
      * Loads a dotenv file into the environment variables.
-     *
      * @param path The file to load as a dotenv configuration
+     * @param pathStr
      */
     static dotenv(pathStr: string): void {
         dotenv.config({ path: pathStr })
@@ -201,66 +213,90 @@ export class PlatformTools {
 
     /**
      * Gets environment variable.
+     * @param name
      */
     static getEnvVariable(name: string): any {
         return process.env[name]
     }
 
     /**
-     * Highlights sql string to be print in the console.
+     * Highlights sql string to be printed in the console.
+     * @param sql
      */
     static highlightSql(sql: string) {
-        const theme: Theme = {
-            keyword: chalk.blueBright,
-            literal: chalk.blueBright,
-            string: chalk.white,
-            type: chalk.magentaBright,
-            built_in: chalk.magentaBright,
-            comment: chalk.gray,
-        }
-        return highlight(sql, { theme: theme, language: "sql" })
+        return highlight(sql, {
+            colors: {
+                keyword: ansi.blueBright.open,
+                function: ansi.magentaBright.open,
+                number: ansi.green.open,
+                string: ansi.white.open,
+                identifier: ansi.white.open,
+                special: ansi.white.open,
+                bracket: ansi.white.open,
+                comment: ansi.gray.open,
+                clear: ansi.reset.open,
+            },
+        })
     }
 
     /**
-     * Highlights json string to be print in the console.
+     * Pretty-print sql string to be print in the console.
+     * @param sql
+     * @param dataSourceType
      */
-    static highlightJson(json: string) {
-        return highlight(json, { language: "json" })
+    static formatSql(sql: string, dataSourceType?: DatabaseType): string {
+        const databaseLanguageMap: Record<
+            string,
+            SqlFormatterConfig["language"]
+        > = {
+            oracle: "pl/sql",
+        }
+
+        const databaseLanguage = dataSourceType
+            ? databaseLanguageMap[dataSourceType] || "sql"
+            : "sql"
+
+        return sqlFormat(sql, {
+            language: databaseLanguage,
+            indent: "    ",
+        })
     }
 
     /**
      * Logging functions needed by AdvancedConsoleLogger
+     * @param prefix
+     * @param info
      */
     static logInfo(prefix: string, info: any) {
-        console.log(chalk.gray.underline(prefix), info)
+        console.log(ansi.gray.underline(prefix), info)
     }
 
     static logError(prefix: string, error: any) {
-        console.log(chalk.underline.red(prefix), error)
+        console.log(ansi.underline.red(prefix), error)
     }
 
     static logWarn(prefix: string, warning: any) {
-        console.log(chalk.underline.yellow(prefix), warning)
+        console.log(ansi.underline.yellow(prefix), warning)
     }
 
     static log(message: string) {
-        console.log(chalk.underline(message))
+        console.log(ansi.underline(message))
     }
 
     static info(info: any) {
-        return chalk.gray(info)
+        return ansi.gray(info)
     }
 
     static error(error: any) {
-        return chalk.red(error)
+        return ansi.red(error)
     }
 
     static warn(message: string) {
-        return chalk.yellow(message)
+        return ansi.yellow(message)
     }
 
     static logCmdErr(prefix: string, err?: any) {
-        console.log(chalk.black.bgRed(prefix))
+        console.log(ansi.black.bgRed(prefix))
         if (err) console.error(err)
     }
 }

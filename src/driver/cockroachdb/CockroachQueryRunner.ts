@@ -1,32 +1,32 @@
+import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { TypeORMError } from "../../error"
+import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { ReadStream } from "../../platform/PlatformTools"
+import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { TableColumn } from "../../schema-builder/table/TableColumn"
-import { Table } from "../../schema-builder/table/Table"
-import { TableIndex } from "../../schema-builder/table/TableIndex"
-import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
-import { View } from "../../schema-builder/view/View"
-import { Query } from "../Query"
-import { CockroachDriver } from "./CockroachDriver"
-import { ReadStream } from "../../platform/PlatformTools"
-import { QueryFailedError } from "../../error/QueryFailedError"
-import { Broadcaster } from "../../subscriber/Broadcaster"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
-import { TableUnique } from "../../schema-builder/table/TableUnique"
-import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
-import { OrmUtils } from "../../util/OrmUtils"
+import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableExclusion } from "../../schema-builder/table/TableExclusion"
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import { TableIndex } from "../../schema-builder/table/TableIndex"
+import { TableUnique } from "../../schema-builder/table/TableUnique"
+import { View } from "../../schema-builder/view/View"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { InstanceChecker } from "../../util/InstanceChecker"
+import { OrmUtils } from "../../util/OrmUtils"
+import { VersionUtils } from "../../util/VersionUtils"
+import { Query } from "../Query"
 import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
-import { TableExclusion } from "../../schema-builder/table/TableExclusion"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
-import { InstanceChecker } from "../../util/InstanceChecker"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
-import { VersionUtils } from "../../util/VersionUtils"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { CockroachDriver } from "./CockroachDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -61,7 +61,11 @@ export class CockroachQueryRunner
     /**
      * Stores all executed queries to be able to run them again if transaction fails.
      */
-    protected queries: { query: string; parameters?: any[] }[] = []
+    protected queries: {
+        query: string
+        parameters?: any[]
+        useStructuredResult: boolean
+    }[] = []
 
     /**
      * Indicates if running queries must be stored
@@ -190,7 +194,6 @@ export class CockroachQueryRunner
         }
 
         if (this.transactionDepth === 0) {
-            this.transactionDepth += 1
             await this.query("START TRANSACTION")
             await this.query("SAVEPOINT cockroach_restart")
             if (isolationLevel) {
@@ -199,10 +202,10 @@ export class CockroachQueryRunner
                 )
             }
         } else {
-            this.transactionDepth += 1
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
         }
 
+        this.transactionDepth += 1
         this.storeQueries = true
 
         await this.broadcaster.broadcast("AfterTransactionStart")
@@ -218,18 +221,18 @@ export class CockroachQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
+            this.transactionDepth -= 1
         } else {
             this.storeQueries = false
-            this.transactionDepth -= 1
             await this.query("RELEASE SAVEPOINT cockroach_restart")
             await this.query("COMMIT")
             this.queries = []
             this.isTransactionActive = false
             this.transactionRetries = 0
+            this.transactionDepth -= 1
         }
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
@@ -245,18 +248,17 @@ export class CockroachQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
             this.storeQueries = false
-            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.queries = []
             this.isTransactionActive = false
             this.transactionRetries = 0
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -272,19 +274,15 @@ export class CockroachQueryRunner
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
-        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-        const queryStartTime = +new Date()
+        const broadcasterResult = new BroadcasterResult()
+        const queryStartTime = Date.now()
 
         if (this.isTransactionActive && this.storeQueries) {
-            this.queries.push({ query, parameters })
+            this.queries.push({ query, parameters, useStructuredResult })
         }
 
         try {
@@ -299,7 +297,7 @@ export class CockroachQueryRunner
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
             if (
                 maxQueryExecutionTime &&
@@ -371,7 +369,11 @@ export class CockroachQueryRunner
                         q.parameters,
                         this,
                     )
-                    result = await this.query(q.query, q.parameters)
+                    result = await this.query(
+                        q.query,
+                        q.parameters,
+                        q.useStructuredResult,
+                    )
                 }
                 this.transactionRetries = 0
                 this.storeQueries = true
@@ -1019,7 +1021,7 @@ export class CockroachQueryRunner
         const enumColumns = newTable.columns.filter(
             (column) => column.type === "enum" || column.type === "simple-enum",
         )
-        for (let column of enumColumns) {
+        for (const column of enumColumns) {
             // skip renaming for user-defined enum name
             if (column.enumName) continue
 
@@ -2317,7 +2319,7 @@ export class CockroachQueryRunner
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -2521,7 +2523,7 @@ export class CockroachQueryRunner
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
     ): Promise<void> {
-        for (const uniqueConstraint of uniqueConstraints) {
+        for (const uniqueConstraint of [...uniqueConstraints]) {
             await this.dropUniqueConstraint(tableOrName, uniqueConstraint)
         }
     }
@@ -2705,6 +2707,15 @@ export class CockroachQueryRunner
                 `Supplied foreign key was not found in table ${table.name}`,
             )
 
+        if (!foreignKey.name) {
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+                table,
+                foreignKey.columnNames,
+                this.getTablePath(foreignKey),
+                foreignKey.referencedColumnNames,
+            )
+        }
+
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
         await this.executeQueries(up, down)
@@ -2718,7 +2729,7 @@ export class CockroachQueryRunner
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
     ): Promise<void> {
-        for (const foreignKey of foreignKeys) {
+        for (const foreignKey of [...foreignKeys]) {
             await this.dropForeignKey(tableOrName, foreignKey)
         }
     }
@@ -2803,7 +2814,7 @@ export class CockroachQueryRunner
         tableOrName: Table | string,
         indices: TableIndex[],
     ): Promise<void> {
-        for (const index of indices) {
+        for (const index of [...indices]) {
             await this.dropIndex(tableOrName, index)
         }
     }
@@ -2843,17 +2854,15 @@ export class CockroachQueryRunner
             const selectViewDropsQuery =
                 `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString})`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
 
             const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || table_schema || '"."' || table_name || '" CASCADE;' as "query" FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`
-            const dropQueries: ObjectLiteral[] = await this.query(
-                selectDropsQuery,
-            )
+            const dropQueries: ObjectLiteral[] =
+                await this.query(selectDropsQuery)
             await Promise.all(dropQueries.map((q) => this.query(q["query"])))
 
             const selectSequenceDropsQuery = `SELECT 'DROP SEQUENCE "' || sequence_schema || '"."' || sequence_name || '";' as "query" FROM "information_schema"."sequences" WHERE "sequence_schema" IN (${schemaNamesString})`
@@ -2875,7 +2884,9 @@ export class CockroachQueryRunner
                 // we throw original error even if rollback thrown an error
                 if (!isAnotherTransactionActive)
                     await this.rollbackTransaction()
-            } catch (rollbackError) {}
+            } catch {
+                // no-op
+            }
             throw error
         }
     }
@@ -3741,12 +3752,13 @@ export class CockroachQueryRunner
     /**
      * Loads Cockroachdb version.
      */
-    protected async getVersion(): Promise<string> {
-        const result = await this.query(`SELECT version()`)
-        return result[0]["version"].replace(
-            /^CockroachDB CCL v([\d.]+) .*$/,
-            "$1",
+    async getVersion(): Promise<string> {
+        const result: [{ version: string }] = await this.query(
+            `SELECT version() AS "version"`,
         )
+        const versionString = result[0].version
+
+        return versionString.replace(/^CockroachDB CCL v([\d.]+) .*$/, "$1")
     }
 
     /**
@@ -3862,7 +3874,7 @@ export class CockroachQueryRunner
     ): Query {
         if (!enumName) enumName = this.buildEnumName(table, column)
         const enumValues = column
-            .enum!.map((value) => `'${value.replace("'", "''")}'`)
+            .enum!.map((value) => `'${value.replaceAll("'", "''")}'`)
             .join(", ")
         return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`)
     }
@@ -3903,7 +3915,7 @@ export class CockroachQueryRunner
         table: Table,
         indexOrName: TableIndex | TableUnique | string,
     ): Query {
-        let indexName =
+        const indexName =
             InstanceChecker.isTableIndex(indexOrName) ||
             InstanceChecker.isTableUnique(indexOrName)
                 ? indexOrName.name
