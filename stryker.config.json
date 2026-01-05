@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
-  "packageManager": "npm",
+  "packageManager": "pnpm",
   "buildCommand": "npm run compile",
   "concurrency": 6,
   "coverageAnalysis": "perTest",

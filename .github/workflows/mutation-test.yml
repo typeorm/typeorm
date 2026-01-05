@@ -44,14 +44,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
-          cache: "npm"
-
-      - run: npm ci
+          node-version: 24
+          cache: "pnpm"
+      - run: pnpm install
       - run: cp .github/workflows/test/mutation-testing.ormconfig.json ormconfig.json
-      - run: npx stryker run
+      - run: pnpm exec stryker run
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
