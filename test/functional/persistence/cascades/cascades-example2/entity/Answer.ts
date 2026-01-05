@@ -10,19 +10,19 @@ export class Answer {
     @PrimaryGeneratedColumn()
     id: number
 
-    @ManyToOne((type) => Question, (question) => question.answers, {
+    @ManyToOne(() => Question, (question) => question.answers, {
         cascade: ["insert"],
         nullable: false,
     })
     question: Question
 
-    @ManyToOne((type) => Photo, {
+    @ManyToOne(() => Photo, {
         cascade: ["insert"],
         nullable: false,
     })
     photo: Photo
 
-    @ManyToOne((type) => User, {
+    @ManyToOne(() => User, {
         cascade: ["insert"],
         nullable: false,
     })

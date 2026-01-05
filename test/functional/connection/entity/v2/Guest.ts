@@ -12,6 +12,6 @@ export class Guest {
     @Column()
     username: string
 
-    @OneToMany((type) => Comment, (comment) => comment.author)
+    @OneToMany(() => Comment, (comment) => comment.author)
     comments: Comment[]
 }

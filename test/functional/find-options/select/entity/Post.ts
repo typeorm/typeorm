@@ -21,7 +21,7 @@ export class Post {
     @Column()
     description: string
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     category: Category
 
     @Column("simple-json", { nullable: true })

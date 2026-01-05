@@ -28,6 +28,9 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { IndexMetadata } from "../../metadata/IndexMetadata"
+import { TableIndex } from "../../schema-builder/table/TableIndex"
+import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -73,7 +76,8 @@ export class PostgresDriver implements Driver {
     options: PostgresConnectionOptions
 
     /**
-     * Version of Postgres. Requires a SQL query to the DB, so it is not always set
+     * Version of Postgres. Requires a SQL query to the DB, so it is set on the first
+     * connection attempt.
      */
     version?: string
 
@@ -115,8 +119,7 @@ export class PostgresDriver implements Driver {
     /**
      * Gets list of supported column data types by a driver.
      *
-     * @see https://www.tutorialspoint.com/postgresql/postgresql_data_types.htm
-     * @see https://www.postgresql.org/docs/9.2/static/datatype.html
+     * @see https://www.postgresql.org/docs/current/datatype.html
      */
     supportedDataTypes: ColumnType[] = [
         "int",
@@ -175,6 +178,7 @@ export class PostgresDriver implements Driver {
         "xml",
         "json",
         "jsonb",
+        "jsonpath",
         "int4range",
         "int8range",
         "numrange",
@@ -191,6 +195,8 @@ export class PostgresDriver implements Driver {
         "geography",
         "cube",
         "ltree",
+        "vector",
+        "halfvec",
     ]
 
     /**
@@ -214,6 +220,8 @@ export class PostgresDriver implements Driver {
         "bit",
         "varbit",
         "bit varying",
+        "vector",
+        "halfvec",
     ]
 
     /**
@@ -263,6 +271,18 @@ export class PostgresDriver implements Driver {
         metadataName: "varchar",
         metadataValue: "text",
     }
+
+    /**
+     * Table indices supported
+     */
+    supportedIndexTypes: TableIndexTypes[] = [
+        "brin",
+        "btree",
+        "gin",
+        "gist",
+        "hash",
+        "spgist",
+    ]
 
     /**
      * The prefix used for the parameters
@@ -358,19 +378,23 @@ export class PostgresDriver implements Driver {
             this.master = await this.createPool(this.options, this.options)
         }
 
-        const queryRunner = this.createQueryRunner("master")
+        if (!this.version || !this.database || !this.searchSchema) {
+            const queryRunner = this.createQueryRunner("master")
 
-        this.version = await queryRunner.getVersion()
+            if (!this.version) {
+                this.version = await queryRunner.getVersion()
+            }
 
-        if (!this.database) {
-            this.database = await queryRunner.getCurrentDatabase()
+            if (!this.database) {
+                this.database = await queryRunner.getCurrentDatabase()
+            }
+
+            if (!this.searchSchema) {
+                this.searchSchema = await queryRunner.getCurrentSchema()
+            }
+
+            await queryRunner.release()
         }
-
-        if (!this.searchSchema) {
-            this.searchSchema = await queryRunner.getCurrentSchema()
-        }
-
-        await queryRunner.release()
 
         if (!this.schema) {
             this.schema = this.searchSchema
@@ -409,6 +433,7 @@ export class PostgresDriver implements Driver {
             hasCubeColumns,
             hasGeometryColumns,
             hasLtreeColumns,
+            hasVectorColumns,
             hasExclusionConstraints,
         } = extensionsMetadata
 
@@ -488,6 +513,18 @@ export class PostgresDriver implements Driver {
                     "At least one of the entities has a ltree column, but the 'ltree' extension cannot be installed automatically. Please install it manually using superuser rights",
                 )
             }
+        if (hasVectorColumns)
+            try {
+                await this.executeQuery(
+                    connection,
+                    `CREATE EXTENSION IF NOT EXISTS "vector"`,
+                )
+            } catch (_) {
+                logger.log(
+                    "warn",
+                    "At least one of the entities has a vector column, but the 'vector' extension (pgvector) cannot be installed automatically. Please install it manually using superuser rights",
+                )
+            }
         if (hasExclusionConstraints)
             try {
                 // The btree_gist extension provides operator support in PostgreSQL exclusion constraints
@@ -556,6 +593,14 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
+        const hasVectorColumns = this.connection.entityMetadatas.some(
+            (metadata) => {
+                return metadata.columns.some(
+                    (column) =>
+                        column.type === "vector" || column.type === "halfvec",
+                )
+            },
+        )
         const hasExclusionConstraints = this.connection.entityMetadatas.some(
             (metadata) => {
                 return metadata.exclusions.length > 0
@@ -569,6 +614,7 @@ export class PostgresDriver implements Driver {
             hasCubeColumns,
             hasGeometryColumns,
             hasLtreeColumns,
+            hasVectorColumns,
             hasExclusionConstraints,
             hasExtensions:
                 hasUuidColumns ||
@@ -577,6 +623,7 @@ export class PostgresDriver implements Driver {
                 hasGeometryColumns ||
                 hasCubeColumns ||
                 hasLtreeColumns ||
+                hasVectorColumns ||
                 hasExclusionConstraints,
         }
     }
@@ -585,8 +632,9 @@ export class PostgresDriver implements Driver {
      * Closes connection with database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("postgres"))
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("postgres")
+        }
 
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
@@ -623,7 +671,9 @@ export class PostgresDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value)
+            return DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedDateToTimeString(value)
         } else if (
@@ -640,6 +690,15 @@ export class PostgresDriver implements Driver {
             ) >= 0
         ) {
             return JSON.stringify(value)
+        } else if (
+            columnMetadata.type === "vector" ||
+            columnMetadata.type === "halfvec"
+        ) {
+            if (Array.isArray(value)) {
+                return `[${value.join(",")}]`
+            } else {
+                return value
+            }
         } else if (columnMetadata.type === "hstore") {
             if (typeof value === "string") {
                 return value
@@ -713,9 +772,23 @@ export class PostgresDriver implements Driver {
         ) {
             value = DateUtils.normalizeHydratedDate(value)
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
+        } else if (
+            columnMetadata.type === "vector" ||
+            columnMetadata.type === "halfvec"
+        ) {
+            if (
+                typeof value === "string" &&
+                value.startsWith("[") &&
+                value.endsWith("]")
+            ) {
+                if (value === "[]") return []
+                return value.slice(1, -1).split(",").map(Number)
+            }
         } else if (columnMetadata.type === "hstore") {
             if (columnMetadata.hstoreType === "object") {
                 const unescapeString = (str: string) =>
@@ -1002,9 +1075,7 @@ export class PostgresDriver implements Driver {
         }
 
         if (columnMetadata.isArray && Array.isArray(defaultValue)) {
-            return `'{${defaultValue
-                .map((val: string) => `${val}`)
-                .join(",")}}'`
+            return `'{${defaultValue.map((val) => String(val)).join(",")}}'`
         }
 
         if (
@@ -1140,6 +1211,9 @@ export class PostgresDriver implements Driver {
             } else {
                 type = column.type
             }
+        } else if (column.type === "vector" || column.type === "halfvec") {
+            type =
+                column.type + (column.length ? "(" + column.length + ")" : "")
         }
 
         if (column.isArray) type += " array"
@@ -1159,7 +1233,11 @@ export class PostgresDriver implements Driver {
 
         return new Promise((ok, fail) => {
             this.master.connect((err: any, connection: any, release: any) => {
-                err ? fail(err) : ok([connection, release])
+                if (err) {
+                    fail(err)
+                } else {
+                    ok([connection, release])
+                }
             })
         })
     }
@@ -1179,7 +1257,11 @@ export class PostgresDriver implements Driver {
         return new Promise((ok, fail) => {
             this.slaves[random].connect(
                 (err: any, connection: any, release: any) => {
-                    err ? fail(err) : ok([connection, release])
+                    if (err) {
+                        fail(err)
+                    } else {
+                        ok([connection, release])
+                    }
                 },
             )
         })
@@ -1249,7 +1331,8 @@ export class PostgresDriver implements Driver {
                 tableColumn.srid !== columnMetadata.srid ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
                 (tableColumn.asExpression || "").trim() !==
-                    (columnMetadata.asExpression || "").trim()
+                    (columnMetadata.asExpression || "").trim() ||
+                tableColumn.collation !== columnMetadata.collation
 
             // DEBUG SECTION
             // if (isColumnChanged) {
@@ -1401,6 +1484,13 @@ export class PostgresDriver implements Driver {
         return this.parametersPrefix + (index + 1)
     }
 
+    compareTableIndexTypes = (indexA: IndexMetadata, indexB: TableIndex) => {
+        const normalizedA = indexA.isSpatial ? "gist" : (indexA.type ?? "btree")
+        const normalizedB = indexB.isSpatial ? "gist" : (indexB.type ?? "btree")
+
+        return normalizedA.toLowerCase() === normalizedB.toLowerCase()
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -1411,10 +1501,10 @@ export class PostgresDriver implements Driver {
     loadStreamDependency() {
         try {
             return PlatformTools.load("pg-query-stream")
-        } catch (e) {
+        } catch {
             // todo: better error for browser env
             throw new TypeORMError(
-                `To use streams you should install pg-query-stream package. Please run npm i pg-query-stream --save command.`,
+                `To use streams you should install pg-query-stream package. Please run "npm i pg-query-stream".`,
             )
         }
     }
@@ -1509,14 +1599,17 @@ export class PostgresDriver implements Driver {
 
                 if (options.logNotifications) {
                     connection.on("notice", (msg: any) => {
-                        msg && this.connection.logger.log("info", msg.message)
+                        if (msg) {
+                            this.connection.logger.log("info", msg.message)
+                        }
                     })
                     connection.on("notification", (msg: any) => {
-                        msg &&
+                        if (msg) {
                             this.connection.logger.log(
                                 "info",
                                 `Received NOTIFY on channel ${msg.channel}: ${msg.payload}.`,
                             )
+                        }
                     })
                 }
                 release()

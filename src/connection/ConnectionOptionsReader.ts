@@ -128,9 +128,23 @@ export class ConnectionOptionsReader {
 
         // if .env file found then load all its variables into process.env using dotenv package
         if (foundFileFormat === "env") {
-            PlatformTools.dotenv(configFile)
+            try {
+                PlatformTools.dotenv(configFile)
+            } catch (err) {
+                PlatformTools.logWarn(
+                    `Warning: Could not load environment variables from .env file at ${configFile}`,
+                    err instanceof Error ? err.message : String(err),
+                )
+            }
         } else if (PlatformTools.fileExist(this.baseDirectory + "/.env")) {
-            PlatformTools.dotenv(this.baseDirectory + "/.env")
+            try {
+                PlatformTools.dotenv(this.baseDirectory + "/.env")
+            } catch (err) {
+                PlatformTools.logWarn(
+                    `Warning: Could not load environment variables from .env file at ${this.baseDirectory + "/.env"}`,
+                    err instanceof Error ? err.message : String(err),
+                )
+            }
         }
 
         // try to find connection options from any of available sources of configuration
@@ -138,7 +152,7 @@ export class ConnectionOptionsReader {
             PlatformTools.getEnvVariable("TYPEORM_CONNECTION") ||
             PlatformTools.getEnvVariable("TYPEORM_URL")
         ) {
-            connectionOptions = await new ConnectionOptionsEnvReader().read()
+            connectionOptions = new ConnectionOptionsEnvReader().read()
         } else if (
             foundFileFormat === "js" ||
             foundFileFormat === "mjs" ||
@@ -147,22 +161,36 @@ export class ConnectionOptionsReader {
             foundFileFormat === "mts" ||
             foundFileFormat === "cts"
         ) {
-            const [importOrRequireResult, moduleSystem] =
-                await importOrRequireFile(configFile)
-            const configModule = await importOrRequireResult
+            try {
+                const [importOrRequireResult, moduleSystem] =
+                    await importOrRequireFile(configFile)
+                const configModule = await importOrRequireResult
 
-            if (
-                moduleSystem === "esm" ||
-                (configModule &&
-                    "__esModule" in configModule &&
-                    "default" in configModule)
-            ) {
-                connectionOptions = configModule.default
-            } else {
-                connectionOptions = configModule
+                if (
+                    moduleSystem === "esm" ||
+                    (configModule &&
+                        "__esModule" in configModule &&
+                        "default" in configModule)
+                ) {
+                    connectionOptions = configModule.default
+                } else {
+                    connectionOptions = configModule
+                }
+            } catch (err) {
+                PlatformTools.logWarn(
+                    `Warning: Could not load ormconfig file at ${configFile}`,
+                    err instanceof Error ? err.message : String(err),
+                )
             }
         } else if (foundFileFormat === "json") {
-            connectionOptions = require(configFile)
+            try {
+                connectionOptions = require(configFile)
+            } catch (err) {
+                PlatformTools.logWarn(
+                    `Warning: Could not load ormconfig file at ${configFile}`,
+                    err instanceof Error ? err.message : String(err),
+                )
+            }
         }
 
         // normalize and return connection options

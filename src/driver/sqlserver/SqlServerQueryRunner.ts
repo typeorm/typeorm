@@ -1,11 +1,12 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { QueryResult } from "../../query-runner/QueryResult"
+import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { ColumnType } from "../types/ColumnTypes"
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
+import { QueryLock } from "../../query-runner/QueryLock"
+import { QueryResult } from "../../query-runner/QueryResult"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
@@ -17,17 +18,16 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Query } from "../Query"
+import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
+import { MetadataTableType } from "../types/MetadataTableType"
+import { ReplicationMode } from "../types/ReplicationMode"
 import { MssqlParameter } from "./MssqlParameter"
 import { SqlServerDriver } from "./SqlServerDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { TypeORMError } from "../../error"
-import { QueryLock } from "../../query-runner/QueryLock"
-import { MetadataTableType } from "../types/MetadataTableType"
-import { InstanceChecker } from "../../util/InstanceChecker"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -209,16 +209,12 @@ export class SqlServerQueryRunner
 
         const release = await this.lock.acquire()
 
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
         const broadcasterResult = new BroadcasterResult()
 
         try {
-            this.driver.connection.logger.logQuery(query, parameters, this)
-            this.broadcaster.broadcastBeforeQueryEvent(
-                broadcasterResult,
-                query,
-                parameters,
-            )
-
             const pool = await (this.mode === "slave"
                 ? this.driver.obtainSlaveConnection()
                 : this.driver.obtainMasterConnection())
@@ -245,14 +241,14 @@ export class SqlServerQueryRunner
                     }
                 })
             }
-            const queryStartTime = +new Date()
+            const queryStartTime = Date.now()
 
             const raw = await new Promise<any>((ok, fail) => {
                 request.query(query, (err: any, raw: any) => {
                     // log slow queries if maxQueryExecution time is set
                     const maxQueryExecutionTime =
                         this.driver.options.maxQueryExecutionTime
-                    const queryEndTime = +new Date()
+                    const queryEndTime = Date.now()
                     const queryExecutionTime = queryEndTime - queryStartTime
 
                     this.broadcaster.broadcastAfterQueryEvent(
@@ -2119,7 +2115,7 @@ export class SqlServerQueryRunner
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -2315,7 +2311,7 @@ export class SqlServerQueryRunner
     }
 
     /**
-     * Drops an unique constraints.
+     * Drops unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
@@ -2522,6 +2518,15 @@ export class SqlServerQueryRunner
                 `Supplied foreign key was not found in table ${table.name}`,
             )
 
+        if (!foreignKey.name) {
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+                table,
+                foreignKey.columnNames,
+                this.getTablePath(foreignKey),
+                foreignKey.referencedColumnNames,
+            )
+        }
+
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
         await this.executeQueries(up, down)
@@ -2637,9 +2642,8 @@ export class SqlServerQueryRunner
             const allViewsSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."VIEWS"`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."VIEWS"`
-            const allViewsResults: ObjectLiteral[] = await this.query(
-                allViewsSql,
-            )
+            const allViewsResults: ObjectLiteral[] =
+                await this.query(allViewsSql)
 
             await Promise.all(
                 allViewsResults.map((viewResult) => {
@@ -2652,9 +2656,8 @@ export class SqlServerQueryRunner
             const allTablesSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
-            const allTablesResults: ObjectLiteral[] = await this.query(
-                allTablesSql,
-            )
+            const allTablesResults: ObjectLiteral[] =
+                await this.query(allTablesSql)
 
             if (allTablesResults.length > 0) {
                 const tablesByCatalog: {
@@ -2721,7 +2724,7 @@ export class SqlServerQueryRunner
                 )
 
                 await Promise.all(
-                    allTablesResults.map((tablesResult) => {
+                    allTablesResults.map(async (tablesResult) => {
                         if (tablesResult["TABLE_NAME"].startsWith("#")) {
                             // don't try to drop temporary tables
                             return
@@ -2839,9 +2842,8 @@ export class SqlServerQueryRunner
                 `SELECT DISTINCT "name" ` +
                 `FROM "master"."dbo"."sysdatabases" ` +
                 `WHERE "name" NOT IN ('master', 'model', 'msdb')`
-            const dbDatabases: { name: string }[] = await this.query(
-                databasesSql,
-            )
+            const dbDatabases: { name: string }[] =
+                await this.query(databasesSql)
 
             const tablesSql = dbDatabases
                 .map(({ name }) => {
@@ -2863,15 +2865,20 @@ export class SqlServerQueryRunner
         } else {
             const tableNamesByCatalog = tableNames
                 .map((tableName) => this.driver.parseTableName(tableName))
-                .reduce((c, { database, ...other }) => {
-                    database = database || currentDatabase
-                    c[database] = c[database] || []
-                    c[database].push({
-                        schema: other.schema || currentSchema,
-                        tableName: other.tableName,
-                    })
-                    return c
-                }, {} as { [key: string]: { schema: string; tableName: string }[] })
+                .reduce(
+                    (c, { database, ...other }) => {
+                        database = database || currentDatabase
+                        c[database] = c[database] || []
+                        c[database].push({
+                            schema: other.schema || currentSchema,
+                            tableName: other.tableName,
+                        })
+                        return c
+                    },
+                    {} as {
+                        [key: string]: { schema: string; tableName: string }[]
+                    },
+                )
 
             const tablesSql = Object.entries(tableNamesByCatalog)
                 .map(([database, tables]) => {
@@ -3155,14 +3162,24 @@ export class SqlServerQueryRunner
                                 if (length === "-1") {
                                     tableColumn.length = "MAX"
                                 } else {
-                                    tableColumn.length =
-                                        !this.isDefaultColumnLength(
-                                            table,
-                                            tableColumn,
-                                            length,
-                                        )
-                                            ? length
-                                            : ""
+                                    if (tableColumn.type === "vector") {
+                                        const len = +length
+                                        // NOTE: real returned length is (N*4 + 8) where N is desired dimensions
+                                        if (!Number.isNaN(len)) {
+                                            tableColumn.length = String(
+                                                (len - 8) / 4,
+                                            )
+                                        }
+                                    } else {
+                                        tableColumn.length =
+                                            !this.isDefaultColumnLength(
+                                                table,
+                                                tableColumn,
+                                                length,
+                                            )
+                                                ? length
+                                                : ""
+                                    }
                                 }
                             }
 
@@ -4138,6 +4155,8 @@ export class SqlServerQueryRunner
                 return this.driver.mssql.UDT
             case "rowversion":
                 return this.driver.mssql.RowVersion
+            case "vector":
+                return this.driver.mssql.Ntext
         }
     }
 

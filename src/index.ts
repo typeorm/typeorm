@@ -103,6 +103,7 @@ export * from "./logger/AbstractLogger"
 export * from "./logger/Logger"
 export * from "./logger/LoggerOptions"
 export * from "./logger/AdvancedConsoleLogger"
+export * from "./logger/FormattedConsoleLogger"
 export * from "./logger/SimpleConsoleLogger"
 export * from "./logger/FileLogger"
 export * from "./metadata/EntityMetadata"
@@ -159,6 +160,10 @@ export { WhereExpression } from "./query-builder/WhereExpressionBuilder"
 export { InsertResult } from "./query-builder/result/InsertResult"
 export { UpdateResult } from "./query-builder/result/UpdateResult"
 export { DeleteResult } from "./query-builder/result/DeleteResult"
+export {
+    QueryPartialEntity,
+    QueryDeepPartialEntity,
+} from "./query-builder/QueryPartialEntity"
 export { QueryResult } from "./query-runner/QueryResult"
 export { QueryRunner } from "./query-runner/QueryRunner"
 export { MongoEntityManager } from "./entity-manager/MongoEntityManager"

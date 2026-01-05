@@ -955,15 +955,18 @@ export class EntityMetadata {
         columns: ColumnMetadata[],
         options?: { skipNulls?: boolean },
     ): ObjectLiteral | undefined {
-        return columns.reduce((map, column) => {
-            const value = column.getEntityValueMap(entity, options)
+        return columns.reduce(
+            (map, column) => {
+                const value = column.getEntityValueMap(entity, options)
 
-            // make sure that none of the values of the columns are not missing
-            if (map === undefined || value === null || value === undefined)
-                return undefined
+                // make sure that none of the values of the columns are not missing
+                if (map === undefined || value === null || value === undefined)
+                    return undefined
 
-            return OrmUtils.mergeDeep(map, value)
-        }, {} as ObjectLiteral | undefined)
+                return OrmUtils.mergeDeep(map, value)
+            },
+            {} as ObjectLiteral | undefined,
+        )
     }
 
     // ---------------------------------------------------------------------

@@ -8,6 +8,7 @@
     "username": "root",
     "password": "admin",
     "database": "test",
+    "legacySpatialSupport": false,
     "logging": false
   },
   {
@@ -19,6 +20,7 @@
     "username": "root",
     "password": "admin",
     "database": "test",
+    "legacySpatialSupport": false,
     "logging": false
   },
   {
@@ -45,6 +47,12 @@
     "logging": false
   },
   {
+    "skip": true,
+    "name": "sqljs",
+    "type": "sqljs",
+    "logging": false
+  },
+  {
     "skip": false,
     "name": "postgres",
     "type": "postgres",
@@ -56,7 +64,7 @@
     "logging": false
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mssql",
     "type": "mssql",
     "host": "localhost",
@@ -133,6 +141,17 @@
     "serviceConfigOptions": {
       "maxRetries": 3
     },
+    "logging": false
+  },
+  {
+    "skip": false,
+    "name": "spanner",
+    "type": "spanner",
+    "host": "localhost",
+    "projectId": "test-project",
+    "instanceId": "test-instance",
+    "databaseId": "test-db",
+    "port": 9010,
     "logging": false
   }
 ]

@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src"
 import { Post } from "./entity/Post"
 import { BasePost } from "./entity/BasePost"
 
@@ -15,9 +15,12 @@ const options: DataSourceOptions = {
     entities: [Post, BasePost],
 }
 
-const dataSource = new DataSource(options)
-dataSource.initialize().then(
-    (dataSource) => {
+async function main() {
+    const dataSource = new DataSource(options)
+
+    try {
+        await dataSource.initialize()
+
         const post = new Post()
         post.text = "Hello how are you?"
         post.title = "hello"
@@ -25,9 +28,19 @@ dataSource.initialize().then(
 
         const postRepository = dataSource.getRepository(Post)
 
-        postRepository
-            .save(post)
-            .then((post) => console.log("Post has been saved"))
-    },
-    (error) => console.log("Cannot connect: ", error),
-)
+        try {
+            await postRepository.save(post)
+            console.log("Post has been saved")
+        } catch (error) {
+            console.log("Cannot save post: ", error)
+        }
+    } catch (error) {
+        console.log("Cannot connect: ", error)
+    } finally {
+        if (dataSource.isInitialized) {
+            await dataSource.destroy()
+        }
+    }
+}
+
+void main()
