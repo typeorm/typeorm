@@ -15,46 +15,46 @@ import { DeleteResult } from "../query-builder/result/DeleteResult"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 
 import {
-    BulkWriteResult,
-    AggregationCursor,
-    Collection,
-    FindCursor,
-    Document,
     AggregateOptions,
+    AggregationCursor,
     AnyBulkWriteOperation,
     BulkWriteOptions,
-    Filter,
-    CountOptions,
-    IndexSpecification,
-    CreateIndexesOptions,
-    IndexDescription,
-    DeleteResult as DeleteResultMongoDb,
-    DeleteOptions,
-    CommandOperationOptions,
-    FindOneAndDeleteOptions,
-    FindOneAndReplaceOptions,
-    UpdateFilter,
-    FindOneAndUpdateOptions,
-    RenameOptions,
-    ReplaceOptions,
-    UpdateResult as UpdateResultMongoDb,
+    BulkWriteResult,
+    ChangeStream,
+    ChangeStreamOptions,
+    Collection,
     CollStats,
     CollStatsOptions,
-    ChangeStreamOptions,
-    ChangeStream,
-    UpdateOptions,
-    ListIndexesOptions,
-    ListIndexesCursor,
-    OptionalId,
+    CommandOperationOptions,
+    CountDocumentsOptions,
+    CountOptions,
+    CreateIndexesOptions,
+    DeleteOptions,
+    DeleteResult as DeleteResultMongoDb,
+    Document,
+    Filter,
+    FilterOperators,
+    FindCursor,
+    FindOneAndDeleteOptions,
+    FindOneAndReplaceOptions,
+    FindOneAndUpdateOptions,
+    IndexDescription,
+    IndexInformationOptions,
+    IndexSpecification,
+    InsertManyResult,
     InsertOneOptions,
     InsertOneResult,
-    InsertManyResult,
-    UnorderedBulkOperation,
-    OrderedBulkOperation,
-    IndexInformationOptions,
+    ListIndexesCursor,
+    ListIndexesOptions,
     ObjectId,
-    FilterOperators,
-    CountDocumentsOptions,
+    OptionalId,
+    OrderedBulkOperation,
+    RenameOptions,
+    ReplaceOptions,
+    UnorderedBulkOperation,
+    UpdateFilter,
+    UpdateOptions,
+    UpdateResult as UpdateResultMongoDb,
 } from "../driver/mongodb/typings"
 import { DataSource } from "../data-source/DataSource"
 import { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
@@ -159,6 +159,16 @@ export class MongoEntityManager extends EntityManager {
         where: any,
     ): Promise<[Entity[], number]> {
         return this.executeFindAndCount(entityClassOrName, where)
+    }
+
+    /**
+     * Finds entities that match given WHERE conditions.
+     */
+    async findBy<Entity>(
+        entityClassOrName: EntityTarget<Entity>,
+        where: any,
+    ): Promise<Entity[]> {
+        return this.executeFind(entityClassOrName, where)
     }
 
     /**
@@ -275,7 +285,7 @@ export class MongoEntityManager extends EntityManager {
         if (Array.isArray(entity)) {
             result.raw = await this.insertMany(target, entity)
             Object.keys(result.raw.insertedIds).forEach((key: any) => {
-                let insertedId = result.raw.insertedIds[key]
+                const insertedId = result.raw.insertedIds[key]
                 result.generatedMaps.push(
                     this.connection.driver.createGeneratedMap(
                         this.connection.getMetadata(target),
@@ -1027,7 +1037,7 @@ export class MongoEntityManager extends EntityManager {
         const queryRunner = this.mongoQueryRunner
 
         ;(cursor as any)["__to_array_func"] = cursor.toArray
-        cursor.toArray = async () =>
+        cursor.toArray = () =>
             ((cursor as any)["__to_array_func"] as CallableFunction)().then(
                 async (results: Entity[]) => {
                     const transformer = new DocumentToEntityTransformer()
@@ -1042,7 +1052,7 @@ export class MongoEntityManager extends EntityManager {
                 },
             )
         ;(cursor as any)["__next_func"] = cursor.next
-        cursor.next = async () =>
+        cursor.next = () =>
             ((cursor as any)["__next_func"] as CallableFunction)().then(
                 async (result: Entity) => {
                     if (!result) {
@@ -1177,7 +1187,7 @@ export class MongoEntityManager extends EntityManager {
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
             )
-        const cursor = await this.createEntityCursor(entityClassOrName, query)
+        const cursor = this.createEntityCursor(entityClassOrName, query)
         const deleteDateColumn =
             this.connection.getMetadata(entityClassOrName).deleteDateColumn
 

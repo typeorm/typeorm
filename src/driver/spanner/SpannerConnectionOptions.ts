@@ -6,8 +6,7 @@ import { SpannerConnectionCredentialsOptions } from "./SpannerConnectionCredenti
  * Spanner specific connection options.
  */
 export interface SpannerConnectionOptions
-    extends BaseConnectionOptions,
-        SpannerConnectionCredentialsOptions {
+    extends BaseConnectionOptions, SpannerConnectionCredentialsOptions {
     /**
      * Database type.
      */
@@ -95,12 +94,6 @@ export interface SpannerConnectionOptions
     readonly multipleStatements?: boolean
 
     /**
-     * Use spatial functions like GeomFromText and AsText which are removed in MySQL 8.
-     * (Default: true)
-     */
-    readonly legacySpatialSupport?: boolean
-
-    /**
      * List of connection flags to use other than the default ones. It is also possible to blacklist default ones.
      * For more information, check https://github.com/mysqljs/mysql#connection-flags.
      */
@@ -116,7 +109,7 @@ export interface SpannerConnectionOptions
         readonly master: SpannerConnectionCredentialsOptions
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from servers (slaves).
          */
         readonly slaves: SpannerConnectionCredentialsOptions[]
 

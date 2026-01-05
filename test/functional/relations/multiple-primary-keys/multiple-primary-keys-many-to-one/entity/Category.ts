@@ -23,15 +23,15 @@ export class Category {
     @Column({ nullable: true })
     description: string
 
-    @OneToMany((type) => Post, (post) => post.category)
+    @OneToMany(() => Post, (post) => post.category)
     posts: Post[]
 
-    @OneToMany((type) => Post, (post) => post.categoryWithJoinColumn)
+    @OneToMany(() => Post, (post) => post.categoryWithJoinColumn)
     postsWithJoinColumn: Post[]
 
-    @OneToMany((type) => Post, (post) => post.categoryWithOptions)
+    @OneToMany(() => Post, (post) => post.categoryWithOptions)
     postsWithOptions: Post[]
 
-    @OneToMany((type) => Post, (post) => post.categoryWithNonPKColumns)
+    @OneToMany(() => Post, (post) => post.categoryWithNonPKColumns)
     postsWithNonPKColumns: Post[]
 }

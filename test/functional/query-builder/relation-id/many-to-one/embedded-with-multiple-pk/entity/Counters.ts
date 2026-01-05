@@ -17,7 +17,7 @@ export class Counters {
     @Column()
     favorites: number
 
-    @ManyToOne((type) => Category)
+    @ManyToOne(() => Category)
     category: Category
 
     @Column(() => Subcounters, { prefix: "sub" })

@@ -6,8 +6,7 @@ import { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCred
  * Cockroachdb-specific connection options.
  */
 export interface CockroachConnectionOptions
-    extends BaseDataSourceOptions,
-        CockroachConnectionCredentialsOptions {
+    extends BaseDataSourceOptions, CockroachConnectionCredentialsOptions {
     /**
      * Database type.
      */
@@ -46,7 +45,7 @@ export interface CockroachConnectionOptions
         readonly master: CockroachConnectionCredentialsOptions
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from servers (slaves).
          */
         readonly slaves: CockroachConnectionCredentialsOptions[]
 

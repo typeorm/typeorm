@@ -12,6 +12,6 @@ export class Child {
     @Column()
     public name: string
 
-    @ManyToOne((target) => Parent, (parent) => parent.children, { lazy: true })
+    @ManyToOne(() => Parent, (parent) => parent.children, { lazy: true })
     public parent: Promise<Parent> | Parent
 }
