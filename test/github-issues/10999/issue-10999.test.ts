@@ -18,7 +18,6 @@ describe("github issues > #10999 Migration: migration:generate Can't Generate a 
                 enabledDrivers: ["postgres"],
             })),
     )
-    // beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should generate drop removed column SQL command", () =>
