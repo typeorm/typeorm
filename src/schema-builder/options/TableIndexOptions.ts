@@ -1,3 +1,5 @@
+import { TableIndexTypes } from "./TableIndexTypes"
+
 /**
  * Database's table index options.
  */
@@ -58,4 +60,11 @@ export interface TableIndexOptions {
      * Index filter condition.
      */
     where?: string
+
+    /**
+     * The `type` option defines the type of the index being created.
+     * Supported types include B-tree, Hash, GiST, SP-GiST, GIN, and BRIN
+     * This option is only applicable in PostgreSQL.
+     */
+    type?: TableIndexTypes
 }

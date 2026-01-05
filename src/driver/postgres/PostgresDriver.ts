@@ -28,6 +28,9 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { IndexMetadata } from "../../metadata/IndexMetadata"
+import { TableIndex } from "../../schema-builder/table/TableIndex"
+import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -268,6 +271,18 @@ export class PostgresDriver implements Driver {
         metadataName: "varchar",
         metadataValue: "text",
     }
+
+    /**
+     * Table indices supported
+     */
+    supportedIndexTypes: TableIndexTypes[] = [
+        "brin",
+        "btree",
+        "gin",
+        "gist",
+        "hash",
+        "spgist",
+    ]
 
     /**
      * The prefix used for the parameters
@@ -1218,7 +1233,11 @@ export class PostgresDriver implements Driver {
 
         return new Promise((ok, fail) => {
             this.master.connect((err: any, connection: any, release: any) => {
-                err ? fail(err) : ok([connection, release])
+                if (err) {
+                    fail(err)
+                } else {
+                    ok([connection, release])
+                }
             })
         })
     }
@@ -1238,7 +1257,11 @@ export class PostgresDriver implements Driver {
         return new Promise((ok, fail) => {
             this.slaves[random].connect(
                 (err: any, connection: any, release: any) => {
-                    err ? fail(err) : ok([connection, release])
+                    if (err) {
+                        fail(err)
+                    } else {
+                        ok([connection, release])
+                    }
                 },
             )
         })
@@ -1461,6 +1484,13 @@ export class PostgresDriver implements Driver {
         return this.parametersPrefix + (index + 1)
     }
 
+    compareTableIndexTypes = (indexA: IndexMetadata, indexB: TableIndex) => {
+        const normalizedA = indexA.isSpatial ? "gist" : (indexA.type ?? "btree")
+        const normalizedB = indexB.isSpatial ? "gist" : (indexB.type ?? "btree")
+
+        return normalizedA.toLowerCase() === normalizedB.toLowerCase()
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -1569,14 +1599,17 @@ export class PostgresDriver implements Driver {
 
                 if (options.logNotifications) {
                     connection.on("notice", (msg: any) => {
-                        msg && this.connection.logger.log("info", msg.message)
+                        if (msg) {
+                            this.connection.logger.log("info", msg.message)
+                        }
                     })
                     connection.on("notification", (msg: any) => {
-                        msg &&
+                        if (msg) {
                             this.connection.logger.log(
                                 "info",
                                 `Received NOTIFY on channel ${msg.channel}: ${msg.payload}.`,
                             )
+                        }
                     })
                 }
                 release()
