@@ -41,6 +41,15 @@ const config: Config = {
                       defer: true,
                       "data-domain": "typeorm.io",
                   },
+                  {
+                      src: "https://widget.kapa.ai/kapa-widget.bundle.js",
+                      "data-website-id": "216c70e7-22e1-4425-bc7a-4af657c59eb2",
+                      "data-project-name": "TypeORM",
+                      "data-project-color": "#d94400",
+                      "data-project-logo":
+                          "https://typeorm.io/img/typeorm-icon-colored.png",
+                      async: true,
+                  },
               ]
             : [],
 
