@@ -15,7 +15,6 @@ describe("github issues > #10999 Migration: migration:generate Can't Generate a 
                 migrations: [__dirname + "/migration/*{.js,.ts}"],
                 schemaCreate: false,
                 dropSchema: true,
-                enabledDrivers: ["postgres"],
             })),
     )
     // beforeEach(() => reloadTestingDatabases(dataSources))
