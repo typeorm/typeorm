@@ -124,6 +124,12 @@ export class ColumnMetadata {
     comment?: string
 
     /**
+     * Indicates if date values use UTC timezone.
+     * Only applies to "date" column type.
+     */
+    utc: boolean = false
+
+    /**
      * Default database value.
      */
     default?:
@@ -242,14 +248,14 @@ export class ColumnMetadata {
     /**
      * Indicates if column is a virtual property. Virtual properties are not mapped to the entity.
      * This property is used in tandem the virtual column decorator.
-     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
+     * @See https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     isVirtualProperty: boolean = false
 
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
-     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
+     * @See https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     query?: (alias: string) => string
 
@@ -388,6 +394,8 @@ export class ColumnMetadata {
             this.isSelect = options.args.options.select
         if (options.args.options.insert !== undefined)
             this.isInsert = options.args.options.insert
+        if (options.args.options.utc !== undefined)
+            this.utc = options.args.options.utc
         if (options.args.options.update !== undefined)
             this.isUpdate = options.args.options.update
         if (options.args.options.readonly !== undefined)
@@ -569,7 +577,7 @@ export class ColumnMetadata {
             const extractEmbeddedColumnValue = (
                 propertyNames: string[],
                 map: ObjectLiteral,
-            ): any => {
+            ) => {
                 const propertyName = propertyNames.shift()
                 if (propertyName) {
                     map[propertyName] = {}
@@ -630,7 +638,9 @@ export class ColumnMetadata {
             // { data: { information: { counters: { id: ... } } } } format
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            const propertyNames = [...this.embeddedMetadata.parentPropertyNames]
+            const embeddedMetadataTree = [
+                ...this.embeddedMetadata.embeddedMetadataTree,
+            ]
             const isEmbeddedArray = this.embeddedMetadata.isArray
 
             // now need to access post[data][information][counters] to get column value from the counters
@@ -639,29 +649,49 @@ export class ColumnMetadata {
             // then { data: { information: { counters: [this.propertyName]: entity[data][information][counters][this.propertyName] } } }
             // this recursive function helps doing that
             const extractEmbeddedColumnValue = (
-                propertyNames: string[],
+                embeddedMetadataTree: EmbeddedMetadata[],
                 value: ObjectLiteral,
             ): ObjectLiteral => {
                 if (value === undefined) {
                     return {}
                 }
 
-                const propertyName = propertyNames.shift()
+                const embeddedMetadata = embeddedMetadataTree.at(0)
 
-                if (propertyName) {
-                    const submap = extractEmbeddedColumnValue(
-                        propertyNames,
-                        value[propertyName],
-                    )
-                    if (Object.keys(submap).length > 0) {
-                        return { [propertyName]: submap }
+                if (embeddedMetadata) {
+                    const embeddedPropertyName = embeddedMetadata.propertyName
+                    const embeddedPropertyValue = value[embeddedPropertyName]
+
+                    if (
+                        embeddedMetadata.isArray &&
+                        Array.isArray(embeddedPropertyValue)
+                    ) {
+                        return {
+                            [embeddedPropertyName]: embeddedPropertyValue.map(
+                                (element) =>
+                                    extractEmbeddedColumnValue(
+                                        embeddedMetadataTree.slice(1),
+                                        element,
+                                    ),
+                            ),
+                        }
                     }
+
+                    const submap = extractEmbeddedColumnValue(
+                        embeddedMetadataTree.slice(1),
+                        embeddedPropertyValue,
+                    )
+
+                    if (Object.keys(submap).length > 0) {
+                        return { [embeddedPropertyName]: submap }
+                    }
+
                     return {}
                 }
 
                 if (isEmbeddedArray && Array.isArray(value)) {
-                    return value.map((v) => ({
-                        [this.propertyName]: v[this.propertyName],
+                    return value.map((element) => ({
+                        [this.propertyName]: element[this.propertyName],
                     }))
                 }
 
@@ -674,7 +704,7 @@ export class ColumnMetadata {
 
                 return {}
             }
-            const map = extractEmbeddedColumnValue(propertyNames, entity)
+            const map = extractEmbeddedColumnValue(embeddedMetadataTree, entity)
 
             return Object.keys(map).length > 0 ? map : undefined
         } else {
@@ -682,7 +712,7 @@ export class ColumnMetadata {
             /**
              * Object.getOwnPropertyDescriptor checks if the relation is lazy, in which case value is a Promise
              * DO NOT use `entity[
-                this.relationMetadata.propertyName] instanceof Promise`, which will invoke property getter and make unwanted DB request
+             this.relationMetadata.propertyName] instanceof Promise`, which will invoke property getter and make unwanted DB request
              * refer: https://github.com/typeorm/typeorm/pull/8676#issuecomment-1049906331
              */
             if (
@@ -916,7 +946,7 @@ export class ColumnMetadata {
      */
     compareEntityValue(entity: any, valueToCompareWith: any) {
         const columnValue = this.getEntityValue(entity)
-        if (ObjectUtils.isObject(columnValue)) {
+        if (typeof columnValue?.equals === "function") {
             return columnValue.equals(valueToCompareWith)
         }
         return columnValue === valueToCompareWith

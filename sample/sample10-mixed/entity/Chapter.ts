@@ -14,6 +14,6 @@ export class Chapter {
     @Column()
     about: string
 
-    @OneToMany((type) => PostDetails, (postDetails) => postDetails.chapter)
+    @OneToMany(() => PostDetails, (postDetails) => postDetails.chapter)
     postDetails: PostDetails[]
 }

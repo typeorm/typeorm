@@ -16,24 +16,24 @@ export class Category {
     @Column()
     name: string
 
-    @OneToOne((type) => Post, (post) => post.oneCategory)
+    @OneToOne(() => Post, (post) => post.oneCategory)
     onePost: Promise<Post>
 
-    @ManyToMany((type) => Post, (post) => post.twoSideCategories)
+    @ManyToMany(() => Post, (post) => post.twoSideCategories)
     twoSidePosts: Promise<Post[]>
 
-    @OneToMany((type) => Post, (post) => post.twoSideCategory)
+    @OneToMany(() => Post, (post) => post.twoSideCategory)
     twoSidePosts2: Promise<Post[]>
 
     // ManyToMany with named properties
-    @ManyToMany((type) => Post, (post) => post.categoriesNamedColumn)
+    @ManyToMany(() => Post, (post) => post.categoriesNamedColumn)
     postsNamedColumn: Promise<Post[]>
 
     // OneToMany with named properties
-    @OneToMany((type) => Post, (post) => post.categoryNamedColumn)
+    @OneToMany(() => Post, (post) => post.categoryNamedColumn)
     onePostsNamedColumn: Promise<Post[]>
 
     // OneToOne with named properties
-    @OneToOne((type) => Post, (post) => post.oneCategoryNamedColumn)
+    @OneToOne(() => Post, (post) => post.oneCategoryNamedColumn)
     onePostNamedColumn: Promise<Post>
 }
