@@ -3,7 +3,7 @@ name: Index docs to Typesense
 on:
   push:
     branches:
-      - master
+      - v0.3
 
 jobs:
   index-docs:
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Delete unaliased collections
         env:
           TYPESENSE_API_KEY: ${{ secrets.TYPESENSE_API_KEY }}

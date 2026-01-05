@@ -81,9 +81,9 @@ export function ForeignKey<
         !Array.isArray(inverseSideOrColumnNamesOrOptions)
             ? inverseSideOrColumnNamesOrOptions
             : ObjectUtils.isObject(referencedColumnNamesOrOptions) &&
-              !Array.isArray(referencedColumnNamesOrOptions)
-            ? referencedColumnNamesOrOptions
-            : maybeOptions
+                !Array.isArray(referencedColumnNamesOrOptions)
+              ? referencedColumnNamesOrOptions
+              : maybeOptions
 
     return function (
         clsOrObject: Function | Object,
