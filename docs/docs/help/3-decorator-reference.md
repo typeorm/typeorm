@@ -662,7 +662,7 @@ Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 #### `@BeforeRemove`
 
 You can define a method with any name in the entity and mark it with `@BeforeRemove`
-and TypeORM will call it before a entity is removed using repository/manager `remove`.
+and TypeORM will call it before an entity is removed using repository/manager `remove`.
 Example:
 
 ```typescript
@@ -698,7 +698,7 @@ Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 #### `@BeforeSoftRemove`
 
 You can define a method with any name in the entity and mark it with `@BeforeSoftRemove`
-and TypeORM will call it before a entity is soft removed using repository/manager `softRemove`.
+and TypeORM will call it before an entity is soft removed using repository/manager `softRemove`.
 Example:
 
 ```typescript
@@ -734,7 +734,7 @@ Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
 #### `@BeforeRecover`
 
 You can define a method with any name in the entity and mark it with `@BeforeRecover`
-and TypeORM will call it before a entity is recovered using repository/manager `recover`.
+and TypeORM will call it before an entity is recovered using repository/manager `recover`.
 Example:
 
 ```typescript

@@ -16,11 +16,9 @@ export class DataModel {
     @PrimaryColumn()
     mainId: number
 
-    @ManyToOne(
-        (type) => ValidationModel,
-        (validation) => validation.dataModel,
-        { eager: true },
-    )
+    @ManyToOne(() => ValidationModel, (validation) => validation.dataModel, {
+        eager: true,
+    })
     @JoinColumn({
         name: "validation",
         referencedColumnName: "validation",
