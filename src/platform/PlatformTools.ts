@@ -30,6 +30,7 @@ export class PlatformTools {
     /**
      * Reads the version string from package.json of the given package.
      * This operation is only supported in node.
+     * @param name
      */
     static readPackageVersion(name: string): string {
         try {
