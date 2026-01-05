@@ -9,7 +9,7 @@ import { expect } from "chai"
 import { Table } from "../../../src"
 import { xfail } from "../../utils/xfail"
 
-describe("github issues > #3387 named columns", () => {
+describe("github issues > #3837 named columns", () => {
     let connections: DataSource[]
     before(
         async () =>

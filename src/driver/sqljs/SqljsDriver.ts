@@ -21,7 +21,7 @@ declare let window: Window
 
 export class SqljsDriver extends AbstractSqliteDriver {
     // The driver specific options.
-    options: SqljsConnectionOptions
+    declare options: SqljsConnectionOptions
 
     // -------------------------------------------------------------------------
     // Constructor

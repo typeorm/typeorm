@@ -36,16 +36,19 @@ export class OrmUtils {
         array: T[],
         propertyCallback: (item: T) => R,
     ): { id: R; items: T[] }[] {
-        return array.reduce((groupedArray, value) => {
-            const key = propertyCallback(value)
-            let grouped = groupedArray.find((i) => i.id === key)
-            if (!grouped) {
-                grouped = { id: key, items: [] }
-                groupedArray.push(grouped)
-            }
-            grouped.items.push(value)
-            return groupedArray
-        }, [] as Array<{ id: R; items: T[] }>)
+        return array.reduce(
+            (groupedArray, value) => {
+                const key = propertyCallback(value)
+                let grouped = groupedArray.find((i) => i.id === key)
+                if (!grouped) {
+                    grouped = { id: key, items: [] }
+                    groupedArray.push(grouped)
+                }
+                grouped.items.push(value)
+                return groupedArray
+            },
+            [] as Array<{ id: R; items: T[] }>,
+        )
     }
 
     public static uniq<T>(array: T[], criteria?: (item: T) => unknown): T[]
@@ -245,6 +248,22 @@ export class OrmUtils {
         }
 
         return arr1.every((element) => arr2.includes(element))
+    }
+
+    /**
+     * Returns items that are missing/extraneous in the second array
+     */
+    public static getArraysDiff<T>(
+        arr1: T[],
+        arr2: T[],
+    ): { extraItems: T[]; missingItems: T[] } {
+        const extraItems = arr1.filter((item) => !arr2.includes(item))
+        const missingItems = arr2.filter((item) => !arr1.includes(item))
+
+        return {
+            extraItems,
+            missingItems,
+        }
     }
 
     public static areMutuallyExclusive<T>(...lists: T[][]): boolean {
