@@ -2159,6 +2159,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Supplied foreign key was not found in table ${table.name}`,
             )
 
+        if (!foreignKey.name) {
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+                table,
+                foreignKey.columnNames,
+                this.getTablePath(foreignKey),
+                foreignKey.referencedColumnNames,
+            )
+        }
+
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
         await this.executeQueries(up, down)
@@ -2279,9 +2288,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
             const selectViewDropsQuery = `SELECT concat('DROP VIEW IF EXISTS \`', table_schema, '\`.\`', table_name, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\` WHERE \`TABLE_SCHEMA\` = '${dbName}'`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
@@ -2291,9 +2299,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const enableForeignKeysCheckQuery = `SET FOREIGN_KEY_CHECKS = 1;`
 
             await this.query(disableForeignKeysCheckQuery)
-            const dropQueries: ObjectLiteral[] = await this.query(
-                dropTablesQuery,
-            )
+            const dropQueries: ObjectLiteral[] =
+                await this.query(dropTablesQuery)
             await Promise.all(
                 dropQueries.map((query) => this.query(query["query"])),
             )
@@ -3376,9 +3383,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     async getVersion(): Promise<string> {
-        const result: [{ "version()": string }] = await this.query(
-            "SELECT version()",
-        )
+        const result: [{ "version()": string }] =
+            await this.query("SELECT version()")
 
         // MariaDB: https://mariadb.com/kb/en/version/
         // - "10.2.27-MariaDB-10.2.27+maria~jessie-log"

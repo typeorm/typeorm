@@ -2527,6 +2527,15 @@ export class SqlServerQueryRunner
                 `Supplied foreign key was not found in table ${table.name}`,
             )
 
+        if (!foreignKey.name) {
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+                table,
+                foreignKey.columnNames,
+                this.getTablePath(foreignKey),
+                foreignKey.referencedColumnNames,
+            )
+        }
+
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
         await this.executeQueries(up, down)
@@ -2642,9 +2651,8 @@ export class SqlServerQueryRunner
             const allViewsSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."VIEWS"`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."VIEWS"`
-            const allViewsResults: ObjectLiteral[] = await this.query(
-                allViewsSql,
-            )
+            const allViewsResults: ObjectLiteral[] =
+                await this.query(allViewsSql)
 
             await Promise.all(
                 allViewsResults.map((viewResult) => {
@@ -2657,9 +2665,8 @@ export class SqlServerQueryRunner
             const allTablesSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
-            const allTablesResults: ObjectLiteral[] = await this.query(
-                allTablesSql,
-            )
+            const allTablesResults: ObjectLiteral[] =
+                await this.query(allTablesSql)
 
             if (allTablesResults.length > 0) {
                 const tablesByCatalog: {
@@ -2844,9 +2851,8 @@ export class SqlServerQueryRunner
                 `SELECT DISTINCT "name" ` +
                 `FROM "master"."dbo"."sysdatabases" ` +
                 `WHERE "name" NOT IN ('master', 'model', 'msdb')`
-            const dbDatabases: { name: string }[] = await this.query(
-                databasesSql,
-            )
+            const dbDatabases: { name: string }[] =
+                await this.query(databasesSql)
 
             const tablesSql = dbDatabases
                 .map(({ name }) => {
@@ -2868,15 +2874,20 @@ export class SqlServerQueryRunner
         } else {
             const tableNamesByCatalog = tableNames
                 .map((tableName) => this.driver.parseTableName(tableName))
-                .reduce((c, { database, ...other }) => {
-                    database = database || currentDatabase
-                    c[database] = c[database] || []
-                    c[database].push({
-                        schema: other.schema || currentSchema,
-                        tableName: other.tableName,
-                    })
-                    return c
-                }, {} as { [key: string]: { schema: string; tableName: string }[] })
+                .reduce(
+                    (c, { database, ...other }) => {
+                        database = database || currentDatabase
+                        c[database] = c[database] || []
+                        c[database].push({
+                            schema: other.schema || currentSchema,
+                            tableName: other.tableName,
+                        })
+                        return c
+                    },
+                    {} as {
+                        [key: string]: { schema: string; tableName: string }[]
+                    },
+                )
 
             const tablesSql = Object.entries(tableNamesByCatalog)
                 .map(([database, tables]) => {

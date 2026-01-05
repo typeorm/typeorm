@@ -748,9 +748,10 @@ export class DataSource {
         const flattenedSubscribers = ObjectUtils.mixedListToArray(
             this.options.subscribers || [],
         )
-        const subscribers = await connectionMetadataBuilder.buildSubscribers(
-            flattenedSubscribers,
-        )
+        const subscribers =
+            await connectionMetadataBuilder.buildSubscribers(
+                flattenedSubscribers,
+            )
         ObjectUtils.assign(this, { subscribers: subscribers })
 
         // build entity metadatas
@@ -772,9 +773,8 @@ export class DataSource {
         const flattenedMigrations = ObjectUtils.mixedListToArray(
             this.options.migrations || [],
         )
-        const migrations = await connectionMetadataBuilder.buildMigrations(
-            flattenedMigrations,
-        )
+        const migrations =
+            await connectionMetadataBuilder.buildMigrations(flattenedMigrations)
         ObjectUtils.assign(this, { migrations: migrations })
 
         // validate all created entity metadatas to make sure user created entities are valid and correct

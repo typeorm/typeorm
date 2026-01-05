@@ -289,9 +289,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         this.driver.connection.logger.logQuery(query, parameters, this)
         try {
             const queryStartTime = Date.now()
-            const [operation] = await this.driver.instanceDatabase.updateSchema(
-                query,
-            )
+            const [operation] =
+                await this.driver.instanceDatabase.updateSchema(query)
             await operation.promise()
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
@@ -1334,6 +1333,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Supplied foreign key was not found in table ${table.name}`,
             )
 
+        if (!foreignKey.name) {
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+                table,
+                foreignKey.columnNames,
+                this.getTablePath(foreignKey),
+                foreignKey.referencedColumnNames,
+            )
+        }
+
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
         await this.executeQueries(up, down)
@@ -1452,9 +1460,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             `SELECT concat('ALTER TABLE \`', TABLE_NAME, '\`', ' DROP CONSTRAINT \`', CONSTRAINT_NAME, '\`') AS \`query\` ` +
             `FROM \`INFORMATION_SCHEMA\`.\`TABLE_CONSTRAINTS\` ` +
             `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`CONSTRAINT_TYPE\` = 'FOREIGN KEY'`
-        const dropFKQueries: ObjectLiteral[] = await this.query(
-            selectFKDropsQuery,
-        )
+        const dropFKQueries: ObjectLiteral[] =
+            await this.query(selectFKDropsQuery)
 
         // drop view queries
         // const selectViewDropsQuery = `SELECT concat('DROP VIEW \`', TABLE_NAME, '\`') AS \`query\` FROM \`INFORMATION_SCHEMA\`.\`VIEWS\``
@@ -1467,9 +1474,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             `SELECT concat('DROP TABLE \`', TABLE_NAME, '\`') AS \`query\` ` +
             `FROM \`INFORMATION_SCHEMA\`.\`TABLES\` ` +
             `WHERE \`TABLE_CATALOG\` = '' AND \`TABLE_SCHEMA\` = '' AND \`TABLE_TYPE\` = 'BASE TABLE'`
-        const dropTableQueries: ObjectLiteral[] = await this.query(
-            dropTablesQuery,
-        )
+        const dropTableQueries: ObjectLiteral[] =
+            await this.query(dropTablesQuery)
 
         if (
             !dropIndexQueries.length &&

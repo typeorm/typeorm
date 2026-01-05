@@ -19,7 +19,7 @@ import { InstanceChecker } from "../util/InstanceChecker"
 import { buildSqlTag } from "../util/SqlTagUtils"
 import { QueryOptions } from "./QueryOptions"
 
-export abstract class BaseQueryRunner {
+export abstract class BaseQueryRunner implements AsyncDisposable {
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -103,6 +103,29 @@ export abstract class BaseQueryRunner {
     // -------------------------------------------------------------------------
     // Public Abstract Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Releases used database connection.
+     * You cannot use query runner methods after connection is released.
+     */
+    abstract release(): Promise<void>
+
+    async [Symbol.asyncDispose](): Promise<void> {
+        try {
+            if (this.isTransactionActive) {
+                this.transactionDepth = 1 // ignore all savepoints and commit directly
+                await this.commitTransaction()
+            }
+        } finally {
+            await this.release()
+        }
+    }
+
+    /**
+     * Commits transaction.
+     * Error will be thrown if transaction was not started.
+     */
+    abstract commitTransaction(): Promise<void>
 
     /**
      * Executes a given SQL query.

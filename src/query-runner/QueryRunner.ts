@@ -20,7 +20,7 @@ import { QueryOptions } from "./QueryOptions"
 /**
  * Runs queries on a single database connection.
  */
-export interface QueryRunner {
+export interface QueryRunner extends AsyncDisposable {
     /**
      * Connection used by this query runner.
      */
@@ -88,6 +88,8 @@ export interface QueryRunner {
      * You cannot use query runner methods after connection is released.
      */
     release(): Promise<void>
+
+    [Symbol.asyncDispose](): Promise<void>
 
     /**
      * Removes all tables from the currently connected database.

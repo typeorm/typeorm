@@ -11,7 +11,7 @@ import { Table } from "../../schema-builder/table/Table"
 import { TypeORMError } from "../../error"
 
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
-    driver: any
+    declare driver: any
 
     constructor(driver: any, mode: ReplicationMode) {
         super(driver, mode)
@@ -32,18 +32,9 @@ export class AuroraPostgresQueryRunner
     /**
      * Database driver used by connection.
      */
-    driver: AuroraPostgresDriver
+    declare driver: AuroraPostgresDriver
 
     protected client: any
-
-    // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Promise used to obtain a database connection for a first time.
-     */
-    protected databaseConnectionPromise: Promise<any>
 
     // -------------------------------------------------------------------------
     // Constructor
