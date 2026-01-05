@@ -17,13 +17,13 @@ export class Category {
     @Column()
     name: string
 
-    @ManyToOne((type) => Post, (post) => post.categories)
+    @ManyToOne(() => Post, (post) => post.categories)
     post: Post | null
 
     @RelationId((category: Category) => category.post)
     postId: number
 
-    @ManyToMany((type) => Post, (post) => post.manyCategories)
+    @ManyToMany(() => Post, (post) => post.manyCategories)
     manyPosts: Post[]
 
     @RelationId((category: Category) => category.manyPosts)

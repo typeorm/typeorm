@@ -1,12 +1,12 @@
-import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { QueryResult } from "../../query-runner/QueryResult"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import { SqliteConnectionOptions } from "./SqliteConnectionOptions"
 import { SqliteDriver } from "./SqliteDriver"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
-import { QueryResult } from "../../query-runner/QueryResult"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -48,7 +48,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
     /**
      * Executes a given SQL query.
      */
-    query(
+    async query(
         query: string,
         parameters?: any[],
         useStructuredResult = false,
@@ -58,24 +58,22 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
         const connection = this.driver.connection
         const options = connection.options as SqliteConnectionOptions
         const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime
-        const broadcasterResult = new BroadcasterResult()
         const broadcaster = this.broadcaster
-
-        broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
 
         if (!connection.isInitialized) {
             throw new ConnectionIsNotSetError("sqlite")
         }
 
+        const databaseConnection = await this.connect()
+
+        this.driver.connection.logger.logQuery(query, parameters, this)
+        await broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const broadcasterResult = new BroadcasterResult()
+
         return new Promise(async (ok, fail) => {
             try {
-                const databaseConnection = await this.connect()
-                this.driver.connection.logger.logQuery(query, parameters, this)
-                const queryStartTime = +new Date()
+                const queryStartTime = Date.now()
                 const isInsertQuery = query.startsWith("INSERT ")
                 const isDeleteQuery = query.startsWith("DELETE ")
                 const isUpdateQuery = query.startsWith("UPDATE ")
@@ -101,7 +99,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
                     }
 
                     // log slow queries if maxQueryExecution time is set
-                    const queryEndTime = +new Date()
+                    const queryEndTime = Date.now()
                     const queryExecutionTime = queryEndTime - queryStartTime
                     if (
                         maxQueryExecutionTime &&

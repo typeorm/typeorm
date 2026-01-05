@@ -2,7 +2,7 @@ import { MigrationInterface } from "../../../../src/migration/MigrationInterface
 import { QueryRunner } from "../../../../src/query-runner/QueryRunner"
 
 export class CreateUuidExtension0000000000001 implements MigrationInterface {
-    public up(queryRunner: QueryRunner): Promise<any> {
+    public async up(queryRunner: QueryRunner) {
         return queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`)
     }
 

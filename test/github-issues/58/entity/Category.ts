@@ -12,6 +12,6 @@ export class Category {
     @Column()
     name: string
 
-    @OneToMany((type) => PostCategory, (postCategory) => postCategory.category)
+    @OneToMany(() => PostCategory, (postCategory) => postCategory.category)
     posts: PostCategory[]
 }

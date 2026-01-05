@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src"
 import { Post } from "./entity/Post"
 import { CustomNamingStrategy } from "./naming-strategy/CustomNamingStrategy"
 
@@ -18,15 +18,15 @@ const options: DataSourceOptions = {
 const dataSource = new DataSource(options)
 dataSource.initialize().then(
     (dataSource) => {
-        let post = new Post()
+        const post = new Post()
         post.text = "Hello how are you?"
         post.title = "hello"
 
-        let postRepository = dataSource.getRepository(Post)
+        const postRepository = dataSource.getRepository(Post)
 
         postRepository
             .save(post)
-            .then((post) => console.log("Post has been saved"))
+            .then(() => console.log("Post has been saved"))
             .catch((error) => console.log("Cannot save. Error: ", error))
     },
     (error) => console.log("Cannot connect: ", error),

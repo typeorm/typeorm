@@ -10,7 +10,7 @@ export class PostVersion {
     @PrimaryColumn()
     id: number
 
-    @ManyToOne((type) => Post)
+    @ManyToOne(() => Post)
     @JoinColumn({ referencedColumnName: "version" })
     post: Post
 
