@@ -24,9 +24,8 @@ describe("query runner > create and drop database", () => {
                 const queryRunner = connection.createQueryRunner()
 
                 await queryRunner.createDatabase("myTestDatabase", true)
-                let hasDatabase = await queryRunner.hasDatabase(
-                    "myTestDatabase",
-                )
+                let hasDatabase =
+                    await queryRunner.hasDatabase("myTestDatabase")
                 hasDatabase.should.be.true
 
                 await queryRunner.dropDatabase("myTestDatabase")
