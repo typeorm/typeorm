@@ -12,7 +12,7 @@ export class Photo {
     @Column()
     name: string
 
-    @ManyToOne((type) => User, (user) => user.manyPhotos)
+    @ManyToOne(() => User, (user) => user.manyPhotos)
     user: User
 
     constructor(name: string) {
