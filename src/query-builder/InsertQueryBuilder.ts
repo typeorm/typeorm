@@ -555,17 +555,22 @@ export class InsertQueryBuilder<
 
                     if (Array.isArray(overwrite)) {
                         updatePart.push(
-                            ...this.expressionMap.mainAlias!.metadata.columns.filter(
-                                (column) => 
-                                    overwrite.includes(column.propertyName) ||
-                                    overwrite.includes(column.databaseName) /**@Deprecated */ 
-                            )
-                            .map(
-                                (column) =>
-                                    `${this.escape(
-                                        column.databaseName,
-                                    )} = EXCLUDED.${this.escape(column.databaseName)}`,
-                            ),
+                            ...this.expressionMap
+                                .mainAlias!.metadata.columns.filter(
+                                    (column) =>
+                                        overwrite.includes(
+                                            column.propertyName,
+                                        ) ||
+                                        overwrite.includes(
+                                            column.databaseName,
+                                        ) /**@Deprecated */,
+                                )
+                                .map(
+                                    (column) =>
+                                        `${this.escape(
+                                            column.databaseName,
+                                        )} = EXCLUDED.${this.escape(column.databaseName)}`,
+                                ),
                         )
                     } else if (columns) {
                         updatePart.push(
