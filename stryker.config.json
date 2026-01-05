@@ -6,6 +6,7 @@
   "coverageAnalysis": "perTest",
   "dryRunTimeoutMinutes": 10,
   "inPlace": true,
+  "plugins": ["@stryker-mutator/mocha-runner"],
   "reporters": ["html", "dashboard", "progress", "json"],
   "testRunner": "mocha",
   "testRunner_comment": "Take a look at https://stryker-mutator.io/docs/stryker-js/mocha-runner for information about the mocha plugin.",
