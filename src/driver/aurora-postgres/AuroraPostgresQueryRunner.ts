@@ -10,7 +10,7 @@ import { Table } from "../../schema-builder/table/Table"
 import { TypeORMError } from "../../error"
 
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
-    driver: any
+    declare driver: any
 
     constructor(driver: any, mode: ReplicationMode) {
         super(driver, mode)
@@ -31,18 +31,9 @@ export class AuroraPostgresQueryRunner
     /**
      * Database driver used by connection.
      */
-    driver: AuroraPostgresDriver
+    declare driver: AuroraPostgresDriver
 
     protected client: any
-
-    // -------------------------------------------------------------------------
-    // Protected Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Promise used to obtain a database connection for a first time.
-     */
-    protected databaseConnectionPromise: Promise<any>
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -110,12 +101,11 @@ export class AuroraPostgresQueryRunner
         }
 
         if (this.transactionDepth === 0) {
-            this.transactionDepth += 1
             await this.client.startTransaction()
         } else {
-            this.transactionDepth += 1
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth} - 1`)
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
         }
+        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -130,15 +120,14 @@ export class AuroraPostgresQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
-            this.transactionDepth -= 1
             await this.client.commitTransaction()
             this.isTransactionActive = false
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -153,15 +142,14 @@ export class AuroraPostgresQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
-            this.transactionDepth -= 1
             await this.client.rollbackTransaction()
             this.isTransactionActive = false
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }

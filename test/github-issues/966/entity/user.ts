@@ -23,6 +23,6 @@ export class User {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column((type) => UserInfo)
+    @Column(() => UserInfo)
     info: UserInfo
 }

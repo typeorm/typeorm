@@ -12,7 +12,7 @@ export class User {
     @Column()
     name: string
 
-    @OneToOne((type) => Profile, (profile) => profile.user, {
+    @OneToOne(() => Profile, (profile) => profile.user, {
         cascade: ["insert"],
     })
     profile: Profile

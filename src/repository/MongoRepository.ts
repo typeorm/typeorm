@@ -60,7 +60,7 @@ export class MongoRepository<
     /**
      * Entity Manager used by this repository.
      */
-    readonly manager: MongoEntityManager
+    declare readonly manager: MongoEntityManager
 
     // -------------------------------------------------------------------------
     // Overridden Methods
@@ -206,7 +206,7 @@ export class MongoRepository<
     aggregate<R = any>(
         pipeline: ObjectLiteral[],
         options?: AggregateOptions,
-    ): AggregationCursor<Entity> {
+    ): AggregationCursor<R> {
         return this.manager.aggregate<R>(
             this.metadata.target,
             pipeline,

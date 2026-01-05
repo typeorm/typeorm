@@ -13,8 +13,7 @@ export interface OracleThickModeOptions {
  * Oracle-specific connection options.
  */
 export interface OracleConnectionOptions
-    extends BaseDataSourceOptions,
-        OracleConnectionCredentialsOptions {
+    extends BaseDataSourceOptions, OracleConnectionCredentialsOptions {
     /**
      * Database type.
      */
@@ -54,7 +53,7 @@ export interface OracleConnectionOptions
         readonly master: OracleConnectionCredentialsOptions
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from servers (slaves).
          */
         readonly slaves: OracleConnectionCredentialsOptions[]
     }
