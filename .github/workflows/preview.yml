@@ -18,17 +18,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
-      - name: Use Node.js
-        uses: actions/setup-node@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
+          node-version: 20
+          cache: "pnpm"
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run package
-
-      - name: Release preview version
-        run: npm run publish:preview
+      - run: pnpm install
+      - run: pnpm run package
+      - run: pnpm run publish:preview

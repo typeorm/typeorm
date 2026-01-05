@@ -61,7 +61,11 @@ export class CockroachQueryRunner
     /**
      * Stores all executed queries to be able to run them again if transaction fails.
      */
-    protected queries: { query: string; parameters?: any[] }[] = []
+    protected queries: {
+        query: string
+        parameters?: any[]
+        useStructuredResult: boolean
+    }[] = []
 
     /**
      * Indicates if running queries must be stored
@@ -278,7 +282,7 @@ export class CockroachQueryRunner
         const queryStartTime = Date.now()
 
         if (this.isTransactionActive && this.storeQueries) {
-            this.queries.push({ query, parameters })
+            this.queries.push({ query, parameters, useStructuredResult })
         }
 
         try {
@@ -365,7 +369,11 @@ export class CockroachQueryRunner
                         q.parameters,
                         this,
                     )
-                    result = await this.query(q.query, q.parameters)
+                    result = await this.query(
+                        q.query,
+                        q.parameters,
+                        q.useStructuredResult,
+                    )
                 }
                 this.transactionRetries = 0
                 this.storeQueries = true
@@ -2698,6 +2706,15 @@ export class CockroachQueryRunner
             throw new TypeORMError(
                 `Supplied foreign key was not found in table ${table.name}`,
             )
+
+        if (!foreignKey.name) {
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+                table,
+                foreignKey.columnNames,
+                this.getTablePath(foreignKey),
+                foreignKey.referencedColumnNames,
+            )
+        }
 
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
