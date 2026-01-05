@@ -154,4 +154,3 @@ Both strategies have their own cons and pros.
 One thing we should always keep in mind with software development is how we are going to maintain our applications.
 The `Data Mapper` approach helps with maintainability, which is more effective in larger apps.
 The `Active Record` approach helps keep things simple which works well in smaller apps.
-And simplicity is always a key to better maintainability.
