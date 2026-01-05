@@ -43,7 +43,7 @@ const config: Config = {
                   },
                   {
                       src: "https://widget.kapa.ai/kapa-widget.bundle.js",
-                      "data-website-id": "216c70e7-22e1-4425-bc7a-4af657c59eb2",
+                      "data-website-id": "a9979852-2282-4862-87b3-b3631fb63d46",
                       "data-project-name": "TypeORM",
                       "data-project-color": "#d94400",
                       "data-project-logo":
