@@ -544,6 +544,10 @@ export class MongoQueryRunner implements QueryRunner {
         // the mongodb driver does not support releasing connection, so simply don't do anything here
     }
 
+    async [Symbol.asyncDispose](): Promise<void> {
+        // there's no clean-up necessary, so simply don't do anything here
+    }
+
     /**
      * Starts transaction.
      */
