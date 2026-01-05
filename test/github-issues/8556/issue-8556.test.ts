@@ -39,9 +39,8 @@ describe("github issues > #8556 TreeRepository.findDescendants/Tree should retur
                     name: "child",
                     parent: root,
                 } as Category)
-                const descendantsIncludingParent = await repo.findDescendants(
-                    root,
-                )
+                const descendantsIncludingParent =
+                    await repo.findDescendants(root)
                 expect(descendantsIncludingParent.length).to.be.equal(2)
                 const descendantTree = await repo.findDescendantsTree(root)
                 expect(descendantTree.children.length).to.be.equal(1)

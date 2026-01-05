@@ -99,6 +99,21 @@ const config: Config = {
                     label: "Docs",
                 },
                 {
+                    type: "dropdown",
+                    label: "Version",
+                    position: "right",
+                    items: [
+                        {
+                            label: "Stable (v0.3)",
+                            href: "https://typeorm.io",
+                        },
+                        {
+                            label: "Dev (master)",
+                            href: "https://dev.typeorm.io",
+                        },
+                    ],
+                },
+                {
                     href: "https://github.com/typeorm/typeorm",
                     label: "GitHub",
                     position: "right",

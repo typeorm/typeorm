@@ -19,13 +19,7 @@
   <br>
 </div>
 
-TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)
-that can run in Node.js, Browser, Cordova, Ionic, React Native, NativeScript, Expo, and Electron platforms
-and can be used with TypeScript and JavaScript (ES2021).
-Its goal is to always support the latest JavaScript features and provide additional features
-that help you to develop any kind of application that uses databases - from
-small applications with a few tables to large-scale enterprise applications
-with multiple databases.
+TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping) that can run in Node.js, Browser, Cordova, Ionic, React Native, NativeScript, Expo, and Electron platforms and can be used with TypeScript and JavaScript (ES2023). Its goal is to always support the latest JavaScript features and provide additional features that help you to develop any kind of application that uses databases - from small applications with a few tables to large-scale enterprise applications with multiple databases.
 
 TypeORM supports more databases than any other JS/TS ORM: [Google Spanner](./docs/docs/drivers/google-spanner.md), [Microsoft SqlServer](./docs/docs/drivers/microsoft-sqlserver.md), [MySQL/MariaDB](./docs/docs/drivers/mysql.md), [MongoDB](./docs/docs/drivers/mongodb.md), [Oracle](./docs/docs/drivers/oracle.md), [Postgres](./docs/docs/drivers/postgres.md), [SAP HANA](./docs/docs/drivers/sap.md) and [SQLite](./docs/docs/drivers/sqlite.md), as well we derived databases and different drivers.
 
