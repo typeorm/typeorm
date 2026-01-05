@@ -1559,7 +1559,7 @@ export class PostgresQueryRunner
                     oldColumn.enum!,
                 )
 
-                const version = await this.getVersion()
+                const version = this.driver.version
 
                 // when the only change is new enum value(s) we can use ADD VALUE syntax
                 const useAddValueForUp =
