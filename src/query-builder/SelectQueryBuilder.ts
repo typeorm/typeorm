@@ -43,7 +43,6 @@ import { OrmUtils } from "../util/OrmUtils"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 
@@ -1535,7 +1534,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Sets LIMIT - maximum number of rows to be selected.
      * When joins are present, a two-query distinct-id strategy is used
      * so that LIMIT applies to root entities rather than raw joined rows.
-     * @param limit
      */
     limit(limit?: number): this {
         this.expressionMap.limit = this.normalizeNumber(limit)
@@ -1554,7 +1552,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Sets OFFSET - selection offset.
      * When joins are present, a two-query distinct-id strategy is used
      * so that OFFSET applies to root entities rather than raw joined rows.
-     * @param offset
      */
     offset(offset?: number): this {
         this.expressionMap.offset = this.normalizeNumber(offset)
