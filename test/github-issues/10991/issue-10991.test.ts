@@ -24,14 +24,13 @@ describe("github issues > #10991", () => {
             dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const tableName = `Table with 'single quotes'`
-                const escapedName = tableName.replace(/'/g, "''")
                 await queryRunner.query(
-                    `CREATE TABLE "${escapedName}" (id serial PRIMARY KEY)`,
+                    `CREATE TABLE "${tableName}" (id serial PRIMARY KEY)`,
                 )
                 const tables = await queryRunner.getTables()
                 const tableNames = tables.map((table) => table.name)
                 expect(tableNames).to.include(tableName)
-                await queryRunner.query(`DROP TABLE "${escapedName}"`)
+                await queryRunner.query(`DROP TABLE "${tableName}"`)
                 await queryRunner.release()
             }),
         ))
