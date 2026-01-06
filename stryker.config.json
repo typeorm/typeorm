@@ -4,6 +4,9 @@
   "buildCommand": "pnpm run compile",
   "concurrency": 6,
   "coverageAnalysis": "perTest",
+  "dashboard": {
+    "reportType": "mutationScore"
+  },
   "dryRunTimeoutMinutes": 10,
   "inPlace": true,
   "plugins": ["@stryker-mutator/mocha-runner"],
