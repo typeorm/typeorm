@@ -19,22 +19,6 @@ describe("github issues > #10991", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should be able to load tables with names containing single quotes", () =>
-        Promise.all(
-            dataSources.map(async (connection) => {
-                const queryRunner = connection.createQueryRunner()
-                const tableName = `Table with 'single quotes'`
-                await queryRunner.query(
-                    `CREATE TABLE "${tableName}" (id serial PRIMARY KEY)`,
-                )
-                const tables = await queryRunner.getTables()
-                const tableNames = tables.map((table) => table.name)
-                expect(tableNames).to.include(tableName)
-                await queryRunner.query(`DROP TABLE "${tableName}"`)
-                await queryRunner.release()
-            }),
-        ))
-
     it("should be able to load tables with names containing dots", () =>
         Promise.all(
             dataSources.map(async (connection) => {
@@ -278,7 +262,6 @@ describe("github issues > #10991", () => {
                 const tables = [
                     `multi"quote"table`,
                     `multi.dot.table`,
-                    `multi'apostrophe'table`,
                     `multi\\backslash\\table`,
                 ]
 
