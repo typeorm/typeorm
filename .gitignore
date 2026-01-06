@@ -27,3 +27,7 @@ node_modules/
 ormlogs.log
 
 /test/github-issues/799/tmp/*
+
+# stryker temp files
+.stryker-tmp
+/reports
