@@ -25,29 +25,26 @@ describe("query builder > insert from select", () => {
     it("should insert from select using a SelectQueryBuilder directly", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                // Insert test users
-                await dataSource
-                    .createQueryBuilder()
-                    .insert()
-                    .into(User)
-                    .values([
-                        {
-                            name: "John",
-                            email: "john@example.com",
-                            isArchived: true,
-                        },
-                        {
-                            name: "Jane",
-                            email: "jane@example.com",
-                            isArchived: false,
-                        },
-                        {
-                            name: "Bob",
-                            email: "bob@example.com",
-                            isArchived: true,
-                        },
-                    ])
-                    .execute()
+                // Insert test users using repository save (Oracle-compatible)
+                // Oracle does not support bulk inserts via QueryBuilder
+                const userRepo = dataSource.getRepository(User)
+                await userRepo.save([
+                    {
+                        name: "John",
+                        email: "john@example.com",
+                        isArchived: true,
+                    },
+                    {
+                        name: "Jane",
+                        email: "jane@example.com",
+                        isArchived: false,
+                    },
+                    {
+                        name: "Bob",
+                        email: "bob@example.com",
+                        isArchived: true,
+                    },
+                ])
 
                 // Create SELECT query builder for archived users
                 const selectQb = dataSource
@@ -82,24 +79,20 @@ describe("query builder > insert from select", () => {
     it("should insert from select using a callback function", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                // Insert test users
-                await dataSource
-                    .createQueryBuilder()
-                    .insert()
-                    .into(User)
-                    .values([
-                        {
-                            name: "Alice",
-                            email: "alice@example.com",
-                            isArchived: true,
-                        },
-                        {
-                            name: "Charlie",
-                            email: "charlie@example.com",
-                            isArchived: true,
-                        },
-                    ])
-                    .execute()
+                // Insert test users using repository save (Oracle-compatible)
+                const userRepo = dataSource.getRepository(User)
+                await userRepo.save([
+                    {
+                        name: "Alice",
+                        email: "alice@example.com",
+                        isArchived: true,
+                    },
+                    {
+                        name: "Charlie",
+                        email: "charlie@example.com",
+                        isArchived: true,
+                    },
+                ])
 
                 // Insert from select using callback
                 await dataSource
@@ -132,24 +125,20 @@ describe("query builder > insert from select", () => {
     it("should insert all rows when no WHERE clause is specified", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                // Insert test users
-                await dataSource
-                    .createQueryBuilder()
-                    .insert()
-                    .into(User)
-                    .values([
-                        {
-                            name: "User1",
-                            email: "user1@example.com",
-                            isArchived: false,
-                        },
-                        {
-                            name: "User2",
-                            email: "user2@example.com",
-                            isArchived: false,
-                        },
-                    ])
-                    .execute()
+                // Insert test users using repository save (Oracle-compatible)
+                const userRepo = dataSource.getRepository(User)
+                await userRepo.save([
+                    {
+                        name: "User1",
+                        email: "user1@example.com",
+                        isArchived: false,
+                    },
+                    {
+                        name: "User2",
+                        email: "user2@example.com",
+                        isArchived: false,
+                    },
+                ])
 
                 // Insert all users from select (no WHERE)
                 await dataSource
@@ -199,19 +188,13 @@ describe("query builder > insert from select", () => {
     it("should handle parameters correctly", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                // Insert test users
-                await dataSource
-                    .createQueryBuilder()
-                    .insert()
-                    .into(User)
-                    .values([
-                        {
-                            name: "TestUser",
-                            email: "test@example.com",
-                            isArchived: true,
-                        },
-                    ])
-                    .execute()
+                // Insert test user using repository save (Oracle-compatible)
+                const userRepo = dataSource.getRepository(User)
+                await userRepo.save({
+                    name: "TestUser",
+                    email: "test@example.com",
+                    isArchived: true,
+                })
 
                 // Use parameters in WHERE clause
                 const emailPattern = "test@%"
@@ -241,29 +224,25 @@ describe("query builder > insert from select", () => {
     it("should work with ORDER BY and LIMIT in select", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                // Insert test users
-                await dataSource
-                    .createQueryBuilder()
-                    .insert()
-                    .into(User)
-                    .values([
-                        {
-                            name: "Zara",
-                            email: "zara@example.com",
-                            isArchived: true,
-                        },
-                        {
-                            name: "Adam",
-                            email: "adam@example.com",
-                            isArchived: true,
-                        },
-                        {
-                            name: "Mike",
-                            email: "mike@example.com",
-                            isArchived: true,
-                        },
-                    ])
-                    .execute()
+                // Insert test users using repository save (Oracle-compatible)
+                const userRepo = dataSource.getRepository(User)
+                await userRepo.save([
+                    {
+                        name: "Zara",
+                        email: "zara@example.com",
+                        isArchived: true,
+                    },
+                    {
+                        name: "Adam",
+                        email: "adam@example.com",
+                        isArchived: true,
+                    },
+                    {
+                        name: "Mike",
+                        email: "mike@example.com",
+                        isArchived: true,
+                    },
+                ])
 
                 // Insert only the first 2 users ordered by name
                 await dataSource
