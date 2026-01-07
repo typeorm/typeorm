@@ -256,9 +256,8 @@ describe("repository > basic methods", () => {
 
                     // and preload it
                     const plainBlogWithId = { id: 1 }
-                    const preloadedBlog = await blogRepository.preload(
-                        plainBlogWithId,
-                    )
+                    const preloadedBlog =
+                        await blogRepository.preload(plainBlogWithId)
                     preloadedBlog!.should.be.instanceOf(Blog)
                     preloadedBlog!.id.should.be.equal(1)
                     preloadedBlog!.title.should.be.equal("About people")
@@ -289,9 +288,8 @@ describe("repository > basic methods", () => {
 
                     // and preload it
                     const plainBlogWithId = { id: 1, categories: [{ id: 1 }] }
-                    const preloadedBlog = await blogRepository.preload(
-                        plainBlogWithId,
-                    )
+                    const preloadedBlog =
+                        await blogRepository.preload(plainBlogWithId)
                     preloadedBlog!.should.be.instanceOf(Blog)
                     preloadedBlog!.id.should.be.equal(1)
                     preloadedBlog!.title.should.be.equal("About people")
@@ -906,9 +904,8 @@ describe("repository > basic methods", () => {
                         title: "changed title about people",
                         categories: [{ id: 1 }, { id: 2, name: "insects" }],
                     }
-                    const preloadedBlog = await blogRepository.preload(
-                        plainBlogWithId,
-                    )
+                    const preloadedBlog =
+                        await blogRepository.preload(plainBlogWithId)
                     preloadedBlog!.should.be.instanceOf(Blog)
                     preloadedBlog!.id.should.be.equal(1)
                     preloadedBlog!.title.should.be.equal(

@@ -13,7 +13,10 @@ export class AccountActivationToken extends Token {
     @JoinColumn()
     account: Account
 
-    constructor(public tokenSecret: string, public expiresOn: Date) {
+    constructor(
+        public tokenSecret: string,
+        public expiresOn: Date,
+    ) {
         super()
     }
 }
