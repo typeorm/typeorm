@@ -30,12 +30,12 @@ describe("github issues > #9006 Eager relations do not respect relationLoadStrat
         const bookRepository = dataSource.getRepository(Book)
         const commentRepository = dataSource.getRepository(Comment)
 
-        const authorModel = await authorRepository.create({
+        const authorModel = authorRepository.create({
             name: "author",
         })
         const author = await authorRepository.save(authorModel)
 
-        const bookModels = await bookRepository.create([
+        const bookModels = bookRepository.create([
             {
                 title: "book1",
                 text: "text1",
@@ -56,7 +56,7 @@ describe("github issues > #9006 Eager relations do not respect relationLoadStrat
 
         for (const book of books) {
             for (let index = 0; index < 3; index++) {
-                const comment = await commentRepository.create({
+                const comment = commentRepository.create({
                     text: `${book.title}: comment${index}`,
                     bookId: book.id,
                     authorId: author.id,
@@ -71,15 +71,12 @@ describe("github issues > #9006 Eager relations do not respect relationLoadStrat
         for (const dataSource of dataSources) {
             const { authorRepository, author } = await setupTestData(dataSource)
 
-            const getManySpy = await sinon.spy(
+            const getManySpy = sinon.spy(
                 SelectQueryBuilder.prototype,
                 "getMany",
             )
-            const getOneSpy = await sinon.spy(
-                SelectQueryBuilder.prototype,
-                "getOne",
-            )
-            const getRawManySpy = await sinon.spy(
+            const getOneSpy = sinon.spy(SelectQueryBuilder.prototype, "getOne")
+            const getRawManySpy = sinon.spy(
                 SelectQueryBuilder.prototype,
                 "getRawMany",
             )
