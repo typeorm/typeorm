@@ -250,6 +250,22 @@ export class OrmUtils {
         return arr1.every((element) => arr2.includes(element))
     }
 
+    /**
+     * Returns items that are missing/extraneous in the second array
+     */
+    public static getArraysDiff<T>(
+        arr1: T[],
+        arr2: T[],
+    ): { extraItems: T[]; missingItems: T[] } {
+        const extraItems = arr1.filter((item) => !arr2.includes(item))
+        const missingItems = arr2.filter((item) => !arr1.includes(item))
+
+        return {
+            extraItems,
+            missingItems,
+        }
+    }
+
     public static areMutuallyExclusive<T>(...lists: T[][]): boolean {
         const haveSharedObjects = lists.some((list) => {
             const otherLists = lists.filter((otherList) => otherList !== list)

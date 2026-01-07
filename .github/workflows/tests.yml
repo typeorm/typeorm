@@ -50,12 +50,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run format:ci
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install
+      - run: pnpm run lint
+      - run: pnpm run format:ci
 
   docs:
     if: contains(needs.detect-changes.outputs.changes, 'docs')
@@ -66,11 +69,14 @@ jobs:
         working-directory: ./docs
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
-      - run: npm ci
-      - run: npm run build
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install
+      - run: pnpm run build
 
   build:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
@@ -78,16 +84,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
-      - run: npm install
-      - run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "package-lock.json is not up to date or was generated with a different npm version than the one shipped with Node.js $(cat .nvmrc)"
-            exit 1
-          fi
-      - run: npm run compile
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install
+      - run: pnpm run compile
+
       - uses: actions/upload-artifact@v5
         with:
           name: build

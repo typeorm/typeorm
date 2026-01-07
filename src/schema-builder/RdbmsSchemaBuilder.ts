@@ -772,7 +772,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const droppedTableColumns = table.columns.filter((tableColumn) => {
                 return !metadata.columns.find(
                     (columnMetadata) =>
-                        columnMetadata.isVirtualProperty ||
+                        !columnMetadata.isVirtualProperty &&
                         columnMetadata.databaseName === tableColumn.name,
                 )
             })
