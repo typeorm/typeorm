@@ -152,12 +152,10 @@ export class MetadataArgsStorage {
     filterIndices(
         target: (Function | string) | (Function | string)[],
     ): IndexMetadataArgs[] {
-        // todo: implement parent-entity overrides?
-        return this.indices.filter((index) => {
-            return Array.isArray(target)
-                ? target.indexOf(index.target) !== -1
-                : index.target === target
-        })
+        return this.filterByTargetAndWithoutDuplicateIndices(
+            this.indices,
+            target,
+        )
     }
 
     filterForeignKeys(target: Function | string): ForeignKeyMetadataArgs[]
@@ -423,5 +421,92 @@ export class MetadataArgsStorage {
             }
         })
         return newArray
+    }
+
+    /**
+     * Filters given array by a given target or targets and prevents duplicate indices.
+     */
+    protected filterByTargetAndWithoutDuplicateIndices(
+        array: IndexMetadataArgs[],
+        target: (Function | string) | (Function | string)[],
+    ): IndexMetadataArgs[] {
+        const newArray: IndexMetadataArgs[] = []
+        array.forEach((item) => {
+            const sameTarget = Array.isArray(target)
+                ? target.indexOf(item.target) !== -1
+                : item.target === target
+            if (sameTarget) {
+                const isDuplicateIndex = newArray.find(
+                    (newItem: IndexMetadataArgs): boolean => {
+                        // Check if both items have the same name (if name is defined)
+                        if (item.name && newItem.name) {
+                            return item.name === newItem.name
+                        }
+
+                        // If no name is defined, compare by columns and other properties
+                        const columnsMatch = this.areIndexColumnsEqual(
+                            item.columns,
+                            newItem.columns,
+                        )
+                        const propertiesMatch =
+                            item.unique === newItem.unique &&
+                            item.spatial === newItem.spatial &&
+                            item.fulltext === newItem.fulltext &&
+                            item.nullFiltered === newItem.nullFiltered &&
+                            item.parser === newItem.parser &&
+                            item.where === newItem.where &&
+                            item.sparse === newItem.sparse
+
+                        return columnsMatch && propertiesMatch
+                    },
+                )
+                if (!isDuplicateIndex) newArray.push(item)
+            }
+        })
+        return newArray
+    }
+
+    /**
+     * Checks if two index column definitions are equal.
+     */
+    private areIndexColumnsEqual(
+        columns1:
+            | ((object?: any) => any[] | { [key: string]: number })
+            | string[]
+            | undefined,
+        columns2:
+            | ((object?: any) => any[] | { [key: string]: number })
+            | string[]
+            | undefined,
+    ): boolean {
+        // If both are undefined, they're equal
+        if (columns1 === undefined && columns2 === undefined) {
+            return true
+        }
+
+        // If one is undefined and the other isn't, they're not equal
+        if (columns1 === undefined || columns2 === undefined) {
+            return false
+        }
+
+        // If both are functions, compare by reference (same function)
+        if (typeof columns1 === "function" && typeof columns2 === "function") {
+            return columns1 === columns2
+        }
+
+        // If one is a function and the other isn't, they're not equal
+        if (typeof columns1 === "function" || typeof columns2 === "function") {
+            return false
+        }
+
+        // Both are string arrays - compare them
+        if (Array.isArray(columns1) && Array.isArray(columns2)) {
+            if (columns1.length !== columns2.length) {
+                return false
+            }
+            return columns1.every((col, index) => col === columns2[index])
+        }
+
+        return false
     }
 }
