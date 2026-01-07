@@ -2,12 +2,13 @@
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
   "packageManager": "pnpm",
   "buildCommand": "pnpm run compile",
-  "concurrency": 6,
+  "concurrency": 4,
   "coverageAnalysis": "perTest",
   "dashboard": {
     "reportType": "mutationScore"
   },
   "dryRunTimeoutMinutes": 10,
+  "ignoreStatic": true,
   "inPlace": true,
   "plugins": ["@stryker-mutator/mocha-runner"],
   "reporters": ["html", "dashboard", "progress", "json"],
