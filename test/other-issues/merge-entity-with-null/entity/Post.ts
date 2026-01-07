@@ -7,6 +7,6 @@ export class Post {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: "varchar", nullable: true })
     title: string | null
 }
