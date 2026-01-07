@@ -1310,7 +1310,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 // that match the relation & then continue further down
                 // the property path
                 const joinAttr = this.expressionMap.joinAttributes.find(
-                    (joinAttr) => joinAttr.entityOrProperty === `${alias.name}.${part}`,
+                    (joinAttr) =>
+                        joinAttr.entityOrProperty === `${alias.name}.${part}`,
                 )
 
                 if (!joinAttr?.alias) {
