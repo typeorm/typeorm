@@ -17,7 +17,7 @@ export class Post {
     @OneToMany(() => Category, (category) => category.post)
     categories: Category[] | null
 
-    @ManyToMany((type) => Category, (category) => category.manyPosts)
+    @ManyToMany(() => Category, (category) => category.manyPosts)
     @JoinTable()
     manyCategories: Category[]
 }

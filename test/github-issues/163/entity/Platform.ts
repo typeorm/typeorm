@@ -21,6 +21,6 @@ export class Platform {
     })
     slug: string
 
-    @ManyToMany((type) => Game, (game) => game.platforms)
+    @ManyToMany(() => Game, (game) => game.platforms)
     games: Game[]
 }

@@ -18,6 +18,6 @@ export class User {
     @Column()
     age: number
 
-    @Column((type) => Event)
+    @Column(() => Event)
     events: Event[]
 }
