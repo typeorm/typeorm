@@ -13,7 +13,7 @@ export class Note {
     @Column()
     content: string
 
-    @ManyToMany((type) => Category, (category) => category.notes)
+    @ManyToMany(() => Category, (category) => category.notes)
     @JoinTable()
     categories: Category[]
 }

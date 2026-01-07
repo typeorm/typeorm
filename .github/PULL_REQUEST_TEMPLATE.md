@@ -33,8 +33,8 @@
 
 -   [ ] Code is up-to-date with the `master` branch
 -   [ ] This pull request links relevant issues as `Fixes #00000`
--   [ ] There are new or updated unit tests validating the change
--   [ ] Documentation has been updated to reflect this change
+-   [ ] There are new or updated tests validating the change (`tests/**.test.ts`)
+-   [ ] Documentation has been updated to reflect this change (`docs/docs/**.md`)
 
 <!--
   🎉 Thank you for contributing and making TypeORM even better!

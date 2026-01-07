@@ -14,7 +14,7 @@ export class Post {
     @Column()
     title: string
 
-    @ManyToMany((type) => Category)
+    @ManyToMany(() => Category)
     @JoinTable()
     categories: Category[]
 

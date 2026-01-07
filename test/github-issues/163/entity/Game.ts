@@ -28,7 +28,7 @@ export class Game {
     })
     isReviewed: boolean
 
-    @ManyToMany((type) => Platform, (platform) => platform.games, {
+    @ManyToMany(() => Platform, (platform) => platform.games, {
         cascade: true,
     })
     @JoinTable()
