@@ -33,24 +33,23 @@ export interface ContainerInterface {
  *
  * @deprecated
  */
-const defaultContainer: ContainerInterface = new (class
-    implements ContainerInterface
-{
-    private instances: { type: Function; object: any }[] = []
+const defaultContainer: ContainerInterface =
+    new (class implements ContainerInterface {
+        private instances: { type: Function; object: any }[] = []
 
-    get<T>(someClass: ContainedType<T>): T {
-        let instance = this.instances.find((i) => i.type === someClass)
-        if (!instance) {
-            instance = {
-                type: someClass,
-                object: new (someClass as new () => T)(),
+        get<T>(someClass: ContainedType<T>): T {
+            let instance = this.instances.find((i) => i.type === someClass)
+            if (!instance) {
+                instance = {
+                    type: someClass,
+                    object: new (someClass as new () => T)(),
+                }
+                this.instances.push(instance)
             }
-            this.instances.push(instance)
-        }
 
-        return instance.object
-    }
-})()
+            return instance.object
+        }
+    })()
 
 let userContainer: ContainerInterface
 let userContainerOptions: UseContainerOptions | undefined

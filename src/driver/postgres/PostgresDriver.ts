@@ -28,6 +28,9 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { IndexMetadata } from "../../metadata/IndexMetadata"
+import { TableIndex } from "../../schema-builder/table/TableIndex"
+import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -268,6 +271,18 @@ export class PostgresDriver implements Driver {
         metadataName: "varchar",
         metadataValue: "text",
     }
+
+    /**
+     * Table indices supported
+     */
+    supportedIndexTypes: TableIndexTypes[] = [
+        "brin",
+        "btree",
+        "gin",
+        "gist",
+        "hash",
+        "spgist",
+    ]
 
     /**
      * The prefix used for the parameters
@@ -1467,6 +1482,13 @@ export class PostgresDriver implements Driver {
      */
     createParameter(parameterName: string, index: number): string {
         return this.parametersPrefix + (index + 1)
+    }
+
+    compareTableIndexTypes = (indexA: IndexMetadata, indexB: TableIndex) => {
+        const normalizedA = indexA.isSpatial ? "gist" : (indexA.type ?? "btree")
+        const normalizedB = indexB.isSpatial ? "gist" : (indexB.type ?? "btree")
+
+        return normalizedA.toLowerCase() === normalizedB.toLowerCase()
     }
 
     // -------------------------------------------------------------------------

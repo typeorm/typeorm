@@ -2,7 +2,7 @@ import appRoot from "app-root-path"
 import { expect } from "chai"
 import fs from "fs/promises"
 import path from "path"
-import { rimraf } from "rimraf"
+import { glob } from "tinyglobby"
 
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { filepathToName } from "../../../../src/util/PathUtils"
@@ -93,7 +93,8 @@ describe("multi-database > basic-functionality", () => {
         beforeEach(() => reloadTestingDatabases(connections))
         after(async () => {
             await closeTestingConnections(connections)
-            await rimraf(`${tempPath}/**/*.attach.db`, { glob: true })
+            const files = await glob(`${tempPath}/**/*.attach.db`)
+            await Promise.all(files.map((file) => fs.rm(file, { force: true })))
         })
 
         it("should correctly attach and create database files", () =>
@@ -174,12 +175,10 @@ describe("multi-database > basic-functionality", () => {
                     const queryRunner = connection.createQueryRunner()
                     const tablePathCategory = `${attachCategoryHandle}.category`
                     const tablePathPost = `${attachCategoryHandle}.post`
-                    const tableCategory = (await queryRunner.getTable(
-                        tablePathCategory,
-                    ))!
-                    const tablePost = (await queryRunner.getTable(
-                        tablePathPost,
-                    ))!
+                    const tableCategory =
+                        (await queryRunner.getTable(tablePathCategory))!
+                    const tablePost =
+                        (await queryRunner.getTable(tablePathPost))!
                     await queryRunner.release()
 
                     expect(tableCategory.foreignKeys.length).to.eq(1)

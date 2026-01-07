@@ -9,6 +9,7 @@ import { DataSource } from "../../../../src/data-source/DataSource"
 import { Tag } from "./entity/Tag"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
+import { CategoryWithCompositePK } from "./entity/CategoryWithCompositePK"
 import { Image } from "./entity/Image"
 import { User } from "./entity/User"
 
@@ -1302,6 +1303,315 @@ describe("query builder > joins", () => {
                         .getOne()
 
                     expect(loadedPost2!).to.be.null
+                }),
+            ))
+    })
+
+    describe("leftJoin with skip/take pagination", () => {
+        it("should work correctly when leftJoin used with addSelect and pagination without primary key", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const user1 = new User()
+                    user1.name = "Test User 1"
+                    await connection.manager.save(user1)
+
+                    const user2 = new User()
+                    user2.name = "Test User 2"
+                    await connection.manager.save(user2)
+
+                    const category1 = new Category()
+                    category1.name = "Category 1"
+                    await connection.manager.save(category1)
+
+                    const category2 = new Category()
+                    category2.name = "Category 2"
+                    await connection.manager.save(category2)
+
+                    const post1 = new Post()
+                    post1.title = "Post 1"
+                    post1.author = user1
+                    post1.categories = [category1, category2]
+                    await connection.manager.save(post1)
+
+                    const post2 = new Post()
+                    post2.title = "Post 2"
+                    post2.author = user2
+                    post2.categories = [category1]
+                    await connection.manager.save(post2)
+
+                    // This is the problematic query that was fixed
+                    const result = await connection
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .leftJoin("post.categories", "category")
+                        .select([
+                            "post.id",
+                            "post.title",
+                            "category.name", // Note: category.id is NOT selected
+                        ])
+                        .skip(0)
+                        .take(2)
+                        .getMany()
+
+                    expect(result).to.have.lengthOf(2)
+                    result.forEach((post) => {
+                        expect(post.categories).to.not.be.undefined
+                        expect(post.categories.length).to.be.greaterThan(0)
+                        post.categories.forEach((category) => {
+                            expect(category.name).to.be.a("string")
+                        })
+                    })
+
+                    // Verify that post1 still has 2 categories and post2 has 1
+                    const post1Result = result.find((p) => p.title === "Post 1")
+                    const post2Result = result.find((p) => p.title === "Post 2")
+
+                    expect(post1Result).to.not.be.undefined
+                    expect(post2Result).to.not.be.undefined
+                    expect(post1Result!.categories).to.have.lengthOf(2)
+                    expect(post2Result!.categories).to.have.lengthOf(1)
+                }),
+            ))
+
+        it("should work correctly with leftJoinAndSelect as comparison", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const user = new User()
+                    user.name = "Test User"
+                    await connection.manager.save(user)
+
+                    const category1 = new Category()
+                    category1.name = "Category 1"
+                    await connection.manager.save(category1)
+
+                    const category2 = new Category()
+                    category2.name = "Category 2"
+                    await connection.manager.save(category2)
+
+                    const post = new Post()
+                    post.title = "Test Post"
+                    post.author = user
+                    post.categories = [category1, category2]
+                    await connection.manager.save(post)
+
+                    // This should work without issues
+                    const result = await connection
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .leftJoinAndSelect("post.categories", "category")
+                        .skip(0)
+                        .take(1)
+                        .getMany()
+
+                    expect(result).to.have.lengthOf(1)
+                    expect(result[0].categories).to.have.lengthOf(2)
+                    result[0].categories.forEach((category) => {
+                        expect(category.id).to.be.a("number")
+                        expect(category.name).to.be.a("string")
+                    })
+                }),
+            ))
+
+        it("should work correctly with explicit primary key selection", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const user = new User()
+                    user.name = "Test User"
+                    await connection.manager.save(user)
+
+                    const category1 = new Category()
+                    category1.name = "Category 1"
+                    await connection.manager.save(category1)
+
+                    const category2 = new Category()
+                    category2.name = "Category 2"
+                    await connection.manager.save(category2)
+
+                    const post = new Post()
+                    post.title = "Test Post"
+                    post.author = user
+                    post.categories = [category1, category2]
+                    await connection.manager.save(post)
+
+                    // This works because primary key is explicitly selected
+                    const result = await connection
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .leftJoin("post.categories", "category")
+                        .select([
+                            "post.id",
+                            "post.title",
+                            "category.id", // Primary key explicitly selected
+                            "category.name",
+                        ])
+                        .skip(0)
+                        .take(1)
+                        .getMany()
+
+                    expect(result).to.have.lengthOf(1)
+                    expect(result[0].categories).to.have.lengthOf(2)
+                    result[0].categories.forEach((category) => {
+                        expect(category.id).to.be.a("number")
+                        expect(category.name).to.be.a("string")
+                    })
+                }),
+            ))
+    })
+
+    describe("leftJoin with composite primary keys", () => {
+        it("should work correctly when all composite primary key columns are selected", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const user = new User()
+                    user.name = "Test User"
+                    await connection.manager.save(user)
+
+                    const category1 = new CategoryWithCompositePK()
+                    category1.categoryId = 1
+                    category1.categoryType = "tech"
+                    category1.name = "Technology"
+                    await connection.manager.save(category1)
+
+                    const category2 = new CategoryWithCompositePK()
+                    category2.categoryId = 2
+                    category2.categoryType = "science"
+                    category2.name = "Science"
+                    await connection.manager.save(category2)
+
+                    const post = new Post()
+                    post.title = "Test Post"
+                    post.author = user
+                    post.compositePKCategories = [category1, category2]
+                    await connection.manager.save(post)
+
+                    // All composite PK columns selected - should work correctly
+                    const result = await connection
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .leftJoin(
+                            "post.compositePKCategories",
+                            "compositePKCategory",
+                        )
+                        .select([
+                            "post.id",
+                            "post.title",
+                            "compositePKCategory.categoryId",
+                            "compositePKCategory.categoryType",
+                            "compositePKCategory.name",
+                        ])
+                        .skip(0)
+                        .take(1)
+                        .getMany()
+
+                    expect(result).to.have.lengthOf(1)
+                    expect(result[0].compositePKCategories).to.have.lengthOf(2)
+                    result[0].compositePKCategories.forEach((category) => {
+                        expect(category.categoryId).to.be.a("number")
+                        expect(category.categoryType).to.be.a("string")
+                        expect(category.name).to.be.a("string")
+                    })
+                }),
+            ))
+
+        it("should work correctly when only part of composite primary key is selected", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const user = new User()
+                    user.name = "Test User"
+                    await connection.manager.save(user)
+
+                    const category1 = new CategoryWithCompositePK()
+                    category1.categoryId = 1
+                    category1.categoryType = "tech"
+                    category1.name = "Technology"
+                    await connection.manager.save(category1)
+
+                    const category2 = new CategoryWithCompositePK()
+                    category2.categoryId = 2
+                    category2.categoryType = "science"
+                    category2.name = "Science"
+                    await connection.manager.save(category2)
+
+                    const post = new Post()
+                    post.title = "Test Post"
+                    post.author = user
+                    post.compositePKCategories = [category1, category2]
+                    await connection.manager.save(post)
+
+                    // Only one of the composite PK columns selected (partial PK)
+                    const result = await connection
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .leftJoin(
+                            "post.compositePKCategories",
+                            "compositePKCategory",
+                        )
+                        .select([
+                            "post.id",
+                            "post.title",
+                            "compositePKCategory.categoryId", // Only categoryId, not categoryType
+                            "compositePKCategory.name",
+                        ])
+                        .skip(0)
+                        .take(1)
+                        .getMany()
+
+                    expect(result).to.have.lengthOf(1)
+                    expect(result[0].compositePKCategories).to.have.lengthOf(2)
+                    result[0].compositePKCategories.forEach((category) => {
+                        expect(category.categoryId).to.be.a("number")
+                        expect(category.name).to.be.a("string")
+                    })
+                }),
+            ))
+
+        it("should work correctly when no composite primary key columns are selected", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const user = new User()
+                    user.name = "Test User"
+                    await connection.manager.save(user)
+
+                    const category1 = new CategoryWithCompositePK()
+                    category1.categoryId = 1
+                    category1.categoryType = "tech"
+                    category1.name = "Technology"
+                    await connection.manager.save(category1)
+
+                    const category2 = new CategoryWithCompositePK()
+                    category2.categoryId = 2
+                    category2.categoryType = "science"
+                    category2.name = "Science"
+                    await connection.manager.save(category2)
+
+                    const post = new Post()
+                    post.title = "Test Post"
+                    post.author = user
+                    post.compositePKCategories = [category1, category2]
+                    await connection.manager.save(post)
+
+                    // No composite PK columns selected - only name
+                    const result = await connection
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .leftJoin(
+                            "post.compositePKCategories",
+                            "compositePKCategory",
+                        )
+                        .select([
+                            "post.id",
+                            "post.title",
+                            "compositePKCategory.name", // Only name, no PK columns
+                        ])
+                        .skip(0)
+                        .take(1)
+                        .getMany()
+
+                    expect(result).to.have.lengthOf(1)
+                    expect(result[0].compositePKCategories).to.have.lengthOf(2)
+                    result[0].compositePKCategories.forEach((category) => {
+                        expect(category.name).to.be.a("string")
+                    })
                 }),
             ))
     })

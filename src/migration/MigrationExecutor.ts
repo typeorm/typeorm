@@ -91,17 +91,25 @@ export class MigrationExecutor {
 
     /**
      * Returns an array of all migrations.
+     *
+     * @deprecated use getMigrations instead
      */
     public async getAllMigrations(): Promise<Migration[]> {
         return Promise.resolve(this.getMigrations())
     }
 
     /**
-     * Returns an array of all executed migrations.
+     * @returns An array of all executed migrations
      */
     public async getExecutedMigrations(): Promise<Migration[]> {
         return this.withQueryRunner(async (queryRunner) => {
-            await this.createMigrationsTableIfNotExist(queryRunner)
+            // There is no need to check if migrations table exists for MongoDB,
+            // as it's handled in loadExecutedMigrations
+            if (this.connection.driver.options.type !== "mongodb") {
+                const exist = await queryRunner.hasTable(this.migrationsTable)
+
+                if (!exist) return []
+            }
 
             return await this.loadExecutedMigrations(queryRunner)
         })
@@ -111,8 +119,10 @@ export class MigrationExecutor {
      * Returns an array of all pending migrations.
      */
     public async getPendingMigrations(): Promise<Migration[]> {
-        const allMigrations = await this.getAllMigrations()
+        const allMigrations = this.getMigrations()
         const executedMigrations = await this.getExecutedMigrations()
+
+        if (executedMigrations.length === 0) return allMigrations
 
         return allMigrations.filter(
             (migration) =>
@@ -153,9 +163,8 @@ export class MigrationExecutor {
         await this.createMigrationsTableIfNotExist(queryRunner)
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations(
-            queryRunner,
-        )
+        const executedMigrations =
+            await this.loadExecutedMigrations(queryRunner)
 
         // get all user's migrations in the source code
         const allMigrations = this.getMigrations()
@@ -201,9 +210,8 @@ export class MigrationExecutor {
         }
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations(
-            queryRunner,
-        )
+        const executedMigrations =
+            await this.loadExecutedMigrations(queryRunner)
 
         // get the time when last migration was executed
         const lastTimeExecutedMigration =
@@ -404,9 +412,8 @@ export class MigrationExecutor {
         }
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations(
-            queryRunner,
-        )
+        const executedMigrations =
+            await this.loadExecutedMigrations(queryRunner)
 
         // get the time when last migration was executed
         const lastTimeExecutedMigration =

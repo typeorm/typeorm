@@ -1,5 +1,6 @@
 import { IndexMetadata } from "../../metadata/IndexMetadata"
 import { TableIndexOptions } from "../options/TableIndexOptions"
+import { TableIndexTypes } from "../options/TableIndexTypes"
 
 /**
  * Database's table index stored in this class.
@@ -60,6 +61,13 @@ export class TableIndex {
     parser?: string
 
     /**
+     * The `type` option defines the type of the index being created.
+     * Supported types include B-tree, Hash, GiST, SP-GiST, GIN, and BRIN
+     * This option is only applicable in PostgreSQL.
+     */
+    type?: TableIndexTypes
+
+    /**
      * Index filter condition.
      */
     where: string
@@ -78,6 +86,7 @@ export class TableIndex {
         this.isNullFiltered = !!options.isNullFiltered
         this.parser = options.parser
         this.where = options.where ? options.where : ""
+        this.type = options.type
     }
 
     // -------------------------------------------------------------------------
@@ -98,6 +107,7 @@ export class TableIndex {
             isNullFiltered: this.isNullFiltered,
             parser: this.parser,
             where: this.where,
+            type: this.type,
         })
     }
 
@@ -121,6 +131,7 @@ export class TableIndex {
             isNullFiltered: indexMetadata.isNullFiltered,
             parser: indexMetadata.parser,
             where: indexMetadata.where,
+            type: indexMetadata.type,
         })
     }
 }

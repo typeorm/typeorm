@@ -1,9 +1,9 @@
 import "reflect-metadata"
 
 import { expect } from "chai"
-import { v4 } from "uuid"
 
 import { DataSource } from "../../../src/data-source/DataSource"
+import { RandomGenerator } from "../../../src/util/RandomGenerator"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -33,7 +33,7 @@ describe("github issues > #10569 Fix type inferencing of EntityManager#create", 
 
             const user = dataSource.manager.create(User, createUserContract)
 
-            user.id = v4()
+            user.id = RandomGenerator.uuidv4()
 
             expect(user.id).to.exist
         })

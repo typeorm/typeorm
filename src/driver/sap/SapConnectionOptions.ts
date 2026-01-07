@@ -5,8 +5,7 @@ import { SapConnectionCredentialsOptions } from "./SapConnectionCredentialsOptio
  * SAP Hana specific connection options.
  */
 export interface SapConnectionOptions
-    extends BaseDataSourceOptions,
-        SapConnectionCredentialsOptions {
+    extends BaseDataSourceOptions, SapConnectionCredentialsOptions {
     /**
      * Database type.
      */

@@ -6,8 +6,7 @@ import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCreden
  * Postgres-specific connection options.
  */
 export interface PostgresConnectionOptions
-    extends BaseDataSourceOptions,
-        PostgresConnectionCredentialsOptions {
+    extends BaseDataSourceOptions, PostgresConnectionCredentialsOptions {
     /**
      * Database type.
      */

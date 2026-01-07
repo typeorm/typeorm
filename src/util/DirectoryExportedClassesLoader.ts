@@ -1,9 +1,9 @@
-import * as glob from "glob"
-import { PlatformTools } from "../platform/PlatformTools"
+import { globSync } from "tinyglobby"
 import { Logger } from "../logger/Logger"
+import { PlatformTools } from "../platform/PlatformTools"
 import { importOrRequireFile } from "./ImportUtils"
-import { ObjectUtils } from "./ObjectUtils"
 import { InstanceChecker } from "./InstanceChecker"
+import { ObjectUtils } from "./ObjectUtils"
 
 /**
  * Loads all exported classes from the given directory.
@@ -34,7 +34,7 @@ export async function importClassesFromDirectories(
     }
 
     const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(glob.sync(PlatformTools.pathNormalize(dir)))
+        return allDirs.concat(globSync(PlatformTools.pathNormalize(dir)))
     }, [] as string[])
 
     if (directories.length > 0 && allFiles.length === 0) {
@@ -63,20 +63,4 @@ export async function importClassesFromDirectories(
     const dirs = await Promise.all(dirPromises)
 
     return loadFileClasses(dirs, [])
-}
-
-/**
- * Loads all json files from the given directory.
- */
-export function importJsonsFromDirectories(
-    directories: string[],
-    format = ".json",
-): any[] {
-    const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(glob.sync(PlatformTools.pathNormalize(dir)))
-    }, [] as string[])
-
-    return allFiles
-        .filter((file) => PlatformTools.pathExtname(file) === format)
-        .map((file) => require(PlatformTools.pathResolve(file)))
 }

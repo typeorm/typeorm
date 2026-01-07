@@ -9,9 +9,8 @@ export class VersionCommand implements yargs.CommandModule {
     describe = "Prints TypeORM version this project uses."
 
     async handler() {
-        const localNpmList = await VersionCommand.executeCommand(
-            "npm list --depth=0",
-        )
+        const localNpmList =
+            await VersionCommand.executeCommand("npm list --depth=0")
         const localMatches = localNpmList.match(/ typeorm@(.*)\n/)
         const localNpmVersion = (
             localMatches && localMatches[1] ? localMatches[1] : ""
