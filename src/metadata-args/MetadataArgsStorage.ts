@@ -438,9 +438,14 @@ export class MetadataArgsStorage {
             if (sameTarget) {
                 const isDuplicateIndex = newArray.find(
                     (newItem: IndexMetadataArgs): boolean => {
-                        // Check if both items have the same name (if name is defined)
+                        // If names are defined, compare only by name
                         if (item.name && newItem.name) {
                             return item.name === newItem.name
+                        }
+
+                        // If only one has a name, they're not duplicates
+                        if (item.name || newItem.name) {
+                            return false
                         }
 
                         // If no name is defined, compare by columns and other properties
