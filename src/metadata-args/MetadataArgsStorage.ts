@@ -455,7 +455,11 @@ export class MetadataArgsStorage {
                             item.nullFiltered === newItem.nullFiltered &&
                             item.parser === newItem.parser &&
                             item.where === newItem.where &&
-                            item.sparse === newItem.sparse
+                            item.sparse === newItem.sparse &&
+                            item.synchronize === newItem.synchronize &&
+                            item.expireAfterSeconds ===
+                                newItem.expireAfterSeconds &&
+                            item.type === newItem.type
 
                         return columnsMatch && propertiesMatch
                     },
