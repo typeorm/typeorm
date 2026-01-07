@@ -3732,16 +3732,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @internal
      * @returns Resolved SQL expression with columns prefixed by parentAlias
      */
-    protected _resolveAliasColumnsInExpression(expr: string, parentAlias: string): string {
+    protected _resolveAliasColumnsInExpression(
+        expr: string,
+        parentAlias: string,
+    ): string {
         // Match alias.column e.g. user.name
-        const regex = /([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_.]*)/g;
+        const regex = /([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_.]*)/g
 
         return expr.replace(regex, (match, aliasName, propertyPath) => {
-            const alias = this.expressionMap.findAliasByName(aliasName);
-            if (!alias || !alias.metadata) return match;
+            const alias = this.expressionMap.findAliasByName(aliasName)
+            if (!alias || !alias.metadata) return match
 
-            const column = alias.metadata.findColumnWithPropertyPath(propertyPath);
-            if (!column) return match;
+            const column =
+                alias.metadata.findColumnWithPropertyPath(propertyPath)
+            if (!column) return match
 
             return (
                 this.escape(parentAlias) +
@@ -3754,8 +3758,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         column.databaseName,
                     ),
                 )
-            );
-        });
+            )
+        })
     }
 
     /**
@@ -3774,7 +3778,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const selectString = Object.keys(orderBys)
             .map((orderCriteria) => {
                 if (orderCriteria.indexOf(".") !== -1) {
-                    return this._resolveAliasColumnsInExpression(orderCriteria, parentAlias)
+                    return this._resolveAliasColumnsInExpression(
+                        orderCriteria,
+                        parentAlias,
+                    )
                 } else {
                     if (
                         this.expressionMap.selects.find(
@@ -3798,7 +3805,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         Object.keys(orderBys).forEach((orderCriteria) => {
             if (orderCriteria.indexOf(".") !== -1) {
                 orderByObject[
-                    this._resolveAliasColumnsInExpression(orderCriteria, parentAlias)
+                    this._resolveAliasColumnsInExpression(
+                        orderCriteria,
+                        parentAlias,
+                    )
                 ] = orderBys[orderCriteria]
             } else {
                 if (

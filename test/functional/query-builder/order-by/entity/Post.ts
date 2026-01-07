@@ -22,6 +22,6 @@ export class Post {
     @Column()
     num2: number = 1
 
-    @OneToMany(() => Comment, comment => comment.post)
+    @OneToMany(() => Comment, (comment) => comment.post)
     comments: Comment[]
 }

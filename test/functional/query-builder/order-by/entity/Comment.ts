@@ -15,6 +15,6 @@ export class Comment {
     @Column()
     postId: number
 
-    @ManyToOne(() => Post, post => post.comments)
+    @ManyToOne(() => Post, (post) => post.comments)
     post: Post
 }
