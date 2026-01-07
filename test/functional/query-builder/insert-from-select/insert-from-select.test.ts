@@ -8,6 +8,8 @@ import {
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { ArchivedUser } from "./entity/ArchivedUser"
+import { Post } from "./entity/Post"
+import { UserPostSummary } from "./entity/UserPostSummary"
 
 describe("query builder > insert from select", () => {
     let dataSources: DataSource[]
@@ -270,6 +272,139 @@ describe("query builder > insert from select", () => {
                 expect(archivedUsers).to.have.length(2)
                 expect(archivedUsers[0].name).to.equal("Adam")
                 expect(archivedUsers[1].name).to.equal("Mike")
+            }),
+        ))
+
+    it("should insert from select with JOIN and GROUP BY", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Insert test users
+                const userRepo = dataSource.getRepository(User)
+                const users = await userRepo.save([
+                    {
+                        name: "Author1",
+                        email: "author1@example.com",
+                        isArchived: false,
+                    },
+                    {
+                        name: "Author2",
+                        email: "author2@example.com",
+                        isArchived: false,
+                    },
+                    {
+                        name: "Author3",
+                        email: "author3@example.com",
+                        isArchived: false,
+                    },
+                ])
+
+                // Insert test posts
+                const postRepo = dataSource.getRepository(Post)
+                await postRepo.save([
+                    { title: "Post 1", authorId: users[0].id },
+                    { title: "Post 2", authorId: users[0].id },
+                    { title: "Post 3", authorId: users[0].id },
+                    { title: "Post 4", authorId: users[1].id },
+                    { title: "Post 5", authorId: users[1].id },
+                    // Author3 has no posts
+                ])
+
+                // Insert from select with LEFT JOIN and GROUP BY
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(UserPostSummary, ["userName", "postCount"])
+                    .valuesFromSelect((qb) =>
+                        qb
+                            .select(["user.name", "COUNT(post.id)"])
+                            .from(User, "user")
+                            .leftJoin(Post, "post", "post.authorId = user.id")
+                            .groupBy("user.id")
+                            .addGroupBy("user.name"),
+                    )
+                    .execute()
+
+                // Verify the results
+                const summaries = await dataSource
+                    .getRepository(UserPostSummary)
+                    .find({
+                        order: { userName: "ASC" },
+                    })
+
+                expect(summaries).to.have.length(3)
+
+                // Author1 has 3 posts
+                expect(summaries[0].userName).to.equal("Author1")
+                expect(summaries[0].postCount).to.equal(3)
+
+                // Author2 has 2 posts
+                expect(summaries[1].userName).to.equal("Author2")
+                expect(summaries[1].postCount).to.equal(2)
+
+                // Author3 has 0 posts
+                expect(summaries[2].userName).to.equal("Author3")
+                expect(summaries[2].postCount).to.equal(0)
+            }),
+        ))
+
+    it("should insert from select with INNER JOIN", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Insert test users
+                const userRepo = dataSource.getRepository(User)
+                const users = await userRepo.save([
+                    {
+                        name: "Writer1",
+                        email: "writer1@example.com",
+                        isArchived: true,
+                    },
+                    {
+                        name: "Writer2",
+                        email: "writer2@example.com",
+                        isArchived: true,
+                    },
+                    {
+                        name: "Writer3",
+                        email: "writer3@example.com",
+                        isArchived: true,
+                    },
+                ])
+
+                // Insert test posts - only Writer1 and Writer2 have posts
+                const postRepo = dataSource.getRepository(Post)
+                await postRepo.save([
+                    { title: "Article 1", authorId: users[0].id },
+                    { title: "Article 2", authorId: users[1].id },
+                    // Writer3 has no posts
+                ])
+
+                // Insert from select with INNER JOIN - only users with posts
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(ArchivedUser, ["name", "email"])
+                    .valuesFromSelect((qb) =>
+                        qb
+                            .select(["user.name", "user.email"])
+                            .from(User, "user")
+                            .innerJoin(Post, "post", "post.authorId = user.id")
+                            .where("user.isArchived = :archived", {
+                                archived: true,
+                            }),
+                    )
+                    .execute()
+
+                // Verify - only users with posts should be inserted
+                const archivedUsers = await dataSource
+                    .getRepository(ArchivedUser)
+                    .find({
+                        order: { name: "ASC" },
+                    })
+
+                expect(archivedUsers).to.have.length(2)
+                expect(archivedUsers[0].name).to.equal("Writer1")
+                expect(archivedUsers[1].name).to.equal("Writer2")
+                // Writer3 should NOT be included because they have no posts
             }),
         ))
 })
