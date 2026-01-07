@@ -61,7 +61,11 @@ export class CockroachQueryRunner
     /**
      * Stores all executed queries to be able to run them again if transaction fails.
      */
-    protected queries: { query: string; parameters?: any[] }[] = []
+    protected queries: {
+        query: string
+        parameters?: any[]
+        useStructuredResult: boolean
+    }[] = []
 
     /**
      * Indicates if running queries must be stored
@@ -278,7 +282,7 @@ export class CockroachQueryRunner
         const queryStartTime = Date.now()
 
         if (this.isTransactionActive && this.storeQueries) {
-            this.queries.push({ query, parameters })
+            this.queries.push({ query, parameters, useStructuredResult })
         }
 
         try {
@@ -365,7 +369,11 @@ export class CockroachQueryRunner
                         q.parameters,
                         this,
                     )
-                    result = await this.query(q.query, q.parameters)
+                    result = await this.query(
+                        q.query,
+                        q.parameters,
+                        q.useStructuredResult,
+                    )
                 }
                 this.transactionRetries = 0
                 this.storeQueries = true
@@ -2699,6 +2707,15 @@ export class CockroachQueryRunner
                 `Supplied foreign key was not found in table ${table.name}`,
             )
 
+        if (!foreignKey.name) {
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+                table,
+                foreignKey.columnNames,
+                this.getTablePath(foreignKey),
+                foreignKey.referencedColumnNames,
+            )
+        }
+
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
         await this.executeQueries(up, down)
@@ -2835,7 +2852,7 @@ export class CockroachQueryRunner
         try {
             const version = await this.getVersion()
             const selectViewDropsQuery =
-                `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
+                `SELECT 'DROP VIEW IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(viewname) || ' CASCADE;' as "query" ` +
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString})`
             const dropViewQueries: ObjectLiteral[] =
                 await this.query(selectViewDropsQuery)
@@ -2843,12 +2860,12 @@ export class CockroachQueryRunner
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
 
-            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || table_schema || '"."' || table_name || '" CASCADE;' as "query" FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`
+            const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS ' || quote_ident(table_schema) || '.' || quote_ident(table_name) || ' CASCADE;' as "query" FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`
             const dropQueries: ObjectLiteral[] =
                 await this.query(selectDropsQuery)
             await Promise.all(dropQueries.map((q) => this.query(q["query"])))
 
-            const selectSequenceDropsQuery = `SELECT 'DROP SEQUENCE "' || sequence_schema || '"."' || sequence_name || '";' as "query" FROM "information_schema"."sequences" WHERE "sequence_schema" IN (${schemaNamesString})`
+            const selectSequenceDropsQuery = `SELECT 'DROP SEQUENCE ' || quote_ident(sequence_schema) || '.' || quote_ident(sequence_name) || ';' as "query" FROM "information_schema"."sequences" WHERE "sequence_schema" IN (${schemaNamesString})`
             const sequenceDropQueries: ObjectLiteral[] = await this.query(
                 selectSequenceDropsQuery,
             )
@@ -2969,7 +2986,7 @@ export class CockroachQueryRunner
             .join(" OR ")
         const columnsSql =
             `SELECT "columns".*, "attr"."attgenerated" as "generated_type", ` +
-            `pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) as description ` +
+            `pg_catalog.col_description((quote_ident(table_catalog) || '.' || quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass::oid, ordinal_position) as description ` +
             `FROM "information_schema"."columns" ` +
             `LEFT JOIN "pg_class" AS "cls" ON "cls"."relname" = "table_name" ` +
             `LEFT JOIN "pg_namespace" AS "ns" ON "ns"."oid" = "cls"."relnamespace" AND "ns"."nspname" = "table_schema" ` +

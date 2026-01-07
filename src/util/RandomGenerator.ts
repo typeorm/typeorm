@@ -1,5 +1,55 @@
 export class RandomGenerator {
     /**
+     * Generates a RFC 4122 version 4 UUID.
+     * Uses native crypto.randomUUID() if available, otherwise falls back to
+     * a custom implementation using crypto.getRandomValues().
+     *
+     * @returns A version 4 UUID string
+     */
+    static uuidv4(): string {
+        // Try native crypto.randomUUID() (available in Node.js 19+ and modern browsers)
+        const uuid = globalThis.crypto?.randomUUID?.()
+        if (uuid) {
+            return uuid
+        }
+
+        // Custom implementation using crypto.getRandomValues()
+        // Based on RFC 4122 version 4 UUID specification
+        const randomBytes = new Uint8Array(16)
+
+        if (globalThis.crypto?.getRandomValues) {
+            globalThis.crypto.getRandomValues(randomBytes)
+        } else {
+            // Fallback for React Native/Hermes and environments without crypto support
+            // Hermes (React Native's JavaScript engine) does not provide crypto APIs
+            // Math.random() is permitted by RFC 4122 for UUID v4 ("pseudo-randomly")
+            // This approach is also used by expo-crypto and other RN libraries
+            // Note: For TypeORM's use case (DB IDs, cache IDs), uniqueness is sufficient
+            for (let i = 0; i < 16; i++) {
+                randomBytes[i] = Math.floor(Math.random() * 256)
+            }
+        }
+
+        // Set version (4) and variant bits according to RFC 4122
+        randomBytes[6] = (randomBytes[6] & 0x0f) | 0x40 // Version 4
+        randomBytes[8] = (randomBytes[8] & 0x3f) | 0x80 // Variant 10
+
+        // Convert to UUID string format (xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx)
+        const hexValues: string[] = []
+        randomBytes.forEach((byte) => {
+            hexValues.push(byte.toString(16).padStart(2, "0"))
+        })
+
+        return [
+            hexValues.slice(0, 4).join(""),
+            hexValues.slice(4, 6).join(""),
+            hexValues.slice(6, 8).join(""),
+            hexValues.slice(8, 10).join(""),
+            hexValues.slice(10, 16).join(""),
+        ].join("-")
+    }
+
+    /**
      *  discuss at: http://locutus.io/php/sha1/
      * original by: Webtoolkit.info (http://www.webtoolkit.info/)
      * improved by: Michael White (http://getsprink.com)
@@ -10,68 +60,58 @@ export class RandomGenerator {
      *      note 1: in a steaming fashion for faster and more efficient hashing
      *   example 1: sha1('Kevin van Zonneveld')
      *   returns 1: '54916d2e62f65b3afa6e192e6a601cdbe5cb5897'
+     * @param str String to be hashed.
+     * @returns SHA-1 hex digest
      */
     static sha1(str: string) {
-        const _rotLeft = function (n: any, s: any) {
+        const _rotLeft = function (n: number, s: number): number {
             const t4 = (n << s) | (n >>> (32 - s))
             return t4
         }
 
-        const _cvtHex = function (val: any) {
+        const _cvtHex = function (val: number): string {
             let str = ""
-            let i
-            let v
 
-            for (i = 7; i >= 0; i--) {
-                v = (val >>> (i * 4)) & 0x0f
+            for (let i = 7; i >= 0; i--) {
+                const v = (val >>> (i * 4)) & 0x0f
                 str += v.toString(16)
             }
             return str
         }
 
-        let blockstart
-        let i, j
-        const W = new Array(80)
-        let H0 = 0x67452301
-        let H1 = 0xefcdab89
-        let H2 = 0x98badcfe
-        let H3 = 0x10325476
-        let H4 = 0xc3d2e1f0
-        let A, B, C, D, E
-        let temp
-
         // utf8_encode
-        str = /*unescape*/ encodeURIComponent(str)
-        const strLen = str.length
+        const bytes = new TextEncoder().encode(str)
+        const bytesLength = bytes.length
 
-        const wordArray = []
-        for (i = 0; i < strLen - 3; i += 4) {
-            j =
-                (str.charCodeAt(i) << 24) |
-                (str.charCodeAt(i + 1) << 16) |
-                (str.charCodeAt(i + 2) << 8) |
-                str.charCodeAt(i + 3)
+        const wordArray: number[] = []
+        for (let i = 0; i < bytesLength - 3; i += 4) {
+            const j =
+                (bytes[i] << 24) |
+                (bytes[i + 1] << 16) |
+                (bytes[i + 2] << 8) |
+                bytes[i + 3]
             wordArray.push(j)
         }
 
-        switch (strLen % 4) {
+        let i: number = 0
+        switch (bytesLength % 4) {
             case 0:
                 i = 0x080000000
                 break
             case 1:
-                i = (str.charCodeAt(strLen - 1) << 24) | 0x0800000
+                i = (bytes[bytesLength - 1] << 24) | 0x0800000
                 break
             case 2:
                 i =
-                    (str.charCodeAt(strLen - 2) << 24) |
-                    (str.charCodeAt(strLen - 1) << 16) |
+                    (bytes[bytesLength - 2] << 24) |
+                    (bytes[bytesLength - 1] << 16) |
                     0x08000
                 break
             case 3:
                 i =
-                    (str.charCodeAt(strLen - 3) << 24) |
-                    (str.charCodeAt(strLen - 2) << 16) |
-                    (str.charCodeAt(strLen - 1) << 8) |
+                    (bytes[bytesLength - 3] << 24) |
+                    (bytes[bytesLength - 2] << 16) |
+                    (bytes[bytesLength - 1] << 8) |
                     0x80
                 break
         }
@@ -82,25 +122,36 @@ export class RandomGenerator {
             wordArray.push(0)
         }
 
-        wordArray.push(strLen >>> 29)
-        wordArray.push((strLen << 3) & 0x0ffffffff)
+        wordArray.push(bytesLength >>> 29)
+        wordArray.push((bytesLength << 3) & 0x0ffffffff)
 
-        for (blockstart = 0; blockstart < wordArray.length; blockstart += 16) {
-            for (i = 0; i < 16; i++) {
+        let H0 = 0x67452301
+        let H1 = 0xefcdab89
+        let H2 = 0x98badcfe
+        let H3 = 0x10325476
+        let H4 = 0xc3d2e1f0
+
+        for (
+            let blockstart = 0;
+            blockstart < wordArray.length;
+            blockstart += 16
+        ) {
+            const W: number[] = new Array(80)
+            for (let i = 0; i < 16; i++) {
                 W[i] = wordArray[blockstart + i]
             }
-            for (i = 16; i <= 79; i++) {
+            for (let i = 16; i <= 79; i++) {
                 W[i] = _rotLeft(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16], 1)
             }
 
-            A = H0
-            B = H1
-            C = H2
-            D = H3
-            E = H4
+            let A = H0
+            let B = H1
+            let C = H2
+            let D = H3
+            let E = H4
 
-            for (i = 0; i <= 19; i++) {
-                temp =
+            for (let i = 0; i <= 19; i++) {
+                const temp =
                     (_rotLeft(A, 5) +
                         ((B & C) | (~B & D)) +
                         E +
@@ -114,8 +165,8 @@ export class RandomGenerator {
                 A = temp
             }
 
-            for (i = 20; i <= 39; i++) {
-                temp =
+            for (let i = 20; i <= 39; i++) {
+                const temp =
                     (_rotLeft(A, 5) + (B ^ C ^ D) + E + W[i] + 0x6ed9eba1) &
                     0x0ffffffff
                 E = D
@@ -125,8 +176,8 @@ export class RandomGenerator {
                 A = temp
             }
 
-            for (i = 40; i <= 59; i++) {
-                temp =
+            for (let i = 40; i <= 59; i++) {
+                const temp =
                     (_rotLeft(A, 5) +
                         ((B & C) | (B & D) | (C & D)) +
                         E +
@@ -140,8 +191,8 @@ export class RandomGenerator {
                 A = temp
             }
 
-            for (i = 60; i <= 79; i++) {
-                temp =
+            for (let i = 60; i <= 79; i++) {
+                const temp =
                     (_rotLeft(A, 5) + (B ^ C ^ D) + E + W[i] + 0xca62c1d6) &
                     0x0ffffffff
                 E = D
@@ -158,8 +209,8 @@ export class RandomGenerator {
             H4 = (H4 + E) & 0x0ffffffff
         }
 
-        temp =
+        const ans =
             _cvtHex(H0) + _cvtHex(H1) + _cvtHex(H2) + _cvtHex(H3) + _cvtHex(H4)
-        return temp.toLowerCase()
+        return ans.toLowerCase()
     }
 }
