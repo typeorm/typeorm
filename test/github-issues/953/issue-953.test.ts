@@ -21,7 +21,7 @@ describe("github issues > #953 MySQL 5.7 JSON column parse", () => {
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should retrieve record from mysql5.7 using driver mysql2", () =>
+    it("should retrieve record from mysql5.7", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const repo = connection.getRepository(User)
