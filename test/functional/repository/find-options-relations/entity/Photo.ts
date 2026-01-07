@@ -20,6 +20,6 @@ export class Photo {
     @ManyToOne(() => Post, (post) => post.photos)
     post: Post
 
-    @Column((type) => Counters)
+    @Column(() => Counters)
     counters: Counters
 }

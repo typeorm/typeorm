@@ -23,7 +23,7 @@ export class Category {
     @RelationId((category: Category) => category.post)
     postId: number
 
-    @ManyToMany((type) => Post, (post) => post.manyCategories)
+    @ManyToMany(() => Post, (post) => post.manyCategories)
     manyPosts: Post[]
 
     @RelationId((category: Category) => category.manyPosts)

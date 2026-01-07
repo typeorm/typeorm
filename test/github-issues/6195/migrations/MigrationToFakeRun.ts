@@ -1,9 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from "../../../../src"
-import {
-    testColumnName,
-    testTableName,
-    nonExistentColumnName,
-} from "../issue-6195"
+
+export const testTableName = "test_table"
+export const testColumnName = "test_column"
+export const nonExistentColumnName = "nonexistent_column"
 
 export class MigrationToFakeRun implements MigrationInterface {
     name = "MigrationToFakeRun" + Date.now()
