@@ -266,37 +266,36 @@ export class DateUtils {
      *  Converts given string to simple enum or array of enums based on the column metadata.
      */
     static stringToSimpleEnum(value: any, columnMetadata: ColumnMetadata) {
+        if (!columnMetadata.enum) {
+            return value
+        }
+
         if (columnMetadata.isArray && typeof value === "string") {
             if (value === "") {
                 return []
             }
-            return value.split(",").map((v: string): string | number => {
-                if (
-                    columnMetadata.enum &&
-                    !isNaN(v as any) &&
-                    columnMetadata.enum.indexOf(parseInt(v)) >= 0
-                ) {
-                    return parseInt(v)
-                }
-                return v
-            })
+
+            return value
+                .split(",")
+                .map((item) => this.parseEnumValue(item, columnMetadata.enum!))
         }
 
-        if (
-            columnMetadata.enum &&
-            !isNaN(value) &&
-            columnMetadata.enum.indexOf(parseInt(value)) >= 0
-        ) {
-            // convert to number if that exists in possible enum options
-            value = parseInt(value)
-        }
-
-        return value
+        return this.parseEnumValue(value, columnMetadata.enum)
     }
 
     // -------------------------------------------------------------------------
     // Private Static Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Parses and converts a value to its numeric form if it exists in the provided enum values.
+     */
+    private static parseEnumValue(value: any, enumValues: any[]): string | any {
+        const parsedValue = Number(value)
+        return !isNaN(parsedValue) && enumValues.includes(parsedValue)
+            ? parsedValue
+            : value
+    }
 
     /**
      * Formats given number to "0x" format, e.g. if the totalLength = 2 and the value is 1 then it will return "01".
