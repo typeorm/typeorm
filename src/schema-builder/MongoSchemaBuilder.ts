@@ -23,7 +23,7 @@ export class MongoSchemaBuilder implements SchemaBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: DataSource) { }
+    constructor(protected connection: DataSource) {}
 
     // -------------------------------------------------------------------------
     // Public Methods

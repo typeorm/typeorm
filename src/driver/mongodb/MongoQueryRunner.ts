@@ -146,7 +146,11 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Creates a cursor for a query that can be used to iterate over results from MongoDB.
      */
-    cursor(database: string, collectionName: string, filter: Filter<Document>): FindCursor<any> {
+    cursor(
+        database: string,
+        collectionName: string,
+        filter: Filter<Document>,
+    ): FindCursor<any> {
         return this.getCollection(database, collectionName).find(filter || {})
     }
 
@@ -234,7 +238,9 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         indexSpecs: IndexDescription[],
     ): Promise<string[]> {
-        return this.getCollection(database, collectionName).createIndexes(indexSpecs)
+        return this.getCollection(database, collectionName).createIndexes(
+            indexSpecs,
+        )
     }
 
     /**
@@ -302,7 +308,10 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops all indexes from the collection.
      */
-    async dropCollectionIndexes(database: string, collectionName: string): Promise<Document> {
+    async dropCollectionIndexes(
+        database: string,
+        collectionName: string,
+    ): Promise<Document> {
         return this.getCollection(database, collectionName).dropIndexes()
     }
 
@@ -358,7 +367,10 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Retrieve all the indexes on the collection.
      */
-    async collectionIndexes(database: string, collectionName: string): Promise<Document> {
+    async collectionIndexes(
+        database: string,
+        collectionName: string,
+    ): Promise<Document> {
         return this.getCollection(database, collectionName).indexes()
     }
 
@@ -394,9 +406,10 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         options?: BulkWriteOptions,
     ): OrderedBulkOperation {
-        return this.getCollection(database, collectionName).initializeOrderedBulkOp(
-            options,
-        )
+        return this.getCollection(
+            database,
+            collectionName,
+        ).initializeOrderedBulkOp(options)
     }
 
     /**
@@ -407,9 +420,10 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         options?: BulkWriteOptions,
     ): UnorderedBulkOperation {
-        return this.getCollection(database, collectionName).initializeUnorderedBulkOp(
-            options,
-        )
+        return this.getCollection(
+            database,
+            collectionName,
+        ).initializeUnorderedBulkOp(options)
     }
 
     /**
@@ -436,7 +450,10 @@ export class MongoQueryRunner implements QueryRunner {
         doc: OptionalId<Document>,
         options?: InsertOneOptions,
     ): Promise<InsertOneResult> {
-        return this.getCollection(database, collectionName).insertOne(doc, options || {})
+        return this.getCollection(database, collectionName).insertOne(
+            doc,
+            options || {},
+        )
     }
 
     /**
@@ -466,7 +483,10 @@ export class MongoQueryRunner implements QueryRunner {
         newName: string,
         options?: RenameOptions,
     ): Promise<Collection<Document>> {
-        return this.getCollection(database, collectionName).rename(newName, options || {})
+        return this.getCollection(database, collectionName).rename(
+            newName,
+            options || {},
+        )
     }
 
     /**
@@ -506,7 +526,10 @@ export class MongoQueryRunner implements QueryRunner {
         pipeline?: Document[],
         options?: ChangeStreamOptions,
     ): ChangeStream {
-        return this.getCollection(database, collectionName).watch(pipeline, options)
+        return this.getCollection(database, collectionName).watch(
+            pipeline,
+            options,
+        )
     }
 
     /**
@@ -561,7 +584,7 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * For MongoDB database we don't create a connection because its single connection already created by a driver.
      */
-    async connect(): Promise<any> { }
+    async connect(): Promise<any> {}
 
     /**
      * For MongoDB database we don't release the connection because it is a single connection.
@@ -1300,7 +1323,10 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Gets collection from the database with a given name.
      */
-    protected getCollection(database: string, collectionName: string): Collection<any> {
+    protected getCollection(
+        database: string,
+        collectionName: string,
+    ): Collection<any> {
         return this.databaseConnection
             .db(database || this.connection.driver.database!)
             .collection(collectionName)

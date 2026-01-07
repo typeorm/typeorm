@@ -76,11 +76,10 @@ export class MongoEntityManager extends EntityManager {
     readonly "@instanceof" = Symbol.for("MongoEntityManager")
 
     get mongoQueryRunner(): MongoQueryRunner {
-        const driver = this.connection.driver as MongoDriver;
-        const queryRunner = driver.queryRunner as MongoQueryRunner;
-        if (!queryRunner)
-            void driver.connect();
-        return queryRunner;
+        const driver = this.connection.driver as MongoDriver
+        const queryRunner = driver.queryRunner as MongoQueryRunner
+        if (!queryRunner) void driver.connect()
+        return queryRunner
     }
 
     // -------------------------------------------------------------------------
@@ -433,7 +432,11 @@ export class MongoEntityManager extends EntityManager {
         query: ObjectLiteral = {},
     ): FindCursor<T> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.cursor(metadata.database!, metadata.tableName, query)
+        return this.mongoQueryRunner.cursor(
+            metadata.database!,
+            metadata.tableName,
+            query,
+        )
     }
 
     /**
@@ -513,7 +516,12 @@ export class MongoEntityManager extends EntityManager {
         options: CountOptions = {},
     ): Promise<number> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.count(metadata.database!, metadata.tableName, query, options)
+        return this.mongoQueryRunner.count(
+            metadata.database!,
+            metadata.tableName,
+            query,
+            options,
+        )
     }
 
     /**
@@ -655,7 +663,10 @@ export class MongoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
     ): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.dropCollectionIndexes(metadata.database!, metadata.tableName)
+        return this.mongoQueryRunner.dropCollectionIndexes(
+            metadata.database!,
+            metadata.tableName,
+        )
     }
 
     /**
@@ -720,7 +731,10 @@ export class MongoEntityManager extends EntityManager {
         entityClassOrName: EntityTarget<Entity>,
     ): Promise<Document> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.collectionIndexes(metadata.database!, metadata.tableName)
+        return this.mongoQueryRunner.collectionIndexes(
+            metadata.database!,
+            metadata.tableName,
+        )
     }
 
     /**
@@ -809,7 +823,12 @@ export class MongoEntityManager extends EntityManager {
         options?: InsertOneOptions,
     ): Promise<InsertOneResult> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.insertOne(metadata.database!, metadata.tableName, doc, options)
+        return this.mongoQueryRunner.insertOne(
+            metadata.database!,
+            metadata.tableName,
+            doc,
+            options,
+        )
     }
 
     /**
@@ -817,7 +836,10 @@ export class MongoEntityManager extends EntityManager {
      */
     isCapped<Entity>(entityClassOrName: EntityTarget<Entity>): Promise<any> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.isCapped(metadata.database!, metadata.tableName)
+        return this.mongoQueryRunner.isCapped(
+            metadata.database!,
+            metadata.tableName,
+        )
     }
 
     /**
@@ -879,7 +901,11 @@ export class MongoEntityManager extends EntityManager {
         options?: CollStatsOptions,
     ): Promise<CollStats> {
         const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.stats(metadata.database!, metadata.tableName, options)
+        return this.mongoQueryRunner.stats(
+            metadata.database!,
+            metadata.tableName,
+            options,
+        )
     }
 
     watch<Entity>(
@@ -1063,7 +1089,7 @@ export class MongoEntityManager extends EntityManager {
     ) {
         const queryRunner = this.mongoQueryRunner
 
-            ; (cursor as any)["__to_array_func"] = cursor.toArray
+        ;(cursor as any)["__to_array_func"] = cursor.toArray
         cursor.toArray = () =>
             ((cursor as any)["__to_array_func"] as CallableFunction)().then(
                 async (results: Entity[]) => {
@@ -1078,7 +1104,7 @@ export class MongoEntityManager extends EntityManager {
                     return entities
                 },
             )
-            ; (cursor as any)["__next_func"] = cursor.next
+        ;(cursor as any)["__next_func"] = cursor.next
         cursor.next = () =>
             ((cursor as any)["__next_func"] as CallableFunction)().then(
                 async (result: Entity) => {
@@ -1122,7 +1148,7 @@ export class MongoEntityManager extends EntityManager {
         const objectIdInstance = PlatformTools.load("mongodb").ObjectId
         const id =
             optionsOrConditions instanceof objectIdInstance ||
-                typeof optionsOrConditions === "string"
+            typeof optionsOrConditions === "string"
                 ? optionsOrConditions
                 : undefined
         const findOneOptionsOrConditions = (
