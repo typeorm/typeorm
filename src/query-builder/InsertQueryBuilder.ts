@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid"
 import { EntityTarget } from "../common/EntityTarget"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
@@ -12,6 +11,7 @@ import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { BroadcasterResult } from "../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectUtils } from "../util/ObjectUtils"
+import { RandomGenerator } from "../util/RandomGenerator"
 import { InsertOrUpdateOptions } from "./InsertOrUpdateOptions"
 import { QueryBuilder } from "./QueryBuilder"
 import { QueryDeepPartialEntity } from "./QueryPartialEntity"
@@ -1407,7 +1407,7 @@ export class InsertQueryBuilder<
             !this.connection.driver.isUUIDGenerationSupported() &&
             value === undefined
         ) {
-            value = uuidv4()
+            value = RandomGenerator.uuidv4()
             expression += this.createParameter(value)
 
             if (!(valueSetIndex in this.expressionMap.locallyGenerated)) {
