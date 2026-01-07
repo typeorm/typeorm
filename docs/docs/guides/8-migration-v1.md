@@ -16,6 +16,15 @@ The `connectorPackage` option was removed, together with the support for the old
 
 Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52, so you'll need to use Expo SDK v52 or later with the modern async SQLite API.
 
+## MS SQL Server
+
+The .query() method now enables access to the full result returned from the underlying driver using an options object.
+
+If you've been using .query('SELECT ...', [myArg], true) to get the full result, you will need to change your code, replacing the third parameter with an options object:
+```typescript
+    { useStructuredResult: true }
+```
+
 ## hashing
 
 Historically TypeORM used a non-standard SHA-1 implementation for hashing. This has been changed to use the built-in `crypto` module from Node.js.
