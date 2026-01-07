@@ -84,10 +84,9 @@
     "format:ci": "prettier --check \"./**/*.ts\"",
     "lint": "eslint",
     "package": "gulp package",
-    "pre-commit": "lint-staged",
     "prepare": "is-ci || husky",
     "publish:preview": "pkg-pr-new publish './build/package' --template='./sample/playground'",
-    "test": "npm run compile && npm run test:fast --",
+    "test": "pnpm run compile && pnpm run test:fast --",
     "test:ci": "mocha --bail",
     "test:fast": "mocha",
     "typecheck": "tsc --noEmit",
@@ -106,17 +105,19 @@
     "sql-highlight": "^6.1.0",
     "tinyglobby": "^0.2.15",
     "tslib": "^2.8.1",
-    "uuid": "^11.1.0",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@google-cloud/spanner": "^8.3.1",
     "@sap/hana-client": "^2.26.26",
+    "@stryker-mutator/core": "^9.4.0",
+    "@stryker-mutator/mocha-runner": "^9.4.0",
     "@tsconfig/node20": "^20.1.8",
     "@types/chai": "^5.2.3",
     "@types/chai-as-promised": "^8.0.2",
     "@types/debug": "^4.1.12",
+    "@types/gulp": "^4.0.18",
     "@types/gulp-rename": "^2.0.7",
     "@types/gulp-sourcemaps": "^0.0.38",
     "@types/mocha": "^10.0.10",
@@ -156,7 +157,7 @@
     "redis": "^5.10.0",
     "sinon": "^21.0.0",
     "sinon-chai": "^4.0.1",
-    "sort-package-json": "^3.5.1",
+    "sort-package-json": "^3.6.0",
     "source-map-support": "^0.5.21",
     "sql.js": "^1.13.0",
     "sqlite3": "^5.1.7",
@@ -233,8 +234,30 @@
       "optional": true
     }
   },
+  "packageManager": "pnpm@10.26.2",
   "engines": {
     "node": "^20.19.0 || ^22.12.0 || >=24.11.0"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^10.26.2",
+      "onFail": "error"
+    }
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "sqlite3"
+    ],
+    "ignoredBuiltDependencies": [
+      "@sap/hana-client",
+      "es5-ext",
+      "libpq",
+      "oracledb",
+      "protobufjs"
+    ],
+    "minimumReleaseAge": 1440
   },
   "collective": {
     "type": "opencollective",
