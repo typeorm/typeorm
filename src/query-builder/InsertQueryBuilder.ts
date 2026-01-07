@@ -304,6 +304,14 @@ export class InsertQueryBuilder<
             | QueryDeepPartialEntity<Entity>
             | QueryDeepPartialEntity<Entity>[],
     ): this {
+        // Prevent using valuesFromSelect and values together
+        if (this.expressionMap.insertFromSelect) {
+            throw new TypeORMError(
+                `Cannot use both "values" and "valuesFromSelect" methods together. ` +
+                    `Use either "values" to insert literal values or "valuesFromSelect" to insert from a SELECT query.`,
+            )
+        }
+
         this.expressionMap.valuesSet = values
         return this
     }
@@ -367,14 +375,37 @@ export class InsertQueryBuilder<
             | SelectQueryBuilder<any>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
     ): this {
-        let selectQueryBuilder: SelectQueryBuilder<any>
+        // Prevent using values and valuesFromSelect together
+        if (this.expressionMap.valuesSet !== undefined) {
+            throw new TypeORMError(
+                `Cannot use both "values" and "valuesFromSelect" methods together. ` +
+                    `Use either "values" to insert literal values or "valuesFromSelect" to insert from a SELECT query.`,
+            )
+        }
 
+        let selectQueryBuilder: SelectQueryBuilder<any>
         if (typeof queryBuilderOrFactory === "function") {
             // Create a new SelectQueryBuilder and pass it to the factory
             const subQuery = this.createQueryBuilder().select()
             selectQueryBuilder = queryBuilderOrFactory(subQuery)
         } else {
             selectQueryBuilder = queryBuilderOrFactory
+        }
+
+        // Validate the number of selected columns matches the number of insert columns
+        const selectColumnCount =
+            selectQueryBuilder.expressionMap.selects.length
+        const insertColumnCount = this.expressionMap.insertColumns.length
+
+        // Only validate if both insert columns and select columns are explicitly specified
+        if (insertColumnCount > 0 && selectColumnCount > 0) {
+            if (selectColumnCount !== insertColumnCount) {
+                throw new TypeORMError(
+                    `The number of columns in the SELECT query (${selectColumnCount}) ` +
+                        `does not match the number of columns specified for INSERT (${insertColumnCount}). ` +
+                        `Make sure both have the same number of columns.`,
+                )
+            }
         }
 
         // Merge parameters from the SelectQueryBuilder

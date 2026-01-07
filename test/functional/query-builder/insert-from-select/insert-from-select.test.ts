@@ -407,4 +407,65 @@ describe("query builder > insert from select", () => {
                 // Writer3 should NOT be included because they have no posts
             }),
         ))
+
+    it("should not be able to use both values and valuesFromSelect together", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Attempt to use first valuesFromSelect then values
+                expect(() => {
+                    dataSource
+                        .createQueryBuilder()
+                        .insert()
+                        .into(User)
+                        .valuesFromSelect(
+                            dataSource
+                                .createQueryBuilder()
+                                .select("user.name", "name")
+                                .from(User, "user"),
+                        )
+                        .values({ name: "test" })
+                }).to.throw(
+                    'Cannot use both "values" and "valuesFromSelect" methods together',
+                )
+
+                // Attempt to use first values then valuesFromSelect
+                expect(() => {
+                    dataSource
+                        .createQueryBuilder()
+                        .insert()
+                        .into(User)
+                        .values({ name: "test" })
+                        .valuesFromSelect(
+                            dataSource
+                                .createQueryBuilder()
+                                .select("user.name", "name")
+                                .from(User, "user"),
+                        )
+                }).to.throw(
+                    'Cannot use both "values" and "valuesFromSelect" methods together',
+                )
+            }),
+        ))
+
+    it("should throw error when SELECT column count does not match INSERT column count", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // INSERT has 2 columns but SELECT only has 1
+                expect(() => {
+                    dataSource
+                        .createQueryBuilder()
+                        .insert()
+                        .into(User, ["name", "memberId"])
+                        .valuesFromSelect(
+                            dataSource
+                                .createQueryBuilder()
+                                .select("user.name")
+                                .from(User, "user"),
+                        )
+                }).to.throw(
+                    "The number of columns in the SELECT query (1) " +
+                        "does not match the number of columns specified for INSERT (2).",
+                )
+            }),
+        ))
 })
