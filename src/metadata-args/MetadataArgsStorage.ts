@@ -511,6 +511,20 @@ export class MetadataArgsStorage {
             return columns1.every((col, index) => col === columns2[index])
         }
 
+        // Both are objects - compare them
+        if (typeof columns1 === "object" && typeof columns2 === "object") {
+            const keys1 = Object.keys(columns1)
+            const keys2 = Object.keys(columns2)
+            if (keys1.length !== keys2.length) {
+                return false
+            }
+            return keys1.every(
+                (key) =>
+                    keys2.includes(key) &&
+                    (columns1 as any)[key] === (columns2 as any)[key],
+            )
+        }
+
         return false
     }
 }
