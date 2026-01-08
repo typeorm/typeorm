@@ -533,7 +533,9 @@ export class AuroraMysqlDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value)
+            return DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedDateToTimeString(value)
         } else if (columnMetadata.type === "json") {
@@ -592,7 +594,9 @@ export class AuroraMysqlDriver implements Driver {
         ) {
             value = DateUtils.normalizeHydratedDate(value)
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "json") {
             value = typeof value === "string" ? JSON.parse(value) : value
         } else if (columnMetadata.type === "time") {
@@ -802,14 +806,20 @@ export class AuroraMysqlDriver implements Driver {
                 this.poolCluster.getConnection(
                     "MASTER",
                     (err: any, dbConnection: any) => {
-                        err
-                            ? fail(err)
-                            : ok(this.prepareDbConnection(dbConnection))
+                        if (err) {
+                            fail(err)
+                        } else {
+                            ok(this.prepareDbConnection(dbConnection))
+                        }
                     },
                 )
             } else if (this.pool) {
                 this.pool.getConnection((err: any, dbConnection: any) => {
-                    err ? fail(err) : ok(this.prepareDbConnection(dbConnection))
+                    if (err) {
+                        fail(err)
+                    } else {
+                        ok(this.prepareDbConnection(dbConnection))
+                    }
                 })
             } else {
                 fail(
@@ -833,7 +843,11 @@ export class AuroraMysqlDriver implements Driver {
             this.poolCluster.getConnection(
                 "SLAVE*",
                 (err: any, dbConnection: any) => {
-                    err ? fail(err) : ok(this.prepareDbConnection(dbConnection))
+                    if (err) {
+                        fail(err)
+                    } else {
+                        ok(this.prepareDbConnection(dbConnection))
+                    }
                 },
             )
         })
