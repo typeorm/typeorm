@@ -169,6 +169,39 @@ describe("query builder > select", () => {
             }),
         ))
 
+    it("should return columns in the order they were specified in select statement", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const sql = connection
+                    .createQueryBuilder(Post, "post")
+                    .select("post.description", "post_description")
+                    .addSelect("post.title", "post_title")
+                    .addSelect("post.id", "post_id")
+                    .disableEscaping()
+                    .getQuery()
+
+                expect(sql).to.equal(
+                    "SELECT post.description AS post_description, " +
+                        "post.title AS post_title, " +
+                        "post.id AS post_id " +
+                        "FROM post post",
+                )
+
+                const sql2 = connection
+                    .createQueryBuilder(Post, "post")
+                    .select(["post.description", "post.title", "post.id"])
+                    .disableEscaping()
+                    .getQuery()
+
+                expect(sql2).to.equal(
+                    "SELECT post.description AS post_description, " +
+                        "post.title AS post_title, " +
+                        "post.id AS post_id " +
+                        "FROM post post",
+                )
+            }),
+        ))
+
     describe("with relations and where clause", () => {
         describe("many-to-one", () => {
             it("should craft query with exact value", () =>
