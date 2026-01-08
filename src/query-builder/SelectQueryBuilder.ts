@@ -2869,20 +2869,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             )
         }
 
-        const validPaths = new Set(
-            metadata.columns.map((col) => `${aliasName}.${col.propertyPath}`),
+        const columnsMap = new Map(
+            metadata.columns.map((col) => [
+                `${aliasName}.${col.propertyPath}`,
+                col,
+            ]),
         )
-        const selectedColumnsOrder = this.expressionMap.selects
-            .filter((select) => validPaths.has(select.selection))
-            .map(
-                (select) =>
-                    metadata.columns.find(
-                        (col) =>
-                            `${aliasName}.${col.propertyPath}` ===
-                            select.selection,
-                    )!,
-            )
-        columns.push(...selectedColumnsOrder)
+        columns.push(
+            ...this.expressionMap.selects
+                .map((select) => columnsMap.get(select.selection))
+                .filter((col): col is ColumnMetadata => !!col),
+        )
 
         // if user used partial selection and did not select some primary columns which are required to be selected
         // we select those primary columns and mark them as "virtual". Later virtual column values will be removed from final entity
