@@ -16,6 +16,6 @@ export class UserWithEmbededEntity {
     @PrimaryColumn()
     id: number
 
-    @Column((type) => FriendStats)
+    @Column(() => FriendStats)
     friend: FriendStats
 }

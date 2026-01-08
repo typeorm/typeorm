@@ -3,18 +3,45 @@ name: Index docs to Typesense
 on:
   push:
     branches:
-      - master
+      - v0.3
 
 jobs:
-  index_docs:
+  index-docs:
+    if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Index docs to Typesense
+      - uses: actions/checkout@v6
+      - name: Delete unaliased collections
+        env:
+          TYPESENSE_API_KEY: ${{ secrets.TYPESENSE_API_KEY }}
+          TYPESENSE_HOST: ${{ secrets.TYPESENSE_HOST }}
+          TYPESENSE_PROTOCOL: https
+          TYPESENSE_PORT: 443
         run: |
+          ALIAS_COLLECTION=$(curl -s -H "X-TYPESENSE-API-KEY: $TYPESENSE_API_KEY" \
+            "$TYPESENSE_PROTOCOL://$TYPESENSE_HOST:$TYPESENSE_PORT/aliases/typeorm-docs" \
+            | jq -r '.collection_name')
+
+          if [ "$ALIAS_COLLECTION" = "null" ] || [ -z "$ALIAS_COLLECTION" ]; then
+            echo "Alias does not exist; skipping collection cleanup."
+            exit 0
+          fi
+
+          echo "Alias currently points to: $ALIAS_COLLECTION"
+
+          COLLECTIONS=$(curl -s -H "X-TYPESENSE-API-KEY: $TYPESENSE_API_KEY" \
+            "$TYPESENSE_PROTOCOL://$TYPESENSE_HOST:$TYPESENSE_PORT/collections" \
+            | jq -r '.[].name')
+
+          for col in $COLLECTIONS; do
+            if [ "$col" != "$ALIAS_COLLECTION" ]; then
+              echo "Deleting unaliased collection: $col"
+              curl -s -X DELETE -H "X-TYPESENSE-API-KEY: $TYPESENSE_API_KEY" \
+                "$TYPESENSE_PROTOCOL://$TYPESENSE_HOST:$TYPESENSE_PORT/collections/$col"
+            fi
+          done
+      - run: |
           docker run \
             -e TYPESENSE_API_KEY=${{ secrets.TYPESENSE_API_KEY }} \
             -e TYPESENSE_HOST="${{ secrets.TYPESENSE_HOST }}" \

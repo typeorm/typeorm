@@ -861,7 +861,7 @@ export abstract class AbstractSqliteQueryRunner
     }
 
     /**
-     * Drops an unique constraint.
+     * Drops a unique constraint.
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
@@ -882,7 +882,7 @@ export abstract class AbstractSqliteQueryRunner
     }
 
     /**
-     * Creates an unique constraints.
+     * Creates a unique constraints.
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
@@ -1183,9 +1183,8 @@ export abstract class AbstractSqliteQueryRunner
             const selectViewDropsQuery = dbPath
                 ? `SELECT 'DROP VIEW "${dbPath}"."' || name || '";' as query FROM "${dbPath}"."sqlite_master" WHERE "type" = 'view'`
                 : `SELECT 'DROP VIEW "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'view'`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )

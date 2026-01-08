@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src"
 import { Category } from "./entity/Category"
 
 const options: DataSourceOptions = {
@@ -39,7 +39,7 @@ dataSource.initialize().then(
 
         return categoryRepository
             .save(category1)
-            .then((category) => {
+            .then(() => {
                 console.log(
                     "Categories has been saved. Lets now load it and all its descendants:",
                 )

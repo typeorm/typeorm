@@ -16,6 +16,9 @@ import { TableForeignKey } from "../schema-builder/table/TableForeignKey"
 import { UpsertType } from "./types/UpsertType"
 import { OnDeleteType } from "../metadata/types/OnDeleteType"
 import { OnUpdateType } from "../metadata/types/OnUpdateType"
+import { TableIndex } from "../schema-builder/table/TableIndex"
+import { IndexMetadata } from "../metadata/IndexMetadata"
+import { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
 
 export type ReturningType = "insert" | "update" | "delete"
 
@@ -95,6 +98,11 @@ export interface Driver {
      * Gets list of column data types that support length by a driver.
      */
     withLengthColumnTypes: ColumnType[]
+
+    /**
+     * Supported index types
+     */
+    supportedIndexTypes?: TableIndexTypes[]
 
     /**
      * Gets list of column data types that support precision by a driver.
@@ -287,4 +295,12 @@ export interface Driver {
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string
+
+    /**
+     * Returns true if both indexes types are equivalent
+     */
+    compareTableIndexTypes?: (
+        indexA: IndexMetadata,
+        indexB: TableIndex,
+    ) => boolean
 }

@@ -11,9 +11,7 @@ import {
  * beforeInsert().
  */
 @EventSubscriber()
-export class ValidEntityCheckSubscriber
-    implements EntitySubscriberInterface<Post>
-{
+export class ValidEntityCheckSubscriber implements EntitySubscriberInterface<Post> {
     listenTo() {
         return Post
     }

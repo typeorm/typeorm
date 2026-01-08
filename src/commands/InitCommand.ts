@@ -6,8 +6,6 @@ import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
 import { CommandUtils } from "./CommandUtils"
 
-import ourPackageJson from "../../package.json"
-
 /**
  * Generates a new project with TypeORM.
  */
@@ -117,7 +115,7 @@ export class InitCommand implements yargs.CommandModule {
             )
             await CommandUtils.createFile(
                 basePath + "/package.json",
-                InitCommand.appendPackageJson(
+                await InitCommand.appendPackageJson(
                     packageJsonContents,
                     database,
                     isExpress,
@@ -264,8 +262,8 @@ export const AppDataSource = new DataSource({
             return JSON.stringify(
                 {
                     compilerOptions: {
-                        lib: ["es2021"],
-                        target: "es2021",
+                        lib: ["es2023"],
+                        target: "es2022",
                         module: "es2022",
                         moduleResolution: "node",
                         allowSyntheticDefaultImports: true,
@@ -282,8 +280,8 @@ export const AppDataSource = new DataSource({
             return JSON.stringify(
                 {
                     compilerOptions: {
-                        lib: ["es2021"],
-                        target: "es2021",
+                        lib: ["es2023"],
+                        target: "es2022",
                         module: "commonjs",
                         moduleResolution: "node",
                         outDir: "./build",
@@ -619,6 +617,7 @@ AppDataSource.initialize().then(async () => {
     environment:
       SA_PASSWORD: "Admin12345"
       ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
 
 `
             case "mongodb":
@@ -672,13 +671,16 @@ Steps to run this project:
     /**
      * Appends to a given package.json template everything needed.
      */
-    protected static appendPackageJson(
+    protected static async appendPackageJson(
         packageJsonContents: string,
         database: string,
         express: boolean,
         projectIsEsm: boolean /*, docker: boolean*/,
-    ): string {
+    ): Promise<string> {
         const packageJson = JSON.parse(packageJsonContents)
+        const ourPackageJson = JSON.parse(
+            await CommandUtils.readFile(`${__dirname}/../package.json`),
+        )
 
         if (!packageJson.devDependencies) packageJson.devDependencies = {}
         packageJson.devDependencies = {

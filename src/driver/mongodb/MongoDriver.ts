@@ -203,6 +203,11 @@ export class MongoDriver implements Driver {
         "w",
         "writeConcern",
         "wtimeoutMS",
+        // Proxy configuration for Socks5
+        "proxyHost",
+        "proxyPort",
+        "proxyUsername",
+        "proxyPassword",
         // Undocumented deprecated options
         // todo: remove next major version
         "appname",

@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src/index"
+import { DataSource, DataSourceOptions } from "../../src"
 import { Employee } from "./entity/Employee"
 import { Homesitter } from "./entity/Homesitter"
 import { Student } from "./entity/Student"

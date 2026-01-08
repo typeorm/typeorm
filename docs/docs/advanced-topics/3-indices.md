@@ -46,7 +46,7 @@ export class User {
 
 ## Unique indices
 
-To create an unique index you need to specify `{ unique: true }` in the index options:
+To create a unique index you need to specify `{ unique: true }` in the index options:
 
 > Note: CockroachDB stores unique indices as `UNIQUE` constraints
 
@@ -133,10 +133,10 @@ export class Thing {
 
 ## Concurrent creation
 
-In order to avoid having to obtain an access exclusive lock when creating and dropping indexes in postgres, you may create them using the CONCURRENTLY modifier.
-If you want use the concurrent option, you need set `migrationsTransactionMode: none` between data source options.
+In order to avoid having to obtain an ACCESS EXCLUSIVE lock when creating and dropping indexes in Postgres, you may create them using the CONCURRENTLY modifier.
+If you want to use the concurrent option, you need to set `migrationsTransactionMode: none` in your data source options.
 
-Typeorm supports generating SQL with this option if when the concurrent option is specified on the index.
+TypeORM supports generating SQL with this option when the concurrent option is specified on the index.
 
 ```typescript
 @Index(["firstName", "middleName", "lastName"], { concurrent: true })
@@ -144,12 +144,21 @@ Typeorm supports generating SQL with this option if when the concurrent option i
 
 For more information see the [Postgres documentation](https://www.postgresql.org/docs/current/sql-createindex.html).
 
+## Index Type
+If you need to specify a custom type for the index, you can use the `type` property. If the `spatial` property is set, this field will be ignored.
+
+```typescript
+@Index({ type: 'hash' })
+```
+
+This feature is currently supported only for PostgreSQL.
+
 ## Disabling synchronization
 
-TypeORM does not support some index options and definitions (e.g. `lower`, `pg_trgm`) because of lot of different database specifics and multiple
-issues with getting information about exist database indices and synchronizing them automatically. In such cases you should create index manually
-(for example in the migrations) with any index signature you want. To make TypeORM ignore these indices during synchronization use `synchronize: false`
-option on `@Index` decorator.
+TypeORM does not support some index options and definitions (e.g. `lower`, `pg_trgm`) due to many database-specific differences and multiple
+issues with getting information about existing database indices and synchronizing them automatically. In such cases you should create the index manually
+(for example, in [the migrations](../migrations/01-why.md)) with any index signature you want. To make TypeORM ignore these indices during synchronization, use `synchronize: false`
+option on the `@Index` decorator.
 
 For example, you create an index with case-insensitive comparison:
 
