@@ -1339,7 +1339,7 @@ export class EntityManager {
      */
     async increment<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        conditions: any,
+        conditions: FindOptionsWhere<Entity>,
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
@@ -1357,7 +1357,7 @@ export class EntityManager {
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
-                (value, key) => ({ [key]: value } as any),
+                (value, key) => ({ [key]: value }) as any,
                 () =>
                     this.connection.driver.escape(column.databaseName) +
                     " + " +
@@ -1376,7 +1376,7 @@ export class EntityManager {
      */
     async decrement<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        conditions: any,
+        conditions: FindOptionsWhere<Entity>,
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
@@ -1394,7 +1394,7 @@ export class EntityManager {
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
-                (value, key) => ({ [key]: value } as any),
+                (value, key) => ({ [key]: value }) as any,
                 () =>
                     this.connection.driver.escape(column.databaseName) +
                     " - " +
