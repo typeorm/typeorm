@@ -57,9 +57,7 @@ const MysqlDataSource = new DataSource({
     username: "test",
     password: "test",
     database: "test",
-    entities: [
-        // ....
-    ],
+    entities: [__dirname + "/entities/**/*{.js,.ts}"],
 })
 
 const PostgresDataSource = new DataSource({
@@ -69,9 +67,7 @@ const PostgresDataSource = new DataSource({
     username: "test",
     password: "test",
     database: "test",
-    entities: [
-        // ....
-    ],
+    entities: [__dirname + "/entities/**/*{.js,.ts}"],
 })
 ```
 
