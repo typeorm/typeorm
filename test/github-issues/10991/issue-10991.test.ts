@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { TEST_TABLE_NAME } from "./migrations/init"
+import { TEST_TABLE_NAME } from "./migration/init"
 import { expect } from "chai"
 
 describe("github issues > #10991", () => {
@@ -12,7 +12,7 @@ describe("github issues > #10991", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
-            migrations: [__dirname + "/migrations/*{.js,.ts}"],
+            migrations: [__dirname + "/migration/*{.js,.ts}"],
             enabledDrivers: ["cockroachdb", "postgres"],
         })
     })

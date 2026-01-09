@@ -18,8 +18,8 @@ describe("github issues > #4956 create typeorm_metatable when running migrations
 
     it("should create typeorm_metadata table when running migrations with views", async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entities/*{.js,.ts}"],
-            migrations: [__dirname + "/migrations/WithView{.js,.ts}"],
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            migrations: [__dirname + "/migration/WithView{.js,.ts}"],
             enabledDrivers: ["mysql", "mariadb"],
             schemaCreate: false,
             dropSchema: true,
@@ -48,8 +48,8 @@ describe("github issues > #4956 create typeorm_metatable when running migrations
 
     it("should not create typeorm_metadata table when running migrations if there are no views", async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entities/Foo{.js,.ts}"],
-            migrations: [__dirname + "/migrations/WithoutView{.js,.ts}"],
+            entities: [__dirname + "/entity/Foo{.js,.ts}"],
+            migrations: [__dirname + "/migration/WithoutView{.js,.ts}"],
             enabledDrivers: ["mysql", "mariadb"],
             schemaCreate: false,
             dropSchema: true,
