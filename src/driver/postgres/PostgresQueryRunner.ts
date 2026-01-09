@@ -20,6 +20,7 @@ import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
+import { VersionUtils } from "../../util/VersionUtils"
 import { DriverUtils } from "../DriverUtils"
 import { Query } from "../Query"
 import { ColumnType } from "../types/ColumnTypes"
@@ -1555,6 +1556,19 @@ export class PostgresQueryRunner
             ) {
                 const arraySuffix = newColumn.isArray ? "[]" : ""
 
+                const { extraItems, missingItems } = OrmUtils.getArraysDiff(
+                    newColumn.enum!,
+                    oldColumn.enum!,
+                )
+
+                const version = this.driver.version
+
+                // when the only change is new enum value(s) we can use ADD VALUE syntax
+                const useAddValueForUp =
+                    VersionUtils.isGreaterOrEqual(version, "12.0") &&
+                    missingItems.length === 0 &&
+                    extraItems.length > 0
+
                 // "public"."new_enum"
                 const newEnumName = this.buildEnumName(table, newColumn)
 
@@ -1586,109 +1600,161 @@ export class PostgresQueryRunner
                     true,
                 )
 
-                // rename old ENUM
-                upQueries.push(
-                    new Query(
-                        `ALTER TYPE ${oldEnumName} RENAME TO ${oldEnumNameWithoutSchema_old}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`,
-                    ),
-                )
+                // ADD VALUE allows us to just add new enum values without any type changes, but can of course only be used when only new values were added
+                if (useAddValueForUp) {
+                    // Add values for up - that's all we need
+                    for (const item of extraItems) {
+                        const escapedValue = item.replaceAll("'", "''")
 
-                // create new ENUM
-                upQueries.push(
-                    this.createEnumTypeSql(table, newColumn, newEnumName),
-                )
-                downQueries.push(
-                    this.dropEnumTypeSql(table, newColumn, newEnumName),
-                )
+                        upQueries.push(
+                            new Query(
+                                `ALTER TYPE ${oldEnumName} ADD VALUE '${escapedValue}'`,
+                            ),
+                        )
+                    }
 
-                // if column have default value, we must drop it to avoid issues with type casting
-                if (
-                    oldColumn.default !== null &&
-                    oldColumn.default !== undefined
-                ) {
-                    // mark default as changed to prevent double update
-                    defaultValueChanged = true
+                    // For down query, we're be doing the doing the same as normal enum change (create new type, alter column, drop old type)
+
+                    downQueries.push(
+                        new Query(
+                            `ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`,
+                        ),
+                    )
+
+                    downQueries.push(
+                        this.dropEnumTypeSql(table, newColumn, newEnumName),
+                    )
+
+                    const downType = `${oldEnumNameWithSchema_old}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithSchema_old}${arraySuffix}`
+
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${downType}`,
+                        ),
+                    )
+
+                    downQueries.push(
+                        this.createEnumTypeSql(
+                            table,
+                            oldColumn,
+                            oldEnumNameWithSchema_old,
+                        ),
+                    )
+                } else {
+                    // rename old ENUM
+                    upQueries.push(
+                        new Query(
+                            `ALTER TYPE ${oldEnumName} RENAME TO ${oldEnumNameWithoutSchema_old}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`,
+                        ),
+                    )
+
+                    // create new ENUM
+                    upQueries.push(
+                        this.createEnumTypeSql(table, newColumn, newEnumName),
+                    )
+                    downQueries.push(
+                        this.dropEnumTypeSql(table, newColumn, newEnumName),
+                    )
+
+                    // if column have default value, we must drop it to avoid issues with type casting
+                    if (
+                        oldColumn.default !== null &&
+                        oldColumn.default !== undefined
+                    ) {
+                        // mark default as changed to prevent double update
+                        defaultValueChanged = true
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    oldColumn.name
+                                }" DROP DEFAULT`,
+                            ),
+                        )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    oldColumn.name
+                                }" SET DEFAULT ${oldColumn.default}`,
+                            ),
+                        )
+                    }
+
+                    // build column types
+                    const upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`
+                    const downType = `${oldEnumNameWithSchema_old}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithSchema_old}${arraySuffix}`
+
+                    // update column to use new type
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
                                 table,
-                            )} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`,
+                            )} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`,
                         ),
                     )
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
                                 table,
-                            )} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${
-                                oldColumn.default
-                            }`,
+                            )} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${downType}`,
                         ),
                     )
-                }
 
-                // build column types
-                const upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`
-                const downType = `${oldEnumNameWithSchema_old}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithSchema_old}${arraySuffix}`
+                    // restore column default or create new one
+                    if (
+                        newColumn.default !== null &&
+                        newColumn.default !== undefined
+                    ) {
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    newColumn.name
+                                }" SET DEFAULT ${newColumn.default}`,
+                            ),
+                        )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    newColumn.name
+                                }" DROP DEFAULT`,
+                            ),
+                        )
+                    }
 
-                // update column to use new type
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${upType}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${downType}`,
-                    ),
-                )
-
-                // restore column default or create new one
-                if (
-                    newColumn.default !== null &&
-                    newColumn.default !== undefined
-                ) {
+                    // remove old ENUM
                     upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${
-                                newColumn.default
-                            }`,
+                        this.dropEnumTypeSql(
+                            table,
+                            oldColumn,
+                            oldEnumNameWithSchema_old,
                         ),
                     )
                     downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`,
+                        this.createEnumTypeSql(
+                            table,
+                            oldColumn,
+                            oldEnumNameWithSchema_old,
                         ),
                     )
                 }
-
-                // remove old ENUM
-                upQueries.push(
-                    this.dropEnumTypeSql(
-                        table,
-                        oldColumn,
-                        oldEnumNameWithSchema_old,
-                    ),
-                )
-                downQueries.push(
-                    this.createEnumTypeSql(
-                        table,
-                        oldColumn,
-                        oldEnumNameWithSchema_old,
-                    ),
-                )
             }
 
             if (oldColumn.isNullable !== newColumn.isNullable) {
@@ -3134,7 +3200,7 @@ export class PostgresQueryRunner
         try {
             // drop views
             const selectViewDropsQuery =
-                `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
+                `SELECT 'DROP VIEW IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(viewname) || ' CASCADE;' as "query" ` +
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`
             const dropViewQueries: ObjectLiteral[] =
                 await this.query(selectViewDropsQuery)
@@ -3146,7 +3212,7 @@ export class PostgresQueryRunner
             // Note: materialized views introduced in Postgres 9.3
             if (DriverUtils.isReleaseVersionOrGreater(this.driver, "9.3")) {
                 const selectMatViewDropsQuery =
-                    `SELECT 'DROP MATERIALIZED VIEW IF EXISTS "' || schemaname || '"."' || matviewname || '" CASCADE;' as "query" ` +
+                    `SELECT 'DROP MATERIALIZED VIEW IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(matviewname) || ' CASCADE;' as "query" ` +
                     `FROM "pg_matviews" WHERE "schemaname" IN (${schemaNamesString})`
                 const dropMatViewQueries: ObjectLiteral[] = await this.query(
                     selectMatViewDropsQuery,
@@ -3160,7 +3226,7 @@ export class PostgresQueryRunner
             // TODO generalize this as this.driver.ignoreTables
 
             // drop tables
-            const selectTableDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND "tablename" NOT IN ('spatial_ref_sys')`
+            const selectTableDropsQuery = `SELECT 'DROP TABLE IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(tablename) || ' CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND "tablename" NOT IN ('spatial_ref_sys')`
             const dropTableQueries: ObjectLiteral[] = await this.query(
                 selectTableDropsQuery,
             )
@@ -3324,7 +3390,7 @@ export class PostgresQueryRunner
         }[] = []
 
         if (!tableNames) {
-            const tablesSql = `SELECT "table_schema", "table_name", obj_description(('"' || "table_schema" || '"."' || "table_name" || '"')::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables"`
+            const tablesSql = `SELECT "table_schema", "table_name", obj_description((quote_ident("table_schema") || '.' || quote_ident("table_name"))::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables"`
             dbTables.push(...(await this.query(tablesSql)))
         } else {
             const tablesCondition = tableNames
@@ -3337,7 +3403,7 @@ export class PostgresQueryRunner
                 .join(" OR ")
 
             const tablesSql =
-                `SELECT "table_schema", "table_name", obj_description(('"' || "table_schema" || '"."' || "table_name" || '"')::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables" WHERE ` +
+                `SELECT "table_schema", "table_name", obj_description((quote_ident("table_schema") || '.' || quote_ident("table_name"))::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables" WHERE ` +
                 tablesCondition
             dbTables.push(...(await this.query(tablesSql)))
         }
@@ -3358,7 +3424,7 @@ export class PostgresQueryRunner
             })
             .join(" OR ")
         const columnsSql =
-            `SELECT columns.*, pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) AS description, ` +
+            `SELECT columns.*, pg_catalog.col_description((quote_ident(table_catalog) || '.' || quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass::oid, ordinal_position) AS description, ` +
             `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype"::text AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type" ` +
             `FROM "information_schema"."columns" ` +
             `LEFT JOIN "pg_catalog"."pg_attribute" AS "col_attr" ON "col_attr"."attname" = "columns"."column_name" ` +
