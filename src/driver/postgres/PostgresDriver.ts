@@ -405,25 +405,27 @@ export class PostgresDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
-        const extensionsToInstall = this.options.extensions
-        const extensionsMetadata = await this.checkMetadataForExtensions()
         const [connection, release] = await this.obtainMasterConnection()
-        const availableExtensions =
-            await this.getAvailableExtensions(connection)
 
         const installExtensions =
             this.options.installExtensions === undefined ||
             this.options.installExtensions
-        if (
-            installExtensions &&
-            (extensionsMetadata.hasExtensions || extensionsToInstall)
-        ) {
-            await this.enableExtensions(
-                extensionsMetadata,
-                connection,
-                extensionsToInstall,
-                availableExtensions,
-            )
+        if (installExtensions) {
+            const extensionsMetadata = await this.checkMetadataForExtensions()
+            const extensionsToInstall = this.options.extensions
+            if (extensionsMetadata.hasExtensions)
+                await this.enableExtensions(extensionsMetadata, connection)
+
+            if (extensionsToInstall) {
+                const availableExtensions =
+                    await this.getAvailableExtensions(connection)
+
+                await this.enableCustomExtensions(
+                    availableExtensions,
+                    extensionsToInstall,
+                    connection,
+                )
+            }
         }
 
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
@@ -456,12 +458,7 @@ export class PostgresDriver implements Driver {
         return availableExtensions
     }
 
-    protected async enableExtensions(
-        extensionsMetadata: any,
-        connection: any,
-        extensionsToInstall?: string[],
-        availableExtensions?: Set<string>,
-    ) {
+    protected async enableExtensions(extensionsMetadata: any, connection: any) {
         const { logger } = this.connection
 
         const {
@@ -576,21 +573,17 @@ export class PostgresDriver implements Driver {
                     "At least one of the entities has an exclusion constraint, but the 'btree_gist' extension cannot be installed automatically. Please install it manually using superuser rights",
                 )
             }
+    }
 
-        if (extensionsToInstall && extensionsToInstall.length > 0) {
-            for (const extension of extensionsToInstall) {
-                if (
-                    availableExtensions &&
-                    availableExtensions.size > 0 &&
-                    !availableExtensions.has(extension)
-                ) {
-                    logger.log(
-                        "warn",
-                        `Extension '${extension}' is not available in your PostgreSQL installation. Please check the extension name or install it using superuser rights.`,
-                    )
-                    continue
-                }
-
+    protected async enableCustomExtensions(
+        availableExtensions: Set<string>,
+        extensionsToInstall: string[],
+        connection: any,
+    ) {
+        if (!extensionsToInstall) return
+        const logger = this.connection.logger
+        for (const extension of extensionsToInstall) {
+            if (availableExtensions.has(extension)) {
                 try {
                     await this.executeQuery(
                         connection,
@@ -599,9 +592,14 @@ export class PostgresDriver implements Driver {
                 } catch (_) {
                     logger.log(
                         "warn",
-                        `The '${extension}' extension cannot be installed automatically. Please install it manually using superuser rights`,
+                        `The extension "${extension}" cannot be installed automatically. Please install it manually using superuser rights`,
                     )
                 }
+            } else {
+                logger.log(
+                    "warn",
+                    `The extension "${extension}" is not available on this database. Please install it manually using superuser rights`,
+                )
             }
         }
     }
