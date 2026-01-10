@@ -176,9 +176,12 @@ export class PostgresQueryRunner
 
         if (this.transactionDepth === 0) {
             await this.query("START TRANSACTION")
-            if (isolationLevel) {
+            const effectiveIsolationLevel =
+                isolationLevel || this.driver.options.isolationLevel
+            if (effectiveIsolationLevel) {
                 await this.query(
-                    "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
+                    "SET TRANSACTION ISOLATION LEVEL " +
+                        effectiveIsolationLevel,
                 )
             }
         } else {

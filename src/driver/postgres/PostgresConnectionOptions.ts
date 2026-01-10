@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { IsolationLevel } from "../types/IsolationLevel"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 
@@ -100,4 +101,10 @@ export interface PostgresConnectionOptions
      * @see [node-postgres defaults.parseInt8 implementation](https://github.com/brianc/node-postgres/blob/pg%408.8.0/packages/pg/lib/defaults.js#L80)
      */
     readonly parseInt8?: boolean
+
+    /**
+     * Sets the default transaction isolation level for new connections.
+     * You can override this value on a per-transaction basis using queryRunner.startTransaction(isolationLevel).
+     */
+    readonly isolationLevel?: IsolationLevel
 }

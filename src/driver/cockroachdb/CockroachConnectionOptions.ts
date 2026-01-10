@@ -72,4 +72,21 @@ export interface CockroachConnectionOptions
      * Max number of transaction retries in case of 40001 error.
      */
     readonly maxTransactionRetries?: number
+
+    /**
+     * Default transaction isolation level for all transactions started on this connection.
+     * CockroachDB only supports SERIALIZABLE (default), READ COMMITTED and REPEATABLE READ isolation levels.
+     *
+     * Note: Isolation level upgrades:
+     * - REPEATABLE READ requires sql.txn.repeatable_read_isolation.enabled=true
+     *   otherwise, it will be interpreted as SERIALIZABLE
+     * - READ COMMITTED requires sql.txn.read_committed_isolation.enabled=true
+     *   otherwise, it will be interpreted as SERIALIZABLE
+     *
+     * You can override this value on a per-transaction basis using queryRunner.startTransaction(isolationLevel).
+     */
+    readonly isolationLevel?:
+        | "READ COMMITTED"
+        | "REPEATABLE READ"
+        | "SERIALIZABLE"
 }

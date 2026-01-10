@@ -26,4 +26,10 @@ export interface ReactNativeConnectionOptions extends BaseDataSourceOptions {
     readonly location: string
 
     readonly poolSize?: never
+
+    /**
+     * Sets the default transaction isolation level for new connections.
+     * You can override this value on a per-transaction basis using `queryRunner.startTransaction(isolationLevel)`.
+     */
+    readonly isolationLevel?: "READ UNCOMMITTED" | "SERIALIZABLE"
 }

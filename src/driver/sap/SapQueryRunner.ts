@@ -123,9 +123,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
          */
         await this.setAutoCommit({ status: "off" })
 
-        if (isolationLevel) {
+        const effectiveIsolationLevel =
+            isolationLevel || this.driver.options.isolationLevel
+        if (effectiveIsolationLevel) {
             await this.query(
-                `SET TRANSACTION ISOLATION LEVEL ${isolationLevel || ""}`,
+                `SET TRANSACTION ISOLATION LEVEL ${effectiveIsolationLevel}`,
             )
         }
 
