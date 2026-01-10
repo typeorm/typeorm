@@ -138,7 +138,7 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                         await UserRepository.remove(loadedUser_3)
                         const loadedUser_4 = await UserRepository.find()
                         expect(loadedUser_4).to.be.eql([])
-                        // update while insertion duplicated row via unique's constraint name
+                        // update while insertion duplicated row via single-column unique constraint name
                         await UserRepository.createQueryBuilder()
                             .insert()
                             .into(User)
@@ -147,6 +147,31 @@ describe("github issues > #1780 Support for insertion ignore on duplicate error"
                         await UserRepository.createQueryBuilder()
                             .insert()
                             .orUpdate(["is_updated"], "unique_first_name")
+                            .setParameter("is_updated", user2.is_updated)
+                            .into(User)
+                            .values(user2)
+                            .execute()
+                        const loadedUser_5 = await UserRepository.find()
+                        expect(loadedUser_5).not.to.be.eql([])
+                        loadedUser_5.length.should.be.equal(1)
+                        expect(loadedUser_5[0]).to.deep.include({
+                            first_name: "John",
+                            last_name: "Lenon",
+                            is_updated: "yes",
+                        })
+
+                        await UserRepository.remove(loadedUser_5)
+                        const loadedUser_6 = await UserRepository.find()
+                        expect(loadedUser_6).to.be.eql([])
+                        // update while insertion duplicated row via multi-column unique constraint name (issue #8731)
+                        await UserRepository.createQueryBuilder()
+                            .insert()
+                            .into(User)
+                            .values(user1)
+                            .execute()
+                        await UserRepository.createQueryBuilder()
+                            .insert()
+                            .orUpdate(["is_updated"], "unique_name_pair")
                             .setParameter("is_updated", user2.is_updated)
                             .into(User)
                             .values(user2)
