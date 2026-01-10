@@ -9,7 +9,7 @@ on:
 jobs:
   cockroachdb:
     # CockroachDB is slow, run less often so it doesn't block other workflows
-    if: ${{ inputs.node-version >= 20 }}
+    if: ${{ inputs.node-version >= 22 }}
     runs-on: ubuntu-latest
 
     services:
@@ -21,17 +21,21 @@ jobs:
           COCKROACH_ARGS: "start-single-node --insecure --cache=1GB --store=type=mem,size=4GB"
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
-      - run: npm ci
+
+      - run: pnpm install
       - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -48,17 +52,21 @@ jobs:
           - "27017:27017"
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
-      - run: npm ci
+
+      - run: pnpm install
       - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -79,17 +87,21 @@ jobs:
           MSSQL_PID: "Express"
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
-      - run: npm ci
+
+      - run: pnpm install
       - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -120,17 +132,21 @@ jobs:
           MYSQL_DATABASE: "test"
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
-      - run: npm ci
+
+      - run: pnpm install
       - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -161,17 +177,21 @@ jobs:
           MYSQL_DATABASE: "test"
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
-      - run: npm ci
+
+      - run: pnpm install
       - run: cp .github/workflows/test/mysql-mariadb-latest.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -182,17 +202,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
-      - run: npm ci
+
+      - run: pnpm install
       - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -203,17 +227,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
-      - run: npm ci
+
+      - run: pnpm install
       - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -224,17 +252,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
-      - run: npm ci
+
+      - run: pnpm install
       - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -264,17 +296,21 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
-      - run: npm ci
+
+      - run: pnpm install
       - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
-      - run: npx nyc npm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci
+
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
@@ -285,22 +321,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - run: docker compose up oracle --detach
 
-      - uses: actions/setup-node@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
 
-      - run: npm ci
+      - run: pnpm install
       - run: cat ormconfig.sample.json | jq 'map(select(.name == "oracle"))' > ormconfig.json
       - run: docker compose up oracle --no-recreate --wait
-      - run: npx nyc npm run test:ci
+      - run: sleep 3 # wait for oracle to be fully ready
+      - run: pnpm exec c8 pnpm run test:ci
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
@@ -312,22 +351,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - run: docker compose up hanaexpress --detach
 
-      - uses: actions/setup-node@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
 
-      - run: npm ci
+      - run: pnpm install
       - run: cat ormconfig.sample.json | jq 'map(select(.name == "hanaexpress"))' > ormconfig.json
       - run: docker compose up hanaexpress --no-recreate --wait
-      - run: npx nyc npm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2

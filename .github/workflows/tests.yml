@@ -1,14 +1,16 @@
 name: Tests
 on:
+  push:
   pull_request:
 
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
+    if: ${{ (github.event_name != 'pull_request') || (github.event.pull_request.head.repo.fork) }}
     outputs:
       changes: ${{ steps.detect-changes.outputs.changes }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: dorny/paths-filter@v3
         id: detect-changes
@@ -30,11 +32,12 @@ jobs:
 
             src-or-tests: &src-or-tests
               - *src
+              - test/**/*
+              - .c8rc.json
               - .github/workflows/test/**/*
               - .github/workflows/test*.yml
               - .mocharc.json
               - .nvmrc
-              - .nycrc.json
 
             lint: &lint
               - *src-or-tests
@@ -46,13 +49,16 @@ jobs:
     needs: detect-changes
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run format:ci
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install
+      - run: pnpm run lint
+      - run: pnpm run format:ci
 
   docs:
     if: contains(needs.detect-changes.outputs.changes, 'docs')
@@ -62,25 +68,32 @@ jobs:
       run:
         working-directory: ./docs
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
-      - run: npm ci
-      - run: npm run build
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install
+      - run: pnpm run build
 
   build:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
     needs: detect-changes
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
-      - run: npm ci
-      - run: npm run compile
-      - uses: actions/upload-artifact@v4
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install
+      - run: pnpm run compile
+
+      - uses: actions/upload-artifact@v5
         with:
           name: build
           path: build/
@@ -92,7 +105,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18, 20]
+        node-version: [20, 24]
     uses: ./.github/workflows/tests-linux.yml
     with:
       node-version: ${{matrix.node-version}}
@@ -102,7 +115,7 @@ jobs:
     needs: [detect-changes, build]
     uses: ./.github/workflows/tests-windows.yml
     with:
-      node-version: 20
+      node-version: 22
 
   coverage:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')

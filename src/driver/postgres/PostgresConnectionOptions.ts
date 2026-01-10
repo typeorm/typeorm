@@ -6,8 +6,7 @@ import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCreden
  * Postgres-specific connection options.
  */
 export interface PostgresConnectionOptions
-    extends BaseDataSourceOptions,
-        PostgresConnectionCredentialsOptions {
+    extends BaseDataSourceOptions, PostgresConnectionCredentialsOptions {
     /**
      * Database type.
      */
@@ -101,4 +100,9 @@ export interface PostgresConnectionOptions
      * @see [node-postgres defaults.parseInt8 implementation](https://github.com/brianc/node-postgres/blob/pg%408.8.0/packages/pg/lib/defaults.js#L80)
      */
     readonly parseInt8?: boolean
+
+    /**
+     * List of additional Postgres extensions to be installed in the database.
+     */
+    readonly extensions?: string[]
 }

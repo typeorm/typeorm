@@ -50,6 +50,8 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 -   `installExtensions` - A boolean to control whether to install necessary postgres extensions automatically or not (default: `true`)
 
+-   `extensions` - List of additional Postgres extensions to be installed in the database (default: `undefined`)
+
 -   `applicationName` - A string visible in statistics and logs to help referencing an application to a connection (default: `undefined`)
 
 -   `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript numbers. By default, `int8` (bigint) values are returned as strings to avoid overflows. JavaScript numbers are IEEE-754 and lose precision over the maximum safe integer (`Number.MAX_SAFE_INTEGER = +2^53`). If you require the full 64-bit range consider working with the returned strings or converting them to native `bigint` instead of using this option.
@@ -60,13 +62,40 @@ Additional options can be added to the `extra` object and will be passed directl
 
 ### Column types for `postgres`
 
-`int`, `int2`, `int4`, `int8`, `smallint`, `integer`, `bigint`, `decimal`, `numeric`, `real`, `float`, `float4`, `float8`, `double precision`, `money`, `character varying`, `varchar`, `character`, `char`, `text`, `citext`, `hstore`, `bytea`, `bit`, `varbit`, `bit varying`, `timetz`, `timestamptz`, `timestamp`, `timestamp without time zone`, `timestamp with time zone`, `date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`, `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`, `macaddr8`, `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `jsonpath`, `int4range`, `int8range`, `numrange`, `tsrange`, `tstzrange`, `daterange`, `int4multirange`, `int8multirange`, `nummultirange`, `tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `cube`, `ltree`
+`int`, `int2`, `int4`, `int8`, `smallint`, `integer`, `bigint`, `decimal`, `numeric`, `real`, `float`, `float4`, `float8`, `double precision`, `money`, `character varying`, `varchar`, `character`, `char`, `text`, `citext`, `hstore`, `bytea`, `bit`, `varbit`, `bit varying`, `timetz`, `timestamptz`, `timestamp`, `timestamp without time zone`, `timestamp with time zone`, `date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`, `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`, `macaddr8`, `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `jsonpath`, `int4range`, `int8range`, `numrange`, `tsrange`, `tstzrange`, `daterange`, `int4multirange`, `int8multirange`, `nummultirange`, `tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `cube`, `ltree`, `vector`, `halfvec`.
 
 ### Column types for `cockroachdb`
 
 `array`, `bool`, `boolean`, `bytes`, `bytea`, `blob`, `date`, `numeric`, `decimal`, `dec`, `float`, `float4`, `float8`, `double precision`, `real`, `inet`, `int`, `integer`, `int2`, `int8`, `int64`, `smallint`, `bigint`, `interval`, `string`, `character varying`, `character`, `char`, `char varying`, `varchar`, `text`, `time`, `time without time zone`, `timestamp`, `timestamptz`, `timestamp without time zone`, `timestamp with time zone`, `json`, `jsonb`, `uuid`
 
 Note: CockroachDB returns all numeric data types as `string`. However, if you omit the column type and define your property as `number` ORM will `parseInt` string into number.
+
+### Vector columns
+
+Vector columns can be used for similarity searches using PostgreSQL's vector operators:
+
+```typescript
+// L2 distance (Euclidean) - <->
+const results = await dataSource.sql`
+    SELECT id, embedding
+    FROM post
+    ORDER BY embedding <-> ${"[1,2,3]"}
+    LIMIT 5`
+
+// Cosine distance - <=>
+const results = await dataSource.sql`
+    SELECT id, embedding
+    FROM post
+    ORDER BY embedding <=> ${"[1,2,3]"}
+    LIMIT 5`
+
+// Inner product - <#>
+const results = await dataSource.sql`
+    SELECT id, embedding
+    FROM post
+    ORDER BY embedding <#> ${"[1,2,3]"}
+    LIMIT 5`
+```
 
 ### Spatial columns
 

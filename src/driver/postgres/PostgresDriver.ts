@@ -28,6 +28,9 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { IndexMetadata } from "../../metadata/IndexMetadata"
+import { TableIndex } from "../../schema-builder/table/TableIndex"
+import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -73,7 +76,8 @@ export class PostgresDriver implements Driver {
     options: PostgresConnectionOptions
 
     /**
-     * Version of Postgres. Requires a SQL query to the DB, so it is not always set
+     * Version of Postgres. Requires a SQL query to the DB, so it is set on the first
+     * connection attempt.
      */
     version?: string
 
@@ -269,6 +273,18 @@ export class PostgresDriver implements Driver {
     }
 
     /**
+     * Table indices supported
+     */
+    supportedIndexTypes: TableIndexTypes[] = [
+        "brin",
+        "btree",
+        "gin",
+        "gist",
+        "hash",
+        "spgist",
+    ]
+
+    /**
      * The prefix used for the parameters
      */
     parametersPrefix: string = "$"
@@ -362,19 +378,23 @@ export class PostgresDriver implements Driver {
             this.master = await this.createPool(this.options, this.options)
         }
 
-        const queryRunner = this.createQueryRunner("master")
+        if (!this.version || !this.database || !this.searchSchema) {
+            const queryRunner = this.createQueryRunner("master")
 
-        this.version = await queryRunner.getVersion()
+            if (!this.version) {
+                this.version = await queryRunner.getVersion()
+            }
 
-        if (!this.database) {
-            this.database = await queryRunner.getCurrentDatabase()
+            if (!this.database) {
+                this.database = await queryRunner.getCurrentDatabase()
+            }
+
+            if (!this.searchSchema) {
+                this.searchSchema = await queryRunner.getCurrentSchema()
+            }
+
+            await queryRunner.release()
         }
-
-        if (!this.searchSchema) {
-            this.searchSchema = await queryRunner.getCurrentSchema()
-        }
-
-        await queryRunner.release()
 
         if (!this.schema) {
             this.schema = this.searchSchema
@@ -385,14 +405,27 @@ export class PostgresDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
-        const extensionsMetadata = await this.checkMetadataForExtensions()
         const [connection, release] = await this.obtainMasterConnection()
 
         const installExtensions =
             this.options.installExtensions === undefined ||
             this.options.installExtensions
-        if (installExtensions && extensionsMetadata.hasExtensions) {
-            await this.enableExtensions(extensionsMetadata, connection)
+        if (installExtensions) {
+            const extensionsMetadata = await this.checkMetadataForExtensions()
+            const extensionsToInstall = this.options.extensions
+            if (extensionsMetadata.hasExtensions)
+                await this.enableExtensions(extensionsMetadata, connection)
+
+            if (extensionsToInstall) {
+                const availableExtensions =
+                    await this.getAvailableExtensions(connection)
+
+                await this.enableCustomExtensions(
+                    availableExtensions,
+                    extensionsToInstall,
+                    connection,
+                )
+            }
         }
 
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
@@ -401,6 +434,28 @@ export class PostgresDriver implements Driver {
         )
 
         await release()
+    }
+
+    protected async getAvailableExtensions(connection: any) {
+        const availableExtensions = new Set<string>()
+        const { logger } = this.connection
+        try {
+            const result: any = await this.executeQuery(
+                connection,
+                `SELECT name FROM pg_available_extensions`,
+            )
+            if (result.rows && Array.isArray(result.rows)) {
+                result.rows.forEach((row: any) => {
+                    availableExtensions.add(row.name)
+                })
+            }
+        } catch (_) {
+            logger.log(
+                "warn",
+                "Could not retrieve available extensions. Extension installation may fail if extensions are not available.",
+            )
+        }
+        return availableExtensions
     }
 
     protected async enableExtensions(extensionsMetadata: any, connection: any) {
@@ -518,6 +573,35 @@ export class PostgresDriver implements Driver {
                     "At least one of the entities has an exclusion constraint, but the 'btree_gist' extension cannot be installed automatically. Please install it manually using superuser rights",
                 )
             }
+    }
+
+    protected async enableCustomExtensions(
+        availableExtensions: Set<string>,
+        extensionsToInstall: string[],
+        connection: any,
+    ) {
+        if (!extensionsToInstall) return
+        const logger = this.connection.logger
+        for (const extension of extensionsToInstall) {
+            if (availableExtensions.has(extension)) {
+                try {
+                    await this.executeQuery(
+                        connection,
+                        `CREATE EXTENSION IF NOT EXISTS "${extension}"`,
+                    )
+                } catch (_) {
+                    logger.log(
+                        "warn",
+                        `The extension "${extension}" cannot be installed automatically. Please install it manually using superuser rights`,
+                    )
+                }
+            } else {
+                logger.log(
+                    "warn",
+                    `The extension "${extension}" is not available on this database. Please install it manually using superuser rights`,
+                )
+            }
+        }
     }
 
     protected async checkMetadataForExtensions() {
@@ -651,7 +735,9 @@ export class PostgresDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value)
+            return DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedDateToTimeString(value)
         } else if (
@@ -750,7 +836,9 @@ export class PostgresDriver implements Driver {
         ) {
             value = DateUtils.normalizeHydratedDate(value)
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
         } else if (
@@ -1209,7 +1297,11 @@ export class PostgresDriver implements Driver {
 
         return new Promise((ok, fail) => {
             this.master.connect((err: any, connection: any, release: any) => {
-                err ? fail(err) : ok([connection, release])
+                if (err) {
+                    fail(err)
+                } else {
+                    ok([connection, release])
+                }
             })
         })
     }
@@ -1229,7 +1321,11 @@ export class PostgresDriver implements Driver {
         return new Promise((ok, fail) => {
             this.slaves[random].connect(
                 (err: any, connection: any, release: any) => {
-                    err ? fail(err) : ok([connection, release])
+                    if (err) {
+                        fail(err)
+                    } else {
+                        ok([connection, release])
+                    }
                 },
             )
         })
@@ -1452,6 +1548,13 @@ export class PostgresDriver implements Driver {
         return this.parametersPrefix + (index + 1)
     }
 
+    compareTableIndexTypes = (indexA: IndexMetadata, indexB: TableIndex) => {
+        const normalizedA = indexA.isSpatial ? "gist" : (indexA.type ?? "btree")
+        const normalizedB = indexB.isSpatial ? "gist" : (indexB.type ?? "btree")
+
+        return normalizedA.toLowerCase() === normalizedB.toLowerCase()
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -1560,14 +1663,17 @@ export class PostgresDriver implements Driver {
 
                 if (options.logNotifications) {
                     connection.on("notice", (msg: any) => {
-                        msg && this.connection.logger.log("info", msg.message)
+                        if (msg) {
+                            this.connection.logger.log("info", msg.message)
+                        }
                     })
                     connection.on("notification", (msg: any) => {
-                        msg &&
+                        if (msg) {
                             this.connection.logger.log(
                                 "info",
                                 `Received NOTIFY on channel ${msg.channel}: ${msg.payload}.`,
                             )
+                        }
                     })
                 }
                 release()
