@@ -3,10 +3,11 @@
 ._*
 
 ### Node ###
+.nvmrc
+.node-version
 build/
 coverage/
 node_modules/
-npm-debug.log*
 *.lcov
 
 ### VisualStudioCode ###
@@ -26,3 +27,7 @@ npm-debug.log*
 ormlogs.log
 
 /test/github-issues/799/tmp/*
+
+# stryker temp files
+.stryker-tmp
+/reports
