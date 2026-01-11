@@ -17,100 +17,77 @@ describe("github issues > #5719 default value on entity trigger transformer twic
                 entities: [TestEntity],
                 schemaCreate: true,
                 dropSchema: true,
-                // The problem occurs in databases which support returning statement
+                // The problem occurs in databases which do NOT support RETURNING statement
+                // and require a SELECT to reload entity after INSERT
                 enabledDrivers: ["mysql"],
             })),
     )
 
-    beforeEach(() => {
+    beforeEach(async () => {
         TestTransformer.reset()
-        return reloadTestingDatabases(connections)
+        await reloadTestingDatabases(connections)
     })
 
-    after(() => closeTestingConnections(connections))
+    after(async () => await closeTestingConnections(connections))
 
-    it("should call transformer's from() method only once for columns with default value", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const repository = connection.getRepository(TestEntity)
+    it("should use default value and apply transformer correctly when column is not set", async () => {
+        for (const connection of connections) {
+            const repository = connection.getRepository(TestEntity)
 
-                // Create a new entity
-                const entity = new TestEntity()
-                entity.columnWithTransformerOnly = 200 // Explicitly set value
+            // Create entity without setting the default column
+            const entity = new TestEntity()
+            entity.columnWithTransformerOnly = 200
 
-                // Save the entity
-                await repository.save(entity)
+            await repository.save(entity)
 
-                // Record call count
-                TestTransformer.reset()
+            // Load and verify default value is correctly transformed
+            const loadedEntity = await repository.findOneBy({
+                id: entity.id,
+            })
 
-                // Load the entity
-                const loadedEntity = await repository.findOneBy({
-                    id: entity.id,
-                })
+            // default: 101, after to(): 102 in DB, after from(): 101
+            expect(loadedEntity!.columnWithDefaultAndTransformer).to.equal(100)
+            expect(loadedEntity!.columnWithTransformerOnly).to.equal(200)
+        }
+    })
 
-                // Verify
-                expect(loadedEntity!.columnWithDefaultAndTransformer).to.equal(
-                    100,
-                )
-                expect(loadedEntity!.columnWithTransformerOnly).to.equal(200) // 200/10
+    it("should preserve values correctly after update", async () => {
+        for (const connection of connections) {
+            const repository = connection.getRepository(TestEntity)
 
-                // Verify from() call count after find
-                const callCountAfterFind = TestTransformer.fromCallCount
+            // Create and save initial entity
+            const entity = new TestEntity()
+            entity.columnWithDefaultAndTransformer = 300
+            entity.columnWithTransformerOnly = 400
+            await repository.save(entity)
 
-                // Current bug: from() is called twice for columns with default
-                // Expected behavior: from() should be called once per column
-                console.log(
-                    `[${connection.name}] from() call counts after find: ${callCountAfterFind}`,
-                )
+            // Update values
+            entity.columnWithDefaultAndTransformer = 500
+            entity.columnWithTransformerOnly = 600
+            await repository.save(entity)
 
-                // Enable this verification after the bug is fixed (currently fails)
-                // expect(callCountAfterFind).to.equal(2) // Once for each column
-            }),
-        ))
+            // Verify updated values are preserved
+            expect(entity.columnWithDefaultAndTransformer).to.equal(500)
+            expect(entity.columnWithTransformerOnly).to.equal(600)
+        }
+    })
 
-    it("should call transformer's from() method only once for columns with default value", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const repository = connection.getRepository(TestEntity)
+    it("should call transformer's from() method only once for columns with default value", async () => {
+        for (const connection of connections) {
+            const repository = connection.getRepository(TestEntity)
 
-                // Create a new entity (set values for both fields)
-                const entity = new TestEntity()
-                entity.columnWithDefaultAndTransformer = 300
-                entity.columnWithTransformerOnly = 400
+            // Create entity with explicit values for both columns
+            const entity = new TestEntity()
+            entity.columnWithDefaultAndTransformer = 300
+            entity.columnWithTransformerOnly = 400
 
-                // Save
-                TestTransformer.reset()
-                await repository.save(entity)
+            TestTransformer.reset()
+            await repository.save(entity)
 
-                // Verify values are correctly transformed
-                expect(entity.columnWithDefaultAndTransformer).to.equal(300)
-                expect(entity.columnWithTransformerOnly).to.equal(400)
-            }),
-        ))
-
-    it("should call transformer's from() method only once for columns with default value", () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const repository = connection.getRepository(TestEntity)
-
-                // Create a new entity (set values for both fields)
-                const entity = new TestEntity()
-                entity.columnWithDefaultAndTransformer = 300
-                entity.columnWithTransformerOnly = 400
-
-                // Save
-                await repository.save(entity)
-
-                entity.columnWithDefaultAndTransformer = 500
-                entity.columnWithTransformerOnly = 600
-
-                // Update
-                await repository.save(entity)
-
-                // Verify values are correctly transformed
-                expect(entity.columnWithDefaultAndTransformer).to.equal(500)
-                expect(entity.columnWithTransformerOnly).to.equal(600)
-            }),
-        ))
+            // Verify from() is called only once for the default column
+            // (not twice due to double transformation bug)
+            // Only columnWithDefaultAndTransformer triggers SELECT reload
+            expect(TestTransformer.fromCallCount).to.equal(1)
+        }
+    })
 })
