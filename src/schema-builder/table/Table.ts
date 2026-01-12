@@ -79,6 +79,16 @@ export class Table {
     withoutRowid?: boolean = false
 
     /**
+     * Enables strict mode. This will make sure that columns are always treated with their defined types.
+     * For example, if a column is defined as an integer, it will always be treated as an integer.
+     * This can help prevent issues with type coercion and ensure data integrity.
+     * Supports only Sqlite.
+     *
+     * @see https://www.sqlite.org/stricttables.html
+     */
+    strict?: boolean = false
+
+    /**
      * Table engine.
      */
     engine?: string
@@ -141,6 +151,8 @@ export class Table {
 
             if (options.withoutRowid) this.withoutRowid = options.withoutRowid
 
+            this.strict = options.strict === true ? true : false
+
             this.engine = options.engine
 
             this.comment = options.comment
@@ -177,6 +189,7 @@ export class Table {
             exclusions: this.exclusions.map((constraint) => constraint.clone()),
             justCreated: this.justCreated,
             withoutRowid: this.withoutRowid,
+            strict: this.strict,
             engine: this.engine,
             comment: this.comment,
         })
@@ -401,6 +414,7 @@ export class Table {
                 database,
             ),
             withoutRowid: entityMetadata.withoutRowid,
+            strict: entityMetadata.strict,
             engine: entityMetadata.engine,
             columns: entityMetadata.columns
                 .filter((column) => column && !column.isVirtualProperty)

@@ -10,6 +10,7 @@ import { QueryRunner } from "../../query-runner/QueryRunner"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { filepathToName, isAbsolute } from "../../util/PathUtils"
+import { VersionUtils } from "../../util/VersionUtils"
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -178,6 +179,35 @@ export class SqliteDriver extends AbstractSqliteDriver {
         // we need to enable foreign keys in sqlite to make sure all foreign key related features
         // working properly. this also makes onDelete to work with sqlite.
         await run(`PRAGMA foreign_keys = ON`)
+
+        // Check SQLite version for strict mode support
+        if (this.options.strict) {
+            try {
+                const versionResult: any = await new Promise((ok, fail) => {
+                    databaseConnection.get(
+                        "SELECT sqlite_version() as version",
+                        (err: any, row: any) => {
+                            if (err) return fail(err)
+                            ok(row)
+                        },
+                    )
+                })
+                if (
+                    versionResult &&
+                    versionResult.version &&
+                    !VersionUtils.isGreaterOrEqual(
+                        versionResult.version,
+                        "3.37.0",
+                    )
+                ) {
+                    throw new Error(
+                        `SQLite strict tables require SQLite version 3.37.0 or higher. Your current version is ${versionResult.version}.`,
+                    )
+                }
+            } catch (_) {
+                // If we can't get the version, we'll allow it and let SQLite handle the error
+            }
+        }
 
         return databaseConnection
     }

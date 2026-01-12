@@ -23,6 +23,7 @@ import { ClosureTreeOptions } from "./types/ClosureTreeOptions"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { shorten } from "../util/StringUtils"
+import { DriverUtils } from "../driver/DriverUtils"
 
 /**
  * Contains all entity metadata.
@@ -111,6 +112,16 @@ export class EntityMetadata {
      * Enables Sqlite "WITHOUT ROWID" modifier for the "CREATE TABLE" statement
      */
     withoutRowid?: boolean = false
+
+    /**
+     * Enables strict mode. This will make sure that columns are always treated with their defined types.
+     * For example, if a column is defined as an integer, it will always be treated as an integer.
+     * This can help prevent issues with type coercion and ensure data integrity.
+     * Supports only Sqlite.
+     *
+     * @see https://www.sqlite.org/stricttables.html
+     */
+    strict?: boolean = false
 
     /**
      * Original user-given table name (taken from schema or @Entity(tableName) decorator).
@@ -546,6 +557,7 @@ export class EntityMetadata {
         this.tableType = this.tableMetadataArgs.type
         this.expression = this.tableMetadataArgs.expression
         this.withoutRowid = this.tableMetadataArgs.withoutRowid
+        this.strict = this.tableMetadataArgs.strict
         this.dependsOn = this.tableMetadataArgs.dependsOn
     }
 
@@ -1081,6 +1093,18 @@ export class EntityMetadata {
         this.expression = this.tableMetadataArgs.expression
         this.withoutRowid =
             this.tableMetadataArgs.withoutRowid === true ? true : false
+
+        // Apply strict mode: entity-level setting takes precedence over connection-level
+        if (this.tableMetadataArgs.strict !== undefined) {
+            // Explicit entity-level setting
+            this.strict = this.tableMetadataArgs.strict === true
+        } else if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
+            // For SQLite drivers, use connection-level setting if entity-level not set
+            this.strict = (this.connection.options as any).strict === true
+        } else {
+            this.strict = false
+        }
+
         this.tablePath = this.connection.driver.buildTableName(
             this.tableName,
             this.schema,

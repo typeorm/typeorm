@@ -214,6 +214,7 @@ export type SimpleColumnType =
     | "array" // cockroachdb, sap, spanner
     | "cube" // postgres
     | "ltree" // postgres
+    | "any" // sqlite
 
 /**
  * Any column type column can be.

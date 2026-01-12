@@ -128,6 +128,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         "time",
         "datetime",
         "json",
+        "any",
     ]
 
     /**
@@ -915,6 +916,69 @@ export abstract class AbstractSqliteDriver implements Driver {
         // return "$" + (index + 1);
         return "?"
         // return "$" + parameterName;
+    }
+
+    /**
+     * Converts column type to strict-compatible type for SQLite strict mode.
+     * SQLite strict mode only allows: INT, INTEGER, REAL, TEXT, BLOB, ANY
+     */
+    convertToStrictType(columnType: string): string {
+        const type = columnType.toLowerCase().trim()
+
+        // Direct strict-compatible types - return as-is
+        const strictTypes = ["int", "integer", "real", "text", "blob", "any"]
+        if (strictTypes.includes(type)) {
+            return type
+        }
+
+        // Map all supported SQLite types to strict-compatible types
+        const typeMap: { [key: string]: string } = {
+            // Text/Character types → TEXT
+            varchar: "text",
+            character: "text",
+            "varying character": "text",
+            nchar: "text",
+            "native character": "text",
+            nvarchar: "text",
+            clob: "text",
+            string: "text",
+            // Date/Time types → TEXT (SQLite stores these as text)
+            datetime: "text",
+            date: "text",
+            timestamp: "text",
+            time: "text",
+            // JSON → TEXT (SQLite stores JSON as text)
+            json: "text",
+            // Boolean → INTEGER (SQLite stores as 0/1)
+            boolean: "integer",
+            bool: "integer",
+            // Numeric/Decimal types → REAL
+            numeric: "real",
+            decimal: "real",
+            float: "real",
+            double: "real",
+            "double precision": "real",
+            // Integer types → INTEGER
+            tinyint: "integer",
+            smallint: "integer",
+            mediumint: "integer",
+            bigint: "integer",
+            int2: "integer",
+            int8: "integer",
+            "unsigned big int": "integer",
+        }
+
+        const mappedType = typeMap[type]
+        if (mappedType) {
+            return mappedType
+        }
+
+        throw new TypeORMError(
+            `Column type "${columnType}" is not compatible with SQLite strict mode. ` +
+                `SQLite strict tables only support these types: INT, INTEGER, REAL, TEXT, BLOB, ANY. ` +
+                `Common type mappings: varchar→text, int→integer, float→real, datetime→text, boolean→integer, json→text. ` +
+                `Please update your entity to use a compatible type.`,
+        )
     }
 
     // -------------------------------------------------------------------------
