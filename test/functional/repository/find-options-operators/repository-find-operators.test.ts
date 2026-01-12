@@ -941,6 +941,34 @@ describe("repository > find options > operators", () => {
                             },
                         },
                     ])
+
+                    const loadedComments2 = await connection
+                        .getRepository(Comment)
+                        .find({
+                            where: {
+                                metadata: Raw((alias) => `${alias} @> :value`, {
+                                    value: JSON.stringify({ tags: ["news"] }),
+                                }),
+                            },
+                            order: {
+                                id: "ASC",
+                            },
+                        })
+                    loadedComments2.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: {
+                                approved: true,
+                                tags: ["news", "tech"],
+                            },
+                        },
+                        {
+                            id: 2,
+                            text: "Comment #2",
+                            metadata: { approved: false, tags: ["news"] },
+                        },
+                    ])
                 }),
             ))
 
@@ -976,6 +1004,33 @@ describe("repository > find options > operators", () => {
                             id: 2,
                             text: "Comment #2",
                             metadata: { approved: false },
+                        },
+                    ])
+
+                    const loadedComments2 = await connection
+                        .getRepository(Comment)
+                        .find({
+                            where: {
+                                metadata: Raw((alias) => `${alias} <@ :value`, {
+                                    value: JSON.stringify({
+                                        approved: true,
+                                        tags: ["news", "tech", "extra"],
+                                    }),
+                                }),
+                            },
+
+                            order: {
+                                id: "ASC",
+                            },
+                        })
+                    loadedComments2.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: {
+                                approved: true,
+                                tags: ["news", "tech"],
+                            },
                         },
                     ])
                 }),
@@ -1059,15 +1114,68 @@ describe("repository > find options > operators", () => {
                 connections.map(async (connection) => {
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
+                    comment1.metadata = { author: { name: "Alice" } }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = { author: { name: "Bob" } }
+                    await connection.manager.save(comment2)
+
+                    // Test -> operator - get nested object and compare
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw(
+                                (alias) => `${alias} -> 'author' = :detail`,
+                                {
+                                    detail: JSON.stringify({ name: "Alice" }),
+                                },
+                            ),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: { author: { name: "Alice" } },
+                        },
+                    ])
+
+                    const loadedComments2 = await connection
+                        .getRepository(Comment)
+                        .find({
+                            where: {
+                                metadata: Raw(
+                                    (alias) =>
+                                        `${alias} -> 'author' = '{"name":"Bob"}'`,
+                                ),
+                            },
+                        })
+
+                    loadedComments2.should.be.eql([
+                        {
+                            id: 2,
+                            text: "Comment #2",
+                            metadata: { author: { name: "Bob" } },
+                        },
+                    ])
+                }),
+            ))
+
+        it("should work with ->> (get object field) operator", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
                     comment1.metadata = {
-                        author: { name: "John", age: 30 },
+                        author: "Alice",
                     }
                     await connection.manager.save(comment1)
 
                     const comment2 = new Comment()
                     comment2.text = "Comment #2"
                     comment2.metadata = {
-                        author: { name: "Jane", age: 25 },
+                        author: "Bob",
                     }
                     await connection.manager.save(comment2)
 
@@ -1076,10 +1184,9 @@ describe("repository > find options > operators", () => {
                         .getRepository(Comment)
                         .findBy({
                             metadata: Raw(
-                                (alias) =>
-                                    `${alias} -> 'author' ->> 'name' = :name`,
+                                (alias) => `${alias} ->> 'author' = :name`,
                                 {
-                                    name: "John",
+                                    name: "Alice",
                                 },
                             ),
                         })
@@ -1088,8 +1195,26 @@ describe("repository > find options > operators", () => {
                             id: 1,
                             text: "Comment #1",
                             metadata: {
-                                author: { name: "John", age: 30 },
+                                author: "Alice",
                             },
+                        },
+                    ])
+
+                    const loadedComments2 = await connection
+                        .getRepository(Comment)
+                        .find({
+                            where: {
+                                metadata: Raw(
+                                    (alias) => `${alias} ->> 'author' = 'Bob'`,
+                                ),
+                            },
+                        })
+
+                    loadedComments2.should.be.eql([
+                        {
+                            id: 2,
+                            text: "Comment #2",
+                            metadata: { author: "Bob" },
                         },
                     ])
                 }),
@@ -1099,12 +1224,16 @@ describe("repository > find options > operators", () => {
                 connections.map(async (connection) => {
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
-                    comment1.metadata = { stats: { views: 100, likes: 10 } }
+                    comment1.metadata = {
+                        details: { stats: { views: 100, likes: 10 } },
+                    }
                     await connection.manager.save(comment1)
 
                     const comment2 = new Comment()
                     comment2.text = "Comment #2"
-                    comment2.metadata = { stats: { views: 200, likes: 20 } }
+                    comment2.metadata = {
+                        details: { stats: { views: 200, likes: 20 } },
+                    }
                     await connection.manager.save(comment2)
 
                     // Test #> operator - get nested object as JSON and compare
@@ -1113,9 +1242,12 @@ describe("repository > find options > operators", () => {
                         .findBy({
                             metadata: Raw(
                                 (alias) =>
-                                    `${alias} #> '{stats, views}' = :views`,
+                                    `${alias} #> '{details, stats}' = :stats`,
                                 {
-                                    views: "100",
+                                    stats: JSON.stringify({
+                                        views: 100,
+                                        likes: 10,
+                                    }),
                                 },
                             ),
                         })
@@ -1123,7 +1255,9 @@ describe("repository > find options > operators", () => {
                         {
                             id: 1,
                             text: "Comment #1",
-                            metadata: { stats: { views: 100, likes: 10 } },
+                            metadata: {
+                                details: { stats: { views: 100, likes: 10 } },
+                            },
                         },
                     ])
                 }),
