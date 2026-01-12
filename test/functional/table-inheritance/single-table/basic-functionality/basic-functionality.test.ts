@@ -12,6 +12,7 @@ import { Employee } from "./entity/Employee"
 import { Person } from "./entity/Person"
 import { expect } from "chai"
 import { Male } from "./entity/Male"
+import { Human } from "./entity/Human"
 
 describe("table-inheritance > single-table > basic-functionality", () => {
     let connections: DataSource[]
@@ -451,20 +452,6 @@ describe("table-inheritance > single-table > basic-functionality", () => {
                 loadedPerson2!.should.not.haveOwnProperty("faculty")
             }),
         ))
-})
-
-describe("table-inheritance > single-table > basic-functionality with custom database schema", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres", "cockroachdb", "mssql"],
-                schema: "my_schema",
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
 
     it("should correctly upsert data with single-table-inheritance pattern", () =>
         Promise.all(
@@ -477,8 +464,8 @@ describe("table-inheritance > single-table > basic-functionality with custom dat
                     .insert()
                     .into(Male)
                     .values([
-                        { id: 1, name: "Alice", age: 20 },
-                        { id: 2, name: "Bob", age: 25 },
+                        { id: 1, name: "Alice", age: 22 },
+                        { id: 2, name: "Bob", age: 23 },
                     ])
                     .execute()
 
@@ -492,8 +479,8 @@ describe("table-inheritance > single-table > basic-functionality with custom dat
                     .insert()
                     .into(Male)
                     .values([
-                        { id: 1, name: "Alice", age: 30 }, // Update age for id=1
-                        { id: 2, name: "Bob", age: 35 }, // Update age for id=2
+                        { id: 1, name: "Alice", age: 40 }, // Update faculty for id=1
+                        { id: 2, name: "Bob", age: 45 }, // Update faculty for id=2
                     ])
                     .orUpdate(["age"], ["id"], {
                         skipUpdateIfNoValuesChanged: true,
@@ -501,7 +488,7 @@ describe("table-inheritance > single-table > basic-functionality with custom dat
                     .execute()
 
                 secondInsert.identifiers.length.should.equal(2)
-                // After upsert, we should have 2 rows with updated ages
+                // After upsert, we should have 2 rows with updated faculties
                 const loadedMales = await connection.manager
                     .createQueryBuilder(Male, "males")
                     .orderBy("males.id")
@@ -511,11 +498,78 @@ describe("table-inheritance > single-table > basic-functionality with custom dat
                 loadedMales[0].should.have.all.keys("id", "name", "age")
                 loadedMales[0].id.should.equal(1)
                 loadedMales[0].name.should.equal("Alice")
-                loadedMales[0].age.should.equal(30)
+                loadedMales[0].age.should.equal(40)
                 loadedMales[1].should.have.all.keys("id", "name", "age")
                 loadedMales[1].id.should.equal(2)
                 loadedMales[1].name.should.equal("Bob")
-                loadedMales[1].age.should.equal(35)
+                loadedMales[1].age.should.equal(45)
             }),
         ))
+
+    describe("table-inheritance > single-table > basic-functionality with custom database schema", () => {
+        let connections: DataSource[]
+        before(
+            async () =>
+                (connections = await createTestingConnections({
+                    entities: [Human, Male],
+                    enabledDrivers: ["postgres", "cockroachdb", "mssql"],
+                    schema: "my_schema",
+                })),
+        )
+        beforeEach(() => reloadTestingDatabases(connections))
+        after(() => closeTestingConnections(connections))
+
+        it("should correctly upsert data with single-table-inheritance pattern", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    // --------------------------------------------------------------------------
+                    // Upsert - Initial insert
+                    // --------------------------------------------------------------------------
+                    const initialInsert = await connection
+                        .createQueryBuilder()
+                        .insert()
+                        .into(Male)
+                        .values([
+                            { id: 1, name: "Alice", age: 20 },
+                            { id: 2, name: "Bob", age: 25 },
+                        ])
+                        .execute()
+
+                    initialInsert.identifiers.length.should.equal(2)
+
+                    // --------------------------------------------------------------------------
+                    // Upsert - Update via conflict
+                    // --------------------------------------------------------------------------
+                    const secondInsert = await connection
+                        .createQueryBuilder()
+                        .insert()
+                        .into(Male)
+                        .values([
+                            { id: 1, name: "Alice", age: 30 }, // Update age for id=1
+                            { id: 2, name: "Bob", age: 35 }, // Update age for id=2
+                        ])
+                        .orUpdate(["age"], ["id"], {
+                            skipUpdateIfNoValuesChanged: true,
+                        })
+                        .execute()
+
+                    secondInsert.identifiers.length.should.equal(2)
+                    // After upsert, we should have 2 rows with updated ages
+                    const loadedMales = await connection.manager
+                        .createQueryBuilder(Male, "males")
+                        .orderBy("males.id")
+                        .getMany()
+
+                    loadedMales.length.should.equal(2)
+                    loadedMales[0].should.have.all.keys("id", "name", "age")
+                    loadedMales[0].id.should.equal(1)
+                    loadedMales[0].name.should.equal("Alice")
+                    loadedMales[0].age.should.equal(30)
+                    loadedMales[1].should.have.all.keys("id", "name", "age")
+                    loadedMales[1].id.should.equal(2)
+                    loadedMales[1].name.should.equal("Bob")
+                    loadedMales[1].age.should.equal(35)
+                }),
+            ))
+    })
 })

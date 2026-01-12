@@ -1290,7 +1290,7 @@ export class InsertQueryBuilder<
     /**
      * Create upsert search condition expression.
      */
-    protected createUpsertConditionExpression(tableOrAliasName: string) {
+    protected createUpsertConditionExpression(mainTableOrAlias: string) {
         if (!this.expressionMap.onUpdate.overwriteCondition) return ""
         const conditionsArray = []
 
@@ -1322,7 +1322,7 @@ export class InsertQueryBuilder<
 
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
                 const column = this.expressionMap.aliasNamePrefixingEnabled
-                    ? tableOrAliasName +
+                    ? mainTableOrAlias +
                       "." +
                       this.escape(metadata.discriminatorColumn.databaseName)
                     : this.escape(metadata.discriminatorColumn.databaseName)
