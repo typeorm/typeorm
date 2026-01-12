@@ -3198,7 +3198,7 @@ export class PostgresQueryRunner
         try {
             // drop views
             const selectViewDropsQuery =
-                `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
+                `SELECT 'DROP VIEW IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(viewname) || ' CASCADE;' as "query" ` +
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`
             const dropViewQueries: ObjectLiteral[] =
                 await this.query(selectViewDropsQuery)
@@ -3210,7 +3210,7 @@ export class PostgresQueryRunner
             // Note: materialized views introduced in Postgres 9.3
             if (DriverUtils.isReleaseVersionOrGreater(this.driver, "9.3")) {
                 const selectMatViewDropsQuery =
-                    `SELECT 'DROP MATERIALIZED VIEW IF EXISTS "' || schemaname || '"."' || matviewname || '" CASCADE;' as "query" ` +
+                    `SELECT 'DROP MATERIALIZED VIEW IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(matviewname) || ' CASCADE;' as "query" ` +
                     `FROM "pg_matviews" WHERE "schemaname" IN (${schemaNamesString})`
                 const dropMatViewQueries: ObjectLiteral[] = await this.query(
                     selectMatViewDropsQuery,
@@ -3224,7 +3224,7 @@ export class PostgresQueryRunner
             // TODO generalize this as this.driver.ignoreTables
 
             // drop tables
-            const selectTableDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND "tablename" NOT IN ('spatial_ref_sys')`
+            const selectTableDropsQuery = `SELECT 'DROP TABLE IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(tablename) || ' CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND "tablename" NOT IN ('spatial_ref_sys')`
             const dropTableQueries: ObjectLiteral[] = await this.query(
                 selectTableDropsQuery,
             )
@@ -3389,7 +3389,7 @@ export class PostgresQueryRunner
         }[] = []
 
         if (!tableNames) {
-            const tablesSql = `SELECT "table_schema", "table_name", obj_description(('"' || "table_schema" || '"."' || "table_name" || '"')::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables"`
+            const tablesSql = `SELECT "table_schema", "table_name", obj_description((quote_ident("table_schema") || '.' || quote_ident("table_name"))::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables"`
             dbTables.push(...(await this.query(tablesSql)))
         } else {
             const tablesCondition = tableNames
@@ -3402,7 +3402,7 @@ export class PostgresQueryRunner
                 .join(" OR ")
 
             const tablesSql =
-                `SELECT "table_schema", "table_name", obj_description(('"' || "table_schema" || '"."' || "table_name" || '"')::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables" WHERE ` +
+                `SELECT "table_schema", "table_name", obj_description((quote_ident("table_schema") || '.' || quote_ident("table_name"))::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables" WHERE ` +
                 tablesCondition
             dbTables.push(...(await this.query(tablesSql)))
         }
@@ -3423,7 +3423,7 @@ export class PostgresQueryRunner
             })
             .join(" OR ")
         const columnsSql =
-            `SELECT columns.*, pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) AS description, ` +
+            `SELECT columns.*, pg_catalog.col_description((quote_ident(table_catalog) || '.' || quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass::oid, ordinal_position) AS description, ` +
             `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype"::text AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type" ` +
             `FROM "information_schema"."columns" ` +
             `LEFT JOIN "pg_catalog"."pg_attribute" AS "col_attr" ON "col_attr"."attname" = "columns"."column_name" ` +
@@ -4184,7 +4184,10 @@ export class PostgresQueryRunner
                               table,
                               exclusion.expression!,
                           )
-                    return `CONSTRAINT "${exclusionName}" EXCLUDE ${exclusion.expression}`
+                    let constraint = `CONSTRAINT "${exclusionName}" EXCLUDE ${exclusion.expression}`
+                    if (exclusion.deferrable)
+                        constraint += ` DEFERRABLE ${exclusion.deferrable}`
+                    return constraint
                 })
                 .join(", ")
 
@@ -4605,11 +4608,14 @@ export class PostgresQueryRunner
         table: Table,
         exclusionConstraint: TableExclusion,
     ): Query {
-        return new Query(
-            `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${
-                exclusionConstraint.name
-            }" EXCLUDE ${exclusionConstraint.expression}`,
-        )
+        let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${
+            exclusionConstraint.name
+        }" EXCLUDE ${exclusionConstraint.expression}`
+
+        if (exclusionConstraint.deferrable)
+            sql += ` DEFERRABLE ${exclusionConstraint.deferrable}`
+
+        return new Query(sql)
     }
 
     /**
