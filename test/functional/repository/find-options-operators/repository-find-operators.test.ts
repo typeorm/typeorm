@@ -23,13 +23,14 @@ import { Post } from "./entity/Post"
 import { Raw } from "../../../../src/find-options/operator/Raw"
 import { PersonAR } from "./entity/PersonAR"
 import { expect } from "chai"
+import { Comment } from "./entity/Comment"
 
 describe("repository > find options > operators", () => {
     let connections: DataSource[]
     before(
         async () =>
             (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
+                entities: [PersonAR, Post],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -893,4 +894,279 @@ describe("repository > find options > operators", () => {
                 ])
             }),
         ))
+
+    describe("raw with jsonb columns", () => {
+        let connections: DataSource[]
+        before(
+            async () =>
+                (connections = await createTestingConnections({
+                    entities: [Comment],
+                    enabledDrivers: ["postgres", "cockroachdb"],
+                })),
+        )
+        beforeEach(() => reloadTestingDatabases(connections))
+        after(() => closeTestingConnections(connections))
+
+        it("should work with @> (contains) operator", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = {
+                        approved: true,
+                        tags: ["news", "tech"],
+                    }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = { approved: false, tags: ["news"] }
+                    await connection.manager.save(comment2)
+
+                    // Test @> operator - does left contain right
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw((alias) => `${alias} @> :value`, {
+                                value: JSON.stringify({ approved: true }),
+                            }),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: {
+                                approved: true,
+                                tags: ["news", "tech"],
+                            },
+                        },
+                    ])
+                }),
+            ))
+
+        it("should work with <@ (contained by) operator", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = {
+                        approved: true,
+                        tags: ["news", "tech"],
+                    }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = { approved: false }
+                    await connection.manager.save(comment2)
+
+                    // Test <@ operator - is left contained by right
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw((alias) => `${alias} <@ :value`, {
+                                value: JSON.stringify({
+                                    approved: false,
+                                    extra: "field",
+                                }),
+                            }),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 2,
+                            text: "Comment #2",
+                            metadata: { approved: false },
+                        },
+                    ])
+                }),
+            ))
+
+        it("should work with ?| (any keys exist) operator", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = {
+                        approved: true,
+                        tags: ["news", "tech"],
+                    }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = { rejected: true, tags: ["news"] }
+                    await connection.manager.save(comment2)
+
+                    // Test ?| operator - do any of these keys exist
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw(
+                                (alias) => `${alias} ?| array[:key1, :key2]`,
+                                {
+                                    key1: "approved",
+                                    key2: "rejected",
+                                },
+                            ),
+                        })
+                    loadedComments.length.should.be.equal(2)
+                }),
+            ))
+
+        it("should work with ?& (all keys exist) operator", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = {
+                        approved: true,
+                        tags: ["news", "tech"],
+                    }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = { approved: false }
+                    await connection.manager.save(comment2)
+
+                    // Test ?& operator - do all of these keys exist
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw(
+                                (alias) => `${alias} ?& array[:key1, :key2]`,
+                                {
+                                    key1: "approved",
+                                    key2: "tags",
+                                },
+                            ),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: {
+                                approved: true,
+                                tags: ["news", "tech"],
+                            },
+                        },
+                    ])
+                }),
+            ))
+
+        it("should work with -> (get object field) operator", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = {
+                        author: { name: "John", age: 30 },
+                    }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = {
+                        author: { name: "Jane", age: 25 },
+                    }
+                    await connection.manager.save(comment2)
+
+                    // Test -> operator - get nested object and compare
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw(
+                                (alias) =>
+                                    `${alias} -> 'author' ->> 'name' = :name`,
+                                {
+                                    name: "John",
+                                },
+                            ),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: {
+                                author: { name: "John", age: 30 },
+                            },
+                        },
+                    ])
+                }),
+            ))
+        it("should work with #> (get object field as JSON) operator", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = { stats: { views: 100, likes: 10 } }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = { stats: { views: 200, likes: 20 } }
+                    await connection.manager.save(comment2)
+
+                    // Test #> operator - get nested object as JSON and compare
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw(
+                                (alias) =>
+                                    `${alias} #> '{stats, views}' = :views`,
+                                {
+                                    views: "100",
+                                },
+                            ),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: { stats: { views: 100, likes: 10 } },
+                        },
+                    ])
+                }),
+            ))
+
+        it("should work with #>> (get object field as text) operator", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = { likesDislikes: [300, 20] }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = { likesDislikes: [300, 20] }
+                    await connection.manager.save(comment2)
+
+                    // Test #>> operator - get nested object as text and compare
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw(
+                                (alias) =>
+                                    `${alias} #>> '{likesDislikes, 0}' = :likes`,
+                                {
+                                    likes: "300",
+                                },
+                            ),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: { likesDislikes: [300, 20] },
+                        },
+                        {
+                            id: 2,
+                            text: "Comment #2",
+                            metadata: { likesDislikes: [300, 20] },
+                        },
+                    ])
+                }),
+            ))
+    })
 })
