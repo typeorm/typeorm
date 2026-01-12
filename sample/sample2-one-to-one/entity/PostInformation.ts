@@ -14,7 +14,7 @@ export class PostInformation {
     @Column()
     text: string
 
-    @OneToOne((type) => Post, (post) => post.information, {
+    @OneToOne(() => Post, (post) => post.information, {
         cascade: ["update"],
     })
     post: Post

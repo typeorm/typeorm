@@ -1,11 +1,11 @@
-import "../../../utils/test-setup"
-import { Post } from "./entity/Post"
 import { DataSource } from "../../../../src"
+import "../../../utils/test-setup"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
+import { Post } from "./entity/Post"
 
 describe("json > defaults", () => {
     let connections: DataSource[]
@@ -14,7 +14,6 @@ describe("json > defaults", () => {
             (connections = await createTestingConnections({
                 entities: [Post],
                 enabledDrivers: ["postgres"], // because only postgres supports jsonb type
-                // logging: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

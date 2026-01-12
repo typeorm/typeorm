@@ -1,10 +1,10 @@
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { DataSource } from "../data-source/DataSource"
-import { PlatformTools } from "../platform/PlatformTools"
-import * as yargs from "yargs"
-import chalk from "chalk"
+import ansi from "ansis"
 import path from "path"
 import process from "process"
+import yargs from "yargs"
+import { DataSource } from "../data-source/DataSource"
+import { PlatformTools } from "../platform/PlatformTools"
+import { QueryRunner } from "../query-runner/QueryRunner"
 import { CommandUtils } from "./CommandUtils"
 import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
 
@@ -45,24 +45,21 @@ export class QueryCommand implements yargs.CommandModule {
             queryRunner = dataSource.createQueryRunner()
             const query = args.query as string
             console.log(
-                chalk.green("Running query: ") +
-                    PlatformTools.highlightSql(query),
+                ansi.green`Running query: ` + PlatformTools.highlightSql(query),
             )
             const queryResult = await queryRunner.query(query)
 
             if (typeof queryResult === "undefined") {
                 console.log(
-                    chalk.green(
-                        "Query has been executed. No result was returned.",
-                    ),
+                    ansi.green`Query has been executed. No result was returned.`,
                 )
             } else {
-                console.log(chalk.green("Query has been executed. Result: "))
-                console.log(
-                    PlatformTools.highlightJson(
-                        JSON.stringify(queryResult, undefined, 2),
-                    ),
-                )
+                console.log(ansi.green`Query has been executed. Result: `)
+                console.dir(queryResult, {
+                    breakLength: Infinity,
+                    compact: false,
+                    depth: null,
+                })
             }
 
             await queryRunner.release()

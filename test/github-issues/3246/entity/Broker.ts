@@ -16,7 +16,7 @@ export class Broker {
     @Column({ type: "varchar", nullable: true })
     name: string
 
-    @OneToMany((type) => Order, (order) => order.company, {
+    @OneToMany(() => Order, (order) => order.company, {
         cascade: ["insert", "update"],
         onDelete: "CASCADE",
         nullable: true,

@@ -1,6 +1,6 @@
 import { QueryRunner } from "../query-runner/QueryRunner"
 import { Subject } from "./Subject"
-import { SubjectTopoligicalSorter } from "./SubjectTopoligicalSorter"
+import { SubjectTopologicalSorter } from "./SubjectTopologicalSorter"
 import { SubjectChangedColumnsComputer } from "./SubjectChangedColumnsComputer"
 import { SubjectWithoutIdentifierError } from "../error/SubjectWithoutIdentifierError"
 import { SubjectRemovedAndUpdatedError } from "../error/SubjectRemovedAndUpdatedError"
@@ -131,7 +131,7 @@ export class SubjectExecutor {
 
         // execute all insert operations
         // console.time(".insertion");
-        this.insertSubjects = new SubjectTopoligicalSorter(
+        this.insertSubjects = new SubjectTopologicalSorter(
             this.insertSubjects,
         ).sort("insert")
         await this.executeInsertOperations()
@@ -150,7 +150,7 @@ export class SubjectExecutor {
 
         // make sure our remove subjects are sorted (using topological sorting) when multiple entities are passed for the removal
         // console.time(".removal");
-        this.removeSubjects = new SubjectTopoligicalSorter(
+        this.removeSubjects = new SubjectTopologicalSorter(
             this.removeSubjects,
         ).sort("delete")
         await this.executeRemoveOperations()
@@ -616,7 +616,7 @@ export class SubjectExecutor {
                 }
 
                 const updateResult = await updateQueryBuilder.execute()
-                let updateGeneratedMap = updateResult.generatedMaps[0]
+                const updateGeneratedMap = updateResult.generatedMaps[0]
                 if (updateGeneratedMap) {
                     subject.metadata.columns.forEach((column) => {
                         const value = column.getEntityValue(updateGeneratedMap!)
@@ -654,21 +654,16 @@ export class SubjectExecutor {
         }
 
         // Run nested set updates one by one
-        const nestedSetPromise = new Promise<void>(async (ok, fail) => {
+        const updateNestSetSubjects = async () => {
             for (const subject of nestedSetSubjects) {
-                try {
-                    await updateSubject(subject)
-                } catch (error) {
-                    fail(error)
-                }
+                await updateSubject(subject)
             }
-            ok()
-        })
+        }
 
         // Run all remaining subjects in parallel
         await Promise.all([
             ...remainingSubjects.map(updateSubject),
-            nestedSetPromise,
+            updateNestSetSubjects(),
         ])
     }
 
@@ -1117,7 +1112,7 @@ export class SubjectExecutor {
             // merge into entity all generated values returned by a database
             if (subject.generatedMap)
                 this.queryRunner.manager.merge(
-                    subject.metadata.target as any,
+                    subject.metadata.target,
                     subject.entity,
                     subject.generatedMap,
                 )

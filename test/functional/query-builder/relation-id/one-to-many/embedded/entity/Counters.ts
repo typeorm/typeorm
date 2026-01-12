@@ -13,7 +13,7 @@ export class Counters {
     @Column()
     favorites: number
 
-    @OneToMany((type) => Category, (category) => category.posts)
+    @OneToMany(() => Category, (category) => category.posts)
     categories: Category[]
 
     @Column(() => Subcounters, { prefix: "sub" })

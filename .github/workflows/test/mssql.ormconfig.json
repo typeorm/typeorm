@@ -1,0 +1,16 @@
+[
+  {
+    "skip": false,
+    "name": "mssql",
+    "type": "mssql",
+    "host": "localhost",
+    "port": 1433,
+    "username": "sa",
+    "password": "Admin12345",
+    "database": "tempdb",
+    "logging": false,
+    "extra": {
+      "trustServerCertificate": true
+    }
+  }
+]

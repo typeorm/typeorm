@@ -10,6 +10,6 @@ export class Post {
     @Column()
     name: string
 
-    @ManyToOne((type) => User)
+    @ManyToOne(() => User)
     user: User
 }
