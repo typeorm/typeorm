@@ -51,7 +51,6 @@ describe("github issues > #10843 TreeRepository does not update mpath if parentI
                 )
                 child.parent = newParent
                 await nodeRepository.save(child)
-
                 ;[mpath] = await dataSource.query(
                     "SELECT mpath FROM node WHERE id = ?",
                     [child.id],
