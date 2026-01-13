@@ -28,6 +28,7 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { Sparsevec } from "../types/Sparsevec"
 import { IndexMetadata } from "../../metadata/IndexMetadata"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
@@ -197,6 +198,7 @@ export class PostgresDriver implements Driver {
         "ltree",
         "vector",
         "halfvec",
+        "sparsevec",
     ]
 
     /**
@@ -222,6 +224,7 @@ export class PostgresDriver implements Driver {
         "bit varying",
         "vector",
         "halfvec",
+        "sparsevec",
     ]
 
     /**
@@ -661,7 +664,9 @@ export class PostgresDriver implements Driver {
             (metadata) => {
                 return metadata.columns.some(
                     (column) =>
-                        column.type === "vector" || column.type === "halfvec",
+                        column.type === "vector" ||
+                        column.type === "halfvec" ||
+                        column.type === "sparsevec",
                 )
             },
         )
@@ -763,6 +768,29 @@ export class PostgresDriver implements Driver {
             } else {
                 return value
             }
+        } else if (columnMetadata.type === "sparsevec") {
+            const dim = parseInt(columnMetadata.length, 10)
+            if (value instanceof Sparsevec) {
+                if (!value.dimensions && columnMetadata.length) {
+                    value.dimensions = dim
+                }
+                return value.toString()
+            } else if (Array.isArray(value)) {
+                return Sparsevec.fromDense(value, dim).toString()
+            } else if (value instanceof Map || typeof value === "object") {
+                // Handle both Record<number, number> and Map<number, number>
+                const sparse = new Sparsevec(
+                    value as Record<number, number> | Map<number, number>,
+                )
+                if (!sparse.dimensions && columnMetadata.length) {
+                    sparse.dimensions = dim
+                }
+                return sparse.toString()
+            } else if (typeof value === "string") {
+                return value
+            } else {
+                return value
+            }
         } else if (columnMetadata.type === "hstore") {
             if (typeof value === "string") {
                 return value
@@ -852,6 +880,11 @@ export class PostgresDriver implements Driver {
             ) {
                 if (value === "[]") return []
                 return value.slice(1, -1).split(",").map(Number)
+            }
+        } else if (columnMetadata.type === "sparsevec") {
+            if (typeof value === "string") {
+                // Parse sparsevec format: {index:value,index:value}/dimensions
+                return Sparsevec.fromString(value)
             }
         } else if (columnMetadata.type === "hstore") {
             if (columnMetadata.hstoreType === "object") {
@@ -1275,7 +1308,11 @@ export class PostgresDriver implements Driver {
             } else {
                 type = column.type
             }
-        } else if (column.type === "vector" || column.type === "halfvec") {
+        } else if (
+            column.type === "vector" ||
+            column.type === "halfvec" ||
+            column.type === "sparsevec"
+        ) {
             type =
                 column.type + (column.length ? "(" + column.length + ")" : "")
         }

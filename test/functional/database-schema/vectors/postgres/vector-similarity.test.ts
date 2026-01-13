@@ -200,4 +200,196 @@ describe("columns > vector type > similarity operations", () => {
                 expect(foundPostWithMalformedHalfvec).to.be.null
             }),
         ))
+
+    it("should perform bit operations using Hamming distance", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                await postRepository.clear()
+
+                // Create test posts with bit vectors
+                await postRepository.save([
+                    { bit_vector: "1111000011110000" },
+                    { bit_vector: "1111000011111111" },
+                    { bit_vector: "0000111100001111" },
+                ])
+
+                const queryBit = "'1111000011110000'"
+
+                // Test Hamming distance operator <~>
+                const results = await connection.query(
+                    `SELECT id, bit_vector FROM "post" WHERE bit_vector IS NOT NULL ORDER BY bit_vector <~> ${queryBit} LIMIT 2`,
+                )
+
+                expect(results).to.have.lengthOf(2)
+                expect(results[0].bit_vector).to.equal("1111000011110000")
+            }),
+        ))
+
+    it("should perform bit operations using Jaccard distance", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                await postRepository.clear()
+
+                // Create test posts with bit vectors
+                await postRepository.save([
+                    { bit_vector: "1111111111111111" },
+                    { bit_vector: "1111000011110000" },
+                    { bit_vector: "0000000000000000" },
+                ])
+
+                const queryBit = "'1111111100000000'"
+
+                // Test Jaccard distance operator <%>
+                const results = await connection.query(
+                    `SELECT id, bit_vector FROM "post" WHERE bit_vector IS NOT NULL ORDER BY bit_vector <%> ${queryBit} LIMIT 2`,
+                )
+
+                expect(results).to.have.lengthOf(2)
+            }),
+        ))
+
+    it("should perform sparsevec similarity search using L2 distance", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                await postRepository.clear()
+
+                // Create test posts with known sparsevec values
+                await postRepository.save([
+                    { sparse_embedding: "{1:1,2:1,3:1}/5" },
+                    { sparse_embedding: "{1:1,2:1,3:2}/5" },
+                    { sparse_embedding: "{1:5,2:5,3:5}/5" },
+                    { sparse_embedding: "{1:2,2:2,3:2}/5" },
+                ])
+
+                const queryVector = "'{1:1,2:1,3:1.6}/5'"
+
+                const results = await connection.query(
+                    `SELECT id, sparse_embedding FROM "post" WHERE sparse_embedding IS NOT NULL ORDER BY sparse_embedding <-> ${queryVector} LIMIT 2`,
+                )
+
+                expect(results.length).to.equal(2)
+                // {1:1,2:1,3:2}/5 should be closest to {1:1,2:1,3:1.6}/5, then {1:1,2:1,3:1}/5
+                expect(results[0].sparse_embedding).to.equal("{1:1,2:1,3:2}/5")
+                expect(results[1].sparse_embedding).to.equal("{1:1,2:1,3:1}/5")
+            }),
+        ))
+
+    it("should perform sparsevec similarity search using inner product", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                await postRepository.clear()
+
+                // Create vectors with known inner products
+                await postRepository.save([
+                    { sparse_embedding: "{1:1,2:2,3:3}/5" }, // IP with {1:1,2:1,3:1}/5 = 6
+                    { sparse_embedding: "{1:3,2:3,3:3}/5" }, // IP with {1:1,2:1,3:1}/5 = 9
+                    { sparse_embedding: "{1:-1,3:1}/5" }, // IP with {1:1,2:1,3:1}/5 = 0
+                ])
+
+                const queryVector = "'{1:1,2:1,3:1}/5'"
+
+                const results = await connection.query(
+                    `SELECT id, sparse_embedding FROM "post" WHERE sparse_embedding IS NOT NULL ORDER BY sparse_embedding <#> ${queryVector} ASC LIMIT 2`,
+                )
+
+                expect(results.length).to.equal(2)
+                // {1:3,2:3,3:3}/5 should have highest inner product, then {1:1,2:2,3:3}/5
+                expect(results[0].sparse_embedding).to.equal("{1:3,2:3,3:3}/5")
+                expect(results[1].sparse_embedding).to.equal("{1:1,2:2,3:3}/5")
+            }),
+        ))
+
+    it("should perform sparsevec similarity search using cosine distance", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                await postRepository.clear()
+
+                // Create test posts with known sparsevec values
+                await postRepository.save([
+                    { sparse_embedding: "{1:1,2:1,3:1}/5" },
+                    { sparse_embedding: "{1:2,2:2,3:2}/5" },
+                    { sparse_embedding: "{1:-1,2:-1,3:-1}/5" },
+                    { sparse_embedding: "{1:5,2:5,3:5}/5" },
+                ])
+
+                const queryVector = "'{1:1,2:1,3:1}/5'"
+
+                const results = await connection.query(
+                    `SELECT id, sparse_embedding FROM "post" WHERE sparse_embedding IS NOT NULL ORDER BY sparse_embedding <=> ${queryVector} LIMIT 3`,
+                )
+
+                expect(results.length).to.equal(3)
+                // Vectors in same direction should have cosine distance 0
+                const sparsevecs = results.map(
+                    (r: { sparse_embedding: string }) => r.sparse_embedding,
+                )
+                expect(sparsevecs).to.deep.include.members([
+                    "{1:1,2:1,3:1}/5",
+                    "{1:2,2:2,3:2}/5",
+                    "{1:5,2:5,3:5}/5",
+                ])
+                expect(sparsevecs).to.not.deep.include("{1:-1,2:-1,3:-1}/5")
+            }),
+        ))
+
+    it("should perform sparsevec similarity search using taxicab distance", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                await postRepository.clear()
+
+                // Create test posts with known sparsevec values
+                await postRepository.save([
+                    { sparse_embedding: "{1:1,2:1,3:1}/5" },
+                    { sparse_embedding: "{1:2,2:1,3:1}/5" },
+                    { sparse_embedding: "{1:10,2:10,3:10}/5" },
+                    { sparse_embedding: "{1:1,2:2,3:1}/5" },
+                ])
+
+                const queryVector = "'{1:1,2:1,3:1}/5'"
+
+                const results = await connection.query(
+                    `SELECT id, sparse_embedding FROM "post" WHERE sparse_embedding IS NOT NULL ORDER BY sparse_embedding <+> ${queryVector} LIMIT 2`,
+                )
+
+                expect(results.length).to.equal(2)
+                // {1:1,2:1,3:1}/5 should have taxicab distance 0 (exact match)
+                // {1:2,2:1,3:1}/5 and {1:1,2:2,3:1}/5 should both have distance 1
+                expect(results[0].sparse_embedding).to.equal("{1:1,2:1,3:1}/5")
+            }),
+        ))
+
+    it("should prevent persistence of Post with incorrect sparsevec dimensions due to DB constraints", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const post = new Post()
+                post.sparse_embedding = "{1:1,2:1,3:1}/3" // Wrong dimensions (3 instead of 5)
+
+                let saveThrewError = false
+                try {
+                    await postRepository.save(post)
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                } catch (error) {
+                    saveThrewError = true
+                }
+
+                expect(saveThrewError).to.be.true
+                expect(post.id).to.be.undefined
+
+                const foundPostWithMalformedSparsevec = await connection
+                    .getRepository(Post)
+                    .createQueryBuilder("p")
+                    .where("p.sparse_embedding::text = :sparsevecText", {
+                        sparsevecText: "{1:1,2:1,3:1}/3",
+                    })
+                    .getOne()
+                expect(foundPostWithMalformedSparsevec).to.be.null
+            }),
+        ))
 })

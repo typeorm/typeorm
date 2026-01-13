@@ -135,6 +135,7 @@ export * from "./driver/mongodb/typings"
 export * from "./driver/types/DatabaseType"
 export * from "./driver/types/GeoJsonTypes"
 export * from "./driver/types/ReplicationMode"
+export * from "./driver/types/Sparsevec"
 export * from "./driver/sqlserver/MssqlParameter"
 export * from "./subscriber/event/QueryEvent"
 
