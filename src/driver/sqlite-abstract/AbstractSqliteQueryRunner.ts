@@ -2074,23 +2074,21 @@ export abstract class AbstractSqliteQueryRunner
         isStrictMode?: boolean,
     ): string {
         let c = '"' + column.name + '"'
+        let columnType: string
         if (InstanceChecker.isColumnMetadata(column)) {
-            let columnType = this.driver.normalizeType(column)
-            // Convert types to strict-compatible types for SQLite strict mode
-            if (isStrictMode) {
-                columnType = this.driver.convertToStrictType(columnType)
-            }
-            c += " " + columnType
+            columnType = this.driver.normalizeType(column)
         } else {
-            let columnType = this.connection.driver.createFullType(column)
-            if (isStrictMode) {
-                // Convert types to strict-compatible types for SQLite strict mode
-                // Need to extract base type in case of types with length/precision/scale
-                const baseType = columnType.split("(")[0].trim()
-                columnType = this.driver.convertToStrictType(baseType)
-            }
-            c += " " + columnType
+            columnType = this.connection.driver.createFullType(column)
         }
+
+        if (isStrictMode) {
+            // Convert types to strict-compatible types for SQLite strict mode
+            // Need to extract base type in case of types with length/precision/scale
+            const baseType = columnType.split("(")[0].trim()
+            columnType = this.driver.convertToStrictType(baseType)
+        }
+        c += " " + columnType
+
         if (column.enum && !column.isArray)
             c +=
                 ' CHECK( "' +
