@@ -1,0 +1,17 @@
+# Dependencies
+/node_modules
+
+# Production
+/build
+
+# Generated files
+.docusaurus
+.cache-loader
+llms.txt
+llms-full.txt
+
+# Misc
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

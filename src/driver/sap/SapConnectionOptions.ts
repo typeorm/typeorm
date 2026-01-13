@@ -5,8 +5,7 @@ import { SapConnectionCredentialsOptions } from "./SapConnectionCredentialsOptio
  * SAP Hana specific connection options.
  */
 export interface SapConnectionOptions
-    extends BaseDataSourceOptions,
-        SapConnectionCredentialsOptions {
+    extends BaseDataSourceOptions, SapConnectionCredentialsOptions {
     /**
      * Database type.
      */
@@ -19,13 +18,12 @@ export interface SapConnectionOptions
 
     /**
      * The driver objects
-     * This defaults to require("hdb-pool")
+     * This defaults to require("@sap/hana-client")
      */
     readonly driver?: any
 
     /**
-     * The driver objects
-     * This defaults to require("@sap/hana-client")
+     * @deprecated Use {@link driver} instead.
      */
     readonly hanaClientDriver?: any
 
@@ -34,29 +32,71 @@ export interface SapConnectionOptions
      */
     readonly pool?: {
         /**
+         * Maximum number of open connections created by the pool, each of which
+         * may be in the pool waiting to be reused or may no longer be in the
+         * pool and actively being used (default: 10).
+         */
+        readonly maxConnectedOrPooled?: number
+
+        /**
+         * Defines the maximum time, in seconds, that connections are allowed to
+         * remain in the pool before being marked for eviction (default: 30).
+         */
+        readonly maxPooledIdleTime?: number
+
+        /**
+         * Defines the maximum time, in milliseconds, to wait for a connection
+         * to become available once the specified number of `maxConnectedOrPooled`
+         * open connections have been reached (default: 0, no wait).
+         * @remarks Requires `@sap/hana-client` version `2.27` or later.
+         */
+        readonly maxWaitTimeoutIfPoolExhausted?: number
+
+        /**
+         * Determines whether or not the pooled connection should be tested for
+         * viability before being reused (default: false).
+         */
+        readonly pingCheck?: boolean
+
+        /**
+         * Maximum number of connections allowed to be in the pool, waiting to
+         * be reused (default: 0, no limit).
+         */
+        readonly poolCapacity?: number
+
+        /**
          * Max number of connections.
+         * @deprecated Use {@link maxConnectedOrPooled} instead.
          */
         readonly max?: number
 
         /**
          * Minimum number of connections.
+         * @deprecated Obsolete, no alternative exists.
          */
         readonly min?: number
 
         /**
-         * Maximum number of waiting requests allowed. (default=0, no limit).
+         * Maximum number of waiting requests allowed.
+         * @deprecated Obsolete, no alternative exists.
          */
         readonly maxWaitingRequests?: number
+
         /**
-         * Max milliseconds a request will wait for a resource before timing out. (default=5000)
+         * Max milliseconds a request will wait for a resource before timing out.
+         * @deprecated Use {@link maxWaitTimeoutIfPoolExhausted} instead.
          */
         readonly requestTimeout?: number
+
         /**
-         * How often to run resource timeout checks. (default=0, disabled)
+         * How often to run resource timeout checks.
+         * @deprecated Obsolete, no alternative exists.
          */
         readonly checkInterval?: number
+
         /**
-         * Idle timeout
+         * Idle timeout (in milliseconds).
+         * @deprecated Use {@link maxPooledIdleTime} (in seconds) instead .
          */
         readonly idleTimeout?: number
 
@@ -66,6 +106,4 @@ export interface SapConnectionOptions
          */
         readonly poolErrorHandler?: (err: any) => any
     }
-
-    readonly poolSize?: never
 }

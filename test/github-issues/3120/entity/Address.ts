@@ -18,6 +18,6 @@ export class Address {
     @Column()
     street: string
 
-    @ManyToMany((type) => Person, (person) => person.addresses)
+    @ManyToMany(() => Person, (person) => person.addresses)
     people: Person[]
 }

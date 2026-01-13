@@ -99,64 +99,6 @@ export declare interface BinaryExtendedLegacy {
 /** @public */
 export declare type BinarySequence = Uint8Array | number[]
 
-declare namespace BSON {
-    export {
-        setInternalBufferSize,
-        serialize,
-        serializeWithBufferAndIndex,
-        deserialize,
-        calculateObjectSize,
-        deserializeStream,
-        UUIDExtended,
-        BinaryExtended,
-        BinaryExtendedLegacy,
-        BinarySequence,
-        CodeExtended,
-        DBRefLike,
-        Decimal128Extended,
-        DoubleExtended,
-        EJSONOptions,
-        Int32Extended,
-        LongExtended,
-        MaxKeyExtended,
-        MinKeyExtended,
-        ObjectIdExtended,
-        ObjectIdLike,
-        BSONRegExpExtended,
-        BSONRegExpExtendedLegacy,
-        BSONSymbolExtended,
-        LongWithoutOverrides,
-        TimestampExtended,
-        TimestampOverrides,
-        LongWithoutOverridesClass,
-        SerializeOptions,
-        DeserializeOptions,
-        Code,
-        BSONSymbol,
-        DBRef,
-        Binary,
-        ObjectId,
-        UUID,
-        Long,
-        Timestamp,
-        Double,
-        Int32,
-        MinKey,
-        MaxKey,
-        BSONRegExp,
-        Decimal128,
-        BSONValue,
-        BSONError,
-        BSONVersionError,
-        BSONRuntimeError,
-        BSONType,
-        EJSON,
-        Document,
-        CalculateObjectSizeOptions,
-    }
-}
-export { BSON }
-
 /**
  * @public
  * @category Error

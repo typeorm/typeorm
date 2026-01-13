@@ -6,8 +6,7 @@ import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCred
  * Microsoft Sql Server specific connection options.
  */
 export interface SqlServerConnectionOptions
-    extends BaseDataSourceOptions,
-        SqlServerConnectionCredentialsOptions {
+    extends BaseDataSourceOptions, SqlServerConnectionCredentialsOptions {
     /**
      * Database type.
      */
@@ -290,6 +289,12 @@ export interface SqlServerConnectionOptions
          * (default: false)
          */
         readonly trustServerCertificate?: boolean
+
+        /**
+         * A boolean, controlling whether the driver should connect to all IPs returned from DNS in parallel.
+         * (default: false)
+         */
+        readonly multiSubnetFailover?: boolean
     }
 
     /**
@@ -302,7 +307,7 @@ export interface SqlServerConnectionOptions
         readonly master: SqlServerConnectionCredentialsOptions
 
         /**
-         * List of read-from severs (slaves).
+         * List of read-from servers (slaves).
          */
         readonly slaves: SqlServerConnectionCredentialsOptions[]
 

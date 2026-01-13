@@ -42,10 +42,10 @@ export class Recipient {
     @PrimaryColumn()
     messageId: number
 
-    @ManyToOne((type) => User, (user) => user.recipients)
+    @ManyToOne(() => User, (user) => user.recipients)
     user: User
 
-    @ManyToOne((type) => Message, (message) => message.recipients)
+    @ManyToOne(() => Message, (message) => message.recipients)
     message: Message
 
     @CreateDateColumn()

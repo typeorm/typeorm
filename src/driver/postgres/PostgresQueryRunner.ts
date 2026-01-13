@@ -17,16 +17,17 @@ import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableUnique } from "../../schema-builder/table/TableUnique"
 import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
+import { DriverUtils } from "../DriverUtils"
 import { Query } from "../Query"
 import { ColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { PostgresDriver } from "./PostgresDriver"
-import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -174,7 +175,6 @@ export class PostgresQueryRunner
         }
 
         if (this.transactionDepth === 0) {
-            this.transactionDepth += 1
             await this.query("START TRANSACTION")
             if (isolationLevel) {
                 await this.query(
@@ -182,9 +182,9 @@ export class PostgresQueryRunner
                 )
             }
         } else {
-            this.transactionDepth += 1
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth - 1}`)
+            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
         }
+        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -199,15 +199,14 @@ export class PostgresQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `RELEASE SAVEPOINT typeorm_${this.transactionDepth}`,
+                `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
-            this.transactionDepth -= 1
             await this.query("COMMIT")
             this.isTransactionActive = false
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -222,15 +221,14 @@ export class PostgresQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
-            this.transactionDepth -= 1
             await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth}`,
+                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
-            this.transactionDepth -= 1
             await this.query("ROLLBACK")
             this.isTransactionActive = false
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -246,22 +244,19 @@ export class PostgresQueryRunner
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
-        const broadcasterResult = new BroadcasterResult()
 
         this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const broadcasterResult = new BroadcasterResult()
 
         try {
-            const queryStartTime = +new Date()
+            const queryStartTime = Date.now()
             const raw = await databaseConnection.query(query, parameters)
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = +new Date()
+            const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
@@ -601,10 +596,22 @@ export class PostgresQueryRunner
                 downQueries.push(this.dropIndexSql(table, index))
             })
         }
-        
+
         if (table.comment) {
-            upQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS '" + table.comment + "'"));
-            downQueries.push(new Query("COMMENT ON TABLE " + this.escapePath(table) + " IS NULL"));
+            upQueries.push(
+                new Query(
+                    "COMMENT ON TABLE " +
+                        this.escapePath(table) +
+                        " IS '" +
+                        table.comment +
+                        "'",
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    "COMMENT ON TABLE " + this.escapePath(table) + " IS NULL",
+                ),
+            )
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -940,7 +947,7 @@ export class PostgresQueryRunner
         const enumColumns = newTable.columns.filter(
             (column) => column.type === "enum" || column.type === "simple-enum",
         )
-        for (let column of enumColumns) {
+        for (const column of enumColumns) {
             // skip renaming for user-defined enum name
             if (column.enumName) continue
 
@@ -1547,6 +1554,19 @@ export class PostgresQueryRunner
             ) {
                 const arraySuffix = newColumn.isArray ? "[]" : ""
 
+                const { extraItems, missingItems } = OrmUtils.getArraysDiff(
+                    newColumn.enum!,
+                    oldColumn.enum!,
+                )
+
+                const version = this.driver.version
+
+                // when the only change is new enum value(s) we can use ADD VALUE syntax
+                const useAddValueForUp =
+                    VersionUtils.isGreaterOrEqual(version, "12.0") &&
+                    missingItems.length === 0 &&
+                    extraItems.length > 0
+
                 // "public"."new_enum"
                 const newEnumName = this.buildEnumName(table, newColumn)
 
@@ -1578,109 +1598,161 @@ export class PostgresQueryRunner
                     true,
                 )
 
-                // rename old ENUM
-                upQueries.push(
-                    new Query(
-                        `ALTER TYPE ${oldEnumName} RENAME TO ${oldEnumNameWithoutSchema_old}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`,
-                    ),
-                )
+                // ADD VALUE allows us to just add new enum values without any type changes, but can of course only be used when only new values were added
+                if (useAddValueForUp) {
+                    // Add values for up - that's all we need
+                    for (const item of extraItems) {
+                        const escapedValue = item.replaceAll("'", "''")
 
-                // create new ENUM
-                upQueries.push(
-                    this.createEnumTypeSql(table, newColumn, newEnumName),
-                )
-                downQueries.push(
-                    this.dropEnumTypeSql(table, newColumn, newEnumName),
-                )
+                        upQueries.push(
+                            new Query(
+                                `ALTER TYPE ${oldEnumName} ADD VALUE '${escapedValue}'`,
+                            ),
+                        )
+                    }
 
-                // if column have default value, we must drop it to avoid issues with type casting
-                if (
-                    oldColumn.default !== null &&
-                    oldColumn.default !== undefined
-                ) {
-                    // mark default as changed to prevent double update
-                    defaultValueChanged = true
+                    // For down query, we're be doing the doing the same as normal enum change (create new type, alter column, drop old type)
+
+                    downQueries.push(
+                        new Query(
+                            `ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`,
+                        ),
+                    )
+
+                    downQueries.push(
+                        this.dropEnumTypeSql(table, newColumn, newEnumName),
+                    )
+
+                    const downType = `${oldEnumNameWithSchema_old}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithSchema_old}${arraySuffix}`
+
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${downType}`,
+                        ),
+                    )
+
+                    downQueries.push(
+                        this.createEnumTypeSql(
+                            table,
+                            oldColumn,
+                            oldEnumNameWithSchema_old,
+                        ),
+                    )
+                } else {
+                    // rename old ENUM
+                    upQueries.push(
+                        new Query(
+                            `ALTER TYPE ${oldEnumName} RENAME TO ${oldEnumNameWithoutSchema_old}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TYPE ${oldEnumNameWithSchema_old} RENAME TO ${oldEnumNameWithoutSchema}`,
+                        ),
+                    )
+
+                    // create new ENUM
+                    upQueries.push(
+                        this.createEnumTypeSql(table, newColumn, newEnumName),
+                    )
+                    downQueries.push(
+                        this.dropEnumTypeSql(table, newColumn, newEnumName),
+                    )
+
+                    // if column have default value, we must drop it to avoid issues with type casting
+                    if (
+                        oldColumn.default !== null &&
+                        oldColumn.default !== undefined
+                    ) {
+                        // mark default as changed to prevent double update
+                        defaultValueChanged = true
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    oldColumn.name
+                                }" DROP DEFAULT`,
+                            ),
+                        )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    oldColumn.name
+                                }" SET DEFAULT ${oldColumn.default}`,
+                            ),
+                        )
+                    }
+
+                    // build column types
+                    const upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`
+                    const downType = `${oldEnumNameWithSchema_old}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithSchema_old}${arraySuffix}`
+
+                    // update column to use new type
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
                                 table,
-                            )} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`,
+                            )} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`,
                         ),
                     )
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
                                 table,
-                            )} ALTER COLUMN "${oldColumn.name}" SET DEFAULT ${
-                                oldColumn.default
-                            }`,
+                            )} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${downType}`,
                         ),
                     )
-                }
 
-                // build column types
-                const upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`
-                const downType = `${oldEnumNameWithSchema_old}${arraySuffix} USING "${newColumn.name}"::"text"::${oldEnumNameWithSchema_old}${arraySuffix}`
+                    // restore column default or create new one
+                    if (
+                        newColumn.default !== null &&
+                        newColumn.default !== undefined
+                    ) {
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    newColumn.name
+                                }" SET DEFAULT ${newColumn.default}`,
+                            ),
+                        )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    newColumn.name
+                                }" DROP DEFAULT`,
+                            ),
+                        )
+                    }
 
-                // update column to use new type
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${upType}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${downType}`,
-                    ),
-                )
-
-                // restore column default or create new one
-                if (
-                    newColumn.default !== null &&
-                    newColumn.default !== undefined
-                ) {
+                    // remove old ENUM
                     upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ALTER COLUMN "${newColumn.name}" SET DEFAULT ${
-                                newColumn.default
-                            }`,
+                        this.dropEnumTypeSql(
+                            table,
+                            oldColumn,
+                            oldEnumNameWithSchema_old,
                         ),
                     )
                     downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`,
+                        this.createEnumTypeSql(
+                            table,
+                            oldColumn,
+                            oldEnumNameWithSchema_old,
                         ),
                     )
                 }
-
-                // remove old ENUM
-                upQueries.push(
-                    this.dropEnumTypeSql(
-                        table,
-                        oldColumn,
-                        oldEnumNameWithSchema_old,
-                    ),
-                )
-                downQueries.push(
-                    this.createEnumTypeSql(
-                        table,
-                        oldColumn,
-                        oldEnumNameWithSchema_old,
-                    ),
-                )
             }
 
             if (oldColumn.isNullable !== newColumn.isNullable) {
@@ -2177,6 +2249,31 @@ export class PostgresQueryRunner
                 )
             }
 
+            // update column collation
+            if (newColumn.collation !== oldColumn.collation) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${newColumn.type} COLLATE "${
+                            newColumn.collation
+                        }"`,
+                    ),
+                )
+
+                const oldCollation = oldColumn.collation
+                    ? `"${oldColumn.collation}"`
+                    : `pg_catalog."default"` // if there's no old collation, use default
+
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                    ),
+                )
+            }
+
             if (newColumn.generatedType !== oldColumn.generatedType) {
                 // Convert generated column data to normal column
                 if (
@@ -2496,7 +2593,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         columns: TableColumn[] | string[],
     ): Promise<void> {
-        for (const column of columns) {
+        for (const column of [...columns]) {
             await this.dropColumn(tableOrName, column)
         }
     }
@@ -2697,7 +2794,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         uniqueConstraints: TableUnique[],
     ): Promise<void> {
-        for (const uniqueConstraint of uniqueConstraints) {
+        for (const uniqueConstraint of [...uniqueConstraints]) {
             await this.dropUniqueConstraint(tableOrName, uniqueConstraint)
         }
     }
@@ -2935,7 +3032,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         foreignKeys: TableForeignKey[],
     ): Promise<void> {
-        for (const foreignKey of foreignKeys) {
+        for (const foreignKey of [...foreignKeys]) {
             await this.dropForeignKey(tableOrName, foreignKey)
         }
     }
@@ -3063,7 +3160,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         indices: TableIndex[],
     ): Promise<void> {
-        for (const index of indices) {
+        for (const index of [...indices]) {
             await this.dropIndex(tableOrName, index)
         }
     }
@@ -3099,23 +3196,21 @@ export class PostgresQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            const version = await this.getVersion()
             // drop views
             const selectViewDropsQuery =
-                `SELECT 'DROP VIEW IF EXISTS "' || schemaname || '"."' || viewname || '" CASCADE;' as "query" ` +
+                `SELECT 'DROP VIEW IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(viewname) || ' CASCADE;' as "query" ` +
                 `FROM "pg_views" WHERE "schemaname" IN (${schemaNamesString}) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
 
             // drop materialized views
             // Note: materialized views introduced in Postgres 9.3
-            if (VersionUtils.isGreaterOrEqual(version, "9.3")) {
+            if (DriverUtils.isReleaseVersionOrGreater(this.driver, "9.3")) {
                 const selectMatViewDropsQuery =
-                    `SELECT 'DROP MATERIALIZED VIEW IF EXISTS "' || schemaname || '"."' || matviewname || '" CASCADE;' as "query" ` +
+                    `SELECT 'DROP MATERIALIZED VIEW IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(matviewname) || ' CASCADE;' as "query" ` +
                     `FROM "pg_matviews" WHERE "schemaname" IN (${schemaNamesString})`
                 const dropMatViewQueries: ObjectLiteral[] = await this.query(
                     selectMatViewDropsQuery,
@@ -3129,7 +3224,7 @@ export class PostgresQueryRunner
             // TODO generalize this as this.driver.ignoreTables
 
             // drop tables
-            const selectTableDropsQuery = `SELECT 'DROP TABLE IF EXISTS "' || schemaname || '"."' || tablename || '" CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND "tablename" NOT IN ('spatial_ref_sys')`
+            const selectTableDropsQuery = `SELECT 'DROP TABLE IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(tablename) || ' CASCADE;' as "query" FROM "pg_tables" WHERE "schemaname" IN (${schemaNamesString}) AND "tablename" NOT IN ('spatial_ref_sys')`
             const dropTableQueries: ObjectLiteral[] = await this.query(
                 selectTableDropsQuery,
             )
@@ -3149,7 +3244,9 @@ export class PostgresQueryRunner
                 if (!isAnotherTransactionActive) {
                     await this.rollbackTransaction()
                 }
-            } catch (rollbackError) {}
+            } catch {
+                // no-op
+            }
             throw error
         }
     }
@@ -3202,13 +3299,14 @@ export class PostgresQueryRunner
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
-            `"types"."typname" AS "type_name" ` +
+            `"types"."typname" AS "type_name", "am"."amname" AS "index_type" ` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
             `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
             `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "t"."relnamespace" ` +
             `INNER JOIN "pg_class" "i" ON "i"."oid" = "ix"."indexrelid" ` +
             `INNER JOIN "pg_type" "types" ON "types"."oid" = "a"."atttypid" ` +
+            `INNER JOIN "pg_am" "am" ON "i"."relam" = "am"."oid" ` +
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
             `WHERE "t"."relkind" IN ('m') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`
 
@@ -3256,13 +3354,16 @@ export class PostgresQueryRunner
                             constraint["constraint_name"]
                     )
                 })
+
                 return new TableIndex(<TableIndexOptions>{
                     view: view,
                     name: constraint["constraint_name"],
                     columnNames: indices.map((i) => i["column_name"]),
                     isUnique: constraint["is_unique"] === "TRUE",
                     where: constraint["condition"],
+                    isSpatial: constraint["index_type"] === "gist",
                     isFulltext: false,
+                    type: constraint["index_type"],
                 })
             })
             return view
@@ -3288,7 +3389,7 @@ export class PostgresQueryRunner
         }[] = []
 
         if (!tableNames) {
-            const tablesSql = `SELECT "table_schema", "table_name", obj_description(('"' || "table_schema" || '"."' || "table_name" || '"')::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables"`
+            const tablesSql = `SELECT "table_schema", "table_name", obj_description((quote_ident("table_schema") || '.' || quote_ident("table_name"))::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables"`
             dbTables.push(...(await this.query(tablesSql)))
         } else {
             const tablesCondition = tableNames
@@ -3301,7 +3402,7 @@ export class PostgresQueryRunner
                 .join(" OR ")
 
             const tablesSql =
-                `SELECT "table_schema", "table_name", obj_description(('"' || "table_schema" || '"."' || "table_name" || '"')::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables" WHERE ` +
+                `SELECT "table_schema", "table_name", obj_description((quote_ident("table_schema") || '.' || quote_ident("table_name"))::regclass, 'pg_class') AS table_comment FROM "information_schema"."tables" WHERE ` +
                 tablesCondition
             dbTables.push(...(await this.query(tablesSql)))
         }
@@ -3322,8 +3423,8 @@ export class PostgresQueryRunner
             })
             .join(" OR ")
         const columnsSql =
-            `SELECT columns.*, pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) AS description, ` +
-            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype" AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type" ` +
+            `SELECT columns.*, pg_catalog.col_description((quote_ident(table_catalog) || '.' || quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass::oid, ordinal_position) AS description, ` +
+            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype"::text AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type" ` +
             `FROM "information_schema"."columns" ` +
             `LEFT JOIN "pg_catalog"."pg_attribute" AS "col_attr" ON "col_attr"."attname" = "columns"."column_name" ` +
             `AND "col_attr"."attrelid" = ( ` +
@@ -3458,6 +3559,18 @@ export class PostgresQueryRunner
                             const tableColumn = new TableColumn()
                             tableColumn.name = dbColumn["column_name"]
                             tableColumn.type = dbColumn["regtype"].toLowerCase()
+
+                            if (
+                                tableColumn.type === "vector" ||
+                                tableColumn.type === "halfvec"
+                            ) {
+                                const lengthMatch = dbColumn[
+                                    "format_type"
+                                ].match(/^(?:vector|halfvec)\((\d+)\)$/)
+                                if (lengthMatch && lengthMatch[1]) {
+                                    tableColumn.length = lengthMatch[1]
+                                }
+                            }
 
                             if (
                                 tableColumn.type === "numeric" ||
@@ -3985,6 +4098,7 @@ export class PostgresQueryRunner
                         isUnique: constraint["is_unique"] === "TRUE",
                         where: constraint["condition"],
                         isSpatial: constraint["index_type"] === "gist",
+                        type: constraint["index_type"],
                         isFulltext: false,
                     })
                 })
@@ -4070,7 +4184,10 @@ export class PostgresQueryRunner
                               table,
                               exclusion.expression!,
                           )
-                    return `CONSTRAINT "${exclusionName}" EXCLUDE ${exclusion.expression}`
+                    let constraint = `CONSTRAINT "${exclusionName}" EXCLUDE ${exclusion.expression}`
+                    if (exclusion.deferrable)
+                        constraint += ` DEFERRABLE ${exclusion.deferrable}`
+                    return constraint
                 })
                 .join(", ")
 
@@ -4146,9 +4263,20 @@ export class PostgresQueryRunner
     /**
      * Loads Postgres version.
      */
-    protected async getVersion(): Promise<string> {
-        const result = await this.query(`SELECT version()`)
-        return result[0]["version"].replace(/^PostgreSQL ([\d.]+) .*$/, "$1")
+    async getVersion(): Promise<string> {
+        // we use `SELECT version()` instead of `SHOW server_version` or `SHOW server_version_num`
+        // to maintain compatability with Amazon Redshift.
+        //
+        // see:
+        //  - https://github.com/typeorm/typeorm/pull/9319
+        //  - https://docs.aws.amazon.com/redshift/latest/dg/c_unsupported-postgresql-functions.html
+        const result: [{ version: string }] =
+            await this.query(`SELECT version()`)
+
+        // Examples:
+        // Postgres: "PostgreSQL 14.10 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 8.5.0 20210514 (Red Hat 8.5.0-20), 64-bit"
+        // Yugabyte: "PostgreSQL 11.2-YB-2.18.1.0-b0 on x86_64-pc-linux-gnu, compiled by clang version 15.0.3 (https://github.com/yugabyte/llvm-project.git 0b8d1183745fd3998d8beffeec8cbe99c1b20529), 64-bit"
+        return result[0].version.replace(/^PostgreSQL ([\d.]+).*$/, "$1")
     }
 
     /**
@@ -4272,7 +4400,7 @@ export class PostgresQueryRunner
     ): Query {
         if (!enumName) enumName = this.buildEnumName(table, column)
         const enumValues = column
-            .enum!.map((value) => `'${value.replace("'", "''")}'`)
+            .enum!.map((value) => `'${value.replaceAll("'", "''")}'`)
             .join(", ")
         return new Query(`CREATE TYPE ${enumName} AS ENUM(${enumValues})`)
     }
@@ -4290,9 +4418,23 @@ export class PostgresQueryRunner
     }
 
     /**
+     * Builds the SQL `USING <index_type>` clause based on the index type, prioritizing `isSpatial` as `GiST`.
+     */
+
+    private buildIndexTypeClause(index: TableIndex) {
+        const type = index.isSpatial ? "gist" : index.type
+
+        if (typeof type !== "string") return null
+
+        return `USING ${type}`
+    }
+
+    /**
      * Builds create index sql.
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
+        const indexTypeClause = this.buildIndexTypeClause(index)
+
         const columns = index.columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
@@ -4300,8 +4442,8 @@ export class PostgresQueryRunner
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX${
                 index.isConcurrent ? " CONCURRENTLY" : ""
             } "${index.name}" ON ${this.escapePath(table)} ${
-                index.isSpatial ? "USING GiST " : ""
-            }(${columns}) ${index.where ? "WHERE " + index.where : ""}`,
+                indexTypeClause ?? ""
+            } (${columns}) ${index.where ? "WHERE " + index.where : ""}`,
         )
     }
 
@@ -4309,15 +4451,17 @@ export class PostgresQueryRunner
      * Builds create view index sql.
      */
     protected createViewIndexSql(view: View, index: TableIndex): Query {
+        const indexTypeClause = this.buildIndexTypeClause(index)
+
         const columns = index.columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
         return new Query(
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
                 index.name
-            }" ON ${this.escapePath(view)} (${columns}) ${
-                index.where ? "WHERE " + index.where : ""
-            }`,
+            }" ON ${this.escapePath(view)} ${
+                indexTypeClause ?? ""
+            } (${columns}) ${index.where ? "WHERE " + index.where : ""}`,
         )
     }
 
@@ -4464,11 +4608,14 @@ export class PostgresQueryRunner
         table: Table,
         exclusionConstraint: TableExclusion,
     ): Query {
-        return new Query(
-            `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${
-                exclusionConstraint.name
-            }" EXCLUDE ${exclusionConstraint.expression}`,
-        )
+        let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${
+            exclusionConstraint.name
+        }" EXCLUDE ${exclusionConstraint.expression}`
+
+        if (exclusionConstraint.deferrable)
+            sql += ` DEFERRABLE ${exclusionConstraint.deferrable}`
+
+        return new Query(sql)
     }
 
     /**
@@ -4744,7 +4891,7 @@ export class PostgresQueryRunner
 
         newComment = this.escapeComment(newComment)
         const comment = this.escapeComment(table.comment)
-        
+
         if (newComment === comment) {
             return
         }

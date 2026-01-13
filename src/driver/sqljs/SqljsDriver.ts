@@ -21,7 +21,7 @@ declare let window: Window
 
 export class SqljsDriver extends AbstractSqliteDriver {
     // The driver specific options.
-    options: SqljsConnectionOptions
+    declare options: SqljsConnectionOptions
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -231,7 +231,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
                 ) {
                     const query = "SELECT last_insert_rowid()"
                     try {
-                        let result = this.databaseConnection.exec(query)
+                        const result = this.databaseConnection.exec(query)
                         this.connection.logger.logQuery(query)
                         return OrmUtils.mergeDeep(
                             map,

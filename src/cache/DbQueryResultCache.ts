@@ -3,9 +3,9 @@ import { DataSource } from "../data-source/DataSource"
 import { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
 import { QueryRunner } from "../query-runner/QueryRunner"
 import { Table } from "../schema-builder/table/Table"
+import { RandomGenerator } from "../util/RandomGenerator"
 import { QueryResultCache } from "./QueryResultCache"
 import { QueryResultCacheOptions } from "./QueryResultCacheOptions"
-import { v4 as uuidv4 } from "uuid"
 
 /**
  * Caches query result into current database, into separate table called "query-result-cache".
@@ -201,7 +201,7 @@ export class DbQueryResultCache implements QueryResultCache {
                 ? parseInt(savedCache.time as any)
                 : savedCache.time)! +
                 duration <
-            new Date().getTime()
+            Date.now()
         )
     }
 
@@ -268,7 +268,7 @@ export class DbQueryResultCache implements QueryResultCache {
                 this.connection.driver.options.type === "spanner" &&
                 !insertedValues.id
             ) {
-                insertedValues.id = uuidv4()
+                insertedValues.id = RandomGenerator.uuidv4()
             }
 
             // otherwise insert
@@ -301,7 +301,7 @@ export class DbQueryResultCache implements QueryResultCache {
         identifiers: string[],
         queryRunner?: QueryRunner,
     ): Promise<void> {
-        let _queryRunner: QueryRunner = queryRunner || this.getQueryRunner()
+        const _queryRunner: QueryRunner = queryRunner || this.getQueryRunner()
         await Promise.all(
             identifiers.map((identifier) => {
                 const qb = _queryRunner.manager.createQueryBuilder()

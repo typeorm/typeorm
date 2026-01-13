@@ -18,6 +18,6 @@ export class Request {
     @Column()
     success: boolean
 
-    @OneToOne((type) => Ticket, (ticket) => ticket.request)
+    @OneToOne(() => Ticket, (ticket) => ticket.request)
     ticket: Ticket
 }

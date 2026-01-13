@@ -16,7 +16,7 @@ export class Post {
     @Column("int", { nullable: true })
     categoryId: number
 
-    @ManyToOne((type) => Category, (category) => category.posts, {
+    @ManyToOne(() => Category, (category) => category.posts, {
         cascade: true,
     })
     @JoinColumn({ name: "categoryId" })
