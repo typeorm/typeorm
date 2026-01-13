@@ -2,8 +2,8 @@ import { Entity, PrimaryGeneratedColumn, Column } from "../../../../../src"
 
 @Entity()
 export class User {
-    @PrimaryGeneratedColumn()
-    id: number
+    @PrimaryGeneratedColumn("uuid")
+    id: string
 
     @Column()
     name: string
