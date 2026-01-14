@@ -1,0 +1,24 @@
+pr_compliances:
+    - title: "Docs updated for user-facing changes"
+      compliance_label: true
+      objective: "Docs reflect public API or usage changes."
+      success_criteria: "Docs or samples update with user-facing changes."
+      failure_criteria: "User-facing changes without doc updates."
+
+    - title: "Breaking changes documented"
+      compliance_label: true
+      objective: "Breaking changes are explicit."
+      success_criteria: "A BREAKING CHANGE note is in the PR description or commit message."
+      failure_criteria: "Breaking changes without a BREAKING CHANGE note."
+
+    - title: "Prefer functional tests over per-issue tests"
+      compliance_label: true
+      objective: "Issue fixes stay in the functional test suite."
+      success_criteria: "Issue fixes add or update tests in test/functional, with an issue reference in the test comment when applicable."
+      failure_criteria: "Issue fixes only add tests under test/github-issues without a clear reason."
+
+    - title: "Use .test. filenames"
+      compliance_label: true
+      objective: "Tests use the .test. naming convention."
+      success_criteria: "New or renamed tests use .test. in the filename."
+      failure_criteria: "Non-.test. test files are added or modified."
