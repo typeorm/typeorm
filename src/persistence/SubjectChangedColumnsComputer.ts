@@ -4,6 +4,7 @@ import { DateUtils } from "../util/DateUtils"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { OrmUtils } from "../util/OrmUtils"
 import { Subject } from "./Subject"
+import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
 
 /**
  * Finds what columns are changed in the subject entities.
@@ -187,10 +188,10 @@ export class SubjectChangedColumnsComputer {
                     if (OrmUtils.deepCompare(normalizedValue, databaseValue))
                         return
                 } else if (
-                    Buffer.isBuffer(normalizedValue) &&
-                    Buffer.isBuffer(databaseValue)
+                    isUint8Array(normalizedValue) &&
+                    isUint8Array(databaseValue)
                 ) {
-                    if (normalizedValue.equals(databaseValue)) {
+                    if (areUint8ArraysEqual(normalizedValue, databaseValue)) {
                         return
                     }
                 } else {

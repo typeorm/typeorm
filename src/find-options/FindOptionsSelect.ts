@@ -16,7 +16,7 @@ export type FindOptionsSelectProperty<Property> =
                 ? boolean
                 : Property extends Function
                   ? never
-                  : Property extends Buffer
+                  : Property extends Uint8Array
                     ? boolean
                     : Property extends Date
                       ? boolean
