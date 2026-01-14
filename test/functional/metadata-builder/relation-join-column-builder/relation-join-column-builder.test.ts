@@ -103,17 +103,16 @@ describe("metadata builder > RelationJoinColumnBuilder", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const game = await dataSource.getRepository(Game).save({
-                    id: 1,
+                    title: "Some Game",
                 })
                 const participant = await dataSource
                     .getRepository(Participant)
                     .save({
                         userId: 1,
-                        gameId: 1,
+                        gameId: game.id,
                     })
 
                 await dataSource.getRepository(Match).save({
-                    id: 1,
                     game: game,
                     userId: 1,
                     participant: participant,
@@ -136,19 +135,17 @@ describe("metadata builder > RelationJoinColumnBuilder", () => {
                 expect(hasCorrectJoin).to.be.true
 
                 const matches = await query.getMany()
-                expect(matches).to.deep.equal([
-                    {
-                        id: 1,
-                        game: {
-                            id: 1,
-                        },
-                        userId: 1,
-                        participant: {
-                            userId: 1,
-                            gameId: 1,
-                        },
-                    },
-                ])
+
+                expect(matches).to.have.lengthOf(1)
+                const match = matches[0]
+                expect(Number(match.id)).to.equal(1) // Some DBs return string ids
+                expect(Number(match.userId)).to.equal(1) // Some DBs return string ids
+                expect(match.game).to.exist
+                expect(Number(match.game.id)).to.equal(1) // Some DBs return string ids
+                expect(match.game.title).to.equal("Some Game")
+                expect(match.participant).to.exist
+                expect(Number(match.participant!.userId)).to.equal(1) // Some DBs return string ids
+                expect(Number(match.participant!.gameId)).to.equal(1) // Some DBs return string ids
             }),
         ))
 })
