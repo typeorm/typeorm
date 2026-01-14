@@ -5,6 +5,6 @@ export class FooMetadata {
     @Column({ nullable: true })
     bar: number
 
-    @Column((type) => FooChildMetadata)
+    @Column(() => FooChildMetadata)
     child?: FooChildMetadata
 }

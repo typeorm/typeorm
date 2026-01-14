@@ -1,4 +1,4 @@
-import { Driver } from "../Driver"
+import { Driver, ReturningType } from "../Driver"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { DriverUtils } from "../DriverUtils"
@@ -27,6 +27,7 @@ import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { TypeORMError } from "../../error"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { FindOperator } from "../../find-options/FindOperator"
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -141,12 +142,13 @@ export class SqlServerDriver implements Driver {
         "geometry",
         "geography",
         "rowversion",
+        "vector",
     ]
 
     /**
      * Returns type of upsert supported by driver if any
      */
-    supportedUpsertTypes: UpsertType[] = []
+    supportedUpsertTypes: UpsertType[] = ["merge-into"]
 
     /**
      * Gets list of spatial column data types.
@@ -163,6 +165,7 @@ export class SqlServerDriver implements Driver {
         "nvarchar",
         "binary",
         "varbinary",
+        "vector",
     ]
 
     /**
@@ -232,6 +235,7 @@ export class SqlServerDriver implements Driver {
         time: { precision: 7 },
         datetime2: { precision: 7 },
         datetimeoffset: { precision: 7 },
+        vector: { length: 255 }, // default length if not provided a value
     }
 
     cteCapabilities: CteCapabilities = {
@@ -300,7 +304,7 @@ export class SqlServerDriver implements Driver {
         }
 
         if (!this.database || !this.searchSchema) {
-            const queryRunner = await this.createQueryRunner("master")
+            const queryRunner = this.createQueryRunner("master")
 
             if (!this.database) {
                 this.database = await queryRunner.getCurrentDatabase()
@@ -329,9 +333,9 @@ export class SqlServerDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {
-        if (!this.master)
-            return Promise.reject(new ConnectionIsNotSetError("mssql"))
-
+        if (!this.master) {
+            throw new ConnectionIsNotSetError("mssql")
+        }
         await this.closePool(this.master)
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
         this.master = undefined
@@ -388,7 +392,7 @@ export class SqlServerDriver implements Driver {
                     return this.parametersPrefix + parameterIndexMap.get(key)
                 }
 
-                let value: any = parameters[key]
+                const value: any = parameters[key]
 
                 if (isArray) {
                     return value
@@ -430,7 +434,7 @@ export class SqlServerDriver implements Driver {
         schema?: string,
         database?: string,
     ): string {
-        let tablePath = [tableName]
+        const tablePath = [tableName]
 
         if (schema) {
             tablePath.unshift(schema)
@@ -528,7 +532,7 @@ export class SqlServerDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDate(value)
+            return DateUtils.mixedDateToDate(value, columnMetadata.utc)
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedTimeToDate(value)
         } else if (
@@ -548,6 +552,12 @@ export class SqlServerDriver implements Driver {
             return DateUtils.simpleJsonToString(value)
         } else if (columnMetadata.type === "simple-enum") {
             return DateUtils.simpleEnumToString(value)
+        } else if (columnMetadata.type === "vector") {
+            if (Array.isArray(value)) {
+                return JSON.stringify(value)
+            } else {
+                return value
+            }
         }
 
         return value
@@ -576,7 +586,9 @@ export class SqlServerDriver implements Driver {
         ) {
             value = DateUtils.normalizeHydratedDate(value)
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
         } else if (columnMetadata.type === "simple-array") {
@@ -585,6 +597,14 @@ export class SqlServerDriver implements Driver {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "simple-enum") {
             value = DateUtils.stringToSimpleEnum(value, columnMetadata)
+        } else if (columnMetadata.type === "vector") {
+            if (typeof value === "string") {
+                try {
+                    value = JSON.parse(value)
+                } catch (e) {
+                    // If parsing fails, return the value as-is
+                }
+            }
         } else if (columnMetadata.type === Number) {
             // convert to number if number
             value = !isNaN(+value) ? parseInt(value) : value
@@ -706,8 +726,12 @@ export class SqlServerDriver implements Driver {
 
         let type = column.type
 
+        // Handle vector type with length (dimensions)
+        if (column.type === "vector") {
+            type = `vector(${column.length})`
+        }
         // used 'getColumnLength()' method, because SqlServer sets `varchar` and `nvarchar` length to 1 by default.
-        if (this.getColumnLength(column)) {
+        else if (this.getColumnLength(column)) {
             type += `(${this.getColumnLength(column)})`
         } else if (
             column.precision !== null &&
@@ -891,7 +915,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(returningType: ReturningType): boolean {
         if (
             this.options.options &&
             this.options.options.disableOutputReturning
@@ -971,6 +995,32 @@ export class SqlServerDriver implements Driver {
         }
 
         return new MssqlParameter(value, normalizedType as any)
+    }
+
+    /**
+     * Recursively wraps values (including those inside FindOperators) into MssqlParameter instances,
+     * ensuring correct type metadata is passed to the SQL Server driver.
+     *
+     * - If the value is a FindOperator containing an array, all elements are individually parametrized.
+     * - If the value is a non-raw FindOperator, a transformation is applied to its internal value.
+     * - Otherwise, the value is passed directly to parametrizeValue for wrapping.
+     *
+     * This ensures SQL Server receives properly typed parameters for queries involving operators like
+     * In, MoreThan, Between, etc.
+     */
+    parametrizeValues(column: ColumnMetadata, value: any) {
+        if (value instanceof FindOperator) {
+            if (value.type !== "raw") {
+                value.transformValue({
+                    to: (v) => this.parametrizeValues(column, v),
+                    from: (v) => v,
+                })
+            }
+
+            return value
+        }
+
+        return this.parametrizeValue(column, value)
     }
 
     /**

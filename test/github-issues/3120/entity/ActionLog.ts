@@ -21,18 +21,18 @@ export class ActionLog {
     @Column()
     action: string
 
-    @ManyToOne((type) => Person, {
+    @ManyToOne(() => Person, {
         createForeignKeyConstraints: false,
     })
     person: Person
 
-    @ManyToMany((type) => Address, {
+    @ManyToMany(() => Address, {
         createForeignKeyConstraints: false,
     })
     @JoinTable()
     addresses: Address[]
 
-    @OneToOne((type) => ActionDetails, {
+    @OneToOne(() => ActionDetails, {
         createForeignKeyConstraints: false,
     })
     @JoinColumn()

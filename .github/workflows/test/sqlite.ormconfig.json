@@ -1,0 +1,10 @@
+[
+  {
+    "skip": false,
+    "name": "sqlite",
+    "type": "sqlite",
+    "database": "./temp/sqlitedb-1.db",
+    "logging": false,
+    "relationLoadStrategy": "join"
+  }
+]
