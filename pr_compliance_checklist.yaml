@@ -22,3 +22,9 @@ pr_compliances:
       objective: "Tests use the .test. naming convention."
       success_criteria: "New or renamed tests use .test. in the filename."
       failure_criteria: "Non-.test. test files are added or modified."
+
+    - title: "Consistent Naming Conventions"
+      compliance_label: true
+      objective: "All new variables, functions, and classes must follow the project's established naming standards"
+      success_criteria: "All identifiers follow the established naming patterns (camelCase, PascalCase, snake_case, etc.)"
+      failure_criteria: "Inconsistent or non-standard naming that deviates from project conventions"
