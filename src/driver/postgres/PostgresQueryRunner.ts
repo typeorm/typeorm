@@ -1528,16 +1528,29 @@ export class PostgresQueryRunner
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
-                const newType =
+                const isNewEnum =
                     newColumn.type === "enum" ||
                     newColumn.type === "simple-enum"
-                        ? this.buildEnumName(table, newColumn)
-                        : this.driver.createFullType(newColumn)
-                const oldType =
+                const isOldEnum =
                     oldColumn.type === "enum" ||
                     oldColumn.type === "simple-enum"
-                        ? this.buildEnumName(table, oldColumn)
-                        : this.driver.createFullType(oldColumn)
+
+                if (isNewEnum && !isOldEnum) {
+                    upQueries.push(this.createEnumTypeSql(table, newColumn))
+                    downQueries.push(this.dropEnumTypeSql(table, newColumn))
+                }
+
+                if (isOldEnum && !isNewEnum) {
+                    downQueries.push(this.createEnumTypeSql(table, oldColumn))
+                    upQueries.push(this.dropEnumTypeSql(table, oldColumn))
+                }
+
+                const newType = isNewEnum
+                    ? this.buildEnumName(table, newColumn)
+                    : this.driver.createFullType(newColumn)
+                const oldType = isOldEnum
+                    ? this.buildEnumName(table, oldColumn)
+                    : this.driver.createFullType(oldColumn)
 
                 upQueries.push(
                     new Query(
