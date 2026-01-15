@@ -55,7 +55,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     implements WhereExpressionBuilder
 {
     readonly "@instanceof" = Symbol.for("SelectQueryBuilder")
-
     protected findOptions: FindManyOptions = {}
     protected selects: string[] = []
     protected joins: {
@@ -1612,40 +1611,36 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             throw new OptimisticLockCanNotBeUsedError()
 
         this.expressionMap.queryEntity = false
-        const queryRunner = this.obtainQueryRunner()
-        let transactionStartedByUs: boolean = false
-        try {
-            // start transaction if it was enabled
-            if (
-                this.expressionMap.useTransaction === true &&
-                queryRunner.isTransactionActive === false
-            ) {
-                await queryRunner.startTransaction()
-                transactionStartedByUs = true
-            }
+        return this.runWithQueryRunner(async (queryRunner) => {
+            let transactionStartedByUs: boolean = false
+            try {
+                // start transaction if it was enabled
+                if (
+                    this.expressionMap.useTransaction === true &&
+                    queryRunner.isTransactionActive === false
+                ) {
+                    await queryRunner.startTransaction()
+                    transactionStartedByUs = true
+                }
 
-            const results = await this.loadRawResults(queryRunner)
+                const results = await this.loadRawResults(queryRunner)
 
-            // close transaction if we started it
-            if (transactionStartedByUs) {
-                await queryRunner.commitTransaction()
-            }
+                // close transaction if we started it
+                if (transactionStartedByUs) {
+                    await queryRunner.commitTransaction()
+                }
 
-            return results
-        } catch (error) {
-            // rollback transaction if we started it
-            if (transactionStartedByUs) {
-                try {
-                    await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                return results
+            } catch (error) {
+                // rollback transaction if we started it
+                if (transactionStartedByUs) {
+                    try {
+                        await queryRunner.rollbackTransaction()
+                    } catch (rollbackError) {}
+                }
+                throw error
             }
-            throw error
-        } finally {
-            if (queryRunner !== this.queryRunner) {
-                // means we created our own query runner
-                await queryRunner.release()
-            }
-        }
+        })
     }
 
     /**
@@ -1655,40 +1650,38 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         entities: Entity[]
         raw: T[]
     }> {
-        const queryRunner = this.obtainQueryRunner()
-        let transactionStartedByUs: boolean = false
-        try {
-            // start transaction if it was enabled
-            if (
-                this.expressionMap.useTransaction === true &&
-                queryRunner.isTransactionActive === false
-            ) {
-                await queryRunner.startTransaction()
-                transactionStartedByUs = true
-            }
+        return this.runWithQueryRunner(async (queryRunner) => {
+            let transactionStartedByUs: boolean = false
+            try {
+                // start transaction if it was enabled
+                if (
+                    this.expressionMap.useTransaction === true &&
+                    queryRunner.isTransactionActive === false
+                ) {
+                    await queryRunner.startTransaction()
+                    transactionStartedByUs = true
+                }
 
-            this.expressionMap.queryEntity = true
-            const results = await this.executeEntitiesAndRawResults(queryRunner)
+                this.expressionMap.queryEntity = true
+                const results =
+                    await this.executeEntitiesAndRawResults(queryRunner)
 
-            // close transaction if we started it
-            if (transactionStartedByUs) {
-                await queryRunner.commitTransaction()
-            }
+                // close transaction if we started it
+                if (transactionStartedByUs) {
+                    await queryRunner.commitTransaction()
+                }
 
-            return results
-        } catch (error) {
-            // rollback transaction if we started it
-            if (transactionStartedByUs) {
-                try {
-                    await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                return results
+            } catch (error) {
+                // rollback transaction if we started it
+                if (transactionStartedByUs) {
+                    try {
+                        await queryRunner.rollbackTransaction()
+                    } catch (rollbackError) {}
+                }
+                throw error
             }
-            throw error
-        } finally {
-            if (queryRunner !== this.queryRunner)
-                // means we created our own query runner
-                await queryRunner.release()
-        }
+        })
     }
 
     /**
@@ -1769,41 +1762,37 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     async getCount(): Promise<number> {
         if (this.expressionMap.lockMode === "optimistic")
             throw new OptimisticLockCanNotBeUsedError()
+        return this.runWithQueryRunner(async (queryRunner) => {
+            let transactionStartedByUs: boolean = false
+            try {
+                // start transaction if it was enabled
+                if (
+                    this.expressionMap.useTransaction === true &&
+                    queryRunner.isTransactionActive === false
+                ) {
+                    await queryRunner.startTransaction()
+                    transactionStartedByUs = true
+                }
 
-        const queryRunner = this.obtainQueryRunner()
-        let transactionStartedByUs: boolean = false
-        try {
-            // start transaction if it was enabled
-            if (
-                this.expressionMap.useTransaction === true &&
-                queryRunner.isTransactionActive === false
-            ) {
-                await queryRunner.startTransaction()
-                transactionStartedByUs = true
+                this.expressionMap.queryEntity = false
+                const results = await this.executeCountQuery(queryRunner)
+
+                // close transaction if we started it
+                if (transactionStartedByUs) {
+                    await queryRunner.commitTransaction()
+                }
+
+                return results
+            } catch (error) {
+                // rollback transaction if we started it
+                if (transactionStartedByUs) {
+                    try {
+                        await queryRunner.rollbackTransaction()
+                    } catch (rollbackError) {}
+                }
+                throw error
             }
-
-            this.expressionMap.queryEntity = false
-            const results = await this.executeCountQuery(queryRunner)
-
-            // close transaction if we started it
-            if (transactionStartedByUs) {
-                await queryRunner.commitTransaction()
-            }
-
-            return results
-        } catch (error) {
-            // rollback transaction if we started it
-            if (transactionStartedByUs) {
-                try {
-                    await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
-            }
-            throw error
-        } finally {
-            if (queryRunner !== this.queryRunner)
-                // means we created our own query runner
-                await queryRunner.release()
-        }
+        })
     }
 
     /**
@@ -1814,40 +1803,37 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (this.expressionMap.lockMode === "optimistic")
             throw new OptimisticLockCanNotBeUsedError()
 
-        const queryRunner = this.obtainQueryRunner()
-        let transactionStartedByUs: boolean = false
-        try {
-            // start transaction if it was enabled
-            if (
-                this.expressionMap.useTransaction === true &&
-                queryRunner.isTransactionActive === false
-            ) {
-                await queryRunner.startTransaction()
-                transactionStartedByUs = true
-            }
+        return this.runWithQueryRunner(async (queryRunner) => {
+            let transactionStartedByUs: boolean = false
+            try {
+                // start transaction if it was enabled
+                if (
+                    this.expressionMap.useTransaction === true &&
+                    queryRunner.isTransactionActive === false
+                ) {
+                    await queryRunner.startTransaction()
+                    transactionStartedByUs = true
+                }
 
-            this.expressionMap.queryEntity = false
-            const results = await this.executeExistsQuery(queryRunner)
+                this.expressionMap.queryEntity = false
+                const results = await this.executeExistsQuery(queryRunner)
 
-            // close transaction if we started it
-            if (transactionStartedByUs) {
-                await queryRunner.commitTransaction()
-            }
+                // close transaction if we started it
+                if (transactionStartedByUs) {
+                    await queryRunner.commitTransaction()
+                }
 
-            return results
-        } catch (error) {
-            // rollback transaction if we started it
-            if (transactionStartedByUs) {
-                try {
-                    await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                return results
+            } catch (error) {
+                // rollback transaction if we started it
+                if (transactionStartedByUs) {
+                    try {
+                        await queryRunner.rollbackTransaction()
+                    } catch (rollbackError) {}
+                }
+                throw error
             }
-            throw error
-        } finally {
-            if (queryRunner !== this.queryRunner)
-                // means we created our own query runner
-                await queryRunner.release()
-        }
+        })
     }
 
     /**
@@ -1858,54 +1844,54 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (this.expressionMap.lockMode === "optimistic")
             throw new OptimisticLockCanNotBeUsedError()
 
-        const queryRunner = this.obtainQueryRunner()
-        let transactionStartedByUs: boolean = false
-        try {
-            // start transaction if it was enabled
-            if (
-                this.expressionMap.useTransaction === true &&
-                queryRunner.isTransactionActive === false
-            ) {
-                await queryRunner.startTransaction()
-                transactionStartedByUs = true
-            }
-
-            this.expressionMap.queryEntity = true
-            const entitiesAndRaw =
-                await this.executeEntitiesAndRawResults(queryRunner)
-            this.expressionMap.queryEntity = false
-
-            let count: number | undefined = this.lazyCount(entitiesAndRaw)
-            if (count === undefined) {
-                const cacheId = this.expressionMap.cacheId
-                // Creates a new cacheId for the count query, or it will retrieve the above query results
-                // and count will return 0.
-                if (cacheId) {
-                    this.expressionMap.cacheId = `${cacheId}-count`
+        return this.runWithQueryRunner(async (queryRunner) => {
+            let transactionStartedByUs: boolean = false
+            try {
+                // start transaction if it was enabled
+                if (
+                    this.expressionMap.useTransaction === true &&
+                    queryRunner.isTransactionActive === false
+                ) {
+                    await queryRunner.startTransaction()
+                    transactionStartedByUs = true
                 }
-                count = await this.executeCountQuery(queryRunner)
-            }
-            const results: [Entity[], number] = [entitiesAndRaw.entities, count]
 
-            // close transaction if we started it
-            if (transactionStartedByUs) {
-                await queryRunner.commitTransaction()
-            }
+                this.expressionMap.queryEntity = true
+                const entitiesAndRaw =
+                    await this.executeEntitiesAndRawResults(queryRunner)
+                this.expressionMap.queryEntity = false
 
-            return results
-        } catch (error) {
-            // rollback transaction if we started it
-            if (transactionStartedByUs) {
-                try {
-                    await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
+                let count: number | undefined = this.lazyCount(entitiesAndRaw)
+                if (count === undefined) {
+                    const cacheId = this.expressionMap.cacheId
+                    // Creates a new cacheId for the count query, or it will retrieve the above query results
+                    // and count will return 0.
+                    if (cacheId) {
+                        this.expressionMap.cacheId = `${cacheId}-count`
+                    }
+                    count = await this.executeCountQuery(queryRunner)
+                }
+                const results: [Entity[], number] = [
+                    entitiesAndRaw.entities,
+                    count,
+                ]
+
+                // close transaction if we started it
+                if (transactionStartedByUs) {
+                    await queryRunner.commitTransaction()
+                }
+
+                return results
+            } catch (error) {
+                // rollback transaction if we started it
+                if (transactionStartedByUs) {
+                    try {
+                        await queryRunner.rollbackTransaction()
+                    } catch (rollbackError) {}
+                }
+                throw error
             }
-            throw error
-        } finally {
-            if (queryRunner !== this.queryRunner)
-                // means we created our own query runner
-                await queryRunner.release()
-        }
+        })
     }
 
     private lazyCount(entitiesAndRaw: {
@@ -1969,46 +1955,43 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     async stream(): Promise<ReadStream> {
         this.expressionMap.queryEntity = false
         const [sql, parameters] = this.getQueryAndParameters()
-        const queryRunner = this.obtainQueryRunner()
-        let transactionStartedByUs: boolean = false
-        try {
-            // start transaction if it was enabled
-            if (
-                this.expressionMap.useTransaction === true &&
-                queryRunner.isTransactionActive === false
-            ) {
-                await queryRunner.startTransaction()
-                transactionStartedByUs = true
-            }
-
-            const releaseFn = () => {
-                if (queryRunner !== this.queryRunner)
-                    // means we created our own query runner
-                    return queryRunner.release()
-                return
-            }
-            const results = queryRunner.stream(
-                sql,
-                parameters,
-                releaseFn,
-                releaseFn,
-            )
-
-            // close transaction if we started it
-            if (transactionStartedByUs) {
-                await queryRunner.commitTransaction()
-            }
-
-            return results
-        } catch (error) {
-            // rollback transaction if we started it
-            if (transactionStartedByUs) {
+        return this.runWithQueryRunner(
+            async (queryRunner: QueryRunner, release: () => Promise<void>) => {
+                let transactionStartedByUs: boolean = false
                 try {
-                    await queryRunner.rollbackTransaction()
-                } catch (rollbackError) {}
-            }
-            throw error
-        }
+                    // start transaction if it was enabled
+                    if (
+                        this.expressionMap.useTransaction === true &&
+                        queryRunner.isTransactionActive === false
+                    ) {
+                        await queryRunner.startTransaction()
+                        transactionStartedByUs = true
+                    }
+
+                    const results = queryRunner.stream(
+                        sql,
+                        parameters,
+                        release,
+                        release,
+                    )
+
+                    // close transaction if we started it
+                    if (transactionStartedByUs) {
+                        await queryRunner.commitTransaction()
+                    }
+
+                    return results
+                } catch (error) {
+                    // rollback transaction if we started it
+                    if (transactionStartedByUs) {
+                        try {
+                            await queryRunner.rollbackTransaction()
+                        } catch (rollbackError) {}
+                    }
+                    throw error
+                }
+            },
+        )
     }
 
     /**
@@ -3918,18 +3901,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         return Number(num)
     }
 
-    /**
-     * Creates a query builder used to execute sql queries inside this query builder.
-     */
-    protected obtainQueryRunner() {
-        return (
-            this.queryRunner ||
-            this.connection.createQueryRunner(
-                this.connection.defaultReplicationModeForReads(),
-            )
-        )
-    }
-
     protected buildSelect(
         select: FindOptionsSelect<any>,
         metadata: EntityMetadata,
@@ -4607,5 +4578,32 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 : andConditions.join(" AND ")
         }
         return condition.length ? "(" + condition + ")" : condition
+    }
+
+    /**
+     * Creates a query builder used to execute sql queries inside this query builder.
+     */
+    protected runWithQueryRunner<T>(
+        fn: (queryRunner: QueryRunner) => Promise<T>,
+    ): Promise<T>
+    protected runWithQueryRunner<T>(
+        fn: (
+            queryRunner: QueryRunner,
+            release: () => Promise<void>,
+        ) => Promise<T>,
+    ): Promise<T>
+    protected runWithQueryRunner<T>(
+        fn:
+            | ((queryRunner: QueryRunner) => Promise<T>)
+            | ((
+                  queryRunner: QueryRunner,
+                  release: () => Promise<void>,
+              ) => Promise<T>),
+    ): Promise<T> {
+        return this.connection.runWithQueryRunner(
+            this.queryRunner,
+            this.connection.defaultReplicationModeForReads(),
+            fn,
+        )
     }
 }

@@ -46,11 +46,13 @@ export class EntityPersistExecutor {
         // we MUST call "fake" resolve here to make sure all properties of lazily loaded relations are resolved
         await Promise.resolve()
 
-        // if query runner is already defined in this class, it means this entity manager was already created for a single connection
-        // if its not defined we create a new query runner - single connection where we'll execute all our operations
-        const queryRunner =
-            this.queryRunner || this.connection.createQueryRunner()
+        return this.connection.runWithQueryRunner(
+            this.queryRunner,
+            (queryRunner) => this.executeWithQueryRunner(queryRunner),
+        )
+    }
 
+    private async executeWithQueryRunner(queryRunner: QueryRunner) {
         // save data in the query runner - this is useful functionality to share data from outside of the world
         // with third classes - like subscribers and listener methods
         const oldQueryRunnerData = queryRunner.data
@@ -199,9 +201,6 @@ export class EntityPersistExecutor {
             }
         } finally {
             queryRunner.data = oldQueryRunnerData
-
-            // release query runner only if its created by us
-            if (!this.queryRunner) await queryRunner.release()
         }
     }
 }

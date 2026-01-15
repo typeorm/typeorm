@@ -506,15 +506,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     async execute(): Promise<any> {
         const [sql, parameters] = this.getQueryAndParameters()
-        const queryRunner = this.obtainQueryRunner()
-        try {
-            return await queryRunner.query(sql, parameters) // await is needed here because we are using finally
-        } finally {
-            if (queryRunner !== this.queryRunner) {
-                // means we created our own query runner
-                await queryRunner.release()
-            }
-        }
+        return this.runWithQueryRunner((queryRunner) =>
+            queryRunner.query(sql, parameters),
+        )
     }
 
     /**
@@ -1687,14 +1681,30 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         return clauses
     }
 
+    protected hasCommonTableExpressions(): boolean {
+        return this.expressionMap.commonTableExpressions.length > 0
+    }
+
     /**
      * Creates a query builder used to execute sql queries inside this query builder.
      */
-    protected obtainQueryRunner() {
-        return this.queryRunner || this.connection.createQueryRunner()
-    }
-
-    protected hasCommonTableExpressions(): boolean {
-        return this.expressionMap.commonTableExpressions.length > 0
+    protected runWithQueryRunner<T>(
+        fn: (queryRunner: QueryRunner) => Promise<T>,
+    ): Promise<T>
+    protected runWithQueryRunner<T>(
+        fn: (
+            queryRunner: QueryRunner,
+            release: () => Promise<void>,
+        ) => Promise<T>,
+    ): Promise<T>
+    protected runWithQueryRunner<T>(
+        fn:
+            | ((queryRunner: QueryRunner) => Promise<T>)
+            | ((
+                  queryRunner: QueryRunner,
+                  release: () => Promise<void>,
+              ) => Promise<T>),
+    ): Promise<T> {
+        return this.connection.runWithQueryRunner(this.queryRunner, fn)
     }
 }
