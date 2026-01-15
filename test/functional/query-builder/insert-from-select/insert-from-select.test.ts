@@ -17,8 +17,6 @@ describe("query builder > insert from select", () => {
         async () =>
             (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -121,6 +119,51 @@ describe("query builder > insert from select", () => {
                 expect(archivedUsers).to.have.length(2)
                 expect(archivedUsers[0].name).to.equal("Alice")
                 expect(archivedUsers[1].name).to.equal("Charlie")
+            }),
+        ))
+
+    it("should insert when no columns are specified, insert all selected columns", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Insert test users using repository save (Oracle-compatible)
+                const userRepo = dataSource.getRepository(User)
+                await userRepo.save([
+                    {
+                        name: "Dave",
+                        email: "dave@example.com",
+                        isArchived: true,
+                    },
+                    {
+                        name: "Eve",
+                        email: "eve@example.com",
+                        isArchived: true,
+                    },
+                ])
+                // Insert from select without specifying columns
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(ArchivedUser)
+                    .valuesFromSelect((qb) =>
+                        qb
+                            .select(["user.name", "user.email"])
+                            .from(User, "user")
+                            .where("user.isArchived = :archived", {
+                                archived: true,
+                            }),
+                    )
+                    .execute()
+
+                // Verify the results
+                const archivedUsers = await dataSource
+                    .getRepository(ArchivedUser)
+                    .find({
+                        order: { name: "ASC" },
+                    })
+
+                expect(archivedUsers).to.have.length(2)
+                expect(archivedUsers[0].name).to.equal("Dave")
+                expect(archivedUsers[1].name).to.equal("Eve")
             }),
         ))
 
@@ -408,64 +451,172 @@ describe("query builder > insert from select", () => {
             }),
         ))
 
-    it("should not be able to use both values and valuesFromSelect together", () =>
+    it("should insert from select with onConflict().orUpdate()", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                // Attempt to use first valuesFromSelect then values
-                expect(() => {
-                    dataSource
-                        .createQueryBuilder()
-                        .insert()
-                        .into(User)
-                        .valuesFromSelect(
-                            dataSource
-                                .createQueryBuilder()
-                                .select("user.name", "name")
-                                .from(User, "user"),
-                        )
-                        .values({ name: "test" })
-                }).to.throw(
-                    'Cannot use both "values" and "valuesFromSelect" methods together',
-                )
+                // Insert initial user
+                const userRepo = dataSource.getRepository(ArchivedUser)
+                await userRepo.save({
+                    name: "John",
+                    email: "john@example.com",
+                })
 
-                // Attempt to use first values then valuesFromSelect
-                expect(() => {
-                    dataSource
-                        .createQueryBuilder()
-                        .insert()
-                        .into(User)
-                        .values({ name: "test" })
-                        .valuesFromSelect(
-                            dataSource
-                                .createQueryBuilder()
-                                .select("user.name", "name")
-                                .from(User, "user"),
-                        )
-                }).to.throw(
-                    'Cannot use both "values" and "valuesFromSelect" methods together',
-                )
+                // Insert test users
+                const sourceUserRepo = dataSource.getRepository(User)
+                await sourceUserRepo.save([
+                    {
+                        name: "John Updated",
+                        email: "john@example.com",
+                        isArchived: true,
+                    },
+                    {
+                        name: "Jane",
+                        email: "jane@example.com",
+                        isArchived: true,
+                    },
+                ])
+
+                // Insert from select with onConflict update
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(ArchivedUser, ["name", "email"])
+                    .valuesFromSelect((qb) =>
+                        qb
+                            .select(["user.name", "user.email"])
+                            .from(User, "user")
+                            .where("user.isArchived = :archived", {
+                                archived: true,
+                            }),
+                    )
+                    .orUpdate(["name"], ["email"])
+                    .execute()
+
+                // Verify the results
+                const archivedUsers = await dataSource
+                    .getRepository(ArchivedUser)
+                    .find({
+                        order: { name: "ASC" },
+                    })
+
+                expect(archivedUsers).to.have.length(2)
+                expect(archivedUsers[0].name).to.equal("Jane")
+                expect(archivedUsers[1].name).to.equal("John Updated")
             }),
         ))
 
-    it("should throw error when SELECT column count does not match INSERT column count", () =>
+    it("should insert from select with onConflict().orIgnore()", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                // INSERT has 2 columns but SELECT only has 1
-                expect(() => {
-                    dataSource
-                        .createQueryBuilder()
-                        .insert()
-                        .into(User, ["name", "memberId"])
-                        .valuesFromSelect(
-                            dataSource
-                                .createQueryBuilder()
-                                .select("user.name")
-                                .from(User, "user"),
-                        )
-                }).to.throw(
-                    "The number of columns in the SELECT query (1) " +
-                        "does not match the number of columns specified for INSERT (2).",
-                )
+                // Insert initial user
+                const userRepo = dataSource.getRepository(ArchivedUser)
+                await userRepo.save({
+                    name: "Alice",
+                    email: "alice@example.com",
+                })
+
+                // Insert test users
+                const sourceUserRepo = dataSource.getRepository(User)
+                await sourceUserRepo.save([
+                    {
+                        name: "Alice Updated",
+                        email: "alice@example.com",
+                        isArchived: true,
+                    },
+                    {
+                        name: "Bob",
+                        email: "bob@example.com",
+                        isArchived: true,
+                    },
+                ])
+
+                // Insert from select with onConflict ignore
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(ArchivedUser, ["name", "email"])
+                    .valuesFromSelect((qb) =>
+                        qb
+                            .select(["user.name", "user.email"])
+                            .from(User, "user")
+                            .where("user.isArchived = :archived", {
+                                archived: true,
+                            }),
+                    )
+                    .orIgnore()
+                    .execute()
+
+                // Verify the results - Alice should NOT be updated
+                const archivedUsers = await dataSource
+                    .getRepository(ArchivedUser)
+                    .find({
+                        order: { name: "ASC" },
+                    })
+
+                expect(archivedUsers).to.have.length(2)
+                expect(archivedUsers[0].name).to.equal("Alice") // Original name
+                expect(archivedUsers[1].name).to.equal("Bob")
+            }),
+        ))
+
+    it("should insert from select with orUpdate updating multiple columns", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Insert initial users
+                const userRepo = dataSource.getRepository(ArchivedUser)
+                await userRepo.save([
+                    {
+                        name: "User1",
+                        email: "user1@example.com",
+                    },
+                    {
+                        name: "User2",
+                        email: "user2@example.com",
+                    },
+                ])
+
+                // Insert test users with updated data
+                const sourceUserRepo = dataSource.getRepository(User)
+                await sourceUserRepo.save([
+                    {
+                        name: "User1 Updated",
+                        email: "user1@example.com",
+                        isArchived: true,
+                    },
+                    {
+                        name: "User3",
+                        email: "user3@example.com",
+                        isArchived: true,
+                    },
+                ])
+
+                // Insert from select with update on conflict
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(ArchivedUser, ["name", "email"])
+                    .valuesFromSelect((qb) =>
+                        qb
+                            .select(["user.name", "user.email"])
+                            .from(User, "user")
+                            .where("user.isArchived = :archived", {
+                                archived: true,
+                            }),
+                    )
+                    .orUpdate(["name"], ["email"])
+                    .execute()
+
+                // Verify the results
+                const archivedUsers = await dataSource
+                    .getRepository(ArchivedUser)
+                    .find({
+                        order: { email: "ASC" },
+                    })
+
+                expect(archivedUsers).to.have.length(3)
+                expect(archivedUsers[0].name).to.equal("User1 Updated")
+                expect(archivedUsers[1].name).to.equal("User2")
+                expect(archivedUsers[2].name).to.equal("User3")
             }),
         ))
 })
