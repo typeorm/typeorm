@@ -110,7 +110,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@google-cloud/spanner": "^8.3.1",
-    "@sap/hana-client": "^2.26.26",
+    "@sap/hana-client": "^2.27.19",
     "@stryker-mutator/core": "^9.4.0",
     "@stryker-mutator/mocha-runner": "^9.4.0",
     "@tsconfig/node20": "^20.1.8",
