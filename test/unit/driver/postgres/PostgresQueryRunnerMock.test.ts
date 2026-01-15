@@ -37,7 +37,15 @@ describe("PostgresQueryRunner Unit Test", () => {
             },
             createFullType: (col: TableColumn) => {
                 let type = col.type
-                if (col.length) type += `(${col.length})`
+                if (col.precision !== undefined && col.precision !== null) {
+                    if (col.scale !== undefined && col.scale !== null) {
+                        type += `(${col.precision},${col.scale})`
+                    } else {
+                        type += `(${col.precision})`
+                    }
+                } else if (col.length) {
+                    type += `(${col.length})`
+                }
                 return type
             },
             parseTableName: (target: any) => {
@@ -80,48 +88,7 @@ describe("PostgresQueryRunner Unit Test", () => {
         // Wait, changeColumn logic does NOT call connect() directly, it constructs queries and calls executeQueries.
     })
 
-    it("should generate ALTER COLUMN SQL with USING clause when length changes", async () => {
-        const table = new Table({
-            name: "post",
-            columns: [
-                {
-                    name: "title",
-                    type: "varchar",
-                    length: "100",
-                },
-            ],
-        })
-
-        const oldColumn = table.findColumnByName("title")!
-        const newColumn = oldColumn.clone()
-        newColumn.length = "200"
-
-        // Execute
-        await queryRunner.changeColumn(table, oldColumn, newColumn)
-
-        // Verify
-        // Expected: result of escapePath("post") is "post"
-        // result of createFullType(newColumn) is varchar(200)
-        // result of createFullType(oldColumn) is varchar(100)
-        // SQL: ALTER TABLE "post" ALTER COLUMN "title" TYPE varchar(200) USING "title"::varchar(200)
-
-        // Note: My mock escapePath returns "name". Postgres escape usually adds quotes but mock depends on implementation.
-        // The real PostgresDriver.escapePath handles schema/dot split.
-        // My mock simple is `"${name}"`.
-
-        const expectedSql =
-            'ALTER TABLE "post" ALTER COLUMN "title" TYPE varchar(200)'
-
-        const matched = queries.find((q) => q === expectedSql)
-        if (!matched)
-            console.log(
-                "FAILED MATCH. Queries:",
-                JSON.stringify(queries, null, 2),
-            )
-        expect(matched).to.exist
-    })
-
-    it("should generate ALTER COLUMN SQL without USING clause when type is same", async () => {
+    it("should generate ALTER COLUMN SQL without USING clause when length changes", async () => {
         const table = new Table({
             name: "post",
             columns: [
@@ -177,6 +144,111 @@ describe("PostgresQueryRunner Unit Test", () => {
                 "FAILED MATCH. Queries:",
                 JSON.stringify(queries, null, 2),
             )
+        expect(matched).to.exist
+    })
+
+    it("should use ALTER COLUMN for integer to bigint type change", async () => {
+        const table = new Table({
+            name: "transaction",
+            columns: [
+                {
+                    name: "amount",
+                    type: "integer",
+                },
+            ],
+        })
+
+        const oldColumn = table.findColumnByName("amount")!
+        const newColumn = oldColumn.clone()
+        newColumn.type = "bigint"
+
+        await queryRunner.changeColumn(table, oldColumn, newColumn)
+
+        const matched = queries.find(
+            (q) =>
+                q.includes("ALTER TABLE") &&
+                q.includes('"amount"') &&
+                q.includes("TYPE bigint") &&
+                q.includes('USING "amount"::bigint'),
+        )
+
+        if (!matched) {
+            console.log(
+                "FAILED MATCH. Queries:",
+                JSON.stringify(queries, null, 2),
+            )
+        }
+        expect(matched).to.exist
+    })
+
+    it("should use ALTER COLUMN for varchar length increase", async () => {
+        const table = new Table({
+            name: "post",
+            columns: [
+                {
+                    name: "title",
+                    type: "varchar",
+                    length: "100",
+                },
+            ],
+        })
+
+        const oldColumn = table.findColumnByName("title")!
+        const newColumn = oldColumn.clone()
+        newColumn.length = "500"
+
+        await queryRunner.changeColumn(table, oldColumn, newColumn)
+
+        const matched = queries.find(
+            (q) =>
+                q.includes("ALTER TABLE") &&
+                q.includes('"title"') &&
+                q.includes("TYPE varchar") &&
+                q.includes("varchar(500)") &&
+                !q.includes("DROP COLUMN"),
+        )
+
+        if (!matched) {
+            console.log(
+                "FAILED MATCH. Queries:",
+                JSON.stringify(queries, null, 2),
+            )
+        }
+        expect(matched).to.exist
+    })
+
+    it("should use ALTER COLUMN for text to varchar conversion", async () => {
+        const table = new Table({
+            name: "document",
+            columns: [
+                {
+                    name: "content",
+                    type: "text",
+                },
+            ],
+        })
+
+        const oldColumn = table.findColumnByName("content")!
+        const newColumn = oldColumn.clone()
+        newColumn.type = "varchar"
+        newColumn.length = "1000"
+
+        await queryRunner.changeColumn(table, oldColumn, newColumn)
+
+        const matched = queries.find(
+            (q) =>
+                q.includes("ALTER TABLE") &&
+                q.includes('"content"') &&
+                q.includes("TYPE varchar") &&
+                q.includes("USING"),
+        )
+
+        if (!matched) {
+            console.log(
+                "FAILED MATCH. Queries:",
+                JSON.stringify(queries, null, 2),
+            )
+        }
         expect(matched).to.exist
     })
 })
