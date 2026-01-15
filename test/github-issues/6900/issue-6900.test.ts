@@ -2,7 +2,7 @@ import { expect } from "chai"
 import {
     closeTestingConnections,
     reloadTestingDatabases,
-    setupTestingConnections,
+    setupTestingConnectionOptions,
 } from "../../utils/test-utils"
 import { MongoDriver } from "../../../src/driver/mongodb/MongoDriver"
 import { DataSource, DataSourceOptions, MongoClient } from "../../../src"
@@ -17,7 +17,9 @@ describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given 
     })
 
     it("should connect to the expected database", async () => {
-        const options = setupTestingConnections({ enabledDrivers: ["mongodb"] })
+        const options = setupTestingConnectionOptions({
+            enabledDrivers: ["mongodb"],
+        })
 
         if (options.length === 0) {
             // Skip if we can't grab the mongodb
@@ -46,7 +48,9 @@ describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given 
     })
 
     it("should write data to the correct database", async () => {
-        const options = setupTestingConnections({ enabledDrivers: ["mongodb"] })
+        const options = setupTestingConnectionOptions({
+            enabledDrivers: ["mongodb"],
+        })
 
         if (options.length === 0) {
             // Skip if we can't grab the mongodb

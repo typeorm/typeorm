@@ -124,19 +124,17 @@ export class EntityManager {
      * All database operations must be executed using provided entity manager.
      */
     async transaction<T>(
-        isolationOrRunInTransaction:
-            | IsolationLevel
-            | ((entityManager: EntityManager) => Promise<T>),
-        runInTransactionParam?: (entityManager: EntityManager) => Promise<T>,
+        ...args:
+            | [(entityManager: EntityManager) => Promise<T>]
+            | [IsolationLevel, (entityManager: EntityManager) => Promise<T>]
     ): Promise<T> {
-        const isolation =
-            typeof isolationOrRunInTransaction === "string"
-                ? isolationOrRunInTransaction
-                : undefined
-        const runInTransaction =
-            typeof isolationOrRunInTransaction === "function"
-                ? isolationOrRunInTransaction
-                : runInTransactionParam
+        let isolation: IsolationLevel | undefined = undefined
+        let runInTransaction: (entityManager: EntityManager) => Promise<T>
+        if (args.length === 1) {
+            ;[runInTransaction] = args
+        } else {
+            ;[isolation, runInTransaction] = args
+        }
 
         if (!runInTransaction) {
             throw new TypeORMError(
@@ -147,27 +145,80 @@ export class EntityManager {
         if (this.queryRunner && this.queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError()
 
-        // if query runner is already defined in this class, it means this entity manager was already created for a single connection
-        // if its not defined we create a new query runner - single connection where we'll execute all our operations
-        const queryRunner =
-            this.queryRunner || this.connection.createQueryRunner()
+        return this.connection.runWithQueryRunner(
+            this.queryRunner,
+            async (queryRunner) => {
+                try {
+                    await queryRunner.startTransaction(isolation)
+                    const result = await runInTransaction(queryRunner.manager)
+                    await queryRunner.commitTransaction()
+                    return result
+                } catch (err) {
+                    try {
+                        // we throw original error even if rollback thrown an error
+                        await queryRunner.rollbackTransaction()
+                    } catch (rollbackError) {}
+                    throw err
+                }
+            },
+        )
+    }
 
-        try {
-            await queryRunner.startTransaction(isolation)
-            const result = await runInTransaction(queryRunner.manager)
-            await queryRunner.commitTransaction()
-            return result
-        } catch (err) {
-            try {
-                // we throw original error even if rollback thrown an error
-                await queryRunner.rollbackTransaction()
-            } catch (rollbackError) {}
-            throw err
-        } finally {
-            if (!this.queryRunner)
-                // if we used a new query runner provider then release it
-                await queryRunner.release()
+    /**
+     * Wraps given function execution (and all operations made there) in a transaction.
+     *
+     * QueryRunner is set on an async context, which is used by all queries executed within
+     * the passed function.
+     */
+    async transactionWithContext<T>(
+        runInTransaction: () => Promise<T>,
+    ): Promise<T>
+
+    /**
+     * Wraps given function execution (and all operations made there) in a transaction.
+     * All database operations must be executed using provided entity manager.
+     */
+    async transactionWithContext<T>(
+        isolationLevel: IsolationLevel,
+        runInTransaction: () => Promise<T>,
+    ): Promise<T>
+    async transactionWithContext<T>(
+        ...args: [() => Promise<T>] | [IsolationLevel, () => Promise<T>]
+    ) {
+        let isolation: IsolationLevel | undefined = undefined
+        let runInTransaction: () => Promise<T>
+        if (args.length === 1) {
+            ;[runInTransaction] = args
+        } else {
+            ;[isolation, runInTransaction] = args
         }
+
+        if (!runInTransaction) {
+            throw new TypeORMError(
+                `Transaction method requires callback in second parameter if isolation level is supplied.`,
+            )
+        }
+
+        if (this.queryRunner && this.queryRunner.isReleased)
+            throw new QueryRunnerProviderAlreadyReleasedError()
+
+        return this.connection.runInQueryRunnerContext(
+            this.queryRunner,
+            async (queryRunner) => {
+                try {
+                    await queryRunner.startTransaction(isolation)
+                    const result = await runInTransaction()
+                    await queryRunner.commitTransaction()
+                    return result
+                } catch (err) {
+                    try {
+                        // we throw original error even if rollback thrown an error
+                        await queryRunner.rollbackTransaction()
+                    } catch (rollbackError) {}
+                    throw err
+                }
+            },
+        )
     }
 
     /**
@@ -1346,13 +1397,10 @@ export class EntityManager {
      */
     async clear<Entity>(entityClass: EntityTarget<Entity>): Promise<void> {
         const metadata = this.connection.getMetadata(entityClass)
-        const queryRunner =
-            this.queryRunner || this.connection.createQueryRunner()
-        try {
-            return await queryRunner.clearTable(metadata.tablePath) // await is needed here because we are using finally
-        } finally {
-            if (!this.queryRunner) await queryRunner.release()
-        }
+        return this.connection.runWithQueryRunner(
+            this.queryRunner,
+            (queryRunner) => queryRunner.clearTable(metadata.tablePath),
+        )
     }
 
     /**
@@ -1452,7 +1500,7 @@ export class EntityManager {
             this.repositories.set(target, newRepository)
             return newRepository
         } else {
-            const newRepository = new Repository<any>(
+            const newRepository = new Repository<Entity>(
                 target,
                 this,
                 this.queryRunner,

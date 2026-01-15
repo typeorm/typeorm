@@ -2,7 +2,13 @@
 
 ## Creating and using transactions
 
-Transactions are created using `DataSource` or `EntityManager`.
+There are two ways of creating transactions, `transaction` and `transactionWithContext`. Both methods are available from `DataSource` and `EntityManager`.
+
+`transaction` is supported on all platforms, `transactionWithContext` is only available on Node.js.
+
+### Using cross-platform `transaction`
+
+Cross-platform transactions are created using `DataSource.transaction` or `EntityManager.transaction`.
 Examples:
 
 ```typescript
@@ -33,12 +39,34 @@ The most important restriction when working in a transaction is to **ALWAYS** us
 `transactionalEntityManager` in this example. DO NOT USE GLOBAL ENTITY MANAGER.
 All operations **MUST** be executed using the provided transactional entity manager.
 
+### Using Node.js-only `transactionWithContext`
+
+Transactions using async tracking context are created using `DataSource.transactionWithContext` or `EntityManager.transactionWithContext`.
+
+```typescript
+await myDataSource.transactionWithContext(async () => {
+    // Exececute queries using any repository/entity/manager, as long as they are using the same
+    // DataSource they will be performed inside the same transaction.
+})
+```
+
+or
+
+```typescript
+await myDataSource.manager.transactionWithContext(async () => {
+    // Exececute queries using any repository/entity/manager, as long as they are using the same
+    // DataSource they will be performed inside the same transaction.
+})
+```
+
+The main advantage of using `transactionWithContext` over `transaction` is that you can use any pre-existing repositories, custom-repositories, or entities as long as they are all created on the same DataSource the transaction is started from.
+
 ### Specifying Isolation Levels
 
 Specifying the isolation level for the transaction can be done by supplying it as the first parameter:
 
 ```typescript
-await myDataSource.manager.transaction(
+await myDataSource.manager.transaction( // OR `.transactionWithContext`
     "SERIALIZABLE",
     (transactionalEntityManager) => {},
 )
@@ -95,6 +123,30 @@ try {
     // you need to release query runner which is manually created:
     await queryRunner.release()
 }
+```
+
+Alternatively you can use the `runWithQueryRunner` method to create a temporary QueryRunner:
+
+```typescript
+dataSource.runWithQueryRunner(async (queryRunner: QueryRunner) => {
+    // queryRunner will behave the same as manually created one
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
+    try {
+        await queryRunner.query(`INSERT INTO user SELECT * FROM other`)
+        const result = queryRunner.query('SELECT * FROM user')
+        await queryRunner.commitTransaction()
+        // return value from function is returned from runWithQueryRunner
+        return result
+    } catch (e) {
+        await queryRunner.rollbackTransaction()
+        // We can re-throw error if we want it to propagate to where runWithQueryRunner
+        // was called, runWithQueryRunner handles QueryRunner cleanup
+        throw e
+    }
+    // queryRunner will automatically be released when function ends, regardless if an exception
+    // is thrown
+})
 ```
 
 There are 3 methods to control transactions in `QueryRunner`:

@@ -7,8 +7,10 @@ import { format as sqlFormat } from "@sqltools/formatter"
 import { type Config as SqlFormatterConfig } from "@sqltools/formatter/lib/core/types"
 import { type DatabaseType } from "../driver/types/DatabaseType"
 
-export { EventEmitter } from "events"
+import { AsyncLocalStorage } from "async_hooks"
+
 export { ReadStream } from "fs"
+export { EventEmitter } from "events"
 export { Readable, Writable } from "stream"
 
 /**
@@ -25,6 +27,13 @@ export class PlatformTools {
      */
     static getGlobalVariable(): any {
         return global
+    }
+
+    /**
+     * Create an AsyncLocalStorage instance, only supported on platform === node.
+     */
+    static createAsyncLocalStorage<T>() {
+        return new AsyncLocalStorage<T>()
     }
 
     /**

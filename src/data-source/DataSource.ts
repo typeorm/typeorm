@@ -1,3 +1,4 @@
+import type { AsyncLocalStorage } from "node:async_hooks"
 import { Driver } from "../driver/Driver"
 import { registerQueryBuilders } from "../query-builder"
 import { Repository } from "../repository/Repository"
@@ -41,9 +42,14 @@ import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
+import { PlatformTools } from "../platform/PlatformTools"
 import { buildSqlTag } from "../util/SqlTagUtils"
 
 registerQueryBuilders()
+
+interface AsyncContext {
+    queryRunner?: QueryRunner
+}
 
 /**
  * DataSource is a pre-defined connection configuration to a specific database.
@@ -135,6 +141,8 @@ export class DataSource {
 
     readonly relationIdLoader: RelationIdLoader
 
+    protected asyncLocalStorage?: AsyncLocalStorage<AsyncContext>
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -158,6 +166,14 @@ export class DataSource {
         this.relationLoader = new RelationLoader(this)
         this.relationIdLoader = new RelationIdLoader(this)
         this.isInitialized = false
+
+        if (
+            this.driver.transactionSupport !== "none" &&
+            PlatformTools.type === "node"
+        ) {
+            this.asyncLocalStorage =
+                PlatformTools.createAsyncLocalStorage<AsyncContext>()
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -508,15 +524,42 @@ export class DataSource {
         runInTransaction: (entityManager: EntityManager) => Promise<T>,
     ): Promise<T>
     async transaction<T>(
-        isolationOrRunInTransaction:
-            | IsolationLevel
-            | ((entityManager: EntityManager) => Promise<T>),
-        runInTransactionParam?: (entityManager: EntityManager) => Promise<T>,
-    ): Promise<any> {
-        return this.manager.transaction(
-            isolationOrRunInTransaction as any,
-            runInTransactionParam as any,
-        )
+        ...args:
+            | [(entityManager: EntityManager) => Promise<T>]
+            | [IsolationLevel, (entityManager: EntityManager) => Promise<T>]
+    ): Promise<T> {
+        // This if is just for typescript... it does not like unions of tuples, this narrows type
+        // to the single item tuple.
+        if (args.length === 1) return this.manager.transaction(...args)
+        return this.manager.transaction(...args)
+    }
+
+    /**
+     * Wraps given function execution (and all operations made there) in a transaction.
+     *
+     * QueryRunner is set on an async context, which is used by all queries executed within
+     * the passed function.
+     */
+    async transactionWithContext<T>(
+        runInTransaction: () => Promise<T>,
+    ): Promise<T>
+
+    /**
+     * Wraps given function execution (and all operations made there) in a transaction.
+     * All database operations must be executed using provided entity manager.
+     */
+    async transactionWithContext<T>(
+        isolationLevel: IsolationLevel,
+        runInTransaction: () => Promise<T>,
+    ): Promise<T>
+    async transactionWithContext<T>(
+        ...args: [() => Promise<T>] | [IsolationLevel, () => Promise<T>]
+    ) {
+        // This if is just for typescript... it does not like unions of tuples, this narrows type
+        // to the single item tuple.
+        if (args.length === 1)
+            return this.manager.transactionWithContext(...args)
+        return this.manager.transactionWithContext(...args)
     }
 
     /**
@@ -535,13 +578,9 @@ export class DataSource {
         if (queryRunner && queryRunner.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError()
 
-        const usedQueryRunner = queryRunner || this.createQueryRunner()
-
-        try {
-            return await usedQueryRunner.query(query, parameters) // await is needed here because we are using finally
-        } finally {
-            if (!queryRunner) await usedQueryRunner.release()
-        }
+        return this.runWithQueryRunner(queryRunner, (queryRunner) =>
+            queryRunner.query(query, parameters),
+        )
     }
 
     /**
@@ -785,5 +824,170 @@ export class DataSource {
             }
         }
         return "slave"
+    }
+
+    /**
+     * Run fn with a temporary query runner.
+     *
+     * Query runner is automatically released after fn is done.
+     *
+     * @param fn
+     */
+    async runWithQueryRunner<T>(
+        fn: (queryRunner: QueryRunner) => Promise<T>,
+    ): Promise<T>
+    async runWithQueryRunner<T>(
+        fn: (
+            queryRunner: QueryRunner,
+            release: () => Promise<void>,
+        ) => Promise<T>,
+    ): Promise<T>
+    /**
+     * Run fn with existingQuery runner or create a temporary query runner if passed query runner
+     * is undefined.
+     *
+     * @param existingQueryRunner
+     * @param fn
+     */
+    async runWithQueryRunner<T>(
+        existingQueryRunner: QueryRunner | undefined,
+        fn: (queryRunner: QueryRunner) => Promise<T>,
+    ): Promise<T>
+    async runWithQueryRunner<T>(
+        existingQueryRunner: QueryRunner | undefined,
+        fn: (
+            queryRunner: QueryRunner,
+            release: () => Promise<void>,
+        ) => Promise<T>,
+    ): Promise<T>
+    /**
+     * Run `fn` with a QueryRunner. Query runner is created and released if existingQueryRunner is
+     * undefined.
+     *
+     * @param existingQueryRunner
+     * @param mode
+     * @param fn
+     */
+    async runWithQueryRunner<T>(
+        existingQueryRunner: QueryRunner | undefined,
+        mode: ReplicationMode,
+        fn: (queryRunner: QueryRunner) => Promise<T>,
+    ): Promise<T>
+    async runWithQueryRunner<T>(
+        existingQueryRunner: QueryRunner | undefined,
+        mode: ReplicationMode,
+        fn: (
+            queryRunner: QueryRunner,
+            release: () => Promise<void>,
+        ) => Promise<T>,
+    ): Promise<T>
+    async runWithQueryRunner<T>(
+        ...args:
+            | [(queryRunner: QueryRunner) => Promise<T>]
+            | [
+                  (
+                      queryRunner: QueryRunner,
+                      release: () => Promise<void>,
+                  ) => Promise<T>,
+              ]
+            | [
+                  QueryRunner | undefined,
+                  fn: (
+                      queryRunner: QueryRunner,
+                      release: () => Promise<void>,
+                  ) => Promise<T>,
+              ]
+            | [
+                  QueryRunner | undefined,
+                  mode: ReplicationMode,
+                  (
+                      queryRunner: QueryRunner,
+                      release: () => Promise<void>,
+                  ) => Promise<T>,
+              ]
+    ): Promise<T> {
+        type FnWithoutReleaseCallback = (queryRunner: QueryRunner) => Promise<T>
+        type FnWithReleaseCallback = (
+            queryRunner: QueryRunner,
+            release: () => Promise<void>,
+        ) => Promise<T>
+        type Fn = FnWithReleaseCallback | FnWithoutReleaseCallback
+
+        let existingQueryRunner: QueryRunner | undefined
+        let createMode: ReplicationMode | undefined
+        let fn: Fn
+        if (args.length === 1) {
+            ;[fn] = args
+        } else if (args.length === 2) {
+            ;[existingQueryRunner, fn] = args
+        } else {
+            ;[existingQueryRunner, createMode, fn] = args
+        }
+
+        let queryRunnerCreated = false
+        let queryRunner: QueryRunner
+        const asyncContextQueryRunner = this.getContextQueryRunner()
+        if (existingQueryRunner) {
+            queryRunner = existingQueryRunner
+        } else if (asyncContextQueryRunner) {
+            queryRunner = asyncContextQueryRunner
+        } else {
+            queryRunnerCreated = true
+            queryRunner = this.createQueryRunner(createMode)
+        }
+
+        let releaseIsDelegated = false
+        try {
+            if (
+                ((cb: Fn): cb is FnWithoutReleaseCallback => cb.length === 1)(
+                    fn,
+                )
+            ) {
+                return await fn(queryRunner)
+            } else {
+                releaseIsDelegated = true
+                return await fn(
+                    queryRunner,
+                    existingQueryRunner
+                        ? () => Promise.resolve()
+                        : () => queryRunner.release(),
+                )
+            }
+        } finally {
+            if (queryRunnerCreated && !releaseIsDelegated) {
+                await queryRunner.release()
+            }
+        }
+    }
+
+    /**
+     * Run the function with a query runner bound to the async context. Any queries executed within
+     * the function will get provided or created context injected when running with the runWithQueryRunner
+     * method without explicitly providing a query runner.
+     *
+     * @see EntityManager#transaction
+     *
+     * @param existingQueryRunner
+     * @param fn
+     */
+    async runInQueryRunnerContext<T>(
+        existingQueryRunner: QueryRunner | undefined,
+        fn: (queryRunner: QueryRunner) => Promise<T>,
+    ): Promise<T> {
+        const { asyncLocalStorage } = this
+
+        if (!asyncLocalStorage) {
+            throw new Error(
+                "AsyncLocalStorage is not available. Make sure you are using supported node version.",
+            )
+        }
+
+        return this.runWithQueryRunner(existingQueryRunner, (queryRunner) =>
+            asyncLocalStorage.run({ queryRunner }, () => fn(queryRunner)),
+        )
+    }
+
+    protected getContextQueryRunner(): QueryRunner | undefined {
+        return this.asyncLocalStorage?.getStore()?.queryRunner
     }
 }
