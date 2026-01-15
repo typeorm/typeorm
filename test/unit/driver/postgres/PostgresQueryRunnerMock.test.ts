@@ -59,25 +59,21 @@ describe("PostgresQueryRunner Unit Test", () => {
         queryRunner = new PostgresQueryRunner(mockDriver, "master")
 
         // Mock executeQueries to capture SQL
-        // @ts-ignore
-        queryRunner.executeQueries = async (up: Query[], down: Query[]) => {
+        // @ts-expect-error - mocking internal method
+        queryRunner.executeQueries = async (up: Query[], _down: Query[]) => {
             // We just capture the up queries strings
             queries.push(...up.map((q) => q.query))
             return Promise.resolve()
         }
 
         // Mock getCachedTable/replaceCachedTable as they might be called
-        // @ts-ignore
-        queryRunner.getCachedTable = async (name) => {
+        // @ts-expect-error - mocking internal method
+        queryRunner.getCachedTable = async () => {
             // Return a dummy table if asked, but we pass table object directly usually
             return new Table({ name: "dummy" })
         }
-        // @ts-ignore
-        queryRunner.replaceCachedTable = (table, cloned) => {}
-
-        // Mock other helpers if needed
-        // @ts-ignore
-        queryRunner.getTableNameWithSchema = async (name) => name
+        // @ts-expect-error - mocking internal method
+        queryRunner.replaceCachedTable = (_table: Table, _cloned: Table) => {}
 
         // Since we don't have a real connection, we must ensure connect() is mocked if called
         // But executeQueries mocking bypasses connect() usually if implemented well
@@ -125,28 +121,62 @@ describe("PostgresQueryRunner Unit Test", () => {
         expect(matched).to.exist
     })
 
-    it("should generate ALTER COLUMN SQL without USING clause when type is same (just precision/scale?)", async () => {
-        // ...
-        // Actually length change logic in my fix uses USING.
-        // oldColumn.type !== newColumn.type -> checks type string equality? "varchar" === "varchar".
-        // If type is SAME, it sends empty string for USING.
-        // Wait, check my fix logic:
-        // oldColumn.type !== newColumn.type ? `USING ...` : ""
-        // So for length change ONLY, it DOES NOT emitting USING clause?
-        // Wait, typically growing a varchar DOES NOT need USING.
-        // My fix handles type change with USING.
-        // Does length change trigger the same block?
-        // Yes:
-        /*
-            if (
-                oldColumn.type !== newColumn.type ||
-                oldColumn.length !== newColumn.length ||
-                newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+    it("should generate ALTER COLUMN SQL without USING clause when type is same", async () => {
+        const table = new Table({
+            name: "post",
+            columns: [
+                {
+                    name: "title",
+                    type: "varchar",
+                    length: "100",
+                },
+            ],
+        })
+
+        const oldColumn = table.findColumnByName("title")!
+        const newColumn = oldColumn.clone()
+        newColumn.length = "200"
+
+        await queryRunner.changeColumn(table, oldColumn, newColumn)
+
+        const expectedSql =
+            'ALTER TABLE "post" ALTER COLUMN "title" TYPE varchar(200)'
+
+        const matched = queries.find((q) => q === expectedSql)
+        if (!matched)
+            console.log(
+                "FAILED MATCH. Queries:",
+                JSON.stringify(queries, null, 2),
             )
-        */
-        // But the ternary: `oldColumn.type !== newColumn.type ? USING... : ""`
-        // If length changes but type is same("varchar"), expected is NO USING.
-        // Let's test that!
+        expect(matched).to.exist
+    })
+
+    it("should generate ALTER COLUMN SQL with USING clause when type changes", async () => {
+        const table = new Table({
+            name: "post",
+            columns: [
+                {
+                    name: "count",
+                    type: "integer",
+                },
+            ],
+        })
+
+        const oldColumn = table.findColumnByName("count")!
+        const newColumn = oldColumn.clone()
+        newColumn.type = "bigint"
+
+        await queryRunner.changeColumn(table, oldColumn, newColumn)
+
+        const expectedSql =
+            'ALTER TABLE "post" ALTER COLUMN "count" TYPE bigint USING "count"::bigint'
+
+        const matched = queries.find((q) => q === expectedSql)
+        if (!matched)
+            console.log(
+                "FAILED MATCH. Queries:",
+                JSON.stringify(queries, null, 2),
+            )
+        expect(matched).to.exist
     })
 })
