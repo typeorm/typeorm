@@ -1233,8 +1233,6 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1525,6 +1523,8 @@ export class PostgresQueryRunner
             }
 
             if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
@@ -1532,14 +1532,26 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        }" TYPE ${this.driver.createFullType(newColumn)}${
+                            oldColumn.type !== newColumn.type
+                                ? ` USING "${newColumn.name}"::${this.driver.createFullType(
+                                      newColumn,
+                                  )}`
+                                : ""
+                        }`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        }" TYPE ${this.driver.createFullType(oldColumn)}${
+                            oldColumn.type !== newColumn.type
+                                ? ` USING "${newColumn.name}"::${this.driver.createFullType(
+                                      oldColumn,
+                                  )}`
+                                : ""
+                        }`,
                     ),
                 )
             }
