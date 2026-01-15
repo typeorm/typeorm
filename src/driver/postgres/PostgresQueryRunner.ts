@@ -1535,14 +1535,12 @@ export class PostgresQueryRunner
                     oldColumn.type === "enum" ||
                     oldColumn.type === "simple-enum"
 
+                // 1. Pre-Alter: Create schemas (Up: New, Down: Old)
                 if (isNewEnum && !isOldEnum) {
                     upQueries.push(this.createEnumTypeSql(table, newColumn))
-                    downQueries.push(this.dropEnumTypeSql(table, newColumn))
                 }
-
                 if (isOldEnum && !isNewEnum) {
                     downQueries.push(this.createEnumTypeSql(table, oldColumn))
-                    upQueries.push(this.dropEnumTypeSql(table, oldColumn))
                 }
 
                 const newType = isNewEnum
@@ -1552,6 +1550,7 @@ export class PostgresQueryRunner
                     ? this.buildEnumName(table, oldColumn)
                     : this.driver.createFullType(oldColumn)
 
+                // 2. Alter Column
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
@@ -1574,6 +1573,14 @@ export class PostgresQueryRunner
                         }`,
                     ),
                 )
+
+                // 3. Post-Alter: Drop schemas (Up: Old, Down: New)
+                if (isNewEnum && !isOldEnum) {
+                    downQueries.push(this.dropEnumTypeSql(table, newColumn))
+                }
+                if (isOldEnum && !isNewEnum) {
+                    upQueries.push(this.dropEnumTypeSql(table, oldColumn))
+                }
             }
 
             if (
