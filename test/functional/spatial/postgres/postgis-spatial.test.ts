@@ -8,11 +8,14 @@ import {
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
 
-describe("spatial-postgres", () => {
+// Tests for PostGIS geometry types
+describe("postgis spatial types", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
+            entities: [Post],
+            schemaCreate: true,
+            dropSchema: true,
             enabledDrivers: ["postgres"],
         })
     })
