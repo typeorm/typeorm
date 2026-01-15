@@ -786,12 +786,28 @@ export class InsertQueryBuilder<
                     return false
                 }
 
+                // Skip generated columns if we are inserting from select, if not explicitly specified
+                if (
+                    column.isGenerated &&
+                    this.expressionMap.insertFromSelect &&
+                    (DriverUtils.isSQLiteFamily(this.connection.driver) ||
+                        DriverUtils.isMySQLFamily(this.connection.driver) ||
+                        this.connection.driver.options.type ===
+                            "aurora-mysql" ||
+                        this.connection.driver.options.type === "oracle")
+                )
+                    return false
+
                 // if user did not specified such list then return all columns except auto-increment one
                 // for Oracle we return auto-increment column as well because Oracle does not support DEFAULT VALUES expression
                 if (
                     column.isGenerated &&
                     column.generationStrategy === "increment" &&
                     !(this.connection.driver.options.type === "spanner") &&
+                    !(this.connection.driver.options.type === "oracle") &&
+                    !DriverUtils.isSQLiteFamily(this.connection.driver) &&
+                    !DriverUtils.isMySQLFamily(this.connection.driver) &&
+                    !(this.connection.driver.options.type === "aurora-mysql") &&
                     !(
                         this.connection.driver.options.type === "mssql" &&
                         this.isOverridingAutoIncrementBehavior(column)
