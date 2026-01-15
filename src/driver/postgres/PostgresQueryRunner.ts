@@ -1528,15 +1528,24 @@ export class PostgresQueryRunner
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
+                const newType =
+                    newColumn.type === "enum" ||
+                    newColumn.type === "simple-enum"
+                        ? this.buildEnumName(table, newColumn)
+                        : this.driver.createFullType(newColumn)
+                const oldType =
+                    oldColumn.type === "enum" ||
+                    oldColumn.type === "simple-enum"
+                        ? this.buildEnumName(table, oldColumn)
+                        : this.driver.createFullType(oldColumn)
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}${
+                        }" TYPE ${newType}${
                             oldColumn.type !== newColumn.type
-                                ? ` USING "${newColumn.name}"::${this.driver.createFullType(
-                                      newColumn,
-                                  )}`
+                                ? ` USING "${newColumn.name}"::${newType}`
                                 : ""
                         }`,
                     ),
@@ -1545,11 +1554,9 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}${
+                        }" TYPE ${oldType}${
                             oldColumn.type !== newColumn.type
-                                ? ` USING "${newColumn.name}"::${this.driver.createFullType(
-                                      oldColumn,
-                                  )}`
+                                ? ` USING "${newColumn.name}"::${oldType}`
                                 : ""
                         }`,
                     ),
