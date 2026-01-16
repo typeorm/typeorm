@@ -2259,7 +2259,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      */
-    async clearTable(tableOrName: Table | string): Promise<void> {
+    async clearTable(
+        tableOrName: Table | string,
+        options?: { cascade: boolean },
+    ): Promise<void> {
+        if (options?.cascade) {
+            throw new TypeORMError(
+                `MySql does not support clearing table with cascade option`,
+            )
+        }
         await this.query(`TRUNCATE TABLE ${this.escapePath(tableOrName)}`)
     }
 
