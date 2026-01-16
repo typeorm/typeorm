@@ -41,6 +41,7 @@ describe("github issues > #9420 Get error 'Cannot get metadata of given alias' w
                     .setParameters(userSubQb.getParameters())
 
                 expect(await userQuery.getRawMany()).to.deep.eq([])
+                await expect(userQuery.getRawMany()).not.to.eventually.throw()
             }),
         ))
 })
