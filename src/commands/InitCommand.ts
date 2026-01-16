@@ -85,7 +85,7 @@ export class InitCommand implements yargs.CommandModule {
                 InitCommand.getTsConfigTemplate(projectIsEsm),
             )
             await CommandUtils.createFile(
-                basePath + "/src/entity/User.ts",
+                basePath + "/src/entities/User.ts",
                 InitCommand.getUserEntityTemplate(database),
             )
             await CommandUtils.createFile(
@@ -96,7 +96,7 @@ export class InitCommand implements yargs.CommandModule {
                 basePath + "/src/index.ts",
                 InitCommand.getAppIndexTemplate(isExpress, projectIsEsm),
             )
-            await CommandUtils.createDirectories(basePath + "/src/migration")
+            await CommandUtils.createDirectories(basePath + "/src/migrations")
 
             // generate extra files for express application
             if (isExpress) {
@@ -105,7 +105,7 @@ export class InitCommand implements yargs.CommandModule {
                     InitCommand.getRoutesTemplate(projectIsEsm),
                 )
                 await CommandUtils.createFile(
-                    basePath + "/src/controller/UserController.ts",
+                    basePath + "/src/controllers/UserController.ts",
                     InitCommand.getControllerTemplate(projectIsEsm),
                 )
             }
