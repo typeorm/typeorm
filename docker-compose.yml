@@ -116,14 +116,14 @@ services:
   # sap hana
   # works only on linux, minimum 10GB RAM for docker required
   hanaexpress:
-    image: "saplabs/hanaexpress:2.00.076.00.20240701.1"
+    image: "saplabs/hanaexpress:2.00.088.00.20251110.1"
     container_name: "typeorm-hanaexpress"
     hostname: hxe
     command:
       [
+        "--agree-to-sap-license",
         "--passwords-url",
         "file:////hana/hxe-config.json",
-        "--agree-to-sap-license",
       ]
     ulimits:
       nofile: 1048576

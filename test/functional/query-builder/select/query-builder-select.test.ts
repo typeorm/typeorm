@@ -846,4 +846,81 @@ describe("query builder > select", () => {
                 }),
             ))
     })
+
+    describe("column order in select statement", () => {
+        it("should return columns in the order they were specified in select statement", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const query1 = connection
+                        .createQueryBuilder(Post, "post")
+                        .select("post.description", "post_description")
+                        .addSelect("post.title", "post_title")
+                        .addSelect("post.id", "post_id")
+                        .disableEscaping()
+                        .getQuery()
+
+                    expect(query1).to.equal(
+                        "SELECT post.description AS post_description, " +
+                            "post.title AS post_title, " +
+                            "post.id AS post_id " +
+                            "FROM post post",
+                    )
+
+                    const query2 = connection
+                        .createQueryBuilder(Post, "post")
+                        .select(["post.description", "post.title", "post.id"])
+                        .disableEscaping()
+                        .getQuery()
+
+                    expect(query2).to.equal(
+                        "SELECT post.description AS post_description, " +
+                            "post.title AS post_title, " +
+                            "post.id AS post_id " +
+                            "FROM post post",
+                    )
+                }),
+            ))
+
+        it("works with joins and subqueries", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const sub = connection
+                        .createQueryBuilder(Category, "c")
+                        .select("c.id")
+                        .where("c.name = :name", { name: "Cat" })
+                        .disableEscaping()
+                        .getSql()
+                    expect(sub).to.equal(
+                        "SELECT c.id AS c_id FROM category c WHERE c.name = ?",
+                    )
+
+                    const sql = connection
+                        .createQueryBuilder(Post, "post")
+                        .select("post")
+                        .addSelect("category.description")
+                        .addSelect("category.name")
+                        .leftJoin("post.category", "category")
+                        .where(`post.categoryId IN (${sub})`)
+                        .disableEscaping()
+                        .getSql()
+
+                    expect(sql).to.equal(
+                        "SELECT post.id AS post_id, " +
+                            "post.title AS post_title, " +
+                            "post.description AS post_description, " +
+                            "post.rating AS post_rating, " +
+                            "post.version AS post_version, " +
+                            "post.heroImageId AS post_heroImageId, " +
+                            "post.categoryId AS post_categoryId, " +
+                            "category.description AS category_description, " +
+                            "category.name AS category_name " +
+                            "FROM post post " +
+                            "LEFT JOIN category category ON category.id=post.categoryId " +
+                            "WHERE post.categoryId IN (" +
+                            "SELECT c.id AS c_id FROM category c WHERE c.name = ?" +
+                            ")",
+                    )
+                }),
+            ))
+    })
 })
