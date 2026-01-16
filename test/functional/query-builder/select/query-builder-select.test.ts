@@ -19,6 +19,7 @@ describe("query builder > select", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [Category, Post, Tag, HeroImage, ExternalPost],
+                enabledDrivers: ["sqlite"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -186,18 +187,10 @@ describe("query builder > select", () => {
                             })
                             .getQueryAndParameters()
 
-                        let where = 'WHERE "category_join"."name" = ?'
-                        if (DriverUtils.isPostgresFamily(connection.driver)) {
-                            where = 'WHERE "category_join"."name" = $1'
-                        } else if (
-                            DriverUtils.isMySQLFamily(connection.driver)
-                        ) {
-                            where = 'WHERE "category_join"."name" = @0'
-                        }
                         expect(sql).to.equal(
                             'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
                                 'LEFT JOIN "category" "category_join" ON "category_join"."id"="post"."categoryId" ' +
-                                where,
+                                'WHERE "category_join"."name" = ?',
                         )
 
                         expect(params).to.eql(["Foo"])
@@ -634,7 +627,7 @@ describe("query builder > select", () => {
         Promise.all(
             connections.map(async (connection) => {
                 // `USE INDEX` is only supported in MySQL
-                if (connection.driver.options.type !== "mysql") {
+                if (!DriverUtils.isMySQLFamily(connection.driver)) {
                     return
                 }
 
