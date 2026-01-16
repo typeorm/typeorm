@@ -5,12 +5,6 @@ pr_compliances:
       success_criteria: "Docs or samples update with user-facing changes."
       failure_criteria: "User-facing changes without doc updates."
 
-    - title: "Breaking changes documented"
-      compliance_label: true
-      objective: "Breaking changes are explicit."
-      success_criteria: "A BREAKING CHANGE note is in the PR description or commit message."
-      failure_criteria: "Breaking changes without a BREAKING CHANGE note."
-
     - title: "Prefer functional tests over per-issue tests"
       compliance_label: true
       objective: "Issue fixes stay in the functional test suite."
@@ -28,3 +22,9 @@ pr_compliances:
       objective: "All new variables, functions, and classes must follow the project's established naming standards"
       success_criteria: "All identifiers follow the established naming patterns (camelCase, PascalCase, snake_case, etc.)"
       failure_criteria: "Inconsistent or non-standard naming that deviates from project conventions"
+
+    - title: "Remove AI-generated noise"
+      compliance_label: true
+      objective: "Changes should not introduce AI-generated slop."
+      success_criteria: "No extra comments, abnormal defensive checks/try-catch blocks, any-casts to bypass types, or style inconsistent with the file."
+      failure_criteria: "Added AI-like comments, abnormal defensive code, any-casts to bypass type issues, or inconsistent style."
