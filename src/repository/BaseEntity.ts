@@ -656,7 +656,7 @@ export class BaseEntity {
      */
     static clear<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
-        options?: { cascade?: boolean },
+        options?: { cascade: boolean },
     ): Promise<void> {
         return this.getRepository<T>().clear(options)
     }

@@ -2359,8 +2359,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async clearTable(
         tableOrName: Table | string,
-        options?: { cascade?: boolean },
+        options?: { cascade: boolean },
     ): Promise<void> {
+        if (options?.cascade) {
+            throw new TypeORMError(
+                `MySql does not support clearing table with cascade option`,
+            )
+        }
         await this.query(`TRUNCATE TABLE ${this.escapePath(tableOrName)}`)
     }
 

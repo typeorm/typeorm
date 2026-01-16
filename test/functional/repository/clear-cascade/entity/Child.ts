@@ -4,11 +4,11 @@ import {
     Column,
     ManyToOne,
     JoinColumn,
-} from "../../../../../../src"
+} from "../../../../../src"
 import { Parent } from "./Parent"
 
 @Entity()
-export class ChildNoDelete {
+export class Child {
     @PrimaryGeneratedColumn()
     id: number
 

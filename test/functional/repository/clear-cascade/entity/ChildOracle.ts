@@ -4,20 +4,20 @@ import {
     Column,
     ManyToOne,
     JoinColumn,
-} from "../../../../../../src"
-import { Parent } from "./Parent"
+} from "../../../../../src"
+import { ParentOracle } from "./ParentOracle"
 
 @Entity()
-export class Child {
+export class ChildOracle {
     @PrimaryGeneratedColumn()
     id: number
 
     @Column()
     value: string
 
-    @ManyToOne(() => Parent, (parent) => parent.children, {
+    @ManyToOne(() => ParentOracle, (parent) => parent.children, {
         onDelete: "CASCADE",
     })
     @JoinColumn({ name: "parent_id" })
-    parent: Parent
+    parent: ParentOracle
 }

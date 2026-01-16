@@ -4,30 +4,31 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src"
-import { Parent } from "./entity/Parent"
-import { Child } from "./entity/Child"
+} from "../../../utils/test-utils"
+import { DataSource } from "../../../../src"
+import { ParentOracle } from "./entity/ParentOracle"
+import { ChildOracle } from "./entity/ChildOracle"
 import { ChildNoDelete } from "./entity/ChildNoDelete"
 
-describe("repository > clear cascade (oracle)", () => {
+describe("repository > clear cascade > oracle", () => {
     let dataSources: DataSource[]
 
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
+            dropSchema: true,
             enabledDrivers: ["oracle"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    describe("clear({ cascade: true })", () => {
+    describe("clear with cascade true", () => {
         it("truncates dependent tables with onDelete: CASCADE", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const parentRepo = dataSource.getRepository(Parent)
-                    const childRepo = dataSource.getRepository(Child)
+                    const parentRepo = dataSource.getRepository(ParentOracle)
+                    const childRepo = dataSource.getRepository(ChildOracle)
 
                     const parent = await parentRepo.save({ name: "p1" })
                     await childRepo.save({ value: "c1", parent })
@@ -52,7 +53,7 @@ describe("repository > clear cascade (oracle)", () => {
         it("does not truncate children without onDelete: CASCADE", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const parentRepo = dataSource.getRepository(Parent)
+                    const parentRepo = dataSource.getRepository(ParentOracle)
                     const childNoDeleteRepo =
                         dataSource.getRepository(ChildNoDelete)
 
@@ -73,12 +74,12 @@ describe("repository > clear cascade (oracle)", () => {
             ))
     })
 
-    describe("clear({ cascade: false })", () => {
+    describe("clear with cascade false", () => {
         it("fails with dependent tables with onDelete: CASCADE", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const parentRepo = dataSource.getRepository(Parent)
-                    const childRepo = dataSource.getRepository(Child)
+                    const parentRepo = dataSource.getRepository(ParentOracle)
+                    const childRepo = dataSource.getRepository(ChildOracle)
 
                     const parent = await parentRepo.save({ name: "p1" })
                     await childRepo.save({ value: "c1", parent })
@@ -96,7 +97,7 @@ describe("repository > clear cascade (oracle)", () => {
         it("truncates independent table with onDelete: CASCADE", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const childRepo = dataSource.getRepository(Child)
+                    const childRepo = dataSource.getRepository(ChildOracle)
 
                     await childRepo.save({ value: "c1" })
 
@@ -113,7 +114,7 @@ describe("repository > clear cascade (oracle)", () => {
         it("fails with dependent tables without onDelete: CASCADE", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const parentRepo = dataSource.getRepository(Parent)
+                    const parentRepo = dataSource.getRepository(ParentOracle)
                     const childNoDeleteRepo =
                         dataSource.getRepository(ChildNoDelete)
 

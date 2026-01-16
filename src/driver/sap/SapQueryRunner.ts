@@ -2543,8 +2543,13 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async clearTable(
         tablePath: string,
-        options?: { cascade?: boolean },
+        options?: { cascade: boolean },
     ): Promise<void> {
+        if (options?.cascade) {
+            throw new TypeORMError(
+                `SAP HANA does not support clearing table with cascade option`,
+            )
+        }
         await this.query(`TRUNCATE TABLE ${this.escapePath(tablePath)}`)
     }
 

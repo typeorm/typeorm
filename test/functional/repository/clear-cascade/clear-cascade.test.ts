@@ -4,27 +4,31 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src"
+} from "../../../utils/test-utils"
+import { DataSource, TypeORMError } from "../../../../src"
 import { Parent } from "./entity/Parent"
 import { Child } from "./entity/Child"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
-describe("repository > clear cascade (postgres)", () => {
+describe("repository > clear cascade", () => {
     let dataSources: DataSource[]
 
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["postgres"],
+            dropSchema: true,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    describe("clear({ cascade: true })", () => {
+    describe("clear with cascade true", () => {
         it("truncates dependent tables", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
+                    // Testing only for non-oracle drivers here
+                    if (dataSource.driver.options.type === "oracle") return
+
                     const parentRepo = dataSource.getRepository(Parent)
                     const childRepo = dataSource.getRepository(Child)
 
@@ -36,6 +40,15 @@ describe("repository > clear cascade (postgres)", () => {
                     expect(parentCount).to.equal(1)
                     expect(childCount).to.equal(1)
 
+                    if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
+                        await expect(
+                            parentRepo.clear({ cascade: true }),
+                        ).to.be.rejectedWith(
+                            TypeORMError,
+                            /does not support clearing table with cascade option/,
+                        )
+                        return
+                    }
                     await parentRepo.clear({ cascade: true })
 
                     parentCount = await parentRepo.count()
@@ -46,10 +59,12 @@ describe("repository > clear cascade (postgres)", () => {
             ))
     })
 
-    describe("clear({ cascade: false })", () => {
+    describe("clear with cascade false", () => {
         it("fails with dependent tables", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "oracle") return
+
                     const parentRepo = dataSource.getRepository(Parent)
                     const childRepo = dataSource.getRepository(Child)
 
@@ -69,6 +84,8 @@ describe("repository > clear cascade (postgres)", () => {
         it("truncates independent table", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "oracle") return
+
                     const childRepo = dataSource.getRepository(Child)
 
                     await childRepo.save({ value: "c1" })

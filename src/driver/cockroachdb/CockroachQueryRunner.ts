@@ -2926,9 +2926,12 @@ export class CockroachQueryRunner
      */
     async clearTable(
         tableName: string,
-        options?: { cascade?: boolean },
+        options?: { cascade: boolean },
     ): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.escapePath(tableName)}`)
+        const cascade = options?.cascade ? " CASCADE" : ""
+        await this.query(
+            `TRUNCATE TABLE ${this.escapePath(tableName)}${cascade}`,
+        )
     }
 
     /**

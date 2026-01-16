@@ -2314,7 +2314,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async clearTable(
         tableName: string,
-        options?: { cascade?: boolean },
+        options?: { cascade: boolean },
     ): Promise<void> {
         const cascade = options?.cascade ? " CASCADE" : ""
         await this.query(
