@@ -186,17 +186,18 @@ describe("query builder > select", () => {
                             })
                             .getQueryAndParameters()
 
-                        const sqlVariable = DriverUtils.isPostgresFamily(
-                            connection.driver,
-                        )
-                            ? "$1"
-                            : DriverUtils.isMySQLFamily(connection.driver)
-                              ? "@0"
-                              : "?"
+                        let where = 'WHERE "category_join"."name" = ?'
+                        if (DriverUtils.isPostgresFamily(connection.driver)) {
+                            where = 'WHERE "category_join"."name" = $1'
+                        } else if (
+                            DriverUtils.isMySQLFamily(connection.driver)
+                        ) {
+                            where = 'WHERE "category_join"."name" = @0'
+                        }
                         expect(sql).to.equal(
                             'SELECT "post"."id" AS "post_id" FROM "post" "post" ' +
                                 'LEFT JOIN "category" "category_join" ON "category_join"."id"="post"."categoryId" ' +
-                                `WHERE "category_join"."name" = ${sqlVariable}`,
+                                where,
                         )
 
                         expect(params).to.eql(["Foo"])
