@@ -240,6 +240,7 @@ export class JunctionEntityMetadataBuilder {
                           this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : relation.onUpdate || "CASCADE",
+                      deferrable: relation.deferrable,
                   }),
                   new ForeignKeyMetadata({
                       entityMetadata: entityMetadata,
@@ -260,6 +261,9 @@ export class JunctionEntityMetadataBuilder {
                               : relation.inverseRelation
                                 ? relation.inverseRelation.onUpdate
                                 : "CASCADE",
+                      deferrable: relation.inverseRelation
+                          ? relation.inverseRelation.deferrable
+                          : relation.deferrable,
                   }),
               ]
             : []
