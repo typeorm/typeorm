@@ -52,13 +52,4 @@ export interface SqljsConnectionOptions extends BaseDataSourceOptions {
     readonly useLocalForage?: boolean
 
     readonly poolSize?: never
-
-    /**
-     * Enables strict mode. This will make sure that columns are always treated with their defined types.
-     * For example, if a column is defined as an integer, it will always be treated as an integer.
-     * This can help prevent issues with type coercion and ensure data integrity.
-     *
-     * @see https://www.sqlite.org/stricttables.html
-     */
-    strict?: boolean
 }

@@ -11,7 +11,6 @@ import { OrmUtils } from "../../util/OrmUtils"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { TypeORMError } from "../../error"
-import { VersionUtils } from "../../util/VersionUtils"
 
 // This is needed to satisfy the typescript compiler.
 interface Window {
@@ -288,33 +287,6 @@ export class SqljsDriver extends AbstractSqliteDriver {
         }
 
         this.databaseConnection.exec(`PRAGMA foreign_keys = ON`)
-
-        // Check SQLite version for strict mode support
-        if (this.options.strict) {
-            try {
-                const result = this.databaseConnection.exec(
-                    "SELECT sqlite_version() as version",
-                )
-                if (
-                    result &&
-                    result[0] &&
-                    result[0].values &&
-                    result[0].values[0]
-                ) {
-                    const version = result[0].values[0][0]
-                    if (
-                        version &&
-                        !VersionUtils.isGreaterOrEqual(version, "3.37.0")
-                    ) {
-                        throw new Error(
-                            `SQLite strict tables require SQLite version 3.37.0 or higher. Your current version is ${version}.`,
-                        )
-                    }
-                }
-            } catch (_) {
-                // If we can't get the version, we'll allow it and let SQLite handle the error
-            }
-        }
 
         return this.databaseConnection
     }

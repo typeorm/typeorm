@@ -23,7 +23,6 @@ import { ClosureTreeOptions } from "./types/ClosureTreeOptions"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { shorten } from "../util/StringUtils"
-import { DriverUtils } from "../driver/DriverUtils"
 
 /**
  * Contains all entity metadata.
@@ -1093,17 +1092,7 @@ export class EntityMetadata {
         this.expression = this.tableMetadataArgs.expression
         this.withoutRowid =
             this.tableMetadataArgs.withoutRowid === true ? true : false
-
-        // Apply strict mode: entity-level setting takes precedence over connection-level
-        if (this.tableMetadataArgs.strict !== undefined) {
-            // Explicit entity-level setting
-            this.strict = this.tableMetadataArgs.strict === true
-        } else if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
-            // For SQLite drivers, use connection-level setting if entity-level not set
-            this.strict = (this.connection.options as any).strict === true
-        } else {
-            this.strict = false
-        }
+        this.strict = this.tableMetadataArgs.strict === true ? true : false
 
         this.tablePath = this.connection.driver.buildTableName(
             this.tableName,

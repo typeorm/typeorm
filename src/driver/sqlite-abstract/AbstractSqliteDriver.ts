@@ -128,7 +128,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         "time",
         "datetime",
         "json",
-        "any",
+        "any", // added in SQLite 3.37.0 for strict tables
     ]
 
     /**
@@ -353,6 +353,8 @@ export abstract class AbstractSqliteDriver implements Driver {
             return DateUtils.simpleArrayToString(value)
         } else if (columnMetadata.type === "simple-enum") {
             return DateUtils.simpleEnumToString(value)
+        } else if (columnMetadata.type === "any") {
+            return DateUtils.simpleJsonToString(value)
         }
 
         return value
@@ -416,7 +418,8 @@ export abstract class AbstractSqliteDriver implements Driver {
             value = DateUtils.mixedTimeToString(value)
         } else if (
             columnMetadata.type === "json" ||
-            columnMetadata.type === "simple-json"
+            columnMetadata.type === "simple-json" ||
+            columnMetadata.type === "any"
         ) {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "simple-array") {
@@ -926,59 +929,50 @@ export abstract class AbstractSqliteDriver implements Driver {
         const type = columnType.toLowerCase().trim()
 
         // Direct strict-compatible types - return as-is
-        const strictTypes = ["int", "integer", "real", "text", "blob", "any"]
-        if (strictTypes.includes(type)) {
+        const strictTypes = new Set([
+            "int",
+            "integer",
+            "real",
+            "text",
+            "blob",
+            "any",
+        ])
+
+        if (strictTypes.has(type)) {
             return type
         }
 
-        // Map all supported SQLite types to strict-compatible types
-        const typeMap: { [key: string]: string } = {
-            // Text/Character types → TEXT
-            varchar: "text",
-            character: "text",
-            "varying character": "text",
-            nchar: "text",
-            "native character": "text",
-            nvarchar: "text",
-            clob: "text",
-            string: "text",
-            // Date/Time types → TEXT (SQLite stores these as text)
-            datetime: "text",
-            date: "text",
-            timestamp: "text",
-            time: "text",
-            // JSON → TEXT (SQLite stores JSON as text)
-            json: "text",
-            // Boolean → INTEGER (SQLite stores as 0/1)
-            boolean: "integer",
-            bool: "integer",
-            // Numeric/Decimal types → REAL
-            numeric: "real",
-            decimal: "real",
-            float: "real",
-            double: "real",
-            "double precision": "real",
-            // Integer types → INTEGER
-            tinyint: "integer",
-            smallint: "integer",
-            mediumint: "integer",
-            bigint: "integer",
-            int2: "integer",
-            int8: "integer",
-            "unsigned big int": "integer",
+        switch (type) {
+            case "tinyint":
+            case "smallint":
+            case "mediumint":
+            case "bigint":
+            case "unsigned big int":
+            case "int2":
+            case "int8":
+            case "boolean":
+                return "integer"
+            case "character":
+            case "varchar":
+            case "varying character":
+            case "nchar":
+            case "native character":
+            case "nvarchar":
+            case "clob":
+            case "datetime":
+            case "date":
+            case "time":
+            case "json":
+                return "text"
+            case "double":
+            case "double precision":
+            case "float":
+            case "numeric":
+            case "decimal":
+                return "real"
+            default:
+                return "any"
         }
-
-        const mappedType = typeMap[type]
-        if (mappedType) {
-            return mappedType
-        }
-
-        throw new TypeORMError(
-            `Column type "${columnType}" is not compatible with SQLite strict mode. ` +
-                `SQLite strict tables only support these types: INT, INTEGER, REAL, TEXT, BLOB, ANY. ` +
-                `Common type mappings: varchar→text, int→integer, float→real, datetime→text, boolean→integer, json→text. ` +
-                `Please update your entity to use a compatible type.`,
-        )
     }
 
     // -------------------------------------------------------------------------

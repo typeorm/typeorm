@@ -10,7 +10,6 @@ import { BetterSqlite3ConnectionOptions } from "./BetterSqlite3ConnectionOptions
 import { BetterSqlite3QueryRunner } from "./BetterSqlite3QueryRunner"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { filepathToName, isAbsolute } from "../../util/PathUtils"
-import { VersionUtils } from "../../util/VersionUtils"
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -141,27 +140,6 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
             verbose,
             nativeBinding,
         })
-
-        // Check SQLite version for strict mode support
-        if (this.options.strict) {
-            try {
-                const versionResult = databaseConnection
-                    .prepare("SELECT sqlite_version()")
-                    .pluck()
-                    .get()
-                if (
-                    versionResult &&
-                    !VersionUtils.isGreaterOrEqual(versionResult, "3.37.0")
-                ) {
-                    throw new Error(
-                        `SQLite strict tables require SQLite version 3.37.0 or higher. Your current version is ${versionResult}.`,
-                    )
-                }
-            } catch (_) {
-                // If we can't get the version, we'll allow it and let SQLite handle the error
-            }
-        }
-
         // in the options, if encryption key for SQLCipher is setted.
         // Must invoke key pragma before trying to do any other interaction with the database.
         if (this.options.key) {
