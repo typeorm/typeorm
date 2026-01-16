@@ -679,7 +679,7 @@ export class InsertQueryBuilder<
                         this.expressionMap.onUpdate.overwriteCondition.length >
                             0
                     ) {
-                        query += ` WHERE ${this.createUpsertConditionExpression()}`
+                        query += ` WHERE ${this.createUpsertConditionExpression(tableOrAliasName)}`
                     }
                 }
             } else if (
@@ -1189,7 +1189,8 @@ export class InsertQueryBuilder<
                     condition: wheres,
                 })
             }
-            const mergeCondition = this.createUpsertConditionExpression()
+            const mergeCondition =
+                this.createUpsertConditionExpression(tableAlias)
             if (updateExpression.trim()) {
                 if (
                     (this.connection.driver.options.type === "mssql" ||
@@ -1450,7 +1451,7 @@ export class InsertQueryBuilder<
     /**
      * Create upsert search condition expression.
      */
-    protected createUpsertConditionExpression() {
+    protected createUpsertConditionExpression(mainTableOrAlias: string) {
         if (!this.expressionMap.onUpdate.overwriteCondition) return ""
         const conditionsArray = []
 
@@ -1482,10 +1483,10 @@ export class InsertQueryBuilder<
 
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
                 const column = this.expressionMap.aliasNamePrefixingEnabled
-                    ? this.expressionMap.mainAlias!.name +
+                    ? mainTableOrAlias +
                       "." +
-                      metadata.discriminatorColumn.databaseName
-                    : metadata.discriminatorColumn.databaseName
+                      this.escape(metadata.discriminatorColumn.databaseName)
+                    : this.escape(metadata.discriminatorColumn.databaseName)
 
                 const condition = `${column} IN (:...discriminatorColumnValues)`
                 conditionsArray.push(condition)
