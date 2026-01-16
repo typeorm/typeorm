@@ -51,6 +51,12 @@ export class IndexMetadata {
     isNullFiltered: boolean = false
 
     /**
+     * UNIQUE NULLS NOT DISTINCT constraint allows only a single NULL value to appear in a UNIQUE index.
+     * Works only in PostgreSQL.
+     */
+    isNullsNotDistinct: boolean = false
+
+    /**
      * Fulltext parser.
      * Works only in MySQL.
      */
@@ -170,6 +176,7 @@ export class IndexMetadata {
             this.isUnique = !!options.args.unique
             this.isSpatial =
                 !!options.args.spatial || options.args.type === "gist"
+            this.isNullsNotDistinct = !!options.args.nullsNotDistinct
             this.isFulltext = !!options.args.fulltext
             this.isNullFiltered = !!options.args.nullFiltered
             this.parser = options.args.parser

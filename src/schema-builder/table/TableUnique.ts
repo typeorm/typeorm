@@ -27,6 +27,12 @@ export class TableUnique {
      */
     deferrable?: string
 
+    /**
+     * UNIQUE NULLS NOT DISTINCT constraint allows only a single NULL value to appear in a UNIQUE index.
+     * This option is only applicable in PostgreSQL.
+     */
+    isNullsNotDistinct: boolean
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -35,6 +41,7 @@ export class TableUnique {
         this.name = options.name
         this.columnNames = options.columnNames
         this.deferrable = options.deferrable
+        this.isNullsNotDistinct = !!options.isNullsNotDistinct
     }
 
     // -------------------------------------------------------------------------
@@ -49,6 +56,7 @@ export class TableUnique {
             name: this.name,
             columnNames: [...this.columnNames],
             deferrable: this.deferrable,
+            isNullsNotDistinct: this.isNullsNotDistinct,
         })
     }
 
@@ -66,6 +74,7 @@ export class TableUnique {
                 (column) => column.databaseName,
             ),
             deferrable: uniqueMetadata.deferrable,
+            isNullsNotDistinct: uniqueMetadata.nullsNotDistinct,
         })
     }
 }
