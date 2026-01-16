@@ -1575,7 +1575,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         } else if (parameterValue === null) {
             const nullBehavior =
                 this.connection.options.invalidWhereValuesBehavior?.null ||
-                "ignore"
+                "throw"
             if (nullBehavior === "sql-null") {
                 return {
                     operator: "isNull",
@@ -1591,7 +1591,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         } else if (parameterValue === undefined) {
             const undefinedBehavior =
                 this.connection.options.invalidWhereValuesBehavior?.undefined ||
-                "ignore"
+                "throw"
             if (undefinedBehavior === "throw") {
                 throw new TypeORMError(
                     `Undefined value encountered in property '${aliasPath}' of a where condition. ` +
