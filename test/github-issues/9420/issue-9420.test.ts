@@ -20,9 +20,14 @@ describe("github issues > #9420 Get error 'Cannot get metadata of given alias' w
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should not throw errors", async () =>
+    it("should return the user with the given name", async () =>
         await Promise.all(
             connections.map(async (connection) => {
+                const user = new User()
+                user.name = "ABCxyz"
+                user.email = "abcxyz@example.com"
+                await connection.manager.save(user)
+
                 const userSubQb = connection
                     .getRepository(User)
                     .createQueryBuilder("user")
@@ -40,8 +45,9 @@ describe("github issues > #9420 Get error 'Cannot get metadata of given alias' w
                     .orderBy("sub.name", "ASC")
                     .setParameters(userSubQb.getParameters())
 
-                expect(await userQuery.getRawMany()).to.deep.eq([])
-                await expect(userQuery.getRawMany()).not.to.eventually.throw()
+                const results = await userQuery.getRawMany()
+                expect(results).to.have.length(1)
+                expect(results[0].name).to.eq("ABCxyz")
             }),
         ))
 })
