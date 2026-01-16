@@ -634,7 +634,7 @@ describe("query builder > select", () => {
         Promise.all(
             connections.map(async (connection) => {
                 // `USE INDEX` is only supported in MySQL
-                if (!DriverUtils.isMySQLFamily(connection.driver)) {
+                if (connection.driver.options.type !== "mysql") {
                     return
                 }
 
