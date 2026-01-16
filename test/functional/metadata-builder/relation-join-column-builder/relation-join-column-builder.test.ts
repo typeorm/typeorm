@@ -10,6 +10,9 @@ import {
 import { City } from "./entity/City"
 import { Country } from "./entity/Country"
 import { Company } from "./entity/Company"
+import { Game } from "./entity/Game"
+import { Match } from "./entity/Match"
+import { Participant } from "./entity/Participant"
 
 describe("metadata builder > RelationJoinColumnBuilder", () => {
     let dataSources: DataSource[]
@@ -93,6 +96,56 @@ describe("metadata builder > RelationJoinColumnBuilder", () => {
                         country: { name: "Texas", region: "USA" },
                     },
                 ] satisfies Company[])
+            }),
+        ))
+
+    it("should correctly generate sql with simple and composite joins (referenceColumnNames)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const game = await dataSource.getRepository(Game).save({
+                    title: "Some Game",
+                })
+                const participant = await dataSource
+                    .getRepository(Participant)
+                    .save({
+                        userId: 1,
+                        gameId: game.id,
+                    })
+
+                await dataSource.getRepository(Match).save({
+                    game: game,
+                    userId: 1,
+                    participant: participant,
+                })
+
+                const query = dataSource
+                    .createQueryBuilder(Match, "match")
+                    .leftJoinAndSelect("match.game", "game")
+                    .leftJoinAndSelect("match.participant", "participant")
+
+                const sql = query.getSql()
+
+                const hasCorrectJoin =
+                    sql.includes(
+                        "LEFT JOIN `game` `game` ON `game`.`id`=`match`.`game_id`  LEFT JOIN `participant` `participant` ON `participant`.`user_id`=`match`.`user_id` AND `participant`.`game_id`=`match`.`game_id`",
+                    ) ||
+                    sql.includes(
+                        `LEFT JOIN "game" "game" ON "game"."id"="match"."game_id"  LEFT JOIN "participant" "participant" ON "participant"."user_id"="match"."user_id" AND "participant"."game_id"="match"."game_id"`,
+                    )
+                expect(hasCorrectJoin).to.be.true
+
+                const matches = await query.getMany()
+
+                expect(matches).to.have.lengthOf(1)
+                const match = matches[0]
+                expect(Number(match.id)).to.equal(1) // Some DBs return string ids
+                expect(Number(match.userId)).to.equal(1) // Some DBs return string ids
+                expect(match.game).to.exist
+                expect(Number(match.game.id)).to.equal(1) // Some DBs return string ids
+                expect(match.game.title).to.equal("Some Game")
+                expect(match.participant).to.exist
+                expect(Number(match.participant!.userId)).to.equal(1) // Some DBs return string ids
+                expect(Number(match.participant!.gameId)).to.equal(1) // Some DBs return string ids
             }),
         ))
 })
