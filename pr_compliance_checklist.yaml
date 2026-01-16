@@ -11,12 +11,6 @@ pr_compliances:
       success_criteria: "Issue fixes add or update tests in test/functional, with an issue reference in the test comment when applicable."
       failure_criteria: "Issue fixes only add tests under test/github-issues without a clear reason."
 
-    - title: "Use .test. filenames"
-      compliance_label: true
-      objective: "Tests use the .test. naming convention."
-      success_criteria: "New or renamed tests use .test. in the filename."
-      failure_criteria: "Non-.test. test files are added or modified."
-
     - title: "Consistent Naming Conventions"
       compliance_label: true
       objective: "All new variables, functions, and classes must follow the project's established naming standards"
