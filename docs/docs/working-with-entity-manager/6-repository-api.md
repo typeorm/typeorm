@@ -488,10 +488,13 @@ const rawData = await repository.query(
 )
 ```
 
-- `clear` - Clears all the data from the given table (truncates/drops it).
+- `clear` - Clears all the data from the given table (truncates/drops it). Supports clear with cascading on PostgreSQL and Oracle via `{ cascade: true }` option.
 
 ```typescript
 await repository.clear()
+
+// With cascade option (PostgreSQL and Oracle only)
+await repository.clear({ cascade: true })
 ```
 
 ### Additional Options

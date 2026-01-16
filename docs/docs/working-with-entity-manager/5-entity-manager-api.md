@@ -391,10 +391,13 @@ const timber = await manager.findOneOrFail(User, {
 const timber = await manager.findOneByOrFail(User, { firstName: "Timber" })
 ```
 
-- `clear` - Clears all the data from the given table (truncates/drops it).
+- `clear` - Clears all the data from the given table (truncates/drops it). Supports clear with cascading on PostgreSQL and Oracle via `{ cascade: true }` option.
 
 ```typescript
 await manager.clear(User)
+
+// With cascade option (PostgreSQL and Oracle only)
+await manager.clear(User, { cascade: true })
 ```
 
 - `getRepository` - Gets `Repository` to perform operations on a specific entity.
