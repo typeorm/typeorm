@@ -1,4 +1,4 @@
-import { Driver } from "../Driver"
+import { Driver, ReturningType } from "../Driver"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { SpannerQueryRunner } from "./SpannerQueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
@@ -399,7 +399,9 @@ export class SpannerDriver implements Driver {
             const lib = this.options.driver || PlatformTools.load("spanner")
             return lib.Spanner.numeric(value.toString())
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value)
+            return DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "json") {
             return value
         } else if (
@@ -434,7 +436,9 @@ export class SpannerDriver implements Driver {
         } else if (columnMetadata.type === "numeric") {
             value = value.value
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "json") {
             value = typeof value === "string" ? JSON.parse(value) : value
         } else if (columnMetadata.type === Number) {
@@ -692,7 +696,7 @@ export class SpannerDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(_returningType: ReturningType): boolean {
         return true
     }
 

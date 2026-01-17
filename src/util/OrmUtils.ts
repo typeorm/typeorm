@@ -36,16 +36,19 @@ export class OrmUtils {
         array: T[],
         propertyCallback: (item: T) => R,
     ): { id: R; items: T[] }[] {
-        return array.reduce((groupedArray, value) => {
-            const key = propertyCallback(value)
-            let grouped = groupedArray.find((i) => i.id === key)
-            if (!grouped) {
-                grouped = { id: key, items: [] }
-                groupedArray.push(grouped)
-            }
-            grouped.items.push(value)
-            return groupedArray
-        }, [] as Array<{ id: R; items: T[] }>)
+        return array.reduce(
+            (groupedArray, value) => {
+                const key = propertyCallback(value)
+                let grouped = groupedArray.find((i) => i.id === key)
+                if (!grouped) {
+                    grouped = { id: key, items: [] }
+                    groupedArray.push(grouped)
+                }
+                grouped.items.push(value)
+                return groupedArray
+            },
+            [] as Array<{ id: R; items: T[] }>,
+        )
     }
 
     public static uniq<T>(array: T[], criteria?: (item: T) => unknown): T[]
@@ -247,6 +250,22 @@ export class OrmUtils {
         return arr1.every((element) => arr2.includes(element))
     }
 
+    /**
+     * Returns items that are missing/extraneous in the second array
+     */
+    public static getArraysDiff<T>(
+        arr1: T[],
+        arr2: T[],
+    ): { extraItems: T[]; missingItems: T[] } {
+        const extraItems = arr1.filter((item) => !arr2.includes(item))
+        const missingItems = arr2.filter((item) => !arr1.includes(item))
+
+        return {
+            extraItems,
+            missingItems,
+        }
+    }
+
     public static areMutuallyExclusive<T>(...lists: T[][]): boolean {
         const haveSharedObjects = lists.some((list) => {
             const otherLists = lists.filter((otherList) => otherList !== list)
@@ -439,24 +458,35 @@ export class OrmUtils {
         if (leftChain.indexOf(x) > -1 || rightChain.indexOf(y) > -1)
             return false
 
+        let iterableX = x
+        let iterableY = y
+
+        if (x instanceof Map) {
+            iterableX = Object.fromEntries(x)
+            iterableY = Object.fromEntries(y)
+        } else if (x instanceof Set) {
+            iterableX = Array.from(x)
+            iterableY = Array.from(y)
+        }
+
         // Quick checking of one object being a subset of another.
         // todo: cache the structure of arguments[0] for performance
-        for (p in y) {
-            if (y.hasOwnProperty(p) !== x.hasOwnProperty(p)) {
+        for (p in iterableY) {
+            if (iterableY.hasOwnProperty(p) !== iterableX.hasOwnProperty(p)) {
                 return false
-            } else if (typeof y[p] !== typeof x[p]) {
+            } else if (typeof iterableY[p] !== typeof iterableX[p]) {
                 return false
             }
         }
 
-        for (p in x) {
-            if (y.hasOwnProperty(p) !== x.hasOwnProperty(p)) {
+        for (p in iterableX) {
+            if (iterableY.hasOwnProperty(p) !== iterableX.hasOwnProperty(p)) {
                 return false
-            } else if (typeof y[p] !== typeof x[p]) {
+            } else if (typeof iterableY[p] !== typeof iterableX[p]) {
                 return false
             }
 
-            switch (typeof x[p]) {
+            switch (typeof iterableX[p]) {
                 case "object":
                 case "function":
                     leftChain.push(x)
@@ -466,8 +496,8 @@ export class OrmUtils {
                         !OrmUtils.compare2Objects(
                             leftChain,
                             rightChain,
-                            x[p],
-                            y[p],
+                            iterableX[p],
+                            iterableY[p],
                         )
                     ) {
                         return false
@@ -478,7 +508,7 @@ export class OrmUtils {
                     break
 
                 default:
-                    if (x[p] !== y[p]) {
+                    if (iterableX[p] !== iterableY[p]) {
                         return false
                     }
                     break

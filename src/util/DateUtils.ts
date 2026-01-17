@@ -25,8 +25,21 @@ export class DateUtils {
     /**
      * Converts given value into date string in a "YYYY-MM-DD" format.
      */
-    static mixedDateToDateString(value: string | Date): string {
+    static mixedDateToDateString(
+        value: string | Date,
+        options?: { utc?: boolean },
+    ): string {
+        const utc = options?.utc ?? false
         if (value instanceof Date) {
+            if (utc) {
+                return (
+                    this.formatZerolessValue(value.getUTCFullYear(), 4) +
+                    "-" +
+                    this.formatZerolessValue(value.getUTCMonth() + 1) +
+                    "-" +
+                    this.formatZerolessValue(value.getUTCDate())
+                )
+            }
             return (
                 this.formatZerolessValue(value.getFullYear(), 4) +
                 "-" +
@@ -239,26 +252,50 @@ export class DateUtils {
         return typeof value === "string" ? JSON.parse(value) : value
     }
 
-    static simpleEnumToString(value: any) {
+    /**
+     * Converts given simple enum or array of enums to string.
+     */
+    static simpleEnumToString(value: any): string {
+        if (Array.isArray(value)) {
+            return value.join(",")
+        }
         return "" + value
     }
 
+    /**
+     *  Converts given string to simple enum or array of enums based on the column metadata.
+     */
     static stringToSimpleEnum(value: any, columnMetadata: ColumnMetadata) {
-        if (
-            columnMetadata.enum &&
-            !isNaN(value) &&
-            columnMetadata.enum.indexOf(parseInt(value)) >= 0
-        ) {
-            // convert to number if that exists in poosible enum options
-            value = parseInt(value)
+        if (!columnMetadata.enum) {
+            return value
         }
 
-        return value
+        if (columnMetadata.isArray && typeof value === "string") {
+            if (value === "") {
+                return []
+            }
+
+            return value
+                .split(",")
+                .map((item) => this.parseEnumValue(item, columnMetadata.enum!))
+        }
+
+        return this.parseEnumValue(value, columnMetadata.enum)
     }
 
     // -------------------------------------------------------------------------
     // Private Static Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Parses and converts a value to its numeric form if it exists in the provided enum values.
+     */
+    private static parseEnumValue(value: any, enumValues: any[]): string | any {
+        const parsedValue = Number(value)
+        return !isNaN(parsedValue) && enumValues.includes(parsedValue)
+            ? parsedValue
+            : value
+    }
 
     /**
      * Formats given number to "0x" format, e.g. if the totalLength = 2 and the value is 1 then it will return "01".

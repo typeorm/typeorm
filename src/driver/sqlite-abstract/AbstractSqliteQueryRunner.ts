@@ -1183,9 +1183,8 @@ export abstract class AbstractSqliteQueryRunner
             const selectViewDropsQuery = dbPath
                 ? `SELECT 'DROP VIEW "${dbPath}"."' || name || '";' as query FROM "${dbPath}"."sqlite_master" WHERE "type" = 'view'`
                 : `SELECT 'DROP VIEW "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'view'`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
             await Promise.all(
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
@@ -1952,8 +1951,7 @@ export abstract class AbstractSqliteQueryRunner
         } else {
             c += " " + this.connection.driver.createFullType(column)
         }
-
-        if (column.enum)
+        if (column.enum && !column.isArray)
             c +=
                 ' CHECK( "' +
                 column.name +

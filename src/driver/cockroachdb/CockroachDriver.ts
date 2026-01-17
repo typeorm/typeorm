@@ -17,7 +17,7 @@ import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { ObjectUtils } from "../../util/ObjectUtils"
 import { OrmUtils } from "../../util/OrmUtils"
-import { Driver } from "../Driver"
+import { Driver, ReturningType } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
 import { ColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
@@ -385,7 +385,9 @@ export class CockroachDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value)
+            return DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             return DateUtils.mixedDateToTimeString(value)
         } else if (
@@ -445,7 +447,9 @@ export class CockroachDriver implements Driver {
         ) {
             value = DateUtils.normalizeHydratedDate(value)
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value)
+            value = DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
         } else if (columnMetadata.type === "simple-array") {
@@ -822,7 +826,11 @@ export class CockroachDriver implements Driver {
 
         return new Promise((ok, fail) => {
             this.master.connect((err: any, connection: any, release: any) => {
-                err ? fail(err) : ok([connection, release])
+                if (err) {
+                    fail(err)
+                } else {
+                    ok([connection, release])
+                }
             })
         })
     }
@@ -840,7 +848,11 @@ export class CockroachDriver implements Driver {
         return new Promise((ok, fail) => {
             this.slaves[random].connect(
                 (err: any, connection: any, release: any) => {
-                    err ? fail(err) : ok([connection, release])
+                    if (err) {
+                        fail(err)
+                    } else {
+                        ok([connection, release])
+                    }
                 },
             )
         })
@@ -960,7 +972,7 @@ export class CockroachDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(_returningType: ReturningType): boolean {
         return true
     }
 
