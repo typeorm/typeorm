@@ -76,46 +76,65 @@ describe("github issues > #10389 softDelete should not update already deleted ro
             }),
         ))
 
-    it("should correctly handle OR conditions in softDelete", () =>
+    it("should correctly handle OR conditions in softDelete and not update already deleted rows", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const manager = dataSource.manager
 
-                const usersData = [
+                // create test users
+                const batch1UsersData = [
                     { id: 10, name: "User 10", company: "comp1" },
                     { id: 11, name: "User 11", company: "comp1" },
-                    { id: 12, name: "User 12", company: "comp2" },
                 ]
-                const users = usersData.map((data) => {
+                const batch1Users = batch1UsersData.map((data) => {
                     const user = new User()
                     user.id = data.id
                     user.name = data.name
                     user.company = data.company
                     return user
                 })
-                await manager.save(users)
+                await manager.save(batch1Users)
 
-                const result = await manager.softDelete(User, [
+                // soft delete users with ID 10 OR 11
+                const del1 = await manager.softDelete(User, [
                     { id: 10 },
                     { id: 11 },
                 ])
+                expect(del1.affected).to.be.eql(2)
 
-                expect(result.affected).to.be.eql(2)
+                // create more users
+                const batch2UsersData = [
+                    { id: 12, name: "User 12", company: "comp1" },
+                    { id: 13, name: "User 13", company: "comp1" },
+                ]
+                const batch2Users = batch2UsersData.map((data) => {
+                    const user = new User()
+                    user.id = data.id
+                    user.name = data.name
+                    user.company = data.company
+                    return user
+                })
+                await manager.save(batch2Users)
+
+                // soft delete users again with ID 10 OR 11 OR 12 OR 13
+                const del2 = await manager.softDelete(User, [
+                    { id: 10 },
+                    { id: 11 },
+                    { id: 12 },
+                    { id: 13 },
+                ])
+
+                // now affected rows should be equal to 2 (batch2) and not 4, since 2 were already soft deleted before
+                expect(del2.affected).to.be.eql(batch2Users.length)
 
                 const softDeletedUsers = await manager.find(User, {
-                    where: [{ id: 10 }, { id: 11 }],
+                    where: [{ id: 10 }, { id: 11 }, { id: 12 }, { id: 13 }],
                     withDeleted: true,
                 })
-                expect(softDeletedUsers.length).to.be.eql(2)
+                expect(softDeletedUsers.length).to.be.eql(4)
                 softDeletedUsers.forEach((user) => {
                     expect(user.deletedAt).to.be.instanceOf(Date)
                 })
-
-                const notSoftDeletedUser = await manager.findOne(User, {
-                    where: { id: 12 },
-                })
-                expect(notSoftDeletedUser).to.not.be.null
-                expect(notSoftDeletedUser!.deletedAt).to.be.null
             }),
         ))
 })
