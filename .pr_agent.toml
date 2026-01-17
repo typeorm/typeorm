@@ -2,13 +2,19 @@
 pr_commands = [
     "/review",
     "/improve",
+    "/agentic_review"
 ]
 
 handle_push_trigger = true
 push_commands = [
     "/improve",
+    "/agentic_review"
 ]
 
 [auto_best_practices]
 enable_auto_best_practices = true
-utilize_auto_best_practices = true 
+utilize_auto_best_practices = true
+
+[review_agent]
+enabled = true
+publish_output = true
