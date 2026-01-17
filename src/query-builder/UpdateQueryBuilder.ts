@@ -642,11 +642,20 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 if (
                     metadata.updateDateColumn &&
                     updatedColumns.indexOf(metadata.updateDateColumn) === -1
-                )
+                ) {
+                    const databaseName = this.escape(
+                        metadata.updateDateColumn.databaseName,
+                    )
+                    const updateDateColumnValue =
+                        metadata.updateDateColumn.onUpdate ||
+                        this.connection.driver.mappedDataTypes
+                            .updateDateDefault ||
+                        "CURRENT_TIMESTAMP"
+
                     updateColumnAndValues.push(
-                        this.escape(metadata.updateDateColumn.databaseName) +
-                            " = CURRENT_TIMESTAMP",
-                    ) // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
+                        `${databaseName} = ${updateDateColumnValue}`,
+                    )
+                }
             }
         } else {
             Object.keys(valuesSetNormalized).map((key) => {
