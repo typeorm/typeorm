@@ -4187,7 +4187,10 @@ export class PostgresQueryRunner
                               table,
                               exclusion.expression!,
                           )
-                    return `CONSTRAINT "${exclusionName}" EXCLUDE ${exclusion.expression}`
+                    let constraint = `CONSTRAINT "${exclusionName}" EXCLUDE ${exclusion.expression}`
+                    if (exclusion.deferrable)
+                        constraint += ` DEFERRABLE ${exclusion.deferrable}`
+                    return constraint
                 })
                 .join(", ")
 
@@ -4662,11 +4665,14 @@ export class PostgresQueryRunner
         table: Table,
         exclusionConstraint: TableExclusion,
     ): Query {
-        return new Query(
-            `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${
-                exclusionConstraint.name
-            }" EXCLUDE ${exclusionConstraint.expression}`,
-        )
+        let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${
+            exclusionConstraint.name
+        }" EXCLUDE ${exclusionConstraint.expression}`
+
+        if (exclusionConstraint.deferrable)
+            sql += ` DEFERRABLE ${exclusionConstraint.deferrable}`
+
+        return new Query(sql)
     }
 
     /**

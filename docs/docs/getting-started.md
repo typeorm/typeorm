@@ -798,7 +798,7 @@ export class Photo {
 
 `photo => photo.metadata` is a function that returns the name of the inverse side of the relation.
 Here we show that the metadata property of the Photo class is where we store PhotoMetadata in the Photo class.
-Instead of passing a function that returns a property of the photo, you could alternatively spass a string to `@OneToOne` decorator, like `"metadata"`.
+Instead of passing a function that returns a property of the photo, you could alternatively pass a string to `@OneToOne` decorator, like `"metadata"`.
 But we used this function-typed approach to make our refactoring easier.
 
 Note that we should use the `@JoinColumn` decorator only on one side of a relation.
