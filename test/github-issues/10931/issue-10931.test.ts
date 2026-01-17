@@ -26,7 +26,6 @@ describe("github issues > #10931 Migration:generate issue using postgres when de
             connections.map(async (connection) => {
                 const schemaBuilder = connection.driver.createSchemaBuilder()
                 const syncQueries = await schemaBuilder.log()
-                console.log(syncQueries)
                 expect(syncQueries.downQueries).to.be.eql([])
                 expect(syncQueries.upQueries).to.be.eql([])
             }),
