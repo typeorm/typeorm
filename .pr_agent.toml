@@ -1,6 +1,6 @@
 [github_app]
 pr_commands = [
-    "/review",
+    "/describe --pr_description.publish_description_as_comment=true",
     "/improve",
     "/agentic_review"
 ]
