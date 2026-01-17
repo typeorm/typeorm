@@ -3562,11 +3562,14 @@ export class PostgresQueryRunner
 
                             if (
                                 tableColumn.type === "vector" ||
-                                tableColumn.type === "halfvec"
+                                tableColumn.type === "halfvec" ||
+                                tableColumn.type === "sparsevec"
                             ) {
                                 const lengthMatch = dbColumn[
                                     "format_type"
-                                ].match(/^(?:vector|halfvec)\((\d+)\)$/)
+                                ].match(
+                                    /^(?:vector|halfvec|sparsevec)\((\d+)\)$/,
+                                )
                                 if (lengthMatch && lengthMatch[1]) {
                                     tableColumn.length = lengthMatch[1]
                                 }
