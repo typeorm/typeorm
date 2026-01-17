@@ -3684,8 +3684,7 @@ export class PostgresQueryRunner
                                         true,
                                     )
                                 const enumName =
-                                    builtEnumName !== name ||
-                                    (givenName && givenName !== name)
+                                    builtEnumName !== name || !!givenName
                                         ? name
                                         : undefined
 
