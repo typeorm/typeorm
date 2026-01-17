@@ -2629,7 +2629,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         const alias = this.expressionMap.aliases.find(
                             (alias) => alias.name === aliasName,
                         )
-                        if (alias) {
+                        if (alias?.hasMetadata) {
                             const column =
                                 alias.metadata.findColumnWithPropertyPath(
                                     propertyPath,
@@ -2928,14 +2928,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 ),
             )
         }
+
+        const columnsMap = new Map(
+            metadata.columns.map((col) => [
+                `${aliasName}.${col.propertyPath}`,
+                col,
+            ]),
+        )
         columns.push(
-            ...metadata.columns.filter((column) => {
-                return this.expressionMap.selects.some(
-                    (select) =>
-                        select.selection ===
-                        aliasName + "." + column.propertyPath,
-                )
-            }),
+            ...this.expressionMap.selects
+                .map((select) => columnsMap.get(select.selection))
+                .filter((col): col is ColumnMetadata => !!col),
         )
 
         // if user used partial selection and did not select some primary columns which are required to be selected
