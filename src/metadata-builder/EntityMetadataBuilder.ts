@@ -549,7 +549,7 @@ export class EntityMetadataBuilder {
                         (column) => column.propertyName === args.propertyName,
                     )!
 
-                // for multiple table inheritance we can override default column values
+                // for multiple table inheritance we can override column values from child class
                 if (
                     entityMetadata.tableType === "regular" &&
                     args.target !== entityMetadata.target
@@ -559,8 +559,8 @@ export class EntityMetadataBuilder {
                             c.propertyName === args.propertyName &&
                             c.target === entityMetadata.target,
                     )
-                    if (childArgs && childArgs.options.default) {
-                        args.options.default = childArgs.options.default
+                    if (childArgs) {
+                        args = childArgs
                     }
                 }
 
