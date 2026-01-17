@@ -198,7 +198,6 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
                 { type: "simple", condition: condition },
             ]
         if (parameters) this.setParameters(parameters)
-
         return this
     }
 
