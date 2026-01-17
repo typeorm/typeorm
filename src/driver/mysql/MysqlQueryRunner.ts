@@ -1,8 +1,10 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { PartitionDefinition } from "../../decorator/options/PartitionOptions"
 import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import type { PartitionType } from "../../metadata/types/PartitionTypes"
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
@@ -3119,7 +3121,196 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             sql += ` COMMENT="${table.comment}"`
         }
 
+        // Add partition clause if table is partitioned
+        if (table.partition) {
+            sql += this.buildMysqlPartitionClauseSql(table)
+        }
+
         return new Query(sql)
+    }
+
+    /**
+     * Builds MySQL PARTITION BY clause with partition definitions.
+     */
+    protected buildMysqlPartitionClauseSql(table: Table): string {
+        if (!table.partition) return ""
+
+        const partition = table.partition
+        let sql = ` PARTITION BY`
+
+        // For RANGE and LIST with columns (not expression), use COLUMNS syntax
+        // This allows non-integer column types (VARCHAR, DATE, etc.)
+        if (
+            (partition.type === "RANGE" || partition.type === "LIST") &&
+            partition.columns &&
+            !partition.expression
+        ) {
+            sql += ` ${partition.type} COLUMNS`
+        } else {
+            sql += ` ${partition.type}`
+        }
+
+        // Partition key (columns or expression)
+        if (partition.expression) {
+            sql += ` (${partition.expression})`
+        } else if (partition.columns) {
+            const columns = partition.columns
+                .map((col) => `\`${col.replace(/`/g, "``")}\``)
+                .join(", ")
+            sql += ` (${columns})`
+        } else {
+            throw new TypeORMError(
+                "Partition configuration must specify either 'columns' or 'expression'",
+            )
+        }
+
+        // MySQL requires partition definitions in CREATE TABLE for RANGE/LIST
+        if (partition.partitions && partition.partitions.length > 0) {
+            if (partition.type === "HASH") {
+                const count = parseInt(String(partition.partitions.length), 10)
+                if (isNaN(count) || count <= 0 || count > 1024) {
+                    throw new TypeORMError(
+                        "HASH partition count must be between 1 and 1024",
+                    )
+                }
+                if (
+                    partition.partitions.some(
+                        (p) => p.values && p.values.length > 0,
+                    )
+                ) {
+                    throw new TypeORMError(
+                        "MySQL HASH partitions should not specify values in partition definitions",
+                    )
+                }
+                sql += ` PARTITIONS ${count}`
+            } else {
+                // RANGE and LIST partitioning
+                sql += " ("
+                const partitionDefs = partition.partitions
+                    .map((p) => {
+                        const escapedName = p.name.replace(/`/g, "``")
+                        let partDef = `PARTITION \`${escapedName}\``
+
+                        if (partition.type === "RANGE") {
+                            if (p.values.length === 1) {
+                                let value: string
+                                if (p.values[0] === "MAXVALUE") {
+                                    value = "MAXVALUE"
+                                } else if (/^\d+$/.test(p.values[0])) {
+                                    value = p.values[0]
+                                } else {
+                                    const escaped = p.values[0].replace(
+                                        /'/g,
+                                        "''",
+                                    )
+                                    value = `'${escaped}'`
+                                }
+                                partDef += ` VALUES LESS THAN (${value})`
+                            } else {
+                                throw new TypeORMError(
+                                    "MySQL RANGE partition requires 1 value (upper bound)",
+                                )
+                            }
+                        } else if (partition.type === "LIST") {
+                            if (p.values.length === 0) {
+                                throw new TypeORMError(
+                                    "LIST partition requires at least one value",
+                                )
+                            }
+                            const values = p.values
+                                .map((v) => `'${v.replace(/'/g, "''")}'`)
+                                .join(", ")
+                            partDef += ` VALUES IN (${values})`
+                        }
+
+                        return partDef
+                    })
+                    .join(", ")
+
+                sql += partitionDefs + ")"
+            }
+        }
+
+        return sql
+    }
+
+    /**
+     * Adds a partition to a partitioned table in MySQL.
+     */
+    async createPartition(
+        tableName: string,
+        partition: PartitionDefinition,
+        partitionType: PartitionType,
+    ): Promise<void> {
+        const escapedPartitionName = partition.name.replace(/`/g, "``")
+        let sql = `ALTER TABLE ${this.escapePath(tableName)} ADD PARTITION (`
+
+        if (partitionType === "RANGE") {
+            if (partition.values.length === 1) {
+                let value: string
+                if (partition.values[0] === "MAXVALUE") {
+                    value = "MAXVALUE"
+                } else if (/^\d+$/.test(partition.values[0])) {
+                    value = partition.values[0]
+                } else {
+                    const escaped = partition.values[0].replace(/'/g, "''")
+                    value = `'${escaped}'`
+                }
+                sql += `PARTITION \`${escapedPartitionName}\` VALUES LESS THAN (${value})`
+            } else {
+                throw new TypeORMError(
+                    "MySQL RANGE partition requires 1 value (upper bound)",
+                )
+            }
+        } else if (partitionType === "LIST") {
+            if (partition.values.length === 0) {
+                throw new TypeORMError(
+                    "LIST partition requires at least one value",
+                )
+            }
+            const values = partition.values
+                .map((v) => `'${v.replace(/'/g, "''")}'`)
+                .join(", ")
+            sql += `PARTITION \`${escapedPartitionName}\` VALUES IN (${values})`
+        } else {
+            throw new TypeORMError(
+                "MySQL does not support adding individual HASH partitions dynamically",
+            )
+        }
+
+        sql += ")"
+        await this.query(sql)
+    }
+
+    /**
+     * Drops a partition from a partitioned table in MySQL.
+     */
+    async dropPartition(
+        tableName: string,
+        partitionName: string,
+    ): Promise<void> {
+        const escapedPartitionName = partitionName.replace(/`/g, "``")
+        const sql = `ALTER TABLE ${this.escapePath(
+            tableName,
+        )} DROP PARTITION \`${escapedPartitionName}\``
+        await this.query(sql)
+    }
+
+    /**
+     * Lists all partitions of a table in MySQL.
+     */
+    async getPartitions(tableName: string): Promise<string[]> {
+        const parsed = this.driver.parseTableName(tableName)
+        const sql = `
+            SELECT PARTITION_NAME
+            FROM INFORMATION_SCHEMA.PARTITIONS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = ?
+              AND PARTITION_NAME IS NOT NULL
+        `
+
+        const results = await this.query(sql, [parsed.tableName])
+        return results.map((row: any) => row.PARTITION_NAME)
     }
 
     /**

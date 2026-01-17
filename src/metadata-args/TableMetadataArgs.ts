@@ -1,4 +1,5 @@
 import { DataSource, SelectQueryBuilder } from ".."
+import type { PartitionByConfig } from "../decorator/options/PartitionOptions"
 import { OrderByCondition } from "../find-options/OrderByCondition"
 import { TableType } from "../metadata/types/TableTypes"
 
@@ -75,4 +76,9 @@ export interface TableMetadataArgs {
      * Table comment. Not supported by all database types.
      */
     comment?: string
+
+    /**
+     * Table partitioning configuration.
+     */
+    partition?: PartitionByConfig
 }
