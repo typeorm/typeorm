@@ -75,4 +75,47 @@ describe("github issues > #10389 softDelete should not update already deleted ro
                 expect(del2.affected).to.be.eql(batch2Users.length)
             }),
         ))
+
+    it("should correctly handle OR conditions in softDelete", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const manager = dataSource.manager
+
+                const usersData = [
+                    { id: 10, name: "User 10", company: "comp1" },
+                    { id: 11, name: "User 11", company: "comp1" },
+                    { id: 12, name: "User 12", company: "comp2" },
+                ]
+                const users = usersData.map((data) => {
+                    const user = new User()
+                    user.id = data.id
+                    user.name = data.name
+                    user.company = data.company
+                    return user
+                })
+                await manager.save(users)
+
+                const result = await manager.softDelete(User, [
+                    { id: 10 },
+                    { id: 11 },
+                ])
+
+                expect(result.affected).to.be.eql(2)
+
+                const softDeletedUsers = await manager.find(User, {
+                    where: [{ id: 10 }, { id: 11 }],
+                    withDeleted: true,
+                })
+                expect(softDeletedUsers.length).to.be.eql(2)
+                softDeletedUsers.forEach((user) => {
+                    expect(user.deletedAt).to.be.instanceOf(Date)
+                })
+
+                const notSoftDeletedUser = await manager.findOne(User, {
+                    where: { id: 12 },
+                })
+                expect(notSoftDeletedUser).to.not.be.null
+                expect(notSoftDeletedUser!.deletedAt).to.be.null
+            }),
+        ))
 })
