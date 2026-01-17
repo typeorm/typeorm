@@ -1,10 +1,10 @@
-import { v4 } from "uuid"
 import { Entity, ManyToOne, PrimaryColumn } from "../../../../src"
+import { RandomGenerator } from "../../../../src/util/RandomGenerator"
 
 @Entity()
 export class Classification {
     constructor() {
-        this.id = v4()
+        this.id = RandomGenerator.uuidv4()
     }
 
     @PrimaryColumn({ type: "uuid" })
