@@ -3737,7 +3737,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     const propertyPath = criteriaParts.slice(1).join(".")
                     const alias = this.expressionMap.findAliasByName(aliasName)
                     const column =
-                        alias.metadata.findColumnWithPropertyPath(propertyPath)
+                        alias.metadata.findColumnWithPropertyPath(
+                            propertyPath,
+                        ) ??
+                        alias.metadata.findColumnWithDatabaseName(propertyPath)
+                    const databaseName = column
+                        ? column.databaseName
+                        : propertyPath
                     return (
                         this.escape(parentAlias) +
                         "." +
@@ -3746,7 +3752,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                 this.connection.driver,
                                 undefined,
                                 aliasName,
-                                column!.databaseName,
+                                databaseName,
                             ),
                         )
                     )
@@ -3777,7 +3783,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 const propertyPath = criteriaParts.slice(1).join(".")
                 const alias = this.expressionMap.findAliasByName(aliasName)
                 const column =
-                    alias.metadata.findColumnWithPropertyPath(propertyPath)
+                    alias.metadata.findColumnWithPropertyPath(propertyPath) ??
+                    alias.metadata.findColumnWithDatabaseName(propertyPath)
+                const databaseName = column ? column.databaseName : propertyPath
                 orderByObject[
                     this.escape(parentAlias) +
                         "." +
@@ -3786,7 +3794,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                 this.connection.driver,
                                 undefined,
                                 aliasName,
-                                column!.databaseName,
+                                databaseName,
                             ),
                         )
                 ] = orderBys[orderCriteria]
