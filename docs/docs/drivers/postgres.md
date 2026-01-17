@@ -50,6 +50,8 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 -   `installExtensions` - A boolean to control whether to install necessary postgres extensions automatically or not (default: `true`)
 
+-   `extensions` - List of additional Postgres extensions to be installed in the database (default: `undefined`)
+
 -   `applicationName` - A string visible in statistics and logs to help referencing an application to a connection (default: `undefined`)
 
 -   `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript numbers. By default, `int8` (bigint) values are returned as strings to avoid overflows. JavaScript numbers are IEEE-754 and lose precision over the maximum safe integer (`Number.MAX_SAFE_INTEGER = +2^53`). If you require the full 64-bit range consider working with the returned strings or converting them to native `bigint` instead of using this option.
