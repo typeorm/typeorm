@@ -163,7 +163,9 @@ export class InsertQueryBuilder<
             const statements = [declareSql, insertSql, selectOutputSql]
             const sql = statements.filter((s) => s != null).join(";\n\n")
 
-            const queryResult = await queryRunner.query(sql, parameters, true)
+            const queryResult = await queryRunner.query(sql, parameters, {
+                useStructuredResult: true,
+            })
 
             const insertResult = InsertResult.from(queryResult)
 

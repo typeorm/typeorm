@@ -40,6 +40,7 @@ import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
 import { buildSqlTag } from "../util/SqlTagUtils"
+import { QueryOptions } from "../query-runner/QueryOptions"
 import { OrmUtils } from "../util/OrmUtils"
 
 /**
@@ -175,8 +176,17 @@ export class EntityManager {
      *
      * @see [Official docs](https://typeorm.io/docs/Working%20with%20Entity%20Manager/entity-manager-api/) for examples.
      */
-    async query<T = any>(query: string, parameters?: any[]): Promise<T> {
-        return this.connection.query(query, parameters, this.queryRunner)
+    async query<T = any>(
+        query: string,
+        parameters?: any[],
+        optionsOrUseStructuredResult?: QueryOptions | boolean,
+    ): Promise<T> {
+        return this.connection.query<T>(
+            query,
+            parameters,
+            this.queryRunner,
+            optionsOrUseStructuredResult,
+        )
     }
 
     /**

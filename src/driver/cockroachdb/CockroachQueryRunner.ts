@@ -6,6 +6,7 @@ import { TransactionNotStartedError } from "../../error/TransactionNotStartedErr
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { QueryOptions } from "../../query-runner/QueryOptions"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
@@ -64,7 +65,7 @@ export class CockroachQueryRunner
     protected queries: {
         query: string
         parameters?: any[]
-        useStructuredResult: boolean
+        options?: QueryOptions | boolean
     }[] = []
 
     /**
@@ -269,8 +270,12 @@ export class CockroachQueryRunner
     async query(
         query: string,
         parameters?: any[],
-        useStructuredResult = false,
+        optionsOrUseStructuredResult?: QueryOptions | boolean,
     ): Promise<any> {
+        const useStructuredResult =
+            typeof optionsOrUseStructuredResult === "boolean"
+                ? optionsOrUseStructuredResult
+                : optionsOrUseStructuredResult?.useStructuredResult === true
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()
@@ -282,7 +287,11 @@ export class CockroachQueryRunner
         const queryStartTime = Date.now()
 
         if (this.isTransactionActive && this.storeQueries) {
-            this.queries.push({ query, parameters, useStructuredResult })
+            this.queries.push({
+                query,
+                parameters,
+                options: optionsOrUseStructuredResult,
+            })
         }
 
         try {
@@ -369,11 +378,7 @@ export class CockroachQueryRunner
                         q.parameters,
                         this,
                     )
-                    result = await this.query(
-                        q.query,
-                        q.parameters,
-                        q.useStructuredResult,
-                    )
+                    result = await this.query(q.query, q.parameters, q.options)
                 }
                 this.transactionRetries = 0
                 this.storeQueries = true
