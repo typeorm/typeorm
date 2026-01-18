@@ -21,6 +21,12 @@ export class TableExclusion {
      */
     expression?: string
 
+    /**
+     * Set this exclusion constraint as "DEFERRABLE" e.g. check constraints at start
+     * or at the end of a transaction
+     */
+    deferrable?: string
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -28,6 +34,7 @@ export class TableExclusion {
     constructor(options: TableExclusionOptions) {
         this.name = options.name
         this.expression = options.expression
+        this.deferrable = options.deferrable
     }
 
     // -------------------------------------------------------------------------
@@ -41,6 +48,7 @@ export class TableExclusion {
         return new TableExclusion(<TableExclusionOptions>{
             name: this.name,
             expression: this.expression,
+            deferrable: this.deferrable,
         })
     }
 
@@ -55,6 +63,7 @@ export class TableExclusion {
         return new TableExclusion(<TableExclusionOptions>{
             name: exclusionMetadata.name,
             expression: exclusionMetadata.expression,
+            deferrable: exclusionMetadata.deferrable,
         })
     }
 }

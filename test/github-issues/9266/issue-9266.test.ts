@@ -11,7 +11,7 @@ describe("github issues > #9266 queryRunner.getTable() fails if Foreign Key is s
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            migrations: [__dirname + "/migrations/*{.js,.ts}"],
+            migrations: [__dirname + "/migration/*{.js,.ts}"],
             enabledDrivers: ["sqlite", "better-sqlite3"],
         })
     })
