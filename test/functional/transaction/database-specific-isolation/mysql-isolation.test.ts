@@ -7,12 +7,58 @@ import {
 } from "../../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
+import { VersionUtils } from "../../../../src/util/VersionUtils"
 
 // TODO: add logic to verify that session level isolation is actually overriden in the database.
 // @@SESSION.transaction_isolation and @@transaction_isolation variables can be used in MySQL for that purpose
 // But both variables return the same value even after overriding the isolation level in a transaction
-// Maybe some other way to verify it
+// This needs further investigation
+
+// New MySQL/MariaDB versions, need transaction_isolation system variable for testing
+// Old MySQL/MariaDB versions, need tx_isolation system variable for testing
 describe("transaction > mysql/mariadb isolation level support", () => {
+    async function verifyTransactionIsolation(
+        connection: DataSource,
+        expectedIsolationLevel: string,
+    ) {
+        if (connection.driver.options.type === "mysql") {
+            if (
+                VersionUtils.isGreaterOrEqual(
+                    connection.driver.version,
+                    "8.0.3",
+                )
+            ) {
+                await connection
+                    .query(
+                        `SELECT @@session.transaction_isolation AS transaction_isolation`,
+                    )
+                    .then((result) =>
+                        expect(result[0].transaction_isolation).to.be.equal(
+                            expectedIsolationLevel,
+                        ),
+                    )
+            } else {
+                await connection
+                    .query(
+                        `SELECT @@session.tx_isolation AS transaction_isolation`,
+                    )
+                    .then((result) =>
+                        expect(result[0].transaction_isolation).to.be.equal(
+                            expectedIsolationLevel,
+                        ),
+                    )
+            }
+        } else {
+            await connection
+                .query(`SELECT @@session.tx_isolation AS transaction_isolation`)
+                .then((result) =>
+                    expect(result[0].transaction_isolation).to.be.equal(
+                        expectedIsolationLevel,
+                    ),
+                )
+        }
+    }
+
     describe("transaction with default isolation level READ COMMITTED", () => {
         let connections: DataSource[]
         before(
@@ -31,15 +77,10 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should execute all operations in a single transaction with READ COMMITTED isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("READ-COMMITTED"),
-                        )
+                    await verifyTransactionIsolation(
+                        connection,
+                        "READ-COMMITTED",
+                    )
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -85,15 +126,10 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should override default isolation level with SERIALIZABLE isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("READ-COMMITTED"),
-                        )
+                    await verifyTransactionIsolation(
+                        connection,
+                        "READ-COMMITTED",
+                    )
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -139,15 +175,10 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should override default isolation level with REPEATABLE READ isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("READ-COMMITTED"),
-                        )
+                    await verifyTransactionIsolation(
+                        connection,
+                        "READ-COMMITTED",
+                    )
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -193,15 +224,10 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should override default isolation level with READ UNCOMMITTED isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("READ-COMMITTED"),
-                        )
+                    await verifyTransactionIsolation(
+                        connection,
+                        "READ-COMMITTED",
+                    )
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -264,15 +290,7 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should execute all operations in a single transaction with SERIALIZABLE isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("SERIALIZABLE"),
-                        )
+                    await verifyTransactionIsolation(connection, "SERIALIZABLE")
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -318,15 +336,7 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should override default isolation level with READ COMMITTED isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("SERIALIZABLE"),
-                        )
+                    await verifyTransactionIsolation(connection, "SERIALIZABLE")
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -372,15 +382,7 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should override default isolation level with REPEATABLE READ isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("SERIALIZABLE"),
-                        )
+                    await verifyTransactionIsolation(connection, "SERIALIZABLE")
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -426,15 +428,7 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should override default isolation level with READ UNCOMMITTED isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("SERIALIZABLE"),
-                        )
+                    await verifyTransactionIsolation(connection, "SERIALIZABLE")
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -496,15 +490,10 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should execute all operations in a single transaction with REPEATABLE READ isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("REPEATABLE-READ"),
-                        )
+                    await verifyTransactionIsolation(
+                        connection,
+                        "REPEATABLE-READ",
+                    )
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -550,15 +539,10 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should override default isolation level with SERIALIZABLE isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("REPEATABLE-READ"),
-                        )
+                    await verifyTransactionIsolation(
+                        connection,
+                        "REPEATABLE-READ",
+                    )
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -604,15 +588,10 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should override default isolation level with REPEATABLE READ isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("REPEATABLE-READ"),
-                        )
+                    await verifyTransactionIsolation(
+                        connection,
+                        "REPEATABLE-READ",
+                    )
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -658,15 +637,10 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should override default isolation level with READ UNCOMMITTED isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("REPEATABLE-READ"),
-                        )
+                    await verifyTransactionIsolation(
+                        connection,
+                        "REPEATABLE-READ",
+                    )
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -728,15 +702,10 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should execute all operations in a single transaction with READ UNCOMMITTED isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("READ-UNCOMMITTED"),
-                        )
+                    await verifyTransactionIsolation(
+                        connection,
+                        "READ-UNCOMMITTED",
+                    )
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -782,15 +751,10 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should override default isolation level with SERIALIZABLE isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("READ-UNCOMMITTED"),
-                        )
+                    await verifyTransactionIsolation(
+                        connection,
+                        "READ-UNCOMMITTED",
+                    )
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -836,15 +800,10 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should override default isolation level with REPEATABLE READ isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("READ-UNCOMMITTED"),
-                        )
+                    await verifyTransactionIsolation(
+                        connection,
+                        "READ-UNCOMMITTED",
+                    )
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
@@ -890,15 +849,10 @@ describe("transaction > mysql/mariadb isolation level support", () => {
         it("should override default isolation level with READ COMMITTED isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    await connection
-                        .query(
-                            `SELECT @@session.transaction_isolation AS default_transaction_isolation`,
-                        )
-                        .then((result) =>
-                            expect(
-                                result[0].default_transaction_isolation,
-                            ).to.be.equal("READ-UNCOMMITTED"),
-                        )
+                    await verifyTransactionIsolation(
+                        connection,
+                        "READ-UNCOMMITTED",
+                    )
 
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
