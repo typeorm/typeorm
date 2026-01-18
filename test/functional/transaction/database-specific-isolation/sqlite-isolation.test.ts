@@ -9,14 +9,14 @@ import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { expect } from "chai"
 
-describe("transaction > sqlite specific isolation support", () => {
+describe("transaction > sqlite isolation support", () => {
     describe("transaction with no default isolation level", () => {
         let connections: DataSource[]
         before(
             async () =>
                 (connections = await createTestingConnections({
                     entities: [__dirname + "/entity/*{.js,.ts}"],
-                    enabledDrivers: ["sqlite", "better-sqlite3"], // todo: for some reasons mariadb tests are not passing here
+                    enabledDrivers: ["sqlite", "better-sqlite3", "sqljs"],
                 })),
         )
         beforeEach(() => reloadTestingDatabases(connections))
@@ -28,9 +28,17 @@ describe("transaction > sqlite specific isolation support", () => {
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
 
-                    await connection.manager.transaction(
+                    await connection.transaction(
                         "READ UNCOMMITTED",
                         async (entityManager) => {
+                            await entityManager
+                                .query(`PRAGMA read_uncommitted`)
+                                .then((result) =>
+                                    expect(
+                                        result[0].read_uncommitted,
+                                    ).to.be.equal(1),
+                                )
+
                             const post = new Post()
                             post.title = "Post #1"
                             await entityManager.save(post)
@@ -73,9 +81,17 @@ describe("transaction > sqlite specific isolation support", () => {
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
 
-                    await connection.manager.transaction(
+                    await connection.transaction(
                         "SERIALIZABLE",
                         async (entityManager) => {
+                            await entityManager
+                                .query(`PRAGMA read_uncommitted`)
+                                .then((result) =>
+                                    expect(
+                                        result[0].read_uncommitted,
+                                    ).to.be.equal(0),
+                                )
+
                             const post = new Post()
                             post.title = "Post #1"
                             await entityManager.save(post)
@@ -119,7 +135,7 @@ describe("transaction > sqlite specific isolation support", () => {
             async () =>
                 (connections = await createTestingConnections({
                     entities: [__dirname + "/entity/*{.js,.ts}"],
-                    enabledDrivers: ["sqlite", "better-sqlite3"],
+                    enabledDrivers: ["sqlite", "better-sqlite3", "sqljs"],
                     driverSpecific: {
                         isolationLevel: "READ UNCOMMITTED",
                     },
@@ -131,16 +147,27 @@ describe("transaction > sqlite specific isolation support", () => {
         it("should use READ UNCOMMITTED as default isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
+                    await connection
+                        .query(`PRAGMA read_uncommitted`)
+                        .then((result) =>
+                            expect(result[0].read_uncommitted).to.be.equal(1),
+                        )
+
                     let postId: number | undefined = undefined
 
-                    await connection.manager.transaction(
-                        async (entityManager) => {
-                            const post = new Post()
-                            post.title = "Post #1"
-                            await entityManager.save(post)
-                            postId = post.id
-                        },
-                    )
+                    await connection.transaction(async (entityManager) => {
+                        await entityManager
+                            .query(`PRAGMA read_uncommitted`)
+                            .then((result) =>
+                                expect(result[0].read_uncommitted).to.be.equal(
+                                    1,
+                                ),
+                            )
+                        const post = new Post()
+                        post.title = "Post #1"
+                        await entityManager.save(post)
+                        postId = post.id
+                    })
                     const post = await connection.manager.findOne(Post, {
                         where: { title: "Post #1" },
                     })
@@ -155,11 +182,25 @@ describe("transaction > sqlite specific isolation support", () => {
         it("should override default isolation level to SERIALIZABLE", () =>
             Promise.all(
                 connections.map(async (connection) => {
+                    await connection
+                        .query(`PRAGMA read_uncommitted`)
+                        .then((result) =>
+                            expect(result[0].read_uncommitted).to.be.equal(1),
+                        )
+
                     let postId: number | undefined = undefined
 
-                    await connection.manager.transaction(
+                    await connection.transaction(
                         "SERIALIZABLE",
                         async (entityManager) => {
+                            await entityManager
+                                .query(`PRAGMA read_uncommitted`)
+                                .then((result) =>
+                                    expect(
+                                        result[0].read_uncommitted,
+                                    ).to.be.equal(0),
+                                )
+
                             const post = new Post()
                             post.title = "Post #1"
                             await entityManager.save(post)
@@ -184,7 +225,7 @@ describe("transaction > sqlite specific isolation support", () => {
             async () =>
                 (connections = await createTestingConnections({
                     entities: [__dirname + "/entity/*{.js,.ts}"],
-                    enabledDrivers: ["sqlite", "better-sqlite3"],
+                    enabledDrivers: ["sqlite", "better-sqlite3", "sqljs"],
                     driverSpecific: {
                         isolationLevel: "SERIALIZABLE",
                     },
@@ -196,16 +237,27 @@ describe("transaction > sqlite specific isolation support", () => {
         it("should use SERIALIZABLE as default isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
+                    await connection
+                        .query(`PRAGMA read_uncommitted`)
+                        .then((result) =>
+                            expect(result[0].read_uncommitted).to.be.equal(0),
+                        )
+
                     let postId: number | undefined = undefined
 
-                    await connection.manager.transaction(
-                        async (entityManager) => {
-                            const post = new Post()
-                            post.title = "Post #1"
-                            await entityManager.save(post)
-                            postId = post.id
-                        },
-                    )
+                    await connection.transaction(async (entityManager) => {
+                        await entityManager
+                            .query(`PRAGMA read_uncommitted`)
+                            .then((result) =>
+                                expect(result[0].read_uncommitted).to.be.equal(
+                                    0,
+                                ),
+                            )
+                        const post = new Post()
+                        post.title = "Post #1"
+                        await entityManager.save(post)
+                        postId = post.id
+                    })
                     const post = await connection.manager.findOne(Post, {
                         where: { title: "Post #1" },
                     })
@@ -220,11 +272,24 @@ describe("transaction > sqlite specific isolation support", () => {
         it("should override default isolation level to READ UNCOMMITTED", () =>
             Promise.all(
                 connections.map(async (connection) => {
+                    await connection
+                        .query(`PRAGMA read_uncommitted`)
+                        .then((result) =>
+                            expect(result[0].read_uncommitted).to.be.equal(0),
+                        )
                     let postId: number | undefined = undefined
 
-                    await connection.manager.transaction(
+                    await connection.transaction(
                         "READ UNCOMMITTED",
                         async (entityManager) => {
+                            await entityManager
+                                .query(`PRAGMA read_uncommitted`)
+                                .then((result) =>
+                                    expect(
+                                        result[0].read_uncommitted,
+                                    ).to.be.equal(1),
+                                )
+
                             const post = new Post()
                             post.title = "Post #1"
                             await entityManager.save(post)

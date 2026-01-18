@@ -3,3 +3,4 @@ export type IsolationLevel =
     | "READ COMMITTED"
     | "REPEATABLE READ"
     | "SERIALIZABLE"
+    | "SNAPSHOT"

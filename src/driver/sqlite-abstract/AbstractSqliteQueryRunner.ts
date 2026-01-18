@@ -82,12 +82,10 @@ export abstract class AbstractSqliteQueryRunner
             this.driver.transactionSupport === "simple"
         )
             throw new TransactionAlreadyStartedError()
-        const effectiveIsolationLevel =
-            isolationLevel || this.driver.options.isolationLevel
         if (
-            effectiveIsolationLevel &&
-            effectiveIsolationLevel !== "READ UNCOMMITTED" &&
-            effectiveIsolationLevel !== "SERIALIZABLE"
+            isolationLevel &&
+            isolationLevel !== "READ UNCOMMITTED" &&
+            isolationLevel !== "SERIALIZABLE"
         )
             throw new TypeORMError(
                 `SQLite only supports SERIALIZABLE and READ UNCOMMITTED isolation`,
@@ -102,11 +100,11 @@ export abstract class AbstractSqliteQueryRunner
         }
 
         if (this.transactionDepth === 0) {
-            if (effectiveIsolationLevel) {
-                if (effectiveIsolationLevel === "READ UNCOMMITTED") {
-                    await this.query("PRAGMA read_uncommitted = true")
+            if (isolationLevel) {
+                if (isolationLevel === "READ UNCOMMITTED") {
+                    await this.query("PRAGMA read_uncommitted = ON")
                 } else {
-                    await this.query("PRAGMA read_uncommitted = false")
+                    await this.query("PRAGMA read_uncommitted = OFF")
                 }
             }
             await this.query("BEGIN TRANSACTION")

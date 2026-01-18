@@ -291,7 +291,12 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
-    afterConnect(): Promise<void> {
+    async afterConnect(): Promise<void> {
+        if ((this.options as any).isolationLevel)
+            await this.setDefaultIsolationLevel(
+                this.connection,
+                (this.options as any).isolationLevel,
+            )
         return Promise.resolve()
     }
 
@@ -305,6 +310,27 @@ export abstract class AbstractSqliteDriver implements Driver {
                 err ? fail(err) : ok(),
             )
         })
+    }
+
+    /**
+     * Sets the default transaction isolation level for all transactions in the current session.
+     */
+    async setDefaultIsolationLevel(
+        connection: any,
+        isolationLevel: "READ UNCOMMITTED" | "SERIALIZABLE",
+    ): Promise<void> {
+        try {
+            if (isolationLevel === "READ UNCOMMITTED") {
+                await connection.query("PRAGMA read_uncommitted = ON")
+            } else if (isolationLevel === "SERIALIZABLE") {
+                await connection.query("PRAGMA read_uncommitted = OFF")
+            }
+        } catch (_) {
+            throw new TypeORMError(
+                `Failed to set default isolation level: ${isolationLevel}.
+                Check if this level is supported in your SQLite database instance`,
+            )
+        }
     }
 
     hasAttachedDatabases(): boolean {

@@ -106,4 +106,11 @@ export interface PostgresConnectionOptions
      * List of additional Postgres extensions to be installed in the database.
      */
     readonly extensions?: string[]
+
+    /**
+     * Default transaction isolation level for all transactions in the current session.
+     *
+     * @see {@link https://www.postgresql.org/docs/current/transaction-iso.html}
+     */
+    readonly isolationLevel?: IsolationLevel
 }

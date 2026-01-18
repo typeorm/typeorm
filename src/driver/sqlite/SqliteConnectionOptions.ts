@@ -63,8 +63,9 @@ export interface SqliteConnectionOptions extends BaseDataSourceOptions {
     readonly busyTimeout?: number
 
     /**
-     * Sets the default transaction isolation level for new connections.
-     * You can override this value on a per-transaction basis using `queryRunner.startTransaction(isolationLevel)`.
+     * Default transaction isolation level for all transactions in the current session.
+     *
+     * @see {@link https://www.sqlite.org/isolation.html}
      */
     readonly isolationLevel?: "READ UNCOMMITTED" | "SERIALIZABLE"
 }

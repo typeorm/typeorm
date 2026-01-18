@@ -1,3 +1,4 @@
+import { IsolationLevel } from "../.."
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
@@ -74,19 +75,18 @@ export interface CockroachConnectionOptions
     readonly maxTransactionRetries?: number
 
     /**
-     * Default transaction isolation level for all transactions started on this connection.
-     * CockroachDB only supports SERIALIZABLE (default), READ COMMITTED and REPEATABLE READ isolation levels.
+     * Default transaction isolation level for all transactions in the current session.
+     * CockroachDB only supports SERIALIZABLE (default), READ COMMITTED, and REPEATABLE READ.
      *
-     * Note: Isolation level upgrades:
-     * - REPEATABLE READ requires sql.txn.repeatable_read_isolation.enabled=true
-     *   otherwise, it will be interpreted as SERIALIZABLE
-     * - READ COMMITTED requires sql.txn.read_committed_isolation.enabled=true
-     *   otherwise, it will be interpreted as SERIALIZABLE
+     * **Note: Isolation level upgrades:**
+     * - **REPEATABLE READ**: Requires `sql.txn.repeatable_read_isolation.enabled=true` (defaults to `false`).
+     * Otherwise, it will be automatically interpreted as `SERIALIZABLE`.
+     * - **READ COMMITTED**: Requires `sql.txn.read_committed_isolation.enabled=true` (defaults to `true`).
+     * Otherwise, it will be automatically interpreted as `SERIALIZABLE`.
      *
-     * You can override this value on a per-transaction basis using queryRunner.startTransaction(isolationLevel).
+     * @see {@link https://www.cockroachlabs.com/docs/releases/v24.3.html#v24-3-0-settings-added|Release Notes v24.3}
+     * @see {@link https://www.cockroachlabs.com/docs/stable/transactions.html#transaction-isolation-levels|CockroachDB Isolation Levels}
+     * @see {@link https://www.cockroachlabs.com/docs/stable/read-committed#enable-read-committed-isolation|Enabling Read Committed}
      */
-    readonly isolationLevel?:
-        | "READ COMMITTED"
-        | "REPEATABLE READ"
-        | "SERIALIZABLE"
+    readonly isolationLevel?: IsolationLevel
 }

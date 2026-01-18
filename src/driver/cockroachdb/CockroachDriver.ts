@@ -22,6 +22,7 @@ import { DriverUtils } from "../DriverUtils"
 import { ColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
+import { IsolationLevel } from "../types/IsolationLevel"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { UpsertType } from "../types/UpsertType"
@@ -339,6 +340,11 @@ export class CockroachDriver implements Driver {
             "SET enable_experimental_alter_column_type_general = true",
         )
 
+        if (this.options.isolationLevel)
+            await this.setDefaultIsolationLevel(
+                this.connection,
+                this.options.isolationLevel,
+            )
         return Promise.resolve()
     }
 
@@ -354,6 +360,25 @@ export class CockroachDriver implements Driver {
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
         this.master = undefined
         this.slaves = []
+    }
+
+    /**
+     * Sets the default transaction isolation level for all transactions in the current session.
+     */
+    async setDefaultIsolationLevel(
+        connection: any,
+        isolationLevel: IsolationLevel,
+    ): Promise<void> {
+        try {
+            await connection.query(
+                `SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
+            )
+        } catch (_) {
+            throw new TypeORMError(
+                `Failed to set default isolation level: ${isolationLevel}.
+                Check if this level is supported or if the required cluster setting (e.g., sql.txn.[repeatable_read_isolation|read_committed_isolation].enabled]) is enabled in your CockroachDB database instance`,
+            )
+        }
     }
 
     /**

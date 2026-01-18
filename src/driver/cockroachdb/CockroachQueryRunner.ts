@@ -196,12 +196,9 @@ export class CockroachQueryRunner
         if (this.transactionDepth === 0) {
             await this.query("START TRANSACTION")
             await this.query("SAVEPOINT cockroach_restart")
-            const effectiveIsolationLevel =
-                isolationLevel || this.driver.options.isolationLevel
-            if (effectiveIsolationLevel) {
+            if (isolationLevel) {
                 await this.query(
-                    "SET TRANSACTION ISOLATION LEVEL " +
-                        effectiveIsolationLevel,
+                    "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
                 )
             }
         } else {

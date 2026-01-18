@@ -28,6 +28,7 @@ import { TypeORMError } from "../../error"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
 import { FindOperator } from "../../find-options/FindOperator"
+import { IsolationLevel } from "../types/IsolationLevel"
 
 /**
  * Organizes communication with SQL Server DBMS.
@@ -325,7 +326,7 @@ export class SqlServerDriver implements Driver {
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
-    afterConnect(): Promise<void> {
+    async afterConnect(): Promise<void> {
         return Promise.resolve()
     }
 
@@ -340,6 +341,16 @@ export class SqlServerDriver implements Driver {
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
         this.master = undefined
         this.slaves = []
+    }
+
+    /**
+     * Sets the default transaction isolation level for all transactions in the current session.
+     */
+    async setDefaultIsolationLevel(
+        connection: any,
+        isolationLevel: IsolationLevel,
+    ): Promise<void> {
+        // SQL Server does not support setting a default isolation level per connection
     }
 
     /**
@@ -1154,7 +1165,20 @@ export class SqlServerDriver implements Driver {
                 requestTimeout: this.options.requestTimeout,
                 stream: this.options.stream,
                 pool: this.options.pool,
-                options: this.options.options,
+                options: {
+                    ...this.options.options,
+                    connectionIsolationLevel: this.options.options
+                        ?.connectionIsolationLevel
+                        ? this.convertIsolationLevel(
+                              this.options.options?.connectionIsolationLevel,
+                          )
+                        : undefined,
+                    isolationLevel: this.options.options?.isolationLevel
+                        ? this.convertIsolationLevel(
+                              this.options.options?.isolationLevel,
+                          )
+                        : undefined,
+                },
             },
             {
                 server: credentials.host,
@@ -1200,5 +1224,26 @@ export class SqlServerDriver implements Driver {
                 ok(connection)
             })
         })
+    }
+
+    /**
+     * Converts string literal of isolation level to enum.
+     * The underlying mssql driver requires an enum for the isolation level.
+     */
+    convertIsolationLevel(isolation: IsolationLevel) {
+        const ISOLATION_LEVEL = this.mssql.ISOLATION_LEVEL
+        switch (isolation) {
+            case "READ UNCOMMITTED":
+                return ISOLATION_LEVEL.READ_UNCOMMITTED
+            case "REPEATABLE READ":
+                return ISOLATION_LEVEL.REPEATABLE_READ
+            case "SERIALIZABLE":
+                return ISOLATION_LEVEL.SERIALIZABLE
+            case "SNAPSHOT":
+                return ISOLATION_LEVEL.SNAPSHOT
+            case "READ COMMITTED":
+            default:
+                return ISOLATION_LEVEL.READ_COMMITTED
+        }
     }
 }

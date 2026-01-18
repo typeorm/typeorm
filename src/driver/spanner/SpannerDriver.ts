@@ -21,6 +21,7 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { CteCapabilities } from "../types/CteCapabilities"
 import { UpsertType } from "../types/UpsertType"
+import { IsolationLevel } from "../types/IsolationLevel"
 
 /**
  * Organizes communication with Spanner DBMS.
@@ -210,6 +211,16 @@ export class SpannerDriver implements Driver {
      */
     async disconnect(): Promise<void> {
         this.instanceDatabase.close()
+    }
+
+    /**
+     * Sets the default transaction isolation level for all transactions in the current session.
+     */
+    async setDefaultIsolationLevel(
+        connection: any,
+        isolationLevel: IsolationLevel,
+    ): Promise<void> {
+        // Spanner does not support setting a default isolation level per connection
     }
 
     /**

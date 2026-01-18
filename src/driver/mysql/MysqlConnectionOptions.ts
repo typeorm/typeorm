@@ -155,8 +155,9 @@ export interface MysqlConnectionOptions
     }
 
     /**
-     * Sets the default transaction isolation level for new connections.
-     * You can override this value on a per-transaction basis using queryRunner.startTransaction(isolationLevel).
+     * Default transaction isolation level for all transactions in the current session.
+     *
+     * @see {@link https://dev.mysql.com/doc/refman/8.0/en/set-transaction.html}
      */
     readonly isolationLevel?: IsolationLevel
 }

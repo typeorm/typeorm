@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { IsolationLevel } from "../types/IsolationLevel"
 
 /**
  * Postgres-specific connection options.
@@ -43,4 +44,11 @@ export interface AuroraPostgresConnectionOptions extends BaseDataSourceOptions {
     readonly formatOptions?: { [key: string]: any; castParameters: boolean }
 
     readonly poolSize?: never
+
+    /**
+     * Default transaction isolation level for all transactions in the current session.
+     *
+     * @see {@link https://www.postgresql.org/docs/current/transaction-iso.html}
+     */
+    readonly isolationLevel?: IsolationLevel
 }

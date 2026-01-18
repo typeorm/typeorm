@@ -14,7 +14,7 @@ import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { OrmUtils } from "../../util/OrmUtils"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { ReplicationMode } from "../types/ReplicationMode"
-import { DriverPackageNotInstalledError } from "../../error"
+import { DriverPackageNotInstalledError, TypeORMError } from "../../error"
 import { Table } from "../../schema-builder/table/Table"
 import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
@@ -280,7 +280,12 @@ export class ReactNativeDriver implements Driver {
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
-    afterConnect(): Promise<void> {
+    async afterConnect(): Promise<void> {
+        if (this.options.isolationLevel)
+            await this.setDefaultIsolationLevel(
+                this.connection,
+                this.options.isolationLevel,
+            )
         return Promise.resolve()
     }
 
@@ -292,6 +297,26 @@ export class ReactNativeDriver implements Driver {
             this.queryRunner = undefined
             this.databaseConnection.close(ok, fail)
         })
+    }
+
+    /**
+     * Sets the default transaction isolation level for all transactions in the current session.
+     */
+    async setDefaultIsolationLevel(
+        connection: any,
+        isolationLevel: "READ UNCOMMITTED" | "SERIALIZABLE",
+    ): Promise<void> {
+        try {
+            if (isolationLevel === "SERIALIZABLE") {
+                await connection.executeSql(`PRAGMA read_uncommitted = OFF`)
+            } else {
+                await connection.executeSql(`PRAGMA read_uncommitted = ON`)
+            }
+        } catch (_) {
+            throw new TypeORMError(`
+                Failed to set default isolation level: ${isolationLevel}.
+                Check if this level is supported in your SQLite database instance`)
+        }
     }
 
     hasAttachedDatabases(): boolean {

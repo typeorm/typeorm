@@ -286,8 +286,6 @@ export class SqljsDriver extends AbstractSqliteDriver {
             this.databaseConnection = new sqlite.Database()
         }
 
-        this.databaseConnection.exec(`PRAGMA foreign_keys = ON`)
-
         return this.databaseConnection
     }
 

@@ -112,17 +112,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Starts transaction.
      */
-    async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+    async startTransaction(
+        isolationLevel: IsolationLevel = "READ COMMITTED",
+    ): Promise<void> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        const effectiveIsolationLevel =
-            isolationLevel ||
-            this.driver.options.isolationLevel ||
-            "READ COMMITTED"
-
+        // await this.query("START TRANSACTION");
         if (
-            effectiveIsolationLevel !== "SERIALIZABLE" &&
-            effectiveIsolationLevel !== "READ COMMITTED"
+            isolationLevel !== "SERIALIZABLE" &&
+            isolationLevel !== "READ COMMITTED"
         ) {
             throw new TypeORMError(
                 `Oracle only supports SERIALIZABLE and READ COMMITTED isolation`,
@@ -139,7 +137,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (this.transactionDepth === 0) {
             await this.query(
-                "SET TRANSACTION ISOLATION LEVEL " + effectiveIsolationLevel,
+                "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
             )
         } else {
             await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)

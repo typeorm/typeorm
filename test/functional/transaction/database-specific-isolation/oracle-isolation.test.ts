@@ -217,37 +217,37 @@ describe("transaction > oracle isolation level support", () => {
         // immediately after DDL statements.
         // TODO: Re-enable this test once a proper solution is implemented to address the root cause.
 
-        // it("should use SERIALIZABLE as default isolation level", () =>
-        //     Promise.all(
-        //         connections.map(async (connection) => {
-        //             let postId: number | undefined = undefined
+        it("should use SERIALIZABLE as default isolation level", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    let postId: number | undefined = undefined
 
-        //             // Initial insert is required to prevent ORA-08177 errors in Oracle 21c when using a serializable connection
-        //             // immediately after DDL statements. This ensures proper synchronization and helps avoid conflicts.
-        //             await connection.manager
-        //                 .getRepository(Post)
-        //                 .save({ title: "Post #0" })
+                    // Initial insert is required to prevent ORA-08177 errors in Oracle 21c when using a serializable connection
+                    // immediately after DDL statements. This ensures proper synchronization and helps avoid conflicts.
+                    await connection.manager
+                        .getRepository(Post)
+                        .save({ title: "Post #0" })
 
-        //             await connection.manager.transaction(
-        //                 async (entityManager) => {
-        //                     const post = new Post()
-        //                     post.title = "Post #1"
-        //                     await entityManager.save(post)
+                    await connection.manager.transaction(
+                        async (entityManager) => {
+                            const post = new Post()
+                            post.title = "Post #1"
+                            await entityManager.save(post)
 
-        //                     postId = post.id
-        //                 },
-        //             )
+                            postId = post.id
+                        },
+                    )
 
-        //             const post = await connection.manager.findOne(Post, {
-        //                 where: { title: "Post #1" },
-        //             })
-        //             expect(post).not.to.be.null
-        //             post!.should.be.eql({
-        //                 id: postId,
-        //                 title: "Post #1",
-        //             })
-        //         }),
-        //     ))
+                    const post = await connection.manager.findOne(Post, {
+                        where: { title: "Post #1" },
+                    })
+                    expect(post).not.to.be.null
+                    post!.should.be.eql({
+                        id: postId,
+                        title: "Post #1",
+                    })
+                }),
+            ))
 
         it("should override default isolation level with READ COMMITTED", () =>
             Promise.all(
