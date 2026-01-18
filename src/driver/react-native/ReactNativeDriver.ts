@@ -922,6 +922,7 @@ export class ReactNativeDriver implements Driver {
                 {
                     name: this.options.database,
                     location: this.options.location,
+                    encryptionKey: this.options.encryptionKey,
                 },
                 this.options.extra || {},
             )
