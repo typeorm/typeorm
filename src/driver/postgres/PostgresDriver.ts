@@ -748,6 +748,25 @@ export class PostgresDriver implements Driver {
             columnMetadata.type === "timestamp without time zone"
         ) {
             return DateUtils.mixedDateToDate(value)
+        } else if (columnMetadata.type === "point") {
+            if (
+                typeof value === "object" &&
+                value.x !== undefined &&
+                value.y !== undefined
+            ) {
+                return `(${value.x},${value.y})`
+            }
+            return value
+        } else if (columnMetadata.type === "circle") {
+            if (
+                typeof value === "object" &&
+                value.x !== undefined &&
+                value.y !== undefined &&
+                value.radius !== undefined
+            ) {
+                return `<(${value.x},${value.y}),${value.radius}>`
+            }
+            return value
         } else if (
             ["json", "jsonb", ...this.spatialTypes].indexOf(
                 columnMetadata.type,
