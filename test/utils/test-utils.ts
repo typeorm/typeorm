@@ -416,7 +416,7 @@ export async function createTestingConnections(
 
             if (connection.driver.options.type === "mssql") {
                 await queryRunner.query(
-                    `ALTER DATABASE ${connection.driver.database} SET ALLOW_SNAPSHOT_ISOLATION ON;`,
+                    `ALTER DATABASE tempdb SET ALLOW_SNAPSHOT_ISOLATION ON;`,
                 )
             }
 
@@ -448,6 +448,7 @@ export async function createTestingConnections(
                 await queryRunner.query(
                     `SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`,
                 )
+                await queryRunner.query(`SET autocommit_before_ddl = 'true';`)
             }
 
             // create new schemas
