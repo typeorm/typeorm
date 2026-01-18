@@ -495,10 +495,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
         this.expressionMap.wheres.push({
             type: "and",
             condition: this.getWhereCondition(
-                `${
-                    this.expressionMap.mainAlias!.metadata.deleteDateColumn
-                        ?.propertyName
-                } IS ${
+                `${metadata.deleteDateColumn.propertyName} IS ${
                     this.expressionMap.queryType === "soft-delete"
                         ? "NULL"
                         : "NOT NULL"
