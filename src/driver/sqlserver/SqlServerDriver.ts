@@ -344,16 +344,6 @@ export class SqlServerDriver implements Driver {
     }
 
     /**
-     * Sets the default transaction isolation level for all transactions in the current session.
-     */
-    async setDefaultIsolationLevel(
-        connection: any,
-        isolationLevel: IsolationLevel,
-    ): Promise<void> {
-        // SQL Server does not support setting a default isolation level per connection
-    }
-
-    /**
      * Closes connection pool.
      */
     protected async closePool(pool: any): Promise<void> {

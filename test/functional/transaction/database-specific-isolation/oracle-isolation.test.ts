@@ -73,15 +73,6 @@ describe("transaction > oracle isolation level support", () => {
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
 
-                    // Initial inserts are required to prevent ORA-08177 errors in Oracle 21c when using a serializable connection
-                    // immediately after DDL statements. This ensures proper synchronization and helps avoid conflicts.
-                    await connection.manager
-                        .getRepository(Post)
-                        .save({ title: "Post #0" })
-                    await connection.manager
-                        .getRepository(Category)
-                        .save({ name: "Category #0" })
-
                     await connection.manager.transaction(
                         "SERIALIZABLE",
                         async (entityManager) => {
@@ -168,12 +159,6 @@ describe("transaction > oracle isolation level support", () => {
                 connections.map(async (connection) => {
                     let postId: number | undefined = undefined
 
-                    // Initial insert is required to prevent ORA-08177 errors in Oracle 21c when using a serializable connection
-                    // immediately after DDL statements. This ensures proper synchronization and helps avoid conflicts.
-                    await connection.manager
-                        .getRepository(Post)
-                        .save({ title: "Post #0" })
-
                     await connection.manager.transaction(
                         "SERIALIZABLE",
                         async (entityManager) => {
@@ -212,21 +197,10 @@ describe("transaction > oracle isolation level support", () => {
         beforeEach(() => reloadTestingDatabases(connections))
         after(() => closeTestingConnections(connections))
 
-        // Disabled the below test due to ORA-08177 errors occurring intermittently in Oracle 21c
-        // These errors arise when using a serializable as default transaction isolation level
-        // immediately after DDL statements.
-        // TODO: Re-enable this test once a proper solution is implemented to address the root cause.
-
         it("should use SERIALIZABLE as default isolation level", () =>
             Promise.all(
                 connections.map(async (connection) => {
                     let postId: number | undefined = undefined
-
-                    // Initial insert is required to prevent ORA-08177 errors in Oracle 21c when using a serializable connection
-                    // immediately after DDL statements. This ensures proper synchronization and helps avoid conflicts.
-                    await connection.manager
-                        .getRepository(Post)
-                        .save({ title: "Post #0" })
 
                     await connection.manager.transaction(
                         async (entityManager) => {

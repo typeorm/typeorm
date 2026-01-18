@@ -58,7 +58,7 @@ The following database drivers support the standard isolation levels (`READ UNCO
 
 **SAP HANA** only supports the `READ COMMITTED`, `REPEATABLE READ`, and `SERIALIZABLE` isolation levels.
 
-**CockroachDB** only supports the `READ COMMITTED`, `REPEATABLE READ`, and `SERIALIZABLE` isolation levels. By default, CockroachDB executes all transactions at `SERIALIZABLE` isolation. Under certain conditions, transactions issued at weaker isolation levels are automatically upgraded to stronger isolation levels:
+**CockroachDB** only supports the `SERIALIZABLE`, `REPEATABLE READ`, and `READ COMMITTED` isolation levels. By default, CockroachDB executes all transactions at `SERIALIZABLE` isolation. Under certain conditions, transactions issued at weaker isolation levels are automatically upgraded to stronger isolation levels:
 
 - If `sql.txn.read_committed_isolation.enabled` is set to `true` (enabling `READ COMMITTED` isolation), `READ COMMITTED` transactions are executed at the requested isolation level.
 - If `sql.txn.repeatable_read_isolation.enabled` is set to `true` (enabling `REPEATABLE READ` isolation), `REPEATABLE READ` transactions are executed at the requested isolation level.
@@ -104,10 +104,10 @@ await dataSource.manager.transaction("READ UNCOMMITTED", async (manager) => {
 
 - **MySQL/MariaDB**: `isolationLevel` option supports `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`
 - **PostgreSQL**: `isolationLevel` option supports `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`
-- **SQL Server**: Use `options.isolation` for transaction-level default (see [SQL Server documentation](../drivers/microsoft-sqlserver.md))
+- **SQL Server**: `options.isolationLevel` option supports `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`, `SNAPSHOT` (see [SQL Server documentation](../drivers/microsoft-sqlserver.md) for details)
 - **Oracle**: `isolationLevel` option supports `READ COMMITTED`, `SERIALIZABLE`
-- **SAP HANA**: `isolationLevel` option supports `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`
-- **CockroachDB**: `isolationLevel` option supports `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`
+- **CockroachDB**: `isolationLevel` option supports `SERIALIZABLE`, `REPEATABLE READ`, `READ COMMITTED` (requires cluster settings to be enabled, see [PostgreSQL/CockroachDB documentation](../drivers/postgres.md))
+- **SQLite**: Supports `SERIALIZABLE` by default; `READ UNCOMMITTED` available in shared cache mode
 
 ## Using `QueryRunner` to create and control state of single database connection
 

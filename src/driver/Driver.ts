@@ -154,14 +154,6 @@ export interface Driver {
     disconnect(): Promise<void>
 
     /**
-     *  Sets the default transaction isolation level for all transactions in the current session.
-     */
-    setDefaultIsolationLevel(
-        connection: any,
-        isolationLevel: string,
-    ): Promise<void>
-
-    /**
      * Synchronizes database schema (creates tables, indices, etc).
      */
     createSchemaBuilder(): SchemaBuilder

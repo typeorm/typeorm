@@ -18,7 +18,6 @@ import { DriverUtils } from "../DriverUtils"
 import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { IsolationLevel } from "../types/IsolationLevel"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { UpsertType } from "../types/UpsertType"
@@ -354,10 +353,19 @@ export class AuroraMysqlDriver implements Driver {
      */
     async afterConnect(): Promise<void> {
         if (this.options.isolationLevel) {
-            await this.setDefaultIsolationLevel(
-                this.connection,
-                this.options.isolationLevel,
-            )
+            const queryRunner = this.createQueryRunner("master")
+            try {
+                await queryRunner.query(
+                    `SET SESSION TRANSACTION ISOLATION LEVEL ${this.options.isolationLevel}`,
+                )
+            } catch (_) {
+                throw new TypeORMError(
+                    `Failed to set default isolation level: ${this.options.isolationLevel}
+                Check if this level is supported in your Aurora MySQL database instance`,
+                )
+            } finally {
+                await queryRunner.release()
+            }
         }
         return Promise.resolve()
     }
@@ -366,25 +374,6 @@ export class AuroraMysqlDriver implements Driver {
      * Closes connection with the database.
      */
     async disconnect(): Promise<void> {}
-
-    /**
-     * Sets the default transaction isolation level for all transactions in the current session.
-     */
-    async setDefaultIsolationLevel(
-        connection: any,
-        isolationLevel: IsolationLevel,
-    ): Promise<void> {
-        try {
-            await connection.query(
-                `SET SESSION TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
-            )
-        } catch (_) {
-            throw new TypeORMError(
-                `Failed to set default isolation level: ${isolationLevel}
-                Check if this level is supported in your Aurora MySQL database instance`,
-            )
-        }
-    }
 
     /**
      * Creates a schema builder used to build and sync a schema.

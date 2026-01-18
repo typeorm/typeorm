@@ -292,11 +292,23 @@ export abstract class AbstractSqliteDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
-        if ((this.options as any).isolationLevel)
-            await this.setDefaultIsolationLevel(
-                this.connection,
-                (this.options as any).isolationLevel,
-            )
+        if ("isolationLevel" in this.options && this.options.isolationLevel) {
+            const queryRunner = this.connection.createQueryRunner()
+            try {
+                if (this.options.isolationLevel === "READ UNCOMMITTED") {
+                    await queryRunner.query("PRAGMA read_uncommitted = ON")
+                } else if (this.options.isolationLevel === "SERIALIZABLE") {
+                    await queryRunner.query("PRAGMA read_uncommitted = OFF")
+                }
+            } catch (_) {
+                throw new TypeORMError(
+                    `Failed to set default isolation level: ${this.options.isolationLevel}. ` +
+                        `Check if this level is supported in your SQLite database instance`,
+                )
+            } finally {
+                await queryRunner.release()
+            }
+        }
         return Promise.resolve()
     }
 

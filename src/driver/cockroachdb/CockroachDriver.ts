@@ -22,7 +22,6 @@ import { DriverUtils } from "../DriverUtils"
 import { ColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
-import { IsolationLevel } from "../types/IsolationLevel"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { UpsertType } from "../types/UpsertType"
@@ -328,23 +327,6 @@ export class CockroachDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
-        // enable time travel queries
-        if (this.options.timeTravelQueries) {
-            await this.connection.query(
-                `SET default_transaction_use_follower_reads = 'on';`,
-            )
-        }
-
-        // enable experimental alter column type support (we need it to alter enum types)
-        await this.connection.query(
-            "SET enable_experimental_alter_column_type_general = true",
-        )
-
-        if (this.options.isolationLevel)
-            await this.setDefaultIsolationLevel(
-                this.connection,
-                this.options.isolationLevel,
-            )
         return Promise.resolve()
     }
 
@@ -360,25 +342,6 @@ export class CockroachDriver implements Driver {
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
         this.master = undefined
         this.slaves = []
-    }
-
-    /**
-     * Sets the default transaction isolation level for all transactions in the current session.
-     */
-    async setDefaultIsolationLevel(
-        connection: any,
-        isolationLevel: IsolationLevel,
-    ): Promise<void> {
-        try {
-            await connection.query(
-                `SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
-            )
-        } catch (_) {
-            throw new TypeORMError(
-                `Failed to set default isolation level: ${isolationLevel}.
-                Check if this level is supported or if the required cluster setting (e.g., sql.txn.[repeatable_read_isolation|read_committed_isolation].enabled]) is enabled in your CockroachDB database instance`,
-            )
-        }
     }
 
     /**
@@ -1106,6 +1069,35 @@ export class CockroachDriver implements Driver {
           cause the hosting app to crash.
          */
         pool.on("error", poolErrorHandler)
+
+        // set connection settings on every new connection
+        pool.on("connect", async (connection: any) => {
+            try {
+                // enable time travel queries
+                if (options.timeTravelQueries) {
+                    await connection.query(
+                        `SET default_transaction_use_follower_reads = 'on';`,
+                    )
+                }
+
+                // enable experimental alter column type support (we need it to alter enum types)
+                await connection.query(
+                    "SET enable_experimental_alter_column_type_general = true",
+                )
+
+                // set default transaction isolation level if configured
+                if (options.isolationLevel) {
+                    await connection.query(
+                        `SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL ${options.isolationLevel}`,
+                    )
+                }
+            } catch (err) {
+                logger.log(
+                    "warn",
+                    `Failed to initialize connection settings: ${err.message}`,
+                )
+            }
+        })
 
         return new Promise((ok, fail) => {
             pool.connect((err: any, connection: any, release: Function) => {

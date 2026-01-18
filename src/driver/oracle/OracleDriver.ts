@@ -28,7 +28,6 @@ import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
 import { OnDeleteType } from "../../metadata/types/OnDeleteType"
 import { OnUpdateType } from "../../metadata/types/OnUpdateType"
-import { IsolationLevel } from "../types/IsolationLevel"
 
 /**
  * Organizes communication with Oracle RDBMS.
@@ -336,7 +335,22 @@ export class OracleDriver implements Driver {
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
-    afterConnect(): Promise<void> {
+    async afterConnect(): Promise<void> {
+        if (this.options.isolationLevel) {
+            const queryRunner = this.connection.createQueryRunner("master")
+            try {
+                await queryRunner.query(
+                    `ALTER SESSION SET ISOLATION_LEVEL=${this.options.isolationLevel}`,
+                )
+            } catch (_) {
+                throw new TypeORMError(
+                    `Failed to set default isolation level: ${this.options.isolationLevel}. ` +
+                        `Check if this level is supported in your Oracle database instance`,
+                )
+            } finally {
+                await queryRunner.release()
+            }
+        }
         return Promise.resolve()
     }
 
@@ -352,25 +366,6 @@ export class OracleDriver implements Driver {
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
         this.master = undefined
         this.slaves = []
-    }
-
-    /**
-     * Sets the default transaction isolation level for all transactions in the current session.
-     */
-    async setDefaultIsolationLevel(
-        connection: any,
-        isolationLevel: IsolationLevel,
-    ): Promise<void> {
-        try {
-            await connection.query(
-                `ALTER SESSION SET ISOLATION_LEVEL=${isolationLevel}`,
-            )
-        } catch (_) {
-            throw new TypeORMError(
-                `Failed to set isolation level: ${isolationLevel}
-                Check if this level is supported in your Oracle database instance`,
-            )
-        }
     }
 
     /**

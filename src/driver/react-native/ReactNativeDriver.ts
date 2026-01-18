@@ -281,11 +281,23 @@ export class ReactNativeDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
-        if (this.options.isolationLevel)
-            await this.setDefaultIsolationLevel(
-                this.connection,
-                this.options.isolationLevel,
-            )
+        if (this.options.isolationLevel) {
+            const queryRunner = this.connection.createQueryRunner()
+            try {
+                if (this.options.isolationLevel === "SERIALIZABLE") {
+                    await queryRunner.query("PRAGMA read_uncommitted = OFF")
+                } else {
+                    await queryRunner.query("PRAGMA read_uncommitted = ON")
+                }
+            } catch (_) {
+                throw new TypeORMError(
+                    `Failed to set default isolation level: ${this.options.isolationLevel}. ` +
+                        `Check if this level is supported in your SQLite database instance`,
+                )
+            } finally {
+                await queryRunner.release()
+            }
+        }
         return Promise.resolve()
     }
 
@@ -297,26 +309,6 @@ export class ReactNativeDriver implements Driver {
             this.queryRunner = undefined
             this.databaseConnection.close(ok, fail)
         })
-    }
-
-    /**
-     * Sets the default transaction isolation level for all transactions in the current session.
-     */
-    async setDefaultIsolationLevel(
-        connection: any,
-        isolationLevel: "READ UNCOMMITTED" | "SERIALIZABLE",
-    ): Promise<void> {
-        try {
-            if (isolationLevel === "SERIALIZABLE") {
-                await connection.executeSql(`PRAGMA read_uncommitted = OFF`)
-            } else {
-                await connection.executeSql(`PRAGMA read_uncommitted = ON`)
-            }
-        } catch (_) {
-            throw new TypeORMError(`
-                Failed to set default isolation level: ${isolationLevel}.
-                Check if this level is supported in your SQLite database instance`)
-        }
     }
 
     hasAttachedDatabases(): boolean {
