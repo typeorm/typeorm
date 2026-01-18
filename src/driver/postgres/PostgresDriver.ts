@@ -403,7 +403,7 @@ export class PostgresDriver implements Driver {
     }
 
     /**
-     * Makes any action after connection (e.g. create extensions in Postgres driver, set default transactionisolation level).
+     * Makes any action after connection (e.g. create extensions in Postgres driver, set default transaction isolation level).
      */
     async afterConnect(): Promise<void> {
         const [connection, release] = await this.obtainMasterConnection()
