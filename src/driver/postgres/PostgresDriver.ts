@@ -11,7 +11,7 @@ import { TableColumn } from "../../schema-builder/table/TableColumn"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { OrmUtils } from "../../util/OrmUtils"
-import { Driver } from "../Driver"
+import { Driver, ReturningType } from "../Driver"
 import { ColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
@@ -748,6 +748,25 @@ export class PostgresDriver implements Driver {
             columnMetadata.type === "timestamp without time zone"
         ) {
             return DateUtils.mixedDateToDate(value)
+        } else if (columnMetadata.type === "point") {
+            if (
+                typeof value === "object" &&
+                value.x !== undefined &&
+                value.y !== undefined
+            ) {
+                return `(${value.x},${value.y})`
+            }
+            return value
+        } else if (columnMetadata.type === "circle") {
+            if (
+                typeof value === "object" &&
+                value.x !== undefined &&
+                value.y !== undefined &&
+                value.radius !== undefined
+            ) {
+                return `<(${value.x},${value.y}),${value.radius}>`
+            }
+            return value
         } else if (
             ["json", "jsonb", ...this.spatialTypes].indexOf(
                 columnMetadata.type,
@@ -1517,7 +1536,7 @@ export class PostgresDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(_returningType: ReturningType): boolean {
         return true
     }
 
