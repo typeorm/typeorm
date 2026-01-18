@@ -7,6 +7,7 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { User } from "./entity/User"
+import { scheduler } from "node:timers/promises"
 
 describe("github issues > #10389 softDelete should not update already deleted rows", () => {
     let dataSources: DataSource[]
@@ -135,6 +136,58 @@ describe("github issues > #10389 softDelete should not update already deleted ro
                 softDeletedUsers.forEach((user) => {
                     expect(user.deletedAt).to.be.instanceOf(Date)
                 })
+            }),
+        ))
+
+    it("should only restore rows that are soft deleted previously", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const manager = dataSource.manager
+
+                // create test users
+                const user1 = new User()
+                user1.id = 1
+                user1.name = "User 1"
+                user1.company = "comp1"
+
+                const user2 = new User()
+                user2.id = 2
+                user2.name = "User 2"
+                user2.company = "comp1"
+
+                await manager.save([user1, user2])
+
+                // soft delete user 1
+                await manager.softDelete(User, { id: 1 })
+
+                // user1 is now deleted, user2 is NOT.
+                // Both have company "comp1".
+
+                // Get current state of user 2
+                const user2Before = await manager.findOneBy(User, { id: 2 })
+                expect(user2Before).to.exist
+                const updatedAtBefore = user2Before!.updatedAt
+                const versionBefore = user2Before!.version
+
+                // wait a bit to ensure CURRENT_TIMESTAMP will be different if updated
+                await scheduler.wait(1000)
+
+                // restore users with company comp1
+                const restoreResult = await manager.restore(User, {
+                    company: "comp1",
+                })
+
+                // only user1 should be restored
+                expect(restoreResult.affected).to.be.eql(1)
+
+                const user1After = await manager.findOneBy(User, { id: 1 })
+                expect(user1After!.deletedAt).to.be.null
+
+                const user2After = await manager.findOneBy(User, { id: 2 })
+                expect(user2After!.deletedAt).to.be.null
+                // updateDate and version should NOT have changed for user 2
+                expect(user2After!.updatedAt).to.be.eql(updatedAtBefore)
+                expect(user2After!.version).to.be.eql(versionBefore)
             }),
         ))
 })

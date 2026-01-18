@@ -3,6 +3,8 @@ import {
     DeleteDateColumn,
     Entity,
     PrimaryColumn,
+    UpdateDateColumn,
+    VersionColumn,
 } from "../../../../src"
 
 @Entity()
@@ -18,4 +20,10 @@ export class User {
 
     @DeleteDateColumn()
     deletedAt: Date
+
+    @UpdateDateColumn()
+    updatedAt: Date
+
+    @VersionColumn()
+    version: number
 }
