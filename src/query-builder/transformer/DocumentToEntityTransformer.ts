@@ -31,7 +31,7 @@ export class DocumentToEntityTransformer {
             fromDeserializer: true,
         })
         let hasData = false
-
+        let documentId = null
         // handle _id property the special way
         if (metadata.objectIdColumn) {
             // todo: we can't use driver in this class
@@ -46,9 +46,11 @@ export class DocumentToEntityTransformer {
 
             if (documentIdWithoutPrefixes) {
                 entity[propertyName] = documentIdWithoutPrefixes
+                documentId = documentIdWithoutPrefixes
                 hasData = true
             } else if (documentIdWithPropertyName) {
                 entity[propertyName] = documentIdWithPropertyName
+                documentId = documentIdWithPropertyName
                 hasData = true
             }
         }
@@ -230,6 +232,6 @@ export class DocumentToEntityTransformer {
             });
         });*/
 
-        return hasData ? entity : null
+        return hasData ? { entity, documentId } : null
     }
 }
