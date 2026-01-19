@@ -56,15 +56,27 @@ describe("query builder > brackets", () => {
                 .disableEscaping()
                 .getSql()
 
-            expect(sql).to.be.equal(
-                "SELECT user.id AS user_id, user.firstName AS user_firstName, " +
-                    "user.lastName AS user_lastName, user.isAdmin AS user_isAdmin " +
-                    "FROM user user " +
-                    "WHERE user.isAdmin = ? " +
-                    "OR (user.firstName = ? AND user.lastName = ?) " +
-                    "OR (user.firstName = ? AND user.lastName = ?) " +
-                    "AND (user.firstName = ? AND foo = bar)",
-            )
+            if (connection.driver.options.type === "postgres") {
+                expect(sql).to.be.equal(
+                    "SELECT user.id AS user_id, user.firstName AS user_firstName, " +
+                        "user.lastName AS user_lastName, user.isAdmin AS user_isAdmin " +
+                        "FROM user user " +
+                        "WHERE user.isAdmin = $1 " +
+                        "OR (user.firstName = $2 AND user.lastName = $3) " +
+                        "OR (user.firstName = $4 AND user.lastName = $5) " +
+                        "AND (user.firstName = $6 AND foo = bar)",
+                )
+            } else {
+                expect(sql).to.be.equal(
+                    "SELECT user.id AS user_id, user.firstName AS user_firstName, " +
+                        "user.lastName AS user_lastName, user.isAdmin AS user_isAdmin " +
+                        "FROM user user " +
+                        "WHERE user.isAdmin = ? " +
+                        "OR (user.firstName = ? AND user.lastName = ?) " +
+                        "OR (user.firstName = ? AND user.lastName = ?) " +
+                        "AND (user.firstName = ? AND foo = bar)",
+                )
+            }
         }
     })
 
