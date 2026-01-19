@@ -8,6 +8,7 @@ import {
 } from "../../../../utils/test-utils"
 import { User } from "../entity/User"
 
+// GitHub Issue #9620: Enable creation of Partitioned Tables in Postgres
 describe("database schema > partitioning > postgres > hash", () => {
     let connections: DataSource[]
 

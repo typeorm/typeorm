@@ -8,6 +8,7 @@ import {
 } from "../../../../utils/test-utils"
 import { Order } from "../entity/Order"
 
+// GitHub Issue #9620: Enable creation of Partitioned Tables in Postgres
 describe("database schema > partitioning > postgres > list", () => {
     let connections: DataSource[]
 

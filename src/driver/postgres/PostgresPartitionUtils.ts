@@ -23,7 +23,7 @@ export class PostgresPartitionUtils {
             sql += ` (${partition.expression})`
         } else if (partition.columns) {
             const columns = partition.columns
-                .map((col) => `"${col}"`)
+                .map((col) => `"${col.replace(/"/g, '""')}"`)
                 .join(", ")
             sql += ` (${columns})`
         } else {

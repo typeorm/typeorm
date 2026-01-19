@@ -8,6 +8,7 @@ import {
 } from "../../../../utils/test-utils"
 import { Sale } from "../entity/Sale"
 
+// GitHub Issue #9620: Enable creation of Partitioned Tables in Postgres
 describe("database schema > partitioning > mysql > range", () => {
     let connections: DataSource[]
 

@@ -11,6 +11,7 @@ import { User } from "./entity/User"
 import { Sale } from "./entity/Sale"
 import { Product } from "./entity/Product"
 
+// GitHub Issue #9620: Enable creation of Partitioned Tables in Postgres
 describe("database schema > partitioning > metadata flow", () => {
     let connections: DataSource[]
 

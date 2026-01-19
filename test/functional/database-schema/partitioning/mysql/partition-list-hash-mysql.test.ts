@@ -9,6 +9,7 @@ import {
 import { Product } from "../entity/Product"
 import { User } from "../entity/User"
 
+// GitHub Issue #9620: Enable creation of Partitioned Tables in Postgres
 describe("database schema > partitioning > mysql > list and hash", () => {
     describe("LIST partitioning", () => {
         let connections: DataSource[]
@@ -90,7 +91,7 @@ describe("database schema > partitioning > mysql > list and hash", () => {
                         "product",
                         {
                             name: "p_books",
-                            values: ["'books'", "'magazines'"],
+                            values: ["books", "magazines"],
                         },
                         "LIST",
                     )

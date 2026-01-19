@@ -3,6 +3,7 @@ import { expect } from "chai"
 import { Table } from "../../../../src/schema-builder/table/Table"
 import { TableColumn } from "../../../../src/schema-builder/table/TableColumn"
 
+// GitHub Issue #9620: Enable creation of Partitioned Tables in Postgres
 describe("database schema > partitioning > Table class", () => {
     it("should create Table with partition configuration", () => {
         const table = new Table({

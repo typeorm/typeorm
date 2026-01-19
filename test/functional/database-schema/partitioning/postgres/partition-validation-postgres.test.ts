@@ -8,6 +8,7 @@ import {
 } from "../../../../utils/test-utils"
 import { Measurement } from "../entity/Measurement"
 
+// GitHub Issue #9620: Enable creation of Partitioned Tables in Postgres
 describe("database schema > partitioning > postgres > validation", () => {
     let connections: DataSource[]
 
@@ -446,6 +447,40 @@ describe("database schema > partitioning > postgres > validation", () => {
                 // Note: NULL means pg_default in PostgreSQL
                 expect(result).to.have.lengthOf(1)
 
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should properly escape column names with embedded quotes", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const queryRunner = connection.createQueryRunner()
+
+                // Create table with column name containing a quote
+                // Note: This is an edge case but should be handled correctly
+                await queryRunner.query(`
+                    CREATE TABLE quote_test (
+                        id INT,
+                        "my""column" DATE,
+                        PRIMARY KEY (id, "my""column")
+                    ) PARTITION BY RANGE ("my""column")
+                `)
+
+                // Create partition - the column name should be properly escaped
+                await queryRunner.createPartition!(
+                    "quote_test",
+                    {
+                        name: "quote_p1",
+                        values: ["2023-01-01", "2024-01-01"],
+                    },
+                    "RANGE",
+                )
+
+                const partitions =
+                    await queryRunner.getPartitions!("quote_test")
+                expect(partitions).to.include("quote_p1")
+
+                await queryRunner.query(`DROP TABLE quote_test`)
                 await queryRunner.release()
             }),
         ))
