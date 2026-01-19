@@ -44,7 +44,9 @@ describe("database schema > partitioning > mysql > range", () => {
                 expect(result[0].PARTITION_NAME).to.equal("p2023")
                 expect(result[1].PARTITION_NAME).to.equal("p2024")
                 expect(result[0].PARTITION_METHOD).to.equal("RANGE")
-                expect(result[0].PARTITION_EXPRESSION).to.include("YEAR")
+                expect(result[0].PARTITION_EXPRESSION.toLowerCase()).to.include(
+                    "year",
+                )
                 expect(result[0].PARTITION_EXPRESSION).to.include("sale_date")
 
                 await queryRunner.release()
@@ -83,7 +85,9 @@ describe("database schema > partitioning > mysql > range", () => {
                 expect(allSales).to.have.lengthOf(3)
 
                 // Verify the data contains records from both years
-                const years = allSales.map((s) => s.sale_date.getFullYear())
+                const years = allSales.map((s) =>
+                    new Date(s.sale_date).getFullYear(),
+                )
                 expect(years).to.include.members([2023, 2024])
 
                 await queryRunner.release()
