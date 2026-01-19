@@ -17,22 +17,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Detect package manager
+        id: package_manager
+        working-directory: ./docs
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "manager=pnpm" >> "$GITHUB_OUTPUT"
+            echo "install=pnpm install --frozen-lockfile" >> "$GITHUB_OUTPUT"
+            echo "build=pnpm run build" >> "$GITHUB_OUTPUT"
+          else
+            echo "manager=npm" >> "$GITHUB_OUTPUT"
+            echo "install=npm install" >> "$GITHUB_OUTPUT"
+            echo "build=npm run build" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 20
-          cache: "pnpm"
+          cache: ${{ steps.package_manager.outputs.manager }}
+
+      - name: Setup pnpm
+        if: steps.package_manager.outputs.manager == 'pnpm'
+        uses: pnpm/action-setup@v4
 
       - name: Install dependencies
         working-directory: ./docs
-        run: pnpm install
+        run: ${{ steps.package_manager.outputs.install }}
 
       - name: Build docs
         working-directory: ./docs
-        run: pnpm run build
+        run: ${{ steps.package_manager.outputs.build }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
