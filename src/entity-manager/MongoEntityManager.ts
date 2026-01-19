@@ -1152,38 +1152,22 @@ export class MongoEntityManager extends EntityManager {
         cursor: FindCursor<Entity> | AggregationCursor<Entity>,
     ) {
         const queryRunner = this.mongoQueryRunner
-
-        ;(cursor as any)["__to_array_func"] = cursor.toArray
+        const originalToArray = cursor.toArray
         cursor.toArray = () =>
-            ((cursor as any)["__to_array_func"] as CallableFunction)().then(
-                async (results: Entity[]) => {
+            (originalToArray as any)
+                .apply(cursor)
+                .then(async (results: Entity[]) => {
                     const transformer = new DocumentToEntityTransformer()
                     const entities = transformer.transformAll(results, metadata)
-                    // broadcast "load" events
+
+                    // Broadcast "load" events
                     await queryRunner.broadcaster.broadcast(
                         "Load",
                         metadata,
                         entities,
                     )
                     return entities
-                },
-            )
-        ;(cursor as any)["__next_func"] = cursor.next
-        cursor.next = () =>
-            ((cursor as any)["__next_func"] as CallableFunction)().then(
-                async (result: Entity) => {
-                    if (!result) {
-                        return result
-                    }
-                    const transformer = new DocumentToEntityTransformer()
-                    const entity = transformer.transform(result, metadata)
-                    // broadcast "load" events
-                    await queryRunner.broadcaster.broadcast("Load", metadata, [
-                        entity,
-                    ])
-                    return entity
-                },
-            )
+                })
     }
 
     protected filterSoftDeleted<Entity>(
