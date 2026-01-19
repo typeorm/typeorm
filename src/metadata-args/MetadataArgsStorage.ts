@@ -461,6 +461,8 @@ export class MetadataArgsStorage {
                             item.parser === newItem.parser &&
                             item.where === newItem.where &&
                             item.sparse === newItem.sparse &&
+                            item.background === newItem.background &&
+                            item.concurrent === newItem.concurrent &&
                             item.synchronize === newItem.synchronize &&
                             item.expireAfterSeconds ===
                                 newItem.expireAfterSeconds &&
