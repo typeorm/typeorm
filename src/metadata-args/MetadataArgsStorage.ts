@@ -430,6 +430,9 @@ export class MetadataArgsStorage {
         array: IndexMetadataArgs[],
         target: (Function | string) | (Function | string)[],
     ): IndexMetadataArgs[] {
+        if (!array || !Array.isArray(array)) {
+            return []
+        }
         const newArray: IndexMetadataArgs[] = []
         array.forEach((item) => {
             const sameTarget = Array.isArray(target)
