@@ -5,7 +5,11 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { Example, MockSubscriber } from "./entity/Example"
+import { AnotherExample, Example } from "./entity/Example"
+import {
+    AnotherMockSubscriber,
+    MockSubscriber,
+} from "./subscriber/MockSubscriber"
 
 // GitHub issue #11091 - mongodb entity subscriber afterLoad not called correctly
 describe("mongodb > entity subscriber", () => {
@@ -14,8 +18,8 @@ describe("mongodb > entity subscriber", () => {
         async () =>
             (connections = await createTestingConnections({
                 enabledDrivers: ["mongodb"],
-                entities: [Example],
-                subscribers: [MockSubscriber],
+                entities: [Example, AnotherExample],
+                subscribers: [MockSubscriber, AnotherMockSubscriber],
                 dropSchema: true,
                 schemaCreate: true,
             })),
@@ -23,6 +27,7 @@ describe("mongodb > entity subscriber", () => {
     beforeEach(async () => {
         if (!connections.length) return
         ;(connections[0].subscribers[0] as MockSubscriber).counter = 0
+        ;(connections[0].subscribers[1] as AnotherMockSubscriber).counter = 0
         await reloadTestingDatabases(connections)
     })
     after(() => closeTestingConnections(connections))
@@ -68,5 +73,39 @@ describe("mongodb > entity subscriber", () => {
             { id: example3.id, value: 3 },
         ])
         expect(subscriber.counter).to.be.eql(3)
+    })
+
+    it("should call afterLoad when any entity is loaded", async () => {
+        if (!connections.length) return
+        const connection = connections[0]
+        const subscriber = connection.subscribers[1] as AnotherMockSubscriber
+        const example1 = new Example()
+        example1.value = 10
+
+        await connection.manager.save(example1)
+
+        const loadedExample = await connection.manager.findOneBy(Example, {
+            id: (example1 as any)._id,
+        })
+        expect(loadedExample).to.be.deep.equal({
+            id: example1.id,
+            value: 10,
+        })
+        expect(subscriber.counter).to.be.eql(1)
+
+        const anotherExample = new AnotherExample()
+        anotherExample.name = "test name"
+
+        await connection.manager.save(anotherExample)
+
+        const loadedAnotherExample = await connection.manager.findOneBy(
+            AnotherExample,
+            { id: (anotherExample as any)._id },
+        )
+        expect(loadedAnotherExample).to.be.deep.equal({
+            id: anotherExample.id,
+            name: "test name",
+        })
+        expect(subscriber.counter).to.be.eql(2)
     })
 })

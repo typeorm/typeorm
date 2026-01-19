@@ -1,24 +1,4 @@
-import {
-    Column,
-    Entity,
-    ObjectId,
-    ObjectIdColumn,
-    EntitySubscriberInterface,
-    EventSubscriber,
-    LoadEvent,
-} from "../../../../../../src"
-
-@EventSubscriber()
-export class MockSubscriber implements EntitySubscriberInterface {
-    counter: number = 0
-    listenTo(): Function | string {
-        return Example
-    }
-
-    afterLoad(entity: Example, event?: LoadEvent<Example>): void {
-        this.counter++
-    }
-}
+import { Column, Entity, ObjectId, ObjectIdColumn } from "../../../../../../src"
 
 @Entity()
 export class Example {
@@ -27,4 +7,13 @@ export class Example {
 
     @Column()
     value: number = 0
+}
+
+@Entity()
+export class AnotherExample {
+    @ObjectIdColumn()
+    id: ObjectId
+
+    @Column()
+    name: string = ""
 }
