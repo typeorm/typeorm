@@ -228,7 +228,7 @@ describe("database schema > partitioning > mysql > error handling", () => {
                     CREATE TABLE list_null_test (
                         id INT NOT NULL,
                         category VARCHAR(50),
-                        UNIQUE KEY (id)
+                        UNIQUE KEY (id, category)
                     ) PARTITION BY LIST COLUMNS(category) (
                         PARTITION p_null VALUES IN (NULL),
                         PARTITION p_valid VALUES IN ('A', 'B')
