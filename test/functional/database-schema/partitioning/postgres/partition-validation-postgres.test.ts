@@ -98,9 +98,8 @@ describe("database schema > partitioning > postgres > validation", () => {
                     "RANGE",
                 )
 
-                const partitions = await queryRunner.getPartitions!(
-                    "measurement",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("measurement")
                 expect(partitions).to.include.members([
                     "measurement_2023",
                     "measurement_maxvalue",
@@ -205,9 +204,8 @@ describe("database schema > partitioning > postgres > validation", () => {
                     CREATE TABLE list_default_p PARTITION OF list_default DEFAULT
                 `)
 
-                const partitions = await queryRunner.getPartitions!(
-                    "list_default",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("list_default")
                 expect(partitions).to.include.members([
                     "list_p1",
                     "list_default_p",
@@ -224,9 +222,8 @@ describe("database schema > partitioning > postgres > validation", () => {
                 const queryRunner = connection.createQueryRunner()
 
                 // Get partitions before creating any
-                const partitions = await queryRunner.getPartitions!(
-                    "measurement",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("measurement")
                 expect(partitions).to.be.an("array")
                 expect(partitions).to.have.lengthOf(0)
 
@@ -258,9 +255,8 @@ describe("database schema > partitioning > postgres > validation", () => {
                     "LIST",
                 )
 
-                const partitions = await queryRunner.getPartitions!(
-                    "long_values",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("long_values")
                 expect(partitions).to.include("long_p1")
 
                 await queryRunner.query(`DROP TABLE long_values`)
@@ -283,9 +279,8 @@ describe("database schema > partitioning > postgres > validation", () => {
                     "RANGE",
                 )
 
-                const partitions = await queryRunner.getPartitions!(
-                    "measurement",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("measurement")
                 expect(partitions).to.include("measurement_dates")
 
                 await queryRunner.release()
@@ -314,9 +309,8 @@ describe("database schema > partitioning > postgres > validation", () => {
                     "LIST",
                 )
 
-                const partitions = await queryRunner.getPartitions!(
-                    "numeric_list",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("numeric_list")
                 expect(partitions).to.include("numeric_p1")
 
                 await queryRunner.query(`DROP TABLE numeric_list`)
@@ -354,9 +348,8 @@ describe("database schema > partitioning > postgres > validation", () => {
                     "HASH",
                 )
 
-                const partitions = await queryRunner.getPartitions!(
-                    "large_hash",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("large_hash")
                 expect(partitions).to.have.lengthOf(2)
 
                 await queryRunner.query(`DROP TABLE large_hash`)
@@ -380,9 +373,8 @@ describe("database schema > partitioning > postgres > validation", () => {
                 )
 
                 // Immediately verify it exists
-                const partitions = await queryRunner.getPartitions!(
-                    "measurement",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("measurement")
                 expect(partitions).to.include("measurement_verify")
 
                 // Verify we can query the partition table
@@ -441,9 +433,8 @@ describe("database schema > partitioning > postgres > validation", () => {
                     "RANGE",
                 )
 
-                const partitions = await queryRunner.getPartitions!(
-                    "measurement",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("measurement")
                 expect(partitions).to.include("measurement_ts")
 
                 // Verify tablespace was set

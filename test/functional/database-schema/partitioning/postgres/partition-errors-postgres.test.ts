@@ -102,9 +102,8 @@ describe("database schema > partitioning > postgres > error handling", () => {
                     )
                 `)
 
-                const partitions = await queryRunner.getPartitions!(
-                    "regular_table",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("regular_table")
                 expect(partitions).to.be.an("array")
                 expect(partitions).to.have.lengthOf(0)
 
@@ -124,9 +123,8 @@ describe("database schema > partitioning > postgres > error handling", () => {
                         FOR VALUES FROM (MINVALUE) TO ('2020-01-01')
                 `)
 
-                const partitions = await queryRunner.getPartitions!(
-                    "measurement",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("measurement")
                 expect(partitions).to.include("measurement_min_max")
 
                 await queryRunner.release()
@@ -149,9 +147,8 @@ describe("database schema > partitioning > postgres > error handling", () => {
                     "RANGE",
                 )
 
-                const partitions = await queryRunner.getPartitions!(
-                    "measurement",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("measurement")
                 expect(partitions).to.include("measurement_with_tablespace")
 
                 await queryRunner.release()
@@ -178,9 +175,8 @@ describe("database schema > partitioning > postgres > error handling", () => {
                         FOR VALUES IN ('test-1', 'test_2', 'test.3')
                 `)
 
-                const partitions = await queryRunner.getPartitions!(
-                    "special_list",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("special_list")
                 expect(partitions).to.include("special_list_p1")
 
                 await queryRunner.query(`DROP TABLE special_list`)
@@ -256,9 +252,8 @@ describe("database schema > partitioning > postgres > error handling", () => {
                     "HASH",
                 )
 
-                const partitions = await queryRunner.getPartitions!(
-                    "hash_table",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("hash_table")
                 expect(partitions).to.have.lengthOf(2)
                 expect(partitions).to.include.members(["hash_p0", "hash_p1"])
 

@@ -71,9 +71,8 @@ describe("database schema > partitioning > postgres > range", () => {
                 )
 
                 // Verify partitions exist
-                const partitions = await queryRunner.getPartitions!(
-                    "measurement",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("measurement")
                 expect(partitions).to.have.lengthOf(2)
                 expect(partitions).to.include("measurement_2023")
                 expect(partitions).to.include("measurement_2024")
@@ -253,9 +252,8 @@ describe("database schema > partitioning > postgres > range", () => {
                     "RANGE",
                 )
 
-                const partitions = await queryRunner.getPartitions!(
-                    "measurement",
-                )
+                const partitions =
+                    await queryRunner.getPartitions!("measurement")
                 expect(partitions).to.include("measurement_2023")
 
                 await queryRunner.release()
