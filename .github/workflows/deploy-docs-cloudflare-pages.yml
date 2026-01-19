@@ -35,7 +35,6 @@ jobs:
         if: steps.package_manager.outputs.manager == 'pnpm'
         uses: pnpm/action-setup@v4
         with:
-          version: "latest"
           run_install: false
 
       - name: Setup Node.js
