@@ -518,6 +518,9 @@ export class MetadataArgsStorage {
 
         // Both are objects - compare them
         if (typeof columns1 === "object" && typeof columns2 === "object") {
+            if (Array.isArray(columns1) || Array.isArray(columns2)) {
+                return false
+            }
             const keys1 = Object.keys(columns1)
             const keys2 = Object.keys(columns2)
             if (keys1.length !== keys2.length) {
