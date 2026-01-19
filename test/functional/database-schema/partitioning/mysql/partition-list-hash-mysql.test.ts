@@ -42,9 +42,9 @@ describe("database schema > partitioning > mysql > list and hash", () => {
                     `)
 
                     expect(result).to.have.lengthOf(2)
-                    expect(result[0].PARTITION_NAME).to.equal("p_electronics")
-                    expect(result[1].PARTITION_NAME).to.equal("p_clothing")
-                    expect(result[0].PARTITION_METHOD).to.equal("LIST")
+                    expect(result[0].PARTITION_NAME).to.equal("p_clothing")
+                    expect(result[1].PARTITION_NAME).to.equal("p_electronics")
+                    expect(result[0].PARTITION_METHOD).to.equal("LIST COLUMNS")
 
                     await queryRunner.release()
                 }),
@@ -142,8 +142,8 @@ describe("database schema > partitioning > mysql > list and hash", () => {
                         listColumnsResult[0]["Create Table"]
 
                     // Verify it uses LIST COLUMNS syntax for VARCHAR column
-                    expect(listColumnsCreateTable).to.include(
-                        "PARTITION BY LIST COLUMNS",
+                    expect(listColumnsCreateTable).to.match(
+                        /PARTITION BY LIST\s+COLUMNS/,
                     )
                     expect(listColumnsCreateTable).to.include("`category`")
 
@@ -151,9 +151,10 @@ describe("database schema > partitioning > mysql > list and hash", () => {
                     // Create a table with LIST partitioning on an integer expression
                     await queryRunner.query(`
                         CREATE TABLE list_expr_test (
-                            id INT PRIMARY KEY,
+                            id INT,
                             status_code INT,
-                            name VARCHAR(100)
+                            name VARCHAR(100),
+                            PRIMARY KEY (id, status_code)
                         ) PARTITION BY LIST (status_code) (
                             PARTITION p_active VALUES IN (1, 2),
                             PARTITION p_inactive VALUES IN (0, 3)
