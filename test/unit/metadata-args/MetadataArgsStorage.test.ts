@@ -194,4 +194,175 @@ describe("MetadataArgsStorage", () => {
             expect(indexNames).to.deep.equal(["IDX_BASE", "IDX_PERSON"])
         })
     })
+
+    describe("areIndexColumnsEqual edge cases", () => {
+        it("should treat empty arrays as equal", () => {
+            const storage = new MetadataArgsStorage()
+
+            storage.indices.push({
+                target: "Person",
+                columns: [],
+                unique: false,
+            })
+
+            storage.indices.push({
+                target: "Person",
+                columns: [],
+                unique: false,
+            })
+
+            const filtered = storage.filterIndices("Person")
+
+            // Empty arrays should be considered equal
+            expect(filtered.length).to.be.equal(1)
+        })
+
+        it("should treat empty objects as equal", () => {
+            const storage = new MetadataArgsStorage()
+
+            // Push raw objects to test object comparison logic directly
+            ;(storage.indices as unknown[]).push({
+                target: "Person",
+                columns: {},
+                unique: false,
+            })
+            ;(storage.indices as unknown[]).push({
+                target: "Person",
+                columns: {},
+                unique: false,
+            })
+
+            const filtered = storage.filterIndices("Person")
+
+            // Empty objects should be considered equal
+            expect(filtered.length).to.be.equal(1)
+        })
+
+        it("should handle arrays with undefined elements", () => {
+            const storage = new MetadataArgsStorage()
+
+            storage.indices.push({
+                target: "Person",
+                columns: ["firstName", undefined as any, "lastName"],
+                unique: false,
+            })
+
+            storage.indices.push({
+                target: "Person",
+                columns: ["firstName", undefined as any, "lastName"],
+                unique: false,
+            })
+
+            const filtered = storage.filterIndices("Person")
+
+            // Arrays with same undefined elements should be equal
+            expect(filtered.length).to.be.equal(1)
+        })
+
+        it("should handle arrays with null elements", () => {
+            const storage = new MetadataArgsStorage()
+
+            storage.indices.push({
+                target: "Person",
+                columns: ["firstName", null as any, "lastName"],
+                unique: false,
+            })
+
+            storage.indices.push({
+                target: "Person",
+                columns: ["firstName", null as any, "lastName"],
+                unique: false,
+            })
+
+            const filtered = storage.filterIndices("Person")
+
+            // Arrays with same null elements should be equal
+            expect(filtered.length).to.be.equal(1)
+        })
+
+        it("should not treat null and undefined as equal in arrays", () => {
+            const storage = new MetadataArgsStorage()
+
+            storage.indices.push({
+                target: "Person",
+                columns: ["firstName", null as any],
+                unique: false,
+            })
+
+            storage.indices.push({
+                target: "Person",
+                columns: ["firstName", undefined as any],
+                unique: false,
+            })
+
+            const filtered = storage.filterIndices("Person")
+
+            // null and undefined should be considered different
+            expect(filtered.length).to.be.equal(2)
+        })
+
+        it("should not treat empty array and empty object as equal", () => {
+            const storage = new MetadataArgsStorage()
+
+            storage.indices.push({
+                target: "Person",
+                columns: [],
+                unique: false,
+            })
+
+            // Push raw object to test array vs object comparison
+            ;(storage.indices as unknown[]).push({
+                target: "Person",
+                columns: {},
+                unique: false,
+            })
+
+            const filtered = storage.filterIndices("Person")
+
+            // Empty array and empty object should be different
+            expect(filtered.length).to.be.equal(2)
+        })
+
+        it("should handle object columns with different key orders", () => {
+            const storage = new MetadataArgsStorage()
+
+            // Push raw objects to test key order comparison
+            ;(storage.indices as unknown[]).push({
+                target: "Person",
+                columns: { firstName: 1, lastName: 1 },
+                unique: false,
+            })
+            ;(storage.indices as unknown[]).push({
+                target: "Person",
+                columns: { lastName: 1, firstName: 1 },
+                unique: false,
+            })
+
+            const filtered = storage.filterIndices("Person")
+
+            // Different key orders should be considered different (MongoDB index order matters)
+            expect(filtered.length).to.be.equal(2)
+        })
+
+        it("should treat object columns with same key order as equal", () => {
+            const storage = new MetadataArgsStorage()
+
+            // Push raw objects to test object equality
+            ;(storage.indices as unknown[]).push({
+                target: "Person",
+                columns: { firstName: 1, lastName: -1 },
+                unique: false,
+            })
+            ;(storage.indices as unknown[]).push({
+                target: "Person",
+                columns: { firstName: 1, lastName: -1 },
+                unique: false,
+            })
+
+            const filtered = storage.filterIndices("Person")
+
+            // Same key order and values should be equal
+            expect(filtered.length).to.be.equal(1)
+        })
+    })
 })
