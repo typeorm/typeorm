@@ -73,6 +73,14 @@ describe("transaction > oracle isolation level support", () => {
                     let postId: number | undefined = undefined,
                         categoryId: number | undefined = undefined
 
+                    // Initial inserts prevent ORA-08177 errors when using SERIALIZABLE immediately after DDL.
+                    await connection.manager
+                        .getRepository(Post)
+                        .save({ title: "Post #0" })
+                    await connection.manager
+                        .getRepository(Category)
+                        .save({ name: "Category #0" })
+
                     await connection.manager.transaction(
                         "SERIALIZABLE",
                         async (entityManager) => {
@@ -158,6 +166,11 @@ describe("transaction > oracle isolation level support", () => {
             Promise.all(
                 connections.map(async (connection) => {
                     let postId: number | undefined = undefined
+
+                    // Initial insert prevents ORA-08177 errors when using SERIALIZABLE immediately after DDL.
+                    await connection.manager
+                        .getRepository(Post)
+                        .save({ title: "Post #0" })
 
                     await connection.manager.transaction(
                         "SERIALIZABLE",
