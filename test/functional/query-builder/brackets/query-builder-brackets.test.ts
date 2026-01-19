@@ -145,8 +145,10 @@ describe("query builder > brackets", () => {
                     .leftJoinAndSelect("post.author", "author")
                     .andWhere(
                         new Brackets((qb) => {
-                            qb.where("author.name = :name", {
-                                name: "gioboa",
+                            qb.where({
+                                author: {
+                                    name: "gioboa",
+                                },
                             })
                         }),
                     )
