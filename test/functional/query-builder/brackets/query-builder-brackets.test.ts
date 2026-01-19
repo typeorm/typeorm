@@ -17,7 +17,7 @@ describe("query builder > brackets", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["sqlite", "postgres"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -131,7 +131,7 @@ describe("query builder > brackets", () => {
                 const posts = await connection
                     .createQueryBuilder(Post, "post")
                     .leftJoinAndSelect("post.author", "author")
-                    .where(
+                    .andWhere(
                         new Brackets((qb) => {
                             qb.where("author.name = :name", {
                                 name: "gioboa",
