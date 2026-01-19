@@ -147,9 +147,13 @@ export class RelationIdLoader {
                     return column.compareEntityValue(
                         entity,
                         relationId[
-                            column.entityMetadata.name +
-                                "_" +
-                                column.propertyAliasName
+                            DriverUtils.buildAlias(
+                                this.connection.driver,
+                                undefined,
+                                column.entityMetadata.name +
+                                    "_" +
+                                    column.propertyAliasName,
+                            )
                         ],
                     )
                 })
@@ -454,10 +458,13 @@ export class RelationIdLoader {
                 const relationIdMap: ObjectLiteral = {}
                 relation.entityMetadata.primaryColumns.forEach(
                     (primaryColumn) => {
-                        const key =
+                        const key = DriverUtils.buildAlias(
+                            this.connection.driver,
+                            undefined,
                             primaryColumn.entityMetadata.name +
-                            "_" +
-                            primaryColumn.propertyPath.replace(".", "_")
+                                "_" +
+                                primaryColumn.propertyPath.replace(".", "_"),
+                        )
                         relationIdMap[key] =
                             primaryColumn.getEntityValue(entity)
                     },
@@ -478,16 +485,19 @@ export class RelationIdLoader {
                             return
 
                         if (entityColumnValue === relatedEntityColumnValue) {
-                            const key =
+                            const key = DriverUtils.buildAlias(
+                                this.connection.driver,
+                                undefined,
                                 joinColumn.referencedColumn!.entityMetadata
                                     .name +
-                                "_" +
-                                relation.propertyPath.replace(".", "_") +
-                                "_" +
-                                joinColumn.referencedColumn!.propertyPath.replace(
-                                    ".",
-                                    "_",
-                                )
+                                    "_" +
+                                    relation.propertyPath.replace(".", "_") +
+                                    "_" +
+                                    joinColumn.referencedColumn!.propertyPath.replace(
+                                        ".",
+                                        "_",
+                                    ),
+                            )
                             relationIdMap[key] = relatedEntityColumnValue
                         }
                     })
