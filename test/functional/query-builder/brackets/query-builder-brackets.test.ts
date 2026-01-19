@@ -7,6 +7,8 @@ import {
 } from "../../../utils/test-utils"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
+import { Post } from "./entity/Post"
+import { Author } from "./entity/Author"
 import { Brackets } from "../../../../src/query-builder/Brackets"
 
 describe("query builder > brackets", () => {
@@ -111,6 +113,36 @@ describe("query builder > brackets", () => {
                     .getMany()
 
                 expect(users.length).to.be.equal(3)
+            }),
+        ))
+
+    it("should be able to use join attributes in brackets", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const author = new Author()
+                author.name = "gioboa"
+                await connection.manager.save(author)
+
+                const post = new Post()
+                post.title = "About TypeORM"
+                post.author = author
+                await connection.manager.save(post)
+
+                const posts = await connection
+                    .createQueryBuilder(Post, "post")
+                    .leftJoinAndSelect("post.author", "author")
+                    .where(
+                        new Brackets((qb) => {
+                            qb.where("author.name = :name", {
+                                name: "gioboa",
+                            })
+                        }),
+                    )
+                    .getMany()
+
+                expect(posts.length).to.be.equal(1)
+                expect(posts[0].author).to.be.not.undefined
+                expect(posts[0].author.name).to.be.equal("gioboa")
             }),
         ))
 })
