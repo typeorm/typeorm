@@ -31,15 +31,18 @@ jobs:
             echo "build=npm run build" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Setup pnpm
+        if: steps.package_manager.outputs.manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: "latest"
+          run_install: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: ${{ steps.package_manager.outputs.manager }}
-
-      - name: Setup pnpm
-        if: steps.package_manager.outputs.manager == 'pnpm'
-        uses: pnpm/action-setup@v4
 
       - name: Install dependencies
         working-directory: ./docs
