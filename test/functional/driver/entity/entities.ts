@@ -5,7 +5,7 @@ import {
     PrimaryGeneratedColumn,
 } from "../../../../src"
 
-@Entity()
+@Entity("third_element")
 export class ThirdElement {
     @PrimaryGeneratedColumn()
     id: number
@@ -14,7 +14,7 @@ export class ThirdElement {
     dummyColumn: number = 0
 }
 
-@Entity()
+@Entity("second_element")
 export class SecondElement {
     @PrimaryGeneratedColumn()
     id: number
@@ -25,7 +25,7 @@ export class SecondElement {
     @Column()
     dummyColumn: number = 0
 }
-@Entity()
+@Entity("first_element")
 export class FirstElement {
     @PrimaryGeneratedColumn()
     id: number
