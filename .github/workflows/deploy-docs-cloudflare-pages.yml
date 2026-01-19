@@ -1,0 +1,57 @@
+name: Deploy Docs to Cloudflare Pages
+
+on:
+  push:
+    paths:
+      - "docs/**"
+      - ".github/workflows/deploy-docs-cloudflare-pages.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Docs
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Detect package manager
+        id: package_manager
+        working-directory: ./docs
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "manager=pnpm" >> "$GITHUB_OUTPUT"
+            echo "install=pnpm install --frozen-lockfile" >> "$GITHUB_OUTPUT"
+            echo "build=pnpm run build" >> "$GITHUB_OUTPUT"
+          else
+            echo "manager=npm" >> "$GITHUB_OUTPUT"
+            echo "install=npm install" >> "$GITHUB_OUTPUT"
+            echo "build=npm run build" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup pnpm
+        if: steps.package_manager.outputs.manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: ${{ steps.package_manager.outputs.manager }}
+
+      - name: Install dependencies
+        working-directory: ./docs
+        run: ${{ steps.package_manager.outputs.install }}
+
+      - name: Build docs
+        working-directory: ./docs
+        run: ${{ steps.package_manager.outputs.build }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy docs/build --project-name=typeorm
