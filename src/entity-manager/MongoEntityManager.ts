@@ -1152,22 +1152,65 @@ export class MongoEntityManager extends EntityManager {
         cursor: FindCursor<Entity> | AggregationCursor<Entity>,
     ) {
         const queryRunner = this.mongoQueryRunner
+        const broadCasted = new Set<string>()
+        const transformer = new DocumentToEntityTransformer()
+
         const originalToArray = cursor.toArray
         cursor.toArray = () =>
-            (originalToArray as any)
-                .apply(cursor)
-                .then(async (results: Entity[]) => {
-                    const transformer = new DocumentToEntityTransformer()
-                    const entities = transformer.transformAll(results, metadata)
+            originalToArray.call(cursor).then(async (results: any[]) => {
+                const transformedResults = transformer.transformAll(
+                    results,
+                    metadata,
+                )
 
-                    // Broadcast "load" events
+                const entities: Entity[] = []
+                const newlyLoadedEntities: Entity[] = []
+
+                transformedResults.forEach((result) => {
+                    if (!result) return
+
+                    const { entity, documentId } = result
+                    entities.push(entity)
+
+                    const idStr = documentId ? documentId.toString() : undefined
+
+                    if (idStr && !broadCasted.has(idStr)) {
+                        broadCasted.add(idStr)
+                        newlyLoadedEntities.push(entity)
+                    }
+                })
+
+                if (newlyLoadedEntities.length > 0) {
                     await queryRunner.broadcaster.broadcast(
                         "Load",
                         metadata,
-                        entities,
+                        newlyLoadedEntities,
                     )
-                    return entities
-                })
+                }
+
+                return entities
+            })
+
+        const originalNext = cursor.next
+        cursor.next = () =>
+            originalNext.call(cursor).then(async (result: any) => {
+                if (!result) return result
+
+                const transformed = transformer.transform(result, metadata)
+                if (!transformed) return null
+
+                const { entity, documentId } = transformed
+                const idStr = documentId ? documentId.toString() : undefined
+
+                if (idStr && !broadCasted.has(idStr)) {
+                    broadCasted.add(idStr)
+                    await queryRunner.broadcaster.broadcast("Load", metadata, [
+                        entity,
+                    ])
+                }
+
+                return entity
+            })
     }
 
     protected filterSoftDeleted<Entity>(
