@@ -21,7 +21,6 @@ import { TypeORMError } from "../error"
 import { WhereClause, WhereClauseCondition } from "./WhereClause"
 import { NotBrackets } from "./NotBrackets"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
-import { JoinAttribute } from "./JoinAttribute"
 import { ReturningType } from "../driver/Driver"
 import { OracleDriver } from "../driver/oracle/OracleDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
@@ -1634,14 +1633,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             whereQueryBuilder.expressionMap.nativeParameters =
                 this.expressionMap.nativeParameters
             whereQueryBuilder.expressionMap.joinAttributes =
-                this.expressionMap.joinAttributes.map(
-                    (join) =>
-                        new JoinAttribute(
-                            this.connection,
-                            this.expressionMap,
-                            join,
-                        ),
-                )
+                this.expressionMap.joinAttributes
 
             whereQueryBuilder.expressionMap.wheres = []
 
