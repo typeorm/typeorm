@@ -7,6 +7,8 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Record } from "./entity/Record"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { AbstractSqliteQueryRunner } from "../../../../src/driver/sqlite-abstract/AbstractSqliteQueryRunner"
 
 describe("jsonb type", () => {
     let connections: DataSource[]
@@ -14,7 +16,12 @@ describe("jsonb type", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [Record],
-                enabledDrivers: ["postgres"], // because only postgres supports jsonb type
+                enabledDrivers: [
+                    "sqlite",
+                    "postgres",
+                    "better-sqlite3",
+                    "sqljs",
+                ],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -118,9 +125,26 @@ describe("jsonb type", () => {
     it("should create updates when changing object", () =>
         Promise.all(
             connections.map(async (connection) => {
-                await connection.query(
-                    `ALTER TABLE record ALTER COLUMN "dataWithDefaultObject" SET DEFAULT '{"foo":"baz","hello": "earth"}';`,
-                )
+                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                    // Sqlite does not support altering column defaults, so we need to use query runner
+                    const queryRunner =
+                        connection.createQueryRunner() as AbstractSqliteQueryRunner
+                    const table = await queryRunner.getTable("record")
+                    const column = table!.findColumnByName(
+                        "dataWithDefaultObject",
+                    )!
+                    column.default = `'{"foo":"baz","hello": "earth"}'`
+                    await queryRunner.changeColumn(
+                        "record",
+                        "dataWithDefaultObject",
+                        column,
+                    )
+                    await queryRunner.release()
+                } else {
+                    await connection.query(
+                        `ALTER TABLE record ALTER COLUMN "dataWithDefaultObject" SET DEFAULT '{"foo":"baz","hello": "earth"}';`,
+                    )
+                }
 
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
@@ -134,9 +158,26 @@ describe("jsonb type", () => {
     it("should not create updates when resorting object", () =>
         Promise.all(
             connections.map(async (connection) => {
-                await connection.query(
-                    `ALTER TABLE record ALTER COLUMN "dataWithDefaultObject" SET DEFAULT '{"foo":"bar", "hello": "world"}';`,
-                )
+                if (DriverUtils.isSQLiteFamily(connection.driver)) {
+                    // Sqlite does not support altering column defaults, so we need to use query runner
+                    const queryRunner =
+                        connection.createQueryRunner() as AbstractSqliteQueryRunner
+                    const table = await queryRunner.getTable("record")
+                    const column = table!.findColumnByName(
+                        "dataWithDefaultObject",
+                    )!
+                    column.default = `'{"foo":"bar", "hello": "world"}'`
+                    await queryRunner.changeColumn(
+                        "record",
+                        "dataWithDefaultObject",
+                        column,
+                    )
+                    await queryRunner.release()
+                } else {
+                    await connection.query(
+                        `ALTER TABLE record ALTER COLUMN "dataWithDefaultObject" SET DEFAULT '{"foo":"bar", "hello": "world"}';`,
+                    )
+                }
 
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
