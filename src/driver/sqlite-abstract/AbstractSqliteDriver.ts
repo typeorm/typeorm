@@ -798,16 +798,26 @@ export abstract class AbstractSqliteDriver implements Driver {
             ) &&
             columnMetadata.default !== null
         ) {
-            const tableDefaultObj =
-                typeof tableColumn.default === "string"
-                    ? JSON.parse(
-                          tableColumn.default.substring(
-                              1,
-                              tableColumn.default.length - 1,
-                          ),
-                      )
-                    : tableColumn.default
-            return OrmUtils.deepCompare(columnMetadata.default, tableDefaultObj)
+            try {
+                const tableDefaultObj =
+                    typeof tableColumn.default === "string"
+                        ? JSON.parse(
+                              tableColumn.default.substring(
+                                  1,
+                                  tableColumn.default.length - 1,
+                              ),
+                          )
+                        : tableColumn.default
+                return OrmUtils.deepCompare(
+                    columnMetadata.default,
+                    tableDefaultObj,
+                )
+            } catch (err) {
+                return (
+                    this.normalizeDefault(columnMetadata) ===
+                    tableColumn.default
+                )
+            }
         }
 
         return this.normalizeDefault(columnMetadata) === tableColumn.default
