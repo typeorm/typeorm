@@ -1191,14 +1191,19 @@ export class MongoEntityManager extends EntityManager {
                         newlyLoadedEntities,
                     )
                 }
-
+                if (cursor.closed) {
+                    entityCache.clear() // cursor is exhausted
+                }
                 return entities
             })
 
         const originalNext = cursor.next
         cursor.next = () =>
             originalNext.call(cursor).then(async (result: any) => {
-                if (!result) return result
+                if (!result) {
+                    entityCache.clear() // cursor is exhausted
+                    return null
+                }
 
                 const transformed = transformer.transform(result, metadata)
                 if (!transformed) return null
