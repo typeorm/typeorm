@@ -128,6 +128,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         "time",
         "datetime",
         "json",
+        "jsonb",
     ]
 
     /**
@@ -345,6 +346,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             return DateUtils.mixedDateToUtcDatetimeString(value)
         } else if (
             columnMetadata.type === "json" ||
+            columnMetadata.type === "jsonb" ||
             columnMetadata.type === "simple-json"
         ) {
             return DateUtils.simpleJsonToString(value)
@@ -415,6 +417,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             value = DateUtils.mixedTimeToString(value)
         } else if (
             columnMetadata.type === "json" ||
+            columnMetadata.type === "jsonb" ||
             columnMetadata.type === "simple-json"
         ) {
             value = DateUtils.stringToSimpleJson(value)
@@ -649,6 +652,10 @@ export abstract class AbstractSqliteDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
 
+        if (defaultValue === null || defaultValue === undefined) {
+            return undefined
+        }
+
         if (typeof defaultValue === "number") {
             return "" + defaultValue
         }
@@ -665,15 +672,15 @@ export abstract class AbstractSqliteDriver implements Driver {
             return `'${defaultValue}'`
         }
 
-        if (defaultValue === null || defaultValue === undefined) {
-            return undefined
-        }
-
         if (
             Array.isArray(defaultValue) &&
             columnMetadata.type === "simple-enum"
         ) {
             return `'${defaultValue.join(",")}'`
+        }
+
+        if (typeof defaultValue === "object") {
+            return `'${JSON.stringify(defaultValue)}'`
         }
 
         return `${defaultValue}`
@@ -778,6 +785,35 @@ export abstract class AbstractSqliteDriver implements Driver {
     }
 
     /**
+     * Compares column default values, handling JSON/JSONB types semantically.
+     */
+    private compareDefaults(
+        columnMetadata: ColumnMetadata,
+        tableColumn: TableColumn,
+    ): boolean {
+        if (
+            ["json", "jsonb"].includes(columnMetadata.type as string) &&
+            !["function", "undefined"].includes(
+                typeof columnMetadata.default,
+            ) &&
+            columnMetadata.default !== null
+        ) {
+            const tableDefaultObj =
+                typeof tableColumn.default === "string"
+                    ? JSON.parse(
+                          tableColumn.default.substring(
+                              1,
+                              tableColumn.default.length - 1,
+                          ),
+                      )
+                    : tableColumn.default
+            return OrmUtils.deepCompare(columnMetadata.default, tableDefaultObj)
+        }
+
+        return this.normalizeDefault(columnMetadata) === tableColumn.default
+    }
+
+    /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      */
@@ -797,7 +833,7 @@ export abstract class AbstractSqliteDriver implements Driver {
                 tableColumn.length !== columnMetadata.length ||
                 tableColumn.precision !== columnMetadata.precision ||
                 tableColumn.scale !== columnMetadata.scale ||
-                this.normalizeDefault(columnMetadata) !== tableColumn.default ||
+                !this.compareDefaults(columnMetadata, tableColumn) ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
