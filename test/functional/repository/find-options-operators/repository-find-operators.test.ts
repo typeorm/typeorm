@@ -1179,7 +1179,7 @@ describe("repository > find options > operators", () => {
                     }
                     await connection.manager.save(comment2)
 
-                    // Test -> operator - get nested object and compare
+                    // Test ->> operator - get nested object and compare
                     const loadedComments = await connection
                         .getRepository(Comment)
                         .findBy({
