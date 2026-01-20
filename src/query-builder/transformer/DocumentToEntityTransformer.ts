@@ -31,7 +31,7 @@ export class DocumentToEntityTransformer {
             fromDeserializer: true,
         })
         let hasData = false
-        let documentId = null
+        let documentId = document._id
         // handle _id property the special way
         if (metadata.objectIdColumn) {
             // todo: we can't use driver in this class
