@@ -297,7 +297,7 @@ export interface QueryRunner extends AsyncDisposable {
 
     /**
      * Creates a new partition for a partitioned table.
-     * Supported by PostgreSQL, MySQL, and CockroachDB.
+     * Supported by PostgreSQL and MySQL.
      */
     createPartition?(
         tableName: string,
@@ -307,13 +307,13 @@ export interface QueryRunner extends AsyncDisposable {
 
     /**
      * Drops a partition from a partitioned table.
-     * Supported by PostgreSQL, MySQL, and CockroachDB.
+     * Supported by PostgreSQL and MySQL.
      */
     dropPartition?(tableName: string, partitionName: string): Promise<void>
 
     /**
      * Gets list of all partitions for a given table.
-     * Supported by PostgreSQL, MySQL, and CockroachDB.
+     * Supported by PostgreSQL and MySQL.
      */
     getPartitions?(tableName: string): Promise<string[]>
 

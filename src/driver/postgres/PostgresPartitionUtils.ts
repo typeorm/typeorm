@@ -6,7 +6,7 @@ import type { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 
 /**
  * Utility functions for PostgreSQL-compatible partition operations.
- * Used by both PostgreSQL and CockroachDB drivers.
+ * Used by PostgreSQL driver.
  */
 export class PostgresPartitionUtils {
     /**

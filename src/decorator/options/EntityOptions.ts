@@ -55,7 +55,7 @@ export interface EntityOptions {
 
     /**
      * Table partitioning configuration.
-     * Supported by PostgreSQL (10+), MySQL/MariaDB (5.1+), and CockroachDB.
+     * Supported by PostgreSQL (10+), MySQL/MariaDB (5.1+).
      * @example
      * ```typescript
      * @Entity({

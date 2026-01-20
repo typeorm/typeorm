@@ -54,7 +54,7 @@ export interface PartitionDefinition {
     /**
      * Partition bounds - format depends on partition type:
      *
-     * RANGE (PostgreSQL/CockroachDB):
+     * RANGE (PostgreSQL):
      *   values: ["2023-01-01", "2024-01-01"]  // FROM ... TO
      *   values: ["DEFAULT"]                    // Catch-all partition
      *
@@ -64,7 +64,7 @@ export interface PartitionDefinition {
      * LIST:
      *   values: ["US", "CA", "MX"]  // List of values
      *
-     * HASH (PostgreSQL/CockroachDB):
+     * HASH (PostgreSQL):
      *   values: ["4", "0"]  // [MODULUS, REMAINDER]
      *
      * HASH (MySQL):
