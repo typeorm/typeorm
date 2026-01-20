@@ -1152,7 +1152,7 @@ export class MongoEntityManager extends EntityManager {
         cursor: FindCursor<Entity> | AggregationCursor<Entity>,
     ) {
         const queryRunner = this.mongoQueryRunner
-        const broadCasted = new Set<string>()
+        const entityCache = new Map<string, Entity>()
         const transformer = new DocumentToEntityTransformer()
 
         const originalToArray = cursor.toArray
@@ -1170,12 +1170,16 @@ export class MongoEntityManager extends EntityManager {
                     if (!result) return
 
                     const { entity, documentId } = result
-                    entities.push(entity)
-
                     const idStr = documentId ? documentId.toString() : undefined
 
-                    if (idStr && !broadCasted.has(idStr)) {
-                        broadCasted.add(idStr)
+                    if (idStr && entityCache.has(idStr)) {
+                        entities.push(entityCache.get(idStr)!)
+                        return
+                    }
+
+                    entities.push(entity)
+                    if (idStr) {
+                        entityCache.set(idStr, entity)
                         newlyLoadedEntities.push(entity)
                     }
                 })
@@ -1202,12 +1206,15 @@ export class MongoEntityManager extends EntityManager {
                 const { entity, documentId } = transformed
                 const idStr = documentId ? documentId.toString() : undefined
 
-                if (idStr && !broadCasted.has(idStr)) {
-                    broadCasted.add(idStr)
-                    await queryRunner.broadcaster.broadcast("Load", metadata, [
-                        entity,
-                    ])
+                if (idStr && entityCache.has(idStr)) {
+                    return entityCache.get(idStr)
                 }
+                if (idStr) {
+                    entityCache.set(idStr, entity)
+                }
+                await queryRunner.broadcaster.broadcast("Load", metadata, [
+                    entity,
+                ])
 
                 return entity
             })
