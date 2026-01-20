@@ -22,6 +22,8 @@ You can also specify some additional entity options:
 -   `engine` - database engine to be set during table creation (works only in some databases).
 -   `synchronize` - entities marked with `false` are skipped from schema updates.
 -   `orderBy` - specifies default ordering for entities when using `find` operations and `QueryBuilder`.
+-   `partition` - table partitioning configuration.
+
 
 Example:
 

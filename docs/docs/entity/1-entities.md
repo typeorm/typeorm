@@ -624,3 +624,36 @@ export class Category {
     level: number
 }
 ```
+
+## Table partitioning
+
+Table partitioning allows you to split a large table into smaller, more manageable pieces called partitions. TypeORM supports table partitioning for PostgreSQL and MySQL.
+
+You can configure partitioning using the `partition` option in the `@Entity` decorator:
+
+```typescript
+@Entity({
+    name: "measurements",
+    partition: {
+        type: "RANGE",
+        columns: ["logdate"],
+        partitions: [
+            { name: "p2023", values: ["2023-01-01", "2024-01-01"] },
+            { name: "p2024", values: ["2024-01-01", "2025-01-01"] }
+        ]
+    }
+})
+export class Measurement {
+    @PrimaryColumn()
+    id: number
+
+    @PrimaryColumn()
+    logdate: Date
+
+    @Column()
+    value: number
+}
+```
+
+Learn more about table partitioning in the [Table Partitioning guide](./7-table-partitioning.md).
+
