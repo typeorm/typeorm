@@ -3,6 +3,7 @@ import { ObjectLiteral } from "../common/ObjectLiteral"
 import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { DriverUtils } from "../driver/DriverUtils"
 import { MysqlDriver } from "../driver/mysql/MysqlDriver"
+import { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
 import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { TypeORMError } from "../error"
 import { InsertValuesMissingError } from "../error/InsertValuesMissingError"
@@ -612,10 +613,31 @@ export class InsertQueryBuilder<
                         )
                     } else if (columns) {
                         updatePart.push(
-                            ...columns.map(
-                                (column) =>
-                                    `${this.escape(column)} = :${column}`,
-                            ),
+                            ...columns.map((column) => {
+                                let expression = `:${column}`
+                                if (
+                                    this.expressionMap.mainAlias!.hasMetadata &&
+                                    DriverUtils.isSQLiteFamily(
+                                        this.connection.driver,
+                                    )
+                                ) {
+                                    const col =
+                                        this.expressionMap.mainAlias?.metadata.findColumnWithDatabaseName(
+                                            column,
+                                        )
+                                    if (col) {
+                                        expression = (
+                                            this.connection
+                                                .driver as AbstractSqliteDriver
+                                        ).wrapWithJsonFunction(
+                                            expression,
+                                            col,
+                                            true,
+                                        )
+                                    }
+                                }
+                                return `${this.escape(column)} = ${expression}`
+                            }),
                         )
                     }
 
@@ -1666,11 +1688,10 @@ export class InsertQueryBuilder<
                     ", " +
                     (column.srid || "0") +
                     ")"
-            } else if (
-                DriverUtils.isSQLiteFamily(this.connection.driver) &&
-                column.type === "jsonb"
-            ) {
-                expression = `jsonb(${paramName})`
+            } else if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
+                expression = (
+                    this.connection.driver as AbstractSqliteDriver
+                ).wrapWithJsonFunction(paramName, column, true)
             } else {
                 expression += paramName
             }
