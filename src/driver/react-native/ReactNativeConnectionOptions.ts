@@ -26,8 +26,16 @@ export interface ReactNativeConnectionOptions extends BaseDataSourceOptions {
     readonly location: string
 
     readonly poolSize?: never
+
     /**
      * Encryption key for encryption supported databases
      */
     readonly encryptionKey?: string
+
+    /**
+     * Default transaction isolation level for all transactions in the current session.
+     *
+     * @see {@link https://www.sqlite.org/isolation.html}
+     */
+    readonly isolationLevel?: "READ UNCOMMITTED" | "SERIALIZABLE"
 }

@@ -1,4 +1,5 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { IsolationLevel } from "../types/IsolationLevel"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
 
@@ -152,4 +153,11 @@ export interface MysqlConnectionOptions
          */
         readonly defaultMode?: ReplicationMode
     }
+
+    /**
+     * Default transaction isolation level for all transactions in the current session.
+     *
+     * @see {@link https://dev.mysql.com/doc/refman/8.0/en/set-transaction.html}
+     */
+    readonly isolationLevel?: IsolationLevel
 }

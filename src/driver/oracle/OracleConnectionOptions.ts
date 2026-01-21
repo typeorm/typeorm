@@ -57,4 +57,11 @@ export interface OracleConnectionOptions
          */
         readonly slaves: OracleConnectionCredentialsOptions[]
     }
+
+    /**
+     * Default transaction isolation level for all transactions in the current session.
+     *
+     * @see {@link https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/SET-TRANSACTION.html#GUID-5F1D0E3A-66A3-4F1C-8BFB-7CE6C7543A2C}
+     */
+    readonly isolationLevel?: "READ COMMITTED" | "SERIALIZABLE"
 }

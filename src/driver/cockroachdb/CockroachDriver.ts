@@ -327,18 +327,6 @@ export class CockroachDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
-        // enable time travel queries
-        if (this.options.timeTravelQueries) {
-            await this.connection.query(
-                `SET default_transaction_use_follower_reads = 'on';`,
-            )
-        }
-
-        // enable experimental alter column type support (we need it to alter enum types)
-        await this.connection.query(
-            "SET enable_experimental_alter_column_type_general = true",
-        )
-
         return Promise.resolve()
     }
 
@@ -1081,6 +1069,35 @@ export class CockroachDriver implements Driver {
           cause the hosting app to crash.
          */
         pool.on("error", poolErrorHandler)
+
+        // set connection settings on every new connection
+        pool.on("connect", async (connection: any) => {
+            try {
+                // enable time travel queries
+                if (options.timeTravelQueries) {
+                    await connection.query(
+                        `SET default_transaction_use_follower_reads = 'on';`,
+                    )
+                }
+
+                // enable experimental alter column type support (we need it to alter enum types)
+                await connection.query(
+                    "SET enable_experimental_alter_column_type_general = true",
+                )
+
+                // set default transaction isolation level if configured
+                if (options.isolationLevel) {
+                    await connection.query(
+                        `SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL ${options.isolationLevel}`,
+                    )
+                }
+            } catch (err) {
+                logger.log(
+                    "warn",
+                    `Failed to initialize connection settings: ${err.message}`,
+                )
+            }
+        })
 
         return new Promise((ok, fail) => {
             pool.connect((err: any, connection: any, release: Function) => {

@@ -82,7 +82,6 @@ export abstract class AbstractSqliteQueryRunner
             this.driver.transactionSupport === "simple"
         )
             throw new TransactionAlreadyStartedError()
-
         if (
             isolationLevel &&
             isolationLevel !== "READ UNCOMMITTED" &&
@@ -103,9 +102,9 @@ export abstract class AbstractSqliteQueryRunner
         if (this.transactionDepth === 0) {
             if (isolationLevel) {
                 if (isolationLevel === "READ UNCOMMITTED") {
-                    await this.query("PRAGMA read_uncommitted = true")
+                    await this.query("PRAGMA read_uncommitted = ON")
                 } else {
-                    await this.query("PRAGMA read_uncommitted = false")
+                    await this.query("PRAGMA read_uncommitted = OFF")
                 }
             }
             await this.query("BEGIN TRANSACTION")

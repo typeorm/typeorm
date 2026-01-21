@@ -25,6 +25,7 @@ import { View } from "../../schema-builder/view/View"
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { UpsertType } from "../types/UpsertType"
+import { IsolationLevel } from "../types/IsolationLevel"
 
 /**
  * Organizes communication with MongoDB.
@@ -272,6 +273,16 @@ export class MongoDriver implements Driver {
 
         this.queryRunner = undefined
         await queryRunner.databaseConnection.close()
+    }
+
+    /**
+     * Sets the default transaction isolation level for all transactions in the current session.
+     */
+    async setDefaultIsolationLevel(
+        connection: any,
+        isolationLevel: IsolationLevel,
+    ): Promise<void> {
+        // MongoDB does not support transactions, simply do nothing
     }
 
     /**

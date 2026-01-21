@@ -61,4 +61,11 @@ export interface SqliteConnectionOptions extends BaseDataSourceOptions {
      * @see https://www.sqlite.org/pragma.html#pragma_busy_timeout
      */
     readonly busyTimeout?: number
+
+    /**
+     * Default transaction isolation level for all transactions in the current session.
+     *
+     * @see {@link https://www.sqlite.org/isolation.html}
+     */
+    readonly isolationLevel?: "READ UNCOMMITTED" | "SERIALIZABLE"
 }

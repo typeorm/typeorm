@@ -31,6 +31,7 @@ import { UpsertType } from "../types/UpsertType"
 import { IndexMetadata } from "../../metadata/IndexMetadata"
 import { TableIndex } from "../../schema-builder/table/TableIndex"
 import { TableIndexTypes } from "../../schema-builder/options/TableIndexTypes"
+import { IsolationLevel } from "../types/IsolationLevel"
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -402,7 +403,7 @@ export class PostgresDriver implements Driver {
     }
 
     /**
-     * Makes any action after connection (e.g. create extensions in Postgres driver).
+     * Makes any action after connection (e.g. create extensions in Postgres driver, set default transaction isolation level).
      */
     async afterConnect(): Promise<void> {
         const [connection, release] = await this.obtainMasterConnection()
@@ -433,6 +434,12 @@ export class PostgresDriver implements Driver {
             "12.0",
         )
 
+        if (this.options.isolationLevel)
+            await this.setDefaultIsolationLevel(
+                connection,
+                this.options.isolationLevel,
+            )
+
         await release()
     }
 
@@ -456,6 +463,26 @@ export class PostgresDriver implements Driver {
             )
         }
         return availableExtensions
+    }
+    /**
+     * Sets the default transaction isolation level for all transactions in the current session.
+     */
+    async setDefaultIsolationLevel(
+        connection: any,
+        isolationLevel: IsolationLevel,
+    ): Promise<void> {
+        try {
+            await this.executeQuery(
+                connection,
+                `SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
+            )
+        } catch (_) {
+            throw new TypeORMError(
+                `Failed to set default isolation level: ${isolationLevel}
+                Check if this level is supported in your Postgres database instance
+                `,
+            )
+        }
     }
 
     protected async enableExtensions(extensionsMetadata: any, connection: any) {

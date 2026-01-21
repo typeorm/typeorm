@@ -52,4 +52,11 @@ export interface NativescriptConnectionOptions extends BaseDataSourceOptions {
     readonly androidFlags?: number
 
     readonly poolSize?: never
+
+    /**
+     * Default transaction isolation level for all transactions in the current session.
+     *
+     * @see {@link https://www.sqlite.org/isolation.html}
+     */
+    readonly isolationLevel?: "READ UNCOMMITTED" | "SERIALIZABLE"
 }

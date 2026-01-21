@@ -77,6 +77,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
     }
 
     async afterConnect(): Promise<void> {
+        await super.afterConnect()
         return this.attachDatabases()
     }
 

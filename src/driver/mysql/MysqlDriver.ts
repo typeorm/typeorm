@@ -420,7 +420,7 @@ export class MysqlDriver implements Driver {
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
-    afterConnect(): Promise<void> {
+    async afterConnect(): Promise<void> {
         return Promise.resolve()
     }
 
@@ -1241,6 +1241,23 @@ export class MysqlDriver implements Driver {
     protected createPool(connectionOptions: any): Promise<any> {
         // create a connection pool
         const pool = this.mysql.createPool(connectionOptions)
+
+        // set isolation level on each new connection
+        if (this.options.isolationLevel) {
+            pool.on("connection", (connection: any) => {
+                connection.query(
+                    `SET SESSION TRANSACTION ISOLATION LEVEL ${this.options.isolationLevel}`,
+                    (err: any) => {
+                        if (err) {
+                            this.connection.logger.log(
+                                "warn",
+                                `Failed to set isolation level on connection: ${err.message}`,
+                            )
+                        }
+                    },
+                )
+            })
+        }
 
         // make sure connection is working fine
         return new Promise<void>((ok, fail) => {

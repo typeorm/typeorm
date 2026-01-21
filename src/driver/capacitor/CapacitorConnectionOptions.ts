@@ -41,4 +41,11 @@ export interface CapacitorConnectionOptions extends BaseDataSourceOptions {
         | "OFF"
 
     readonly poolSize?: never
+
+    /**
+     * Default transaction isolation level for all transactions in the current session.
+     *
+     * @see {@link https://www.sqlite.org/isolation.html}
+     */
+    readonly isolationLevel?: "READ UNCOMMITTED" | "SERIALIZABLE"
 }

@@ -1,7 +1,7 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { IsolationLevel } from "../types/IsolationLevel"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
-
 /**
  * Microsoft Sql Server specific connection options.
  */
@@ -218,23 +218,13 @@ export interface SqlServerConnectionOptions
          * The default isolation level that transactions will be run with. The isolation levels are available
          * from require('tedious').ISOLATION_LEVEL. (default: READ_COMMITTED).
          */
-        readonly isolation?:
-            | "READ_UNCOMMITTED"
-            | "READ_COMMITTED"
-            | "REPEATABLE_READ"
-            | "SERIALIZABLE"
-            | "SNAPSHOT"
+        readonly isolationLevel?: IsolationLevel
 
         /**
          * The default isolation level for new connections. All out-of-transaction queries are executed with this
          * setting. The isolation levels are available from require('tedious').ISOLATION_LEVEL .
          */
-        readonly connectionIsolationLevel?:
-            | "READ_UNCOMMITTED"
-            | "READ_COMMITTED"
-            | "REPEATABLE_READ"
-            | "SERIALIZABLE"
-            | "SNAPSHOT"
+        readonly connectionIsolationLevel?: IsolationLevel
 
         /**
          * A boolean, determining whether the connection will request read only access from a SQL Server

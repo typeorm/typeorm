@@ -56,6 +56,12 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 -   `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript numbers. By default, `int8` (bigint) values are returned as strings to avoid overflows. JavaScript numbers are IEEE-754 and lose precision over the maximum safe integer (`Number.MAX_SAFE_INTEGER = +2^53`). If you require the full 64-bit range consider working with the returned strings or converting them to native `bigint` instead of using this option.
 
+-   `isolationLevel` - Sets the default transaction isolation level for new connections. You can override this value on a per-transaction basis using `queryRunner.startTransaction(isolationLevel)`. Supported values: `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`. See [Transactions](../advanced-topics/2-transactions.md) for more information.
+
+    **Note for CockroachDB:** CockroachDB only supports `SERIALIZABLE` (default), `REPEATABLE READ` and `READ COMMITTED` isolation levels.
+    - `REPEATABLE READ` requires `sql.txn.repeatable_read_isolation.enabled=true`, otherwise, it will be interpreted as `SERIALIZABLE`.
+    - `READ COMMITTED` requires `sql.txn.read_committed_isolation.enabled=true`, otherwise, it will be interpreted as `SERIALIZABLE`.
+
 Additional options can be added to the `extra` object and will be passed directly to the client library. See more in `pg`'s documentation for [Pool](https://node-postgres.com/apis/pool#new-pool) and [Client](https://node-postgres.com/apis/client#new-client).
 
 ## Column Types

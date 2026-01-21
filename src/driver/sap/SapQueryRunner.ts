@@ -122,10 +122,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
          *  Otherwise, COMMIT/ROLLBACK doesn't work in autocommit mode.
          */
         await this.setAutoCommit({ status: "off" })
-
         if (isolationLevel) {
             await this.query(
-                `SET TRANSACTION ISOLATION LEVEL ${isolationLevel || ""}`,
+                `SET TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
             )
         }
 

@@ -56,6 +56,59 @@ The following database drivers support the standard isolation levels (`READ UNCO
 
 **Oracle** only supports the `READ COMMITTED` and `SERIALIZABLE` isolation levels.
 
+**SAP HANA** only supports the `READ COMMITTED`, `REPEATABLE READ`, and `SERIALIZABLE` isolation levels.
+
+**CockroachDB** only supports the `SERIALIZABLE`, `REPEATABLE READ`, and `READ COMMITTED` isolation levels. By default, CockroachDB executes all transactions at `SERIALIZABLE` isolation. Under certain conditions, transactions issued at weaker isolation levels are automatically upgraded to stronger isolation levels:
+
+- If `sql.txn.read_committed_isolation.enabled` is set to `true` (enabling `READ COMMITTED` isolation), `READ COMMITTED` transactions are executed at the requested isolation level.
+- If `sql.txn.repeatable_read_isolation.enabled` is set to `true` (enabling `REPEATABLE READ` isolation), `REPEATABLE READ` transactions are executed at the requested isolation level.
+
+For more information, see the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stable/transactions).
+
+### Setting a Default Isolation Level
+
+You can set a default transaction isolation level in your data source options. This default will be used for all transactions unless explicitly overridden:
+
+```typescript
+import { DataSource } from "typeorm"
+
+const dataSource = new DataSource({
+    type: "postgres",
+    host: "localhost",
+    port: 5432,
+    username: "test",
+    password: "test",
+    database: "test",
+    isolationLevel: "SERIALIZABLE", // Set default isolation level
+    entities: [
+        /* your entities */
+    ],
+})
+```
+
+The default isolation level can be overridden on a per-transaction basis:
+
+```typescript
+// This transaction uses the default isolation level from connection options
+await dataSource.manager.transaction(async (manager) => {
+    // operations
+})
+
+// This transaction explicitly overrides the default
+await dataSource.manager.transaction("READ UNCOMMITTED", async (manager) => {
+    // operations
+})
+```
+
+**Supported options by database:**
+
+- **MySQL/MariaDB**: `isolationLevel` option supports `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`
+- **PostgreSQL**: `isolationLevel` option supports `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`
+- **SQL Server**: `options.isolationLevel` option supports `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`, `SNAPSHOT` (see [SQL Server documentation](../drivers/microsoft-sqlserver.md) for details)
+- **Oracle**: `isolationLevel` option supports `READ COMMITTED`, `SERIALIZABLE`
+- **CockroachDB**: `isolationLevel` option supports `SERIALIZABLE`, `REPEATABLE READ`, `READ COMMITTED` (requires cluster settings to be enabled, see [PostgreSQL/CockroachDB documentation](../drivers/postgres.md))
+- **SQLite**: Supports `SERIALIZABLE` by default; `READ UNCOMMITTED` available in shared cache mode
+
 ## Using `QueryRunner` to create and control state of single database connection
 
 `QueryRunner` provides a single database connection.

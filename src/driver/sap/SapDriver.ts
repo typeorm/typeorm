@@ -3,6 +3,7 @@ import {
     ColumnType,
     DataSource,
     EntityMetadata,
+    IsolationLevel,
     ObjectLiteral,
     Table,
     TableColumn,
@@ -356,6 +357,16 @@ export class SapDriver implements Driver {
             this.poolErrorHandler(error)
             throw error
         }
+    }
+
+    /**
+     * Sets the default transaction isolation level for all transactions in the current session.
+     */
+    async setDefaultIsolationLevel(
+        connection: any,
+        isolationLevel: IsolationLevel,
+    ): Promise<void> {
+        // Does nothing as SAP HANA does not support setting a default isolation level per connection
     }
 
     /**

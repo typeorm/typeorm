@@ -335,7 +335,22 @@ export class OracleDriver implements Driver {
     /**
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
-    afterConnect(): Promise<void> {
+    async afterConnect(): Promise<void> {
+        if (this.options.isolationLevel) {
+            const queryRunner = this.connection.createQueryRunner("master")
+            try {
+                await queryRunner.query(
+                    `ALTER SESSION SET ISOLATION_LEVEL=${this.options.isolationLevel}`,
+                )
+            } catch (_) {
+                throw new TypeORMError(
+                    `Failed to set default isolation level: ${this.options.isolationLevel}. ` +
+                        `Check if this level is supported in your Oracle database instance`,
+                )
+            } finally {
+                await queryRunner.release()
+            }
+        }
         return Promise.resolve()
     }
 

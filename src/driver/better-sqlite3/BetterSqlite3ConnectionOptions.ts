@@ -76,4 +76,11 @@ export interface BetterSqlite3ConnectionOptions extends BaseDataSourceOptions {
      * @see https://www.sqlite.org/wal.html
      */
     readonly enableWAL?: boolean
+
+    /**
+     * Default transaction isolation level for all transactions in the current session.
+     *
+     * @see {@link https://www.sqlite.org/isolation.html}
+     */
+    readonly isolationLevel?: "READ UNCOMMITTED" | "SERIALIZABLE"
 }

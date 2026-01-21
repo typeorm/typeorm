@@ -1,5 +1,6 @@
 import { AuroraMysqlConnectionCredentialsOptions } from "./AuroraMysqlConnectionCredentialsOptions"
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import { IsolationLevel } from "../types/IsolationLevel"
 
 /**
  * MySQL specific connection options.
@@ -38,4 +39,11 @@ export interface AuroraMysqlConnectionOptions
     readonly legacySpatialSupport?: boolean
 
     readonly poolSize?: never
+
+    /**
+     * Default transaction isolation level for all transactions in the current session.
+     *
+     * @see {@link https://dev.mysql.com/doc/refman/8.0/en/set-transaction.html}
+     */
+    readonly isolationLevel?: IsolationLevel
 }

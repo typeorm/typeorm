@@ -112,13 +112,20 @@ export class SqlServerQueryRunner
                     : this.driver.obtainMasterConnection())
                 this.databaseConnection = pool.transaction()
                 this.connection.logger.logQuery("BEGIN TRANSACTION")
-                if (isolationLevel) {
+
+                const effectiveIsolationLevel =
+                    isolationLevel ||
+                    this.driver.options.options?.isolationLevel
+                if (effectiveIsolationLevel) {
                     this.databaseConnection.begin(
-                        this.convertIsolationLevel(isolationLevel),
+                        this.driver.convertIsolationLevel(
+                            effectiveIsolationLevel,
+                        ),
                         transactionCallback,
                     )
                     this.connection.logger.logQuery(
-                        "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
+                        "SET TRANSACTION ISOLATION LEVEL " +
+                            effectiveIsolationLevel,
                     )
                 } else {
                     this.databaseConnection.begin(transactionCallback)
@@ -4157,26 +4164,6 @@ export class SqlServerQueryRunner
                 return this.driver.mssql.RowVersion
             case "vector":
                 return this.driver.mssql.Ntext
-        }
-    }
-
-    /**
-     * Converts string literal of isolation level to enum.
-     * The underlying mssql driver requires an enum for the isolation level.
-     */
-    convertIsolationLevel(isolation: IsolationLevel) {
-        const ISOLATION_LEVEL = this.driver.mssql.ISOLATION_LEVEL
-        switch (isolation) {
-            case "READ UNCOMMITTED":
-                return ISOLATION_LEVEL.READ_UNCOMMITTED
-            case "REPEATABLE READ":
-                return ISOLATION_LEVEL.REPEATABLE_READ
-            case "SERIALIZABLE":
-                return ISOLATION_LEVEL.SERIALIZABLE
-
-            case "READ COMMITTED":
-            default:
-                return ISOLATION_LEVEL.READ_COMMITTED
         }
     }
 

@@ -414,6 +414,12 @@ export async function createTestingConnections(
                 await queryRunner.createDatabase(database, true)
             }
 
+            if (connection.driver.options.type === "mssql") {
+                await queryRunner.query(
+                    `ALTER DATABASE tempdb SET ALLOW_SNAPSHOT_ISOLATION ON;`,
+                )
+            }
+
             if (connection.driver.options.type === "cockroachdb") {
                 await queryRunner.query(
                     `ALTER RANGE default CONFIGURE ZONE USING num_replicas = 1, gc.ttlseconds = 60;`,
@@ -442,6 +448,7 @@ export async function createTestingConnections(
                 await queryRunner.query(
                     `SET CLUSTER SETTING sql.defaults.experimental_temporary_tables.enabled = 'true';`,
                 )
+                await queryRunner.query(`SET autocommit_before_ddl = 'true';`)
             }
 
             // create new schemas

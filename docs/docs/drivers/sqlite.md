@@ -29,6 +29,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 ### `sqlite` data source options
 
 -   `database` - Database path. For example, "mydb.sql"
+-   `isolationLevel` - Sets the default transaction isolation level for new connections. You can override this value on a per-transaction basis using `queryRunner.startTransaction(isolationLevel)`. Supported values: `READ UNCOMMITTED`, `SERIALIZABLE`. See [Transactions](../advanced-topics/2-transactions.md) for more information.
 
 ### `better-sqlite3` data source options
 
@@ -36,6 +37,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 -   `statementCacheSize` - Cache size of the SQLite statement to speed up queries (default 100).
 -   `prepareDatabase` - Function to run before a database is used in typeorm. You can access the original better-sqlite3 Database object here.
 -   `nativeBinding` - Relative or absolute path to the native addon (better_sqlite3.node).
+-   `isolationLevel` - Sets the default transaction isolation level for new connections. You can override this value on a per-transaction basis using `queryRunner.startTransaction(isolationLevel)`. Supported values: `READ UNCOMMITTED`, `SERIALIZABLE`. See [Transactions](../advanced-topics/2-transactions.md) for more information.
 
 ### `sql.js` data source options
 
