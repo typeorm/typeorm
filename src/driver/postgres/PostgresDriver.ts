@@ -1198,24 +1198,39 @@ export class PostgresDriver implements Driver {
         columnMetadata: ColumnMetadata,
         tableColumn: TableColumn,
     ): boolean {
+        // defaults are equal if both are undefined or null
+        if (
+            (columnMetadata.default === null ||
+                columnMetadata.default === undefined) &&
+            (tableColumn.default === null || tableColumn.default === undefined)
+        )
+            return true
+
         if (
             ["json", "jsonb"].includes(columnMetadata.type as string) &&
             !["function", "undefined"].includes(typeof columnMetadata.default)
         ) {
-            const tableColumnDefault =
-                typeof tableColumn.default === "string"
-                    ? JSON.parse(
-                          tableColumn.default.substring(
-                              1,
-                              tableColumn.default.length - 1,
-                          ),
-                      )
-                    : tableColumn.default
+            try {
+                const tableColumnDefault =
+                    typeof tableColumn.default === "string"
+                        ? JSON.parse(
+                              tableColumn.default.substring(
+                                  1,
+                                  tableColumn.default.length - 1,
+                              ),
+                          )
+                        : tableColumn.default
 
-            return OrmUtils.deepCompare(
-                columnMetadata.default,
-                tableColumnDefault,
-            )
+                return OrmUtils.deepCompare(
+                    columnMetadata.default,
+                    tableColumnDefault,
+                )
+            } catch (err) {
+                const columnDefault = this.lowerDefaultValueIfNecessary(
+                    this.normalizeDefault(columnMetadata),
+                )
+                return columnDefault === tableColumn.default
+            }
         }
 
         const columnDefault = this.lowerDefaultValueIfNecessary(
