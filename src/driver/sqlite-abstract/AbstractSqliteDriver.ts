@@ -787,16 +787,21 @@ export abstract class AbstractSqliteDriver implements Driver {
     /**
      * Compares column default values, handling JSON/JSONB types semantically.
      */
-    private compareDefaults(
+    private defaultEqual(
         columnMetadata: ColumnMetadata,
         tableColumn: TableColumn,
     ): boolean {
+        // defaults are equal if both are undefined or null
+        if (
+            (columnMetadata.default === null ||
+                columnMetadata.default === undefined) &&
+            (tableColumn.default === null || tableColumn.default === undefined)
+        )
+            return true
+
         if (
             ["json", "jsonb"].includes(columnMetadata.type as string) &&
-            !["function", "undefined"].includes(
-                typeof columnMetadata.default,
-            ) &&
-            columnMetadata.default !== null
+            !["function", "undefined"].includes(typeof columnMetadata.default)
         ) {
             try {
                 const tableDefaultObj =
@@ -843,7 +848,7 @@ export abstract class AbstractSqliteDriver implements Driver {
                 tableColumn.length !== columnMetadata.length ||
                 tableColumn.precision !== columnMetadata.precision ||
                 tableColumn.scale !== columnMetadata.scale ||
-                !this.compareDefaults(columnMetadata, tableColumn) ||
+                !this.defaultEqual(columnMetadata, tableColumn) ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
