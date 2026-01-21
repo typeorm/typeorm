@@ -9,7 +9,7 @@ that help you to develop any kind of application that uses databases - from
 small applications with a few tables to large-scale enterprise applications
 with multiple databases.
 
-TypeORM supports more databases than any other JS/TS ORM: [Google Spanner](./drivers/google-spanner.md), [Microsoft SqlServer](./drivers/microsoft-sqlserver.md), [MongoDB](./drivers/mongodb.md), [MySQL/MariaDB](./drivers/mysql.md), [Oracle](./drivers/oracle.md), [Postgres](./drivers/postgres.md), [SAP HANA](./drivers/sap.md) and [SQLite](./drivers/sqlite.md), as well we derived databases and different drivers.
+TypeORM supports more databases than any other JS/TS ORM: [Google Spanner](./drivers/google-spanner.md), [Microsoft SqlServer](./drivers/microsoft-sqlserver.md), [MongoDB](./drivers/mongodb.md), [MySQL/MariaDB](./drivers/mysql.md), [Oracle](./drivers/oracle.md), [Postgres](./drivers/postgres.md), [SAP HANA](./drivers/sap.md) and [SQLite](./drivers/sqlite.md), as well as derived databases and different drivers.
 
 TypeORM supports both [Active Record](./guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) and [Data Mapper](./guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) patterns,
 unlike all other JavaScript ORMs currently in existence,
@@ -798,7 +798,7 @@ export class Photo {
 
 `photo => photo.metadata` is a function that returns the name of the inverse side of the relation.
 Here we show that the metadata property of the Photo class is where we store PhotoMetadata in the Photo class.
-Instead of passing a function that returns a property of the photo, you could alternatively spass a string to `@OneToOne` decorator, like `"metadata"`.
+Instead of passing a function that returns a property of the photo, you could alternatively pass a string to `@OneToOne` decorator, like `"metadata"`.
 But we used this function-typed approach to make our refactoring easier.
 
 Note that we should use the `@JoinColumn` decorator only on one side of a relation.
