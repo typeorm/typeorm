@@ -772,7 +772,7 @@ export class ColumnMetadata {
         entity: ObjectLiteral,
         transform: boolean = false,
     ): any | undefined {
-        if (entity === undefined || entity === null) return undefined
+        if (entity === undefined || entity === null) return entity
 
         // extract column value from embeddeds of entity if column is in embedded
         let value: any = undefined
