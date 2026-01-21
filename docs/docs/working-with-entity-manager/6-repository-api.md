@@ -180,7 +180,7 @@ await repository.upsert(
  *  VALUES
  *      (externalId = abc123, firstName = Rizzrak),
  *      (externalId = cba321, firstName = Karzzir),
- *  ON CONFLICT (externalId) DO UPDATE 
+ *  ON CONFLICT (externalId) DO UPDATE
  *  SET firstName = EXCLUDED.firstName,
  *      updatedDate = CURRENT_TIMESTAMP,
  *      version = version + 1
@@ -472,10 +472,14 @@ const rawData = await repository.query(
 )
 ```
 
--   `clear` - Clears all the data from the given table (truncates/drops it).
+-   `clear` - Clears all the data from the given table (truncates/drops it). Also supports cascade option
+    to clear all the data from the tables that have foreign keys to this table (supported by PostgreSQL/CockroachDB and Oracle only).
 
 ```typescript
 await repository.clear()
+
+// With cascade option (PostgreSQL/CockroachDB and Oracle only)
+await repository.clear({ cascade: true })
 ```
 
 ### Additional Options
