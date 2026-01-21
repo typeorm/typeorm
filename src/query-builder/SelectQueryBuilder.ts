@@ -3007,6 +3007,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 selectionPath = `(${column.query(escapedAliasName)})`
             }
 
+            if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
+                if (column.type === "jsonb") {
+                    selectionPath = `json(${selectionPath})`
+                }
+            }
+
             if (
                 this.connection.driver.spatialTypes.indexOf(column.type) !== -1
             ) {

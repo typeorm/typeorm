@@ -76,3 +76,10 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 ## Column Types
 
 `int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`, `numeric`, `float`, `double`, `real`, `double precision`, `datetime`, `varying character`, `character`, `native character`, `varchar`, `nchar`, `nvarchar2`, `unsigned big int`, `boolean`, `blob`, `text`, `clob`, `date`, `json`, `jsonb`
+
+TypeORM supports both `json` and `jsonb` types in SQLite:
+
+-   `json` is stored as `TEXT`.
+-   `jsonb` is stored as SQLite's binary JSON format. TypeORM automatically wraps values with the `jsonb()` function during persistence and with the `json()` function during retrieval for transparent support and better performance.
+
+> **Note:** JSONB support requires SQLite 3.45.0 or newer. When using the `jsonb` column type, TypeORM will use the `jsonb` type in your database schema, which SQLite handles as a binary `BLOB` internally.

@@ -611,6 +611,13 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     ", " +
                                     (column.srid || "0") +
                                     ")"
+                            } else if (
+                                DriverUtils.isSQLiteFamily(
+                                    this.connection.driver,
+                                ) &&
+                                column.type === "jsonb"
+                            ) {
+                                expression = `jsonb(${paramName})`
                             } else {
                                 expression = paramName
                             }
