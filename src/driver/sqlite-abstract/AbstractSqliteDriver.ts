@@ -680,6 +680,9 @@ export abstract class AbstractSqliteDriver implements Driver {
         }
 
         if (typeof defaultValue === "object") {
+            if (columnMetadata.type === "jsonb") {
+                return `jsonb('${JSON.stringify(defaultValue)}')`
+            }
             return `'${JSON.stringify(defaultValue)}'`
         }
 
@@ -804,15 +807,39 @@ export abstract class AbstractSqliteDriver implements Driver {
             !["function", "undefined"].includes(typeof columnMetadata.default)
         ) {
             try {
+                let tableDefault = tableColumn.default
+                if (typeof tableDefault === "string") {
+                    if (
+                        tableDefault.startsWith("(") &&
+                        tableDefault.endsWith(")")
+                    ) {
+                        tableDefault = tableDefault.substring(
+                            1,
+                            tableDefault.length - 1,
+                        )
+                    }
+
+                    if (
+                        tableDefault.toLowerCase().startsWith("jsonb('") &&
+                        tableDefault.endsWith("')")
+                    ) {
+                        tableDefault = tableDefault
+                            .substring(7, tableDefault.length - 2)
+                            .replace(/''/g, "'")
+                    } else if (
+                        tableDefault.startsWith("'") &&
+                        tableDefault.endsWith("'")
+                    ) {
+                        tableDefault = tableDefault
+                            .substring(1, tableDefault.length - 1)
+                            .replace(/''/g, "'")
+                    }
+                }
+
                 const tableDefaultObj =
-                    typeof tableColumn.default === "string"
-                        ? JSON.parse(
-                              tableColumn.default.substring(
-                                  1,
-                                  tableColumn.default.length - 1,
-                              ),
-                          )
-                        : tableColumn.default
+                    typeof tableDefault === "string"
+                        ? JSON.parse(tableDefault)
+                        : tableDefault
                 return OrmUtils.deepCompare(
                     columnMetadata.default,
                     tableDefaultObj,
