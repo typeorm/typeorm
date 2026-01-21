@@ -1,26 +1,17 @@
 import { Entity } from "../../../../../src/decorator/entity/Entity"
 import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
 import { Column } from "../../../../../src/decorator/columns/Column"
-import { CreateDateColumn } from "../../../../../src/decorator/columns/CreateDateColumn"
+import { ManyToOne } from "../../../../../src/decorator/relations/ManyToOne"
+import { Author } from "./Author"
 
-@Entity({
-    orderBy: {
-        myOrder: "DESC",
-    },
-})
+@Entity()
 export class Post {
     @PrimaryGeneratedColumn()
     id: number
 
     @Column()
-    myOrder: number
+    title: string
 
-    @Column()
-    num1: number = 1
-
-    @Column()
-    num2: number = 1
-
-    @CreateDateColumn({ name: "created_at" })
-    createdAt: Date
+    @ManyToOne(() => Author)
+    author: Author
 }
