@@ -1,13 +1,14 @@
-import { TableColumn } from "./TableColumn"
-import { TableIndex } from "./TableIndex"
-import { TableForeignKey } from "./TableForeignKey"
+import type { PartitionByConfig } from "../../decorator/options/PartitionOptions"
 import { Driver } from "../../driver/Driver"
-import { TableOptions } from "../options/TableOptions"
 import { EntityMetadata } from "../../metadata/EntityMetadata"
+import { TableOptions } from "../options/TableOptions"
 import { TableUtils } from "../util/TableUtils"
-import { TableUnique } from "./TableUnique"
 import { TableCheck } from "./TableCheck"
+import { TableColumn } from "./TableColumn"
 import { TableExclusion } from "./TableExclusion"
+import { TableForeignKey } from "./TableForeignKey"
+import { TableIndex } from "./TableIndex"
+import { TableUnique } from "./TableUnique"
 
 /**
  * Table in the database represented in this class.
@@ -88,6 +89,11 @@ export class Table {
      */
     comment?: string
 
+    /**
+     * Table partitioning configuration.
+     */
+    partition?: PartitionByConfig
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -144,6 +150,8 @@ export class Table {
             this.engine = options.engine
 
             this.comment = options.comment
+
+            this.partition = options.partition
         }
     }
 
@@ -179,6 +187,7 @@ export class Table {
             withoutRowid: this.withoutRowid,
             engine: this.engine,
             comment: this.comment,
+            partition: this.partition,
         })
     }
 
@@ -420,6 +429,7 @@ export class Table {
                 TableExclusion.create(exclusion),
             ),
             comment: entityMetadata.comment,
+            partition: entityMetadata.partition,
         }
 
         return new Table(options)

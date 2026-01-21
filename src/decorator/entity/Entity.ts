@@ -42,6 +42,7 @@ export function Entity(
             synchronize: options.synchronize,
             withoutRowid: options.withoutRowid,
             comment: options.comment ? options.comment : undefined,
+            partition: options.partition ? options.partition : undefined,
         } as TableMetadataArgs)
     }
 }

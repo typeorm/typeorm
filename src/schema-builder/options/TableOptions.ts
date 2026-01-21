@@ -1,9 +1,10 @@
-import { TableColumnOptions } from "./TableColumnOptions"
-import { TableIndexOptions } from "./TableIndexOptions"
-import { TableForeignKeyOptions } from "./TableForeignKeyOptions"
-import { TableUniqueOptions } from "./TableUniqueOptions"
+import type { PartitionByConfig } from "../../decorator/options/PartitionOptions"
 import { TableCheckOptions } from "./TableCheckOptions"
+import { TableColumnOptions } from "./TableColumnOptions"
 import { TableExclusionOptions } from "./TableExclusionOptions"
+import { TableForeignKeyOptions } from "./TableForeignKeyOptions"
+import { TableIndexOptions } from "./TableIndexOptions"
+import { TableUniqueOptions } from "./TableUniqueOptions"
 
 /**
  * Table options.
@@ -79,4 +80,9 @@ export interface TableOptions {
      * Table comment. Not supported by all database types.
      */
     comment?: string
+
+    /**
+     * Table partitioning configuration.
+     */
+    partition?: PartitionByConfig
 }

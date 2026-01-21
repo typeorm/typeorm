@@ -1,4 +1,5 @@
 import { OrderByCondition } from "../../find-options/OrderByCondition"
+import type { PartitionByConfig } from "./PartitionOptions"
 
 /**
  * Describes all entity's options.
@@ -51,4 +52,24 @@ export interface EntityOptions {
      * Table comment. Not supported by all database types.
      */
     comment?: string
+
+    /**
+     * Table partitioning configuration.
+     * Supported by PostgreSQL (10+), MySQL/MariaDB (5.1+).
+     * @example
+     * ```typescript
+     * @Entity({
+     *   name: "measurements",
+     *   partition: {
+     *     type: "RANGE",
+     *     columns: ["logdate"],
+     *     partitions: [
+     *       { name: "p2023", values: ["2023-01-01", "2024-01-01"] },
+     *       { name: "p2024", values: ["2024-01-01", "2025-01-01"] }
+     *     ]
+     *   }
+     * })
+     * ```
+     */
+    partition?: PartitionByConfig
 }

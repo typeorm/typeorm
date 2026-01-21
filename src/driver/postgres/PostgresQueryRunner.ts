@@ -1,8 +1,10 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { PartitionDefinition } from "../../decorator/options/PartitionOptions"
 import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import type { PartitionType } from "../../metadata/types/PartitionTypes"
 import { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
@@ -28,6 +30,7 @@ import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { PostgresDriver } from "./PostgresDriver"
+import { PostgresPartitionUtils } from "./PostgresPartitionUtils"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -4248,6 +4251,11 @@ export class PostgresQueryRunner
 
         sql += `)`
 
+        // Add partition clause if table is partitioned
+        if (table.partition) {
+            sql += this.buildPartitionClauseSql(table)
+        }
+
         table.columns
             .filter((it) => it.comment)
             .forEach(
@@ -4258,6 +4266,55 @@ export class PostgresQueryRunner
             )
 
         return new Query(sql)
+    }
+
+    /**
+     * Builds PostgreSQL PARTITION BY clause.
+     */
+    protected buildPartitionClauseSql(table: Table): string {
+        return PostgresPartitionUtils.buildPartitionClauseSql(table)
+    }
+
+    /**
+     * Creates a partition of a partitioned table in PostgreSQL.
+     */
+    async createPartition(
+        tableName: string,
+        partition: PartitionDefinition,
+        partitionType: PartitionType,
+    ): Promise<void> {
+        await PostgresPartitionUtils.createPartition(
+            this,
+            tableName,
+            partition,
+            partitionType,
+            {
+                escapePath: (target) => this.escapePath(target),
+                includeTablespace: true,
+                escapeIdentifier: (name) => this.driver.escape(name),
+            },
+        )
+    }
+
+    /**
+     * Drops a partition from a partitioned table in PostgreSQL.
+     */
+    async dropPartition(
+        tableName: string,
+        partitionName: string,
+    ): Promise<void> {
+        await PostgresPartitionUtils.dropPartition(
+            this,
+            partitionName,
+            (target) => this.escapePath(target),
+        )
+    }
+
+    /**
+     * Lists all partitions of a table in PostgreSQL.
+     */
+    async getPartitions(tableName: string): Promise<string[]> {
+        return PostgresPartitionUtils.getPartitions(this, tableName)
     }
 
     /**
