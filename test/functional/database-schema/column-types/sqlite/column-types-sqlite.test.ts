@@ -23,6 +23,8 @@ describe("database schema > column types > sqlite", () => {
     it("all types should work correctly - persist and hydrate", () =>
         Promise.all(
             connections.map(async (connection) => {
+                // Current sqlite3 package does not support jsonb or jsonb functions
+                if (connection.driver.options.type === "sqlite") return
                 const postRepository = connection.getRepository(Post)
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post")
