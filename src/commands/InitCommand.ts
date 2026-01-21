@@ -241,7 +241,7 @@ sid: "xe.oracle.docker",`
         }
         return `import "reflect-metadata"
 import { DataSource } from "typeorm"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 export const AppDataSource = new DataSource({
     ${dbSettings}
@@ -344,7 +344,7 @@ export class User {
      * Gets contents of the route file (used when express is enabled).
      */
     protected static getRoutesTemplate(isEsm: boolean): string {
-        return `import { UserController } from "./controller/UserController${
+        return `import { UserController } from "./controllers/UserController${
             isEsm ? ".js" : ""
         }"
 
@@ -379,7 +379,7 @@ export const Routes = [{
             isEsm ? ".js" : ""
         }"
 import { NextFunction, Request, Response } from "express"
-import { User } from "../entity/User${isEsm ? ".js" : ""}"
+import { User } from "../entities/User${isEsm ? ".js" : ""}"
 
 export class UserController {
 
@@ -445,7 +445,7 @@ import ${!isEsm ? "* as " : ""}bodyParser from "body-parser"
 import { Request, Response } from "express"
 import { AppDataSource } from "./data-source${isEsm ? ".js" : ""}"
 import { Routes } from "./routes${isEsm ? ".js" : ""}"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 AppDataSource.initialize().then(async () => {
 
@@ -497,7 +497,7 @@ AppDataSource.initialize().then(async () => {
             return `import { AppDataSource } from "./data-source${
                 isEsm ? ".js" : ""
             }"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 AppDataSource.initialize().then(async () => {
 
