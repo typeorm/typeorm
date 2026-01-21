@@ -637,6 +637,8 @@ You can configure partitioning using the `partition` option in the `@Entity` dec
     partition: {
         type: "RANGE",
         columns: ["logdate"],
+        // PostgreSQL example - uses FROM/TO format (2 values)
+        // For MySQL, use single VALUES LESS THAN values: ["2024-01-01"], ["2025-01-01"]
         partitions: [
             { name: "p2023", values: ["2023-01-01", "2024-01-01"] },
             { name: "p2024", values: ["2024-01-01", "2025-01-01"] }
