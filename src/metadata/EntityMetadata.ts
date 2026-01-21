@@ -555,6 +555,10 @@ export class EntityMetadata {
 
     /**
      * Creates a new entity.
+     * @param queryRunner
+     * @param options
+     * @param options.fromDeserializer
+     * @param options.pojo
      */
     create(
         queryRunner?: QueryRunner,
@@ -591,6 +595,7 @@ export class EntityMetadata {
 
     /**
      * Checks if given entity has an id.
+     * @param entity
      */
     hasId(entity: ObjectLiteral): boolean {
         if (!entity) return false
@@ -604,6 +609,7 @@ export class EntityMetadata {
     /**
      * Checks if given entity / object contains ALL primary keys entity must have.
      * Returns true if it contains all of them, false if at least one of them is not defined.
+     * @param entity
      */
     hasAllPrimaryKeys(entity: ObjectLiteral): boolean {
         return this.primaryColumns.every((primaryColumn) => {
@@ -617,6 +623,7 @@ export class EntityMetadata {
      * If given id is an object then it means its already id map.
      * If given id isn't an object then it means its a value of the id column
      * and it creates a new id map with this value and name of the primary column.
+     * @param id
      */
     ensureEntityIdMap(id: any): ObjectLiteral {
         if (ObjectUtils.isObject(id)) return id
@@ -632,6 +639,7 @@ export class EntityMetadata {
      * For example, for Post{ id: 1, title: "hello" } where id is primary it will return { id: 1 }
      * For multiple primary keys it returns multiple keys in object.
      * For primary keys inside embeds it returns complex object literal with keys in them.
+     * @param entity
      */
     getEntityIdMap(
         entity: ObjectLiteral | undefined,
@@ -648,6 +656,7 @@ export class EntityMetadata {
      * If entity has multiple primary keys (ids) then it will return just regular id map, like what getEntityIdMap returns.
      * But if entity has a single primary key then it will return just value of the id column of the entity, just value.
      * This is called mixed id map.
+     * @param entity
      */
     getEntityIdMixedMap(
         entity: ObjectLiteral | undefined,
@@ -667,6 +676,8 @@ export class EntityMetadata {
     /**
      * Compares two different entities by their ids.
      * Returns true if they match, false otherwise.
+     * @param firstEntity
+     * @param secondEntity
      */
     compareEntities(
         firstEntity: ObjectLiteral,
@@ -683,6 +694,7 @@ export class EntityMetadata {
 
     /**
      * Finds column with a given property name.
+     * @param propertyName
      */
     findColumnWithPropertyName(
         propertyName: string,
@@ -694,6 +706,7 @@ export class EntityMetadata {
 
     /**
      * Finds column with a given database name.
+     * @param databaseName
      */
     findColumnWithDatabaseName(
         databaseName: string,
@@ -705,6 +718,7 @@ export class EntityMetadata {
 
     /**
      * Checks if there is a column or relationship with a given property path.
+     * @param propertyPath
      */
     hasColumnWithPropertyPath(propertyPath: string): boolean {
         const hasColumn = this.columns.some(
@@ -715,6 +729,7 @@ export class EntityMetadata {
 
     /**
      * Finds column with a given property path.
+     * @param propertyPath
      */
     findColumnWithPropertyPath(
         propertyPath: string,
@@ -738,6 +753,7 @@ export class EntityMetadata {
     /**
      * Finds column with a given property path.
      * Does not search in relation unlike findColumnWithPropertyPath.
+     * @param propertyPath
      */
     findColumnWithPropertyPathStrict(
         propertyPath: string,
@@ -750,6 +766,7 @@ export class EntityMetadata {
     /**
      * Finds columns with a given property path.
      * Property path can match a relation, and relations can contain multiple columns.
+     * @param propertyPath
      */
     findColumnsWithPropertyPath(propertyPath: string): ColumnMetadata[] {
         const column = this.columns.find(
@@ -767,6 +784,7 @@ export class EntityMetadata {
 
     /**
      * Checks if there is a relation with the given property path.
+     * @param propertyPath
      */
     hasRelationWithPropertyPath(propertyPath: string): boolean {
         return this.relations.some(
@@ -776,6 +794,7 @@ export class EntityMetadata {
 
     /**
      * Finds relation with the given property path.
+     * @param propertyPath
      */
     findRelationWithPropertyPath(
         propertyPath: string,
@@ -787,6 +806,7 @@ export class EntityMetadata {
 
     /**
      * Checks if there is an embedded with a given property path.
+     * @param propertyPath
      */
     hasEmbeddedWithPropertyPath(propertyPath: string): boolean {
         return this.allEmbeddeds.some(
@@ -796,6 +816,7 @@ export class EntityMetadata {
 
     /**
      * Finds embedded with a given property path.
+     * @param propertyPath
      */
     findEmbeddedWithPropertyPath(
         propertyPath: string,
@@ -807,6 +828,7 @@ export class EntityMetadata {
 
     /**
      * Returns an array of databaseNames mapped from provided propertyPaths
+     * @param propertyPaths
      */
     mapPropertyPathsToColumns(propertyPaths: string[]) {
         return propertyPaths.map((propertyPath) => {
@@ -821,6 +843,8 @@ export class EntityMetadata {
     /**
      * Iterates through entity and finds and extracts all values from relations in the entity.
      * If relation value is an array its being flattened.
+     * @param entity
+     * @param relations
      */
     extractRelationValuesFromEntity(
         entity: ObjectLiteral,
@@ -854,7 +878,6 @@ export class EntityMetadata {
     /**
      * In the case of SingleTableInheritance, find the correct metadata
      * for a given value.
-     *
      * @param value The value to find the metadata for.
      * @returns The found metadata for the entity or the base metadata if no matching metadata
      *          was found in the whole inheritance tree.
@@ -903,7 +926,9 @@ export class EntityMetadata {
 
     /**
      * Creates a property paths for a given entity.
-     *
+     * @param metadata
+     * @param entity
+     * @param prefix
      * @deprecated
      */
     static createPropertyPath(
@@ -934,6 +959,8 @@ export class EntityMetadata {
     /**
      * Finds difference between two entity id maps.
      * Returns items that exist in the first array and absent in the second array.
+     * @param firstIdMaps
+     * @param secondIdMaps
      */
     static difference(
         firstIdMaps: ObjectLiteral[],
@@ -949,21 +976,28 @@ export class EntityMetadata {
     /**
      * Creates value map from the given values and columns.
      * Examples of usages are primary columns map and join columns map.
+     * @param entity
+     * @param columns
+     * @param options
+     * @param options.skipNulls
      */
     static getValueMap(
         entity: ObjectLiteral,
         columns: ColumnMetadata[],
         options?: { skipNulls?: boolean },
     ): ObjectLiteral | undefined {
-        return columns.reduce((map, column) => {
-            const value = column.getEntityValueMap(entity, options)
+        return columns.reduce(
+            (map, column) => {
+                const value = column.getEntityValueMap(entity, options)
 
-            // make sure that none of the values of the columns are not missing
-            if (map === undefined || value === null || value === undefined)
-                return undefined
+                // make sure that none of the values of the columns are not missing
+                if (map === undefined || value === null || value === undefined)
+                    return undefined
 
-            return OrmUtils.mergeDeep(map, value)
-        }, {} as ObjectLiteral | undefined)
+                return OrmUtils.mergeDeep(map, value)
+            },
+            {} as ObjectLiteral | undefined,
+        )
     }
 
     // ---------------------------------------------------------------------
@@ -1072,6 +1106,7 @@ export class EntityMetadata {
 
     /**
      * Registers a new column in the entity and recomputes all depend properties.
+     * @param column
      */
     registerColumn(column: ColumnMetadata) {
         if (this.ownColumns.indexOf(column) !== -1) return

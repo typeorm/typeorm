@@ -7,9 +7,9 @@
     "start": "ts-node app.ts"
   },
   "dependencies": {
-    "typeorm": "latest",
     "mssql": "^11.0.0",
-    "reflect-metadata": "^0.2.2"
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "latest"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
