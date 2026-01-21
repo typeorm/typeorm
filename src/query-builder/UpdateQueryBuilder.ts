@@ -18,6 +18,7 @@ import { TypeORMError } from "../error"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { DriverUtils } from "../driver/DriverUtils"
+import { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -614,10 +615,12 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             } else if (
                                 DriverUtils.isSQLiteFamily(
                                     this.connection.driver,
-                                ) &&
-                                column.type === "jsonb"
+                                )
                             ) {
-                                expression = `jsonb(${paramName})`
+                                expression = (
+                                    this.connection
+                                        .driver as AbstractSqliteDriver
+                                ).wrapWithJsonFunction(paramName, column, true)
                             } else {
                                 expression = paramName
                             }

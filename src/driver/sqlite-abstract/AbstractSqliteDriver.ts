@@ -995,6 +995,20 @@ export abstract class AbstractSqliteDriver implements Driver {
         // return "$" + parameterName;
     }
 
+    /**
+     * Wraps key with json/jsonb function if required.
+     */
+    wrapWithJsonFunction(
+        value: string,
+        column: ColumnMetadata,
+        jsonb: boolean = false,
+    ): string {
+        if (column.type === "jsonb") {
+            return jsonb ? `jsonb(${value})` : `json(${value})`
+        }
+        return value
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
