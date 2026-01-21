@@ -69,7 +69,7 @@ const dataSource = new DataSource({
     username: "test",
     password: "test",
     database: "test",
-    entities: [[__dirname + "/entities/**/*{.js,.ts}"]],
+    entities: [__dirname + "/entities/**/*{.js,.ts}"],
 })
 ```
 
