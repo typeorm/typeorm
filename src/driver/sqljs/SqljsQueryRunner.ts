@@ -1,6 +1,7 @@
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { QueryOptions } from "../../query-runner/QueryOptions"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
@@ -48,8 +49,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     async afterMigration(): Promise<void> {
         await this.query(`PRAGMA foreign_keys = ON`)
     }
-
-    private async flush() {
+    async flush(): Promise<void> {
         if (this.isDirty) {
             await this.driver.autoSave()
             this.isDirty = false
@@ -78,7 +78,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
     async query(
         query: string,
         parameters: any[] = [],
-        useStructuredResult = false,
+        optionsOrUseStructuredResult?: QueryOptions | boolean,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
@@ -147,6 +147,11 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             if (command !== "SELECT") {
                 this.isDirty = true
             }
+
+            const useStructuredResult =
+                typeof optionsOrUseStructuredResult === "boolean"
+                    ? optionsOrUseStructuredResult
+                    : optionsOrUseStructuredResult?.useStructuredResult === true
 
             if (useStructuredResult) {
                 return result

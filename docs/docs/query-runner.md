@@ -94,3 +94,97 @@ try {
 ```
 
 When declaring a query runner like this, it will be automatically released after the last statement in the containing scope was executed.
+
+## Executing raw SQL and structured results
+
+The low-level `query` method available on `DataSource`, `EntityManager`, and `QueryRunner` returns by default the driver-specific raw result (usually an array of rows or a primitive). To get consistent metadata (affected row count, normalized record array, etc.) you can request a structured return using a `QueryOptions` object.
+
+### `QueryOptions` interface
+
+```ts
+interface QueryOptions {
+  /** When true, the call returns a QueryResult object instead of the raw driver return. */
+  useStructuredResult?: boolean
+}
+```
+
+### Raw vs structured examples
+
+```ts
+// Raw result (array of rows)
+const rows = await dataSource.query("SELECT * FROM users WHERE id = ?", [1])
+
+// Structured result
+const result = await dataSource.query(
+  "SELECT * FROM users WHERE id = ?",
+  [1],
+  { useStructuredResult: true }
+)
+console.log(result.records) // same rows
+console.log(result.affected) // undefined for a SELECT
+```
+
+### With EntityManager
+
+```ts
+const update = await manager.query(
+    "UPDATE user SET active = ? WHERE last_login < ?",
+    [false, cutoffDate],
+    { useStructuredResult: true }
+)
+console.log(update.affected)
+```
+
+### With a QueryRunner
+
+```ts
+const qr = dataSource.createQueryRunner()
+await qr.connect()
+try {
+    const del = await qr.query(
+        "DELETE FROM session WHERE expires_at < ?",
+        [new Date()],
+        { useStructuredResult: true }
+    )
+    console.log(del.affected)
+} finally {
+  await qr.release()
+}
+```
+
+
+
+### Migration note (deprecated boolean overload)
+
+Older versions allowed `query(sql, params, true)` to return a `QueryResult`. That boolean overload is deprecated. Replace:
+
+```ts
+await queryRunner.query(sql, params, true)
+```
+
+with:
+
+```ts
+await queryRunner.query(sql, params, { useStructuredResult: true })
+```
+
+### When to request structured results
+
+Use `{ useStructuredResult: true }` when you need:
+
+- Affected row counts for write operations.
+- Cross-driver consistency of returned metadata.
+- Both normalized records and the raw driver payload.
+
+Leave it off for the lightest weight simple SELECT queries.
+
+### `QueryResult` shape (simplified)
+
+```ts
+interface QueryResult<T = any> {
+    raw: any
+    records?: T[]
+    recordsets?: T[][]
+    affected?: number
+}
+```

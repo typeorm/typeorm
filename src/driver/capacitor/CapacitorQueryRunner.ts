@@ -5,6 +5,7 @@ import { CapacitorDriver } from "./CapacitorDriver"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { QueryOptions } from "../../query-runner/QueryOptions"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -54,8 +55,12 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
     async query(
         query: string,
         parameters?: any[],
-        useStructuredResult = false,
+        optionsOrUseStructuredResult?: QueryOptions | boolean,
     ): Promise<any> {
+        const useStructuredResult =
+            typeof optionsOrUseStructuredResult === "boolean"
+                ? optionsOrUseStructuredResult
+                : optionsOrUseStructuredResult?.useStructuredResult === true
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const databaseConnection = await this.connect()

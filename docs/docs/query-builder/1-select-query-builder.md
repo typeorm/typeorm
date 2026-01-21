@@ -225,6 +225,15 @@ const photosSums = await dataSource
 // result will be like this: [{ id: 1, sum: 25 }, { id: 2, sum: 13 }, ...]
 ```
 
+Note that `getRawMany` also supports the use of `QueryOptions` to return a structured result:
+
+```typescript
+const structured = await dataSource
+    .createQueryBuilder(User, "u")
+    .where("u.isActive = :active", { active: true })
+    .getRawMany({ useStructuredResult: true })
+```
+
 ## Getting a count
 
 You can get the count on the number of rows a query will return by using `getCount()`. This will return the count as a number rather than an Entity result.
