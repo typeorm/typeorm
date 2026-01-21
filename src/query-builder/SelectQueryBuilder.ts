@@ -2576,7 +2576,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         const alias = this.expressionMap.aliases.find(
                             (alias) => alias.name === aliasName,
                         )
-                        if (alias) {
+                        if (alias?.hasMetadata) {
                             const column =
                                 alias.metadata.findColumnWithPropertyPath(
                                     propertyPath,
@@ -2875,14 +2875,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 ),
             )
         }
+
+        const columnsMap = new Map(
+            metadata.columns.map((col) => [
+                `${aliasName}.${col.propertyPath}`,
+                col,
+            ]),
+        )
         columns.push(
-            ...metadata.columns.filter((column) => {
-                return this.expressionMap.selects.some(
-                    (select) =>
-                        select.selection ===
-                        aliasName + "." + column.propertyPath,
-                )
-            }),
+            ...this.expressionMap.selects
+                .map((select) => columnsMap.get(select.selection))
+                .filter((col): col is ColumnMetadata => !!col),
         )
 
         // if user used partial selection and did not select some primary columns which are required to be selected
@@ -3741,7 +3744,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     const propertyPath = criteriaParts.slice(1).join(".")
                     const alias = this.expressionMap.findAliasByName(aliasName)
                     const column =
-                        alias.metadata.findColumnWithPropertyPath(propertyPath)
+                        alias.metadata.findColumnWithPropertyPath(
+                            propertyPath,
+                        ) ??
+                        alias.metadata.findColumnWithDatabaseName(propertyPath)
+                    const databaseName = column
+                        ? column.databaseName
+                        : propertyPath
                     return (
                         this.escape(parentAlias) +
                         "." +
@@ -3750,7 +3759,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                 this.connection.driver,
                                 undefined,
                                 aliasName,
-                                column!.databaseName,
+                                databaseName,
                             ),
                         )
                     )
@@ -3781,7 +3790,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 const propertyPath = criteriaParts.slice(1).join(".")
                 const alias = this.expressionMap.findAliasByName(aliasName)
                 const column =
-                    alias.metadata.findColumnWithPropertyPath(propertyPath)
+                    alias.metadata.findColumnWithPropertyPath(propertyPath) ??
+                    alias.metadata.findColumnWithDatabaseName(propertyPath)
+                const databaseName = column ? column.databaseName : propertyPath
                 orderByObject[
                     this.escape(parentAlias) +
                         "." +
@@ -3790,7 +3801,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                 this.connection.driver,
                                 undefined,
                                 aliasName,
-                                column!.databaseName,
+                                databaseName,
                             ),
                         )
                 ] = orderBys[orderCriteria]

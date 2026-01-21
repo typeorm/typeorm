@@ -493,6 +493,18 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
             throw new UpdateValuesMissingError()
         }
 
+        // only update rows that are not already soft deleted
+        this.expressionMap.wheres.push({
+            type: "and",
+            condition: `${this.escape(
+                metadata.deleteDateColumn.databaseName,
+            )} IS ${
+                this.expressionMap.queryType === "soft-delete"
+                    ? "NULL"
+                    : "NOT NULL"
+            }`,
+        })
+
         // get a table name and all column database names
         const whereExpression = this.createWhereExpression()
         const returningExpression = this.createReturningExpression("update")
