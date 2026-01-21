@@ -64,8 +64,8 @@ importers:
         specifier: ^8.3.1
         version: 8.3.1(encoding@0.1.13)
       '@sap/hana-client':
-        specifier: ^2.26.26
-        version: 2.26.26
+        specifier: ^2.27.19
+        version: 2.27.19
       '@stryker-mutator/core':
         specifier: ^9.4.0
         version: 9.4.0(@types/node@20.19.26)
@@ -1094,8 +1094,8 @@ packages:
     peerDependencies:
       '@redis/client': ^5.10.0
 
-  '@sap/hana-client@2.26.26':
-    resolution: {integrity: sha512-r5OSJKDLcuRCA1Ka5O4CMtTmKp9BD9EsrrqSLZ6mwCIxQd7WL+Km7aIKveyJZ0Bt511dZY279DGgvs3fXB20Tw==}
+  '@sap/hana-client@2.27.19':
+    resolution: {integrity: sha512-Bqx9isM8uW/ud/jLqUh7BCHnoTor6hwuC4fOtOxPub00oHQ6LNExLnOrofFskom+4V0po1303dJ8geXlStdFuw==}
     engines: {node: '>=4.0.0'}
 
   '@sec-ant/readable-stream@0.4.1':
@@ -6319,7 +6319,7 @@ snapshots:
     dependencies:
       '@redis/client': 5.10.0
 
-  '@sap/hana-client@2.26.26':
+  '@sap/hana-client@2.27.19':
     dependencies:
       debug: 3.1.0
     transitivePeerDependencies:
