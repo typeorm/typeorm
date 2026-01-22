@@ -58,7 +58,7 @@ describe("database schema > column types > oracle", () => {
                 post.timestampWithTimeZone.setMilliseconds(0)
                 post.timestampWithLocalTimeZone = new Date()
                 post.timestampWithLocalTimeZone.setMilliseconds(0)
-                post.blob = Buffer.from("This is blob")
+                post.blob = Buffer.alloc(100_000, 1) // 100 KB of binary data
                 post.clob = "This is clob"
                 post.nclob = "This is nclob"
                 post.simpleArray = ["A", "B", "C"]
@@ -299,7 +299,7 @@ describe("database schema > column types > oracle", () => {
                 post.id = 1
                 post.name = "Post"
                 post.boolean = true
-                post.blob = Buffer.from("This is blob")
+                post.blob = Buffer.alloc(100_000, 1) // 100 KB of binary data
                 post.datetime = new Date()
                 await postRepository.save(post)
 

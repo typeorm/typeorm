@@ -211,6 +211,15 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 outFormat: this.driver.oracle.OUT_FORMAT_OBJECT,
             }
 
+            if (parameters && parameters.length) {
+                parameters = parameters.map((param) => {
+                    if (Buffer.isBuffer(param)) {
+                        return { val: param, type: this.driver.oracle.BLOB }
+                    }
+                    return param
+                })
+            }
+
             const raw = await databaseConnection.execute(
                 query,
                 parameters || {},
