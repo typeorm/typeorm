@@ -11,7 +11,7 @@ import { TableColumn } from "../../schema-builder/table/TableColumn"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { OrmUtils } from "../../util/OrmUtils"
-import { Driver } from "../Driver"
+import { Driver, ReturningType } from "../Driver"
 import { ColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
@@ -405,14 +405,27 @@ export class PostgresDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
-        const extensionsMetadata = await this.checkMetadataForExtensions()
         const [connection, release] = await this.obtainMasterConnection()
 
         const installExtensions =
             this.options.installExtensions === undefined ||
             this.options.installExtensions
-        if (installExtensions && extensionsMetadata.hasExtensions) {
-            await this.enableExtensions(extensionsMetadata, connection)
+        if (installExtensions) {
+            const extensionsMetadata = await this.checkMetadataForExtensions()
+            const extensionsToInstall = this.options.extensions
+            if (extensionsMetadata.hasExtensions)
+                await this.enableExtensions(extensionsMetadata, connection)
+
+            if (extensionsToInstall) {
+                const availableExtensions =
+                    await this.getAvailableExtensions(connection)
+
+                await this.enableCustomExtensions(
+                    availableExtensions,
+                    extensionsToInstall,
+                    connection,
+                )
+            }
         }
 
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
@@ -421,6 +434,28 @@ export class PostgresDriver implements Driver {
         )
 
         await release()
+    }
+
+    protected async getAvailableExtensions(connection: any) {
+        const availableExtensions = new Set<string>()
+        const { logger } = this.connection
+        try {
+            const result: any = await this.executeQuery(
+                connection,
+                `SELECT name FROM pg_available_extensions`,
+            )
+            if (result.rows && Array.isArray(result.rows)) {
+                result.rows.forEach((row: any) => {
+                    availableExtensions.add(row.name)
+                })
+            }
+        } catch (_) {
+            logger.log(
+                "warn",
+                "Could not retrieve available extensions. Extension installation may fail if extensions are not available.",
+            )
+        }
+        return availableExtensions
     }
 
     protected async enableExtensions(extensionsMetadata: any, connection: any) {
@@ -538,6 +573,35 @@ export class PostgresDriver implements Driver {
                     "At least one of the entities has an exclusion constraint, but the 'btree_gist' extension cannot be installed automatically. Please install it manually using superuser rights",
                 )
             }
+    }
+
+    protected async enableCustomExtensions(
+        availableExtensions: Set<string>,
+        extensionsToInstall: string[],
+        connection: any,
+    ) {
+        if (!extensionsToInstall) return
+        const logger = this.connection.logger
+        for (const extension of extensionsToInstall) {
+            if (availableExtensions.has(extension)) {
+                try {
+                    await this.executeQuery(
+                        connection,
+                        `CREATE EXTENSION IF NOT EXISTS "${extension}"`,
+                    )
+                } catch (_) {
+                    logger.log(
+                        "warn",
+                        `The extension "${extension}" cannot be installed automatically. Please install it manually using superuser rights`,
+                    )
+                }
+            } else {
+                logger.log(
+                    "warn",
+                    `The extension "${extension}" is not available on this database. Please install it manually using superuser rights`,
+                )
+            }
+        }
     }
 
     protected async checkMetadataForExtensions() {
@@ -684,6 +748,25 @@ export class PostgresDriver implements Driver {
             columnMetadata.type === "timestamp without time zone"
         ) {
             return DateUtils.mixedDateToDate(value)
+        } else if (columnMetadata.type === "point") {
+            if (
+                typeof value === "object" &&
+                value.x !== undefined &&
+                value.y !== undefined
+            ) {
+                return `(${value.x},${value.y})`
+            }
+            return value
+        } else if (columnMetadata.type === "circle") {
+            if (
+                typeof value === "object" &&
+                value.x !== undefined &&
+                value.y !== undefined &&
+                value.radius !== undefined
+            ) {
+                return `<(${value.x},${value.y}),${value.radius}>`
+            }
+            return value
         } else if (
             ["json", "jsonb", ...this.spatialTypes].indexOf(
                 columnMetadata.type,
@@ -1453,7 +1536,7 @@ export class PostgresDriver implements Driver {
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(_returningType: ReturningType): boolean {
         return true
     }
 
