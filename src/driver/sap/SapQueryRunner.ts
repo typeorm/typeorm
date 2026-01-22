@@ -3372,7 +3372,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Escapes a given comment so it's safe to include in a query.
      */
     protected escapeComment(comment?: string) {
-        if (!comment) {
+        if (!comment || comment.length === 0) {
             return "NULL"
         }
 

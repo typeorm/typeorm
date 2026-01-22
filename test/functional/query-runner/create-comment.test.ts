@@ -8,6 +8,7 @@ import {
 import { Company } from "./entity/Company"
 
 describe("create comment", () => {
+    // GitHub issue #10621 - Table comments not supported by typeorm for SAP HANA
     describe("table comment", () => {
         let connections: DataSource[]
         before(
@@ -29,19 +30,22 @@ describe("create comment", () => {
             const dbType = dataSource.driver.options.type
             if (dbType === "sap") {
                 const res = await dataSource.query(
-                    `SELECT "COMMENTS" FROM "SYS"."TABLES" WHERE "TABLE_NAME" = '${tableName.toUpperCase()}'`,
+                    `SELECT "COMMENTS" FROM "SYS"."TABLES" WHERE "TABLE_NAME" = ? AND "SCHEMA_NAME" = 'SYSTEM'`,
+                    [tableName],
                 )
-                return res[0]["COMMENTS"]
+                return res.length > 0 ? res[0]["COMMENTS"] : undefined
             } else if (dbType === "postgres") {
                 const res = await dataSource.query(
-                    `SELECT obj_description('${tableName}'::regclass, 'pg_class') AS "comment"`,
+                    `SELECT obj_description($1::regclass, 'pg_class') AS "comment"`,
+                    [tableName],
                 )
-                return res[0]["comment"]
+                return res.length > 0 ? res[0]["comment"] : undefined
             } else if (dbType === "mysql" || dbType === "mariadb") {
                 const res = await dataSource.query(
-                    `SELECT \`TABLE_COMMENT\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE TABLE_NAME = "${tableName}"`,
+                    `SELECT \`TABLE_COMMENT\` FROM \`INFORMATION_SCHEMA\`.\`TABLES\` WHERE TABLE_NAME = ?`,
+                    [tableName],
                 )
-                return res[0]["TABLE_COMMENT"]
+                return res.length > 0 ? res[0]["TABLE_COMMENT"] : undefined
             }
             return undefined
         }
