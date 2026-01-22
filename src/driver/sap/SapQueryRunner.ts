@@ -616,6 +616,21 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             })
         }
 
+        if (table.comment) {
+            upQueries.push(
+                new Query(
+                    `COMMENT ON TABLE ${this.escapePath(table)}
+                    IS ${this.escapeComment(table.comment)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `COMMENT ON TABLE ${this.escapePath(table)}
+                    IS NULL`,
+                ),
+            )
+        }
+
         await this.executeQueries(upQueries, downQueries)
     }
 
@@ -1094,6 +1109,21 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
             upQueries.push(this.createIndexSql(table, uniqueIndex))
             downQueries.push(this.dropIndexSql(table, uniqueIndex))
+        }
+
+        if (column.comment) {
+            upQueries.push(
+                new Query(
+                    `COMMENT ON COLUMN ${this.escapePath(table)}."${column.name}"
+                    IS ${this.escapeComment(column.comment)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `COMMENT ON COLUMN ${this.escapePath(table)}."${column.name}"
+                    IS NULL`,
+                ),
+            )
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -2556,10 +2586,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const currentSchema = await this.getCurrentSchema()
         const currentDatabase = await this.getCurrentDatabase()
 
-        const dbTables: { SCHEMA_NAME: string; TABLE_NAME: string }[] = []
+        const dbTables: {
+            SCHEMA_NAME: string
+            TABLE_NAME: string
+            COMMENTS: string
+        }[] = []
 
         if (!tableNames) {
-            const tablesSql = `SELECT "SCHEMA_NAME", "TABLE_NAME" FROM "SYS"."TABLES"`
+            const tablesSql = `SELECT "SCHEMA_NAME", "TABLE_NAME", "COMMENTS" FROM "SYS"."TABLES"`
 
             dbTables.push(...(await this.query(tablesSql)))
         } else {
@@ -2575,7 +2609,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 .join(" OR ")
 
             const tablesSql =
-                `SELECT "SCHEMA_NAME", "TABLE_NAME" FROM "SYS"."TABLES" WHERE ` +
+                `SELECT "SCHEMA_NAME", "TABLE_NAME", "COMMENTS" FROM "SYS"."TABLES" WHERE ` +
                 tablesCondition
 
             dbTables.push(...(await this.query(tablesSql)))
@@ -2645,6 +2679,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             const schema = getSchemaFromKey(dbTable, "SCHEMA_NAME")
             table.database = currentDatabase
             table.schema = dbTable["SCHEMA_NAME"]
+            table.comment = dbTable["COMMENTS"]
             table.name = this.driver.buildTableName(
                 dbTable["TABLE_NAME"],
                 schema,
@@ -3395,12 +3430,41 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Change table comment.
      */
-    changeTableComment(
+    async changeTableComment(
         tableOrName: Table | string,
-        comment?: string,
+        newComment?: string,
     ): Promise<void> {
-        throw new TypeORMError(
-            `spa driver does not support change table comment.`,
+        const upQueries: Query[] = []
+        const downQueries: Query[] = []
+
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+
+        const escapedNewComment = this.escapeComment(newComment)
+        const escapedComment = this.escapeComment(table.comment)
+
+        if (escapedNewComment === escapedComment) {
+            return
+        }
+
+        const newTable = table.clone()
+        newTable.comment = newComment
+        upQueries.push(
+            new Query(
+                `COMMENT ON TABLE ${this.escapePath(
+                    newTable,
+                )} IS ${escapedNewComment}`,
+            ),
         )
+        downQueries.push(
+            new Query(
+                `COMMENT ON TABLE ${this.escapePath(table)} IS ${escapedComment}`,
+            ),
+        )
+        await this.executeQueries(upQueries, downQueries)
+
+        table.comment = newTable.comment
+        this.replaceCachedTable(table, newTable)
     }
 }
