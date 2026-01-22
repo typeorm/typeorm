@@ -59,7 +59,7 @@ Each view entity must be registered in your data source options:
 
 ```typescript
 import { DataSource } from "typeorm"
-import { UserView } from "./entity/UserView"
+import { UserView } from "./entities/UserView"
 
 const dataSource = new DataSource({
     type: "mysql",
@@ -257,9 +257,9 @@ export class PostCategory {
 then fill these tables with data and request all data from PostCategory view:
 
 ```typescript
-import { Category } from "./entity/Category"
-import { Post } from "./entity/Post"
-import { PostCategory } from "./entity/PostCategory"
+import { Category } from "./entities/Category"
+import { Post } from "./entities/Post"
+import { PostCategory } from "./entities/PostCategory"
 
 const category1 = new Category()
 category1.name = "Cars"

@@ -2,4 +2,4 @@ extra/
 src/driver/mongodb/typings.ts
 src/driver/mongodb/bson.typings.ts
 gulpfile.ts
-package-lock.json
+pnpm-lock.yaml

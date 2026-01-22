@@ -156,7 +156,7 @@ export const myDataSource = new DataSource({
     username: "test",
     password: "test",
     database: "test",
-    entities: ["src/entity/*.js"],
+    entities: [__dirname + "/entities/**/*{.js,.ts}"],
     logging: true,
     synchronize: true,
 })
@@ -165,7 +165,7 @@ export const myDataSource = new DataSource({
 Configure each option as you need.
 Learn more about options [here](../data-source/2-data-source-options.md).
 
-Let's create a `user.entity.ts` entity inside `src/entity`:
+Let's create a `user.entity.ts` entity under `entities` folder:
 
 ```typescript
 import { Entity, Column, PrimaryGeneratedColumn } from "typeorm"
@@ -190,7 +190,7 @@ import "reflect-metadata"
 
 import * as express from "express"
 import { Request, Response } from "express"
-import { User } from "./entity/User"
+import { User } from "./entities/User"
 import { myDataSource } from "./app-data-source.ts"
 
 // establish database connection

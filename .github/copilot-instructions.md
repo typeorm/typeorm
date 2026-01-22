@@ -40,8 +40,6 @@ TypeORM is a TypeScript-based Object-Relational Mapping (ORM) library that suppo
 
 - **Formatting**: Use Prettier with these settings:
     - No semicolons (`"semi": false`)
-    - Arrow function parentheses always (`"arrowParens": "always"`)
-    - Trailing commas everywhere (`"trailingComma": "all"`)
 - **Linting**: ESLint with TypeScript support
     - Use `@typescript-eslint` rules
     - Warnings allowed for some `@typescript-eslint/no-*` rules
@@ -80,14 +78,14 @@ Tests are organized in `test/` directory:
 1. **Use the standard test template**:
 
 ```typescript
+import { expect } from "chai"
 import "reflect-metadata"
 import {
-    createTestingConnections,
     closeTestingConnections,
+    createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { expect } from "chai"
 
 describe("description of functionality", () => {
     let dataSources: DataSource[]
@@ -123,10 +121,10 @@ describe("description of functionality", () => {
     - Reference GitHub issue numbers when fixing specific issues
 
 4. **Running Tests**:
-    - Full test suite: `npm test` (compiles then runs tests)
-    - Fast iteration: `npm run test:fast` (runs without recompiling)
-    - Specific tests: `npm run test:fast -- --grep "pattern"`
-    - Watch mode: `npm run compile -- --watch` + `npm run test:fast`
+    - Full test suite: `pnpm run test` (compiles then runs tests)
+    - Fast iteration: `pnpm run test:fast` (runs without recompiling)
+    - Specific tests: `pnpm run test:fast -- --grep "pattern"`
+    - Watch mode: `pnpm run compile -- --watch` + `pnpm run test:fast`
 
 ## Database-Specific Considerations
 
@@ -182,20 +180,20 @@ Each driver in `src/driver/` implements common interfaces:
 
 ### Commands
 
-- **Build**: `npm run compile` - Compiles TypeScript to `build/compiled/`
-- **Package**: `npm run package` - Creates distribution in `build/package/`
-- **Pack**: `npm run pack` - Creates `.tgz` file in `build/`
-- **Test**: `npm test` - Compile and run all tests
-- **Lint**: `npm run lint` - Run ESLint
-- **Format**: `npm run format` - Run Prettier
-- **Watch**: `npm run watch` - Watch mode for TypeScript compilation
+- **Build**: `pnpm run compile` - Compiles TypeScript to `build/compiled/`
+- **Package**: `pnpm run package` - Creates distribution in `build/package/`
+- **Pack**: `pnpm pack` - Creates `.tgz` file in `build/`
+- **Test**: `pnpm run test` - Compile and run all tests
+- **Lint**: `pnpm run lint` - Run ESLint
+- **Format**: `pnpm run format` - Run Prettier
+- **Watch**: `pnpm run watch` - Watch mode for TypeScript compilation
 
 ### Development Setup
 
-1. Install dependencies: `npm install`
+1. Install dependencies: `pnpm install`
 2. Copy config: `cp ormconfig.sample.json ormconfig.json`
 3. Configure database connections in `ormconfig.json`
-4. Optionally use Docker: `docker-compose up` for database services
+4. Optionally use Docker: `docker compose up` for database services
 
 ### Pre-commit Hooks
 

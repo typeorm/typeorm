@@ -24,6 +24,10 @@ import { Guest as GuestV1 } from "./entity/v1/Guest"
 import { Comment as CommentV2 } from "./entity/v2/Comment"
 import { Guest as GuestV2 } from "./entity/v2/Guest"
 import { View } from "./entity/View"
+import { Professor } from "./entity/Professor"
+import { Subject } from "./entity/Subject"
+import { SiteLocation } from "./entity/SiteLocation"
+import { Site } from "./entity/Site"
 
 describe("Connection", () => {
     // const resourceDir = __dirname + "/../../../../../test/functional/connection/";
@@ -411,6 +415,83 @@ describe("Connection", () => {
                     )
                     await queryRunner.release()
                     expect(rows[0]["context"]).to.be.eq(comment.context)
+                }),
+            ))
+    })
+
+    // GitHub issue #7738
+    describe("synchronize with multiple foreign keys to same table", () => {
+        let connections: DataSource[]
+        beforeEach(
+            async () =>
+                (connections = await createTestingConnections({
+                    enabledDrivers: ["postgres"],
+                    entities: [Professor, Subject, Site, SiteLocation],
+                    dropSchema: true,
+                })),
+        )
+        afterEach(() => closeTestingConnections(connections))
+
+        it("should not fail with constraint already exists error when synchronizing multiple times", () =>
+            Promise.all(
+                connections.map(async (dataSource) => {
+                    // First synchronization
+                    await dataSource.synchronize()
+
+                    // Second synchronization should not fail with constraint error
+                    await expect(dataSource.synchronize()).to.not.be.rejected
+
+                    const professorRepo = dataSource.getRepository(Professor)
+                    const subjectRepo = dataSource.getRepository(Subject)
+                    const siteRepo = dataSource.getRepository(Site)
+                    const siteLocationRepo =
+                        dataSource.getRepository(SiteLocation)
+
+                    // Create and save entities to test foreign key relationships
+                    const professor = professorRepo.create({
+                        name: "Dr. Smith",
+                    })
+                    await professorRepo.save(professor)
+
+                    const assistant = professorRepo.create({
+                        name: "Dr. Jones",
+                    })
+                    await professorRepo.save(assistant)
+
+                    const subject = subjectRepo.create({
+                        name: "Mathematics",
+                        professor: professor,
+                        assistant: assistant,
+                    })
+                    await subjectRepo.save(subject)
+
+                    const loadedSubject = await subjectRepo.findOne({
+                        where: { id: subject.id },
+                        relations: ["professor", "assistant"],
+                    })
+
+                    const site = siteRepo.create({ name: "Main Campus" })
+                    await siteRepo.save(site)
+
+                    const siteLocation = siteLocationRepo.create({
+                        address: "123 Main St",
+                        site: site,
+                    })
+                    await siteLocationRepo.save(siteLocation)
+
+                    const loadedSiteLocation = await siteLocationRepo.findOne({
+                        where: { id: siteLocation.id },
+                        relations: ["site"],
+                    })
+
+                    expect(loadedSiteLocation).to.not.be.null
+                    expect(loadedSiteLocation!.site.name).to.equal(
+                        "Main Campus",
+                    )
+
+                    expect(loadedSubject).to.not.be.null
+                    expect(loadedSubject!.professor.name).to.equal("Dr. Smith")
+                    expect(loadedSubject!.assistant.name).to.equal("Dr. Jones")
                 }),
             ))
     })

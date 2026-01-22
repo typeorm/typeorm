@@ -35,6 +35,7 @@ import { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { getMetadataArgsStorage } from "../globals"
 import { UpsertOptions } from "../repository/UpsertOptions"
+import { UpdateOptions } from "../repository/UpdateOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
@@ -773,7 +774,7 @@ export class EntityManager {
                 ),
         )
 
-        return this.createQueryBuilder()
+        const qb = this.createQueryBuilder()
             .insert()
             .into(target)
             .values(entities)
@@ -791,7 +792,12 @@ export class EntityManager {
                         this.connection.driver.supportedUpsertTypes[0],
                 },
             )
-            .execute()
+
+        if (options.returning !== undefined) {
+            qb.returning(options.returning)
+        }
+
+        return qb.execute()
     }
 
     /**
@@ -817,6 +823,7 @@ export class EntityManager {
             | ObjectId[]
             | any,
         partialEntity: QueryDeepPartialEntity<Entity>,
+        options?: UpdateOptions,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
@@ -828,17 +835,27 @@ export class EntityManager {
         }
 
         if (OrmUtils.isPrimitiveCriteria(criteria)) {
-            return this.createQueryBuilder()
+            const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
                 .whereInIds(criteria)
-                .execute()
+
+            if (options?.returning !== undefined) {
+                qb.returning(options.returning)
+            }
+
+            return qb.execute()
         } else {
-            return this.createQueryBuilder()
+            const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
                 .where(criteria)
-                .execute()
+
+            if (options?.returning !== undefined) {
+                qb.returning(options.returning)
+            }
+
+            return qb.execute()
         }
     }
 
@@ -854,11 +871,15 @@ export class EntityManager {
     updateAll<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
         partialEntity: QueryDeepPartialEntity<Entity>,
+        options?: UpdateOptions,
     ): Promise<UpdateResult> {
-        return this.createQueryBuilder()
-            .update(target)
-            .set(partialEntity)
-            .execute()
+        const qb = this.createQueryBuilder().update(target).set(partialEntity)
+
+        if (options?.returning !== undefined) {
+            qb.returning(options.returning)
+        }
+
+        return qb.execute()
     }
 
     /**
@@ -1427,7 +1448,7 @@ export class EntityManager {
      */
     async increment<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        conditions: any,
+        conditions: FindOptionsWhere<Entity>,
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
@@ -1468,7 +1489,7 @@ export class EntityManager {
      */
     async decrement<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        conditions: any,
+        conditions: FindOptionsWhere<Entity>,
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {

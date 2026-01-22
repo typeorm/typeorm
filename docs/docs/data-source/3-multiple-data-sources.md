@@ -14,7 +14,7 @@ const db1DataSource = new DataSource({
     username: "root",
     password: "admin",
     database: "db1",
-    entities: [__dirname + "/entity/*{.js,.ts}"],
+    entities: [__dirname + "/entities/*{.js,.ts}"],
     synchronize: true,
 })
 
@@ -25,7 +25,7 @@ const db2DataSource = new DataSource({
     username: "root",
     password: "admin",
     database: "db2",
-    entities: [__dirname + "/entity/*{.js,.ts}"],
+    entities: [__dirname + "/entities/*{.js,.ts}"],
     synchronize: true,
 })
 ```

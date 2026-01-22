@@ -44,7 +44,7 @@ Each entity must be registered in your data source options:
 
 ```typescript
 import { DataSource } from "typeorm"
-import { User } from "./entity/User"
+import { User } from "./entities/User"
 
 const myDataSource = new DataSource({
     type: "mysql",
@@ -69,7 +69,7 @@ const dataSource = new DataSource({
     username: "test",
     password: "test",
     database: "test",
-    entities: ["entity/*.js"],
+    entities: [__dirname + "/entities/**/*{.js,.ts}"],
 })
 ```
 

@@ -18,14 +18,14 @@ Different RDBMS-es have their own specific options.
 - `entities` - Entities, or Entity Schemas, to be loaded and used for this data source.
   It accepts entity classes, entity schema classes, and directory paths from which to load.
   Directories support glob patterns.
-  Example: `entities: [Post, Category, "entity/*.js", "modules/**/entity/*.js"]`.
+  Example: `entities: [Post, Category, "entities/*.js", "modules/**/entities/*.js"]`.
   Learn more about [Entities](../entity/1-entities.md).
   Learn more about [Entity Schemas](../entity/6-separating-entity-definition.md).
 
 - `subscribers` - Subscribers to be loaded and used for this data source.
   It accepts both entity classes and directories from which to load.
   Directories support glob patterns.
-  Example: `subscribers: [PostSubscriber, AppSubscriber, "subscriber/*.js", "modules/**/subscriber/*.js"]`.
+  Example: `subscribers: [PostSubscriber, AppSubscriber, "subscribers/*.js", "modules/**/subscribers/*.js"]`.
   Learn more about [Subscribers](../advanced-topics/4-listeners-and-subscribers.md).
 
 - `logging` - Indicates if logging is enabled or not.
@@ -104,17 +104,9 @@ Here is a small example of data source options for mysql:
     database: "test",
     logging: true,
     synchronize: true,
-    entities: [
-        "entity/*.js"
-    ],
-    subscribers: [
-        "subscriber/*.js"
-    ],
-    entitySchemas: [
-        "schema/*.json"
-    ],
-    migrations: [
-        "migration/*.js"
-    ]
+    entities: [__dirname + "/entities/**/*{.js,.ts}"],
+    subscribers: [__dirname + "/subscribers/**/*{.js,.ts}"],
+    entitySchemas: [__dirname + "/schemas/**/*.json"],
+    migrations: [__dirname + "/migrations/**/*{.js,.ts}"]
 }
 ```

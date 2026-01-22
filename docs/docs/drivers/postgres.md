@@ -22,37 +22,39 @@ npm install pg-query-stream
 
 See [Data Source Options](../data-source/2-data-source-options.md) for the common data source options. You can use the data source type `postgres`, `cockroachdb` or `aurora-postgres` to connect to the respective databases.
 
-- `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
+-   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
-- `host` - Database host.
+-   `host` - Database host.
 
-- `port` - Database host port. The default Postgres port is `5432`.
+-   `port` - Database host port. The default Postgres port is `5432`.
 
-- `username` - Database username.
+-   `username` - Database username.
 
-- `password` - Database password.
+-   `password` - Database password.
 
-- `database` - Database name.
+-   `database` - Database name.
 
-- `schema` - Schema name. Default is "public".
+-   `schema` - Schema name. Default is "public".
 
-- `connectTimeoutMS` - The milliseconds before a timeout occurs during the initial connection to the postgres server. If `undefined`, or set to `0`, there is no timeout. Defaults to `undefined`.
+-   `connectTimeoutMS` - The milliseconds before a timeout occurs during the initial connection to the postgres server. If `undefined`, or set to `0`, there is no timeout. Defaults to `undefined`.
 
-- `ssl` - Object with ssl parameters. See [TLS/SSL](https://node-postgres.com/features/ssl).
+-   `ssl` - Object with ssl parameters. See [TLS/SSL](https://node-postgres.com/features/ssl).
 
-- `uuidExtension` - The Postgres extension to use when generating UUIDs. Defaults to `uuid-ossp`. It can be changed to `pgcrypto` if the `uuid-ossp` extension is unavailable.
+-   `uuidExtension` - The Postgres extension to use when generating UUIDs. Defaults to `uuid-ossp`. It can be changed to `pgcrypto` if the `uuid-ossp` extension is unavailable.
 
-- `poolErrorHandler` - A function that gets called when the underlying pool emits `'error'` event. Takes a single parameter (error instance) and defaults to logging with `warn` level.
+-   `poolErrorHandler` - A function that gets called when the underlying pool emits `'error'` event. Takes a single parameter (error instance) and defaults to logging with `warn` level.
 
-- `maxTransactionRetries` - A maximum number of transaction retries in case of a 40001 error. Defaults to 5.
+-   `maxTransactionRetries` - A maximum number of transaction retries in case of a 40001 error. Defaults to 5.
 
-- `logNotifications` - A boolean to determine whether postgres server [notice messages](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html) and [notification events](https://www.postgresql.org/docs/current/sql-notify.html) should be included in client's logs with `info` level (default: `false`).
+-   `logNotifications` - A boolean to determine whether postgres server [notice messages](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html) and [notification events](https://www.postgresql.org/docs/current/sql-notify.html) should be included in client's logs with `info` level (default: `false`).
 
-- `installExtensions` - A boolean to control whether to install necessary postgres extensions automatically or not (default: `true`)
+-   `installExtensions` - A boolean to control whether to install necessary postgres extensions automatically or not (default: `true`)
 
-- `applicationName` - A string visible in statistics and logs to help referencing an application to a connection (default: `undefined`)
+-   `extensions` - List of additional Postgres extensions to be installed in the database (default: `undefined`)
 
-- `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript numbers. By default, `int8` (bigint) values are returned as strings to avoid overflows. JavaScript numbers are IEEE-754 and lose precision over the maximum safe integer (`Number.MAX_SAFE_INTEGER = +2^53`). If you require the full 64-bit range consider working with the returned strings or converting them to native `bigint` instead of using this option.
+-   `applicationName` - A string visible in statistics and logs to help referencing an application to a connection (default: `undefined`)
+
+-   `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript numbers. By default, `int8` (bigint) values are returned as strings to avoid overflows. JavaScript numbers are IEEE-754 and lose precision over the maximum safe integer (`Number.MAX_SAFE_INTEGER = +2^53`). If you require the full 64-bit range consider working with the returned strings or converting them to native `bigint` instead of using this option.
 
 Additional options can be added to the `extra` object and will be passed directly to the client library. See more in `pg`'s documentation for [Pool](https://node-postgres.com/apis/pool#new-pool) and [Client](https://node-postgres.com/apis/client#new-client).
 

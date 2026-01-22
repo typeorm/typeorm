@@ -6,9 +6,7 @@ Before working with migrations you need to setup your [DataSource](../data-sourc
 export default new DataSource({
     // basic setup
     synchronize: false,
-    migrations: [
-        /*...*/
-    ],
+    migrations: [__dirname + "/migrations/**/*{.js,.ts}"],
 
     // optional
     migrationsRun: false,
@@ -30,7 +28,7 @@ Defines list of migrations that need to be loaded by TypeORM. It accepts both mi
 The easiest is to specify the directory where your migration files are located (glob patterns are supported):
 
 ```ts
-migrations: [__dirname + "/migration/**/*{.js,.ts}"]
+migrations: [__dirname + "/migrations/**/*{.js,.ts}"]
 ```
 
 Defining both `.js` and `.ts` extensions would allow you to run migrations in development and from compiled to JavaScript for production (eg. from Docker image).
@@ -38,8 +36,8 @@ Defining both `.js` and `.ts` extensions would allow you to run migrations in de
 Alternatively you could also specify exact classes to get more fine grained control:
 
 ```ts
-import FirstMigration from "migrations/TIMESTAMP-first-migration"
-import SecondMigration from "migrations/TIMESTAMP-second-migration"
+import FirstMigration from "./migrations/TIMESTAMP-first-migration"
+import SecondMigration from "./migrations/TIMESTAMP-second-migration"
 
 export default new DataSource({
     migrations: [FirstMigration, SecondMigration],

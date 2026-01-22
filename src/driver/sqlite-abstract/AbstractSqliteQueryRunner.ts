@@ -2059,8 +2059,7 @@ export abstract class AbstractSqliteQueryRunner
         } else {
             c += " " + this.connection.driver.createFullType(column)
         }
-
-        if (column.enum)
+        if (column.enum && !column.isArray)
             c +=
                 ' CHECK( "' +
                 column.name +

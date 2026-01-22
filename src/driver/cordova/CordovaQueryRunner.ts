@@ -113,6 +113,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
 
                 result.records = resultSet
                 result.raw = resultSet
+                result.affected = raw.rowsAffected
             }
 
             if (useStructuredResult) {
