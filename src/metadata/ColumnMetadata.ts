@@ -884,10 +884,45 @@ export class ColumnMetadata {
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
         if (this.embeddedMetadata) {
+            const setEmbeddedMetadata = (
+                embeddedMetadata: EmbeddedMetadata,
+                embeddedEntity: ObjectLiteral,
+                parentEntity: ObjectLiteral,
+            ) => {
+                Object.defineProperty(
+                    embeddedEntity,
+                    "__typeormEmbeddedParentEntity__",
+                    {
+                        value: parentEntity,
+                        configurable: true,
+                        enumerable: false,
+                        writable: true,
+                    },
+                )
+
+                embeddedMetadata.relations
+                    .filter((relation) => relation.isLazy)
+                    .forEach((relation) => {
+                        Object.defineProperty(
+                            embeddedEntity,
+                            "__relation_metadata_" +
+                                relation.propertyName +
+                                "__",
+                            {
+                                value: relation,
+                                configurable: true,
+                                enumerable: false,
+                                writable: true,
+                            },
+                        )
+                    })
+            }
+
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
             const extractEmbeddedColumnValue = (
                 embeddedMetadatas: EmbeddedMetadata[],
                 map: ObjectLiteral,
+                rootEntity: ObjectLiteral,
             ): any => {
                 // if (!object[embeddedMetadata.propertyName])
                 //     object[embeddedMetadata.propertyName] = embeddedMetadata.create();
@@ -898,9 +933,16 @@ export class ColumnMetadata {
                         map[embeddedMetadata.propertyName] =
                             embeddedMetadata.create()
 
+                    setEmbeddedMetadata(
+                        embeddedMetadata,
+                        map[embeddedMetadata.propertyName],
+                        rootEntity,
+                    )
+
                     extractEmbeddedColumnValue(
                         embeddedMetadatas,
                         map[embeddedMetadata.propertyName],
+                        rootEntity,
                     )
                     return map
                 }
@@ -909,6 +951,7 @@ export class ColumnMetadata {
             }
             return extractEmbeddedColumnValue(
                 [...this.embeddedMetadata.embeddedMetadataTree],
+                entity,
                 entity,
             )
         } else {

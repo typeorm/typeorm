@@ -11,6 +11,7 @@ import type { EntitySchemaOptions } from "../../../../../src"
 import { EntitySchema } from "../../../../../src"
 import UserSchema from "./schema/user.json"
 import ProfileSchema from "./schema/profile.json"
+import sinon from "sinon"
 
 describe("relations > lazy relations > basic-lazy-relations", () => {
     let dataSources: DataSource[]
@@ -23,6 +24,8 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                 new EntitySchema(ProfileSchema as EntitySchemaOptions<unknown>),
             ],
             enabledDrivers: ["mysql", "postgres"],
+            schemaCreate: true,
+            dropSchema: true,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -139,11 +142,11 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                 const userRepository = dataSource.getRepository("User")
                 const profileRepository = dataSource.getRepository("Profile")
 
-                const profile: any = profileRepository.create()
+                const profile = profileRepository.create()
                 profile.country = "Japan"
                 await profileRepository.save(profile)
 
-                const newUser: any = userRepository.create()
+                const newUser = userRepository.create()
                 newUser.firstName = "Umed"
                 newUser.secondName = "San"
                 newUser.profile = Promise.resolve(profile)
@@ -152,13 +155,13 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                 await newUser.profile.should.eventually.be.eql(profile)
 
                 // const loadOptions: FindOptions = { alias: "user", innerJoinAndSelect };
-                const loadedUser: any = await userRepository.findOneBy({
+                const loadedUser = await userRepository.findOneBy({
                     id: 1,
                 })
-                loadedUser.firstName.should.be.equal("Umed")
-                loadedUser.secondName.should.be.equal("San")
+                loadedUser!.firstName.should.be.equal("Umed")
+                loadedUser!.secondName.should.be.equal("San")
 
-                const lazyLoadedProfile = await loadedUser.profile
+                const lazyLoadedProfile = await loadedUser!.profile
                 lazyLoadedProfile.country.should.be.equal("Japan")
             }),
         ))
@@ -427,5 +430,128 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     const loadedPost = await loadedCategory!.onePost
                     loadedPost.title.should.be.equal("post with great category")
                 }),
+        ))
+
+    // GitHub issue #10721 - create() method should not trigger lazy relation loads when an loaded entity is passed
+    it("should not reload relations when calling create with an entity instance", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const category = dataSource.manager.create(Category, {
+                    name: "Create",
+                })
+                await dataSource.manager.save(category)
+
+                const post = dataSource.manager.create(Post, {
+                    title: "About ActiveRecord",
+                    text: "Huge discussion how good or bad ActiveRecord is.",
+                })
+                post.twoSideCategory = Promise.resolve(category)
+                await dataSource.manager.save(post)
+
+                const loadedPost = await dataSource.manager.findOne(Post, {
+                    where: { title: "About ActiveRecord" },
+                })
+
+                let queryCount = 0
+                const loggerStub = sinon
+                    .stub(dataSource.logger, "logQuery")
+                    .callsFake(() => queryCount++)
+
+                try {
+                    const createdPost = dataSource.manager.create(
+                        Post,
+                        loadedPost!,
+                    )
+
+                    // wait for macrotask boundary to ensure lazy relation loads are executed
+                    await new Promise<void>((resolve) => setImmediate(resolve))
+
+                    queryCount.should.be.equal(0)
+                    createdPost.title.should.be.equal("About ActiveRecord")
+                } finally {
+                    loggerStub.restore()
+                }
+            }),
+        ))
+
+    it("should not invoke instance-defined lazy getters when calling create with an EntitySchema object", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const userRepository = dataSource.getRepository("User")
+                const profileRepository = dataSource.getRepository("Profile")
+
+                const profile = profileRepository.create({ country: "Japan" })
+                await profileRepository.save(profile)
+
+                const user = userRepository.create({
+                    firstName: "Umed",
+                    secondName: "San",
+                })
+                user.profile = Promise.resolve(profile)
+                await userRepository.save(user)
+
+                const loadedUser = await userRepository.findOneBy({ id: 1 })
+
+                const profileDescriptor = Object.getOwnPropertyDescriptor(
+                    loadedUser!,
+                    "profile",
+                )
+                profileDescriptor!.get!.should.be.a("function")
+
+                let queryCount = 0
+                const loggerStub = sinon
+                    .stub(dataSource.logger, "logQuery")
+                    .callsFake(() => queryCount++)
+
+                try {
+                    const createdUser = userRepository.create(loadedUser!)
+
+                    await new Promise<void>((resolve) => setImmediate(resolve))
+
+                    queryCount.should.be.equal(0)
+                    createdUser.firstName.should.be.equal("Umed")
+                    createdUser.secondName.should.be.equal("San")
+                } finally {
+                    loggerStub.restore()
+                }
+            }),
+        ))
+
+    it("should correctly load relations using RelationLoader even if getEntityValue is called with transform=true", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const category = new Category()
+                category.name = "Test Category"
+                await dataSource.manager.save(category)
+
+                const post = new Post()
+                post.title = "Test Post"
+                post.text = "Test Content"
+                post.twoSideCategory = Promise.resolve(category)
+                await dataSource.manager.save(post)
+
+                const loadedPost = await dataSource.manager.findOne(Post, {
+                    where: { title: "Test Post" },
+                })
+
+                // RelationLoader is used internally when we access a lazy relation
+                // We want to ensure that it can still extract the primary key "id" from loadedPost
+                // even with our changes to getEntityValue.
+                const loadedCategory = await loadedPost!.twoSideCategory
+                loadedCategory.name.should.be.equal("Test Category")
+
+                // We can also test more directly if we want
+                const relation = dataSource
+                    .getMetadata(Post)
+                    .relations.find(
+                        (r) => r.propertyName === "twoSideCategory",
+                    )!
+                const loadedCategories = await dataSource.relationLoader.load(
+                    relation,
+                    loadedPost!,
+                )
+                loadedCategories.length.should.be.equal(1)
+                loadedCategories[0].name.should.be.equal("Test Category")
+            }),
         ))
 })
