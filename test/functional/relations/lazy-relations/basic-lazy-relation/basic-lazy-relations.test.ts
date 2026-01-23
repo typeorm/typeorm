@@ -429,6 +429,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                 }),
         ))
 
+    // GitHub issue #10721 - create() method should not trigger lazy relation loads when an loaded entity is passed
     it("should not reload relations when calling create with an entity instance", () =>
         Promise.all(
             dataSources.map(async (connection) => {
@@ -459,8 +460,8 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                         loadedPost!,
                     )
 
-                    // wait a tick to ensure no lazy loading happens
-                    await new Promise((resolve) => setTimeout(resolve, 100))
+                    // wait till next tick to ensure that if there were any lazy relation loads
+                    await new Promise((resolve) => process.nextTick(resolve))
 
                     queryCount.should.be.equal(0)
                     createdPost.title.should.be.equal("About ActiveRecord")
