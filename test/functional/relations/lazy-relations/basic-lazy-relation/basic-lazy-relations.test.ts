@@ -8,6 +8,7 @@ import { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { EntitySchema } from "../../../../../src"
+import sinon from "sinon"
 
 /**
  * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
@@ -441,5 +442,46 @@ describe("basic-lazy-relations", () => {
                     const loadedPost = await loadedCategory!.onePost
                     loadedPost.title.should.be.equal("post with great category")
                 }),
+        ))
+
+    it("should not reload relations when calling create with an entity instance", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const category = connection.manager.create(Category, {
+                    name: "Create",
+                })
+                await connection.manager.save(category)
+
+                const post = connection.manager.create(Post, {
+                    title: "About ActiveRecord",
+                    text: "Huge discussion how good or bad ActiveRecord is.",
+                })
+                post.twoSideCategory = Promise.resolve(category)
+                await connection.manager.save(post)
+
+                const loadedPost = await connection.manager.findOne(Post, {
+                    where: { title: "About ActiveRecord" },
+                })
+
+                let queryCount = 0
+                const loggerStub = sinon
+                    .stub(connection.logger, "logQuery")
+                    .callsFake(() => queryCount++)
+
+                try {
+                    const createdPost = connection.manager.create(
+                        Post,
+                        loadedPost!,
+                    )
+
+                    // wait a tick to ensure no lazy loading happens
+                    await new Promise((resolve) => setTimeout(resolve, 100))
+
+                    queryCount.should.be.equal(0)
+                    createdPost.title.should.be.equal("About ActiveRecord")
+                } finally {
+                    loggerStub.restore()
+                }
+            }),
         ))
 })
