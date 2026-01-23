@@ -101,7 +101,7 @@ if (manager.hasId(user)) {
 const userId = manager.getId(user) // userId === 1
 ```
 
-- `create` - Creates a new instance of `User`. Optionally accepts an object literal with user properties
+- `create` - Creates a new instance of `User`. Optionally accepts an object literal or an existing entity instance with properties
   which will be written into newly created user object.
 
 ```typescript
@@ -111,6 +111,11 @@ const user = manager.create(User, {
     firstName: "Timber",
     lastName: "Saw",
 }) // same as const user = new User(); user.firstName = "Timber"; user.lastName = "Saw";
+
+// You can also pass an existing entity instance.
+const loadedUser = await manager.findOneBy(User, { id: 1 })
+// This will NOT trigger database queries for any lazy relations on "loadedUser"
+const newUser = manager.create(User, loadedUser)
 ```
 
 - `merge` - Merges multiple entities into a single entity.

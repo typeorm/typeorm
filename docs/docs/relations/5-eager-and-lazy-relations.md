@@ -145,3 +145,13 @@ Note: if you come from other languages (Java, PHP, etc.) and are used to using l
 Those languages aren't asynchronous, and lazy loading is achieved in a different way, without the use of promises.
 In JavaScript and Node.JS, you have to use promises if you want to have lazy-loaded relations.
 This is a non-standard technique and considered experimental in TypeORM.
+
+### Performance Note: Existing Entity Instances
+
+When calling `EntityManager.create` or `Repository.create` and passing an existing entity loaded instance, TypeORM does not reload any lazy relations. This avoids unnecessary database queries when you're simply initializing a new entity from a loaded one.
+
+```typescript
+const post = await postRepository.findOneBy(Post, { id: 1 })
+// This will NOT trigger database queries for any lazy relations on "post"
+const newPost = postRepository.create(post)
+```
