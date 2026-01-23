@@ -476,8 +476,23 @@ export class RelationMetadata {
                 if (entity["__" + this.propertyName + "__"] !== undefined)
                     return entity["__" + this.propertyName + "__"]
 
-                if (getLazyRelationsPromiseValue === true)
+                if (getLazyRelationsPromiseValue === true) {
+                    const descriptor =
+                        Object.getOwnPropertyDescriptor(
+                            entity,
+                            this.propertyName,
+                        ) ||
+                        Object.getOwnPropertyDescriptor(
+                            Object.getPrototypeOf(entity),
+                            this.propertyName,
+                        )
+
+                    if (descriptor && descriptor.get) {
+                        return undefined
+                    }
+
                     return entity[this.propertyName]
+                }
 
                 return undefined
             }

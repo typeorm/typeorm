@@ -10,6 +10,7 @@ import { Category } from "./entity/Category"
 import { EntitySchema, EntitySchemaOptions } from "../../../../../src"
 import UserSchema from "./schema/user.json"
 import ProfileSchema from "./schema/profile.json"
+import sinon from "sinon"
 
 describe("relations > lazy relations > basic-lazy-relations", () => {
     let dataSources: DataSource[]
@@ -138,11 +139,11 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                 const userRepository = connection.getRepository("User")
                 const profileRepository = connection.getRepository("Profile")
 
-                const profile: any = profileRepository.create()
+                const profile = profileRepository.create()
                 profile.country = "Japan"
                 await profileRepository.save(profile)
 
-                const newUser: any = userRepository.create()
+                const newUser = userRepository.create()
                 newUser.firstName = "Umed"
                 newUser.secondName = "San"
                 newUser.profile = Promise.resolve(profile)
@@ -151,13 +152,13 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                 await newUser.profile.should.eventually.be.eql(profile)
 
                 // const loadOptions: FindOptions = { alias: "user", innerJoinAndSelect };
-                const loadedUser: any = await userRepository.findOneBy({
+                const loadedUser = await userRepository.findOneBy({
                     id: 1,
                 })
-                loadedUser.firstName.should.be.equal("Umed")
-                loadedUser.secondName.should.be.equal("San")
+                loadedUser!.firstName.should.be.equal("Umed")
+                loadedUser!.secondName.should.be.equal("San")
 
-                const lazyLoadedProfile = await loadedUser.profile
+                const lazyLoadedProfile = await loadedUser!.profile
                 lazyLoadedProfile.country.should.be.equal("Japan")
             }),
         ))
@@ -426,5 +427,46 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     const loadedPost = await loadedCategory!.onePost
                     loadedPost.title.should.be.equal("post with great category")
                 }),
+        ))
+
+    it("should not reload relations when calling create with an entity instance", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const category = connection.manager.create(Category, {
+                    name: "Create",
+                })
+                await connection.manager.save(category)
+
+                const post = connection.manager.create(Post, {
+                    title: "About ActiveRecord",
+                    text: "Huge discussion how good or bad ActiveRecord is.",
+                })
+                post.twoSideCategory = Promise.resolve(category)
+                await connection.manager.save(post)
+
+                const loadedPost = await connection.manager.findOne(Post, {
+                    where: { title: "About ActiveRecord" },
+                })
+
+                let queryCount = 0
+                const loggerStub = sinon
+                    .stub(connection.logger, "logQuery")
+                    .callsFake(() => queryCount++)
+
+                try {
+                    const createdPost = connection.manager.create(
+                        Post,
+                        loadedPost!,
+                    )
+
+                    // wait a tick to ensure no lazy loading happens
+                    await new Promise((resolve) => setTimeout(resolve, 100))
+
+                    queryCount.should.be.equal(0)
+                    createdPost.title.should.be.equal("About ActiveRecord")
+                } finally {
+                    loggerStub.restore()
+                }
+            }),
         ))
 })
