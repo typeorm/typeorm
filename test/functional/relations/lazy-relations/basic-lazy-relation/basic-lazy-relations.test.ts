@@ -470,4 +470,42 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                 }
             }),
         ))
+
+    it("should correctly load relations using RelationLoader even if getEntityValue is called with transform=true", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const category = new Category()
+                category.name = "Test Category"
+                await connection.manager.save(category)
+
+                const post = new Post()
+                post.title = "Test Post"
+                post.text = "Test Content"
+                post.twoSideCategory = Promise.resolve(category)
+                await connection.manager.save(post)
+
+                const loadedPost = await connection.manager.findOne(Post, {
+                    where: { title: "Test Post" },
+                })
+
+                // RelationLoader is used internally when we access a lazy relation
+                // We want to ensure that it can still extract the primary key "id" from loadedPost
+                // even with our changes to getEntityValue.
+                const loadedCategory = await loadedPost!.twoSideCategory
+                loadedCategory.name.should.be.equal("Test Category")
+
+                // We can also test more directly if we want
+                const relation = connection
+                    .getMetadata(Post)
+                    .relations.find(
+                        (r) => r.propertyName === "twoSideCategory",
+                    )!
+                const loadedCategories = await connection.relationLoader.load(
+                    relation,
+                    loadedPost!,
+                )
+                loadedCategories.length.should.be.equal(1)
+                loadedCategories[0].name.should.be.equal("Test Category")
+            }),
+        ))
 })

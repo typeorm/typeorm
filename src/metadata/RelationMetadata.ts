@@ -454,42 +454,33 @@ export class RelationMetadata {
                 entity,
             )
 
-            if (!embeddedObject) return undefined
-
             if (this.isLazy) {
                 if (
+                    embeddedObject &&
                     embeddedObject["__" + this.propertyName + "__"] !==
-                    undefined
+                        undefined
                 )
                     return embeddedObject["__" + this.propertyName + "__"]
 
                 if (getLazyRelationsPromiseValue === true) {
-                    const prototype = Object.getPrototypeOf(embeddedObject)
-                    const descriptor =
-                        Object.getOwnPropertyDescriptor(
-                            embeddedObject,
-                            this.propertyName,
-                        ) ||
-                        (prototype &&
-                            Object.getOwnPropertyDescriptor(
-                                prototype,
-                                this.propertyName,
-                            ))
-
-                    if (descriptor && descriptor.get) {
-                        return undefined
-                    }
-
-                    return embeddedObject[this.propertyName]
+                    if (!embeddedObject) return undefined
+                    return this.hasGetterDescriptor(
+                        embeddedObject,
+                        this.propertyName,
+                    )
+                        ? undefined
+                        : embeddedObject[this.propertyName]
                 }
 
                 return undefined
             }
-            return embeddedObject[
-                this.isLazy
-                    ? "__" + this.propertyName + "__"
-                    : this.propertyName
-            ]
+            return embeddedObject
+                ? embeddedObject[
+                      this.isLazy
+                          ? "__" + this.propertyName + "__"
+                          : this.propertyName
+                  ]
+                : undefined
         } else {
             // no embeds - no problems. Simply return column name by property name of the entity
             if (this.isLazy) {
@@ -497,23 +488,9 @@ export class RelationMetadata {
                     return entity["__" + this.propertyName + "__"]
 
                 if (getLazyRelationsPromiseValue === true) {
-                    const prototype = Object.getPrototypeOf(entity)
-                    const descriptor =
-                        Object.getOwnPropertyDescriptor(
-                            entity,
-                            this.propertyName,
-                        ) ||
-                        (prototype &&
-                            Object.getOwnPropertyDescriptor(
-                                prototype,
-                                this.propertyName,
-                            ))
-
-                    if (descriptor && descriptor.get) {
-                        return undefined
-                    }
-
-                    return entity[this.propertyName]
+                    return this.hasGetterDescriptor(entity, this.propertyName)
+                        ? undefined
+                        : entity[this.propertyName]
                 }
 
                 return undefined
@@ -718,5 +695,22 @@ export class RelationMetadata {
             "." +
             this.propertyName
         )
+    }
+
+    /**
+     * Checks if the given object has a getter descriptor for the relation property.
+     * This is used to determine if the lazy relation has been accessed.
+     * @param obj The object to check.
+     * @param propertyName The property name of the relation.
+     * @returns true if the getter descriptor exists, false otherwise.
+     */
+    private hasGetterDescriptor(obj: any, propertyName: string): boolean {
+        if (!obj) return false
+        const prototype = Object.getPrototypeOf(obj)
+        const descriptor =
+            Object.getOwnPropertyDescriptor(obj, propertyName) ||
+            (prototype &&
+                Object.getOwnPropertyDescriptor(prototype, propertyName))
+        return !!(descriptor && descriptor.get)
     }
 }
