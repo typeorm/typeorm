@@ -2,14 +2,11 @@
 pr_commands = [
     "/describe --pr_description.publish_description_as_comment=true",
     "/improve",
-    "/agentic_review"
+    "/agentic_review",
 ]
 
 handle_push_trigger = true
-push_commands = [
-    "/improve",
-    "/agentic_review"
-]
+push_commands = ["/improve", "/agentic_review"]
 
 [auto_best_practices]
 enable_auto_best_practices = true
@@ -18,3 +15,9 @@ utilize_auto_best_practices = true
 [review_agent]
 enabled = true
 publish_output = true
+
+[config]
+publish_output_progress = false
+
+[checks]
+enable_auto_checks_feedback = false
