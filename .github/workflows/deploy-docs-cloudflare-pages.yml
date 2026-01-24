@@ -1,7 +1,7 @@
 name: Deploy Docs to Cloudflare Pages
 
 on:
-  pull_request_target:
+  push:
     branches:
       - v0.3
     paths:
