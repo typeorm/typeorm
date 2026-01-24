@@ -8,9 +8,12 @@ on:
       - "docs/**"
       - ".github/workflows/deploy-docs-cloudflare-pages.yml"
 
+concurrency:
+  group: deploy-docs-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
-    if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-latest
     name: Deploy Docs
     permissions:
