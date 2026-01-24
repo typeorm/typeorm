@@ -10,6 +10,7 @@ on:
 
 jobs:
   deploy:
+    if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-latest
     name: Deploy Docs
     permissions:
