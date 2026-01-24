@@ -151,7 +151,7 @@ This is a non-standard technique and considered experimental in TypeORM.
 When calling `EntityManager.create` or `Repository.create` and passing an existing entity loaded instance, TypeORM does not reload any lazy relations. This avoids unnecessary database queries when you're simply initializing a new entity from a loaded one.
 
 ```typescript
-const post = await postRepository.findOneBy(Post, { id: 1 })
+const post = await postRepository.findOneBy({ id: 1 })
 // This will NOT trigger database queries for any lazy relations on "post"
 const newPost = postRepository.create(post)
 ```
