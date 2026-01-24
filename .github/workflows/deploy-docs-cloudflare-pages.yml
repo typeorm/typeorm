@@ -2,6 +2,8 @@ name: Deploy Docs to Cloudflare Pages
 
 on:
   pull_request_target:
+    branches:
+      - master
     paths:
       - "docs/**"
       - ".github/workflows/deploy-docs-cloudflare-pages.yml"
