@@ -14,7 +14,7 @@ const db1DataSource = new DataSource({
     username: "root",
     password: "admin",
     database: "db1",
-    entities: [__dirname + "/entity/*{.js,.ts}"],
+    entities: [__dirname + "/entities/*{.js,.ts}"],
     synchronize: true,
 })
 
@@ -25,7 +25,7 @@ const db2DataSource = new DataSource({
     username: "root",
     password: "admin",
     database: "db2",
-    entities: [__dirname + "/entity/*{.js,.ts}"],
+    entities: [__dirname + "/entities/*{.js,.ts}"],
     synchronize: true,
 })
 ```
@@ -225,10 +225,10 @@ const datasource = new DataSource({
 
 With replication slaves defined, TypeORM will start sending all possible queries to slaves by default.
 
--   all queries performed by the `find` methods or `SelectQueryBuilder` will use a random `slave` instance
--   all write queries performed by `update`, `create`, `InsertQueryBuilder`, `UpdateQueryBuilder`, etc will use the `master` instance
--   all raw queries performed by calling `.query()` will use the `master` instance
--   all schema update operations are performed using the `master` instance
+- all queries performed by the `find` methods or `SelectQueryBuilder` will use a random `slave` instance
+- all write queries performed by `update`, `create`, `InsertQueryBuilder`, `UpdateQueryBuilder`, etc will use the `master` instance
+- all raw queries performed by calling `.query()` will use the `master` instance
+- all schema update operations are performed using the `master` instance
 
 ### Explicitly selecting query destinations
 
