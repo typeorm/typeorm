@@ -2195,8 +2195,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const isSubQuery =
             (!isEntity && typeof entityOrProperty === "function") ||
             (typeof entityOrProperty === "string" &&
-                entityOrProperty.substr(0, 1) === "(" &&
-                entityOrProperty.substr(-1) === ")")
+                entityOrProperty.startsWith("(") &&
+                entityOrProperty.endsWith(")"))
 
         let subQuery: string = ""
         if (isSubQuery) {
