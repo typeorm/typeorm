@@ -104,7 +104,6 @@ export class SapDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
-     *
      * @see https://help.sap.com/docs/SAP_HANA_PLATFORM/4fe29514fd584807ac9f2a04f6754767/20a1569875191014b507cf392724b7eb.html
      * @see https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/data-types
      */
@@ -291,6 +290,10 @@ export class SapDriver implements Driver {
                 (this.options.pool?.idleTimeout
                     ? this.options.pool.idleTimeout / 1000
                     : 30),
+            maxWaitTimeoutIfPoolExhausted:
+                this.options.pool?.maxWaitTimeoutIfPoolExhausted ??
+                this.options.pool?.requestTimeout ??
+                0,
         }
         if (this.options.pool?.pingCheck) {
             poolOptions.pingCheck = this.options.pool.pingCheck
@@ -391,6 +394,7 @@ export class SapDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new SapQueryRunner(this, mode)
@@ -399,6 +403,9 @@ export class SapDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     * @param sql
+     * @param parameters
+     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
@@ -406,15 +413,7 @@ export class SapDriver implements Driver {
         nativeParameters: ObjectLiteral,
     ): [string, any[]] {
         const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => {
-                if (nativeParameters[key] instanceof Date)
-                    return DateUtils.mixedDateToDatetimeString(
-                        nativeParameters[key],
-                        true,
-                    )
-
-                return nativeParameters[key]
-            },
+            (key) => nativeParameters[key],
         )
 
         if (!parameters || !Object.keys(parameters).length)
@@ -445,10 +444,6 @@ export class SapDriver implements Driver {
                     return value()
                 }
 
-                if (value instanceof Date) {
-                    return DateUtils.mixedDateToDatetimeString(value, true)
-                }
-
                 escapedParameters.push(value)
                 return this.createParameter(key, escapedParameters.length - 1)
             },
@@ -458,6 +453,7 @@ export class SapDriver implements Driver {
 
     /**
      * Escapes a column name.
+     * @param columnName
      */
     escape(columnName: string): string {
         return `"${columnName}"`
@@ -466,6 +462,8 @@ export class SapDriver implements Driver {
     /**
      * Build full table name with schema name and table name.
      * E.g. myDB.mySchema.myTable
+     * @param tableName
+     * @param schema
      */
     buildTableName(tableName: string, schema?: string): string {
         const tablePath = [tableName]
@@ -479,6 +477,7 @@ export class SapDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -531,6 +530,8 @@ export class SapDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -569,6 +570,8 @@ export class SapDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -610,6 +613,11 @@ export class SapDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
      */
     normalizeType(column: {
         type?: ColumnType
@@ -683,6 +691,7 @@ export class SapDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -712,6 +721,7 @@ export class SapDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.indices.some(
@@ -724,6 +734,7 @@ export class SapDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
         if (column.length) return column.length.toString()
@@ -747,6 +758,7 @@ export class SapDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     * @param column
      */
     createFullType(column: TableColumn): string {
         let type = column.type
@@ -775,6 +787,8 @@ export class SapDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     * @param metadata
+     * @param insertResult
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: ObjectLiteral) {
         const generatedMap = metadata.generatedColumns.reduce(
@@ -804,6 +818,8 @@ export class SapDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -865,6 +881,8 @@ export class SapDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         return "?"
@@ -901,6 +919,7 @@ export class SapDriver implements Driver {
 
     /**
      * Escapes a given comment.
+     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (!comment) return comment

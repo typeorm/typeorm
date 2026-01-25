@@ -1,4 +1,4 @@
-import { Driver } from "../Driver"
+import { Driver, ReturningType } from "../Driver"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { SpannerQueryRunner } from "./SpannerQueryRunner"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
@@ -81,7 +81,6 @@ export class SpannerDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
-     *
      * @see https://cloud.google.com/spanner/docs/reference/standard-sql/data-types
      */
     supportedDataTypes: ColumnType[] = [
@@ -221,6 +220,7 @@ export class SpannerDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new SpannerQueryRunner(this, mode)
@@ -229,6 +229,9 @@ export class SpannerDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     * @param sql
+     * @param parameters
+     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
@@ -307,6 +310,7 @@ export class SpannerDriver implements Driver {
 
     /**
      * Escapes a column name.
+     * @param columnName
      */
     escape(columnName: string): string {
         return `\`${columnName}\``
@@ -315,6 +319,9 @@ export class SpannerDriver implements Driver {
     /**
      * Build full table name with database name, schema name and table name.
      * E.g. myDB.mySchema.myTable
+     * @param tableName
+     * @param schema
+     * @param database
      */
     buildTableName(
         tableName: string,
@@ -332,6 +339,7 @@ export class SpannerDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -385,6 +393,8 @@ export class SpannerDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -416,6 +426,8 @@ export class SpannerDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -457,6 +469,11 @@ export class SpannerDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
      */
     normalizeType(column: {
         type: ColumnType
@@ -483,6 +500,7 @@ export class SpannerDriver implements Driver {
      * Normalizes "default" value of the column.
      *
      * Spanner does not support default values.
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         return columnMetadata.default === ""
@@ -492,6 +510,7 @@ export class SpannerDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.indices.some(
@@ -504,6 +523,7 @@ export class SpannerDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
         if (column.length) return column.length.toString()
@@ -521,6 +541,7 @@ export class SpannerDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     * @param column
      */
     createFullType(column: TableColumn): string {
         let type = column.type
@@ -569,6 +590,9 @@ export class SpannerDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     * @param metadata
+     * @param insertResult
+     * @param entityIndex
      */
     createGeneratedMap(
         metadata: EntityMetadata,
@@ -622,6 +646,8 @@ export class SpannerDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -695,8 +721,9 @@ export class SpannerDriver implements Driver {
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     * @param _returningType
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(_returningType: ReturningType): boolean {
         return true
     }
 
@@ -716,6 +743,8 @@ export class SpannerDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         return this.parametersPrefix + index
@@ -767,6 +796,8 @@ export class SpannerDriver implements Driver {
 
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
+     * @param columnMetadataValue
+     * @param databaseValue
      */
     protected compareDefaultValues(
         columnMetadataValue: string | undefined,
@@ -788,6 +819,7 @@ export class SpannerDriver implements Driver {
     /**
      * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
      * Otherwise returns original input.
+     * @param value
      */
     protected normalizeDatetimeFunction(value?: string) {
         if (!value) return value
@@ -810,6 +842,7 @@ export class SpannerDriver implements Driver {
 
     /**
      * Escapes a given comment.
+     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (!comment) return comment

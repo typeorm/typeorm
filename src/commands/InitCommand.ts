@@ -85,7 +85,7 @@ export class InitCommand implements yargs.CommandModule {
                 InitCommand.getTsConfigTemplate(projectIsEsm),
             )
             await CommandUtils.createFile(
-                basePath + "/src/entity/User.ts",
+                basePath + "/src/entities/User.ts",
                 InitCommand.getUserEntityTemplate(database),
             )
             await CommandUtils.createFile(
@@ -96,7 +96,7 @@ export class InitCommand implements yargs.CommandModule {
                 basePath + "/src/index.ts",
                 InitCommand.getAppIndexTemplate(isExpress, projectIsEsm),
             )
-            await CommandUtils.createDirectories(basePath + "/src/migration")
+            await CommandUtils.createDirectories(basePath + "/src/migrations")
 
             // generate extra files for express application
             if (isExpress) {
@@ -105,7 +105,7 @@ export class InitCommand implements yargs.CommandModule {
                     InitCommand.getRoutesTemplate(projectIsEsm),
                 )
                 await CommandUtils.createFile(
-                    basePath + "/src/controller/UserController.ts",
+                    basePath + "/src/controllers/UserController.ts",
                     InitCommand.getControllerTemplate(projectIsEsm),
                 )
             }
@@ -166,6 +166,8 @@ export class InitCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the ormconfig file.
+     * @param isEsm
+     * @param database
      */
     protected static getAppDataSourceTemplate(
         isEsm: boolean,
@@ -241,7 +243,7 @@ sid: "xe.oracle.docker",`
         }
         return `import "reflect-metadata"
 import { DataSource } from "typeorm"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 export const AppDataSource = new DataSource({
     ${dbSettings}
@@ -256,6 +258,7 @@ export const AppDataSource = new DataSource({
 
     /**
      * Gets contents of the ormconfig file.
+     * @param esmModule
      */
     protected static getTsConfigTemplate(esmModule: boolean): string {
         if (esmModule)
@@ -309,6 +312,7 @@ temp/`
 
     /**
      * Gets contents of the user entity.
+     * @param database
      */
     protected static getUserEntityTemplate(database: string): string {
         return `import { Entity, ${
@@ -342,9 +346,10 @@ export class User {
 
     /**
      * Gets contents of the route file (used when express is enabled).
+     * @param isEsm
      */
     protected static getRoutesTemplate(isEsm: boolean): string {
-        return `import { UserController } from "./controller/UserController${
+        return `import { UserController } from "./controllers/UserController${
             isEsm ? ".js" : ""
         }"
 
@@ -373,13 +378,14 @@ export const Routes = [{
 
     /**
      * Gets contents of the user controller file (used when express is enabled).
+     * @param isEsm
      */
     protected static getControllerTemplate(isEsm: boolean): string {
         return `import { AppDataSource } from "../data-source${
             isEsm ? ".js" : ""
         }"
 import { NextFunction, Request, Response } from "express"
-import { User } from "../entity/User${isEsm ? ".js" : ""}"
+import { User } from "../entities/User${isEsm ? ".js" : ""}"
 
 export class UserController {
 
@@ -434,6 +440,8 @@ export class UserController {
 
     /**
      * Gets contents of the main (index) application file.
+     * @param express
+     * @param isEsm
      */
     protected static getAppIndexTemplate(
         express: boolean,
@@ -445,7 +453,7 @@ import ${!isEsm ? "* as " : ""}bodyParser from "body-parser"
 import { Request, Response } from "express"
 import { AppDataSource } from "./data-source${isEsm ? ".js" : ""}"
 import { Routes } from "./routes${isEsm ? ".js" : ""}"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 AppDataSource.initialize().then(async () => {
 
@@ -497,7 +505,7 @@ AppDataSource.initialize().then(async () => {
             return `import { AppDataSource } from "./data-source${
                 isEsm ? ".js" : ""
             }"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 AppDataSource.initialize().then(async () => {
 
@@ -522,6 +530,8 @@ AppDataSource.initialize().then(async () => {
 
     /**
      * Gets contents of the new package.json file.
+     * @param projectName
+     * @param projectIsEsm
      */
     protected static getPackageJsonTemplate(
         projectName?: string,
@@ -544,6 +554,7 @@ AppDataSource.initialize().then(async () => {
 
     /**
      * Gets contents of the new docker-compose.yml file.
+     * @param database
      */
     protected static getDockerComposeTemplate(database: string): string {
         switch (database) {
@@ -646,6 +657,8 @@ AppDataSource.initialize().then(async () => {
 
     /**
      * Gets contents of the new readme.md file.
+     * @param options
+     * @param options.docker
      */
     protected static getReadmeTemplate(options: { docker: boolean }): string {
         let template = `# Awesome Project Build with TypeORM
@@ -670,6 +683,10 @@ Steps to run this project:
 
     /**
      * Appends to a given package.json template everything needed.
+     * @param packageJsonContents
+     * @param database
+     * @param express
+     * @param projectIsEsm
      */
     protected static async appendPackageJson(
         packageJsonContents: string,

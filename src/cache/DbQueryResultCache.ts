@@ -3,9 +3,9 @@ import { DataSource } from "../data-source/DataSource"
 import { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
 import { QueryRunner } from "../query-runner/QueryRunner"
 import { Table } from "../schema-builder/table/Table"
+import { RandomGenerator } from "../util/RandomGenerator"
 import { QueryResultCache } from "./QueryResultCache"
 import { QueryResultCacheOptions } from "./QueryResultCacheOptions"
-import { v4 as uuidv4 } from "uuid"
 
 /**
  * Caches query result into current database, into separate table called "query-result-cache".
@@ -59,6 +59,7 @@ export class DbQueryResultCache implements QueryResultCache {
 
     /**
      * Creates table for storing cache if it does not exist yet.
+     * @param queryRunner
      */
     async synchronize(queryRunner?: QueryRunner): Promise<void> {
         queryRunner = this.getQueryRunner(queryRunner)
@@ -134,6 +135,8 @@ export class DbQueryResultCache implements QueryResultCache {
      * Get data from cache.
      * Returns cache result if found.
      * Returns undefined if result is not cached.
+     * @param options
+     * @param queryRunner
      */
     getFromCache(
         options: QueryResultCacheOptions,
@@ -190,6 +193,7 @@ export class DbQueryResultCache implements QueryResultCache {
 
     /**
      * Checks if cache is expired or not.
+     * @param savedCache
      */
     isExpired(savedCache: QueryResultCacheOptions): boolean {
         const duration =
@@ -207,6 +211,9 @@ export class DbQueryResultCache implements QueryResultCache {
 
     /**
      * Stores given query result in the cache.
+     * @param options
+     * @param savedCache
+     * @param queryRunner
      */
     async storeInCache(
         options: QueryResultCacheOptions,
@@ -268,7 +275,7 @@ export class DbQueryResultCache implements QueryResultCache {
                 this.connection.driver.options.type === "spanner" &&
                 !insertedValues.id
             ) {
-                insertedValues.id = uuidv4()
+                insertedValues.id = RandomGenerator.uuidv4()
             }
 
             // otherwise insert
@@ -287,6 +294,7 @@ export class DbQueryResultCache implements QueryResultCache {
 
     /**
      * Clears everything stored in the cache.
+     * @param queryRunner
      */
     async clear(queryRunner: QueryRunner): Promise<void> {
         return this.getQueryRunner(queryRunner).clearTable(
@@ -296,6 +304,8 @@ export class DbQueryResultCache implements QueryResultCache {
 
     /**
      * Removes all cached results by given identifiers from cache.
+     * @param identifiers
+     * @param queryRunner
      */
     async remove(
         identifiers: string[],
@@ -326,6 +336,7 @@ export class DbQueryResultCache implements QueryResultCache {
 
     /**
      * Gets a query runner to work with.
+     * @param queryRunner
      */
     protected getQueryRunner(queryRunner?: QueryRunner): QueryRunner {
         if (queryRunner) return queryRunner

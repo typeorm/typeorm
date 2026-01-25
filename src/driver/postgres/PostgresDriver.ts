@@ -11,7 +11,7 @@ import { TableColumn } from "../../schema-builder/table/TableColumn"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { OrmUtils } from "../../util/OrmUtils"
-import { Driver } from "../Driver"
+import { Driver, ReturningType } from "../Driver"
 import { ColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
@@ -118,7 +118,6 @@ export class PostgresDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
-     *
      * @see https://www.postgresql.org/docs/current/datatype.html
      */
     supportedDataTypes: ColumnType[] = [
@@ -405,14 +404,27 @@ export class PostgresDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
-        const extensionsMetadata = await this.checkMetadataForExtensions()
         const [connection, release] = await this.obtainMasterConnection()
 
         const installExtensions =
             this.options.installExtensions === undefined ||
             this.options.installExtensions
-        if (installExtensions && extensionsMetadata.hasExtensions) {
-            await this.enableExtensions(extensionsMetadata, connection)
+        if (installExtensions) {
+            const extensionsMetadata = await this.checkMetadataForExtensions()
+            const extensionsToInstall = this.options.extensions
+            if (extensionsMetadata.hasExtensions)
+                await this.enableExtensions(extensionsMetadata, connection)
+
+            if (extensionsToInstall) {
+                const availableExtensions =
+                    await this.getAvailableExtensions(connection)
+
+                await this.enableCustomExtensions(
+                    availableExtensions,
+                    extensionsToInstall,
+                    connection,
+                )
+            }
         }
 
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
@@ -421,6 +433,28 @@ export class PostgresDriver implements Driver {
         )
 
         await release()
+    }
+
+    protected async getAvailableExtensions(connection: any) {
+        const availableExtensions = new Set<string>()
+        const { logger } = this.connection
+        try {
+            const result: any = await this.executeQuery(
+                connection,
+                `SELECT name FROM pg_available_extensions`,
+            )
+            if (result.rows && Array.isArray(result.rows)) {
+                result.rows.forEach((row: any) => {
+                    availableExtensions.add(row.name)
+                })
+            }
+        } catch (_) {
+            logger.log(
+                "warn",
+                "Could not retrieve available extensions. Extension installation may fail if extensions are not available.",
+            )
+        }
+        return availableExtensions
     }
 
     protected async enableExtensions(extensionsMetadata: any, connection: any) {
@@ -540,6 +574,35 @@ export class PostgresDriver implements Driver {
             }
     }
 
+    protected async enableCustomExtensions(
+        availableExtensions: Set<string>,
+        extensionsToInstall: string[],
+        connection: any,
+    ) {
+        if (!extensionsToInstall) return
+        const logger = this.connection.logger
+        for (const extension of extensionsToInstall) {
+            if (availableExtensions.has(extension)) {
+                try {
+                    await this.executeQuery(
+                        connection,
+                        `CREATE EXTENSION IF NOT EXISTS "${extension}"`,
+                    )
+                } catch (_) {
+                    logger.log(
+                        "warn",
+                        `The extension "${extension}" cannot be installed automatically. Please install it manually using superuser rights`,
+                    )
+                }
+            } else {
+                logger.log(
+                    "warn",
+                    `The extension "${extension}" is not available on this database. Please install it manually using superuser rights`,
+                )
+            }
+        }
+    }
+
     protected async checkMetadataForExtensions() {
         const hasUuidColumns = this.connection.entityMetadatas.some(
             (metadata) => {
@@ -651,6 +714,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): PostgresQueryRunner {
         return new PostgresQueryRunner(this, mode)
@@ -658,6 +722,8 @@ export class PostgresDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -684,6 +750,25 @@ export class PostgresDriver implements Driver {
             columnMetadata.type === "timestamp without time zone"
         ) {
             return DateUtils.mixedDateToDate(value)
+        } else if (columnMetadata.type === "point") {
+            if (
+                typeof value === "object" &&
+                value.x !== undefined &&
+                value.y !== undefined
+            ) {
+                return `(${value.x},${value.y})`
+            }
+            return value
+        } else if (columnMetadata.type === "circle") {
+            if (
+                typeof value === "object" &&
+                value.x !== undefined &&
+                value.y !== undefined &&
+                value.radius !== undefined
+            ) {
+                return `<(${value.x},${value.y}),${value.radius}>`
+            }
+            return value
         } else if (
             ["json", "jsonb", ...this.spatialTypes].indexOf(
                 columnMetadata.type,
@@ -751,6 +836,8 @@ export class PostgresDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -888,6 +975,9 @@ export class PostgresDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     * @param sql
+     * @param parameters
+     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
@@ -940,6 +1030,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Escapes a column name.
+     * @param columnName
      */
     escape(columnName: string): string {
         return '"' + columnName + '"'
@@ -948,6 +1039,8 @@ export class PostgresDriver implements Driver {
     /**
      * Build full table name with schema name and table name.
      * E.g. myDB.mySchema.myTable
+     * @param tableName
+     * @param schema
      */
     buildTableName(tableName: string, schema?: string): string {
         const tablePath = [tableName]
@@ -961,6 +1054,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -1013,6 +1107,12 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
+     * @param column.isArray
      */
     normalizeType(column: {
         type?: ColumnType
@@ -1066,6 +1166,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -1108,6 +1209,8 @@ export class PostgresDriver implements Driver {
     /**
      * Compares "default" value of the column.
      * Postgres sorts json values before it is saved, so in that case a deep comparison has to be performed to see if has changed.
+     * @param columnMetadata
+     * @param tableColumn
      */
     private defaultEqual(
         columnMetadata: ColumnMetadata,
@@ -1141,6 +1244,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.uniques.some(
@@ -1150,6 +1254,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     * @param column
      */
     getColumnLength(column: ColumnMetadata): string {
         return column.length ? column.length.toString() : ""
@@ -1157,6 +1262,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     * @param column
      */
     createFullType(column: TableColumn): string {
         let type = column.type
@@ -1271,6 +1377,8 @@ export class PostgresDriver implements Driver {
      * Creates generated map of values generated or returned by database after INSERT query.
      *
      * todo: slow. optimize Object.keys(), OrmUtils.mergeDeep and column.createValueMap parts
+     * @param metadata
+     * @param insertResult
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: ObjectLiteral) {
         if (!insertResult) return undefined
@@ -1291,6 +1399,8 @@ export class PostgresDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -1452,8 +1562,9 @@ export class PostgresDriver implements Driver {
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     * @param _returningType
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(_returningType: ReturningType): boolean {
         return true
     }
 
@@ -1479,6 +1590,8 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         return this.parametersPrefix + (index + 1)
@@ -1534,6 +1647,8 @@ export class PostgresDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     * @param options
+     * @param credentials
      */
     protected async createPool(
         options: PostgresConnectionOptions,
@@ -1620,6 +1735,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Closes connection pool.
+     * @param pool
      */
     protected async closePool(pool: any): Promise<void> {
         while (this.connectedQueryRunners.length) {
@@ -1633,6 +1749,8 @@ export class PostgresDriver implements Driver {
 
     /**
      * Executes given query.
+     * @param connection
+     * @param query
      */
     protected executeQuery(connection: any, query: string) {
         this.connection.logger.logQuery(query)
@@ -1647,6 +1765,7 @@ export class PostgresDriver implements Driver {
     /**
      * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
      * Otherwise returns original input.
+     * @param value
      */
     protected normalizeDatetimeFunction(value: string) {
         // check if input is datetime function
@@ -1688,6 +1807,7 @@ export class PostgresDriver implements Driver {
 
     /**
      * Escapes a given comment.
+     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (!comment) return comment

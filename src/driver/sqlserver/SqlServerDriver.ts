@@ -1,4 +1,4 @@
-import { Driver } from "../Driver"
+import { Driver, ReturningType } from "../Driver"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { DriverUtils } from "../DriverUtils"
@@ -104,7 +104,6 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
-     *
      * @see https://docs.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql
      */
     supportedDataTypes: ColumnType[] = [
@@ -344,6 +343,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Closes connection pool.
+     * @param pool
      */
     protected async closePool(pool: any): Promise<void> {
         return new Promise<void>((ok, fail) => {
@@ -360,6 +360,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new SqlServerQueryRunner(this, mode)
@@ -368,6 +369,9 @@ export class SqlServerDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     * @param sql
+     * @param parameters
+     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
@@ -420,6 +424,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Escapes a column name.
+     * @param columnName
      */
     escape(columnName: string): string {
         return `"${columnName}"`
@@ -428,6 +433,9 @@ export class SqlServerDriver implements Driver {
     /**
      * Build full table name with database name, schema name and table name.
      * E.g. myDB.mySchema.myTable
+     * @param tableName
+     * @param schema
+     * @param database
      */
     buildTableName(
         tableName: string,
@@ -453,6 +461,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -519,6 +528,8 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -565,6 +576,8 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -621,6 +634,11 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
      */
     normalizeType(column: {
         type?: ColumnType
@@ -660,6 +678,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -693,6 +712,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.uniques.some(
@@ -702,6 +722,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
         if (column.length) return column.length.toString()
@@ -718,6 +739,7 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     * @param column
      */
     createFullType(column: TableColumn): string {
         // The Database Engine determines the data type of the computed column by applying the rules
@@ -779,6 +801,8 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     * @param metadata
+     * @param insertResult
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: ObjectLiteral) {
         if (!insertResult) return undefined
@@ -800,6 +824,8 @@ export class SqlServerDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -914,8 +940,9 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     * @param returningType
      */
-    isReturningSqlSupported(): boolean {
+    isReturningSqlSupported(returningType: ReturningType): boolean {
         if (
             this.options.options &&
             this.options.options.disableOutputReturning
@@ -941,6 +968,8 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         return this.parametersPrefix + index
@@ -953,6 +982,8 @@ export class SqlServerDriver implements Driver {
     /**
      * Sql server's parameters needs to be wrapped into special object with type information about this value.
      * This method wraps given value into MssqlParameter based on its column definition.
+     * @param column
+     * @param value
      */
     parametrizeValue(column: ColumnMetadata, value: any) {
         // if its already MssqlParameter then simply return it
@@ -1007,6 +1038,8 @@ export class SqlServerDriver implements Driver {
      *
      * This ensures SQL Server receives properly typed parameters for queries involving operators like
      * In, MoreThan, Between, etc.
+     * @param column
+     * @param value
      */
     parametrizeValues(column: ColumnMetadata, value: any) {
         if (value instanceof FindOperator) {
@@ -1026,6 +1059,8 @@ export class SqlServerDriver implements Driver {
     /**
      * Sql server's parameters needs to be wrapped into special object with type information about this value.
      * This method wraps all values of the given object into MssqlParameter based on their column definitions in the given table.
+     * @param tablePath
+     * @param map
      */
     parametrizeMap(tablePath: string, map: ObjectLiteral): ObjectLiteral {
         // find metadata for the given table
@@ -1124,6 +1159,8 @@ export class SqlServerDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     * @param options
+     * @param credentials
      */
     protected createPool(
         options: SqlServerConnectionOptions,

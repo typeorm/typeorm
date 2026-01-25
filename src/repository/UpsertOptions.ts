@@ -1,5 +1,6 @@
 import { InsertOrUpdateOptions } from "../query-builder/InsertOrUpdateOptions"
 import { UpsertType } from "../driver/types/UpsertType"
+import { ReturningOption } from "../query-builder/ReturningOption"
 
 /**
  * Special options passed to Repository#upsert
@@ -25,4 +26,10 @@ export interface UpsertOptions<Entity> extends InsertOrUpdateOptions {
      * This allows fine-grained control over which fields get overwritten during upsert.
      */
     updateOnly?: string[] | { [P in keyof Entity]?: true }
+
+    /**
+     * Allows selecting custom RETURNING / OUTPUT clause.
+     * Works only on drivers with returning support.
+     */
+    returning?: ReturningOption
 }
