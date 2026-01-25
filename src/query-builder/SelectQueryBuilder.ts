@@ -2199,7 +2199,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 entityOrProperty.substr(-1) === ")")
 
         let subQuery: string = ""
-
         if (isSubQuery) {
             if (typeof entityOrProperty === "string") {
                 subQuery = entityOrProperty
