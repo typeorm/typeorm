@@ -2191,6 +2191,25 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         joinAttribute.condition = condition // joinInverseSideCondition
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
         this.expressionMap.joinAttributes.push(joinAttribute)
+        const isEntity = this.connection.hasMetadata(entityOrProperty)
+        const isSubQuery =
+            (!isEntity && typeof entityOrProperty === "function") ||
+            (typeof entityOrProperty === "string" &&
+                entityOrProperty.startsWith("(") &&
+                entityOrProperty.endsWith(")"))
+
+        let subQuery: string = ""
+        if (isSubQuery) {
+            if (typeof entityOrProperty === "string") {
+                subQuery = entityOrProperty
+            } else {
+                const subQueryBuilder: SelectQueryBuilder<any> = (
+                    entityOrProperty as any
+                )((this as any as SelectQueryBuilder<any>).subQuery())
+                this.setParameters(subQueryBuilder.getParameters())
+                subQuery = subQueryBuilder.getQuery()
+            }
+        }
 
         const joinAttributeMetadata = joinAttribute.metadata
         if (joinAttributeMetadata) {
@@ -2208,6 +2227,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 type: "join",
                 name: aliasName,
                 metadata: joinAttributeMetadata,
+                subQuery: isSubQuery ? subQuery : undefined,
             })
             if (
                 joinAttribute.relation &&
@@ -2220,20 +2240,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 })
             }
         } else {
-            let subQuery: string = ""
-            if (typeof entityOrProperty === "function") {
-                const subQueryBuilder: SelectQueryBuilder<any> = (
-                    entityOrProperty as any
-                )((this as any as SelectQueryBuilder<any>).subQuery())
-                this.setParameters(subQueryBuilder.getParameters())
-                subQuery = subQueryBuilder.getQuery()
-            } else {
-                subQuery = entityOrProperty
-            }
-            const isSubQuery =
-                typeof entityOrProperty === "function" ||
-                (entityOrProperty.substr(0, 1) === "(" &&
-                    entityOrProperty.substr(-1) === ")")
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
                 name: aliasName,
