@@ -16,12 +16,12 @@ This code will create a database table named "users".
 
 You can also specify some additional entity options:
 
--   `name` - table name. If not specified, then table name is generated from entity class name.
--   `database` - database name in selected DB server.
--   `schema` - schema name.
--   `engine` - database engine to be set during table creation (works only in some databases).
--   `synchronize` - entities marked with `false` are skipped from schema updates.
--   `orderBy` - specifies default ordering for entities when using `find` operations and `QueryBuilder`.
+- `name` - table name. If not specified, then table name is generated from entity class name.
+- `database` - database name in selected DB server.
+- `schema` - schema name.
+- `engine` - database engine to be set during table creation (works only in some databases).
+- `synchronize` - entities marked with `false` are skipped from schema updates.
+- `orderBy` - specifies default ordering for entities when using `find` operations and `QueryBuilder`.
 
 Example:
 
@@ -48,10 +48,10 @@ View entity is a class that maps to a database view.
 
 `@ViewEntity()` accepts following options:
 
--   `name` - view name. If not specified, then view name is generated from entity class name.
--   `database` - database name in selected DB server.
--   `schema` - schema name.
--   `expression` - view definition. **Required parameter**.
+- `name` - view name. If not specified, then view name is generated from entity class name.
+- `database` - database name in selected DB server.
+- `schema` - schema name.
+- `expression` - view definition. **Required parameter**.
 
 `expression` can be string with properly escaped columns and tables, depend on database used (postgres in example):
 
@@ -128,43 +128,43 @@ export class User {
 
 `@Column` accept several options you can use:
 
--   `type: ColumnType` - Column type. One of the [supported column types](../entity/1-entities.md#column-types).
--   `name: string` - Column name in the database table.
-    By default, the column name is generated from the name of the property.
-    You can change it by specifying your own name.
--   `length: string|number` - Column type's length. For example, if you want to create `varchar(150)` type
-    you specify column type and length options.
--   `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html). _Deprecated_ in newer MySQL versions, will be removed from TypeORM in an upcoming version.
--   `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
--   `nullable: boolean` - determines whether the column can become `NULL` or always has to be `NOT NULL`. By default column is `nullable: false`.
--   `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object.
-    Default value is `true`.
--   `insert: boolean` - Indicates if column value is set the first time you insert the object. Default value is `true`.
--   `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
--   `default: string` - Adds database-level column's `DEFAULT` value.
--   `primary: boolean` - Marks column as primary. Same as using `@PrimaryColumn`.
--   `unique: boolean` - Marks column as unique column (creates unique constraint). Default value is false.
--   `comment: string` - Database's column comment. Not supported by all database types.
--   `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
-    number of digits that are stored for the values. Used in some column types.
--   `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column),
-    which represents the number of digits to the right of the decimal point and must not be greater than precision.
-    Used in some column types.
--   `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column. _Deprecated_ in newer MySQL versions, will be removed from TypeORM in an upcoming version. Use a character column and the `LPAD` function as suggested by MySQL.
--   `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
--   `charset: string` - Defines a column character set. Not supported by all database types.
--   `collation: string` - Defines a column collation.
--   `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.
-    You can specify array of values or specify a enum class.
--   `enumName: string` - A name for generated enum type. If not specified, TypeORM will generate a enum type from entity and column names - so it's necessary if you intend to use the same enum type in different tables.
--   `primaryKeyConstraintName: string` - A name for the primary key constraint. If not specified, then constraint name is generated from the table name and the names of the involved columns.
--   `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html) and [Postgres](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
--   `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html) and [Postgres (Only "STORED")](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
--   `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
--   `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[]).
--   `transformer: ValueTransformer|ValueTransformer[]` - Specifies a value transformer (or array of value transformers) that is to be used to (un)marshal this column when reading or writing to the database. In case of an array, the value transformers will be applied in the natural order from entityValue to databaseValue, and in reverse order from databaseValue to entityValue.
--   `spatialFeatureType: string` - Optional feature type (`Point`, `Polygon`, `LineString`, `Geometry`) used as a constraint on a spatial column. If not specified, it will behave as though `Geometry` was provided. Used only in PostgreSQL and CockroachDB.
--   `srid: number` - Optional [Spatial Reference ID](https://postgis.net/docs/using_postgis_dbmanagement.html#spatial_ref_sys) used as a constraint on a spatial column. If not specified, it will default to `0`. Standard geographic coordinates (latitude/longitude in the WGS84 datum) correspond to [EPSG 4326](http://spatialreference.org/ref/epsg/wgs-84/). Used only in PostgreSQL and CockroachDB.
+- `type: ColumnType` - Column type. One of the [supported column types](../entity/1-entities.md#column-types).
+- `name: string` - Column name in the database table.
+  By default, the column name is generated from the name of the property.
+  You can change it by specifying your own name.
+- `length: string|number` - Column type's length. For example, if you want to create `varchar(150)` type
+  you specify column type and length options.
+- `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html). _Deprecated_ in newer MySQL versions, will be removed from TypeORM in an upcoming version.
+- `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
+- `nullable: boolean` - determines whether the column can become `NULL` or always has to be `NOT NULL`. By default column is `nullable: false`.
+- `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object.
+  Default value is `true`.
+- `insert: boolean` - Indicates if column value is set the first time you insert the object. Default value is `true`.
+- `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
+- `default: string` - Adds database-level column's `DEFAULT` value.
+- `primary: boolean` - Marks column as primary. Same as using `@PrimaryColumn`.
+- `unique: boolean` - Marks column as unique column (creates unique constraint). Default value is false.
+- `comment: string` - Database's column comment. Not supported by all database types.
+- `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
+  number of digits that are stored for the values. Used in some column types.
+- `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column),
+  which represents the number of digits to the right of the decimal point and must not be greater than precision.
+  Used in some column types.
+- `zerofill: boolean` - Puts `ZEROFILL` attribute on to a numeric column. Used only in MySQL. If `true`, MySQL automatically adds the `UNSIGNED` attribute to this column. _Deprecated_ in newer MySQL versions, will be removed from TypeORM in an upcoming version. Use a character column and the `LPAD` function as suggested by MySQL.
+- `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
+- `charset: string` - Defines a column character set. Not supported by all database types.
+- `collation: string` - Defines a column collation.
+- `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values.
+  You can specify array of values or specify a enum class.
+- `enumName: string` - A name for generated enum type. If not specified, TypeORM will generate a enum type from entity and column names - so it's necessary if you intend to use the same enum type in different tables.
+- `primaryKeyConstraintName: string` - A name for the primary key constraint. If not specified, then constraint name is generated from the table name and the names of the involved columns.
+- `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html) and [Postgres](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
+- `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html) and [Postgres (Only "STORED")](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
+- `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
+- `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[]).
+- `transformer: ValueTransformer|ValueTransformer[]` - Specifies a value transformer (or array of value transformers) that is to be used to (un)marshal this column when reading or writing to the database. In case of an array, the value transformers will be applied in the natural order from entityValue to databaseValue, and in reverse order from databaseValue to entityValue.
+- `spatialFeatureType: string` - Optional feature type (`Point`, `Polygon`, `LineString`, `Geometry`) used as a constraint on a spatial column. If not specified, it will behave as though `Geometry` was provided. Used only in PostgreSQL and CockroachDB.
+- `srid: number` - Optional [Spatial Reference ID](https://postgis.net/docs/using_postgis_dbmanagement.html#spatial_ref_sys) used as a constraint on a spatial column. If not specified, it will default to `0`. Standard geographic coordinates (latitude/longitude in the WGS84 datum) correspond to [EPSG 4326](http://spatialreference.org/ref/epsg/wgs-84/). Used only in PostgreSQL and CockroachDB.
 
 Learn more about [entity columns](../entity/1-entities.md#entity-columns).
 
@@ -223,11 +223,11 @@ export class User {
 
 There are four generation strategies:
 
--   `increment` - uses AUTO_INCREMENT / SERIAL / SEQUENCE (depend on database type) to generate incremental number.
--   `identity` - only for [PostgreSQL 10+](https://www.postgresql.org/docs/13/sql-createtable.html). Postgres versions above 10 support the SQL-Compliant **IDENTITY** column. When marking the generation strategy as `identity` the column will be produced using `GENERATED [ALWAYS|BY DEFAULT] AS IDENTITY`
--   `uuid` - generates unique `uuid` string.
--   `rowid` - only for [CockroachDB](https://www.cockroachlabs.com/docs/stable/serial.html). Value is automatically generated using the `unique_rowid()`
-    function. This produces a 64-bit integer from the current timestamp and ID of the node executing the `INSERT` or `UPSERT` operation.
+- `increment` - uses AUTO_INCREMENT / SERIAL / SEQUENCE (depend on database type) to generate incremental number.
+- `identity` - only for [PostgreSQL 10+](https://www.postgresql.org/docs/13/sql-createtable.html). Postgres versions above 10 support the SQL-Compliant **IDENTITY** column. When marking the generation strategy as `identity` the column will be produced using `GENERATED [ALWAYS|BY DEFAULT] AS IDENTITY`
+- `uuid` - generates unique `uuid` string.
+- `rowid` - only for [CockroachDB](https://www.cockroachlabs.com/docs/stable/serial.html). Value is automatically generated using the `unique_rowid()`
+  function. This produces a 64-bit integer from the current timestamp and ID of the node executing the `INSERT` or `UPSERT` operation.
     > Note: property with a `rowid` generation strategy must be a `string` data type
 
 Default generation strategy is `increment`, to change it to another strategy, simply pass it as the first argument to decorator:
