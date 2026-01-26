@@ -43,7 +43,6 @@ import { OrmUtils } from "../util/OrmUtils"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 
@@ -4485,14 +4484,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     }
 
                     if (column.transformer) {
-                        if (parameterValue instanceof FindOperator) {
-                            parameterValue.transformValue(column.transformer)
-                        } else {
-                            parameterValue = ApplyValueTransformers.transformTo(
-                                column.transformer,
-                                parameterValue,
-                            )
-                        }
+                        parameterValue = ApplyValueTransformers.transformTo(
+                            column.transformer,
+                            parameterValue,
+                        )
                     }
 
                     // MSSQL requires parameters to carry extra type information
