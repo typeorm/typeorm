@@ -628,14 +628,13 @@ export class PostgresQueryRunner
         if (table.comment) {
             upQueries.push(
                 new Query(
-                    `COMMENT ON TABLE ${this.escapePath(table)}
-                    IS ${this.escapeComment(table.comment)}`,
+                    `COMMENT ON TABLE ${this.escapePath(table)}` +
+                        ` IS ${this.escapeComment(table.comment)}`,
                 ),
             )
             downQueries.push(
                 new Query(
-                    `COMMENT ON TABLE ${this.escapePath(table)}
-                    IS NULL`,
+                    `COMMENT ON TABLE ${this.escapePath(table)}` + ` IS NULL`,
                 ),
             )
         }
