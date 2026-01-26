@@ -48,9 +48,9 @@ Isolation level implementations are _not_ agnostic across all databases.
 
 The following database drivers support the standard isolation levels (`READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`):
 
--   MySQL
--   Postgres
--   SQL Server
+- MySQL
+- Postgres
+- SQL Server
 
 **SQLite** defaults transactions to `SERIALIZABLE`, but if _shared cache mode_ is enabled, a transaction can use the `READ UNCOMMITTED` isolation level.
 
@@ -99,8 +99,8 @@ try {
 
 There are 3 methods to control transactions in `QueryRunner`:
 
--   `startTransaction` - starts a new transaction inside the query runner instance.
--   `commitTransaction` - commits all changes made using the query runner instance.
--   `rollbackTransaction` - rolls all changes made using the query runner instance back.
+- `startTransaction` - starts a new transaction inside the query runner instance.
+- `commitTransaction` - commits all changes made using the query runner instance.
+- `rollbackTransaction` - rolls all changes made using the query runner instance back.
 
 Learn more about [Query Runner](../query-runner.md).

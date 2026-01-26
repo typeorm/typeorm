@@ -69,6 +69,7 @@ export class MigrationExecutor {
 
     /**
      * Tries to execute a single migration given.
+     * @param migration
      */
     public async executeMigration(migration: Migration): Promise<Migration> {
         return this.withQueryRunner(async (queryRunner) => {
@@ -135,6 +136,7 @@ export class MigrationExecutor {
 
     /**
      * Inserts an executed migration.
+     * @param migration
      */
     public insertMigration(migration: Migration): Promise<void> {
         return this.withQueryRunner((q) =>
@@ -144,6 +146,7 @@ export class MigrationExecutor {
 
     /**
      * Deletes an executed migration.
+     * @param migration
      */
     public deleteMigration(migration: Migration): Promise<void> {
         return this.withQueryRunner((q) =>
@@ -501,6 +504,7 @@ export class MigrationExecutor {
 
     /**
      * Creates table "migrations" that will store information about executed migrations.
+     * @param queryRunner
      */
     protected async createMigrationsTableIfNotExist(
         queryRunner: QueryRunner,
@@ -553,6 +557,7 @@ export class MigrationExecutor {
 
     /**
      * Loads all migrations that were executed and saved into the database (sorts by id).
+     * @param queryRunner
      */
     protected async loadExecutedMigrations(
         queryRunner: QueryRunner,
@@ -628,6 +633,7 @@ export class MigrationExecutor {
 
     /**
      * Finds the latest migration (sorts by timestamp) in the given array of migrations.
+     * @param migrations
      */
     protected getLatestTimestampMigration(
         migrations: Migration[],
@@ -641,6 +647,7 @@ export class MigrationExecutor {
     /**
      * Finds the latest migration in the given array of migrations.
      * PRE: Migration array must be sorted by descending id.
+     * @param sortedMigrations
      */
     protected getLatestExecutedMigration(
         sortedMigrations: Migration[],
@@ -650,6 +657,8 @@ export class MigrationExecutor {
 
     /**
      * Inserts new executed migration's data into migrations table.
+     * @param queryRunner
+     * @param migration
      */
     protected async insertExecutedMigration(
         queryRunner: QueryRunner,
@@ -692,6 +701,8 @@ export class MigrationExecutor {
 
     /**
      * Delete previously executed migration's data from the migrations table.
+     * @param queryRunner
+     * @param migration
      */
     protected async deleteExecutedMigration(
         queryRunner: QueryRunner,

@@ -9,8 +9,8 @@ You can achieve this using custom repositories.
 
 There are several ways how custom repositories can be created.
 
--   [How to create custom repository](#how-to-create-custom-repository)
--   [Using custom repositories in transactions](#using-custom-repositories-in-transactions)
+- [How to create custom repository](#how-to-create-custom-repository)
+- [Using custom repositories in transactions](#using-custom-repositories-in-transactions)
 
 ## How to create custom repository?
 

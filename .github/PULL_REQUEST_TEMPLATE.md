@@ -31,10 +31,10 @@
   If an item is not applicable, you can add "N/A" to the end.
 -->
 
--   [ ] Code is up-to-date with the `master` branch
--   [ ] This pull request links relevant issues as `Fixes #00000`
--   [ ] There are new or updated tests validating the change (`tests/**.test.ts`)
--   [ ] Documentation has been updated to reflect this change (`docs/docs/**.md`)
+- [ ] Code is up-to-date with the `master` branch
+- [ ] This pull request links relevant issues as `Fixes #00000`
+- [ ] There are new or updated tests validating the change (`tests/**.test.ts`)
+- [ ] Documentation has been updated to reflect this change (`docs/docs/**.md`)
 
 <!--
   🎉 Thank you for contributing and making TypeORM even better!

@@ -571,6 +571,41 @@ describe("query builder > joins", () => {
                 }),
             ))
 
+        it("should not load join data when join subquery does not find results", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const tag = new Tag()
+                    tag.name = "audi"
+                    await connection.manager.save(tag)
+
+                    const post = new Post()
+                    post.title = "about China"
+                    post.tag = tag
+                    await connection.manager.save(post)
+
+                    const loadedPost = await connection.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndMapOne(
+                            "post.tag",
+                            (qb) =>
+                                qb
+                                    .subQuery()
+                                    .from(Tag, "tag")
+                                    .where("tag.name != :name", {
+                                        name: "audi",
+                                    }),
+                            "tag",
+                            "tag.id = post.tagId",
+                            undefined,
+                            Tag,
+                        )
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost!.tag).to.be.null
+                }),
+            ))
+
         it("should load and map selected data when data will given from same entity but with different conditions", () =>
             Promise.all(
                 connections.map(async (connection) => {
@@ -1019,6 +1054,41 @@ describe("query builder > joins", () => {
 
                     expect(loadedPost!.tag).to.not.be.undefined
                     expect(loadedPost!.tag.id).to.be.equal(1)
+                }),
+            ))
+
+        it("should not find results when join subquery with conditions does not find join data", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const tag = new Tag()
+                    tag.name = "audi"
+                    await connection.manager.save(tag)
+
+                    const post = new Post()
+                    post.title = "about China"
+                    post.tag = tag
+                    await connection.manager.save(post)
+
+                    const loadedPost = await connection.manager
+                        .createQueryBuilder(Post, "post")
+                        .innerJoinAndMapOne(
+                            "post.tag",
+                            (qb) =>
+                                qb
+                                    .subQuery()
+                                    .from(Tag, "tag")
+                                    .where("tag.name != :name", {
+                                        name: "audi",
+                                    }),
+                            "tag",
+                            "tag.id = post.tagId",
+                            undefined,
+                            Tag,
+                        )
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost).to.be.null
                 }),
             ))
 

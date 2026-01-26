@@ -15,7 +15,7 @@ describe("github issues > #8747 QueryBuilder update handles Date objects wrong o
         async () =>
             (dataSources = await createTestingConnections({
                 enabledDrivers: ["mysql", "postgres", "mariadb"],
-                entities: [__dirname + "/entity/*.{js,ts}"],
+                entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
