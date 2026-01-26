@@ -531,7 +531,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "categories" && '{TypeScript}'
 ```
 
-- `JsonContains`
+- `JsonContains` (PostgreSQL/CockroachDB only)
 
 ```ts
 import { JsonContains } from "typeorm"
@@ -541,7 +541,7 @@ const loadedPosts = await dataSource.getRepository(Post).findBy({
 })
 ```
 
-will execute following query (Postgres notation):
+will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "metadata" ::jsonb @> '{"author":{"name":"John"}}'
