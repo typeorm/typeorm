@@ -37,6 +37,8 @@ export class EntityMetadataValidator {
 
     /**
      * Validates all given entity metadatas.
+     * @param entityMetadatas
+     * @param driver
      */
     validateMany(entityMetadatas: EntityMetadata[], driver: Driver) {
         entityMetadatas.forEach((entityMetadata) =>
@@ -48,12 +50,23 @@ export class EntityMetadataValidator {
 
     /**
      * Validates given entity metadata.
+     * @param entityMetadata
+     * @param allEntityMetadatas
+     * @param driver
      */
     validate(
         entityMetadata: EntityMetadata,
         allEntityMetadatas: EntityMetadata[],
         driver: Driver,
     ) {
+        // check if strict mode is supported by the driver
+        if (entityMetadata.strict && !DriverUtils.isSQLiteFamily(driver)) {
+            throw new TypeORMError(
+                `Entity ${entityMetadata.name} is marked as 'strict', ` +
+                    `but 'strict' mode is only supported for SQLite-based drivers.`,
+            )
+        }
+
         // check if table metadata has an id
         if (!entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
             throw new MissingPrimaryColumnError(entityMetadata)
@@ -315,6 +328,7 @@ export class EntityMetadataValidator {
 
     /**
      * Validates dependencies of the entity metadatas.
+     * @param entityMetadatas
      */
     protected validateDependencies(entityMetadatas: EntityMetadata[]) {
         const graph = new DepGraph()
@@ -342,6 +356,7 @@ export class EntityMetadataValidator {
 
     /**
      * Validates eager relations to prevent circular dependency in them.
+     * @param entityMetadatas
      */
     protected validateEagerRelations(entityMetadatas: EntityMetadata[]) {
         entityMetadatas.forEach((entityMetadata) => {
