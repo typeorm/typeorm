@@ -128,6 +128,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         "time",
         "datetime",
         "json",
+        "jsonb",
     ]
 
     /**
@@ -345,6 +346,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             return DateUtils.mixedDateToUtcDatetimeString(value)
         } else if (
             columnMetadata.type === "json" ||
+            columnMetadata.type === "jsonb" ||
             columnMetadata.type === "simple-json"
         ) {
             return DateUtils.simpleJsonToString(value)
@@ -415,6 +417,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             value = DateUtils.mixedTimeToString(value)
         } else if (
             columnMetadata.type === "json" ||
+            columnMetadata.type === "jsonb" ||
             columnMetadata.type === "simple-json"
         ) {
             value = DateUtils.stringToSimpleJson(value)
@@ -649,6 +652,10 @@ export abstract class AbstractSqliteDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
 
+        if (defaultValue === null || defaultValue === undefined) {
+            return undefined
+        }
+
         if (typeof defaultValue === "number") {
             return "" + defaultValue
         }
@@ -665,15 +672,18 @@ export abstract class AbstractSqliteDriver implements Driver {
             return `'${defaultValue}'`
         }
 
-        if (defaultValue === null || defaultValue === undefined) {
-            return undefined
-        }
-
         if (
             Array.isArray(defaultValue) &&
             columnMetadata.type === "simple-enum"
         ) {
             return `'${defaultValue.join(",")}'`
+        }
+
+        if (typeof defaultValue === "object") {
+            if (columnMetadata.type === "jsonb") {
+                return `jsonb('${JSON.stringify(defaultValue)}')`
+            }
+            return `'${JSON.stringify(defaultValue)}'`
         }
 
         return `${defaultValue}`
@@ -778,6 +788,74 @@ export abstract class AbstractSqliteDriver implements Driver {
     }
 
     /**
+     * Compares column default values, handling JSON/JSONB types semantically.
+     */
+    private defaultEqual(
+        columnMetadata: ColumnMetadata,
+        tableColumn: TableColumn,
+    ): boolean {
+        // defaults are equal if both are undefined or null
+        if (
+            (columnMetadata.default === null ||
+                columnMetadata.default === undefined) &&
+            (tableColumn.default === null || tableColumn.default === undefined)
+        )
+            return true
+
+        if (
+            ["json", "jsonb"].includes(columnMetadata.type as string) &&
+            !["function", "undefined"].includes(typeof columnMetadata.default)
+        ) {
+            try {
+                let tableDefault = tableColumn.default
+                if (typeof tableDefault === "string") {
+                    if (
+                        tableDefault.startsWith("(") &&
+                        tableDefault.endsWith(")")
+                    ) {
+                        tableDefault = tableDefault.substring(
+                            1,
+                            tableDefault.length - 1,
+                        )
+                    }
+
+                    if (
+                        tableDefault.toLowerCase().startsWith("jsonb('") &&
+                        tableDefault.endsWith("')")
+                    ) {
+                        tableDefault = tableDefault
+                            .substring(7, tableDefault.length - 2)
+                            .replace(/''/g, "'")
+                    } else if (
+                        tableDefault.startsWith("'") &&
+                        tableDefault.endsWith("'")
+                    ) {
+                        tableDefault = tableDefault
+                            .substring(1, tableDefault.length - 1)
+                            .replace(/''/g, "'")
+                    }
+                }
+
+                const tableDefaultObj =
+                    typeof tableDefault === "string"
+                        ? JSON.parse(tableDefault)
+                        : tableDefault
+                return OrmUtils.deepCompare(
+                    columnMetadata.default,
+                    tableDefaultObj,
+                )
+            } catch (err) {
+                return (
+                    this.normalizeDefault(columnMetadata) ===
+                    tableColumn.default
+                )
+            }
+        }
+
+        return this.normalizeDefault(columnMetadata) === tableColumn.default
+    }
+
+    /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      */
@@ -797,7 +875,7 @@ export abstract class AbstractSqliteDriver implements Driver {
                 tableColumn.length !== columnMetadata.length ||
                 tableColumn.precision !== columnMetadata.precision ||
                 tableColumn.scale !== columnMetadata.scale ||
-                this.normalizeDefault(columnMetadata) !== tableColumn.default ||
+                !this.defaultEqual(columnMetadata, tableColumn) ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
@@ -915,6 +993,20 @@ export abstract class AbstractSqliteDriver implements Driver {
         // return "$" + (index + 1);
         return "?"
         // return "$" + parameterName;
+    }
+
+    /**
+     * Wraps key with json/jsonb function if required.
+     */
+    wrapWithJsonFunction(
+        value: string,
+        column: ColumnMetadata,
+        jsonb: boolean = false,
+    ): string {
+        if (column.type === "jsonb") {
+            return jsonb ? `jsonb(${value})` : `json(${value})`
+        }
+        return value
     }
 
     // -------------------------------------------------------------------------

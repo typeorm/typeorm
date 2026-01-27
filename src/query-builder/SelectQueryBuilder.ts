@@ -30,6 +30,7 @@ import { OffsetWithoutLimitNotSupportedError } from "../error/OffsetWithoutLimit
 import { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { DriverUtils } from "../driver/DriverUtils"
+import { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
 import { EntityNotFoundError } from "../error/EntityNotFoundError"
 import { TypeORMError } from "../error"
 import { FindManyOptions } from "../find-options/FindManyOptions"
@@ -3005,6 +3006,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             if (column.isVirtualProperty && column.query) {
                 selectionPath = `(${column.query(escapedAliasName)})`
+            }
+
+            if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
+                selectionPath = (
+                    this.connection.driver as AbstractSqliteDriver
+                ).wrapWithJsonFunction(selectionPath, column, false)
             }
 
             if (

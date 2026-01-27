@@ -13,7 +13,7 @@ describe("json > defaults", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [Post],
-                enabledDrivers: ["postgres"], // because only postgres supports jsonb type
+                enabledDrivers: ["postgres", "better-sqlite3", "sqljs"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
