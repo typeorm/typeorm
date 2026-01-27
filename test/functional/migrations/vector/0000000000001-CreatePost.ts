@@ -9,7 +9,9 @@ export class CreatePost0000000000001 implements MigrationInterface {
                 "embedding" vector,
                 "embedding_three_dimensions" vector(3),
                 "halfvec_embedding" halfvec,
-                "halfvec_four_dimensions" halfvec(4)
+                "halfvec_four_dimensions" halfvec(4),
+                "sparse_embedding" sparsevec(5),
+                "bit_vector" bit(16)
             )
         `)
     }

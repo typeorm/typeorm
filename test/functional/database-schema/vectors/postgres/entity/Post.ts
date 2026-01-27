@@ -1,6 +1,7 @@
 import { Entity } from "../../../../../../src/decorator/entity/Entity"
 import { Column } from "../../../../../../src/decorator/columns/Column"
 import { PrimaryGeneratedColumn } from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { SparseVector } from "../../../../../../src/driver/types/SparseVector"
 
 @Entity()
 export class Post {
@@ -18,4 +19,10 @@ export class Post {
 
     @Column("halfvec", { length: 4, nullable: true })
     halfvec_four_dimensions: number[]
+
+    @Column("sparsevec", { length: 5, nullable: true })
+    sparse_embedding: SparseVector | string | null
+
+    @Column("bit", { length: 16, nullable: true })
+    bit_vector: string
 }
