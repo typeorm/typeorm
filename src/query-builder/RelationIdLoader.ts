@@ -25,6 +25,9 @@ export class RelationIdLoader {
 
     /**
      * Loads relation ids of the given entity or entities.
+     * @param relation
+     * @param entityOrEntities
+     * @param relatedEntityOrRelatedEntities
      */
     load(
         relation: RelationMetadata,
@@ -63,6 +66,10 @@ export class RelationIdLoader {
      * Loads relation ids of the given entities and groups them into the object with parent and children.
      *
      * todo: extract this method?
+     * @param relation
+     * @param entitiesOrEntities
+     * @param relatedEntityOrEntities
+     * @param queryBuilder
      */
     async loadManyToManyRelationIdsAndGroup<
         E1 extends ObjectLiteral,
@@ -227,7 +234,8 @@ export class RelationIdLoader {
                 }
             });
         });
-    }*/
+    }
+     */
 
     // -------------------------------------------------------------------------
     // Protected Methods
@@ -235,6 +243,9 @@ export class RelationIdLoader {
 
     /**
      * Loads relation ids for the many-to-many relation.
+     * @param relation
+     * @param entities
+     * @param relatedEntities
      */
     protected loadForManyToMany(
         relation: RelationMetadata,
@@ -435,6 +446,9 @@ export class RelationIdLoader {
 
     /**
      * Loads relation ids for the many-to-one and one-to-one owner relations.
+     * @param relation
+     * @param entities
+     * @param relatedEntities
      */
     protected loadForManyToOneAndOneToOneOwner(
         relation: RelationMetadata,
@@ -602,6 +616,9 @@ export class RelationIdLoader {
 
     /**
      * Loads relation ids for the one-to-many and one-to-one not owner relations.
+     * @param relation
+     * @param entities
+     * @param relatedEntities
      */
     protected loadForOneToManyAndOneToOneNotOwner(
         relation: RelationMetadata,
