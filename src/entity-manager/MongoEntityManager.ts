@@ -1035,38 +1035,77 @@ export class MongoEntityManager extends EntityManager {
         cursor: FindCursor<Entity> | AggregationCursor<Entity>,
     ) {
         const queryRunner = this.mongoQueryRunner
+        const entityCache = new Map<string, Entity>()
+        const transformer = new DocumentToEntityTransformer()
 
-        ;(cursor as any)["__to_array_func"] = cursor.toArray
+        const originalToArray = cursor.toArray
         cursor.toArray = () =>
-            ((cursor as any)["__to_array_func"] as CallableFunction)().then(
-                async (results: Entity[]) => {
-                    const transformer = new DocumentToEntityTransformer()
-                    const entities = transformer.transformAll(results, metadata)
-                    // broadcast "load" events
+            originalToArray.call(cursor).then(async (results: any[]) => {
+                const transformedResults = transformer.transformAll(
+                    results,
+                    metadata,
+                )
+
+                const entities: Entity[] = []
+                const newlyLoadedEntities: Entity[] = []
+
+                transformedResults.forEach((result) => {
+                    if (!result) return
+
+                    const { entity, documentId } = result
+                    const idStr = documentId ? documentId.toString() : undefined
+
+                    if (idStr && entityCache.has(idStr)) {
+                        entities.push(entityCache.get(idStr)!)
+                        return
+                    }
+
+                    entities.push(entity)
+                    if (idStr) {
+                        entityCache.set(idStr, entity)
+                        newlyLoadedEntities.push(entity)
+                    }
+                })
+
+                if (newlyLoadedEntities.length > 0) {
                     await queryRunner.broadcaster.broadcast(
                         "Load",
                         metadata,
-                        entities,
+                        newlyLoadedEntities,
                     )
-                    return entities
-                },
-            )
-        ;(cursor as any)["__next_func"] = cursor.next
+                }
+                if (cursor.closed) {
+                    entityCache.clear() // cursor is exhausted
+                }
+                return entities
+            })
+
+        const originalNext = cursor.next
         cursor.next = () =>
-            ((cursor as any)["__next_func"] as CallableFunction)().then(
-                async (result: Entity) => {
-                    if (!result) {
-                        return result
-                    }
-                    const transformer = new DocumentToEntityTransformer()
-                    const entity = transformer.transform(result, metadata)
-                    // broadcast "load" events
-                    await queryRunner.broadcaster.broadcast("Load", metadata, [
-                        entity,
-                    ])
-                    return entity
-                },
-            )
+            originalNext.call(cursor).then(async (result: any) => {
+                if (!result) {
+                    entityCache.clear() // cursor is exhausted
+                    return null
+                }
+
+                const transformed = transformer.transform(result, metadata)
+                if (!transformed) return null
+
+                const { entity, documentId } = transformed
+                const idStr = documentId ? documentId.toString() : undefined
+
+                if (idStr && entityCache.has(idStr)) {
+                    return entityCache.get(idStr)
+                }
+                if (idStr) {
+                    entityCache.set(idStr, entity)
+                }
+                await queryRunner.broadcaster.broadcast("Load", metadata, [
+                    entity,
+                ])
+
+                return entity
+            })
     }
 
     protected filterSoftDeleted<Entity>(
