@@ -16,9 +16,9 @@ const vectorTransformer: ValueTransformer = {
             dataView.setFloat32(4 + index * 4, value[index], true)
         }
 
-        return Buffer.from(arrayBuffer)
+        return new Uint8Array(arrayBuffer)
     },
-    from: (value: Buffer) => {
+    from: (value: Uint8Array) => {
         const dataView = new DataView(
             value.buffer,
             value.byteOffset,
@@ -35,7 +35,7 @@ const vectorTransformer: ValueTransformer = {
 }
 
 @Entity()
-export class BufferEmbedding {
+export class Uint8ArrayEmbedding {
     @PrimaryColumn()
     id: number
 

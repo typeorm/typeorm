@@ -17,9 +17,6 @@ importers:
       app-root-path:
         specifier: ^3.1.0
         version: 3.1.0
-      buffer:
-        specifier: ^6.0.3
-        version: 6.0.3
       dayjs:
         specifier: ^1.11.19
         version: 1.11.19

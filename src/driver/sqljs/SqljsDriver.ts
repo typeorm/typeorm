@@ -165,7 +165,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
         if (PlatformTools.type === "node") {
             try {
-                const content = Buffer.from(this.databaseConnection.export())
+                const content = this.databaseConnection.export()
                 await PlatformTools.writeFile(path, content)
             } catch (e) {
                 throw new TypeORMError(`Could not save database, error: ${e}`)

@@ -57,20 +57,20 @@ export class Document {
 
     // Using SAP HANA native type names
     @Column("real_vector", { length: 1536 })
-    embedding: Buffer | number[]
+    embedding: Uint8Array | number[]
 
     @Column("half_vector", { length: 768 })
-    reduced_embedding: Buffer | number[]
+    reduced_embedding: Uint8Array | number[]
 
     // Using cross-database aliases (recommended)
     @Column("vector", { length: 1536 })
-    universal_embedding: Buffer | number[]
+    universal_embedding: Uint8Array | number[]
 
     @Column("halfvec", { length: 768 })
-    universal_reduced_embedding: Buffer | number[]
+    universal_reduced_embedding: Uint8Array | number[]
 }
 ```
 
-By default, the client will return a `Buffer` in the `fvecs`/`hvecs` format, which is more efficient. It is possible to let the driver convert the values to a `number[]` by adding `{ extra: { vectorOutputType: "Array" } }` to the connection options. Check the SAP HANA Client documentation for more information about [REAL_VECTOR](https://help.sap.com/docs/SAP_HANA_CLIENT/f1b440ded6144a54ada97ff95dac7adf/0d197e4389c64e6b9cf90f6f698f62fe.html) or [HALF_VECTOR](https://help.sap.com/docs/SAP_HANA_CLIENT/f1b440ded6144a54ada97ff95dac7adf/8bb854b4ce4a4299bed27c365b717e91.html).
+By default, the client will return a `Uint8Array` in the `fvecs`/`hvecs` format, which is more efficient. It is possible to let the driver convert the values to a `number[]` by adding `{ extra: { vectorOutputType: "Array" } }` to the connection options. Check the SAP HANA Client documentation for more information about [REAL_VECTOR](https://help.sap.com/docs/SAP_HANA_CLIENT/f1b440ded6144a54ada97ff95dac7adf/0d197e4389c64e6b9cf90f6f698f62fe.html) or [HALF_VECTOR](https://help.sap.com/docs/SAP_HANA_CLIENT/f1b440ded6144a54ada97ff95dac7adf/8bb854b4ce4a4299bed27c365b717e91.html).
 
 Use the appropriate [vector functions](https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/vector-functions) for similarity searches.

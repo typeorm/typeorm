@@ -19,7 +19,7 @@ export type FindOptionsWhereProperty<
           ? FindOptionsWhereProperty<NonNullable<I>>
           : PropertyToBeNarrowed extends Function
             ? never
-            : PropertyToBeNarrowed extends Buffer
+            : PropertyToBeNarrowed extends Uint8Array
               ? Property | FindOperator<Property>
               : PropertyToBeNarrowed extends Date
                 ? Property | FindOperator<Property>

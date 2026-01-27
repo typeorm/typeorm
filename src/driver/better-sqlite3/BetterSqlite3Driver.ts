@@ -67,7 +67,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         precision?: number | null
         scale?: number
     }): string {
-        if ((column.type as any) === Buffer) {
+        if ((column.type as any) === Uint8Array) {
             return "blob"
         }
 
