@@ -105,4 +105,80 @@ describe("github issues > #3837 named columns", () => {
                 return expect(count).to.equal(3)
             }),
         ))
+
+    it("should handle bulk inserts with different column sets and fill missing columns with NULL/default", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                // Create a table with multiple nullable columns
+                const qr = connection.createQueryRunner()
+                await qr.createTable(
+                    new Table({
+                        name: "tasks",
+                        columns: [
+                            {
+                                name: "id",
+                                type: "int",
+                                isPrimary: true,
+                                isGenerated: true,
+                                generationStrategy: "increment",
+                            },
+                            {
+                                name: "name",
+                                type: "varchar",
+                                isNullable: true,
+                            },
+                            {
+                                name: "description",
+                                type: "varchar",
+                                isNullable: true,
+                            },
+                            {
+                                name: "priority",
+                                type: "int",
+                                isNullable: true,
+                            },
+                        ],
+                    }),
+                )
+
+                // Insert rows with different subsets of columns
+                await connection.manager
+                    .createQueryBuilder()
+                    .insert()
+                    .into("tasks")
+                    .values([
+                        {
+                            name: "Task 1",
+                            description: "First task",
+                            priority: 1,
+                        },
+                        { name: "Task 2" },
+                        { description: "No name", priority: 2 },
+                        { priority: 3 },
+                    ])
+                    .execute()
+
+                // Verify all rows were inserted and missing columns are NULL
+                const rows = await connection.query(
+                    `SELECT * FROM tasks ORDER BY id ASC`,
+                )
+                expect(rows).to.have.length(4)
+                expect(rows).to.deep.equal([
+                    {
+                        id: 1,
+                        name: "Task 1",
+                        description: "First task",
+                        priority: 1,
+                    },
+                    {
+                        id: 2,
+                        name: "Task 2",
+                        description: null,
+                        priority: null,
+                    },
+                    { id: 3, name: null, description: "No name", priority: 2 },
+                    { id: 4, name: null, description: null, priority: 3 },
+                ])
+            }),
+        ))
 })
