@@ -133,6 +133,18 @@ export class IndexMetadata {
      */
     columnNamesWithOrderingMap: { [key: string]: number } = {}
 
+    /**
+     * Per-column options for the index.
+     * Allows specifying sort order (ASC/DESC) and null ordering (NULLS FIRST/NULLS LAST) for each column.
+     * Works only in PostgreSQL and CockroachDB.
+     */
+    columnOptions?: {
+        [columnName: string]: {
+            order?: "ASC" | "DESC"
+            nulls?: "NULLS FIRST" | "NULLS LAST"
+        }
+    }
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -181,6 +193,27 @@ export class IndexMetadata {
             this.givenName = options.args.name
             this.givenColumnNames = options.args.columns
             this.type = options.args.type
+            this.columnOptions = options.args.columnOptions
+
+            // handle shorthand syntax for property-level indexes
+            if (
+                (options.args.order || options.args.nulls) &&
+                !this.columnOptions &&
+                Array.isArray(options.args.columns) &&
+                options.args.columns.length === 1
+            ) {
+                const columnName = options.args.columns[0] as string
+                this.columnOptions = {
+                    [columnName]: {
+                        ...(options.args.order
+                            ? { order: options.args.order }
+                            : {}),
+                        ...(options.args.nulls
+                            ? { nulls: options.args.nulls }
+                            : {}),
+                    },
+                }
+            }
         }
     }
 
@@ -281,6 +314,41 @@ export class IndexMetadata {
             },
             {} as { [key: string]: number },
         )
+
+        // validate columnOptions
+        if (this.columnOptions) {
+            const columnPropertyPaths = this.columns.map(
+                (column) => column.propertyPath,
+            )
+            const columnOptionsKeys = Object.keys(this.columnOptions)
+
+            // if there are more columnOptions than columns
+            if (columnOptionsKeys.length > columnPropertyPaths.length) {
+                const indexName = this.givenName
+                    ? '"' + this.givenName + '" '
+                    : ""
+                const entityName = this.entityMetadata.targetName
+                throw new TypeORMError(
+                    `Index ${indexName}on entity "${entityName}" has ${columnOptionsKeys.length} columnOptions but only ${columnPropertyPaths.length} columns in the index. ` +
+                        `columnOptions keys: [${columnOptionsKeys.join(", ")}], Index columns: [${columnPropertyPaths.join(", ")}]. ` +
+                        `Suggestion: Add it to the fields to which the index is applied or remove it from columnOptions.`,
+                )
+            }
+            // for each columnOptions key check if such column exists in the index
+            columnOptionsKeys.forEach((columnName) => {
+                if (columnPropertyPaths.indexOf(columnName) === -1) {
+                    const indexName = this.givenName
+                        ? '"' + this.givenName + '" '
+                        : ""
+                    const entityName = this.entityMetadata.targetName
+                    throw new TypeORMError(
+                        `Index ${indexName}on entity "${entityName}" has columnOptions for column "${columnName}" which is missing in the index. ` +
+                            `Index columns: [${columnPropertyPaths.join(", ")}]. ` +
+                            `Suggestion: Add it to the fields to which the index is applied or remove it from columnOptions.`,
+                    )
+                }
+            })
+        }
 
         this.name = this.givenName
             ? this.givenName
