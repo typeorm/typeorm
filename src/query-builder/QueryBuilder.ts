@@ -252,6 +252,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             typeof entityOrTableNameUpdateSet === "function" ||
             typeof entityOrTableNameUpdateSet === "string"
         ) {
+            this.expressionMap.removeAlias(this.expressionMap.mainAlias)
             const mainAlias = this.createFromAlias(entityOrTableNameUpdateSet)
             this.expressionMap.setMainAlias(mainAlias)
         }
