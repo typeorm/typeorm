@@ -592,7 +592,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             if (
                 DriverUtils.isMySQLFamily(this.connection.driver) ||
-                this.connection.driver.options.type === "postgres"
+                this.connection.driver.options.type === "postgres" ||
+                this.connection.driver.options.type === "sap"
             ) {
                 const newComment = metadata.comment
                 await this.queryRunner.changeTableComment(table, newComment)
