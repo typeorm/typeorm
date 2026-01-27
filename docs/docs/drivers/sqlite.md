@@ -79,8 +79,8 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 TypeORM supports both `json` and `jsonb` types in SQLite:
 
--   `json` is stored as `TEXT`.
--   `jsonb` is stored as SQLite's binary JSON format. TypeORM automatically wraps values with the `jsonb()` function during persistence and with the `json()` function during retrieval for transparent support and better performance.
+- `json` is stored as `TEXT`.
+- `jsonb` is stored as SQLite's binary JSON format. TypeORM automatically wraps values with the `jsonb()` function during persistence and with the `json()` function during retrieval for transparent support and better performance.
 
 JSONB support requires SQLite 3.45.0 or newer. When using the `jsonb` column type, TypeORM will use the `jsonb` type in your database schema, which SQLite handles as a binary `BLOB` internally.
 
