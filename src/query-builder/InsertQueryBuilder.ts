@@ -1007,19 +1007,19 @@ export class InsertQueryBuilder<
 
     /**
      * Derive a stable, deduplicated column list from provided value sets (for tables without metadata).
+     * @param valueSets
      */
     protected getColumnNamesFromValueSets(
         valueSets: ObjectLiteral[],
     ): string[] {
-        const columns: string[] = []
-        valueSets.forEach((valueSet) => {
-            Object.keys(valueSet).forEach((columnName) => {
-                if (columns.indexOf(columnName) === -1) {
-                    columns.push(columnName)
-                }
-            })
-        })
-        return columns
+        const columns = new Set<string>()
+        for (const valueSet of valueSets) {
+            for (const columnName of Object.keys(valueSet)) {
+                columns.add(columnName)
+            }
+        }
+
+        return Array.from(columns).sort()
     }
 
     /**
