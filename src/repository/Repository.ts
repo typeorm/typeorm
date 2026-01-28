@@ -684,7 +684,10 @@ export class Repository<Entity extends ObjectLiteral> {
      *
      * @see [Official docs](https://typeorm.io/repository-api) for examples.
      */
-    query<T = any>(query: string, parameters?: any[]): Promise<T> {
+    query<T = any>(
+        query: string,
+        parameters?: any[] | ObjectLiteral,
+    ): Promise<T> {
         return this.manager.query(query, parameters)
     }
 
