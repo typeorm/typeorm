@@ -87,4 +87,39 @@ describe("columns > no-selection functionality", () => {
                 expect(loadedPost!.authorName).to.be.equal("Umed")
             }),
         ))
+
+    it("should not return columns marked with select: false", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const post = new Post()
+                post.title = "Hello Post"
+                post.text = "Some text"
+                post.authorName = "Umed"
+                const savedPost = await postRepository.save(post)
+
+                expect(savedPost).to.have.property("id")
+                expect(savedPost).to.have.property("title")
+                expect(savedPost).to.not.have.property("authorName")
+                expect(savedPost.counters).to.not.have.property("secretCode")
+            }),
+        ))
+
+    it("should not return columns marked with select: false in embedded entities", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const post = new Post()
+                post.title = "Hello Post"
+                post.text = "Some text"
+                post.authorName = "Umed"
+                post.counters = { secretCode: "789" }
+                const savedPost = await postRepository.save(post)
+
+                expect(savedPost).to.have.property("id")
+                expect(savedPost).to.have.property("title")
+                expect(savedPost).to.not.have.property("authorName")
+                expect(savedPost.counters).to.not.have.property("secretCode")
+            }),
+        ))
 })
