@@ -552,6 +552,7 @@ export class EntityMetadataBuilder {
                     )!
 
                 // for multiple table inheritance we can override column values from child class
+                let mergedArgs = args
                 if (
                     entityMetadata.tableType === "regular" &&
                     args.target !== entityMetadata.target
@@ -561,15 +562,21 @@ export class EntityMetadataBuilder {
                             c.propertyName === args.propertyName &&
                             c.target === entityMetadata.target,
                     )
-                    if (childArgs) {
-                        args = childArgs
+                    if (childArgs?.options) {
+                        mergedArgs = {
+                            ...args,
+                            options: {
+                                ...args.options,
+                                ...childArgs.options,
+                            },
+                        }
                     }
                 }
 
                 const column = new ColumnMetadata({
                     connection: this.connection,
                     entityMetadata,
-                    args,
+                    args: mergedArgs,
                 })
 
                 // if single table inheritance used, we need to mark all inherit table columns as nullable

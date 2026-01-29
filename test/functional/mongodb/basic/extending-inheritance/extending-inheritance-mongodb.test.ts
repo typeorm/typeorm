@@ -21,6 +21,7 @@ describe("table inheritance > mongodb > regular inheritance using extends keywor
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
+    // GitHub issue #7898 - Extending an entity does not override property decorators
     // MongoBaseEntity: none
     // Article: length=200
     it("should override property decorators when extending abstract class", () =>

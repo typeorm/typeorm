@@ -44,6 +44,7 @@ describe("table inheritance > regular inheritance using extends keyword", () => 
             }),
         ))
 
+    // GitHub issue #7898 - Extending an entity does not override property decorators
     // AbstractBase: none
     // Article: title unique, nullable=false
     it("should override property decorators when extending abstract class", () =>
