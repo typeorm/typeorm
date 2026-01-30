@@ -57,6 +57,8 @@ export class RawSqlResultsToEntityTransformer {
     /**
      * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
      * we need to group our result and we must have some unique id (primary key in our case)
+     * @param rawResults
+     * @param alias
      */
     transform(rawResults: any[], alias: Alias): any[] {
         const group = this.group(rawResults, alias)
@@ -74,6 +76,8 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Build an alias from a name and column name.
+     * @param aliasName
+     * @param columnName
      */
     protected buildAlias(aliasName: string, columnName: string) {
         let aliases = this.aliasCache.get(aliasName)
@@ -96,6 +100,8 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Groups given raw results by ids of given alias.
+     * @param rawResults
+     * @param alias
      */
     protected group(rawResults: any[], alias: Alias): Map<string, any[]> {
         const map = new Map()
@@ -113,22 +119,38 @@ export class RawSqlResultsToEntityTransformer {
                 ),
             )
         }
+
+        // Check if primary key columns are actually selected in the raw results
+        const primaryKeysSelected = keys.some(
+            (key) => key in (rawResults[0] ?? {}),
+        )
+
         for (const rawResult of rawResults) {
-            const id = keys
-                .map((key) => {
-                    const keyValue = rawResult[key]
+            let id: string
 
-                    if (Buffer.isBuffer(keyValue)) {
-                        return keyValue.toString("hex")
-                    }
+            if (primaryKeysSelected) {
+                // Use primary key based grouping when available
+                id = keys
+                    .map((key) => {
+                        const keyValue = rawResult[key]
 
-                    if (ObjectUtils.isObject(keyValue)) {
-                        return JSON.stringify(keyValue)
-                    }
+                        if (Buffer.isBuffer(keyValue)) {
+                            return keyValue.toString("hex")
+                        }
 
-                    return keyValue
-                })
-                .join("_") // todo: check partial
+                        if (ObjectUtils.isObject(keyValue)) {
+                            return JSON.stringify(keyValue)
+                        }
+
+                        return keyValue
+                    })
+                    .join("_")
+            } else {
+                // Fallback: use row index when primary keys are not available
+                // This ensures each row gets its own group for proper entity mapping
+                const rowIndex = rawResults.indexOf(rawResult)
+                id = `row_${rowIndex}`
+            }
 
             const items = map.get(id)
             if (!items) {
@@ -142,6 +164,8 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Transforms set of data results into single entity.
+     * @param rawResults
+     * @param alias
      */
     protected transformRawResultsGroup(
         rawResults: any[],
@@ -251,6 +275,10 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Transforms joined entities in the given raw results by a given alias and stores to the given (parent) entity
+     * @param rawResults
+     * @param entity
+     * @param alias
+     * @param metadata
      */
     protected transformJoins(
         rawResults: any[],
@@ -365,6 +393,12 @@ export class RawSqlResultsToEntityTransformer {
                     return map
                 }
                 if (property && properties.length > 0) {
+                    if (
+                        typeof map[property] !== "object" ||
+                        map[property] === null
+                    ) {
+                        map[property] = {}
+                    }
                     mapToProperty(properties, map[property], value)
                 } else {
                     return map
@@ -671,6 +705,8 @@ export class RawSqlResultsToEntityTransformer {
      * Use a simple JSON.stringify to create a simple hash of the primary ids of an entity.
      * As this.extractEntityPrimaryIds always creates the primary id object in the same order, if the same relation is
      * given, a simple JSON.stringify should be enough to get a unique hash per entity!
+     * @param relation
+     * @param data
      */
     private hashEntityIds(relation: RelationMetadata, data: ObjectLiteral) {
         const entityPrimaryIds = this.extractEntityPrimaryIds(relation, data)

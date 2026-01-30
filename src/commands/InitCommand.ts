@@ -6,8 +6,6 @@ import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
 import { CommandUtils } from "./CommandUtils"
 
-import ourPackageJson from "../../package.json"
-
 /**
  * Generates a new project with TypeORM.
  */
@@ -87,7 +85,7 @@ export class InitCommand implements yargs.CommandModule {
                 InitCommand.getTsConfigTemplate(projectIsEsm),
             )
             await CommandUtils.createFile(
-                basePath + "/src/entity/User.ts",
+                basePath + "/src/entities/User.ts",
                 InitCommand.getUserEntityTemplate(database),
             )
             await CommandUtils.createFile(
@@ -98,7 +96,7 @@ export class InitCommand implements yargs.CommandModule {
                 basePath + "/src/index.ts",
                 InitCommand.getAppIndexTemplate(isExpress, projectIsEsm),
             )
-            await CommandUtils.createDirectories(basePath + "/src/migration")
+            await CommandUtils.createDirectories(basePath + "/src/migrations")
 
             // generate extra files for express application
             if (isExpress) {
@@ -107,7 +105,7 @@ export class InitCommand implements yargs.CommandModule {
                     InitCommand.getRoutesTemplate(projectIsEsm),
                 )
                 await CommandUtils.createFile(
-                    basePath + "/src/controller/UserController.ts",
+                    basePath + "/src/controllers/UserController.ts",
                     InitCommand.getControllerTemplate(projectIsEsm),
                 )
             }
@@ -117,7 +115,7 @@ export class InitCommand implements yargs.CommandModule {
             )
             await CommandUtils.createFile(
                 basePath + "/package.json",
-                InitCommand.appendPackageJson(
+                await InitCommand.appendPackageJson(
                     packageJsonContents,
                     database,
                     isExpress,
@@ -243,7 +241,7 @@ sid: "xe.oracle.docker",`
         }
         return `import "reflect-metadata"
 import { DataSource } from "typeorm"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 export const AppDataSource = new DataSource({
     ${dbSettings}
@@ -264,8 +262,8 @@ export const AppDataSource = new DataSource({
             return JSON.stringify(
                 {
                     compilerOptions: {
-                        lib: ["es2021"],
-                        target: "es2021",
+                        lib: ["es2023"],
+                        target: "es2022",
                         module: "es2022",
                         moduleResolution: "node",
                         allowSyntheticDefaultImports: true,
@@ -282,8 +280,8 @@ export const AppDataSource = new DataSource({
             return JSON.stringify(
                 {
                     compilerOptions: {
-                        lib: ["es2021"],
-                        target: "es2021",
+                        lib: ["es2023"],
+                        target: "es2022",
                         module: "commonjs",
                         moduleResolution: "node",
                         outDir: "./build",
@@ -346,7 +344,7 @@ export class User {
      * Gets contents of the route file (used when express is enabled).
      */
     protected static getRoutesTemplate(isEsm: boolean): string {
-        return `import { UserController } from "./controller/UserController${
+        return `import { UserController } from "./controllers/UserController${
             isEsm ? ".js" : ""
         }"
 
@@ -381,7 +379,7 @@ export const Routes = [{
             isEsm ? ".js" : ""
         }"
 import { NextFunction, Request, Response } from "express"
-import { User } from "../entity/User${isEsm ? ".js" : ""}"
+import { User } from "../entities/User${isEsm ? ".js" : ""}"
 
 export class UserController {
 
@@ -447,7 +445,7 @@ import ${!isEsm ? "* as " : ""}bodyParser from "body-parser"
 import { Request, Response } from "express"
 import { AppDataSource } from "./data-source${isEsm ? ".js" : ""}"
 import { Routes } from "./routes${isEsm ? ".js" : ""}"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 AppDataSource.initialize().then(async () => {
 
@@ -499,7 +497,7 @@ AppDataSource.initialize().then(async () => {
             return `import { AppDataSource } from "./data-source${
                 isEsm ? ".js" : ""
             }"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 AppDataSource.initialize().then(async () => {
 
@@ -673,13 +671,16 @@ Steps to run this project:
     /**
      * Appends to a given package.json template everything needed.
      */
-    protected static appendPackageJson(
+    protected static async appendPackageJson(
         packageJsonContents: string,
         database: string,
         express: boolean,
         projectIsEsm: boolean /*, docker: boolean*/,
-    ): string {
+    ): Promise<string> {
         const packageJson = JSON.parse(packageJsonContents)
+        const ourPackageJson = JSON.parse(
+            await CommandUtils.readFile(`${__dirname}/../package.json`),
+        )
 
         if (!packageJson.devDependencies) packageJson.devDependencies = {}
         packageJson.devDependencies = {

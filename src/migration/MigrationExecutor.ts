@@ -69,6 +69,7 @@ export class MigrationExecutor {
 
     /**
      * Tries to execute a single migration given.
+     * @param migration
      */
     public async executeMigration(migration: Migration): Promise<Migration> {
         return this.withQueryRunner(async (queryRunner) => {
@@ -91,17 +92,25 @@ export class MigrationExecutor {
 
     /**
      * Returns an array of all migrations.
+     *
+     * @deprecated use getMigrations instead
      */
     public async getAllMigrations(): Promise<Migration[]> {
         return Promise.resolve(this.getMigrations())
     }
 
     /**
-     * Returns an array of all executed migrations.
+     * @returns An array of all executed migrations
      */
     public async getExecutedMigrations(): Promise<Migration[]> {
         return this.withQueryRunner(async (queryRunner) => {
-            await this.createMigrationsTableIfNotExist(queryRunner)
+            // There is no need to check if migrations table exists for MongoDB,
+            // as it's handled in loadExecutedMigrations
+            if (this.connection.driver.options.type !== "mongodb") {
+                const exist = await queryRunner.hasTable(this.migrationsTable)
+
+                if (!exist) return []
+            }
 
             return await this.loadExecutedMigrations(queryRunner)
         })
@@ -111,8 +120,10 @@ export class MigrationExecutor {
      * Returns an array of all pending migrations.
      */
     public async getPendingMigrations(): Promise<Migration[]> {
-        const allMigrations = await this.getAllMigrations()
+        const allMigrations = this.getMigrations()
         const executedMigrations = await this.getExecutedMigrations()
+
+        if (executedMigrations.length === 0) return allMigrations
 
         return allMigrations.filter(
             (migration) =>
@@ -125,6 +136,7 @@ export class MigrationExecutor {
 
     /**
      * Inserts an executed migration.
+     * @param migration
      */
     public insertMigration(migration: Migration): Promise<void> {
         return this.withQueryRunner((q) =>
@@ -134,6 +146,7 @@ export class MigrationExecutor {
 
     /**
      * Deletes an executed migration.
+     * @param migration
      */
     public deleteMigration(migration: Migration): Promise<void> {
         return this.withQueryRunner((q) =>
@@ -153,9 +166,8 @@ export class MigrationExecutor {
         await this.createMigrationsTableIfNotExist(queryRunner)
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations(
-            queryRunner,
-        )
+        const executedMigrations =
+            await this.loadExecutedMigrations(queryRunner)
 
         // get all user's migrations in the source code
         const allMigrations = this.getMigrations()
@@ -201,9 +213,8 @@ export class MigrationExecutor {
         }
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations(
-            queryRunner,
-        )
+        const executedMigrations =
+            await this.loadExecutedMigrations(queryRunner)
 
         // get the time when last migration was executed
         const lastTimeExecutedMigration =
@@ -404,9 +415,8 @@ export class MigrationExecutor {
         }
 
         // get all migrations that are executed and saved in the database
-        const executedMigrations = await this.loadExecutedMigrations(
-            queryRunner,
-        )
+        const executedMigrations =
+            await this.loadExecutedMigrations(queryRunner)
 
         // get the time when last migration was executed
         const lastTimeExecutedMigration =
@@ -417,6 +427,8 @@ export class MigrationExecutor {
             this.connection.logger.logSchemaBuild(
                 `No migrations were found in the database. Nothing to revert!`,
             )
+            // if query runner was created by us then release it
+            if (!this.queryRunner) await queryRunner.release()
             return
         }
 
@@ -492,6 +504,7 @@ export class MigrationExecutor {
 
     /**
      * Creates table "migrations" that will store information about executed migrations.
+     * @param queryRunner
      */
     protected async createMigrationsTableIfNotExist(
         queryRunner: QueryRunner,
@@ -544,6 +557,7 @@ export class MigrationExecutor {
 
     /**
      * Loads all migrations that were executed and saved into the database (sorts by id).
+     * @param queryRunner
      */
     protected async loadExecutedMigrations(
         queryRunner: QueryRunner,
@@ -619,6 +633,7 @@ export class MigrationExecutor {
 
     /**
      * Finds the latest migration (sorts by timestamp) in the given array of migrations.
+     * @param migrations
      */
     protected getLatestTimestampMigration(
         migrations: Migration[],
@@ -632,6 +647,7 @@ export class MigrationExecutor {
     /**
      * Finds the latest migration in the given array of migrations.
      * PRE: Migration array must be sorted by descending id.
+     * @param sortedMigrations
      */
     protected getLatestExecutedMigration(
         sortedMigrations: Migration[],
@@ -641,6 +657,8 @@ export class MigrationExecutor {
 
     /**
      * Inserts new executed migration's data into migrations table.
+     * @param queryRunner
+     * @param migration
      */
     protected async insertExecutedMigration(
         queryRunner: QueryRunner,
@@ -683,6 +701,8 @@ export class MigrationExecutor {
 
     /**
      * Delete previously executed migration's data from the migrations table.
+     * @param queryRunner
+     * @param migration
      */
     protected async deleteExecutedMigration(
         queryRunner: QueryRunner,

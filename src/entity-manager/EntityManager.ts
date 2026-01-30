@@ -35,6 +35,7 @@ import { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { getMetadataArgsStorage } from "../globals"
 import { UpsertOptions } from "../repository/UpsertOptions"
+import { UpdateOptions } from "../repository/UpdateOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
@@ -121,6 +122,8 @@ export class EntityManager {
     /**
      * Wraps given function execution (and all operations made there) in a transaction.
      * All database operations must be executed using provided entity manager.
+     * @param isolationOrRunInTransaction
+     * @param runInTransactionParam
      */
     async transaction<T>(
         isolationOrRunInTransaction:
@@ -171,7 +174,8 @@ export class EntityManager {
 
     /**
      * Executes raw SQL query and returns raw database results.
-     *
+     * @param query
+     * @param parameters
      * @see [Official docs](https://typeorm.io/docs/Working%20with%20Entity%20Manager/entity-manager-api/) for examples.
      */
     async query<T = any>(query: string, parameters?: any[]): Promise<T> {
@@ -184,6 +188,8 @@ export class EntityManager {
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
      * Example: entityManager.sql`SELECT * FROM table_name WHERE id = ${id}`
+     * @param strings
+     * @param values
      */
     async sql<T = any>(
         strings: TemplateStringsArray,
@@ -214,6 +220,9 @@ export class EntityManager {
 
     /**
      * Creates a new query builder that can be used to build a SQL query.
+     * @param entityClass
+     * @param alias
+     * @param queryRunner
      */
     createQueryBuilder<Entity extends ObjectLiteral>(
         entityClass?: EntityTarget<Entity> | QueryRunner,
@@ -247,6 +256,8 @@ export class EntityManager {
 
     /**
      * Checks if entity has an id by its Function type or schema name.
+     * @param targetOrEntity
+     * @param maybeEntity
      */
     hasId(targetOrEntity: any | Function | string, maybeEntity?: any): boolean {
         const target =
@@ -268,6 +279,8 @@ export class EntityManager {
 
     /**
      * Gets entity mixed id.
+     * @param targetOrEntity
+     * @param maybeEntity
      */
     getId(targetOrEntity: any | EntityTarget<any>, maybeEntity?: any): any {
         const target =
@@ -298,6 +311,8 @@ export class EntityManager {
     /**
      * Creates a new entity instance or instances.
      * Can copy properties from the given object into new entities.
+     * @param entityClass
+     * @param plainObjectOrObjects
      */
     create<Entity, EntityLike extends DeepPartial<Entity>>(
         entityClass: EntityTarget<Entity>,
@@ -324,6 +339,9 @@ export class EntityManager {
 
     /**
      * Merges two entities into one new entity.
+     * @param entityClass
+     * @param mergeIntoEntity
+     * @param entityLikes
      */
     merge<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -347,6 +365,8 @@ export class EntityManager {
      * it loads it (and everything related to it), replaces all values with the new ones from the given object
      * and returns this new entity. This new entity is actually a loaded from the db entity with all properties
      * replaced from the new object.
+     * @param entityClass
+     * @param entityLike
      */
     async preload<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -424,6 +444,9 @@ export class EntityManager {
 
     /**
      * Saves a given entity in the database.
+     * @param targetOrEntity
+     * @param maybeEntityOrOptions
+     * @param maybeOptions
      */
     save<Entity extends ObjectLiteral, T extends DeepPartial<Entity>>(
         targetOrEntity: (T | T[]) | EntityTarget<Entity>,
@@ -494,6 +517,9 @@ export class EntityManager {
 
     /**
      * Removes a given entity from the database.
+     * @param targetOrEntity
+     * @param maybeEntityOrOptions
+     * @param maybeOptions
      */
     remove<Entity extends ObjectLiteral>(
         targetOrEntity: (Entity | Entity[]) | EntityTarget<Entity>,
@@ -565,6 +591,9 @@ export class EntityManager {
 
     /**
      * Records the delete date of one or many given entities.
+     * @param targetOrEntity
+     * @param maybeEntityOrOptions
+     * @param maybeOptions
      */
     softRemove<Entity extends ObjectLiteral, T extends DeepPartial<Entity>>(
         targetOrEntity: (T | T[]) | EntityTarget<Entity>,
@@ -638,6 +667,9 @@ export class EntityManager {
 
     /**
      * Recovers one or many given entities.
+     * @param targetOrEntity
+     * @param maybeEntityOrOptions
+     * @param maybeOptions
      */
     recover<Entity extends ObjectLiteral, T extends DeepPartial<Entity>>(
         targetOrEntity: (T | T[]) | EntityTarget<Entity>,
@@ -684,6 +716,8 @@ export class EntityManager {
      * Executes fast and efficient INSERT query.
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
      * You can execute bulk inserts using this method.
+     * @param target
+     * @param entity
      */
     async insert<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -740,7 +774,7 @@ export class EntityManager {
                 ),
         )
 
-        return this.createQueryBuilder()
+        const qb = this.createQueryBuilder()
             .insert()
             .into(target)
             .values(entities)
@@ -758,7 +792,12 @@ export class EntityManager {
                         this.connection.driver.supportedUpsertTypes[0],
                 },
             )
-            .execute()
+
+        if (options.returning !== undefined) {
+            qb.returning(options.returning)
+        }
+
+        return qb.execute()
     }
 
     /**
@@ -767,6 +806,9 @@ export class EntityManager {
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
+     * @param target
+     * @param criteria
+     * @param partialEntity
      */
     update<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -781,6 +823,7 @@ export class EntityManager {
             | ObjectId[]
             | any,
         partialEntity: QueryDeepPartialEntity<Entity>,
+        options?: UpdateOptions,
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
@@ -792,17 +835,27 @@ export class EntityManager {
         }
 
         if (OrmUtils.isPrimitiveCriteria(criteria)) {
-            return this.createQueryBuilder()
+            const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
                 .whereInIds(criteria)
-                .execute()
+
+            if (options?.returning !== undefined) {
+                qb.returning(options.returning)
+            }
+
+            return qb.execute()
         } else {
-            return this.createQueryBuilder()
+            const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
                 .where(criteria)
-                .execute()
+
+            if (options?.returning !== undefined) {
+                qb.returning(options.returning)
+            }
+
+            return qb.execute()
         }
     }
 
@@ -812,15 +865,21 @@ export class EntityManager {
      * Executes fast and efficient UPDATE query without WHERE clause.
      *
      * WARNING! This method updates ALL rows in the target table.
+     * @param target
+     * @param partialEntity
      */
     updateAll<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
         partialEntity: QueryDeepPartialEntity<Entity>,
+        options?: UpdateOptions,
     ): Promise<UpdateResult> {
-        return this.createQueryBuilder()
-            .update(target)
-            .set(partialEntity)
-            .execute()
+        const qb = this.createQueryBuilder().update(target).set(partialEntity)
+
+        if (options?.returning !== undefined) {
+            qb.returning(options.returning)
+        }
+
+        return qb.execute()
     }
 
     /**
@@ -829,6 +888,8 @@ export class EntityManager {
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
+     * @param targetOrEntity
+     * @param criteria
      */
     delete<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
@@ -873,6 +934,7 @@ export class EntityManager {
      * Executes fast and efficient DELETE query without WHERE clause.
      *
      * WARNING! This method deletes ALL rows in the target table.
+     * @param targetOrEntity
      */
     deleteAll<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
@@ -886,6 +948,8 @@ export class EntityManager {
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
+     * @param targetOrEntity
+     * @param criteria
      */
     softDelete<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
@@ -930,6 +994,8 @@ export class EntityManager {
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
+     * @param targetOrEntity
+     * @param criteria
      */
     restore<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
@@ -970,8 +1036,10 @@ export class EntityManager {
 
     /**
      * Checks whether any entity exists with the given options.
+     * @param entityClass
+     * @param options
      */
-    exists<Entity extends ObjectLiteral>(
+    async exists<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<boolean> {
@@ -987,6 +1055,8 @@ export class EntityManager {
 
     /**
      * Checks whether any entity exists with the given conditions.
+     * @param entityClass
+     * @param where
      */
     async existsBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -1001,8 +1071,10 @@ export class EntityManager {
     /**
      * Counts entities that match given options.
      * Useful for pagination.
+     * @param entityClass
+     * @param options
      */
-    count<Entity extends ObjectLiteral>(
+    async count<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<number> {
@@ -1019,8 +1091,10 @@ export class EntityManager {
     /**
      * Counts entities that match given conditions.
      * Useful for pagination.
+     * @param entityClass
+     * @param where
      */
-    countBy<Entity extends ObjectLiteral>(
+    async countBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number> {
@@ -1032,6 +1106,9 @@ export class EntityManager {
 
     /**
      * Return the SUM of a column
+     * @param entityClass
+     * @param columnName
+     * @param where
      */
     sum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -1043,6 +1120,9 @@ export class EntityManager {
 
     /**
      * Return the AVG of a column
+     * @param entityClass
+     * @param columnName
+     * @param where
      */
     average<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -1054,6 +1134,9 @@ export class EntityManager {
 
     /**
      * Return the MIN of a column
+     * @param entityClass
+     * @param columnName
+     * @param where
      */
     minimum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -1065,6 +1148,9 @@ export class EntityManager {
 
     /**
      * Return the MAX of a column
+     * @param entityClass
+     * @param columnName
+     * @param where
      */
     maximum<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -1090,12 +1176,16 @@ export class EntityManager {
             )
         }
 
-        const result = await this.createQueryBuilder(entityClass, metadata.name)
-            .setFindOptions({ where })
+        const qb = this.createQueryBuilder(entityClass, metadata.name)
+        qb.setFindOptions({ where })
+
+        const alias = qb.alias
+
+        const result = await qb
             .select(
                 `${fnName}(${this.connection.driver.escape(
-                    column.databaseName,
-                )})`,
+                    alias,
+                )}.${this.connection.driver.escape(column.databaseName)})`,
                 fnName,
             )
             .getRawOne()
@@ -1104,6 +1194,8 @@ export class EntityManager {
 
     /**
      * Finds entities that match given find options.
+     * @param entityClass
+     * @param options
      */
     async find<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -1121,6 +1213,8 @@ export class EntityManager {
 
     /**
      * Finds entities that match given find options.
+     * @param entityClass
+     * @param where
      */
     async findBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -1139,8 +1233,10 @@ export class EntityManager {
      * Finds entities that match given find options.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
+     * @param entityClass
+     * @param options
      */
-    findAndCount<Entity extends ObjectLiteral>(
+    async findAndCount<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<[Entity[], number]> {
@@ -1158,8 +1254,10 @@ export class EntityManager {
      * Finds entities that match given WHERE conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
+     * @param entityClass
+     * @param where
      */
-    findAndCountBy<Entity extends ObjectLiteral>(
+    async findAndCountBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<[Entity[], number]> {
@@ -1175,7 +1273,8 @@ export class EntityManager {
     /**
      * Finds entities with ids.
      * Optionally find options or conditions can be applied.
-     *
+     * @param entityClass
+     * @param ids
      * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
      *
      * .findBy({
@@ -1201,6 +1300,8 @@ export class EntityManager {
     /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
+     * @param entityClass
+     * @param options
      */
     async findOne<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -1232,6 +1333,8 @@ export class EntityManager {
     /**
      * Finds first entity that matches given where condition.
      * If entity was not found in the database - returns null.
+     * @param entityClass
+     * @param where
      */
     async findOneBy<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -1251,7 +1354,8 @@ export class EntityManager {
     /**
      * Finds first entity that matches given id.
      * If entity was not found in the database - returns null.
-     *
+     * @param entityClass
+     * @param id
      * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
      *
      * .findOneBy({
@@ -1276,6 +1380,8 @@ export class EntityManager {
     /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - rejects with error.
+     * @param entityClass
+     * @param options
      */
     async findOneOrFail<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -1296,6 +1402,8 @@ export class EntityManager {
     /**
      * Finds first entity that matches given where condition.
      * If entity was not found in the database - rejects with error.
+     * @param entityClass
+     * @param where
      */
     async findOneByOrFail<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
@@ -1317,6 +1425,7 @@ export class EntityManager {
      * Clears all the data from the given table (truncates/drops it).
      *
      * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
+     * @param entityClass
      * @see https://stackoverflow.com/a/5972738/925151
      */
     async clear<Entity>(entityClass: EntityTarget<Entity>): Promise<void> {
@@ -1332,10 +1441,14 @@ export class EntityManager {
 
     /**
      * Increments some column by provided value of the entities matched given conditions.
+     * @param entityClass
+     * @param conditions
+     * @param propertyPath
+     * @param value
      */
     async increment<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        conditions: any,
+        conditions: FindOptionsWhere<Entity>,
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
@@ -1353,7 +1466,7 @@ export class EntityManager {
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
-                (value, key) => ({ [key]: value } as any),
+                (value, key) => ({ [key]: value }) as any,
                 () =>
                     this.connection.driver.escape(column.databaseName) +
                     " + " +
@@ -1369,10 +1482,14 @@ export class EntityManager {
 
     /**
      * Decrements some column by provided value of the entities matched given conditions.
+     * @param entityClass
+     * @param conditions
+     * @param propertyPath
+     * @param value
      */
     async decrement<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        conditions: any,
+        conditions: FindOptionsWhere<Entity>,
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
@@ -1390,7 +1507,7 @@ export class EntityManager {
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
             .reduceRight(
-                (value, key) => ({ [key]: value } as any),
+                (value, key) => ({ [key]: value }) as any,
                 () =>
                     this.connection.driver.escape(column.databaseName) +
                     " - " +
@@ -1409,6 +1526,7 @@ export class EntityManager {
      * If single database connection mode is used, then repository is obtained from the
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
+     * @param target
      */
     getRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -1442,6 +1560,7 @@ export class EntityManager {
      * If single database connection mode is used, then repository is obtained from the
      * repository aggregator, where each repository is individually created for this entity manager.
      * When single database connection is not used, repository is being obtained from the connection.
+     * @param target
      */
     getTreeRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -1464,6 +1583,7 @@ export class EntityManager {
 
     /**
      * Gets mongodb repository for the given entity class.
+     * @param target
      */
     getMongoRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -1475,6 +1595,7 @@ export class EntityManager {
      * Creates a new repository instance out of a given Repository and
      * sets current EntityManager instance to it. Used to work with custom repositories
      * in transactions.
+     * @param repository
      */
     withRepository<Entity extends ObjectLiteral, R extends Repository<any>>(
         repository: R & Repository<Entity>,
@@ -1493,7 +1614,7 @@ export class EntityManager {
 
     /**
      * Gets custom entity repository marked with @EntityRepository decorator.
-     *
+     * @param customRepository
      * @deprecated use Repository.extend to create custom repositories
      */
     getCustomRepository<T>(customRepository: ObjectType<T>): T {

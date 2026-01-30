@@ -44,7 +44,7 @@ Each entity must be registered in your data source options:
 
 ```typescript
 import { DataSource } from "typeorm"
-import { User } from "./entity/User"
+import { User } from "./entities/User"
 
 const myDataSource = new DataSource({
     type: "mysql",
@@ -69,7 +69,7 @@ const dataSource = new DataSource({
     username: "test",
     password: "test",
     database: "test",
-    entities: ["entity/*.js"],
+    entities: [__dirname + "/entities/**/*{.js,.ts}"],
 })
 ```
 
@@ -90,7 +90,7 @@ Each entity class property you marked with `@Column` will be mapped to a databas
 Each entity must have at least one primary column.
 There are several types of primary columns:
 
--   `@PrimaryColumn()` creates a primary column which takes any value of any type. You can specify the column type. If you don't specify a column type it will be inferred from the property type. The example below will create id with `int` as type which you must manually assign before save.
+- `@PrimaryColumn()` creates a primary column which takes any value of any type. You can specify the column type. If you don't specify a column type it will be inferred from the property type. The example below will create id with `int` as type which you must manually assign before save.
 
 ```typescript
 import { Entity, PrimaryColumn } from "typeorm"
@@ -102,7 +102,7 @@ export class User {
 }
 ```
 
--   `@PrimaryGeneratedColumn()` creates a primary column which value will be automatically generated with an auto-increment value. It will create `int` column with `auto-increment`/`serial`/`sequence`/`identity` (depend on the database and configuration provided). You don't have to manually assign its value before save - value will be automatically generated.
+- `@PrimaryGeneratedColumn()` creates a primary column which value will be automatically generated with an auto-increment value. It will create `int` column with `auto-increment`/`serial`/`sequence`/`identity` (depend on the database and configuration provided). You don't have to manually assign its value before save - value will be automatically generated.
 
 ```typescript
 import { Entity, PrimaryGeneratedColumn } from "typeorm"
@@ -114,7 +114,7 @@ export class User {
 }
 ```
 
--   `@PrimaryGeneratedColumn("uuid")` creates a primary column which value will be automatically generated with `uuid`. Uuid is a unique string id. You don't have to manually assign its value before save - value will be automatically generated.
+- `@PrimaryGeneratedColumn("uuid")` creates a primary column which value will be automatically generated with `uuid`. Uuid is a unique string id. You don't have to manually assign its value before save - value will be automatically generated.
 
 ```typescript
 import { Entity, PrimaryGeneratedColumn } from "typeorm"
@@ -167,100 +167,18 @@ const user = await dataSource.getRepository(User).findOneBy({
 
 There are several special column types with additional functionality available:
 
--   `@CreateDateColumn` is a special column that is automatically set to the entity's insertion date.
-    You don't need to set this column - it will be automatically set.
+- `@CreateDateColumn` is a special column that is automatically set to the entity's insertion date.
+  You don't need to set this column - it will be automatically set.
 
--   `@UpdateDateColumn` is a special column that is automatically set to the entity's update time
-    each time you call `save` of entity manager or repository, or during `upsert` operations when an update occurs.
-    You don't need to set this column - it will be automatically set.
+- `@UpdateDateColumn` is a special column that is automatically set to the entity's update time
+  each time you call `save` of entity manager or repository, or during `upsert` operations when an update occurs.
+  You don't need to set this column - it will be automatically set.
 
--   `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set. If the @DeleteDateColumn is set, the default scope will be "non-deleted".
+- `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set. If the @DeleteDateColumn is set, the default scope will be "non-deleted".
 
--   `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)
-    each time you call `save` of entity manager or repository, or during `upsert` operations when an update occurs.
-    You don't need to set this column - it will be automatically set.
-
-### Vector columns
-
-Vector columns are supported on PostgreSQL (via [`pgvector`](https://github.com/pgvector/pgvector) extension), Microsoft SQL Server, and SAP HANA Cloud, enabling storing and querying vector embeddings for similarity search and machine learning applications.
-
-TypeORM supports both `vector` and `halfvec` column types across databases:
-
--   `vector` - stores vectors as 4-byte floats (single precision)
--   PostgreSQL: native `vector` type via pgvector extension
--   SQL Server: native `vector` type
--   SAP HANA: alias for `real_vector` type
--   `halfvec` - stores vectors as 2-byte floats (half precision) for memory efficiency
--   PostgreSQL: native `halfvec` type via pgvector extension
--   SAP HANA: alias for `half_vector` type
-
-You can specify the vector dimensions using the `length` option:
-
-```typescript
-@Entity()
-export class Post {
-    @PrimaryGeneratedColumn()
-    id: number
-
-    // Vector without specified dimensions (works on PostgreSQL and SAP HANA; SQL Server requires explicit dimensions)
-    @Column("vector")
-    embedding: number[] | Buffer
-
-    // Vector with 3 dimensions: vector(3)
-    @Column("vector", { length: 3 })
-    embedding_3d: number[] | Buffer
-
-    // Half-precision vector with 4 dimensions: halfvec(4) (PostgreSQL and SAP HANA only)
-    @Column("halfvec", { length: 4 })
-    halfvec_embedding: number[] | Buffer
-}
-```
-
-**PostgreSQL** - Vector columns can be used for similarity searches using vector operators:
-
-```typescript
-// L2 distance (Euclidean) - <->
-const results = await dataSource.query(
-    `SELECT id, embedding FROM post ORDER BY embedding <-> $1 LIMIT 5`,
-    ["[1,2,3]"],
-)
-
-// Cosine distance - <=>
-const results = await dataSource.query(
-    `SELECT id, embedding FROM post ORDER BY embedding <=> $1 LIMIT 5`,
-    ["[1,2,3]"],
-)
-
-// Inner product - <#>
-const results = await dataSource.query(
-    `SELECT id, embedding FROM post ORDER BY embedding <#> $1 LIMIT 5`,
-    ["[1,2,3]"],
-)
-```
-
-**SQL Server** - Use the `VECTOR_DISTANCE` function for similarity searches:
-
-```typescript
-const queryEmbedding = [1, 2, 3]
-
-// Cosine distance
-const results = await dataSource.query(
-    `
-    DECLARE @question AS VECTOR(3) = @0;
-    SELECT TOP (5) id, embedding, 
-           VECTOR_DISTANCE('cosine', @question, embedding) AS distance
-    FROM post
-    ORDER BY VECTOR_DISTANCE('cosine', @question, embedding)
-`,
-    [JSON.stringify(queryEmbedding)],
-)
-```
-
-> **Note**:
->
-> -   **PostgreSQL**: Vector columns require the `pgvector` extension to be installed. The extension provides the vector data types and similarity operators.
-> -   **SQL Server**: Vector type support requires a compatible SQL Server version with vector functionality enabled.
-> -   **SAP HANA**: Vector columns require SAP HANA Cloud (2024Q1+) and a supported version of `@sap/hana-client`. Use the appropriate [vector similarity functions](https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/vector-functions) for similarity searches.
+- `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)
+  each time you call `save` of entity manager or repository, or during `upsert` operations when an update occurs.
+  You don't need to set this column - it will be automatically set.
 
 ## Column types
 
@@ -414,6 +332,50 @@ Besides "uuid" there is also "increment", "identity" (Postgres 10+ only) and "ro
 on some database platforms with this type of generation (for example some databases can only have one increment column,
 or some of them require increment to be a primary key).
 
+### Vector columns
+
+Vector columns are supported on MariaDB/MySQL, Microsoft SQL Server, PostgreSQL (via [`pgvector`](https://github.com/pgvector/pgvector) extension) and SAP HANA Cloud, enabling storing and querying vector embeddings for similarity search and machine learning applications.
+
+TypeORM supports both `vector` and `halfvec` column types across databases:
+
+- `vector` - stores vectors as 4-byte floats (single precision)
+    - MariaDB/MySQL: native `vector` type
+    - Microsoft SQL Server: native `vector` type
+    - PostgreSQL: `vector` type, available via `pgvector` extension
+    - SAP HANA Cloud: alias for `real_vector` type
+- `halfvec` - stores vectors as 2-byte floats (half precision) for memory efficiency
+    - PostgreSQL: `halfvec` type, available via `pgvector` extension
+    - SAP HANA Cloud: alias for `half_vector` type
+
+You can specify the number of vector dimensions using the `length` option:
+
+```typescript
+@Entity()
+export class Post {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    // Vector without specified dimensions
+    @Column("vector")
+    embedding: number[] | Buffer
+
+    // Vector with 3 dimensions: vector(3)
+    @Column("vector", { length: 3 })
+    embedding_3d: number[] | Buffer
+
+    // Half-precision vector with 4 dimensions: halfvec(4) (works on PostgreSQL and SAP HANA only)
+    @Column("halfvec", { length: 4 })
+    halfvec_embedding: number[] | Buffer
+}
+```
+
+> **Note**:
+>
+> - **MariaDB/MySQL**: Vectors are supported since MariaDB 11.7 and MySQL 9
+> - **Microsoft SQL Server**: Vector type support requires SQL Server 2025 (17.x) or newer.
+> - **PostgreSQL**: Vector columns require the `pgvector` extension to be installed. The extension provides the vector data types and similarity operators.
+> - **SAP HANA**: Vector columns require SAP HANA Cloud (2024Q1+) and a supported version of `@sap/hana-client`.
+
 ### Spatial columns
 
 Microsoft SQLServer, MySQL/MariaDB, PostgreSQL/CockroachDB and SAP HANA all support spatial columns. TypeORM's support for each varies slightly between databases, particularly as the column names vary between databases.
@@ -463,34 +425,35 @@ name: string;
 
 List of available options in `ColumnOptions`:
 
--   `type: ColumnType` - Column type. One of the type listed [above](#column-types).
--   `name: string` - Column name in the database table.
-    By default the column name is generated from the name of the property.
-    You can change it by specifying your own name.
+- `type: ColumnType` - Column type. One of the type listed [above](#column-types).
+- `name: string` - Column name in the database table.
+  By default the column name is generated from the name of the property.
+  You can change it by specifying your own name.
 
--   `length: number` - Column type's length. For example if you want to create `varchar(150)` type you specify column type and length options.
--   `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
--   `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. By default column is `nullable: false`.
--   `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object. Default value is `true`.
--   `insert: boolean` - Indicates if column value is set the first time you insert the object. Default value is `true`.
--   `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
--   `default: string` - Adds database-level column's `DEFAULT` value.
--   `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn`.
--   `unique: boolean` - Marks column as unique column (creates unique constraint).
--   `comment: string` - Database's column comment. Not supported by all database types.
--   `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
-    number of digits that are stored for the values. Used in some column types.
--   `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), which represents the number of digits to the right of the decimal point and must not be greater than precision. Used in some column types.
--   `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
--   `charset: string` - Defines a column character set. Not supported by all database types.
--   `collation: string` - Defines a column collation.
--   `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values. You can specify array of values or specify a enum class.
--   `enumName: string` - Defines the name for the used enum.
--   `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
--   `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
--   `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
--   `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[])
--   `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database. Array of transformers are also supported and will be applied in natural order when writing, and in reverse order when reading. e.g. `[lowercase, encrypt]` will first lowercase the string then encrypt it when writing, and will decrypt then do nothing when reading.
+- `length: number` - Column type's length. For example if you want to create `varchar(150)` type you specify column type and length options.
+- `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
+- `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. By default column is `nullable: false`.
+- `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object. Default value is `true`.
+- `insert: boolean` - Indicates if column value is set the first time you insert the object. Default value is `true`.
+- `select: boolean` - Defines whether or not to hide this column by default when making queries. When set to `false`, the column data will not show with a standard query. By default column is `select: true`
+- `default: string` - Adds database-level column's `DEFAULT` value.
+- `primary: boolean` - Marks column as primary. Same if you use `@PrimaryColumn`.
+- `unique: boolean` - Marks column as unique column (creates unique constraint).
+- `comment: string` - Database's column comment. Not supported by all database types.
+- `precision: number` - The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
+  number of digits that are stored for the values. Used in some column types.
+- `scale: number` - The scale for a decimal (exact numeric) column (applies only for decimal column), which represents the number of digits to the right of the decimal point and must not be greater than precision. Used in some column types.
+- `unsigned: boolean` - Puts `UNSIGNED` attribute on to a numeric column. Used only in MySQL.
+- `charset: string` - Defines a column character set. Not supported by all database types.
+- `collation: string` - Defines a column collation.
+- `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values. You can specify array of values or specify a enum class.
+- `enumName: string` - Defines the name for the used enum.
+- `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+- `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+- `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
+- `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[])
+- `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database. Array of transformers are also supported and will be applied in natural order when writing, and in reverse order when reading. e.g. `[lowercase, encrypt]` will first lowercase the string then encrypt it when writing, and will decrypt then do nothing when reading.
+- `utc: boolean` - Indicates if date values should be stored and retrieved in UTC timezone instead of local timezone. Only applies to `date` column type. Default value is `false` (uses local timezone for backward compatibility).
 
 Note: most of those column options are RDBMS-specific and aren't available in `MongoDB`.
 

@@ -1,12 +1,8 @@
 {
   "index_name": "typeorm-docs",
-  "start_urls": [
-    "https://typeorm.io/"
-  ],
-  "sitemap_urls": [
-    "https://typeorm.io/sitemap.xml"
-  ],
-  "allowed_domains":["typeorm.io"],
+  "start_urls": ["https://typeorm.io/"],
+  "sitemap_urls": ["https://typeorm.io/sitemap.xml"],
+  "allowed_domains": ["typeorm.io"],
   "sitemap_alternate_links": true,
   "stop_urls": [],
   "selectors": {
@@ -27,12 +23,7 @@
   "strip_chars": " .,;:#",
   "custom_settings": {
     "separatorsToIndex": "_",
-    "attributesForFaceting": [
-      "language",
-      "version",
-      "type",
-      "docusaurus_tag"
-    ],
+    "attributesForFaceting": [],
     "attributesToRetrieve": [
       "hierarchy",
       "content",
@@ -42,8 +33,6 @@
       "type"
     ]
   },
-  "conversation_id": [
-    "833762294"
-  ],
+  "conversation_id": ["833762294"],
   "nb_hits": 0
 }

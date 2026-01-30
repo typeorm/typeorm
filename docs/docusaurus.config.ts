@@ -1,8 +1,8 @@
-import { themes as prismThemes } from "prism-react-renderer"
-import type { Config } from "@docusaurus/types"
 import type * as Preset from "@docusaurus/preset-classic"
+import type { Config } from "@docusaurus/types"
+import { PluginOptions as LLMsTXTPluginOptions } from "@signalwire/docusaurus-plugin-llms-txt"
+import { themes as prismThemes } from "prism-react-renderer"
 import { redirects } from "./redirects"
-import { LLMsTXTPluginOptions } from "@signalwire/docusaurus-plugin-llms-txt"
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -23,7 +23,6 @@ const config: Config = {
     projectName: "typeorm", // Usually your repo name.
 
     onBrokenLinks: "throw",
-    onBrokenMarkdownLinks: "warn",
 
     // Even if you don't use internationalization, you can use this field to set
     // useful metadata like html lang. For example, if your site is Chinese, you
@@ -41,6 +40,15 @@ const config: Config = {
                       src: "https://plausible.io/js/script.hash.js",
                       defer: true,
                       "data-domain": "typeorm.io",
+                  },
+                  {
+                      src: "https://widget.kapa.ai/kapa-widget.bundle.js",
+                      "data-website-id": "a9979852-2282-4862-87b3-b3631fb63d46",
+                      "data-project-name": "TypeORM",
+                      "data-project-color": "#d94400",
+                      "data-project-logo":
+                          "https://typeorm.io/img/typeorm-icon-colored.png",
+                      async: true,
                   },
               ]
             : [],
@@ -98,6 +106,21 @@ const config: Config = {
                     sidebarId: "tutorialSidebar",
                     position: "left",
                     label: "Docs",
+                },
+                {
+                    type: "dropdown",
+                    label: "Version",
+                    position: "right",
+                    items: [
+                        {
+                            label: "Stable (v0.3)",
+                            href: "https://typeorm.io",
+                        },
+                        {
+                            label: "Dev (master)",
+                            href: "https://dev.typeorm.io",
+                        },
+                    ],
                 },
                 {
                     href: "https://github.com/typeorm/typeorm",

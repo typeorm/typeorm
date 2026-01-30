@@ -4,14 +4,6 @@ MySQL, MariaDB and Amazon Aurora MySQL are supported as TypeORM drivers.
 
 ## Installation
 
-Either `mysql` or `mysql2` are required to connect to a MySQL/MariaDB data source. Only `mysql2` can connect to MySQL 8.0 or later and is recommended because it is still maintained. See more about [mysql2](https://sidorares.github.io/node-mysql2/docs/history-and-why-mysq2).
-
-```shell
-npm install mysql
-```
-
-or:
-
 ```shell
 npm install mysql2
 ```
@@ -20,69 +12,71 @@ npm install mysql2
 
 See [Data Source Options](../data-source/2-data-source-options.md) for the common data source options. You can use the data source types `mysql`, `mariadb` and `aurora-mysql` to connect to the respective databases.
 
--   `connectorPackage` - The database client, either `mysql` or `mysql2`. If the specified client cannot be loaded, it will fall back to the alternative. (Current default: `mysql`)
+- `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
--   `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
+- `host` - Database host.
 
--   `host` - Database host.
+- `port` - Database host port. Default mysql port is `3306`.
 
--   `port` - Database host port. Default mysql port is `3306`.
+- `username` - Database username.
 
--   `username` - Database username.
+- `password` - Database password.
 
--   `password` - Database password.
+- `database` - Database name.
 
--   `database` - Database name.
+- `socketPath` - Database socket path.
 
--   `charset` and `collation` - The charset/collation for the connection. If an SQL-level charset is specified (like utf8mb4) then the default collation for that charset is used.
+- `poolSize` - Maximum number of clients the pool should contain for each connection.
 
--   `timezone` - the timezone configured on the MySQL server. This is used to typecast server date/time
-    values to JavaScript Date object and vice versa. This can be `local`, `Z`, or an offset in the form
-    `+HH:MM` or `-HH:MM`. (Default: `local`)
+- `charset` and `collation` - The charset/collation for the connection. If an SQL-level charset is specified (like utf8mb4) then the default collation for that charset is used.
 
--   `connectTimeout` - The milliseconds before a timeout occurs during the initial connection to the MySQL server.
-    (Default: `10000`)
+- `timezone` - the timezone configured on the MySQL server. This is used to typecast server date/time
+  values to JavaScript Date object and vice versa. This can be `local`, `Z`, or an offset in the form
+  `+HH:MM` or `-HH:MM`. (Default: `local`)
 
--   `acquireTimeout` - The milliseconds before a timeout occurs during the initial connection to the MySQL server. It differs from `connectTimeout` as it governs the TCP connection timeout whereas connectTimeout does not. (default: `10000`)
+- `connectTimeout` - The milliseconds before a timeout occurs during the initial connection to the MySQL server.
+  (Default: `10000`)
 
--   `insecureAuth` - Allow connecting to MySQL instances that ask for the old (insecure) authentication method.
-    (Default: `false`)
+- `acquireTimeout` - The milliseconds before a timeout occurs during the initial connection to the MySQL server. It differs from `connectTimeout` as it governs the TCP connection timeout whereas connectTimeout does not. (default: `10000`)
 
--   `supportBigNumbers` - When dealing with big numbers (`BIGINT` and `DECIMAL` columns) in the database,
-    you should enable this option (Default: `true`)
+- `insecureAuth` - Allow connecting to MySQL instances that ask for the old (insecure) authentication method.
+  (Default: `false`)
 
--   `bigNumberStrings` - Enabling both `supportBigNumbers` and `bigNumberStrings` forces big numbers
-    (`BIGINT` and `DECIMAL` columns) to be always returned as JavaScript String objects (Default: `true`).
-    Enabling `supportBigNumbers` but leaving `bigNumberStrings` disabled will return big numbers as String
-    objects only when they cannot be accurately represented with
-    [JavaScript Number objects](http://ecma262-5.com/ELS5_HTML.htm#Section_8.5)
-    (which happens when they exceed the `[-2^53, +2^53]` range), otherwise they will be returned as
-    Number objects. This option is ignored if `supportBigNumbers` is disabled.
+- `supportBigNumbers` - When dealing with big numbers (`BIGINT` and `DECIMAL` columns) in the database,
+  you should enable this option (Default: `true`)
 
--   `dateStrings` - Force date types (`TIMESTAMP`, `DATETIME`, `DATE`) to be returned as strings rather than
-    inflated into JavaScript Date objects. Can be true/false or an array of type names to keep as strings.
-    (Default: `false`)
+- `bigNumberStrings` - Enabling both `supportBigNumbers` and `bigNumberStrings` forces big numbers
+  (`BIGINT` and `DECIMAL` columns) to be always returned as JavaScript String objects (Default: `true`).
+  Enabling `supportBigNumbers` but leaving `bigNumberStrings` disabled will return big numbers as String
+  objects only when they cannot be accurately represented with
+  [JavaScript Number objects](http://ecma262-5.com/ELS5_HTML.htm#Section_8.5)
+  (which happens when they exceed the `[-2^53, +2^53]` range), otherwise they will be returned as
+  Number objects. This option is ignored if `supportBigNumbers` is disabled.
 
--   `debug` - Prints protocol details to stdout. Can be true/false or an array of packet type names that
-    should be printed. (Default: `false`)
+- `dateStrings` - Force date types (`TIMESTAMP`, `DATETIME`, `DATE`) to be returned as strings rather than
+  inflated into JavaScript Date objects. Can be true/false or an array of type names to keep as strings.
+  (Default: `false`)
 
--   `trace` - Generates stack traces on Error to include call site of library entrance ("long stack traces").
-    Slight performance penalty for most calls. (Default: `true`)
+- `debug` - Prints protocol details to stdout. Can be true/false or an array of packet type names that
+  should be printed. (Default: `false`)
 
--   `multipleStatements` - Allow multiple mysql statements per query. Be careful with this, it could increase the scope
-    of SQL injection attacks. (Default: `false`)
+- `trace` - Generates stack traces on Error to include call site of library entrance ("long stack traces").
+  Slight performance penalty for most calls. (Default: `true`)
 
--   `legacySpatialSupport` - Use legacy spatial functions like `GeomFromText` and `AsText` which have been replaced by the standard-compliant `ST_GeomFromText` or `ST_AsText` in MySQL 8.0. (Current default: true)
+- `multipleStatements` - Allow multiple mysql statements per query. Be careful with this, it could increase the scope
+  of SQL injection attacks. (Default: `false`)
 
--   `flags` - List of connection flags to use other than the default ones. It is also possible to blacklist default ones.
-    For more information, check [Connection Flags](https://github.com/mysqljs/mysql#connection-flags).
+- `legacySpatialSupport` - Use legacy spatial functions like `GeomFromText` and `AsText` which have been replaced by the standard-compliant `ST_GeomFromText` or `ST_AsText` in MySQL 8.0. (Current default: true)
 
--   `ssl` - object with SSL parameters or a string containing the name of the SSL profile.
-    See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
+- `flags` - List of connection flags to use other than the default ones. It is also possible to blacklist default ones.
+  For more information, check [Connection Flags](https://github.com/mysqljs/mysql#connection-flags).
 
--   `enableQueryTimeout` - If a value is specified for maxQueryExecutionTime, in addition to generating a warning log when a query exceeds this time limit, the specified maxQueryExecutionTime value is also used as the timeout for the query. For more information, check [mysql timeouts](https://github.com/mysqljs/mysql#timeouts).
+- `ssl` - object with SSL parameters or a string containing the name of the SSL profile.
+  See [SSL options](https://github.com/mysqljs/mysql#ssl-options).
 
-Additional options can be added to the `extra` object and will be passed directly to the client library. See more in the [mysql connection options](https://github.com/mysqljs/mysql#connection-options) or the [mysql2 documentation](https://sidorares.github.io/node-mysql2/docs).
+- `enableQueryTimeout` - If a value is specified for maxQueryExecutionTime, in addition to generating a warning log when a query exceeds this time limit, the specified maxQueryExecutionTime value is also used as the timeout for the query. For more information, check [mysql timeouts](https://github.com/mysqljs/mysql#timeouts).
+
+Additional options can be added to the `extra` object and will be passed directly to the client library. See more in the [mysql2 documentation](https://sidorares.github.io/node-mysql2/docs).
 
 ## Column Types
 
@@ -139,3 +133,7 @@ export class User {
     roles: UserRoleType[]
 }
 ```
+
+### Vector Types
+
+MySQL supports the [VECTOR type](https://dev.mysql.com/doc/refman/en/vector.html) since version 9.0, while in MariaDB, [vectors](https://mariadb.com/docs/server/reference/sql-structure/vectors/vector-overview) are available since 11.7.

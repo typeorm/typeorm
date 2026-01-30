@@ -25,6 +25,8 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Builds EntityMetadata for the junction of the given many-to-many relation.
+     * @param relation
+     * @param joinTable
      */
     build(
         relation: RelationMetadata,
@@ -249,15 +251,15 @@ export class JunctionEntityMetadataBuilder {
                           this.connection.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : relation.inverseRelation
-                              ? relation.inverseRelation.onDelete
-                              : "CASCADE",
+                                ? relation.inverseRelation.onDelete
+                                : "CASCADE",
                       onUpdate:
                           this.connection.driver.options.type === "oracle" ||
                           this.connection.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : relation.inverseRelation
-                              ? relation.inverseRelation.onUpdate
-                              : "CASCADE",
+                                ? relation.inverseRelation.onUpdate
+                                : "CASCADE",
                   }),
               ]
             : []
@@ -293,6 +295,8 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Collects referenced columns from the given join column args.
+     * @param relation
+     * @param joinTable
      */
     protected collectReferencedColumns(
         relation: RelationMetadata,
@@ -328,6 +332,8 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Collects inverse referenced columns from the given join column args.
+     * @param relation
+     * @param joinTable
      */
     protected collectInverseReferencedColumns(
         relation: RelationMetadata,
