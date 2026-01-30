@@ -1,3 +1,4 @@
+import { validate, parse } from "uuid"
 import { DeepPartial } from "../common/DeepPartial"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import {
@@ -229,7 +230,21 @@ export class OrmUtils {
             Object.keys(firstId).length === 1 &&
             Object.keys(secondId).length === 1
         ) {
-            return firstId.id === secondId.id
+            const a = firstId.id
+            const b = secondId.id
+
+            if (typeof a === "string" && typeof b === "string") {
+                const aIsUUID = validate(a)
+                const bIsUUID = validate(b)
+                if (aIsUUID && bIsUUID) {
+                    const aParsed = parse(a)
+                    const bParsed = parse(b)
+                    return OrmUtils.deepCompare(aParsed, bParsed)
+                }
+                return a === b
+            }
+
+            return a === b
         }
 
         return OrmUtils.deepCompare(firstId, secondId)
@@ -264,6 +279,8 @@ export class OrmUtils {
 
     /**
      * Returns items that are missing/extraneous in the second array
+     * @param arr1
+     * @param arr2
      */
     public static getArraysDiff<T>(
         arr1: T[],

@@ -105,6 +105,7 @@
     "sql-highlight": "^6.1.0",
     "tinyglobby": "^0.2.15",
     "tslib": "^2.8.1",
+    "uuid": "^13.0.0",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
