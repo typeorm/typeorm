@@ -17,6 +17,13 @@ describe("uuid-case-insensitive", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: [
+                "mysql",
+                "postgres",
+                "mssql",
+                "cockroachdb",
+                "mariadb",
+            ], // Oracle, SAP HANA and SQLite treats UUIDs as case-sensitive
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -36,7 +43,7 @@ describe("uuid-case-insensitive", () => {
         expect(expected.dayDemand!.id.toLowerCase()).to.equal(
             actual.dayDemand!.id.toLowerCase(),
         )
-        expect(expected.amount).to.equal(actual.amount)
+        expect(Number(expected.amount)).to.equal(Number(actual.amount)) // cockroachdb returns numeric as string
         expect(actual.lastUpdate).to.exist
         expect(actual.lastUpdate).to.be.instanceOf(Date)
         expect(expected.transportUnitType.name).to.equal(
@@ -76,7 +83,7 @@ describe("uuid-case-insensitive", () => {
 
                 const savedDemand = await dataSource.manager.findOne(Demand, {
                     where: {
-                        id: "58b1b016-54ed-477d-95e0-61a0f3fb3a61".toLowerCase(),
+                        id: "58b1b016-54ed-477d-95e0-61a0f3fb3a61",
                     },
                     relations: {
                         transportUnitType: true,
@@ -98,7 +105,7 @@ describe("uuid-case-insensitive", () => {
 
                 const updatedDemand = await dataSource.manager.findOne(Demand, {
                     where: {
-                        id: "58B1B016-54ED-477D-95E0-61A0F3FB3A61".toLowerCase(),
+                        id: "58B1B016-54ED-477D-95E0-61A0F3FB3A61",
                     },
                     relations: {
                         transportUnitType: true,
