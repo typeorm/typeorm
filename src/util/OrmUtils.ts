@@ -6,6 +6,9 @@ import {
 } from "../common/PrimitiveCriteria"
 
 export class OrmUtils {
+    private static readonly UUID_REGEX =
+        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+
     // -------------------------------------------------------------------------
     // Public methods
     // -------------------------------------------------------------------------
@@ -229,7 +232,21 @@ export class OrmUtils {
             Object.keys(firstId).length === 1 &&
             Object.keys(secondId).length === 1
         ) {
-            return firstId.id === secondId.id
+            const firstIdValue = firstId.id
+            const secondIdValue = secondId.id
+
+            if (
+                typeof firstIdValue === "string" &&
+                typeof secondIdValue === "string" &&
+                OrmUtils.UUID_REGEX.test(firstIdValue) &&
+                OrmUtils.UUID_REGEX.test(secondIdValue)
+            ) {
+                return (
+                    firstIdValue.toLowerCase() === secondIdValue.toLowerCase()
+                )
+            }
+
+            return firstIdValue === secondIdValue
         }
 
         return OrmUtils.deepCompare(firstId, secondId)

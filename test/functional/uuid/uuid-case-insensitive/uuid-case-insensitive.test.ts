@@ -31,7 +31,7 @@ describe("uuid-case-insensitive", () => {
 
     // Helper function to validate that two Demand entities are equivalent
     // normalizing UUID case to lowercase for comparison, as some DBs return UUIDs in uppercase (mssql)
-    const validate = (expected: Demand, actual: Demand) => {
+    const assertEquality = (expected: Demand, actual: Demand) => {
         expect(expected).to.not.be.null
         expect(expected.id.toLowerCase()).to.equal(actual.id.toLowerCase())
         expect(expected.transportUnitType.id.toLowerCase()).to.equal(
@@ -91,7 +91,7 @@ describe("uuid-case-insensitive", () => {
                         dayDemand: true,
                     },
                 })
-                validate(demandLower, savedDemand!)
+                assertEquality(demandLower, savedDemand!)
 
                 // Try to save (upsert) Demand with same UUID but uppercase
                 const demandUpper = dataSource.manager.create(Demand, {
@@ -113,7 +113,7 @@ describe("uuid-case-insensitive", () => {
                         dayDemand: true,
                     },
                 })
-                validate(demandUpper, updatedDemand!)
+                assertEquality(demandUpper, updatedDemand!)
             }),
         ))
 })
