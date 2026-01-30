@@ -215,25 +215,19 @@ export class OrmUtils {
         firstId: ObjectLiteral | undefined,
         secondId: ObjectLiteral | undefined,
     ): boolean {
-        if (
-            firstId === undefined ||
-            firstId === null ||
-            secondId === undefined ||
-            secondId === null
-        )
-            return false
+        if (!firstId || !secondId) return false
 
-        // Optimized version for the common case
-        if (
-            ((typeof firstId.id === "string" &&
-                typeof secondId.id === "string") ||
-                (typeof firstId.id === "number" &&
-                    typeof secondId.id === "number")) &&
-            Object.keys(firstId).length === 1 &&
-            Object.keys(secondId).length === 1
-        ) {
-            const firstIdValue = firstId.id
-            const secondIdValue = secondId.id
+        const firstKeys = Object.keys(firstId)
+        const secondKeys = Object.keys(secondId)
+
+        if (firstKeys.length !== secondKeys.length) return false
+        for (const key of firstKeys) {
+            if (!(key in secondId)) return false
+        }
+
+        for (const key of firstKeys) {
+            const firstIdValue = firstId[key]
+            const secondIdValue = secondId[key]
 
             if (
                 typeof firstIdValue === "string" &&
@@ -241,15 +235,20 @@ export class OrmUtils {
                 OrmUtils.UUID_REGEX.test(firstIdValue) &&
                 OrmUtils.UUID_REGEX.test(secondIdValue)
             ) {
-                return (
-                    firstIdValue.toLowerCase() === secondIdValue.toLowerCase()
-                )
+                if (firstIdValue.toLowerCase() !== secondIdValue.toLowerCase())
+                    return false
+            } else if (
+                typeof firstIdValue === "number" &&
+                typeof secondIdValue === "number"
+            ) {
+                if (firstIdValue !== secondIdValue) return false
+            } else {
+                if (!OrmUtils.deepCompare(firstIdValue, secondIdValue))
+                    return false
             }
-
-            return firstIdValue === secondIdValue
         }
 
-        return OrmUtils.deepCompare(firstId, secondId)
+        return true
     }
 
     /**
