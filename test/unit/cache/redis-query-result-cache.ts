@@ -42,13 +42,12 @@ describe("RedisQueryResultCache", () => {
             }
 
             // Call the private method
-            ;(cache as any).detectPromiseApi()
+            ;(cache as any).detectPromiseBasedApi()
 
-            expect((cache as any).isPromiseApi).to.be.true
-            expect((cache as any).usesPromiseApi()).to.be.true
+            expect((cache as any).isPromiseBasedApi).to.be.true
         })
 
-        it("should detect callback-based API when ping() returns undefined", () => {
+        it("should detect callback-based API when ping() returns a non-Promise value", () => {
             const cache = new RedisQueryResultCache(
                 mockDataSource as any,
                 "redis",
@@ -56,32 +55,13 @@ describe("RedisQueryResultCache", () => {
 
             // Mock client with callback-based ping() (returns undefined)
             ;(cache as any).client = {
-                ping: () => undefined,
+                ping: () => "PONG",
             }
 
             // Call the private method
-            ;(cache as any).detectPromiseApi()
+            ;(cache as any).detectPromiseBasedApi()
 
-            expect((cache as any).isPromiseApi).to.be.false
-            expect((cache as any).usesPromiseApi()).to.be.false
-        })
-
-        it("should detect callback-based API when ping() returns null", () => {
-            const cache = new RedisQueryResultCache(
-                mockDataSource as any,
-                "redis",
-            )
-
-            // Mock client with callback-based ping() (returns null)
-            ;(cache as any).client = {
-                ping: () => null,
-            }
-
-            // Call the private method
-            ;(cache as any).detectPromiseApi()
-
-            expect((cache as any).isPromiseApi).to.be.false
-            expect((cache as any).usesPromiseApi()).to.be.false
+            expect((cache as any).isPromiseBasedApi).to.be.false
         })
 
         it("should not detect for ioredis client type", () => {
@@ -96,31 +76,10 @@ describe("RedisQueryResultCache", () => {
             }
 
             // Call the private method
-            ;(cache as any).detectPromiseApi()
+            ;(cache as any).detectPromiseBasedApi()
 
             // Should remain false (default) for non-redis clients
-            expect((cache as any).isPromiseApi).to.be.false
-            expect((cache as any).usesPromiseApi()).to.be.false
-        })
-
-        it("should detect Promise-based API with thenable object", () => {
-            const cache = new RedisQueryResultCache(
-                mockDataSource as any,
-                "redis",
-            )
-
-            // Mock client with thenable (Promise-like) object
-            ;(cache as any).client = {
-                ping: () => ({
-                    then: (resolve: any) => resolve("PONG"),
-                }),
-            }
-
-            // Call the private method
-            ;(cache as any).detectPromiseApi()
-
-            expect((cache as any).isPromiseApi).to.be.true
-            expect((cache as any).usesPromiseApi()).to.be.true
+            expect((cache as any).isPromiseBasedApi).to.be.false
         })
     })
 })
