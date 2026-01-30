@@ -7,6 +7,7 @@ import {
 } from "../../../utils/test-utils"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { Demand } from "./entity/Demand"
+import { CompositeDemand } from "./entity/CompositeDemand"
 import { DayDemand } from "./entity/DayDemand"
 import { Material } from "./entity/Material"
 import { TransportUnitType } from "./entity/TransportUnitType"
@@ -105,7 +106,7 @@ describe("uuid-case-insensitive", () => {
 
                 const updatedDemand = await dataSource.manager.findOne(Demand, {
                     where: {
-                        id: "58B1B016-54ED-477D-95E0-61A0F3FB3A61",
+                        id: "58b1b016-54ed-477d-95e0-61a0f3fb3a61",
                     },
                     relations: {
                         transportUnitType: true,
@@ -114,6 +115,45 @@ describe("uuid-case-insensitive", () => {
                     },
                 })
                 assertEquality(demandUpper, updatedDemand!)
+            }),
+        ))
+
+    it("should treat UUIDs in composite primary keys as case-insensitive", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Save with lowercase UUID
+                const lower = dataSource.manager.create(CompositeDemand, {
+                    id: "58b1b016-54ed-477d-95e0-61a0f3fb3a61",
+                    code: "A1",
+                    amount: 7,
+                })
+                await dataSource.manager.save(lower)
+
+                // Save with uppercase UUID, same code
+                const upper = dataSource.manager.create(CompositeDemand, {
+                    id: "58B1B016-54ED-477D-95E0-61A0F3FB3A61",
+                    code: "A1",
+                    amount: 8,
+                })
+                await dataSource.manager.save(upper)
+
+                // Should update, not insert new row
+                const found = await dataSource.manager.findOne(
+                    CompositeDemand,
+                    {
+                        where: {
+                            id: "58b1b016-54ed-477d-95e0-61a0f3fb3a61",
+                            code: "A1",
+                        },
+                    },
+                )
+
+                expect(found).to.exist
+                expect(found!.id.toLowerCase()).to.equal(
+                    "58b1b016-54ed-477d-95e0-61a0f3fb3a61",
+                )
+                expect(found!.code).to.equal("A1")
+                expect(found!.amount).to.equal(8)
             }),
         ))
 })
