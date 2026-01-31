@@ -1,7 +1,7 @@
 /**
- * Database type.
+ * Built-in database types.
  */
-export type DatabaseType =
+export type BuiltInDatabaseType =
     | "mysql"
     | "postgres"
     | "cockroachdb"
@@ -21,3 +21,9 @@ export type DatabaseType =
     | "better-sqlite3"
     | "capacitor"
     | "spanner"
+
+/**
+ * Database type. Accepts built-in types or any string for custom drivers.
+ * Custom drivers must be registered via DriverRegistry.register() before use.
+ */
+export type DatabaseType = BuiltInDatabaseType | (string & {})

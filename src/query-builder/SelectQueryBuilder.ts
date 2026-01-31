@@ -2323,7 +2323,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // Use certain index
         let useIndex: string = ""
         if (this.expressionMap.useIndex) {
-            if (DriverUtils.isMySQLFamily(this.connection.driver)) {
+            if (DriverUtils.supportsUseIndexHint(this.connection.driver)) {
                 useIndex = ` USE INDEX (${this.expressionMap.useIndex})`
             }
         }
@@ -2378,13 +2378,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         let select = "SELECT "
 
         if (maxExecutionTime > 0) {
-            if (DriverUtils.isMySQLFamily(driver)) {
+            if (DriverUtils.supportsMaxExecutionTimeHint(driver)) {
                 select += `/*+ MAX_EXECUTION_TIME(${this.expressionMap.maxExecutionTime}) */ `
             }
         }
 
         if (
-            DriverUtils.isPostgresFamily(driver) &&
+            DriverUtils.supportsDistinctOn(driver) &&
             selectDistinctOn.length > 0
         ) {
             const selectDistinctOnMap = selectDistinctOn
@@ -2742,16 +2742,21 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 )
             if (hasOffset) return prefix + " OFFSET " + offset + " ROWS"
         } else if (
-            DriverUtils.isMySQLFamily(this.connection.driver) ||
-            this.connection.driver.options.type === "aurora-mysql" ||
-            this.connection.driver.options.type === "sap" ||
-            this.connection.driver.options.type === "spanner"
+            DriverUtils.getPaginationStyle(this.connection.driver) ===
+                "LIMIT_OFFSET" &&
+            (this.connection.driver.options.type === "aurora-mysql" ||
+                this.connection.driver.options.type === "sap" ||
+                this.connection.driver.options.type === "spanner")
         ) {
             if (hasLimit && hasOffset)
                 return " LIMIT " + limit + " OFFSET " + offset
             if (hasLimit) return " LIMIT " + limit
             if (hasOffset) throw new OffsetWithoutLimitNotSupportedError()
-        } else if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
+        } else if (
+            DriverUtils.getPaginationStyle(this.connection.driver) ===
+            "LIMIT_OFFSET"
+        ) {
+            // SQLite family uses LIMIT -1 for offset-only
             if (hasLimit && hasOffset)
                 return " LIMIT " + limit + " OFFSET " + offset
             if (hasLimit) return " LIMIT " + limit
@@ -2810,10 +2815,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         if (this.expressionMap.lockTables) {
             if (
-                !(
-                    DriverUtils.isPostgresFamily(driver) ||
-                    driver.options.type === "cockroachdb"
-                )
+                !DriverUtils.supportsLockOfTables(driver) &&
+                driver.options.type !== "cockroachdb"
             ) {
                 throw new TypeORMError(
                     "Lock tables not supported in selected driver",
@@ -2848,7 +2851,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     }
                 } else if (driver.options.type === "mariadb") {
                     return " LOCK IN SHARE MODE"
-                } else if (DriverUtils.isPostgresFamily(driver)) {
+                } else if (
+                    DriverUtils.getForShareStyle(driver) === "FOR_SHARE"
+                ) {
                     return " FOR SHARE" + lockTablesClause + onLockExpression
                 } else if (driver.options.type === "oracle") {
                     return " FOR UPDATE"
@@ -2859,14 +2864,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 }
             case "pessimistic_write":
                 if (
-                    DriverUtils.isMySQLFamily(driver) ||
-                    driver.options.type === "aurora-mysql" ||
-                    driver.options.type === "oracle"
+                    DriverUtils.supportsForUpdate(driver) &&
+                    !DriverUtils.supportsLockOfTables(driver) &&
+                    driver.options.type !== "cockroachdb"
                 ) {
                     return " FOR UPDATE" + onLockExpression
                 } else if (
-                    DriverUtils.isPostgresFamily(driver) ||
-                    driver.options.type === "cockroachdb"
+                    DriverUtils.supportsForUpdate(driver) &&
+                    (DriverUtils.supportsLockOfTables(driver) ||
+                        driver.options.type === "cockroachdb")
                 ) {
                     return " FOR UPDATE" + lockTablesClause + onLockExpression
                 } else if (driver.options.type === "mssql") {
@@ -2875,29 +2881,30 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     throw new LockNotSupportedOnGivenDriverError()
                 }
             case "pessimistic_partial_write":
-                if (DriverUtils.isPostgresFamily(driver)) {
-                    return " FOR UPDATE" + lockTablesClause + " SKIP LOCKED"
-                } else if (DriverUtils.isMySQLFamily(driver)) {
-                    return " FOR UPDATE SKIP LOCKED"
+                if (DriverUtils.supportsSkipLocked(driver)) {
+                    if (DriverUtils.supportsLockOfTables(driver)) {
+                        return " FOR UPDATE" + lockTablesClause + " SKIP LOCKED"
+                    } else {
+                        return " FOR UPDATE SKIP LOCKED"
+                    }
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
             case "pessimistic_write_or_fail":
-                if (
-                    DriverUtils.isPostgresFamily(driver) ||
-                    driver.options.type === "cockroachdb"
-                ) {
-                    return " FOR UPDATE" + lockTablesClause + " NOWAIT"
-                } else if (DriverUtils.isMySQLFamily(driver)) {
-                    return " FOR UPDATE NOWAIT"
+                if (DriverUtils.supportsNowait(driver)) {
+                    if (
+                        DriverUtils.supportsLockOfTables(driver) ||
+                        driver.options.type === "cockroachdb"
+                    ) {
+                        return " FOR UPDATE" + lockTablesClause + " NOWAIT"
+                    } else {
+                        return " FOR UPDATE NOWAIT"
+                    }
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
             case "for_no_key_update":
-                if (
-                    DriverUtils.isPostgresFamily(driver) ||
-                    driver.options.type === "cockroachdb"
-                ) {
+                if (DriverUtils.supportsForNoKeyUpdate(driver)) {
                     return (
                         " FOR NO KEY UPDATE" +
                         lockTablesClause +
@@ -2907,7 +2914,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     throw new LockNotSupportedOnGivenDriverError()
                 }
             case "for_key_share":
-                if (DriverUtils.isPostgresFamily(driver)) {
+                if (DriverUtils.supportsForKeyShare(driver)) {
                     return (
                         " FOR KEY SHARE" + lockTablesClause + onLockExpression
                     )
@@ -3101,7 +3108,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         if (
             this.connection.driver.options.type === "cockroachdb" ||
-            DriverUtils.isPostgresFamily(this.connection.driver)
+            DriverUtils.supportsDistinctOn(this.connection.driver)
         ) {
             // Postgres and CockroachDB can pass multiple parameters to the `DISTINCT` function
             // https://www.postgresql.org/docs/9.5/sql-select.html#SQL-DISTINCT
@@ -3117,7 +3124,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             )
         }
 
-        if (DriverUtils.isMySQLFamily(this.connection.driver)) {
+        if (
+            DriverUtils.getStringAggregationStyle(this.connection.driver) ===
+            "GROUP_CONCAT"
+        ) {
             // MySQL & MariaDB can pass multiple parameters to the `DISTINCT` language construct
             // https://mariadb.com/kb/en/count-distinct/
             return (
