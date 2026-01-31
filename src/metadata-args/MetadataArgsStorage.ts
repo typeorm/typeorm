@@ -441,17 +441,14 @@ export class MetadataArgsStorage {
             if (sameTarget) {
                 const isDuplicateIndex = newArray.find(
                     (newItem: IndexMetadataArgs): boolean => {
-                        // If names are defined, compare only by name
                         if (item.name && newItem.name) {
                             return item.name === newItem.name
                         }
 
-                        // If only one has a name, they're not duplicates
                         if (item.name || newItem.name) {
                             return false
                         }
 
-                        // If no name is defined, compare by columns and other properties
                         const columnsMatch = this.areIndexColumnsEqual(
                             item.columns,
                             newItem.columns,
@@ -493,27 +490,22 @@ export class MetadataArgsStorage {
             | string[]
             | undefined,
     ): boolean {
-        // If both are undefined, they're equal
         if (columns1 === undefined && columns2 === undefined) {
             return true
         }
 
-        // If one is undefined and the other isn't, they're not equal
         if (columns1 === undefined || columns2 === undefined) {
             return false
         }
 
-        // If both are functions, compare by reference (same function)
         if (typeof columns1 === "function" && typeof columns2 === "function") {
             return columns1 === columns2
         }
 
-        // If one is a function and the other isn't, they're not equal
         if (typeof columns1 === "function" || typeof columns2 === "function") {
             return false
         }
 
-        // Both are string arrays - compare them
         if (Array.isArray(columns1) && Array.isArray(columns2)) {
             if (columns1.length !== columns2.length) {
                 return false
@@ -521,7 +513,6 @@ export class MetadataArgsStorage {
             return columns1.every((col, index) => col === columns2[index])
         }
 
-        // Both are objects - compare them
         if (typeof columns1 === "object" && typeof columns2 === "object") {
             if (Array.isArray(columns1) || Array.isArray(columns2)) {
                 return false
