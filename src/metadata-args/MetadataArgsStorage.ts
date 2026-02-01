@@ -510,6 +510,8 @@ export class MetadataArgsStorage {
             if (columns1.length !== columns2.length) {
                 return false
             }
+            // Order-sensitive comparison is critical: index column order affects query performance
+            // and index usage. An index on (firstName, lastName) is different from (lastName, firstName)
             return columns1.every((col, index) => col === columns2[index])
         }
 
@@ -522,6 +524,8 @@ export class MetadataArgsStorage {
             if (keys1.length !== keys2.length) {
                 return false
             }
+            // Object key order comparison is also order-sensitive for the same reasons:
+            // the order of columns in composite indices determines their effectiveness for queries
             return keys1.every(
                 (key, index) =>
                     keys2[index] === key && columns1[key] === columns2[key],
