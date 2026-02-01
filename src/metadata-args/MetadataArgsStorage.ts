@@ -351,6 +351,9 @@ export class MetadataArgsStorage {
     protected filterByTargetAndWithoutDuplicateProperties<
         T extends { target: Function | string; propertyName: string },
     >(array: T[], target: (Function | string) | (Function | string)[]): T[] {
+        if (!array || !Array.isArray(array)) {
+            return []
+        }
         const newArray: T[] = []
         array.forEach((item) => {
             const sameTarget = Array.isArray(target)
@@ -406,6 +409,9 @@ export class MetadataArgsStorage {
     protected filterByTargetAndWithoutDuplicateEmbeddedProperties<
         T extends EmbeddedMetadataArgs,
     >(array: T[], target: (Function | string) | (Function | string)[]): T[] {
+        if (!array || !Array.isArray(array)) {
+            return []
+        }
         const newArray: T[] = []
         array.forEach((item) => {
             const sameTarget = Array.isArray(target)
