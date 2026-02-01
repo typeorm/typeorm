@@ -9,6 +9,7 @@ import { expect } from "chai"
 import { PersonSchema } from "./entity/Person"
 
 describe("entity-schema > indices > duplicate", () => {
+    // Tests for GitHub issue #5062: Duplicate indices generation
     let connections: DataSource[]
     before(
         async () =>
