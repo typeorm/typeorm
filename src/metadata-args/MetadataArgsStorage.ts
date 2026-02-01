@@ -524,8 +524,7 @@ export class MetadataArgsStorage {
             }
             return keys1.every(
                 (key, index) =>
-                    keys2[index] === key &&
-                    (columns1 as any)[key] === (columns2 as any)[key],
+                    keys2[index] === key && columns1[key] === columns2[key],
             )
         }
 
