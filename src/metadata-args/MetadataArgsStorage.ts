@@ -430,6 +430,53 @@ export class MetadataArgsStorage {
     }
 
     /**
+     * Generates a unique key for an index based on its properties.
+     * Used for efficient duplicate detection in O(1) time.
+     */
+    private generateIndexKey(index: IndexMetadataArgs): string {
+        if (index.name) {
+            return index.name
+        }
+
+        let columnsKey: string
+
+        if (index.columns === undefined) {
+            columnsKey = "undefined"
+        } else if (typeof index.columns === "function") {
+            columnsKey = `function:${index.columns.toString()}`
+        } else if (Array.isArray(index.columns)) {
+            columnsKey = `array:${index.columns.join(",")}`
+        } else if (
+            typeof index.columns === "object" &&
+            index.columns !== null
+        ) {
+            const columnsObj = index.columns as { [key: string]: number }
+            const keys = Object.keys(columnsObj)
+            const orderedPairs = keys.map((key) => `${key}=${columnsObj[key]}`)
+            columnsKey = `object:${orderedPairs.join(",")}`
+        } else {
+            columnsKey = String(index.columns)
+        }
+
+        const propertiesKey = [
+            index.unique ?? false,
+            index.spatial ?? false,
+            index.fulltext ?? false,
+            index.nullFiltered ?? false,
+            index.parser ?? "",
+            index.where ?? "",
+            index.sparse ?? false,
+            index.background ?? false,
+            index.concurrent ?? false,
+            index.synchronize ?? true,
+            index.expireAfterSeconds ?? "",
+            index.type ?? "",
+        ].join("|")
+
+        return `${columnsKey}::${propertiesKey}`
+    }
+
+    /**
      * Filters given array by a given target or targets and prevents duplicate indices.
      */
     protected filterByTargetAndWithoutDuplicateIndices(
@@ -439,105 +486,21 @@ export class MetadataArgsStorage {
         if (!array || !Array.isArray(array)) {
             return []
         }
-        const newArray: IndexMetadataArgs[] = []
-        array.forEach((item) => {
-            const sameTarget = Array.isArray(target)
-                ? target.indexOf(item.target) !== -1
-                : item.target === target
-            if (sameTarget) {
-                const isDuplicateIndex = newArray.find(
-                    (newItem: IndexMetadataArgs): boolean => {
-                        if (item.name && newItem.name) {
-                            return item.name === newItem.name
-                        }
 
-                        if (item.name || newItem.name) {
-                            return false
-                        }
+        const targetArray = Array.isArray(target) ? target : [target]
+        const seenIndices = new Set<string>()
+        const result: IndexMetadataArgs[] = []
 
-                        const columnsMatch = this.areIndexColumnsEqual(
-                            item.columns,
-                            newItem.columns,
-                        )
-                        const propertiesMatch =
-                            item.unique === newItem.unique &&
-                            item.spatial === newItem.spatial &&
-                            item.fulltext === newItem.fulltext &&
-                            item.nullFiltered === newItem.nullFiltered &&
-                            item.parser === newItem.parser &&
-                            item.where === newItem.where &&
-                            item.sparse === newItem.sparse &&
-                            item.background === newItem.background &&
-                            item.concurrent === newItem.concurrent &&
-                            item.synchronize === newItem.synchronize &&
-                            item.expireAfterSeconds ===
-                                newItem.expireAfterSeconds &&
-                            item.type === newItem.type
-
-                        return columnsMatch && propertiesMatch
-                    },
-                )
-                if (!isDuplicateIndex) newArray.push(item)
+        for (const item of array) {
+            if (targetArray.includes(item.target)) {
+                const indexKey = this.generateIndexKey(item)
+                if (!seenIndices.has(indexKey)) {
+                    seenIndices.add(indexKey)
+                    result.push(item)
+                }
             }
-        })
-        return newArray
-    }
-
-    /**
-     * Checks if two index column definitions are equal.
-     */
-    private areIndexColumnsEqual(
-        columns1:
-            | ((object?: any) => any[] | { [key: string]: number })
-            | string[]
-            | undefined,
-        columns2:
-            | ((object?: any) => any[] | { [key: string]: number })
-            | string[]
-            | undefined,
-    ): boolean {
-        if (columns1 === undefined && columns2 === undefined) {
-            return true
         }
 
-        if (columns1 === undefined || columns2 === undefined) {
-            return false
-        }
-
-        if (typeof columns1 === "function" && typeof columns2 === "function") {
-            return columns1 === columns2
-        }
-
-        if (typeof columns1 === "function" || typeof columns2 === "function") {
-            return false
-        }
-
-        if (Array.isArray(columns1) && Array.isArray(columns2)) {
-            if (columns1.length !== columns2.length) {
-                return false
-            }
-            // Order-sensitive comparison is critical: index column order affects query performance
-            // and index usage. An index on (firstName, lastName) is different from (lastName, firstName)
-            return columns1.every((col, index) => col === columns2[index])
-        }
-
-        if (typeof columns1 === "object" && typeof columns2 === "object") {
-            if (Array.isArray(columns1) || Array.isArray(columns2)) {
-                return false
-            }
-            const keys1 = Object.keys(columns1)
-            const keys2 = Object.keys(columns2)
-            if (keys1.length !== keys2.length) {
-                return false
-            }
-            // Object key order comparison is also order-sensitive for the same reasons:
-            // the order of columns in composite indices determines their effectiveness for queries
-            return keys1.every(
-                (key, index) =>
-                    keys2[index] === key && columns1[key] === columns2[key],
-            )
-        }
-
-        return false
+        return result
     }
 }
