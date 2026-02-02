@@ -15,6 +15,7 @@ import { ObjectUtils } from "../util/ObjectUtils"
 import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import { UpsertOptions } from "./UpsertOptions"
 import { UpdateOptions } from "./UpdateOptions"
+import { DeleteOptions } from "./DeleteOptions"
 import { EntityTarget } from "../common/EntityTarget"
 import { PickKeysByType } from "../common/PickKeysByType"
 
@@ -387,8 +388,9 @@ export class BaseEntity {
             | ObjectId
             | ObjectId[]
             | FindOptionsWhere<T>,
+        options?: DeleteOptions,
     ): Promise<DeleteResult> {
-        return this.getRepository<T>().delete(criteria)
+        return this.getRepository<T>().delete(criteria, options)
     }
 
     /**

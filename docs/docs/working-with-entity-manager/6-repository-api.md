@@ -253,6 +253,10 @@ await repository.upsert(
 await repository.delete(1)
 await repository.delete([1, 2, 3])
 await repository.delete({ firstName: "Timber" })
+
+// optionally request RETURNING / OUTPUT values (supported drivers only)
+const result = await repository.delete(1, { returning: ["id", "firstName"] })
+console.log(result.raw) // [{ id: 1, firstName: "Timber" }]
 ```
 
 - `deleteAll` - Deletes _all_ entities of target type (without WHERE clause).
@@ -260,6 +264,10 @@ await repository.delete({ firstName: "Timber" })
 ```typescript
 await repository.deleteAll()
 // executes DELETE FROM user
+
+await repository.deleteAll({
+    returning: "*", // limited to drivers that support returning clauses
+})
 ```
 
 Refer also to the `clear` method, which performs database `TRUNCATE TABLE` operation instead.

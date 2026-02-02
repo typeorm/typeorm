@@ -15,6 +15,7 @@ import { ObjectId } from "../driver/mongodb/typings"
 import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import { UpsertOptions } from "./UpsertOptions"
 import { UpdateOptions } from "./UpdateOptions"
+import { DeleteOptions } from "./DeleteOptions"
 import { EntityTarget } from "../common/EntityTarget"
 import { PickKeysByType } from "../common/PickKeysByType"
 import { buildSqlTag } from "../util/SqlTagUtils"
@@ -424,8 +425,9 @@ export class Repository<Entity extends ObjectLiteral> {
             | ObjectId[]
             | FindOptionsWhere<Entity>
             | FindOptionsWhere<Entity>[],
+        options?: DeleteOptions,
     ): Promise<DeleteResult> {
-        return this.manager.delete(this.metadata.target, criteria)
+        return this.manager.delete(this.metadata.target, criteria, options)
     }
 
     /**
@@ -435,8 +437,8 @@ export class Repository<Entity extends ObjectLiteral> {
      *
      * WARNING! This method deletes ALL rows in the target table.
      */
-    deleteAll(): Promise<DeleteResult> {
-        return this.manager.deleteAll(this.metadata.target)
+    deleteAll(options?: DeleteOptions): Promise<DeleteResult> {
+        return this.manager.deleteAll(this.metadata.target, options)
     }
 
     /**
