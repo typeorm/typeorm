@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #750 Need option for Mysql's full text search", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
@@ -18,7 +18,7 @@ describe("github issues > #750 Need option for Mysql's full text search", () => 
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should correctly create SPATIAL and FULLTEXT indices", () =>
         Promise.all(

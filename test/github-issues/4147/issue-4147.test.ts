@@ -9,7 +9,7 @@ import { Post, PostSchema } from "./entity/Post"
 
 describe('github issues > #4147 `SQLITE_ERROR: near "-": syntax error` when use sqlite, simple-enum', () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [new EntitySchema<Post>(PostSchema)],
@@ -18,7 +18,7 @@ describe('github issues > #4147 `SQLITE_ERROR: near "-": syntax error` when use 
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not error while synchronizing when using simple-enum with sqlite", () =>
         Promise.all(

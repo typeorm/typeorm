@@ -26,7 +26,7 @@ describe("github issues > #9903 json data type", () => {
             jsonData: `'''faux---'''`,
         }
 
-        before(
+        beforeAll(
             async () =>
                 (connections = await createTestingConnections({
                     entities: [__dirname + "/entity/*{.js,.ts}"],

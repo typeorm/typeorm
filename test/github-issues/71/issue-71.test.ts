@@ -11,14 +11,14 @@ import { Kollektion } from "./entity/Kollektion"
 
 describe("github issues > #71 ManyToOne relation with custom column name persistence fails", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should persist successfully entity successfully with its many-to-one relation", () =>
         Promise.all(

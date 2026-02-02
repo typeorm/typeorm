@@ -7,7 +7,7 @@ import {
 
 describe("github issues > #9601 view+schema+synchronize broken for oracle", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -16,7 +16,7 @@ describe("github issues > #9601 view+schema+synchronize broken for oracle", () =
                 enabledDrivers: ["oracle"],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should recognize model changes", () =>
         Promise.all(

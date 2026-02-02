@@ -10,14 +10,14 @@ import { Dog } from "./entity/Dog"
 
 describe("github issues > #620 Feature Request: Flexibility in Foreign Key names", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should work as expected", () =>
         Promise.all(

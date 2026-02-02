@@ -9,7 +9,7 @@ import { expect } from "chai"
 
 describe("github issues > #6066 Column comment string is not escaped during synchronization", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Session],
@@ -18,7 +18,7 @@ describe("github issues > #6066 Column comment string is not escaped during sync
                 dropSchema: true,
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should synchronize", () =>
         Promise.all(

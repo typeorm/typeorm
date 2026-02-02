@@ -31,7 +31,7 @@ describe("github issues > #10322 logMigration of AbstractLogger has wrong loggin
         }
     }
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             migrations: [__dirname + "/migration/*{.js,.ts}"],
@@ -41,7 +41,7 @@ describe("github issues > #10322 logMigration of AbstractLogger has wrong loggin
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should call fakeLog when migration failed", () =>
         Promise.all(

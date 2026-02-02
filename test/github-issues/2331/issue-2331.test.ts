@@ -12,7 +12,7 @@ describe("github issues > #2331 undefined value is nulling column on update", ()
     let dataSource: DataSource
     let repository: Repository<Post>
 
-    before(async () => {
+    beforeAll(async () => {
         const options = setupSingleTestingConnection("postgres", {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -29,7 +29,7 @@ describe("github issues > #2331 undefined value is nulling column on update", ()
         await reloadTestingDatabases([dataSource])
         repository = dataSource.getRepository(Post)
     })
-    after(() => closeTestingConnections([dataSource]))
+    afterAll(() => closeTestingConnections([dataSource]))
 
     it("should not overwrite column with null when passing undefined", async () => {
         if (!dataSource) return

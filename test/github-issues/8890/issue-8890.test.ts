@@ -12,14 +12,14 @@ import { prepareDataManyToOne, prepareDataOneToOne } from "./issue-8890-utils"
 
 describe("github issues > #8890 it should be possible to query IS NULL on ManyToOne relations", () => {
     let dataSources: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (dataSources = await createTestingConnections({
                 __dirname,
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("where IsNull", () =>
         Promise.all(
@@ -129,14 +129,14 @@ describe("github issues > #8890 it should be possible to query IS NULL on ManyTo
 
 describe("github issues > #8890 it should be possible to query IS NULL on OneToOne relations on owner side", () => {
     let dataSources: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (dataSources = await createTestingConnections({
                 __dirname,
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("where IsNull", () =>
         Promise.all(

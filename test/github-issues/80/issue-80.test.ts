@@ -10,14 +10,14 @@ import { expect } from "chai"
 
 describe("github issues > #80 repository.save fails when empty array is sent to the method", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should persist successfully and return persisted entity", () =>
         Promise.all(

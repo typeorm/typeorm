@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #5501 Incorrect data loading from JSON string for column type 'simple-json'", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             enabledDrivers: ["mysql", "mariadb"],
             entities: [Post],
@@ -19,7 +19,7 @@ describe("github issues > #5501 Incorrect data loading from JSON string for colu
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should correctly store simple-json field", () =>
         Promise.all(

@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #1233 column updatedDate must appear in the GROUP BY clause or be used in an aggregate function", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #1233 column updatedDate must appear in the GROUP BY c
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should filter correctly using findByIds", () =>
         Promise.all(

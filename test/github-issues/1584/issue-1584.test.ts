@@ -9,7 +9,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #1584 Cannot read property 'createValueMap' of undefined", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #1584 Cannot read property 'createValueMap' of undefin
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should save entities properly", () =>
         Promise.all(

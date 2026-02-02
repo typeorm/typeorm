@@ -13,7 +13,7 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #1476 subqueries", () => {
     let connections: DataSource[] = []
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -27,7 +27,7 @@ describe("github issues > #1476 subqueries", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should", () =>
         Promise.all(

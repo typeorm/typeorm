@@ -7,7 +7,7 @@ import {
 
 describe("github issues > #1839 Charset and collation not being carried to JoinTable when generating migration", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mariadb", "mysql"],
@@ -15,7 +15,7 @@ describe("github issues > #1839 Charset and collation not being carried to JoinT
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should carry charset and collation from original column in to junction column", () =>
         Promise.all(

@@ -12,7 +12,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
     describe("when legacySpatialSupport: true", () => {
         let connections: DataSource[]
 
-        before(async () => {
+        beforeAll(async () => {
             connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql"],
@@ -23,7 +23,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
                 },
             })
         })
-        after(() => closeTestingConnections(connections))
+        afterAll(() => closeTestingConnections(connections))
 
         it("should use GeomFromText", () =>
             Promise.all(
@@ -107,7 +107,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
     describe("when legacySpatialSupport: false", () => {
         let connections: DataSource[]
 
-        before(
+        beforeAll(
             async () =>
                 (connections = await createTestingConnections({
                     entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -119,7 +119,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
                     },
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        afterAll(() => closeTestingConnections(connections))
 
         it("should use ST_GeomFromText", () =>
             Promise.all(

@@ -9,7 +9,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #1600 Postgres: QueryBuilder insert with Postgres array type bug", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #1600 Postgres: QueryBuilder insert with Postgres arra
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should insert successfully using save method", () =>
         Promise.all(

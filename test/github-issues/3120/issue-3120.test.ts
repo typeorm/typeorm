@@ -13,7 +13,7 @@ import { Person } from "./entity/Person"
 
 describe('github issues > #3120 Add relation option "createForeignKeyConstraints"', () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -22,7 +22,7 @@ describe('github issues > #3120 Add relation option "createForeignKeyConstraints
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should create foreign key for relation without createForeignKeyConstraints option", () =>
         Promise.all(

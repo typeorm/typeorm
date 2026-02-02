@@ -12,7 +12,7 @@ import { expect } from "chai"
 
 describe("github issues > #1042 EntityMetadata.createPropertyPath does not work properly with objects inside entities (date, json, etc.)", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -20,7 +20,7 @@ describe("github issues > #1042 EntityMetadata.createPropertyPath does not work 
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should update object columns fine, at the same time embedded should work properly", () =>
         Promise.all(

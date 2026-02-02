@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("benchmark > bulk-save > case1", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 __dirname,
@@ -17,7 +17,7 @@ describe("benchmark > bulk-save > case1", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("testing bulk save of 10.000 objects", () =>
         Promise.all(

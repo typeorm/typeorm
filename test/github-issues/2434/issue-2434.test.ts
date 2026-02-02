@@ -11,7 +11,7 @@ import { expect } from "chai"
 
 describe("github issues > #2434 QueryBuilder insert for Oracle failed", () => {
     let connections: DataSource[] = []
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #2434 QueryBuilder insert for Oracle failed", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should insert multiple rows with QueryBuilder", () =>
         Promise.all(

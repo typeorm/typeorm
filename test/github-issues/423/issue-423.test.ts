@@ -7,7 +7,7 @@ import { DataSource } from "../../../src/data-source/DataSource"
 
 describe("github issues > #423 Cannot use Group as Table name && cannot autoSchemeSync when use alias Entity", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -15,7 +15,7 @@ describe("github issues > #423 Cannot use Group as Table name && cannot autoSche
                 dropSchema: true,
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should successfully sync schema", () =>
         Promise.all(

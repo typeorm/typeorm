@@ -8,13 +8,13 @@ import { Bar } from "./entity/Bar"
 
 describe("github issues > #1261 onDelete property on foreign key is not modified on sync", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should modify onDelete property on foreign key on sync", () =>
         Promise.all(

@@ -9,14 +9,14 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #1118 findByIds must return empty results if no criteria were passed in an array", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("drivers which does not support offset without limit should throw an exception, other drivers must work fine", () =>
         Promise.all(

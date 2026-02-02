@@ -9,7 +9,7 @@ import { expect } from "chai"
 
 describe("github issues > #8430 sqlite temporary tables do not honor withoutRowid", () => {
     let connections: DataSource[] = []
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #8430 sqlite temporary tables do not honor withoutRowi
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     // -------------------------------------------------------------------------
     // Specifications

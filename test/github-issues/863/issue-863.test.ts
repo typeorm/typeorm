@@ -11,14 +11,14 @@ import { Detail } from "./entity/detail"
 
 describe("github issues > #863 indices > create schema", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Master, Detail],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     describe("build schema", function () {
         it("it should just work, creating the index", () =>

@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #9365 ", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #9365 ", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should work with conflict path", () =>
         Promise.all(

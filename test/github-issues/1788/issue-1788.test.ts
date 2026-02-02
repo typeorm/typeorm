@@ -11,7 +11,7 @@ import { expect } from "chai"
 
 describe("github issues > #1788 One to One does not load relationships.", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #1788 One to One does not load relationships.", () => 
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should work as expected when using find* methods with relations explicitly provided", () =>
         Promise.all(

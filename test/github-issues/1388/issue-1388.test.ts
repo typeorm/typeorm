@@ -7,7 +7,7 @@ import {
 
 describe("github issues > #1388 nullable: true dons't output 'NULL' in mysql", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
@@ -15,7 +15,7 @@ describe("github issues > #1388 nullable: true dons't output 'NULL' in mysql", (
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should correctly create nullable column", () =>
         Promise.all(

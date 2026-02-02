@@ -8,7 +8,7 @@ import { Group } from "./entity/Group"
 
 describe("github issues > #1089 UUID in ClosureEntity", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -16,7 +16,7 @@ describe("github issues > #1089 UUID in ClosureEntity", () => {
                 dropSchema: true,
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should correctly work with primary UUID column", () =>
         Promise.all(

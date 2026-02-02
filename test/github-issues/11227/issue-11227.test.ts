@@ -11,7 +11,7 @@ import { SuperLongRelatedEntityNameDontAskWhy } from "./entity/SuperLongRelatedE
 
 describe("github issues > #11227 RelationIdLoader is not consistently respecting maxAliasLength", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #11227 RelationIdLoader is not consistently respecting
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should fetch related entities properly", async () => {
         for (const connection of connections) {

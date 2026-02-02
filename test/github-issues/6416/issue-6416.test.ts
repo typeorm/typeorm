@@ -14,7 +14,7 @@ import PostAttachment, { PostAttachmentSchema } from "./entity/PostAttachment"
 
 describe("github issues > #6399 Combining ManyToOne, Cascade, & Composite Primary Key causes Unique Constraint issues", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [PostSchema, PostTagSchema, PostAttachmentSchema],
@@ -22,7 +22,7 @@ describe("github issues > #6399 Combining ManyToOne, Cascade, & Composite Primar
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("persisting the cascading entities should succeed", () =>
         Promise.all(

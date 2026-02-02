@@ -11,14 +11,14 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #813 order by must support functions", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should work perfectly", () =>
         Promise.all(

@@ -47,7 +47,7 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
     })
 
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         return (connections = await createTestingConnections({
             entities: [
                 __dirname + "/entity/*{.js,.ts}",
@@ -58,7 +58,7 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
         }))
     })
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("throws an error because there is no object id defined", () =>
         Promise.all(

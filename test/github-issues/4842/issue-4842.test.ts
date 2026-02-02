@@ -10,14 +10,14 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #4842 QueryExpressionMap doesn't clone distinct property", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should contain correct distinct value after query builder is cloned", () => {
         connections.forEach((connection) => {

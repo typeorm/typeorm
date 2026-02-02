@@ -10,7 +10,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #9518 Can't pass ObjectLiteral in MongoRepository.find where condition due to typings", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Post],
@@ -18,7 +18,7 @@ describe("github issues > #9518 Can't pass ObjectLiteral in MongoRepository.find
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should be able to use ObjectLiteral in find where condition", () =>
         Promise.all(

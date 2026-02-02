@@ -11,14 +11,14 @@ import { Category } from "./entity/Category"
 
 describe("github issues > #70 cascade deleting works incorrect", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should persist successfully and return persisted entity", () =>
         Promise.all(

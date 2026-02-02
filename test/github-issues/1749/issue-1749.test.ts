@@ -9,7 +9,7 @@ import { Bar } from "./entity/Bar"
 
 describe("github issues > #1749 Can't delete tables in non-default schema", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #1749 Can't delete tables in non-default schema", () =
     )
 
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should delete entites from tables in different schemas", () =>
         Promise.all(

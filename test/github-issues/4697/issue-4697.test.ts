@@ -8,7 +8,7 @@ import { DataSource } from "../../../src/data-source/DataSource"
 
 describe("github issues > #4697 Revert migrations running in reverse order.", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #4697 Revert migrations running in reverse order.", ()
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should revert migrations in the right order", () =>
         Promise.all(

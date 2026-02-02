@@ -9,7 +9,7 @@ import { DataSource } from "../../../src"
 // TODO: https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_explicit_defaults_for_timestamp
 describe.skip("github issues > #1960 Migration generator produces duplicated changes", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe.skip("github issues > #1960 Migration generator produces duplicated cha
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not execute any alter queries", () =>
         Promise.all(

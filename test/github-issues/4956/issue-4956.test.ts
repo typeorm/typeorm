@@ -6,7 +6,7 @@ import {
 } from "../../utils/test-utils"
 
 import { DataSource } from "../../../src/data-source/DataSource"
-import { afterEach } from "mocha"
+
 import { expect } from "chai"
 
 describe("github issues > #4956 create typeorm_metatable when running migrations.", () => {

@@ -10,14 +10,14 @@ import { Category } from "./entity/Category"
 
 describe("github issues > #703.findOne does not return an empty array on OneToMany relationship", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not return anything in joined relation if nothing was found", () =>
         Promise.all(

@@ -10,14 +10,14 @@ import { User } from "./entity/User"
 
 describe("github issues > #495 Unable to set multi-column indices", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should successfully create indices and save an object", () =>
         Promise.all(

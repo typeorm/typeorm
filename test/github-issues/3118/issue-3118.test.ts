@@ -21,7 +21,7 @@ import { CategoryWithVeryLongName } from "./entity/CategoryWithVeryLongName"
  */
 describe("github issues > #3118 shorten alias names (for RDBMS with a limit) when they are longer than 63 characters", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -36,7 +36,7 @@ describe("github issues > #3118 shorten alias names (for RDBMS with a limit) whe
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should be able to load deeply nested entities, even with long aliases", () =>
         Promise.all(

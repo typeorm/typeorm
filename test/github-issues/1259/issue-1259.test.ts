@@ -10,7 +10,7 @@ import { Category } from "./entity/Category"
 
 describe("github issues > #1259 Can't sort by fields added with addSelect", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #1259 Can't sort by fields added with addSelect", () =
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should order by added selects when pagination is used", () =>
         Promise.all(

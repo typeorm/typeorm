@@ -10,7 +10,7 @@ import { UsersObject } from "./entity/usersObject"
 
 describe("github issues > #7852 saving a ManyToMany relation tries to insert (DEFAULT, entity2.id) instead of (entity1.id, entity2.id), when id is Buffer", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             enabledDrivers: ["mysql"],
             entities: [User, UsersObject],
@@ -19,7 +19,7 @@ describe("github issues > #7852 saving a ManyToMany relation tries to insert (DE
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should insert (entity1.id, entity2.id)", () =>
         Promise.all(

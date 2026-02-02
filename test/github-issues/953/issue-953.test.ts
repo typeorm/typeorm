@@ -11,7 +11,7 @@ import { User } from "./entity/user"
 
 describe("github issues > #953 MySQL 5.7 JSON column parse", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #953 MySQL 5.7 JSON column parse", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should retrieve record from mysql5.7", () =>
         Promise.all(

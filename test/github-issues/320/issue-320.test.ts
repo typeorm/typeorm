@@ -10,7 +10,7 @@ import { ActivityEntity } from "./entity/ActivityEntity"
 
 describe("github issues > #320 Bug in getManyAndCount", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #320 Bug in getManyAndCount", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should correctly parse type from PrimaryGeneratedColumn options", () =>
         Promise.all(

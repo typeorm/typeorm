@@ -10,7 +10,7 @@ import { expect } from "chai"
 describe("github issues > #9984 TransactionRetryWithProtoRefreshError should be handled by TypeORM", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["cockroachdb"],
@@ -18,7 +18,7 @@ describe("github issues > #9984 TransactionRetryWithProtoRefreshError should be 
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should retry transaction on 40001 error with 'inject_retry_errors_enabled=true'", () =>
         Promise.all(

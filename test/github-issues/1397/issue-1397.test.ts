@@ -10,7 +10,7 @@ import { Post } from "./entity/Post"
 
 describe("github issue > #1397 Spaces at the end of values are removed when inserting", () => {
     let connections: DataSource[] = []
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issue > #1397 Spaces at the end of values are removed when inse
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not trim empty spaces when saving", () =>
         Promise.all(

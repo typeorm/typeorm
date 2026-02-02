@@ -10,14 +10,14 @@ import { expect } from "chai"
 
 describe("github issues > #1014 Transaction doesn't rollback", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should rollback transaction if some operation failed in it", () =>
         Promise.all(

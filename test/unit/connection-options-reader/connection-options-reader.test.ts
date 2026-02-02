@@ -6,7 +6,7 @@ import { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
 import { PlatformTools } from "../../../src/platform/PlatformTools"
 
 describe("ConnectionOptionsReader", () => {
-    before(async () => {
+    beforeAll(async () => {
         // These files may not always exist
         await fs.mkdir("./temp/configs", { recursive: true })
         await fs.writeFile(

@@ -10,7 +10,7 @@ import { Item, EmbeddedItem } from "./entity/Item"
 
 describe("github issue > #1569 updateById generates wrong SQL with arrays inside embeddeds", () => {
     let connections: DataSource[] = []
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issue > #1569 updateById generates wrong SQL with arrays inside
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should properly updateById arrays inside embeddeds", () =>
         Promise.all(

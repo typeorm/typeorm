@@ -8,7 +8,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #7521 Only first \0 is removed in comments, only first \\ is escaped etc.", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 enabledDrivers: ["postgres", "cockroachdb", "mysql"],
@@ -17,7 +17,7 @@ describe("github issues > #7521 Only first \0 is removed in comments, only first
                 entities: [Post],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should recognize model changes", () =>
         Promise.all(

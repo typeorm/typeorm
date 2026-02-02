@@ -11,7 +11,7 @@ import {
 describe("github issues > #7100 MSSQL error when user requests additional columns to be returned", () => {
     let connections: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("github issues > #7100 MSSQL error when user requests additional column
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should return user requested columns", () =>
         Promise.all(

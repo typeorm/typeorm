@@ -14,7 +14,7 @@ import { DataModel } from "./entity/DataModel"
 //  due to complexity of cascades, it was skipped fow now
 describe.skip("github issues > #1545 Typeorm runs insert query instead of update query on save of existing entity for ManyToOne relationships", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -22,7 +22,7 @@ describe.skip("github issues > #1545 Typeorm runs insert query instead of update
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should add intial validation data", () =>
         Promise.all(

@@ -10,7 +10,7 @@ import { TestEntity } from "./entity/test.entity"
 
 describe("github issues > #7760 Mongodb: When field is null in db, typeorm query sets it to undefined", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             enabledDrivers: ["mongodb"],
             entities: [TestEntity],
@@ -19,7 +19,7 @@ describe("github issues > #7760 Mongodb: When field is null in db, typeorm query
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should delete all documents related to search pattern", () =>
         Promise.all(

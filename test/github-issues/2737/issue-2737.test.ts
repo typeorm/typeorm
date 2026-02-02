@@ -10,7 +10,7 @@ import {
 describe("github issues > #2737 MySQLDriver findChangedColumns (fields: width, precision)", () => {
     let connections: DataSource[]
 
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 dropSchema: false,
@@ -26,7 +26,7 @@ describe("github issues > #2737 MySQLDriver findChangedColumns (fields: width, p
 
     beforeEach(() => reloadTestingDatabases(connections))
 
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not create migrations for an existing unique index when bigNumberStrings is false", () =>
         Promise.all(

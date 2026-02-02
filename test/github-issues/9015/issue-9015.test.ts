@@ -12,7 +12,7 @@ describe("github issues > #9015 @UpdateDateColumn not updating on upsert", () =>
     let dataSource: DataSource
     let repository: Repository<Post>
 
-    before(async () => {
+    beforeAll(async () => {
         const options = setupSingleTestingConnection("postgres", {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -29,7 +29,7 @@ describe("github issues > #9015 @UpdateDateColumn not updating on upsert", () =>
         await reloadTestingDatabases([dataSource])
         repository = dataSource.getRepository(Post)
     })
-    after(() => closeTestingConnections([dataSource]))
+    afterAll(() => closeTestingConnections([dataSource]))
 
     it("should update the @UpdateDateColumn", async () => {
         if (!dataSource) return

@@ -5,6 +5,14 @@ on:
       node-version:
         required: true
         type: number
+      shard:
+        required: false
+        type: number
+        default: 1
+      total-shards:
+        required: false
+        type: number
+        default: 1
 
 jobs:
   cockroachdb:
@@ -34,12 +42,12 @@ jobs:
 
       - run: pnpm install
       - run: cp .github/workflows/test/cockroachdb.ormconfig.json ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: crdb-node:${{ inputs.node-version }}
+          flag-name: crdb-node:${{ inputs.shard }}/${{ inputs.total-shards }}-${{ inputs.node-version }}
           parallel: true
 
   mongodb:
@@ -65,12 +73,12 @@ jobs:
 
       - run: pnpm install
       - run: cp .github/workflows/test/mongodb.ormconfig.json ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: mongodb-node:${{ inputs.node-version }}
+          flag-name: mongodb-node:${{ inputs.shard }}/${{ inputs.total-shards }}-${{ inputs.node-version }}
           parallel: true
 
   mssql:
@@ -100,12 +108,12 @@ jobs:
 
       - run: pnpm install
       - run: cp .github/workflows/test/mssql.ormconfig.json ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: mssql-node:${{ inputs.node-version }}
+          flag-name: mssql-node:${{ inputs.shard }}/${{ inputs.total-shards }}-${{ inputs.node-version }}
           parallel: true
 
   mysql_mariadb:
@@ -145,12 +153,12 @@ jobs:
 
       - run: pnpm install
       - run: cp .github/workflows/test/mysql-mariadb.ormconfig.json ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: mysql_mariadb-node:${{ inputs.node-version }}
+          flag-name: mysql_mariadb-node:${{ inputs.shard }}/${{ inputs.total-shards }}-${{ inputs.node-version }}
           parallel: true
 
   mysql_mariadb_latest:
@@ -190,12 +198,12 @@ jobs:
 
       - run: pnpm install
       - run: cp .github/workflows/test/mysql-mariadb-latest.ormconfig.json ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: mysql_mariadb_latest-node:${{ inputs.node-version }}
+          flag-name: mysql_mariadb_latest-node:${{ inputs.shard }}/${{ inputs.total-shards }}-${{ inputs.node-version }}
           parallel: true
 
   better-sqlite3:
@@ -215,12 +223,12 @@ jobs:
 
       - run: pnpm install
       - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: better-sqlite3-node:${{ inputs.node-version }}
+          flag-name: better-sqlite3-node:${{ inputs.shard }}/${{ inputs.total-shards }}-${{ inputs.node-version }}
           parallel: true
 
   sqlite:
@@ -240,12 +248,12 @@ jobs:
 
       - run: pnpm install
       - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: sqlite-node:${{ inputs.node-version }}
+          flag-name: sqlite-node:${{ inputs.shard }}/${{ inputs.total-shards }}-${{ inputs.node-version }}
           parallel: true
 
   sqljs:
@@ -265,12 +273,12 @@ jobs:
 
       - run: pnpm install
       - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: sqljs-node:${{ inputs.node-version }}
+          flag-name: sqljs-node:${{ inputs.shard }}/${{ inputs.total-shards }}-${{ inputs.node-version }}
           parallel: true
 
   postgres:
@@ -309,12 +317,12 @@ jobs:
 
       - run: pnpm install
       - run: cp .github/workflows/test/postgres.ormconfig.json ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: postgres:${{ matrix.postgres-version }}-node:${{ inputs.node-version }}
+          flag-name: postgres:${{ matrix.postgres-version }}-shard:${{ inputs.shard }}/${{ inputs.total-shards }}-node:${{ inputs.node-version }}
           parallel: true
 
   oracle:
@@ -339,12 +347,12 @@ jobs:
       - run: cat ormconfig.sample.json | jq 'map(select(.name == "oracle"))' > ormconfig.json
       - run: docker compose up oracle --no-recreate --wait
       - run: sleep 3 # wait for oracle to be fully ready
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: oracle-node:${{ inputs.node-version }}
+          flag-name: oracle-node:${{ inputs.shard }}/${{ inputs.total-shards }}-${{ inputs.node-version }}
           parallel: true
 
   sap:
@@ -368,10 +376,10 @@ jobs:
       - run: pnpm install
       - run: cat ormconfig.sample.json | jq 'map(select(.name == "hanaexpress"))' > ormconfig.json
       - run: docker compose up hanaexpress --no-recreate --wait
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: sap-node:${{ inputs.node-version }}
+          flag-name: sap-node:${{ inputs.shard }}/${{ inputs.total-shards }}-${{ inputs.node-version }}
           parallel: true

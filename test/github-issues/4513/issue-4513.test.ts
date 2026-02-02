@@ -9,7 +9,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #4513 CockroachDB support for onConflict", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #4513 CockroachDB support for onConflict", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should insert if no conflict", () =>
         Promise.all(

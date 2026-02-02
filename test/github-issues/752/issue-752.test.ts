@@ -9,14 +9,14 @@ import { Product } from "./entity/Product"
 
 describe("github issues > #752 postgres - count query fails for empty table", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should return user by a given email and proper escape 'user' keyword", () =>
         Promise.all(

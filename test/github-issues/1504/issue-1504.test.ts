@@ -9,7 +9,7 @@ import { TestEntity1 } from "./entity/TestEntity1"
 
 describe("github issues > #1504 Cannot eagerly query Entity with relation more than 3 levels deep", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #1504 Cannot eagerly query Entity with relation more t
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not throw an error", () =>
         Promise.all(

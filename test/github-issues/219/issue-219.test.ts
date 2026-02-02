@@ -10,14 +10,14 @@ import { IsNull } from "../../../src"
 
 describe("github issues > #219 FindOptions should be able to resolve null values", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should properly query null values", () =>
         Promise.all(

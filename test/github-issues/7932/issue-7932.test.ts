@@ -10,7 +10,7 @@ import { Example } from "./entity/Example"
 
 describe("github issues > #7932  non-ascii characters assigned to var/char columns in SQL are truncated to one byte", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             entities: [Example],
             enabledDrivers: ["mssql"],
@@ -19,7 +19,7 @@ describe("github issues > #7932  non-ascii characters assigned to var/char colum
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should store non-ascii characters in var/char without data loss", () =>
         Promise.all(

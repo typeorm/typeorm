@@ -11,7 +11,7 @@ import { ExampleText } from "./entity/ExampleText"
 
 describe("github issues > #7882  .findOne reduces relations to an empty array", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             enabledDrivers: ["sqlite"],
             entities: [Example, ExampleText],
@@ -20,7 +20,7 @@ describe("github issues > #7882  .findOne reduces relations to an empty array", 
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should delete all documents related to search pattern", () =>
         Promise.all(

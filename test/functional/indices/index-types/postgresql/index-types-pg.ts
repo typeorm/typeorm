@@ -11,7 +11,7 @@ import { User5 } from "../entity/User5"
 
 describe("github issues > Add support of 'hash' indexes for postgres", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "./../entity/*{.js,.ts}"],
@@ -20,7 +20,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should support 'hash' index", () =>
         Promise.all(

@@ -11,14 +11,14 @@ import { User } from "./entity/User"
 
 describe("github issues > #6977 Relation columns in embedded entities are not prefixed", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [User, Embedded],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should correctly assign foreign key columns in embedded entity", () => {
         connections.forEach((connection) => {

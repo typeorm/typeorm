@@ -10,7 +10,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #2651 set shouldn't have update statements twice when UpdateDate is in use", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #2651 set shouldn't have update statements twice when 
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should add and remove relations of an entity if given a mix of ids and objects", () =>
         Promise.all(

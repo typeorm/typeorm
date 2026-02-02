@@ -10,7 +10,7 @@ import { Example } from "./entity/Example"
 describe("github issues > #10191 incorrect escaping of indexPredicate", () => {
     let connections: DataSource[]
 
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Example],
@@ -18,7 +18,7 @@ describe("github issues > #10191 incorrect escaping of indexPredicate", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not fail", () =>
         Promise.all(

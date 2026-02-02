@@ -8,7 +8,7 @@ import {
 
 describe("github issues > #4658 Renaming a column with current_timestamp(6) results in broken SQL", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql", "mariadb"],
@@ -16,7 +16,7 @@ describe("github issues > #4658 Renaming a column with current_timestamp(6) resu
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should correctly rename column and revert rename", () =>
         Promise.all(

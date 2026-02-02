@@ -11,14 +11,14 @@ import { AccessToken } from "./entity/AccessToken"
 
 describe("github issues > #57 cascade insert not working with OneToOne relationship", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     // this test is no absolutely complete because cascade is now only allowed from one side of the relation
 

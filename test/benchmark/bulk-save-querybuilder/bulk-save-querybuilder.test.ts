@@ -9,7 +9,7 @@ import { Document } from "../bulk-save-case2/entity/Document"
 
 describe("benchmark > bulk-save > case-querybuilder", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 __dirname,
@@ -17,7 +17,7 @@ describe("benchmark > bulk-save > case-querybuilder", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("testing bulk save of 10000 objects", () =>
         Promise.all(
@@ -36,11 +36,15 @@ describe("benchmark > bulk-save > case-querybuilder", () => {
                     documents.push(document)
                 }
 
-                await connection
-                    .createQueryRunner()
-                    .query(
-                        `CREATE TABLE "document" ("id" text NOT NULL, "docId" text NOT NULL, "label" text NOT NULL, "context" text NOT NULL, "date" TIMESTAMP WITH TIME ZONE NOT NULL, CONSTRAINT "PK_e57d3357f83f3cdc0acffc3d777" PRIMARY KEY ("id"))`,
-                    )
+                const queryRunner = connection.createQueryRunner()
+                await queryRunner.query(
+                    `DROP TABLE IF EXISTS "document" CASCADE`,
+                )
+                await queryRunner.query(
+                    `CREATE TABLE "document" ("id" text NOT NULL, "docId" text NOT NULL, "label" text NOT NULL, "context" text NOT NULL, "date" TIMESTAMP WITH TIME ZONE NOT NULL, CONSTRAINT "PK_e57d3357f83f3cdc0acffc3d777" PRIMARY KEY ("id"))`,
+                )
+                await queryRunner.release()
+
                 await connection.manager
                     .createQueryBuilder()
                     .insert()

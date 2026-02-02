@@ -10,7 +10,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #4220 Fix the bug when using buffer as the key.", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -20,7 +20,7 @@ describe("github issues > #4220 Fix the bug when using buffer as the key.", () =
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should use the hex string format of buffer when the primary column is buffer type.", () =>
         Promise.all(

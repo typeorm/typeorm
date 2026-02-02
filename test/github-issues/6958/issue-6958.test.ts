@@ -10,14 +10,14 @@ import { expect } from "chai"
 
 describe("github issues > #6958 Promises never get resolved in specific cases", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 enabledDrivers: ["postgres"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should release all used query runners upon disconnection", () =>
         Promise.all(

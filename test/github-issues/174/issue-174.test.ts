@@ -11,14 +11,14 @@ import { Contact } from "./entity/Contact"
 
 describe("github issues > #174 Embeded types confusing with order by", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should order organisations correctly when properties are duplicate in its embeddable", () =>
         Promise.all(

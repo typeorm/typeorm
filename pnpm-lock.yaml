@@ -93,9 +93,6 @@ importers:
       '@types/gulp-sourcemaps':
         specifier: ^0.0.38
         version: 0.0.38
-      '@types/mocha':
-        specifier: ^10.0.10
-        version: 10.0.10
       '@types/node':
         specifier: ^20.19.26
         version: 20.19.26
@@ -171,9 +168,6 @@ importers:
       lint-staged:
         specifier: ^16.2.7
         version: 16.2.7
-      mocha:
-        specifier: ^11.7.5
-        version: 11.7.5
       mongodb:
         specifier: ^6.21.0
         version: 6.21.0(socks@2.8.7)
@@ -1783,9 +1777,6 @@ packages:
 
   '@types/merge2@1.4.4':
     resolution: {integrity: sha512-WZLSif3sHKMlq6vW22R9ub5f+/CEFFlSCY8actv9WBU/8RMJes5zHog9+8oEVLTkaIPaM8fp8XpLaHZggPWN9Q==}
-
-  '@types/mocha@10.0.10':
-    resolution: {integrity: sha512-xPyYSz1cMPnJQhl0CLMH68j3gprKZaTjG3s5Vi+fDgx+uhG9NOXwbVt52eFS8ECyXhyKcjDLCBEqBExKuiZb7Q==}
 
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
@@ -7581,8 +7572,6 @@ snapshots:
   '@types/merge2@1.4.4':
     dependencies:
       '@types/node': 22.19.2
-
-  '@types/mocha@10.0.10': {}
 
   '@types/ms@2.1.0': {}
 

@@ -45,7 +45,7 @@ describe.skip("github issues > #4415 allow beautify generated migrations", () =>
         ...options,
     })
 
-    before(async () => {
+    beforeAll(async () => {
         // clean out db from any prior tests in case previous state impacts the generated migrations
         const connections = await createTestingConnections({
             entities: [],
@@ -62,7 +62,7 @@ describe.skip("github issues > #4415 allow beautify generated migrations", () =>
         migrationGenerateCommand = new MigrationGenerateCommand()
         createFileStub = sinon.stub(CommandUtils, "createFile")
     })
-    after(() => createFileStub.restore())
+    afterAll(() => createFileStub.restore())
 
     it("writes regular migration file when no option is passed", async () => {
         for (const connectionOption of connectionOptions) {

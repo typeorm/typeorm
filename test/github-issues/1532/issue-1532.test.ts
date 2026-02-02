@@ -8,7 +8,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #1532 Array type default value doesnt work. PostgreSQL", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 migrations: [],
@@ -18,7 +18,7 @@ describe("github issues > #1532 Array type default value doesnt work. PostgreSQL
                 entities: [User],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("can recognize model changes", () =>
         Promise.all(

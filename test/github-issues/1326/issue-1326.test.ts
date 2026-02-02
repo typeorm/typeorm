@@ -11,7 +11,7 @@ import { expect } from "chai"
 
 describe("github issue > #1326 Wrong behavior w/ the same table names in different databases", () => {
     let connections: DataSource[] = []
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issue > #1326 Wrong behavior w/ the same table names in differe
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not confuse equivalent table names in different databases", () =>
         Promise.all(

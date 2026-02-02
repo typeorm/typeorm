@@ -12,7 +12,7 @@ import { Tag } from "./entity/Tag"
 
 describe("github issues > #234 and #223 lazy loading does not work correctly from one-to-many and many-to-many sides", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -20,7 +20,7 @@ describe("github issues > #234 and #223 lazy loading does not work correctly fro
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should correctly load from one-to-many and many-to-one sides", () =>
         Promise.all(

@@ -19,7 +19,7 @@ import { QueryFailedError } from "../../../src/error/QueryFailedError"
  */
 describe("github issues > #7106 shorten sequence names (for RDBMS with a limit) when they are longer than 63 characters", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -27,7 +27,7 @@ describe("github issues > #7106 shorten sequence names (for RDBMS with a limit) 
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should be able to work with long sequence name with short table name", () =>
         Promise.all(

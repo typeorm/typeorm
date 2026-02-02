@@ -9,14 +9,14 @@ import { DataSource } from "../../../src"
 
 describe("github issues > #2984 Discriminator conflict reported even for non-inherited tables", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/**/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should load entities even with the same discriminator", () => {
         connections.forEach((connection) => {

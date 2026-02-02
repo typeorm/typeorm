@@ -10,7 +10,7 @@ import { Person } from "./entity/Person"
 
 describe("github issues > #184 [Postgres] Single-Inheritance not working with integer type field", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #184 [Postgres] Single-Inheritance not working with in
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("single table inheritance should accept a Integer Type", () =>
         Promise.all(

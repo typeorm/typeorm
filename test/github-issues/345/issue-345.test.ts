@@ -11,14 +11,14 @@ import { expect } from "chai"
 
 describe("github issues > #345 Join query on ManyToMany relations not working", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("embedded with custom column name should persist and load without errors", () =>
         Promise.all(

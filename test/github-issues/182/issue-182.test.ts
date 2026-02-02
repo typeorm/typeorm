@@ -11,7 +11,7 @@ import { PostStatus } from "./model/PostStatus"
 
 describe("github issues > #182 enums are not saved properly", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #182 enums are not saved properly", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should persist successfully with enum values", () =>
         Promise.all(

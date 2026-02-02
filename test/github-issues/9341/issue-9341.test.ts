@@ -10,7 +10,7 @@ import { TestEntity } from "./entity/TestEntity"
 
 describe('github issues > #9341 "bigNumberStrings:false" is not working for postgres', () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -21,7 +21,7 @@ describe('github issues > #9341 "bigNumberStrings:false" is not working for post
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should fetch big int as number not string when using parseInt8=true", async () => {
         for (const connection of connections) {

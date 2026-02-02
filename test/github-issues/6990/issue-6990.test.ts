@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #6990 synchronize drops array columns in postgres if a length is set", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #6990 synchronize drops array columns in postgres if a
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not drop varchar array column on synchronize using postgres driver", () =>
         Promise.all(

@@ -10,7 +10,7 @@ import { Bar } from "./entity/Bar"
 
 describe("github issues > #4060 Fail to insert entity with Buffer type of primary column under some circumstances.", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             enabledDrivers: ["mysql", "mariadb"],
             entities: [Foo, Bar],
@@ -19,7 +19,7 @@ describe("github issues > #4060 Fail to insert entity with Buffer type of primar
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should save entities", () =>
         Promise.all(

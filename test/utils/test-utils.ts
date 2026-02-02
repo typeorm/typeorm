@@ -388,6 +388,13 @@ export function createDataSource(options: DataSourceOptions): DataSource {
 export async function createTestingConnections(
     options?: TestingOptions,
 ): Promise<DataSource[]> {
+    if (!options) options = {}
+    if (!options.schema) {
+        options.schema = "testing_schema_" + generateRandomText(10)
+    }
+    if (options.dropSchema === undefined) {
+        options.dropSchema = true
+    }
     const dataSourceOptions = setupTestingConnections(options)
     const dataSources: DataSource[] = []
     for (const options of dataSourceOptions) {

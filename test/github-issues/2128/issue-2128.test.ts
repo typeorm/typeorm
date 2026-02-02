@@ -10,7 +10,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #2128 skip preparePersistentValue for value functions", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #2128 skip preparePersistentValue for value functions"
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should be able to resolve value functions", () =>
         Promise.all(

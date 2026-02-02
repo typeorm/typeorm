@@ -13,7 +13,7 @@ import { expect } from "chai"
 
 describe("github issues > #2464 - ManyToMany onDelete option not working", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -21,7 +21,7 @@ describe("github issues > #2464 - ManyToMany onDelete option not working", () =>
     )
 
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not delete when onDelete is 'NO ACTION'", () =>
         Promise.all(

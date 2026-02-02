@@ -8,7 +8,7 @@ import { expect } from "chai"
 
 describe("github issues > #7203 QueryExpressionMap doesn't clone comment field", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 dropSchema: true,
@@ -16,7 +16,7 @@ describe("github issues > #7203 QueryExpressionMap doesn't clone comment field",
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should be able to clone comment field", () => {
         for (const connection of connections) {

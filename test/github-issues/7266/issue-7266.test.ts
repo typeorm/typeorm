@@ -14,7 +14,7 @@ const customTypeormMetadataTableName = "custom_typeorm_metadata_table_name"
 describe("github issues > #7266 rename table typeorm_metadata name.", () => {
     let connections: DataSource[]
 
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Foo, FooView],
@@ -23,7 +23,7 @@ describe("github issues > #7266 rename table typeorm_metadata name.", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should create the typeorm metadata table with a custom name when provided", () =>
         Promise.all(

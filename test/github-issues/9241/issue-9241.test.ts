@@ -12,7 +12,7 @@ import { Photo } from "./entity/Photo"
 
 describe("github issues > #9241 Incorrect insert order when cascade inserting parent inherited relations", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -22,7 +22,7 @@ describe("github issues > #9241 Incorrect insert order when cascade inserting pa
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should save entities properly", async () => {
         for (const connection of connections) {

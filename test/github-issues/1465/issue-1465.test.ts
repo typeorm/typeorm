@@ -11,7 +11,7 @@ import { AccountActivationToken } from "./entity/AccountActivationToken"
 
 describe("github issues > #1465 save child and parent entity", () => {
     let connections: DataSource[] = []
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -25,7 +25,7 @@ describe("github issues > #1465 save child and parent entity", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("account property in accountActivationToken should not be null", () =>
         Promise.all(

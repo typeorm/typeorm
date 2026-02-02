@@ -14,7 +14,7 @@ describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumn
     let connections: DataSource[]
     const namingStrategy = new NamingStrategyUnderTest()
 
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -24,7 +24,7 @@ describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumn
     beforeEach(() => {
         return reloadTestingDatabases(connections)
     })
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("NamingStrategyUnderTest#", () =>
         Promise.all(

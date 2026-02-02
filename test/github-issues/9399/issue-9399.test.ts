@@ -8,7 +8,7 @@ import { expect } from "chai"
 
 describe("github issues > #9399 mssql: Column is dropped and recreated in every migration", () => {
     let dataSources: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #9399 mssql: Column is dropped and recreated in every 
                 enabledDrivers: ["mssql"],
             })),
     )
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("No migration should be created", () =>
         Promise.all(

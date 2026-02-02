@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #3374 Synchronize issue with UUID (MySQL)", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #3374 Synchronize issue with UUID (MySQL)", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not drop primary column again", () =>
         Promise.all(

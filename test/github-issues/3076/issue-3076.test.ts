@@ -8,7 +8,7 @@ import { SomeEntity, CreationMechanism } from "./entity/SomeEntity"
 
 describe("github issues > #3076 Postgres enum in schema with default is recreated in every new generated migration", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 migrations: [],
@@ -18,7 +18,7 @@ describe("github issues > #3076 Postgres enum in schema with default is recreate
                 entities: [SomeEntity],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should recognize model changes", () =>
         Promise.all(

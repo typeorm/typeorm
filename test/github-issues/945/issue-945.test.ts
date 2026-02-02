@@ -9,14 +9,14 @@ import { expect } from "chai"
 
 describe("github issues > #945 synchronization with multiple primary keys", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("schema should include two primary keys", () =>
         Promise.all(

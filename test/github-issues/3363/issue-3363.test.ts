@@ -11,7 +11,7 @@ import { Category } from "./entity/Category"
 
 describe("github issues > #3363 Isolation Level in transaction() from Connection", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should execute operations in READ UNCOMMITED isolation level", () =>
         Promise.all(

@@ -7,7 +7,7 @@ import { PushLog } from "./entity/PushLog"
 
 describe("github issues > #7381 Infinite same ALTERs upon startup (mysql, ver 0.2.30)", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 enabledDrivers: ["mysql", "mariadb"],
@@ -16,7 +16,7 @@ describe("github issues > #7381 Infinite same ALTERs upon startup (mysql, ver 0.
                 entities: [PushLog],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should recognize model changes", () =>
         Promise.all(

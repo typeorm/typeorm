@@ -9,7 +9,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #948 EntityManager#save always considers a Postgres array-type field to have changed", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #948 EntityManager#save always considers a Postgres ar
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not produce extra query when array is updated?", () =>
         Promise.all(

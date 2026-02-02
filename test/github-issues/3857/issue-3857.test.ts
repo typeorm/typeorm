@@ -12,7 +12,7 @@ import { Women } from "./entity/Women"
 
 describe("github issues > #3857 Schema inheritance when STI pattern is used", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 enabledDrivers: ["postgres"],
@@ -22,7 +22,7 @@ describe("github issues > #3857 Schema inheritance when STI pattern is used", ()
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("Child classes should have same schema as parent", () => {
         connections.map((connection) => {

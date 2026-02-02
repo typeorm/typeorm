@@ -12,7 +12,7 @@ describe("github issues > #11423", () => {
     let dataSource: DataSource
     let repository: Repository<Post>
 
-    before(async () => {
+    beforeAll(async () => {
         const options = setupSingleTestingConnection("postgres", {
             entities: [Post],
         }) as PostgresConnectionOptions
@@ -29,7 +29,7 @@ describe("github issues > #11423", () => {
         if (!dataSource) return
         await reloadTestingDatabases([dataSource])
     })
-    after(() => closeTestingConnections([dataSource]))
+    afterAll(() => closeTestingConnections([dataSource]))
 
     it("allow replication to be undefined", async () => {
         if (!dataSource) return

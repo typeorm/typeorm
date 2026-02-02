@@ -9,7 +9,7 @@ import { Photo } from "./entity/Photo"
 
 describe("github issues > #2044 Should not double get embedded column value", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #2044 Should not double get embedded column value", ()
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("Insert query should work with relational columns", () =>
         Promise.all(

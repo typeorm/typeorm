@@ -11,7 +11,7 @@ import { RecordData } from "./entity/RecordData"
 
 describe("github issues > #204 jsonb array is not persisted correctly", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Record],
@@ -19,7 +19,7 @@ describe("github issues > #204 jsonb array is not persisted correctly", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should persist json and jsonb arrays correctly", () =>
         Promise.all(

@@ -14,14 +14,14 @@ describe("github issues > #10517 EntityManager update/delete/softDelete don't wo
     // -------------------------------------------------------------------------
 
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Post],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     // -------------------------------------------------------------------------
     // Specifications

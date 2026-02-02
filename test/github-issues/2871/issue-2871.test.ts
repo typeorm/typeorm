@@ -13,7 +13,7 @@ describe("github issues > #2871 Empty enum array is returned as array with singl
     let dataSource: DataSource
     let repository: Repository<Bar>
 
-    before(async () => {
+    beforeAll(async () => {
         const options = setupSingleTestingConnection("postgres", {
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
@@ -30,7 +30,7 @@ describe("github issues > #2871 Empty enum array is returned as array with singl
         await reloadTestingDatabases([dataSource])
         repository = dataSource.getRepository(Bar)
     })
-    after(() => closeTestingConnections([dataSource]))
+    afterAll(() => closeTestingConnections([dataSource]))
 
     it("should extract array with values from enum array values from 'postgres'", async () => {
         if (!dataSource) return

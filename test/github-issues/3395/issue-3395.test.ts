@@ -9,14 +9,14 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #3395 Transform.from does nothing when column is NULL", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Post],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should run transform from if column is null", () =>
         Promise.all(

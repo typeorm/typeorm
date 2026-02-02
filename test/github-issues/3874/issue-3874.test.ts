@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #3874 Using an (empty string) enum as the type of a primary key column", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Settings],
@@ -20,7 +20,7 @@ describe("github issues > #3874 Using an (empty string) enum as the type of a pr
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should reload entity", () =>
         Promise.all(

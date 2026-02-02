@@ -10,7 +10,7 @@ import { TipoCliente } from "./entity/tipo-cliente"
 
 describe("github issue #1754 Repository.save() always updating ManyToOne relation", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issue #1754 Repository.save() always updating ManyToOne relatio
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should work as expected", () =>
         Promise.all(

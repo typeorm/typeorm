@@ -9,7 +9,7 @@ import { Photo } from "./entity/Photo"
 
 describe("github issues > #2031 Advanced find options with FKs", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #2031 Advanced find options with FKs", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("find operators should work with relational columns as well", () =>
         Promise.all(

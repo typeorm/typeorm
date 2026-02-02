@@ -27,7 +27,7 @@ describe('github issues > #7235 Use "INSERT...RETURNING" in MariaDB.', () => {
 
     let connections: DataSource[]
 
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -37,7 +37,7 @@ describe('github issues > #7235 Use "INSERT...RETURNING" in MariaDB.', () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it(
         "should allow `DELETE...RETURNING` on MariaDB >= 10.0.5",

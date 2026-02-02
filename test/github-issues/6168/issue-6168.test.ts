@@ -67,7 +67,7 @@ const createTables = async (queryRunner: QueryRunner, dbName: string) => {
 
 describe("github issues > #6168 fix multiple foreign keys with the same name in a mysql multi-tenanted DB", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
@@ -86,7 +86,7 @@ describe("github issues > #6168 fix multiple foreign keys with the same name in 
         }
     })
 
-    after(async () => {
+    afterAll(async () => {
         for (const connection of connections) {
             const queryRunner = connection.createQueryRunner()
             await queryRunner.dropDatabase("test2")

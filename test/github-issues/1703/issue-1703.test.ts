@@ -11,7 +11,7 @@ import { OrganizationEntity } from "./entity/OrganizationEntity"
 
 describe("github issues > #1703 Many to Many with association table returns odd values.", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #1703 Many to Many with association table returns odd 
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should work as expected", () =>
         Promise.all(

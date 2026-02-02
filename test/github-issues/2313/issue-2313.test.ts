@@ -11,7 +11,7 @@ import { EntityNotFoundError } from "../../../src/error/EntityNotFoundError"
 
 describe("github issues > #2313 - BaseEntity has no findOneOrFail() method", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #2313 - BaseEntity has no findOneOrFail() method", () 
     )
 
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should find the appropriate record when one exists", async () => {
         // These must run sequentially as we have the global context of the `Post` ActiveRecord class

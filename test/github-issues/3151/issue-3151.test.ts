@@ -8,7 +8,7 @@ import { DataSource } from "../../../src"
 
 describe("github issues > #3151 'uuid' in PrimaryGeneratedColumn causes Many-to-Many Relationship to Fail", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -16,7 +16,7 @@ describe("github issues > #3151 'uuid' in PrimaryGeneratedColumn causes Many-to-
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should work correctly", () =>
         Promise.all(

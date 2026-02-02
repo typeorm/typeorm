@@ -8,7 +8,7 @@ import { TestEntity } from "./entity/Test"
 
 describe("github issues > #7614 Postgres: Custom enum name results in field recreate", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 enabledDrivers: ["postgres"],
@@ -17,7 +17,7 @@ describe("github issues > #7614 Postgres: Custom enum name results in field recr
                 entities: [TestEntity],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should recognize model changes", () =>
         Promise.all(

@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #463 saving empty string array", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #463 saving empty string array", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not return array with single empty string if empty array was saved", () =>
         Promise.all(

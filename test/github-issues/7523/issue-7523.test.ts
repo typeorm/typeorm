@@ -8,7 +8,7 @@ import { ChildEntity1, ChildEntity2 } from "./entity/Test"
 
 describe("github issues > #7523 Do not create duplicate CREATE TYPE migration query when same 'enumName's are exists", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 enabledDrivers: ["postgres"],
@@ -17,7 +17,7 @@ describe("github issues > #7523 Do not create duplicate CREATE TYPE migration qu
                 entities: [ChildEntity1, ChildEntity2],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should recognize model changes", () =>
         Promise.all(

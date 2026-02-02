@@ -9,7 +9,7 @@ import { expect } from "chai"
 
 describe("github issues > #6636 migration issues with scale & precision", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Test],
@@ -17,7 +17,7 @@ describe("github issues > #6636 migration issues with scale & precision", () => 
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not create migrations columns with precision", async () => {
         await Promise.all(

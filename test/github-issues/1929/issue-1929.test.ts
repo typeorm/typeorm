@@ -9,7 +9,7 @@ import {
 
 describe("github issues > #1929 Select attributes in Find method - mongodb", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Product],
@@ -17,7 +17,7 @@ describe("github issues > #1929 Select attributes in Find method - mongodb", () 
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("return column on include in select on find", () =>
         Promise.all(

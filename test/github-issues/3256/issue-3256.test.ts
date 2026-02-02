@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #3256 wrong subscriber methods being called", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #3256 wrong subscriber methods being called", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("if entity was changed, subscriber should be take updated columns", () =>
         Promise.all(

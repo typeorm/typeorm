@@ -10,7 +10,7 @@ import { TestEntity } from "./entity/test.entity"
 
 describe("github issues > #7809 MongoDB delete make changes only to first matched document", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             enabledDrivers: ["mongodb"],
             entities: [TestEntity],
@@ -19,7 +19,7 @@ describe("github issues > #7809 MongoDB delete make changes only to first matche
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should delete all documents related to search pattern", () =>
         Promise.all(

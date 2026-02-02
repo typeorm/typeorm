@@ -9,14 +9,14 @@ import { Category } from "./entity/Category"
 
 describe("github issues > #3783 Tree functionality broken", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should work correctly", () =>
         Promise.all(

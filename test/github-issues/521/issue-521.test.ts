@@ -9,14 +9,14 @@ import { Car } from "./entity/Car"
 
 describe("github issues > #521 Attributes in UPDATE in QB arent getting replaced", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should replace parameters", () => {
         connections.forEach((connection) => {

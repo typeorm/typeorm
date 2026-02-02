@@ -11,7 +11,7 @@ import { TicketProduct } from "./entity/TicketProduct"
 
 describe("github issues > #2298 - Repository filtering not considering related columns as filter", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #2298 - Repository filtering not considering related c
     )
 
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should work perfectly", () =>
         Promise.all(

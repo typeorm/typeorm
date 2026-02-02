@@ -14,7 +14,7 @@ import { Post as SqlitePost } from "./entity/sqlite/Post"
 describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@UpdateDateColumn timestamp column to same definition", () => {
     describe("postgres", () => {
         let connections: DataSource[]
-        before(
+        beforeAll(
             async () =>
                 (connections = await createTestingConnections({
                     enabledDrivers: ["postgres"],
@@ -23,7 +23,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
                     entities: [PostgresPost],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        afterAll(() => closeTestingConnections(connections))
 
         it("should recognize model changes", () =>
             Promise.all(
@@ -51,7 +51,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("cockroachdb", () => {
         let connections: DataSource[]
-        before(
+        beforeAll(
             async () =>
                 (connections = await createTestingConnections({
                     enabledDrivers: ["cockroachdb"],
@@ -60,7 +60,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
                     entities: [CockroachPost],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        afterAll(() => closeTestingConnections(connections))
 
         it("should recognize model changes", () =>
             Promise.all(
@@ -88,7 +88,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("oracle", () => {
         let connections: DataSource[]
-        before(
+        beforeAll(
             async () =>
                 (connections = await createTestingConnections({
                     enabledDrivers: ["oracle"],
@@ -97,7 +97,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
                     entities: [OraclePost],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        afterAll(() => closeTestingConnections(connections))
 
         it("should recognize model changes", () =>
             Promise.all(
@@ -125,7 +125,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("sqlite", () => {
         let connections: DataSource[]
-        before(
+        beforeAll(
             async () =>
                 (connections = await createTestingConnections({
                     enabledDrivers: ["sqlite"],
@@ -134,7 +134,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
                     entities: [SqlitePost],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        afterAll(() => closeTestingConnections(connections))
 
         it("should recognize model changes", () =>
             Promise.all(
@@ -162,7 +162,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("mysql, mariadb", () => {
         let connections: DataSource[]
-        before(
+        beforeAll(
             async () =>
                 (connections = await createTestingConnections({
                     enabledDrivers: ["mysql", "mariadb"],
@@ -171,7 +171,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
                     entities: [MysqlPost],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        afterAll(() => closeTestingConnections(connections))
 
         it("should recognize model changes", () =>
             Promise.all(
@@ -199,7 +199,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
     describe("mssql", () => {
         let connections: DataSource[]
-        before(
+        beforeAll(
             async () =>
                 (connections = await createTestingConnections({
                     enabledDrivers: ["mssql"],
@@ -208,7 +208,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
                     entities: [MssqlPost],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        afterAll(() => closeTestingConnections(connections))
 
         it("should recognize model changes", () =>
             Promise.all(

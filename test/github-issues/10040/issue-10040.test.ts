@@ -11,7 +11,7 @@ import { Todo } from "./entity/todo"
 describe("github issues > #10040 TypeORM synchronize database even if it is up to date", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Person, Todo],
             enabledDrivers: ["mysql"],
@@ -19,7 +19,7 @@ describe("github issues > #10040 TypeORM synchronize database even if it is up t
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should return an empty array for the upQueries after sync", async () => {
         await Promise.all(

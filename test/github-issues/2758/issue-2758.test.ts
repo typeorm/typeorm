@@ -9,7 +9,7 @@ import { User } from "./entity/User"
 
 describe.skip("github issues > #2758 Insert fails when related OneToOne entity's primary key is also a foreign key", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
@@ -17,7 +17,7 @@ describe.skip("github issues > #2758 Insert fails when related OneToOne entity's
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should insert person with nested new party", () =>
         Promise.all(

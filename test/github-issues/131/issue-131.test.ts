@@ -11,14 +11,14 @@ import { Employee } from "./entity/Employee"
 
 describe("github issues > #131 Error with single table inheritance query without additional conditions", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not fail when querying for single table inheritance model without additional conditions", () =>
         Promise.all(

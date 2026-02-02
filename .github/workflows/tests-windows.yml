@@ -5,6 +5,14 @@ on:
       node-version:
         required: true
         type: number
+      shard:
+        required: false
+        type: number
+        default: 1
+      total-shards:
+        required: false
+        type: number
+        default: 1
 
 jobs:
   better-sqlite3:
@@ -24,12 +32,12 @@ jobs:
 
       - run: pnpm install
       - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: better-sqlite3-node:${{ inputs.node-version }}-windows
+          flag-name: better-sqlite3-node:${{ inputs.shard }}/${{ inputs.total-shards }}-${{ inputs.node-version }}-windows
           parallel: true
 
   sqlite:
@@ -49,12 +57,12 @@ jobs:
 
       - run: pnpm install
       - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: sqlite-node:${{ inputs.node-version }}-windows
+          flag-name: sqlite-node:${{ inputs.shard }}/${{ inputs.total-shards }}-${{ inputs.node-version }}-windows
           parallel: true
 
   sqljs:
@@ -74,10 +82,10 @@ jobs:
 
       - run: pnpm install
       - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
-      - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci --shard=${{ inputs.shard }}/${{ inputs.total-shards }}
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
-          flag-name: sqljs-node:${{ inputs.node-version }}-windows
+          flag-name: sqljs-node:${{ inputs.shard }}/${{ inputs.total-shards }}-${{ inputs.node-version }}-windows
           parallel: true

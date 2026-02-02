@@ -14,7 +14,7 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 describe("github issues > #6442 JoinTable does not respect inverseJoinColumns referenced column width", () => {
     let connections: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/v1/*{.js,.ts}"],
             enabledDrivers: ["mariadb", "mysql"],
@@ -40,7 +40,7 @@ describe("github issues > #6442 JoinTable does not respect inverseJoinColumns re
         )
     })
     beforeEach(async () => await reloadTestingDatabases(connections))
-    after(async () => await closeTestingConnections(connections))
+    afterAll(async () => await closeTestingConnections(connections))
 
     it("should generate column widths equal to the referenced column widths", async () => {
         await Promise.all(

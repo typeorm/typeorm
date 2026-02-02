@@ -9,7 +9,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #3997 synchronize=true always failing when using decimal column type with a foreign key constraint", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 enabledDrivers: [
@@ -25,7 +25,7 @@ describe("github issues > #3997 synchronize=true always failing when using decim
                 entities: [User, Photo],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should recognize model changes", () =>
         Promise.all(

@@ -11,14 +11,14 @@ import { Group } from "./entity/Group"
 
 describe("github issues > #401 special keywords should be escaped in join queries", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should escape 'group' keyword properly", () =>
         Promise.all(

@@ -8,7 +8,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #1898 Simple JSON breaking in @next", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sqlite", "better-sqlite3"],
@@ -16,7 +16,7 @@ describe("github issues > #1898 Simple JSON breaking in @next", () => {
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should correctly persist", () =>
         Promise.all(

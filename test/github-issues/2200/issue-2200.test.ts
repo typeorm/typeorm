@@ -12,7 +12,7 @@ describe("github issue > #2200 Bug - Issue with snake_case naming strategy", () 
     let connections: DataSource[]
     const namingStrategy = new NamingStrategyUnderTest()
 
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -22,7 +22,7 @@ describe("github issue > #2200 Bug - Issue with snake_case naming strategy", () 
     beforeEach(() => {
         return reloadTestingDatabases(connections)
     })
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("Renammed alias allow to query correctly", () =>
         Promise.all(

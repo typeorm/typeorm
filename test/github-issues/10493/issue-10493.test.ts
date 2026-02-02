@@ -11,7 +11,7 @@ import { User } from "./entity/User"
 describe("github issues > #10493 Broken migrations for indices on TIMESTAMP WITH TIMEZONE Oracle Database columns", () => {
     let dataSources: DataSource[]
 
-    before(
+    beforeAll(
         async () =>
             (dataSources = await createTestingConnections({
                 entities: [User],
@@ -22,7 +22,7 @@ describe("github issues > #10493 Broken migrations for indices on TIMESTAMP WITH
     )
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should ignore virtual columns when indexing Oracle TIMESTAMP WITH TIME ZONE columns", () =>
         Promise.all(

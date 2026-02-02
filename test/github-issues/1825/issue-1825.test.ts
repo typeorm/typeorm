@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #1825 Invalid field values being loaded with long camelCased embedded field names.", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #1825 Invalid field values being loaded with long came
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should load valid values in embedded with long field names", () =>
         Promise.all(

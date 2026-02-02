@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #4452 InsertQueryBuilder fails on some SQL Expressions values", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 // enabledDrivers: ["postgres"],
@@ -19,7 +19,7 @@ describe("github issues > #4452 InsertQueryBuilder fails on some SQL Expressions
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
     it("should be able to use sql functions", () =>
         Promise.all(
             connections.map(async (connection) => {

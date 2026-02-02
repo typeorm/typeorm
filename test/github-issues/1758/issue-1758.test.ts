@@ -8,7 +8,7 @@ import {
 describe("github issues > #1758 Synchronization bug in PostgreSQL bug occurs when we explicitly state the default schema as 'public'", () => {
     describe("postgres, cockroachdb", () => {
         let connections: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres", "cockroachdb"],
@@ -17,7 +17,7 @@ describe("github issues > #1758 Synchronization bug in PostgreSQL bug occurs whe
                 dropSchema: true,
             })
         })
-        after(() => closeTestingConnections(connections))
+        afterAll(() => closeTestingConnections(connections))
 
         it("should correctly synchronize schema when we explicitly state the default schema as 'public'", () =>
             Promise.all(
@@ -29,7 +29,7 @@ describe("github issues > #1758 Synchronization bug in PostgreSQL bug occurs whe
 
     describe("mssql", () => {
         let connections: DataSource[]
-        before(async () => {
+        beforeAll(async () => {
             connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mssql"],
@@ -38,7 +38,7 @@ describe("github issues > #1758 Synchronization bug in PostgreSQL bug occurs whe
                 dropSchema: true,
             })
         })
-        after(() => closeTestingConnections(connections))
+        afterAll(() => closeTestingConnections(connections))
 
         it("should correctly synchronize schema when we explicitly state the default schema as 'public'", () =>
             Promise.all(

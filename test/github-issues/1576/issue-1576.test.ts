@@ -11,7 +11,7 @@ import { Category } from "./entity/Category"
 
 describe("github issues > #1576 Entities with null as `id` are merged [@next]", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #1576 Entities with null as `id` are merged [@next]", 
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should successfully create object", () => {
         connections.forEach((connection) => {

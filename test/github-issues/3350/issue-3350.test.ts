@@ -11,7 +11,7 @@ import { expect } from "chai"
 
 describe("github issues > #3350 ER_DUP_FIELDNAME with simple find", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -20,7 +20,7 @@ describe("github issues > #3350 ER_DUP_FIELDNAME with simple find", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should find without errors", () =>
         Promise.all(

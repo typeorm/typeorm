@@ -7,7 +7,9 @@ import {
 import { MemoryLogger } from "./memory-logger"
 
 describe("github issues > #7662 postgres extensions installation should be optional", function () {
-    it("should NOT install extensions if option is disabled", async function () {
+    it("should NOT install extensions if option is disabled", async function ({
+        skip,
+    }) {
         let connection: DataSource | null = null
         try {
             const connections = await createTestingConnections({
@@ -22,7 +24,7 @@ describe("github issues > #7662 postgres extensions installation should be optio
             })
 
             if (connections.length < 1) {
-                this.skip()
+                skip()
                 return
             }
 
@@ -43,7 +45,9 @@ describe("github issues > #7662 postgres extensions installation should be optio
         }
     })
 
-    it("should install extensions if option is undefined", async function () {
+    it("should install extensions if option is undefined", async function ({
+        skip,
+    }) {
         let connections: DataSource[] = []
         try {
             connections = await createTestingConnections({
@@ -55,7 +59,7 @@ describe("github issues > #7662 postgres extensions installation should be optio
             })
 
             if (connections.length < 1) {
-                this.skip()
+                skip()
                 return
             }
 
@@ -72,7 +76,9 @@ describe("github issues > #7662 postgres extensions installation should be optio
         }
     })
 
-    it("should install extensions if option is enabled", async function () {
+    it("should install extensions if option is enabled", async function ({
+        skip,
+    }) {
         let connections: DataSource[] = []
         try {
             connections = await createTestingConnections({
@@ -87,7 +93,7 @@ describe("github issues > #7662 postgres extensions installation should be optio
             })
 
             if (connections.length < 1) {
-                this.skip()
+                skip()
             }
 
             const connection = connections[0]

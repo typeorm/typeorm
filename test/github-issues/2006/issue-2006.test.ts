@@ -8,7 +8,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #2006 Columns are being set to null after saving the entity", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -16,7 +16,7 @@ describe("github issues > #2006 Columns are being set to null after saving the e
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should be able to find by boolean find", () =>
         Promise.all(

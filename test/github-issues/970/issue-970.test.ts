@@ -9,7 +9,7 @@ import {
 
 describe("github issues > #970 Mongo Bad Sort Specification", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Post],
@@ -17,7 +17,7 @@ describe("github issues > #970 Mongo Bad Sort Specification", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should order properly without errors", () =>
         Promise.all(

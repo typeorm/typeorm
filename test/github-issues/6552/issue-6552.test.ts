@@ -12,7 +12,7 @@ import { PostV2 } from "./entity/PostV2"
 
 describe("github issues > #6552 MongoRepository delete by ObjectId deletes the wrong entity", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -20,7 +20,7 @@ describe("github issues > #6552 MongoRepository delete by ObjectId deletes the w
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     // before the fix this would delete incorrectly post1 instead of post2
     it("should delete the correct entity when id column is called _id", () =>

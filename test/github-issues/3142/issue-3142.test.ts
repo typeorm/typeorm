@@ -9,7 +9,7 @@ import { DataSource } from "../../../src"
 
 describe("github issues > #3142 Unique constraint not created on embedded entity field", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #3142 Unique constraint not created on embedded entity
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should create unique constraint on embedded entity", () =>
         Promise.all(

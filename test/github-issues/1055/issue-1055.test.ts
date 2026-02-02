@@ -12,7 +12,7 @@ import { expect } from "chai"
 
 describe("github issues > #1055 ind with relations not working, correct syntax causes type error", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -20,7 +20,7 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should be able to find by object reference", () =>
         Promise.all(

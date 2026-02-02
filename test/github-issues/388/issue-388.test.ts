@@ -10,14 +10,14 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #388 skip and take with string ID don't work", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should load posts with string id successfully", () =>
         Promise.all(

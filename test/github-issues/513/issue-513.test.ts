@@ -12,7 +12,7 @@ import { DateUtils } from "../../../src/util/DateUtils"
 
 describe("github issues > #513 Incorrect time/datetime types for SQLite", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -20,7 +20,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should create datetime column type for datetime in sqlite", () =>
         Promise.all(

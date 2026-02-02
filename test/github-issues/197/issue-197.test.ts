@@ -10,7 +10,7 @@ import { Person } from "./entity/person"
 
 describe("github issues > #197 Fails to drop indexes when removing fields", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #197 Fails to drop indexes when removing fields", () =
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("it should drop the column and the referenced index", () =>
         Promise.all(

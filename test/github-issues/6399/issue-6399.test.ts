@@ -11,7 +11,7 @@ import { Comment } from "./entity/Comment"
 describe("github issues > #6399 Process extraAppendedAndWhereCondition for inherited entity", () => {
     let connections: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         return (connections = await createTestingConnections({
             entities: [Post, TargetPost, Comment],
             schemaCreate: true,
@@ -20,7 +20,7 @@ describe("github issues > #6399 Process extraAppendedAndWhereCondition for inher
         }))
     })
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("Query with join and limit for inhered entity", () =>
         Promise.all(

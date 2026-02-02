@@ -11,14 +11,14 @@ import { expect } from "chai"
 
 describe("github issues > #341 OneToOne relation with referencedColumnName does not work", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("custom join column name and referencedColumnName", () =>
         Promise.all(

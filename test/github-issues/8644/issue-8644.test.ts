@@ -9,7 +9,7 @@ import { Limit, MyTable } from "./entity/my-table.entity"
 describe("github issues > #8644 BUG - Special keyword column name for simple-enum in sqlite", () => {
     let connections: DataSource[]
 
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #8644 BUG - Special keyword column name for simple-enu
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("it should be able to set special keyword as column name for simple-enum types", () =>
         Promise.all(

@@ -12,14 +12,14 @@ import { Post } from "./entity/Post"
 describe("github issues > #11440", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["postgres", "aurora-postgres", "cockroachdb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should use table or alias name during upsert or doUpdate when both schema name and skipUpdateIfNoValuesChanged supplied", async () =>
         Promise.all(

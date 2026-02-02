@@ -9,7 +9,7 @@ import { expect } from "chai"
 
 describe("github issues > #3158 Cannot run sync a second time", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -28,7 +28,7 @@ describe("github issues > #3158 Cannot run sync a second time", () => {
             })),
     )
     beforeEach(async () => await reloadTestingDatabases(connections))
-    after(async () => await closeTestingConnections(connections))
+    afterAll(async () => await closeTestingConnections(connections))
 
     it("can recognize model changes", () =>
         Promise.all(

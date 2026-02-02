@@ -5,7 +5,7 @@ import { PostgresConnectionOptions } from "../../../src/driver/postgres/Postgres
 
 describe.skip("github issues > #114 Can not be parsed correctly the URL of pg.", () => {
     let connection: DataSource
-    before(() => {
+    beforeAll(() => {
         connection = new DataSource({
             // Dummy Connection, won't be established
             type: "postgres",

@@ -8,7 +8,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #438 how can i define unsigned column?", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
@@ -16,7 +16,7 @@ describe("github issues > #438 how can i define unsigned column?", () => {
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should correctly create and change column with UNSIGNED and ZEROFILL attributes", () =>
         Promise.all(

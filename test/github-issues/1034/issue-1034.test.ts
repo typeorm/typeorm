@@ -11,7 +11,7 @@ import { expect } from "chai"
 
 describe("github issues > #1034 Issue using setter with promises", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #1034 Issue using setter with promises", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should set members in circle", () =>
         Promise.all(

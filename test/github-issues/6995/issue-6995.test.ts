@@ -8,7 +8,7 @@ import { DefaultUpdateDate } from "./entity/default-update-date"
 
 describe("github issues > #6995 Generating migrations for UpdateDateColumn should generate on update clause", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 migrations: [],
@@ -18,7 +18,7 @@ describe("github issues > #6995 Generating migrations for UpdateDateColumn shoul
                 entities: [DefaultUpdateDate],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should create migration with default ON UPDATE clause", () =>
         Promise.all(

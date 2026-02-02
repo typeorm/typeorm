@@ -10,7 +10,7 @@ import Second from "./entity/second"
 
 describe("github issues > #4958 getRepository returns results from another Repo", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [First, Second],
@@ -18,7 +18,7 @@ describe("github issues > #4958 getRepository returns results from another Repo"
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("sql generated is for correct model", () => {
         for (const connection of connections) {

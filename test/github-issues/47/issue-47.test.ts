@@ -11,7 +11,7 @@ import { Category } from "./entity/Category"
 
 describe("github issues > #47 wrong sql syntax when loading lazy relation", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #47 wrong sql syntax when loading lazy relation", () =
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should persist successfully and return persisted entity", () =>
         Promise.all(

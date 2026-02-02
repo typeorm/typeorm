@@ -12,7 +12,7 @@ import { UserMonth } from "./entity/user-month"
 
 describe.skip("github issues > #1685 JoinColumn from JoinColum is not considered when inserting new value", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -22,7 +22,7 @@ describe.skip("github issues > #1685 JoinColumn from JoinColum is not considered
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not fail when inserting a new UserMonth with good PKs from JoinColumn", () =>
         Promise.all(

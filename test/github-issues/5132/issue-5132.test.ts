@@ -11,7 +11,7 @@ import { Foo } from "./entity/foo.entity"
 describe("github issues > #5132: Default of -1 (minus 1) generates useless migrations`", () => {
     describe("-1 (minus 1) in default value", () => {
         let connections: DataSource[]
-        before(
+        beforeAll(
             async () =>
                 (connections = await createTestingConnections({
                     schemaCreate: false,
@@ -20,7 +20,7 @@ describe("github issues > #5132: Default of -1 (minus 1) generates useless migra
                     enabledDrivers: ["postgres", "cockroachdb"],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        afterAll(() => closeTestingConnections(connections))
 
         it("can recognize model changes", () =>
             Promise.all(

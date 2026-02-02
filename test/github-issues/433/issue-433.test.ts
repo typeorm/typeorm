@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #433 default value (json) is not getting set in postgreSQL", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #433 default value (json) is not getting set in postgr
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should successfully set default value in to JSON type column", () =>
         Promise.all(

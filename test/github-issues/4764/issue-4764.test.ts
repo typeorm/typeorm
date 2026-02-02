@@ -18,7 +18,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
     // connect to db
     let connections: DataSource[]
 
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 enabledDrivers: ["mssql"],
@@ -28,7 +28,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     // -------------------------------------------------------------------------
     // Specifications

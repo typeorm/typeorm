@@ -20,7 +20,7 @@
     "stripInternal": true,
     "useDefineForClassFields": false,
     "useUnknownInCatchVariables": false,
-    "types": ["chai", "chai/register-should", "node"]
+    "types": ["chai", "chai/register-should", "node", "vitest/globals"]
   },
   "exclude": ["build", "node_modules", "temp", "tmp", "sample/playground"],
   "extends": "@tsconfig/node20/tsconfig.json",

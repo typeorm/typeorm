@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #3636 synchronize drops (and then re-adds) json column in mariadb", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #3636 synchronize drops (and then re-adds) json column
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not drop json column", () =>
         Promise.all(

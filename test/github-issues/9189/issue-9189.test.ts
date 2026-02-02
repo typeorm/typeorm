@@ -9,7 +9,7 @@ import { expect } from "chai"
 describe("github issues > #9189 check invalid constraint options", () => {
     let dataSources: DataSource[] = []
 
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should throw an exception, when invalid option is configured", async () => {
         let err

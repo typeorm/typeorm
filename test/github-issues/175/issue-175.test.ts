@@ -11,14 +11,14 @@ import { expect } from "chai"
 
 describe("github issues > #175 ManyToMany relation doesn't put an empty array when the relation is empty", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should return post with categories if they are attached to the post", () =>
         Promise.all(

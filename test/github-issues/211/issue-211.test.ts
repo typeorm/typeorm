@@ -9,14 +9,14 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #211 where in query issue", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not fail if WHERE IN expression is used", () =>
         Promise.all(

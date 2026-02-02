@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #190 too many SQL variables when using setMaxResults in SQLite", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -17,7 +17,7 @@ describe("github issues > #190 too many SQL variables when using setMaxResults i
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not fail if high max results is used", () =>
         Promise.all(

@@ -8,7 +8,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #5407 Wrong migration created because of default column value format", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 migrations: [],
@@ -25,7 +25,7 @@ describe("github issues > #5407 Wrong migration created because of default colum
                 entities: [User],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("can recognize model changes", () =>
         Promise.all(

@@ -27,7 +27,7 @@ describe("github issues > #6266 Many identical selects after insert bunch of ite
         },
     ]
 
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -35,7 +35,7 @@ describe("github issues > #6266 Many identical selects after insert bunch of ite
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should execute a single SELECT to get inserted default and generated values of multiple entities", () =>
         Promise.all(

@@ -8,7 +8,7 @@ import { User } from "./entity/UserEntity"
 
 describe("github issues > #7217 Modifying enum fails migration if the enum is used in an array column", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 migrations: [],
@@ -18,7 +18,7 @@ describe("github issues > #7217 Modifying enum fails migration if the enum is us
                 entities: [User],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should not generate queries when no model changes", () =>
         Promise.all(

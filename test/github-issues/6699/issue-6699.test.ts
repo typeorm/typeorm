@@ -8,7 +8,7 @@ import { expect } from "chai"
 
 describe("github issues > #6699 MaxListenersExceededWarning occurs on Postgres", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [],
@@ -16,7 +16,7 @@ describe("github issues > #6699 MaxListenersExceededWarning occurs on Postgres",
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("queries in a transaction do not cause an EventEmitter memory leak", () =>
         Promise.all(

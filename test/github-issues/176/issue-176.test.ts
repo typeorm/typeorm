@@ -12,14 +12,14 @@ import { expect } from "chai"
 
 describe("github issues > #176 @CreateDateColumn and @UpdateDateColumn does not read back in UTC", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should return dates in utc", () =>
         Promise.all(

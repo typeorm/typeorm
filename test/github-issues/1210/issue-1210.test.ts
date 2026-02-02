@@ -10,7 +10,7 @@ import { Event } from "./entity/Event"
 
 describe("github issues > #1210 mongodb does not have multiple entities properly", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -18,7 +18,7 @@ describe("github issues > #1210 mongodb does not have multiple entities properly
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should save entities properly", () =>
         Promise.all(

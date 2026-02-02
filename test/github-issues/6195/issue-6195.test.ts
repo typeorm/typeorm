@@ -31,7 +31,7 @@ const createTestTable = async (queryRunner: QueryRunner) => {
 describe("github issues > #6195 feature: fake migrations for existing tables", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: false,
@@ -49,7 +49,7 @@ describe("github issues > #6195 feature: fake migrations for existing tables", (
         }
     })
 
-    after(async () => {
+    afterAll(async () => {
         await closeTestingConnections(dataSources)
     })
 
@@ -77,7 +77,7 @@ describe("github issues > #6195 feature: fake migrations for existing tables", (
     })
 
     describe("fake rollback tests", () => {
-        before(async () => {
+        beforeAll(async () => {
             for (const dataSource of dataSources) {
                 if (dataSource.options.type === "mongodb") return
                 await dataSource.runMigrations({

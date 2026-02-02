@@ -10,7 +10,7 @@ import { Message } from "./entity/message"
 
 describe("github issues > #7851 Updating (using save method) a ManyToOne relation sets the object.relation_id to null", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             enabledDrivers: ["mysql"],
             entities: [User, Message],
@@ -19,7 +19,7 @@ describe("github issues > #7851 Updating (using save method) a ManyToOne relatio
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should update the message.user_id to the new value", () =>
         Promise.all(

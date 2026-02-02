@@ -11,7 +11,7 @@ import { User } from "./entity/User"
 // TODO: wrong test
 describe.skip("github issues > #2147 Lazy load JoinColumn with multiple columns name property is ignored for second reference column", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -20,7 +20,7 @@ describe.skip("github issues > #2147 Lazy load JoinColumn with multiple columns 
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should create multiple column join for lazy loading relationship", () => {
         return Promise.all(

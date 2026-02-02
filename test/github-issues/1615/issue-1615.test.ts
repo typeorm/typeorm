@@ -7,7 +7,7 @@ import {
 
 describe("github issues > #1615 Datetime2 with any precision result in datetime2(7) in database", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
@@ -15,7 +15,7 @@ describe("github issues > #1615 Datetime2 with any precision result in datetime2
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should correctly create column with Datetime2 type and any precision", () =>
         Promise.all(

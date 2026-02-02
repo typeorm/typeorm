@@ -11,7 +11,7 @@ import { SuperLongTableNameWhichIsRelatedToOriginalTable } from "./entity/SuperL
 
 describe("github issues > #9379 RelationIdLoader is not respecting maxAliasLength", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -19,7 +19,7 @@ describe("github issues > #9379 RelationIdLoader is not respecting maxAliasLengt
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should fetch related entities properly", async () => {
         for (const connection of connections) {

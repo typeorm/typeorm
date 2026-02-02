@@ -15,7 +15,7 @@ import { User } from "./entity/User"
 
 describe("github issues > #10626 Regression in transactionDepth handling", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -23,7 +23,7 @@ describe("github issues > #10626 Regression in transactionDepth handling", () =>
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("transactionDepth should be updated correctly when commit fails", () =>
         Promise.all(

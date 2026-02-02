@@ -13,14 +13,14 @@ import { prepareData } from "./find-options-test-utils"
 
 describe("github issues > #9977", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 __dirname,
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("where relations with (More|Less)ThanOrEqual operators", () =>
         Promise.all(

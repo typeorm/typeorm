@@ -10,7 +10,7 @@ import { expect } from "chai"
 
 describe("github issues > #134 Error TIME is converted to 'HH-mm' instead of 'HH:mm", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -25,7 +25,7 @@ describe("github issues > #134 Error TIME is converted to 'HH-mm' instead of 'HH
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should successfully persist the post with creationDate in HH:mm and return persisted entity", () =>
         Promise.all(

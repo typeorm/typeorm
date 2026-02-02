@@ -11,7 +11,7 @@ import { PlanOfRecord } from "./entity/PlanOfRecord"
 
 describe("github issues > #6752 column name not been find on unique index decorator", () => {
     let connections: DataSource[]
-    before(async () => {
+    beforeAll(async () => {
         connections = await createTestingConnections({
             entities: [Block, PlanOfRecord],
             schemaCreate: false,
@@ -21,7 +21,7 @@ describe("github issues > #6752 column name not been find on unique index decora
         await reloadTestingDatabases(connections)
     })
 
-    after(async () => {
+    afterAll(async () => {
         await closeTestingConnections(connections)
     })
 

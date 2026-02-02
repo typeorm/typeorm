@@ -12,7 +12,7 @@ import { TournamentSquadParticipant } from "./entity/TournamentSquadParticipant"
 describe("github issues > #1972 STI problem - empty columns", () => {
     let connections: DataSource[]
 
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -22,7 +22,7 @@ describe("github issues > #1972 STI problem - empty columns", () => {
 
     beforeEach(() => reloadTestingDatabases(connections))
 
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should insert with userId", () =>
         Promise.all(

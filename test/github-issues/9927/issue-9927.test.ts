@@ -9,7 +9,7 @@ import { ExampleEntity } from "./entity/ExampleEntity"
 describe("github issues > #9927 aggregate function throw error when column alias name is set", () => {
     let dataSources: DataSource[]
 
-    before(async () => {
+    beforeAll(async () => {
         dataSources = await createTestingConnections({
             entities: [ExampleEntity],
             enabledDrivers: ["mariadb"],
@@ -17,7 +17,7 @@ describe("github issues > #9927 aggregate function throw error when column alias
     })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    afterAll(() => closeTestingConnections(dataSources))
 
     it("should call `maximum` method successfully", async () => {
         await Promise.all(

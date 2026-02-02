@@ -29,7 +29,7 @@ describe("github issues > #2131 InsertResult return the same primary key", () =>
         },
     ]
 
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -37,7 +37,7 @@ describe("github issues > #2131 InsertResult return the same primary key", () =>
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should get correct insert ids for multiple entities inserted", () =>
         Promise.all(

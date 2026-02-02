@@ -10,7 +10,7 @@ import { Table, TableColumn } from "../../../src"
 
 describe("github issues > #1997 enum type not working in postgres when defined in a custom schema", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
@@ -36,7 +36,7 @@ describe("github issues > #1997 enum type not working in postgres when defined i
             }),
         )
     })
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should create table with ENUM column", () =>
         Promise.all(

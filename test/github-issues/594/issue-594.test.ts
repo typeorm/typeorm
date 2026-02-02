@@ -9,14 +9,14 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #594 WhereInIds no longer works in the latest version.", () => {
     let connections: DataSource[]
-    before(
+    beforeAll(
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    afterAll(() => closeTestingConnections(connections))
 
     it("should load entities by given simple post ids (non mixed)", () =>
         Promise.all(
