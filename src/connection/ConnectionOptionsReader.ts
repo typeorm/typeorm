@@ -51,6 +51,7 @@ export class ConnectionOptionsReader {
     /**
      * Gets a connection with a given name read from ormconfig.
      * If connection with such name would not be found then it throw error.
+     * @param name
      */
     async get(name: string): Promise<DataSourceOptions> {
         const allOptions = await this.all()
@@ -68,6 +69,7 @@ export class ConnectionOptionsReader {
 
     /**
      * Checks if there is a TypeORM configuration file.
+     * @param name
      */
     async has(name: string): Promise<boolean> {
         const allOptions = await this.load()
@@ -172,9 +174,9 @@ export class ConnectionOptionsReader {
                         "__esModule" in configModule &&
                         "default" in configModule)
                 ) {
-                    connectionOptions = configModule.default
+                    connectionOptions = await configModule.default
                 } else {
-                    connectionOptions = configModule
+                    connectionOptions = await configModule
                 }
             } catch (err) {
                 PlatformTools.logWarn(
@@ -203,6 +205,7 @@ export class ConnectionOptionsReader {
 
     /**
      * Normalize connection options.
+     * @param connectionOptions
      */
     protected normalizeConnectionOptions(
         connectionOptions: DataSourceOptions | DataSourceOptions[],

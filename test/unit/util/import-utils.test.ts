@@ -81,9 +81,15 @@ describe("ImportUtils.importOrRequireFile", () => {
         const [exports, moduleType] = await importOrRequireFile(jsFilePath)
 
         expect(exports).to.not.be.eq(null)
-        expect(moduleType).to.be.eq("commonjs")
-        expect(exports.test).to.be.a("function")
-        expect(exports.number).to.be.eq(6)
+        if (process.env.VITEST) {
+            expect(moduleType).to.be.eq("esm")
+            expect(exports.default.test).to.be.a("function")
+            expect(exports.default.number).to.be.eq(6)
+        } else {
+            expect(moduleType).to.be.eq("commonjs")
+            expect(exports.test).to.be.a("function")
+            expect(exports.number).to.be.eq(6)
+        }
 
         await fs.rm(testDir, { recursive: true, force: true })
     })
@@ -145,9 +151,15 @@ describe("ImportUtils.importOrRequireFile", () => {
         const [exports, moduleType] = await importOrRequireFile(jsFilePath)
 
         expect(exports).to.not.be.eq(null)
-        expect(moduleType).to.be.eq("commonjs")
-        expect(exports.test).to.be.a("function")
-        expect(exports.number).to.be.eq(6)
+        if (process.env.VITEST) {
+            expect(moduleType).to.be.eq("esm")
+            expect(exports.default.test).to.be.a("function")
+            expect(exports.default.number).to.be.eq(6)
+        } else {
+            expect(moduleType).to.be.eq("commonjs")
+            expect(exports.test).to.be.a("function")
+            expect(exports.number).to.be.eq(6)
+        }
 
         await fs.rm(testDir, { recursive: true, force: true })
     })
@@ -175,8 +187,13 @@ describe("ImportUtils.importOrRequireFile", () => {
         const [exports, moduleType] = await importOrRequireFile(jsonFilePath)
 
         expect(exports).to.not.be.eq(null)
-        expect(moduleType).to.be.eq("commonjs")
-        expect(exports.test).to.be.eq(6)
+        if (process.env.VITEST) {
+            expect(moduleType).to.be.eq("esm")
+            expect(exports.default.test).to.be.eq(6)
+        } else {
+            expect(moduleType).to.be.eq("commonjs")
+            expect(exports.test).to.be.eq(6)
+        }
 
         await fs.rm(testDir, { recursive: true, force: true })
     })
@@ -222,17 +239,30 @@ describe("ImportUtils.importOrRequireFile", () => {
         const numberOfStatCalls = statSpy.callCount
         const numberOfReadFileCalls = readFileSpy.callCount
 
-        assert.equal(
-            numberOfStatCalls,
-            1,
-            "stat should be called for the first import",
-        )
+        if (process.env.VITEST) {
+            assert.equal(
+                numberOfStatCalls,
+                0,
+                "stat should NOT be called in Vitest (cache bypass)",
+            )
+            assert.equal(
+                numberOfReadFileCalls,
+                0,
+                "readFile should NOT be called in Vitest (cache bypass)",
+            )
+        } else {
+            assert.equal(
+                numberOfStatCalls,
+                1,
+                "stat should be called for the first import",
+            )
 
-        assert.equal(
-            numberOfReadFileCalls,
-            1,
-            "readFile should be called for the first import",
-        )
+            assert.equal(
+                numberOfReadFileCalls,
+                1,
+                "readFile should be called for the first import",
+            )
+        }
 
         // Trigger next imports to check if cache is used
         await importOrRequireFile(filePath2)
