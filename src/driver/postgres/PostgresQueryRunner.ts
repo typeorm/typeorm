@@ -1317,16 +1317,16 @@ export class PostgresQueryRunner
                 // Handle scalar-to-array conversion specially
                 if (!oldColumn.isArray && newColumn.isArray) {
                     // Wrap scalar value in ARRAY constructor
-                    upTypeClause = `${newFullType} USING ARRAY["${newColumn.name}"]`
-                    downTypeClause = `${oldFullType} USING "${oldColumn.name}"[1]`
+                    upTypeClause = `${newFullType} USING ARRAY["${oldColumn.name}"]`
+                    downTypeClause = `${oldFullType} USING "${newColumn.name}"[1]`
                 } else if (oldColumn.isArray && !newColumn.isArray) {
                     // Extract first element from array
-                    upTypeClause = `${newFullType} USING "${newColumn.name}"[1]`
-                    downTypeClause = `${oldFullType} USING ARRAY["${oldColumn.name}"]`
+                    upTypeClause = `${newFullType} USING "${oldColumn.name}"[1]`
+                    downTypeClause = `${oldFullType} USING ARRAY["${newColumn.name}"]`
                 } else {
-                    // Use explicit cast via text for safer conversion
-                    upTypeClause = `${newFullType} USING "${newColumn.name}"::text::${newFullType}`
-                    downTypeClause = `${oldFullType} USING "${oldColumn.name}"::text::${oldFullType}`
+                    // Use explicit cast for safer conversion
+                    upTypeClause = `${newFullType} USING "${oldColumn.name}"::${newFullType}`
+                    downTypeClause = `${oldFullType} USING "${newColumn.name}"::${oldFullType}`
                 }
             }
 
@@ -1344,6 +1344,9 @@ export class PostgresQueryRunner
                     }" TYPE ${downTypeClause}`,
                 ),
             )
+
+            // Update cloned table to reflect the new column state
+            clonedTable = table.clone()
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
