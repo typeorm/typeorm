@@ -1279,21 +1279,71 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
+        // Check if this is a generated column change that requires recreation
+        const requiresRecreation =
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
-        ) {
-            // To avoid data conversion, we just recreate column
+
+        if (requiresRecreation) {
+            // Generated column changes require full recreation
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            oldColumn.type !== newColumn.type ||
+            oldColumn.length !== newColumn.length ||
+            newColumn.isArray !== oldColumn.isArray
+        ) {
+            // Type, length, or array changes - use ALTER COLUMN TYPE to preserve data
+            // PostgreSQL supports: ALTER TABLE ... ALTER COLUMN ... TYPE new_type [USING expression]
+
+            const newFullType = this.driver.createFullType(newColumn)
+            const oldFullType = this.driver.createFullType(oldColumn)
+
+            // Build the ALTER COLUMN TYPE statement
+            // For most type changes, PostgreSQL can auto-convert. For complex changes,
+            // we add a USING clause to help with the conversion.
+            let upTypeClause = newFullType
+            let downTypeClause = oldFullType
+
+            // Determine if we need a USING clause for the type conversion
+            // USING is needed when PostgreSQL cannot automatically convert between types
+            const needsUsing = this.typeChangeNeedsUsing(oldColumn, newColumn)
+            if (needsUsing) {
+                // Handle scalar-to-array conversion specially
+                if (!oldColumn.isArray && newColumn.isArray) {
+                    // Wrap scalar value in ARRAY constructor
+                    upTypeClause = `${newFullType} USING ARRAY["${newColumn.name}"]`
+                    downTypeClause = `${oldFullType} USING "${oldColumn.name}"[1]`
+                } else if (oldColumn.isArray && !newColumn.isArray) {
+                    // Extract first element from array
+                    upTypeClause = `${newFullType} USING "${newColumn.name}"[1]`
+                    downTypeClause = `${oldFullType} USING ARRAY["${oldColumn.name}"]`
+                } else {
+                    // Use explicit cast via text for safer conversion
+                    upTypeClause = `${newFullType} USING "${newColumn.name}"::text::${newFullType}`
+                    downTypeClause = `${oldFullType} USING "${oldColumn.name}"::text::${oldFullType}`
+                }
+            }
+
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${upTypeClause}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        oldColumn.name
+                    }" TYPE ${downTypeClause}`,
+                ),
+            )
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
@@ -4866,6 +4916,116 @@ export class PostgresQueryRunner
         return schema
             ? `${schema}.${this.buildSequenceName(table, columnOrName)}`
             : this.buildSequenceName(table, columnOrName)
+    }
+
+    /**
+     * Determines if a column type change requires a USING clause in PostgreSQL.
+     * PostgreSQL can auto-convert between many types (e.g., varchar length changes),
+     * but some conversions require explicit casting via USING.
+     * @param oldColumn The original column definition
+     * @param newColumn The new column definition
+     * @returns true if the type change requires a USING clause
+     */
+    protected typeChangeNeedsUsing(
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+    ): boolean {
+        const oldType = oldColumn.type.toLowerCase()
+        const newType = newColumn.type.toLowerCase()
+
+        // Same base type with only length change - no USING needed
+        // e.g., varchar(50) -> varchar(100), char(10) -> char(20)
+        if (oldType === newType) {
+            return false
+        }
+
+        // Character type family - can convert between each other without USING
+        const charTypes = [
+            "character varying",
+            "varchar",
+            "character",
+            "char",
+            "text",
+        ]
+        if (
+            charTypes.indexOf(oldType) >= 0 &&
+            charTypes.indexOf(newType) >= 0
+        ) {
+            return false
+        }
+
+        // Integer type family - PostgreSQL auto-converts these
+        const intTypes = [
+            "int",
+            "int2",
+            "int4",
+            "int8",
+            "smallint",
+            "integer",
+            "bigint",
+        ]
+        if (intTypes.indexOf(oldType) >= 0 && intTypes.indexOf(newType) >= 0) {
+            return false
+        }
+
+        // Floating point type family
+        const floatTypes = [
+            "real",
+            "float",
+            "float4",
+            "float8",
+            "double precision",
+            "numeric",
+            "decimal",
+        ]
+        if (
+            floatTypes.indexOf(oldType) >= 0 &&
+            floatTypes.indexOf(newType) >= 0
+        ) {
+            return false
+        }
+
+        // Bit type family
+        const bitTypes = ["bit", "varbit", "bit varying"]
+        if (bitTypes.indexOf(oldType) >= 0 && bitTypes.indexOf(newType) >= 0) {
+            return false
+        }
+
+        // Timestamp type family
+        const timestampTypes = [
+            "timestamp",
+            "timestamptz",
+            "timestamp without time zone",
+            "timestamp with time zone",
+        ]
+        if (
+            timestampTypes.indexOf(oldType) >= 0 &&
+            timestampTypes.indexOf(newType) >= 0
+        ) {
+            return false
+        }
+
+        // Time type family
+        const timeTypes = [
+            "time",
+            "timetz",
+            "time without time zone",
+            "time with time zone",
+        ]
+        if (
+            timeTypes.indexOf(oldType) >= 0 &&
+            timeTypes.indexOf(newType) >= 0
+        ) {
+            return false
+        }
+
+        // Array dimension change - needs USING
+        if (oldColumn.isArray !== newColumn.isArray) {
+            return true
+        }
+
+        // Cross-family conversions need USING clause
+        return true
     }
 
     /**
