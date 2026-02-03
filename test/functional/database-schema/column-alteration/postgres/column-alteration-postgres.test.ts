@@ -9,6 +9,8 @@ import {
 } from "../../../../utils/test-utils"
 import { TableColumn } from "../../../../../src/schema-builder/table/TableColumn"
 
+// GitHub issue #3357 - PostgreSQL column type/length changes should use
+// ALTER COLUMN TYPE instead of DROP/ADD to prevent data loss
 describe("database schema > column alteration > postgres", () => {
     let connections: DataSource[]
     before(async () => {
