@@ -3,7 +3,6 @@ import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 
 /**
  * MySQL specific connection options.
- *
  * @see https://github.com/mysqljs/mysql#connection-options
  */
 export interface AuroraMysqlConnectionOptions
