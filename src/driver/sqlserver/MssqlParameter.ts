@@ -1,6 +1,5 @@
 /**
  * Sql server driver requires parameter types to be specified fo input parameters used in the query.
- *
  * @see https://github.com/patriksimek/node-mssql#data-types
  */
 export class MssqlParameter {
