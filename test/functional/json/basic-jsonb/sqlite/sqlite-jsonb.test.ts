@@ -7,6 +7,7 @@ import {
 } from "../../../../utils/test-utils"
 import { Record } from "./entity/Record"
 
+// GitHub issue #11930 - TypeORM does not allow jsonb on sqlite
 describe("jsonb type > sqlite", () => {
     let connections: DataSource[]
     before(

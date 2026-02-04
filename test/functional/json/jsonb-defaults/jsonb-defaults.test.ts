@@ -7,13 +7,18 @@ import {
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
 
-describe("json > defaults", () => {
+describe("jsonb > defaults", () => {
     let connections: DataSource[]
     before(
         async () =>
             (connections = await createTestingConnections({
                 entities: [Post],
-                enabledDrivers: ["postgres", "better-sqlite3", "sqljs"],
+                enabledDrivers: [
+                    "postgres",
+                    "better-sqlite3",
+                    "sqljs",
+                    "cockroachdb",
+                ],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

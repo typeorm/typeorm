@@ -833,50 +833,48 @@ export abstract class AbstractSqliteDriver implements Driver {
             ["json", "jsonb"].includes(columnMetadata.type as string) &&
             !["function", "undefined"].includes(typeof columnMetadata.default)
         ) {
-            try {
-                let tableDefault = tableColumn.default
-                if (typeof tableDefault === "string") {
-                    if (
-                        tableDefault.startsWith("(") &&
-                        tableDefault.endsWith(")")
-                    ) {
-                        tableDefault = tableDefault.substring(
-                            1,
-                            tableDefault.length - 1,
-                        )
-                    }
+            let tableDefault = tableColumn.default
+            if (typeof tableDefault === "string") {
+                tableDefault = tableDefault.trim()
+                if (
+                    tableDefault.startsWith("(") &&
+                    tableDefault.endsWith(")")
+                ) {
+                    tableDefault = tableDefault.slice(1, -1)
+                }
 
-                    if (
-                        tableDefault.toLowerCase().startsWith("jsonb('") &&
-                        tableDefault.endsWith("')")
-                    ) {
-                        tableDefault = tableDefault.substring(
-                            7,
-                            tableDefault.length - 2,
-                        )
-                    } else if (
-                        tableDefault.startsWith("'") &&
-                        tableDefault.endsWith("'")
-                    ) {
-                        tableDefault = tableDefault.substring(
-                            1,
-                            tableDefault.length - 1,
+                const fnWrapped = tableDefault.match(
+                    /^(jsonb|json)\s*\(\s*'((?:''|[^'])*)'\s*\)\s*$/i,
+                )
+                if (fnWrapped) tableDefault = fnWrapped[2]
+                else if (
+                    tableDefault.startsWith("'") &&
+                    tableDefault.endsWith("'")
+                ) {
+                    tableDefault = tableDefault.slice(1, -1)
+                }
+            }
+
+            if (typeof tableDefault === "string") {
+                try {
+                    const tableDefaultObj = JSON.parse(
+                        tableDefault.replace(/''/g, "'"),
+                    )
+                    return OrmUtils.deepCompare(
+                        columnMetadata.default,
+                        tableDefaultObj,
+                    )
+                } catch (err) {
+                    if (!(err instanceof SyntaxError)) {
+                        throw new TypeORMError(
+                            `Failed to compare default values of ${columnMetadata.propertyName} column`,
                         )
                     }
                 }
-
-                const tableDefaultObj =
-                    typeof tableDefault === "string"
-                        ? JSON.parse(tableDefault.replace(/''/g, "'"))
-                        : tableDefault
+            } else {
                 return OrmUtils.deepCompare(
                     columnMetadata.default,
-                    tableDefaultObj,
-                )
-            } catch (err) {
-                return (
-                    this.normalizeDefault(columnMetadata) ===
-                    tableColumn.default
+                    tableDefault,
                 )
             }
         }

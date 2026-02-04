@@ -3,6 +3,7 @@ import { ObjectLiteral } from "../common/ObjectLiteral"
 import { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { DriverUtils } from "../driver/DriverUtils"
 import { MysqlDriver } from "../driver/mysql/MysqlDriver"
+import { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
 import { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
 import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { TypeORMError } from "../error"
@@ -236,6 +237,8 @@ export class InsertQueryBuilder<
 
     /**
      * Specifies INTO which entity's table insertion will be executed.
+     * @param entityTarget
+     * @param columns
      */
     into<T extends ObjectLiteral>(
         entityTarget: EntityTarget<T>,
@@ -252,6 +255,7 @@ export class InsertQueryBuilder<
 
     /**
      * Values needs to be inserted into table.
+     * @param values
      */
     values(
         values:
@@ -281,6 +285,7 @@ export class InsertQueryBuilder<
     /**
      * Specifies a SELECT query to use as the source of values for the INSERT.
      * This creates an INSERT INTO ... SELECT FROM statement.
+     * @param queryBuilderOrFactory
      */
     valuesFromSelect(
         queryBuilderOrFactory:
@@ -319,6 +324,7 @@ export class InsertQueryBuilder<
 
     /**
      * Optional returning/output clause.
+     * @param output
      */
     output(output: string | string[]): this {
         return this.returning(output)
@@ -343,6 +349,7 @@ export class InsertQueryBuilder<
 
     /**
      * Optional returning/output clause.
+     * @param returning
      */
     returning(returning: string | string[]): this {
         // not all databases support returning/output cause
@@ -358,6 +365,7 @@ export class InsertQueryBuilder<
      * Indicates if entity must be updated after insertion operations.
      * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
      * Enabled by default.
+     * @param enabled
      */
     updateEntity(enabled: boolean): this {
         this.expressionMap.updateEntity = enabled
@@ -366,7 +374,7 @@ export class InsertQueryBuilder<
 
     /**
      * Adds additional ON CONFLICT statement supported in postgres and cockroach.
-     *
+     * @param statement
      * @deprecated Use `orIgnore` or `orUpdate`
      */
     onConflict(statement: string): this {
@@ -376,6 +384,7 @@ export class InsertQueryBuilder<
 
     /**
      * Adds additional ignore statement supported in databases.
+     * @param statement
      */
     orIgnore(statement: string | boolean = true): this {
         this.expressionMap.onIgnore = !!statement
@@ -392,7 +401,6 @@ export class InsertQueryBuilder<
      * `.orUpdate({ conflict_target: ['date'], overwrite: ['title'] })`
      *
      * is now `.orUpdate(['title'], ['date'])`
-     *
      */
     orUpdate(statement?: {
         columns?: string[]
@@ -408,6 +416,9 @@ export class InsertQueryBuilder<
 
     /**
      * Adds additional update statement supported in databases.
+     * @param statementOrOverwrite
+     * @param conflictTarget
+     * @param orUpdateOptions
      */
     orUpdate(
         statementOrOverwrite?:
@@ -627,8 +638,9 @@ export class InsertQueryBuilder<
                                         )
                                     if (col) {
                                         expression = (
-                                            this.connection
-                                                .driver as AbstractSqliteDriver
+                                            this.connection.driver as
+                                                | AbstractSqliteDriver
+                                                | ReactNativeDriver
                                         ).wrapWithJsonFunction(
                                             expression,
                                             col,
@@ -1019,7 +1031,6 @@ export class InsertQueryBuilder<
 
     /**
      * Checks if column is an auto-generated primary key, but the current insertion specifies a value for it.
-     *
      * @param column
      */
     protected isOverridingAutoIncrementBehavior(
@@ -1263,6 +1274,7 @@ export class InsertQueryBuilder<
 
     /**
      * Creates list of values needs to be inserted in the VALUES expression.
+     * @param mergeSourceAlias
      */
     protected createMergeIntoSourceExpression(
         mergeSourceAlias: string,
@@ -1427,6 +1439,7 @@ export class InsertQueryBuilder<
 
     /**
      * Creates list of values needs to be inserted in the VALUES expression.
+     * @param mergeSourceAlias
      */
     protected createMergeIntoInsertValuesExpression(
         mergeSourceAlias: string,
@@ -1472,6 +1485,7 @@ export class InsertQueryBuilder<
 
     /**
      * Create upsert search condition expression.
+     * @param mainTableOrAlias
      */
     protected createUpsertConditionExpression(mainTableOrAlias: string) {
         if (!this.expressionMap.onUpdate.overwriteCondition) return ""

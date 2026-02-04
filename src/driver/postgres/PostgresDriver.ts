@@ -1230,25 +1230,30 @@ export class PostgresDriver implements Driver {
             ["json", "jsonb"].includes(columnMetadata.type as string) &&
             !["function", "undefined"].includes(typeof columnMetadata.default)
         ) {
-            try {
-                const tableColumnDefault =
-                    typeof tableColumn.default === "string"
-                        ? JSON.parse(
-                              tableColumn.default
-                                  .substring(1, tableColumn.default.length - 1)
-                                  .replace(/''/g, "'"),
-                          )
-                        : tableColumn.default
+            let jsonString = tableColumn.default
+            if (typeof jsonString === "string") {
+                jsonString = jsonString.trim()
+                if (jsonString.startsWith("'") && jsonString.endsWith("'")) {
+                    jsonString = jsonString.slice(1, -1).replace(/''/g, "'")
+                }
+            }
 
-                return OrmUtils.deepCompare(
-                    columnMetadata.default,
-                    tableColumnDefault,
-                )
-            } catch (err) {
-                const columnDefault = this.lowerDefaultValueIfNecessary(
-                    this.normalizeDefault(columnMetadata),
-                )
-                return columnDefault === tableColumn.default
+            if (typeof jsonString === "string") {
+                try {
+                    const tableColumnDefault = JSON.parse(jsonString)
+                    return OrmUtils.deepCompare(
+                        columnMetadata.default,
+                        tableColumnDefault,
+                    )
+                } catch (err) {
+                    if (!(err instanceof SyntaxError)) {
+                        throw new TypeORMError(
+                            `Failed to compare default values of ${columnMetadata.propertyName} column`,
+                        )
+                    }
+                }
+            } else {
+                return OrmUtils.deepCompare(columnMetadata.default, jsonString)
             }
         }
 

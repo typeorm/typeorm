@@ -804,39 +804,38 @@ export class CockroachDriver implements Driver {
             ["json", "jsonb"].includes(columnMetadata.type as string) &&
             !["function", "undefined"].includes(typeof columnMetadata.default)
         ) {
-            try {
-                let jsonString = tableColumn.default
-                if (typeof jsonString === "string") {
-                    if (
-                        jsonString.startsWith("e'") && // CockroachDB escapes JSON/JSONB default values with e'...'
-                        jsonString.endsWith("'")
-                    ) {
-                        jsonString = jsonString
-                            .substring(2, jsonString.length - 1)
-                            .replace(/\\'/g, "'")
-                    } else if (
-                        jsonString.startsWith("'") &&
-                        jsonString.endsWith("'")
-                    ) {
-                        jsonString = jsonString
-                            .substring(1, jsonString.length - 1)
-                            .replace(/''/g, "'")
+            let jsonString = tableColumn.default
+            if (typeof jsonString === "string") {
+                jsonString = jsonString.trim()
+                if (
+                    jsonString.startsWith("e'") && // CockroachDB escapes JSON/JSONB default values with e'...'
+                    jsonString.endsWith("'")
+                ) {
+                    jsonString = jsonString.slice(2, -1).replace(/\\'/g, "'")
+                } else if (
+                    jsonString.startsWith("'") &&
+                    jsonString.endsWith("'")
+                ) {
+                    jsonString = jsonString.slice(1, -1).replace(/''/g, "'")
+                }
+            }
+
+            if (typeof jsonString === "string") {
+                try {
+                    const tableColumnDefault = JSON.parse(jsonString)
+                    return OrmUtils.deepCompare(
+                        columnMetadata.default,
+                        tableColumnDefault,
+                    )
+                } catch (err) {
+                    if (!(err instanceof SyntaxError)) {
+                        throw new TypeORMError(
+                            `Failed to compare default values of ${columnMetadata.propertyName} column`,
+                        )
                     }
                 }
-                const tableColumnDefault =
-                    typeof jsonString === "string"
-                        ? JSON.parse(jsonString)
-                        : jsonString
-
-                return OrmUtils.deepCompare(
-                    columnMetadata.default,
-                    tableColumnDefault,
-                )
-            } catch (err) {
-                const columnDefault = this.lowerDefaultValueIfNecessary(
-                    this.normalizeDefault(columnMetadata),
-                )
-                return columnDefault === tableColumn.default
+            } else {
+                return OrmUtils.deepCompare(columnMetadata.default, jsonString)
             }
         }
 

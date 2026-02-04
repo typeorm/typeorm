@@ -47,6 +47,7 @@ import { InstanceChecker } from "../util/InstanceChecker"
 import { FindOperator } from "../find-options/FindOperator"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
+import { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -3010,7 +3011,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             if (DriverUtils.isSQLiteFamily(this.connection.driver)) {
                 selectionPath = (
-                    this.connection.driver as AbstractSqliteDriver
+                    this.connection.driver as
+                        | AbstractSqliteDriver
+                        | ReactNativeDriver
                 ).wrapWithJsonFunction(selectionPath, column, false)
             }
 
