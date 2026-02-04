@@ -1019,7 +1019,7 @@ export class InsertQueryBuilder<
             }
         }
 
-        return Array.from(columns).sort()
+        return Array.from(columns)
     }
 
     /**
