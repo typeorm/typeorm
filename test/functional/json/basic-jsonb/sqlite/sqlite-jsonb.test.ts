@@ -1,10 +1,10 @@
 import { expect } from "chai"
-import { DataSource } from "../../../../src"
+import { DataSource } from "../../../../../src"
 import {
     createTestingConnections,
     reloadTestingDatabases,
     closeTestingConnections,
-} from "../../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { Record } from "./entity/Record"
 
 describe("jsonb type > sqlite", () => {
@@ -84,7 +84,7 @@ describe("jsonb type > sqlite", () => {
                     "dataWithDefaultObject",
                 )
                 const oldColumn = column?.clone()
-                column!.default = `'{"foo":"baz","hello": "earth"}'`
+                column!.default = `jsonb('{"foo":"baz","hello": "earth"}')`
                 await queryRunner.changeColumn("record", oldColumn!, column!)
                 await queryRunner.release()
 
@@ -105,7 +105,7 @@ describe("jsonb type > sqlite", () => {
                     "dataWithDefaultObject",
                 )
                 const oldColumn = column?.clone()
-                column!.default = `'{"foo": "bar", "hello":"world"}'`
+                column!.default = `jsonb('{"foo": "bar", "hello":"world''O"}')`
                 await queryRunner.changeColumn("record", oldColumn!, column!)
                 await queryRunner.release()
 

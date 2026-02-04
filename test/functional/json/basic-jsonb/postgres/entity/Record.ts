@@ -1,8 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../src"
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../../src"
 
-/**
- * For testing Postgres jsonb
- */
 @Entity()
 export class Record {
     @PrimaryGeneratedColumn()

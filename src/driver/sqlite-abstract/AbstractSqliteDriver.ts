@@ -850,22 +850,24 @@ export abstract class AbstractSqliteDriver implements Driver {
                         tableDefault.toLowerCase().startsWith("jsonb('") &&
                         tableDefault.endsWith("')")
                     ) {
-                        tableDefault = tableDefault
-                            .substring(7, tableDefault.length - 2)
-                            .replace(/''/g, "'")
+                        tableDefault = tableDefault.substring(
+                            7,
+                            tableDefault.length - 2,
+                        )
                     } else if (
                         tableDefault.startsWith("'") &&
                         tableDefault.endsWith("'")
                     ) {
-                        tableDefault = tableDefault
-                            .substring(1, tableDefault.length - 1)
-                            .replace(/''/g, "'")
+                        tableDefault = tableDefault.substring(
+                            1,
+                            tableDefault.length - 1,
+                        )
                     }
                 }
 
                 const tableDefaultObj =
                     typeof tableDefault === "string"
-                        ? JSON.parse(tableDefault)
+                        ? JSON.parse(tableDefault.replace(/''/g, "'"))
                         : tableDefault
                 return OrmUtils.deepCompare(
                     columnMetadata.default,
