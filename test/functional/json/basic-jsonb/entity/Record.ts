@@ -17,7 +17,7 @@ export class Record {
     @Column({
         type: "jsonb",
         nullable: true,
-        default: { hello: "world", foo: "bar" },
+        default: { hello: "world'O", foo: "bar" },
     })
     dataWithDefaultObject: any
 

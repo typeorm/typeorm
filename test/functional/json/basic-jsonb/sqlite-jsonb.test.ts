@@ -241,4 +241,24 @@ describe("jsonb type > sqlite", () => {
                 expect(foundRecords[0].data).to.deep.equal({ search: "me" })
             }),
         ))
+    it("should handle JSONB with quotes correctly", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const recordRepo = connection.getRepository(Record)
+                const record = new Record()
+                record.data = { qoute: "He said, O'Brian" }
+                const savedRecord = await recordRepo.save(record)
+
+                const foundRecord = await recordRepo.findOneBy({
+                    id: savedRecord.id,
+                })
+                expect(foundRecord).to.be.not.undefined
+                expect(foundRecord!).to.deep.include({
+                    data: {
+                        qoute: "He said, O'Brian",
+                    },
+                    dataWithDefaultObject: { hello: "world'O", foo: "bar" },
+                })
+            }),
+        ))
 })
