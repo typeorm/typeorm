@@ -7,12 +7,13 @@ import { Post } from "./entity/Post"
 import type { DataSource } from "../../../../src"
 import { LessThan } from "../../../../src"
 import { expect } from "chai"
+import { User } from "./entity/User"
 
 describe("repository > aggregate methods", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Post],
+            entities: [Post, User],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -24,6 +25,18 @@ describe("repository > aggregate methods", () => {
                     post.id = i
                     post.counter = i + 1
                     await dataSource.getRepository(Post).save(post)
+                }
+            }),
+        )
+
+        await Promise.all(
+            dataSources.map(async (dataSource) => {
+                for (let i = 0; i < 100; i++) {
+                    const user = new User()
+                    user.name = `User${i}`
+                    user.age = 20 + (i % 30)
+                    user.username = `user${i}`
+                    await dataSource.getRepository(User).save(user)
                 }
             }),
         )
@@ -123,6 +136,35 @@ describe("repository > aggregate methods", () => {
                             id: LessThan(0),
                         })
                     expect(maximum).to.be.null
+                }),
+            ))
+    })
+
+    // GitHub issue #1186 - Easier way to make SELECT COUNT(DISTINCT()) queries
+    describe("count", () => {
+        it("should return the aggregate count", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const count = await dataSource.getRepository(User).count()
+                    expect(count).to.equal(100)
+                }),
+            ))
+        it("should return the aggregate distinct count", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const count = await dataSource
+                        .getRepository(User)
+                        .count(["age"])
+                    expect(count).to.equal(30)
+                }),
+            ))
+        it("should return the aggregate distinct count with filters", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const count = await dataSource
+                        .getRepository(User)
+                        .count(["age", "id"], { where: { age: 25 } })
+                    expect(count).to.equal(4)
                 }),
             ))
     })
