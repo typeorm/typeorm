@@ -13,4 +13,9 @@ export interface FindManyOptions<Entity = any> extends FindOneOptions<Entity> {
      * Limit (paginated) - max number of entities should be taken.
      */
     take?: number
+
+    /**
+     * Indicates if DISTINCT should be applied to the query or not.
+     */
+    distinct?: boolean
 }

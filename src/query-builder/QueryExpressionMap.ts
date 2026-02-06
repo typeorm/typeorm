@@ -78,9 +78,14 @@ export class QueryExpressionMap {
     selectDistinctOn: string[] = []
 
     /**
-     * COUNT DISTINCT ON columns.
+     * COUNT columns.
      */
-    countDistinctOn: string[] = []
+    countOn: string[] = []
+
+    /**
+     * Whether COUNT should use DISTINCT.
+     */
+    countDistinct: boolean = false
 
     /**
      * FROM-s to be selected.
@@ -512,7 +517,8 @@ export class QueryExpressionMap {
         map.maxExecutionTime = this.maxExecutionTime
         map.selectDistinct = this.selectDistinct
         map.selectDistinctOn = this.selectDistinctOn
-        map.countDistinctOn = this.countDistinctOn
+        map.countOn = this.countOn
+        map.countDistinct = this.countDistinct
         this.aliases.forEach((alias) => map.aliases.push(new Alias(alias)))
         map.relationLoadStrategy = this.relationLoadStrategy
         map.mainAlias = this.mainAlias

@@ -550,21 +550,33 @@ export class Repository<Entity extends ObjectLiteral> {
      * Useful for pagination.
      */
     count(options?: FindManyOptions<Entity>): Promise<number>
+
+    /**
+     * Counts entities that match given options.
+     * Useful for pagination.
+     */
     count(
-        distinctOn: (keyof Entity)[],
+        countOn: (keyof Entity)[],
         options?: FindManyOptions<Entity>,
     ): Promise<number>
+
+    /**
+     * Counts entities that match given options.
+     * Useful for pagination.
+     * @param countOnOrOptions
+     * @param options
+     */
     count(
-        distinctOnOrOptions?: (keyof Entity)[] | FindManyOptions<Entity>,
+        countOnOrOptions?: (keyof Entity)[] | FindManyOptions<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<number> {
-        return Array.isArray(distinctOnOrOptions)
+        return Array.isArray(countOnOrOptions)
             ? this.manager.count(
                   this.metadata.target,
-                  distinctOnOrOptions,
+                  countOnOrOptions,
                   options,
               )
-            : this.manager.count(this.metadata.target, distinctOnOrOptions)
+            : this.manager.count(this.metadata.target, countOnOrOptions)
     }
 
     /**
