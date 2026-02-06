@@ -78,6 +78,11 @@ export class QueryExpressionMap {
     selectDistinctOn: string[] = []
 
     /**
+     * COUNT DISTINCT ON columns.
+     */
+    countDistinctOn: string[] = []
+
+    /**
      * FROM-s to be selected.
      */
     // froms: { target: string, alias: string }[] = [];
@@ -335,7 +340,6 @@ export class QueryExpressionMap {
 
     /**
      * Extra parameters.
-     *
      * @deprecated Use standard parameters instead
      */
     nativeParameters: ObjectLiteral = {}
@@ -402,6 +406,7 @@ export class QueryExpressionMap {
 
     /**
      * Creates a main alias and adds it to the current expression map.
+     * @param alias
      */
     setMainAlias(alias: Alias): Alias {
         // if main alias is already set then remove it from the array
@@ -416,6 +421,13 @@ export class QueryExpressionMap {
 
     /**
      * Creates a new alias and adds it to the current expression map.
+     * @param options
+     * @param options.type
+     * @param options.name
+     * @param options.target
+     * @param options.tablePath
+     * @param options.subQuery
+     * @param options.metadata
      */
     createAlias(options: {
         type: "from" | "select" | "join" | "other"
@@ -448,6 +460,7 @@ export class QueryExpressionMap {
     /**
      * Finds alias with the given name.
      * If alias was not found it throw an exception.
+     * @param aliasName
      */
     findAliasByName(aliasName: string): Alias {
         const alias = this.aliases.find((alias) => alias.name === aliasName)
@@ -499,6 +512,7 @@ export class QueryExpressionMap {
         map.maxExecutionTime = this.maxExecutionTime
         map.selectDistinct = this.selectDistinct
         map.selectDistinctOn = this.selectDistinctOn
+        map.countDistinctOn = this.countDistinctOn
         this.aliases.forEach((alias) => map.aliases.push(new Alias(alias)))
         map.relationLoadStrategy = this.relationLoadStrategy
         map.mainAlias = this.mainAlias

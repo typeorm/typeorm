@@ -258,6 +258,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         return this
     }
 
+    /**
+     * Sets the DISTINCT columns for COUNT queries.
+     * @param distinctOn
+     */
+    countDistinctOn(distinctOn: string[]): this {
+        this.expressionMap.countDistinctOn = distinctOn
+        return this
+    }
+
     fromDummy(): SelectQueryBuilder<any> {
         return this.from(
             this.connection.driver.dummyTableName ??
@@ -3090,7 +3099,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const mainAlias = this.expressionMap.mainAlias!.name // todo: will this work with "fromTableName"?
         const metadata = this.expressionMap.mainAlias!.metadata
 
-        const primaryColumns = metadata.primaryColumns
+        const countDistinctColumns = this.getCountDistinctColumns(metadata)
+        const countColumns =
+            countDistinctColumns.length > 0
+                ? countDistinctColumns
+                : metadata.primaryColumns
         const distinctAlias = this.escape(mainAlias)
 
         // If we aren't doing anything that will create a join, we can use a simpler `COUNT` instead
@@ -3098,7 +3111,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (
             this.expressionMap.joinAttributes.length === 0 &&
             this.expressionMap.relationIdAttributes.length === 0 &&
-            this.expressionMap.relationCountAttributes.length === 0
+            this.expressionMap.relationCountAttributes.length === 0 &&
+            countDistinctColumns.length === 0
         ) {
             return "COUNT(1)"
         }
@@ -3113,7 +3127,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // https://www.postgresql.org/docs/9.5/sql-select.html#SQL-DISTINCT
             return (
                 "COUNT(DISTINCT(" +
-                primaryColumns
+                countColumns
                     .map(
                         (c) =>
                             `${distinctAlias}.${this.escape(c.databaseName)}`,
@@ -3128,7 +3142,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // https://mariadb.com/kb/en/count-distinct/
             return (
                 "COUNT(DISTINCT " +
-                primaryColumns
+                countColumns
                     .map(
                         (c) =>
                             `${distinctAlias}.${this.escape(c.databaseName)}`,
@@ -3144,7 +3158,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // characteristic for concatenating, so we gotta use the `CONCAT` function.
             // However, If it's exactly 1 column we can omit the `CONCAT` for better performance.
 
-            const columnsExpression = primaryColumns
+            const columnsExpression = countColumns
                 .map(
                     (primaryColumn) =>
                         `${distinctAlias}.${this.escape(
@@ -3153,7 +3167,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 )
                 .join(", '|;|', ")
 
-            if (primaryColumns.length === 1) {
+            if (countColumns.length === 1) {
                 return `COUNT(DISTINCT(${columnsExpression}))`
             }
 
@@ -3164,13 +3178,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // spanner also has gotta be different from everyone else.
             // they do not support concatenation of different column types without casting them to string
 
-            if (primaryColumns.length === 1) {
+            if (countColumns.length === 1) {
                 return `COUNT(DISTINCT(${distinctAlias}.${this.escape(
-                    primaryColumns[0].databaseName,
+                    countColumns[0].databaseName,
                 )}))`
             }
 
-            const columnsExpression = primaryColumns
+            const columnsExpression = countColumns
                 .map(
                     (primaryColumn) =>
                         `CAST(${distinctAlias}.${this.escape(
@@ -3190,11 +3204,40 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         return (
             `COUNT(DISTINCT(` +
-            primaryColumns
+            countColumns
                 .map((c) => `${distinctAlias}.${this.escape(c.databaseName)}`)
                 .join(" || '|;|' || ") +
             "))"
         )
+    }
+
+    private getCountDistinctColumns(
+        metadata: EntityMetadata,
+    ): ColumnMetadata[] {
+        const distinctOn = this.expressionMap.countDistinctOn
+        if (!distinctOn || distinctOn.length === 0) {
+            return []
+        }
+
+        const columns: ColumnMetadata[] = []
+        const columnMap = new Map<string, ColumnMetadata>()
+
+        distinctOn.forEach((propertyPath) => {
+            const foundColumns =
+                metadata.findColumnsWithPropertyPath(propertyPath)
+            if (!foundColumns.length) {
+                throw new EntityPropertyNotFoundError(propertyPath, metadata)
+            }
+
+            foundColumns.forEach((column) => {
+                if (!columnMap.has(column.propertyPath)) {
+                    columnMap.set(column.propertyPath, column)
+                    columns.push(column)
+                }
+            })
+        })
+
+        return columns
     }
 
     protected async executeCountQuery(

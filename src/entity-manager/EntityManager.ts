@@ -809,6 +809,7 @@ export class EntityManager {
      * @param target
      * @param criteria
      * @param partialEntity
+     * @param options
      */
     update<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -867,6 +868,7 @@ export class EntityManager {
      * WARNING! This method updates ALL rows in the target table.
      * @param target
      * @param partialEntity
+     * @param options
      */
     updateAll<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -1077,15 +1079,37 @@ export class EntityManager {
     async count<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
+    ): Promise<number>
+    async count<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        distinctOn: (keyof Entity)[],
+        options?: FindManyOptions<Entity>,
+    ): Promise<number>
+    async count<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        distinctOnOrOptions?: (keyof Entity)[] | FindManyOptions<Entity>,
+        options?: FindManyOptions<Entity>,
     ): Promise<number> {
         const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder(
+        const countQueryBuilder = this.createQueryBuilder(
             entityClass,
-            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
-                metadata.name,
+            FindOptionsUtils.extractFindManyOptionsAlias(
+                Array.isArray(distinctOnOrOptions)
+                    ? options
+                    : distinctOnOrOptions,
+            ) || metadata.name,
         )
-            .setFindOptions(options || {})
-            .getCount()
+        const findOptions = Array.isArray(distinctOnOrOptions)
+            ? options
+            : distinctOnOrOptions
+        const distinctColumns = Array.isArray(distinctOnOrOptions)
+            ? distinctOnOrOptions.map((column) => column as string)
+            : []
+        countQueryBuilder.setFindOptions(findOptions || {})
+        if (distinctColumns.length > 0) {
+            countQueryBuilder.countDistinctOn(distinctColumns)
+        }
+        return countQueryBuilder.getCount()
     }
 
     /**
