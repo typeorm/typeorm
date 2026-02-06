@@ -14,6 +14,7 @@ import { RelationCountLoader } from "./relation-count/RelationCountLoader"
 import { RelationCountMetadataToAttributeTransformer } from "./relation-count/RelationCountMetadataToAttributeTransformer"
 import { QueryBuilder } from "./QueryBuilder"
 import { ReadStream } from "../platform/PlatformTools"
+import { Transform } from "stream"
 import { LockNotSupportedOnGivenDriverError } from "../error/LockNotSupportedOnGivenDriverError"
 import { MysqlDriver } from "../driver/mysql/MysqlDriver"
 import { SelectQuery } from "./SelectQuery"
@@ -2060,7 +2061,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Executes built SQL query and returns raw data stream.
      */
     async stream(): Promise<ReadStream> {
-        this.expressionMap.queryEntity = false
+        this.expressionMap.queryEntity = true
         const [sql, parameters] = this.getQueryAndParameters()
         const queryRunner = this.obtainQueryRunner()
         let transactionStartedByUs: boolean = false
@@ -2080,7 +2081,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     return queryRunner.release()
                 return
             }
-            const results = queryRunner.stream(
+            const results = await queryRunner.stream(
                 sql,
                 parameters,
                 releaseFn,
@@ -2090,6 +2091,37 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // close transaction if we started it
             if (transactionStartedByUs) {
                 await queryRunner.commitTransaction()
+            }
+
+            if (this.expressionMap.queryEntity) {
+                const expressionMap = this.expressionMap
+                const transformer = new RawSqlResultsToEntityTransformer(
+                    expressionMap,
+                    this.connection.driver,
+                    [],
+                    [],
+                    this.queryRunner,
+                )
+
+                const transformStream = new Transform({
+                    objectMode: true,
+                    transform(chunk, encoding, callback) {
+                        try {
+                            const entities = transformer.transform(
+                                [chunk],
+                                expressionMap.mainAlias!,
+                            )
+                            if (entities.length > 0) {
+                                this.push(entities[0])
+                            }
+                            callback()
+                        } catch (err) {
+                            callback(err)
+                        }
+                    },
+                })
+
+                return results.pipe(transformStream) as any
             }
 
             return results
