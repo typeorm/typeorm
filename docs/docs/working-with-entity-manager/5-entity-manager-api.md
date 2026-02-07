@@ -261,7 +261,7 @@ const exists = await manager.exists(User, {
 const exists = await manager.existsBy(User, { firstName: "Timber" })
 ```
 
-- `count` - Counts entities that match `FindOptions`. Useful for pagination.
+- `count` - Counts entities that match `FindOptions`. Useful for pagination. You can optionally pass an array of entity property paths to control which columns the `COUNT` expression uses.
 
 ```typescript
 const count = await manager.count(User, {
@@ -269,7 +269,16 @@ const count = await manager.count(User, {
         firstName: "Timber",
     },
 })
+
+const uniqueNamePairs = await manager.count(User, ["firstName", "lastName"], {
+    where: {
+        isActive: true,
+    },
+    distinct: true,
+})
 ```
+
+When you supply column names, the `distinct` option on `FindManyOptions` controls whether `COUNT(DISTINCT ...)` is generated. It defaults to `false`, so set it to `true` when you need to remove duplicates introduced by joins.
 
 - `countBy` - Counts entities that match `FindOptionsWhere`. Useful for pagination.
 

@@ -13,4 +13,11 @@ export interface FindManyOptions<Entity = any> extends FindOneOptions<Entity> {
      * Limit (paginated) - max number of entities should be taken.
      */
     take?: number
+
+    /**
+     * Indicates if the underlying `count` query will be executed with the DISTINCT keyword.
+     *
+     * Note: This option is only honored when using `count` method of repository and entity manager
+     */
+    distinct?: boolean
 }
