@@ -3101,15 +3101,18 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             this.expressionMap.joinAttributes.length === 0 &&
             this.expressionMap.relationIdAttributes.length === 0 &&
             this.expressionMap.relationCountAttributes.length === 0 &&
-            countColumnsToUse.length === 0
+            countColumns.length === 0
         ) {
             return "COUNT(1)"
         }
 
         // For everything else, we'll need to do some hackery to get the correct count values.
-        let distinctKeyword = this.expressionMap.selectDistinct
-            ? "DISTINCT"
-            : ""
+        const distinctKeyword =
+            countColumns.length === 0
+                ? "DISTINCT"
+                : this.expressionMap.selectDistinct
+                  ? "DISTINCT"
+                  : ""
 
         if (
             this.connection.driver.options.type === "cockroachdb" ||
@@ -3134,18 +3137,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (DriverUtils.isMySQLFamily(this.connection.driver)) {
             // MySQL & MariaDB can pass multiple parameters to the `DISTINCT` language construct
             // https://mariadb.com/kb/en/count-distinct/
-            distinctKeyword = distinctKeyword ? "DISTINCT " : ""
-            return (
-                "COUNT(" +
-                distinctKeyword +
-                countColumnsToUse
-                    .map(
-                        (c) =>
-                            `${distinctAlias}.${this.escape(c.databaseName)}`,
-                    )
-                    .join(", ") +
-                ")"
-            )
+            const columnsExpression = countColumnsToUse
+                .map((c) => `${distinctAlias}.${this.escape(c.databaseName)}`)
+                .join(", ")
+
+            if (distinctKeyword) {
+                return `COUNT(${distinctKeyword} ${columnsExpression})`
+            }
+            return `COUNT(CONCAT(${columnsExpression}))`
         }
 
         if (this.connection.driver.options.type === "mssql") {
@@ -3211,20 +3210,19 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const columns: ColumnMetadata[] = []
         const columnMap = new Map<string, ColumnMetadata>()
 
-        countOn.forEach((propertyPath) => {
-            const foundColumns =
-                metadata.findColumnsWithPropertyPath(propertyPath)
+        for (const col of countOn) {
+            const foundColumns = metadata.findColumnsWithPropertyPath(col)
             if (!foundColumns.length) {
-                throw new EntityPropertyNotFoundError(propertyPath, metadata)
+                throw new EntityPropertyNotFoundError(col, metadata)
             }
 
-            foundColumns.forEach((column) => {
-                if (!columnMap.has(column.propertyPath)) {
-                    columnMap.set(column.propertyPath, column)
-                    columns.push(column)
+            for (const foundColumn of foundColumns) {
+                if (!columnMap.has(foundColumn.propertyPath)) {
+                    columnMap.set(foundColumn.propertyPath, foundColumn)
+                    columns.push(foundColumn)
                 }
-            })
-        })
+            }
+        }
 
         return columns
     }

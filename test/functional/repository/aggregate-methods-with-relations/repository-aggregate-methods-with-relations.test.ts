@@ -243,7 +243,7 @@ describe("repository > aggregate methods with relations", () => {
                     expect(count2).to.equal(1)
                 }),
             ))
-        it("should return null when no records match relation filter", () =>
+        it("should return 0 when no records match relation filter", () =>
             Promise.all(
                 connections.map(async (connection) => {
                     const authorRepo = connection.getRepository(Author)
