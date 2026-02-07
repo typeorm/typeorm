@@ -6,12 +6,13 @@ import {
 import { Post } from "./entity/Post"
 import { LessThan, DataSource } from "../../../../src"
 import { expect } from "chai"
+import { User } from "./entity/User"
 
 describe("repository > aggregate methods", () => {
     let connections: DataSource[]
     before(async () => {
         connections = await createTestingConnections({
-            entities: [Post],
+            entities: [Post, User],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -23,6 +24,18 @@ describe("repository > aggregate methods", () => {
                     post.id = i
                     post.counter = i + 1
                     await connection.getRepository(Post).save(post)
+                }
+            }),
+        )
+
+        await Promise.all(
+            connections.map(async (connection) => {
+                for (let i = 0; i < 100; i++) {
+                    const user = new User()
+                    user.name = `User${i}`
+                    user.age = 20 + (i % 30)
+                    user.username = `user${i}`
+                    await connection.getRepository(User).save(user)
                 }
             }),
         )
@@ -122,6 +135,37 @@ describe("repository > aggregate methods", () => {
                             id: LessThan(0),
                         })
                     expect(maximum).to.be.null
+                }),
+            ))
+    })
+
+    // GitHub issue #1186 - Easier way to make SELECT COUNT(DISTINCT()) queries
+    describe("count", () => {
+        it("should return the aggregate count", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const count = await connection
+                        .getRepository(User)
+                        .count(["age", "id"])
+                    expect(count).to.equal(100)
+                }),
+            ))
+        it("should return the aggregate count with distinct", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const count = await connection
+                        .getRepository(User)
+                        .count(["age"], { distinct: true })
+                    expect(count).to.equal(30)
+                }),
+            ))
+        it("should return the aggregate count with filters", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const count = await connection
+                        .getRepository(User)
+                        .count(["age", "id"], { where: { age: 25 } })
+                    expect(count).to.equal(4)
                 }),
             ))
     })

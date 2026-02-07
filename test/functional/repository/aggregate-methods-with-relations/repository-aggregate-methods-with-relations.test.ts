@@ -210,6 +210,57 @@ describe("repository > aggregate methods with relations", () => {
             ))
     })
 
+    describe("count with relation filter", () => {
+        it("should return the aggregate count when filtering by relation", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const authorRepo = connection.getRepository(Author)
+                    const postRepo = connection.getRepository(Post)
+
+                    const author1 = await authorRepo.save({
+                        name: "Author 1",
+                    })
+                    const author2 = await authorRepo.save({
+                        name: "Author 2",
+                    })
+
+                    await postRepo.save([
+                        { title: "Post 1", viewCount: 100, author: author1 },
+                        { title: "Post 2", viewCount: 200, author: author1 },
+                        { title: "Post 3", viewCount: 300, author: author2 },
+                    ])
+
+                    const count = await postRepo.count(["author"], {
+                        where: { author: { id: author1.id } },
+                        distinct: false,
+                    })
+                    expect(count).to.equal(2)
+
+                    const count2 = await postRepo.count(["author"], {
+                        where: { author: { id: author1.id } },
+                        distinct: true,
+                    })
+                    expect(count2).to.equal(1)
+                }),
+            ))
+        it("should return null when no records match relation filter", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const authorRepo = connection.getRepository(Author)
+                    const postRepo = connection.getRepository(Post)
+
+                    const author1 = await authorRepo.save({
+                        name: "Author 1",
+                    })
+
+                    const count = await postRepo.count(["author"], {
+                        where: { author: { id: author1.id } },
+                    })
+                    expect(count).to.equal(0)
+                }),
+            ))
+    })
+
     describe("aggregate methods with nested relation filters", () => {
         it("should handle complex relation filters correctly", () =>
             Promise.all(

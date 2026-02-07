@@ -1120,7 +1120,9 @@ export class EntityManager {
             : []
         countQueryBuilder.setFindOptions(findOptions || {})
         if (countColumns.length > 0) {
-            countQueryBuilder.countOn(countColumns, findOptions?.distinct)
+            countQueryBuilder.expressionMap.countOn = countColumns
+            countQueryBuilder.expressionMap.selectDistinct =
+                findOptions?.distinct ?? true
         }
         return countQueryBuilder.getCount()
     }

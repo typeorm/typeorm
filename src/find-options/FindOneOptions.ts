@@ -47,7 +47,6 @@ export interface FindOneOptions<Entity = any> {
 
     /**
      * Specifies what relations should be loaded.
-     *
      * @deprecated
      */
     join?: JoinOptions
@@ -111,4 +110,9 @@ export interface FindOneOptions<Entity = any> {
      * If this is set to true, SELECT query in a `find` method will be executed in a transaction.
      */
     transaction?: boolean
+
+    /**
+     * Indicates if SELECT query in a `count` method will be executed with DISTINCT keyword.
+     */
+    distinct?: boolean
 }

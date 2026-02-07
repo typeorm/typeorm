@@ -258,17 +258,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         return this
     }
 
-    /**
-     * Sets the columns for COUNT queries.
-     * @param countOn
-     * @param countDistinct
-     */
-    countOn(countOn: string[], countDistinct: boolean = false): this {
-        this.expressionMap.countOn = countOn
-        this.expressionMap.countDistinct = countDistinct
-        return this
-    }
-
     fromDummy(): SelectQueryBuilder<any> {
         return this.from(
             this.connection.driver.dummyTableName ??
@@ -3118,8 +3107,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
 
         // For everything else, we'll need to do some hackery to get the correct count values.
-        const distinctKeyword = this.expressionMap.countDistinct
-            ? "DISTINCT "
+        let distinctKeyword = this.expressionMap.selectDistinct
+            ? "DISTINCT"
             : ""
 
         if (
@@ -3145,10 +3134,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (DriverUtils.isMySQLFamily(this.connection.driver)) {
             // MySQL & MariaDB can pass multiple parameters to the `DISTINCT` language construct
             // https://mariadb.com/kb/en/count-distinct/
+            distinctKeyword = distinctKeyword ? "DISTINCT " : ""
             return (
                 "COUNT(" +
                 distinctKeyword +
-                " " +
                 countColumnsToUse
                     .map(
                         (c) =>
@@ -3169,7 +3158,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 .map((c) => `${distinctAlias}.${this.escape(c.databaseName)}`)
                 .join(", '|;|', ")
 
-            if (countColumns.length === 1) {
+            if (countColumnsToUse.length === 1) {
                 return `COUNT(${distinctKeyword}(${columnsExpression}))`
             }
 

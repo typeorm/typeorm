@@ -83,11 +83,6 @@ export class QueryExpressionMap {
     countOn: string[] = []
 
     /**
-     * Whether COUNT should use DISTINCT.
-     */
-    countDistinct: boolean = false
-
-    /**
      * FROM-s to be selected.
      */
     // froms: { target: string, alias: string }[] = [];
@@ -518,7 +513,6 @@ export class QueryExpressionMap {
         map.selectDistinct = this.selectDistinct
         map.selectDistinctOn = this.selectDistinctOn
         map.countOn = this.countOn
-        map.countDistinct = this.countDistinct
         this.aliases.forEach((alias) => map.aliases.push(new Alias(alias)))
         map.relationLoadStrategy = this.relationLoadStrategy
         map.mainAlias = this.mainAlias
