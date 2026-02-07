@@ -230,15 +230,14 @@ describe("repository > aggregate methods with relations", () => {
                         { title: "Post 3", viewCount: 300, author: author2 },
                     ])
 
-                    const count = await postRepo.count(["author"], {
+                    const count = await postRepo.count({
                         where: { author: { id: author1.id } },
-                        distinct: false,
                     })
                     expect(count).to.equal(2)
 
+                    // SELECT COUNT(DISTINCT(col1, col2...))
                     const count2 = await postRepo.count(["author"], {
                         where: { author: { id: author1.id } },
-                        distinct: true,
                     })
                     expect(count2).to.equal(1)
                 }),

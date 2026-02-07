@@ -78,11 +78,6 @@ export class QueryExpressionMap {
     selectDistinctOn: string[] = []
 
     /**
-     * COUNT columns.
-     */
-    countOn: string[] = []
-
-    /**
      * FROM-s to be selected.
      */
     // froms: { target: string, alias: string }[] = [];
@@ -512,7 +507,6 @@ export class QueryExpressionMap {
         map.maxExecutionTime = this.maxExecutionTime
         map.selectDistinct = this.selectDistinct
         map.selectDistinctOn = this.selectDistinctOn
-        map.countOn = this.countOn.map((col) => col)
         this.aliases.forEach((alias) => map.aliases.push(new Alias(alias)))
         map.relationLoadStrategy = this.relationLoadStrategy
         map.mainAlias = this.mainAlias

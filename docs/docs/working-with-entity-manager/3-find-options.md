@@ -194,17 +194,6 @@ ORDER BY "columnName" ASC
 LIMIT 10 OFFSET 0
 ```
 
-- `distinct` - indicates if queries produced through `Repository.count` / `EntityManager.count` should use `COUNT(DISTINCT ...)` when you pass a column list as the second argument. Defaults to `false`.
-
-```ts
-await dataSource.manager.count(User, ["email"], {
-    where: {
-        companyId: 1,
-    },
-    distinct: true,
-})
-```
-
 - `cache` - Enables or disables query result caching. See [caching](../query-builder/6-caching.md) for more information and options.
 
 ```typescript

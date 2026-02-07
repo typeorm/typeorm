@@ -144,22 +144,20 @@ describe("repository > aggregate methods", () => {
         it("should return the aggregate count", () =>
             Promise.all(
                 connections.map(async (connection) => {
-                    const count = await connection
-                        .getRepository(User)
-                        .count(["age", "id"])
+                    const count = await connection.getRepository(User).count()
                     expect(count).to.equal(100)
                 }),
             ))
-        it("should return the aggregate count with distinct", () =>
+        it("should return the aggregate distinct count", () =>
             Promise.all(
                 connections.map(async (connection) => {
                     const count = await connection
                         .getRepository(User)
-                        .count(["age"], { distinct: true })
+                        .count(["age"])
                     expect(count).to.equal(30)
                 }),
             ))
-        it("should return the aggregate count with filters", () =>
+        it("should return the aggregate distinct count with filters", () =>
             Promise.all(
                 connections.map(async (connection) => {
                     const count = await connection

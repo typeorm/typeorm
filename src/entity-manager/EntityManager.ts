@@ -1089,7 +1089,7 @@ export class EntityManager {
      */
     async count<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        countOn: (keyof Entity)[],
+        distinctOn: (keyof Entity)[],
         options?: FindManyOptions<Entity>,
     ): Promise<number>
 
@@ -1097,34 +1097,38 @@ export class EntityManager {
      * Counts entities that match given options.
      * Useful for pagination.
      * @param entityClass
-     * @param countOnOrOptions
+     * @param distinctOnOrOptions
      * @param options
      */
     async count<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
-        countOnOrOptions?: (keyof Entity)[] | FindManyOptions<Entity>,
+        distinctOnOrOptions?: (keyof Entity)[] | FindManyOptions<Entity>,
         options?: FindManyOptions<Entity>,
     ): Promise<number> {
         const metadata = this.connection.getMetadata(entityClass)
+        const isDistinctArray = Array.isArray(distinctOnOrOptions)
+        const shouldUseOptionsArgument =
+            distinctOnOrOptions === undefined && options !== undefined
+
+        const findOptionsSource =
+            isDistinctArray || shouldUseOptionsArgument
+                ? options
+                : distinctOnOrOptions
+
         const countQueryBuilder = this.createQueryBuilder(
             entityClass,
-            FindOptionsUtils.extractFindManyOptionsAlias(
-                Array.isArray(countOnOrOptions) ? options : countOnOrOptions,
-            ) || metadata.name,
+            FindOptionsUtils.extractFindManyOptionsAlias(findOptionsSource) ||
+                metadata.name,
         )
-        const findOptions = Array.isArray(countOnOrOptions)
-            ? options
-            : countOnOrOptions
-        const countColumns = Array.isArray(countOnOrOptions)
-            ? countOnOrOptions.map((column) => column as string)
+
+        const distinctColumns = isDistinctArray
+            ? (distinctOnOrOptions as (keyof Entity)[]).map(
+                  (column) => column as string,
+              )
             : []
-        countQueryBuilder.setFindOptions(findOptions || {})
-        if (countColumns.length > 0) {
-            countQueryBuilder.expressionMap.countOn = countColumns
-            countQueryBuilder.expressionMap.selectDistinct =
-                findOptions?.distinct ?? false
-        }
-        return countQueryBuilder.getCount()
+
+        countQueryBuilder.setFindOptions(findOptionsSource || {})
+        return countQueryBuilder.getCount(distinctColumns)
     }
 
     /**

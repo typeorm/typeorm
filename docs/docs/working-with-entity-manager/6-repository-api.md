@@ -317,7 +317,7 @@ const exists = await repository.exists({
 const exists = await repository.existsBy({ firstName: "Timber" })
 ```
 
-- `count` - Counts entities that match `FindOptions`. Useful for pagination. You can also provide an array of property paths to count against specific columns.
+- `count` - Counts entities that match `FindOptions`. Useful for pagination. You can optionally pass an array of entity property paths to count distinct values of those columns.
 
 ```typescript
 const count = await repository.count({
@@ -330,11 +330,8 @@ const uniqueAgeBuckets = await repository.count(["age"], {
     where: {
         firstName: "Timber",
     },
-    distinct: true,
 })
 ```
-
-Set `distinct: true` inside the `FindManyOptions` argument when you need the generated query to use `COUNT(DISTINCT ...)` for the provided column list. By default duplicates are counted.
 
 - `countBy` - Counts entities that match `FindOptionsWhere`. Useful for pagination.
 
