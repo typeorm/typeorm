@@ -1280,21 +1280,51 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
+            // These changes require column recreation (e.g. scalar↔array,
+            // adding a generated column).
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length
+            ) {
+                // Use ALTER COLUMN TYPE to change column type/length in-place,
+                // preserving existing data instead of dropping the column.
+                // Fixes: https://github.com/typeorm/typeorm/issues/3357
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.connection.driver.createFullType(
+                            newColumn,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.connection.driver.createFullType(
+                            oldColumn,
+                        )}`,
+                    ),
+                )
+            }
+
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(

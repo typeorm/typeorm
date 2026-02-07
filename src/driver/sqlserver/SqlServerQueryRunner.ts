@@ -1303,19 +1303,52 @@ export class SqlServerQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
             newColumn.asExpression !== oldColumn.asExpression ||
             newColumn.generatedType !== oldColumn.generatedType
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            // Also, we recreate column if column type changed
+            // Also, we recreate column if computed column expression changed.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
+            if (
+                newColumn.type !== oldColumn.type ||
+                newColumn.length !== oldColumn.length
+            ) {
+                // Use ALTER COLUMN to change type/length in-place,
+                // preserving existing data.
+                // Fixes: https://github.com/typeorm/typeorm/issues/3357
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN ${this.buildCreateColumnSql(
+                            table,
+                            newColumn,
+                            true,
+                            false,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN ${this.buildCreateColumnSql(
+                            table,
+                            oldColumn,
+                            true,
+                            false,
+                            true,
+                        )}`,
+                    ),
+                )
+            }
+
             if (newColumn.name !== oldColumn.name) {
                 // we need database name and schema name to rename FK constraints
                 let dbName: string | undefined = undefined
