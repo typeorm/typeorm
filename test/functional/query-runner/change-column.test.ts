@@ -113,7 +113,8 @@ describe("query runner > change column", () => {
                 const testId = Number(Date.now())
                 try {
                     await queryRunner.query(
-                        `INSERT INTO "post"("id","version","name","text","tag") VALUES (${testId}, 1, 'Custom name', 'text', 'tag')`,
+                        `INSERT INTO "post"("id","version","name","text","tag") VALUES ($1, 1, $2, $3, $4)`,
+                        [testId, "Custom name", "text", "tag"],
                     )
 
                     const table = await queryRunner.getTable("post")
@@ -128,12 +129,14 @@ describe("query runner > change column", () => {
                     )
 
                     const rows = await queryRunner.query(
-                        `SELECT "name" FROM "post" WHERE "id" = ${testId}`,
+                        `SELECT "name" FROM "post" WHERE "id" = $1`,
+                        [testId],
                     )
                     expect(rows[0].name).to.equal("Custom name")
                 } finally {
                     await queryRunner.query(
-                        `DELETE FROM "post" WHERE "id" = ${testId}`,
+                        `DELETE FROM "post" WHERE "id" = $1`,
+                        [testId],
                     )
                     await queryRunner.executeMemoryDownSql()
                     queryRunner.clearSqlMemory()

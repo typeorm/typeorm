@@ -1281,8 +1281,10 @@ export class PostgresQueryRunner
 
         const oldColumnFullType = this.driver.createFullType(oldColumn).trim()
         const newColumnFullType = this.driver.createFullType(newColumn).trim()
+        const oldNormalizedType = this.driver.normalizeType(oldColumn)
+        const newNormalizedType = this.driver.normalizeType(newColumn)
         const isTypeChanged =
-            oldColumn.type !== newColumn.type ||
+            oldNormalizedType !== newNormalizedType ||
             newColumn.isArray !== oldColumn.isArray
         const isGeneratedColumnChanged =
             (!oldColumn.generatedType &&
