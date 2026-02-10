@@ -1593,7 +1593,7 @@ export class PostgresQueryRunner
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            oldColumnName
+                            newColumnName
                         }" TYPE ${oldColumnFullType}`,
                     ),
                 )
