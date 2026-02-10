@@ -237,7 +237,7 @@ export class FindOptionsUtils {
             // TODO: Review this validation
             for (const join of qb.expressionMap.joinAttributes) {
                 if (
-                    join.condition !== undefined ||
+                    join.hasUserCondition === true ||
                     join.mapToProperty !== undefined ||
                     join.isMappingMany !== undefined ||
                     join.direction !== "LEFT" ||

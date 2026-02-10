@@ -2189,6 +2189,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         joinAttribute.isMappingMany = isMappingMany
         joinAttribute.entityOrProperty = entityOrProperty // relationName
         joinAttribute.condition = condition // joinInverseSideCondition
+        joinAttribute.hasUserCondition = condition !== undefined
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
         this.expressionMap.joinAttributes.push(joinAttribute)
         const isEntity = this.connection.hasMetadata(entityOrProperty)
