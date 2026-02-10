@@ -115,7 +115,7 @@ describe("query runner > change column", () => {
                         `INSERT INTO "post"("id","version","name","text","tag") VALUES (1001, 1, 'Custom name', 'text', 'tag')`,
                     )
 
-                    let table = await queryRunner.getTable("post")
+                    const table = await queryRunner.getTable("post")
                     const nameColumn = table!.findColumnByName("name")!
                     const changedNameColumn = nameColumn.clone()
                     changedNameColumn.length = "500"
