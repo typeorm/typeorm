@@ -81,23 +81,44 @@ export class OneToOneInverseSideSubjectBuilder {
         if (relatedEntity === null) {
             // it makes sense to update database only there is a previously set value in the database
             if (relatedEntityDatabaseRelationId) {
-                // todo: probably we can improve this in the future by finding entity with column those values,
-                // todo: maybe it was already in persistence process. This is possible due to unique requirements of join columns
-                // we create a new subject which operations will be executed in subject operation executor
+                if (
+                    relation.inverseRelation?.orphanedRowAction !== "disable"
+                ) {
+                    // todo: probably we can improve this in the future by finding entity with column those values,
+                    // todo: maybe it was already in persistence process. This is possible due to unique requirements of join columns
+                    // we create a new subject which operations will be executed in subject operation executor
 
-                const removedRelatedEntitySubject = new Subject({
-                    metadata: relation.inverseEntityMetadata,
-                    parentSubject: subject,
-                    canBeUpdated: true,
-                    identifier: relatedEntityDatabaseRelationId,
-                    changeMaps: [
-                        {
-                            relation: relation.inverseRelation!,
-                            value: null,
-                        },
-                    ],
-                })
-                this.subjects.push(removedRelatedEntitySubject)
+                    const removedRelatedEntitySubject = new Subject({
+                        metadata: relation.inverseEntityMetadata,
+                        parentSubject: subject,
+                        identifier: relatedEntityDatabaseRelationId,
+                    })
+
+                    if (
+                        !relation.inverseRelation ||
+                        relation.inverseRelation.orphanedRowAction ===
+                            "nullify"
+                    ) {
+                        removedRelatedEntitySubject.canBeUpdated = true
+                        removedRelatedEntitySubject.changeMaps = [
+                            {
+                                relation: relation.inverseRelation!,
+                                value: null,
+                            },
+                        ]
+                    } else if (
+                        relation.inverseRelation.orphanedRowAction === "delete"
+                    ) {
+                        removedRelatedEntitySubject.mustBeRemoved = true
+                    } else if (
+                        relation.inverseRelation.orphanedRowAction ===
+                        "soft-delete"
+                    ) {
+                        removedRelatedEntitySubject.canBeSoftRemoved = true
+                    }
+
+                    this.subjects.push(removedRelatedEntitySubject)
+                }
             }
 
             return
