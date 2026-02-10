@@ -1279,6 +1279,8 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const oldColumnFullType = this.driver.createFullType(oldColumn)
+        const newColumnFullType = this.driver.createFullType(newColumn)
         const isTypeChanged =
             oldColumn.type !== newColumn.type ||
             newColumn.isArray !== oldColumn.isArray
@@ -1287,8 +1289,17 @@ export class PostgresQueryRunner
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
+        const isStoredGenerated =
+            oldColumn.generatedType === "STORED" ||
+            newColumn.generatedType === "STORED"
+        const isStoredGeneratedFullTypeChanged =
+            isStoredGenerated && newColumnFullType !== oldColumnFullType
 
-        if (isTypeChanged || isGeneratedColumnChanged) {
+        if (
+            isTypeChanged ||
+            isGeneratedColumnChanged ||
+            isStoredGeneratedFullTypeChanged
+        ) {
             // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
@@ -1298,8 +1309,6 @@ export class PostgresQueryRunner
         } else {
             const oldColumnName = oldColumn.name
             const newColumnName = newColumn.name
-            const oldColumnFullType = this.driver.createFullType(oldColumn)
-            const newColumnFullType = this.driver.createFullType(newColumn)
 
             if (oldColumnName !== newColumnName) {
                 // rename column
@@ -1578,6 +1587,8 @@ export class PostgresQueryRunner
             }
 
             if (
+                oldColumn.type === newColumn.type &&
+                typeof newColumn.type === "string" &&
                 this.driver.withLengthColumnTypes.includes(
                     newColumn.type as ColumnType,
                 ) &&
