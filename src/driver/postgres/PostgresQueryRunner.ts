@@ -1597,6 +1597,16 @@ export class PostgresQueryRunner
                         }" TYPE ${oldColumnFullType}`,
                     ),
                 )
+
+                const clonedColumn = clonedTable.columns.find(
+                    (column) => column.name === newColumnName,
+                )
+                if (clonedColumn) {
+                    clonedColumn.length = newColumn.length
+                    clonedColumn.type = newColumn.type
+                }
+                oldColumn.length = newColumn.length
+                oldColumn.type = newColumn.type
             }
 
             if (
