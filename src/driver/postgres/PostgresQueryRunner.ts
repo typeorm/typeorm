@@ -1279,8 +1279,8 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        const oldColumnFullType = this.driver.createFullType(oldColumn)
-        const newColumnFullType = this.driver.createFullType(newColumn)
+        const oldColumnFullType = this.driver.createFullType(oldColumn).trim()
+        const newColumnFullType = this.driver.createFullType(newColumn).trim()
         const isTypeChanged =
             oldColumn.type !== newColumn.type ||
             newColumn.isArray !== oldColumn.isArray

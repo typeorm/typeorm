@@ -110,9 +110,10 @@ describe("query runner > change column", () => {
                 if (connection.driver.options.type !== "postgres") return
 
                 const queryRunner = connection.createQueryRunner()
+                const testId = Number(Date.now())
                 try {
                     await queryRunner.query(
-                        `INSERT INTO "post"("id","version","name","text","tag") VALUES (1001, 1, 'Custom name', 'text', 'tag')`,
+                        `INSERT INTO "post"("id","version","name","text","tag") VALUES (${testId}, 1, 'Custom name', 'text', 'tag')`,
                     )
 
                     const table = await queryRunner.getTable("post")
@@ -127,12 +128,12 @@ describe("query runner > change column", () => {
                     )
 
                     const rows = await queryRunner.query(
-                        `SELECT "name" FROM "post" WHERE "id" = 1001`,
+                        `SELECT "name" FROM "post" WHERE "id" = ${testId}`,
                     )
                     expect(rows[0].name).to.equal("Custom name")
                 } finally {
                     await queryRunner.query(
-                        `DELETE FROM "post" WHERE "id" = 1001`,
+                        `DELETE FROM "post" WHERE "id" = ${testId}`,
                     )
                     await queryRunner.executeMemoryDownSql()
                     queryRunner.clearSqlMemory()
