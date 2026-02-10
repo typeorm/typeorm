@@ -1573,10 +1573,11 @@ export class PostgresQueryRunner
             }
 
             if (
-                newColumn.length !== oldColumn.length &&
                 this.driver.withLengthColumnTypes.includes(
                     newColumn.type as ColumnType,
-                )
+                ) &&
+                this.driver.createFullType(newColumn) !==
+                    this.driver.createFullType(oldColumn)
             ) {
                 upQueries.push(
                     new Query(
@@ -1588,7 +1589,7 @@ export class PostgresQueryRunner
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
+                            oldColumn.name
                         }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )

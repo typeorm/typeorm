@@ -110,30 +110,34 @@ describe("query runner > change column", () => {
                 if (connection.driver.options.type !== "postgres") return
 
                 const queryRunner = connection.createQueryRunner()
-                await queryRunner.query(
-                    `INSERT INTO "post"("id","version","name","text","tag") VALUES (1001, 1, 'Custom name', 'text', 'tag')`,
-                )
+                try {
+                    await queryRunner.query(
+                        `INSERT INTO "post"("id","version","name","text","tag") VALUES (1001, 1, 'Custom name', 'text', 'tag')`,
+                    )
 
-                let table = await queryRunner.getTable("post")
-                const nameColumn = table!.findColumnByName("name")!
-                const changedNameColumn = nameColumn.clone()
-                changedNameColumn.length = "500"
+                    let table = await queryRunner.getTable("post")
+                    const nameColumn = table!.findColumnByName("name")!
+                    const changedNameColumn = nameColumn.clone()
+                    changedNameColumn.length = "500"
 
-                await queryRunner.changeColumn(
-                    table!,
-                    nameColumn,
-                    changedNameColumn,
-                )
+                    await queryRunner.changeColumn(
+                        table!,
+                        nameColumn,
+                        changedNameColumn,
+                    )
 
-                const rows = await queryRunner.query(
-                    `SELECT "name" FROM "post" WHERE "id" = 1001`,
-                )
-                expect(rows[0].name).to.equal("Custom name")
-
-                await queryRunner.query(
-                    `DELETE FROM "post" WHERE "id" = 1001`,
-                )
-                await queryRunner.release()
+                    const rows = await queryRunner.query(
+                        `SELECT "name" FROM "post" WHERE "id" = 1001`,
+                    )
+                    expect(rows[0].name).to.equal("Custom name")
+                } finally {
+                    await queryRunner.query(
+                        `DELETE FROM "post" WHERE "id" = 1001`,
+                    )
+                    await queryRunner.executeMemoryDownSql()
+                    queryRunner.clearSqlMemory()
+                    await queryRunner.release()
+                }
             }),
         ))
 
