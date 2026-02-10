@@ -110,7 +110,8 @@ describe("query runner > change column", () => {
                 if (connection.driver.options.type !== "postgres") return
 
                 const queryRunner = connection.createQueryRunner()
-                const testId = Number(Date.now())
+                queryRunner.enableSqlMemory()
+                const testId = Math.floor(Math.random() * 1_000_000_000)
                 try {
                     await queryRunner.query(
                         `INSERT INTO "post"("id","version","name","text","tag") VALUES ($1, 1, $2, $3, $4)`,

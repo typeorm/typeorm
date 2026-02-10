@@ -1589,10 +1589,10 @@ export class PostgresQueryRunner
             }
 
             if (
-                oldColumn.type === newColumn.type &&
-                typeof newColumn.type === "string" &&
+                !isTypeChanged &&
+                typeof newNormalizedType === "string" &&
                 this.driver.withLengthColumnTypes.includes(
-                    newColumn.type as ColumnType,
+                    newNormalizedType as ColumnType,
                 ) &&
                 newColumnFullType !== oldColumnFullType
             ) {
