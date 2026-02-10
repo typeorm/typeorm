@@ -1296,20 +1296,25 @@ export class PostgresQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (oldColumn.name !== newColumn.name) {
+            const oldColumnName = oldColumn.name
+            const newColumnName = newColumn.name
+            const oldColumnFullType = this.driver.createFullType(oldColumn)
+            const newColumnFullType = this.driver.createFullType(newColumn)
+
+            if (oldColumnName !== newColumnName) {
                 // rename column
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} RENAME COLUMN "${
-                            oldColumn.name
-                        }" TO "${newColumn.name}"`,
+                            oldColumnName
+                        }" TO "${newColumnName}"`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} RENAME COLUMN "${
-                            newColumn.name
-                        }" TO "${oldColumn.name}"`,
+                            newColumnName
+                        }" TO "${oldColumnName}"`,
                     ),
                 )
 
@@ -1564,33 +1569,32 @@ export class PostgresQueryRunner
 
                 // rename old column in the Table object
                 const oldTableColumn = clonedTable.columns.find(
-                    (column) => column.name === oldColumn.name,
+                    (column) => column.name === oldColumnName,
                 )
                 clonedTable.columns[
                     clonedTable.columns.indexOf(oldTableColumn!)
-                ].name = newColumn.name
-                oldColumn.name = newColumn.name
+                ].name = newColumnName
+                oldColumn.name = newColumnName
             }
 
             if (
                 this.driver.withLengthColumnTypes.includes(
                     newColumn.type as ColumnType,
                 ) &&
-                this.driver.createFullType(newColumn) !==
-                    this.driver.createFullType(oldColumn)
+                newColumnFullType !== oldColumnFullType
             ) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                            newColumnName
+                        }" TYPE ${newColumnFullType}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            oldColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                            oldColumnName
+                        }" TYPE ${oldColumnFullType}`,
                     ),
                 )
             }
