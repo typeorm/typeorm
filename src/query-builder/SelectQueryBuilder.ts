@@ -4429,8 +4429,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     metadata.findEmbeddedWithPropertyPath(propertyPath)
                 const relation =
                     metadata.findRelationWithPropertyPath(propertyPath)
+                const relationId = metadata.relationIds.find(
+                    (relId) => relId.propertyName === propertyPath,
+                )
 
-                if (!embed && !column && !relation) {
+                if (!embed && !column && !relation && !relationId) {
                     throw new EntityPropertyNotFoundError(
                         propertyPath,
                         metadata,

@@ -142,6 +142,44 @@ export class EntityPersistExecutor {
                     // console.timeEnd("building subjects...");
                     // console.log("subjects", subjects);
 
+                    // For each RelationId property that is set, ensure the corresponding relation object is also set on the entity.
+                    subjects.forEach((subject) => {
+                        subject.metadata.relationIds.forEach((relationId) => {
+                            const value =
+                                subject.entity?.[relationId.propertyName]
+                            const relation = relationId.relation
+
+                            if (
+                                value === undefined ||
+                                value === null ||
+                                subject.entity?.[relation.propertyName] !==
+                                    undefined ||
+                                (!relation.isManyToOne &&
+                                    !relation.isOneToOneOwner) ||
+                                Array.isArray(value)
+                            ) {
+                                return
+                            }
+
+                            // Construct a simple object for the related entity with its referenced column set
+                            const idMap = relation.ensureRelationIdMap(value)
+                            const relatedEntity =
+                                relation.inverseEntityMetadata.create()
+                            relation.joinColumns.forEach((joinColumn) => {
+                                const referencedColumn =
+                                    joinColumn.referencedColumn!
+                                const val =
+                                    referencedColumn.getEntityValue(idMap)
+                                referencedColumn.setEntityValue(
+                                    relatedEntity,
+                                    val,
+                                )
+                            })
+                            subject.entity![relation.propertyName] =
+                                relatedEntity
+                        })
+                    })
+
                     // create a subject executor
                     return new SubjectExecutor(
                         queryRunner,

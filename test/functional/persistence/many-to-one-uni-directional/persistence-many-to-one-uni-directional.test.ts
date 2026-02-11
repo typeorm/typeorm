@@ -8,6 +8,10 @@ import {
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { expect } from "chai"
+import { ArticleCategory } from "./entity/ArticleCategory"
+import { ArticleDetails } from "./entity/ArticleDetails"
+import { Article } from "./entity/Article"
+import { In } from "../../../../src"
 
 describe("persistence > many-to-one uni-directional relation", function () {
     let connections: DataSource[]
@@ -360,6 +364,59 @@ describe("persistence > many-to-one uni-directional relation", function () {
                     name: "Hello Category",
                     post: { id: 2, title: "Hello Post #2" },
                 })
+            }),
+        ))
+
+    it("should save relation based on RelationId value", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const category = new ArticleCategory()
+                category.name = "Article category"
+
+                const details = new ArticleDetails()
+                details.authorName = "Umed"
+                details.comment = "about Article"
+                details.metadata = "Article,details,one-to-one"
+
+                const article = new Article()
+                article.text = "Hello how are you?"
+                article.title = "hello"
+                article.details = details
+
+                const secondArticle = new Article()
+                secondArticle.text = "Hello how are you? I am fine"
+                secondArticle.title = "hello again"
+                secondArticle.details = details
+                secondArticle.category = category
+
+                const categoryRepository =
+                    connection.getRepository(ArticleCategory)
+                const articleRepository = connection.getRepository(Article)
+
+                const createdCategory = await categoryRepository.save(category)
+                article.categoryId = createdCategory.id
+
+                await articleRepository.save(article)
+
+                const loadedArticle1 = await articleRepository.findOneBy({
+                    id: article.id,
+                })
+                expect(loadedArticle1!.categoryId).to.be.equal(
+                    createdCategory.id,
+                )
+
+                const loadedArticlesByDetails = await articleRepository.find({
+                    where: { detailsId: In([1]) },
+                })
+                expect(loadedArticlesByDetails).to.have.lengthOf(1)
+                expect(loadedArticlesByDetails[0].id).to.be.equal(article.id)
+
+                await articleRepository.save(secondArticle)
+
+                const loadedArticlesByCategory = await articleRepository.find({
+                    where: { categoryId: createdCategory.id },
+                })
+                expect(loadedArticlesByCategory).to.have.lengthOf(2)
             }),
         ))
 })
