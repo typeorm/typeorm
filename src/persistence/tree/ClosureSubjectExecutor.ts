@@ -22,6 +22,7 @@ export class ClosureSubjectExecutor {
 
     /**
      * Executes operations when subject is being inserted.
+     * @param subject
      */
     async insert(subject: Subject): Promise<void> {
         // create values to be inserted into the closure junction
@@ -38,6 +39,15 @@ export class ClosureSubjectExecutor {
                     subject.identifier
             },
         )
+
+        const levelColumn =
+            subject.metadata.closureJunctionTable.ownColumns.find(
+                (column) =>
+                    column.propertyName === "level" && !column.closureType,
+            )
+        if (levelColumn) {
+            closureJunctionInsertMap[levelColumn.databaseName] = 0
+        }
 
         // insert values into the closure junction table
         await this.queryRunner.manager
@@ -94,6 +104,13 @@ export class ClosureSubjectExecutor {
                 },
             )
 
+            let levelColumnName = ""
+            let levelColumnName2 = ""
+            if (levelColumn) {
+                levelColumnName = escape(levelColumn.databaseName)
+                levelColumnName2 = escape(levelColumn.databaseName) + " + 1"
+            }
+
             const whereCondition =
                 subject.metadata.closureJunctionTable.descendantColumns.map(
                     (column) => {
@@ -121,19 +138,87 @@ export class ClosureSubjectExecutor {
                 `INSERT INTO ${tableName} (${[
                     ...ancestorColumnNames,
                     ...descendantColumnNames,
+                    ...(levelColumn ? [levelColumnName] : []),
                 ].join(", ")}) ` +
                     `SELECT ${ancestorColumnNames.join(
                         ", ",
-                    )}, ${childEntityIds1.join(
-                        ", ",
-                    )} FROM ${tableName} WHERE ${whereCondition.join(" AND ")}`,
+                    )}, ${childEntityIds1.join(", ")}${
+                        levelColumn ? ", " + levelColumnName2 : ""
+                    } FROM ${tableName} WHERE ${whereCondition.join(" AND ")}`,
                 queryParams,
             )
         }
     }
 
+    async insertLevel(subject: Subject): Promise<void> {
+        const treeLevelColumn = subject.metadata.treeLevelColumn
+        if (!treeLevelColumn) return
+
+        let parent = subject.metadata.treeParentRelation!.getEntityValue(
+            subject.entity!,
+        ) // if entity was attached via parent
+        if (!parent && subject.parentSubject && subject.parentSubject.entity)
+            // if entity was attached via children
+            parent = subject.parentSubject.insertedValueSet
+                ? subject.parentSubject.insertedValueSet
+                : subject.parentSubject.entity
+
+        if (parent) {
+            const parentLevel = treeLevelColumn.getEntityValue(parent)
+            if (parentLevel !== undefined && parentLevel !== null) {
+                const parentLevelNum =
+                    typeof parentLevel === "string"
+                        ? parseInt(parentLevel, 10)
+                        : Number(parentLevel)
+                const finalLevel =
+                    (isNaN(parentLevelNum) ? 0 : parentLevelNum) + 1
+                OrmUtils.mergeDeep(
+                    subject.insertedValueSet,
+                    treeLevelColumn.createValueMap(finalLevel),
+                )
+                treeLevelColumn.setEntityValue(subject.entity!, finalLevel)
+            } else {
+                const parentId = subject.metadata.getEntityIdMap(parent)
+                if (parentId) {
+                    const parentEntity = await this.queryRunner.manager
+                        .createQueryBuilder()
+                        .select(
+                            subject.metadata.targetName +
+                                "." +
+                                treeLevelColumn.propertyPath,
+                            "level",
+                        )
+                        .from(
+                            subject.metadata.target,
+                            subject.metadata.targetName,
+                        )
+                        .whereInIds(parentId)
+                        .getRawOne()
+                    const raw = parentEntity ? parentEntity["level"] : 0
+                    const levelNum =
+                        typeof raw === "string"
+                            ? parseInt(raw, 10)
+                            : Number(raw)
+                    const finalLevel = (isNaN(levelNum) ? 0 : levelNum) + 1
+                    OrmUtils.mergeDeep(
+                        subject.insertedValueSet,
+                        treeLevelColumn.createValueMap(finalLevel),
+                    )
+                    treeLevelColumn.setEntityValue(subject.entity!, finalLevel)
+                }
+            }
+        } else {
+            OrmUtils.mergeDeep(
+                subject.insertedValueSet,
+                treeLevelColumn.createValueMap(1),
+            )
+            treeLevelColumn.setEntityValue(subject.entity!, 1)
+        }
+    }
+
     /**
      * Executes operations when subject is being updated.
+     * @param subject
      */
     async update(subject: Subject): Promise<void> {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
@@ -319,6 +404,7 @@ export class ClosureSubjectExecutor {
 
     /**
      * Executes operations when subject is being removed.
+     * @param subjects
      */
     async remove(subjects: Subject | Subject[]): Promise<void> {
         // Only mssql need to execute deletes for the juntion table as it doesn't support multi cascade paths.
@@ -362,6 +448,7 @@ export class ClosureSubjectExecutor {
     /**
      * Gets escaped table name with schema name if SqlServer or Postgres driver used with custom
      * schema name, otherwise returns escaped table name.
+     * @param tablePath
      */
     protected getTableName(tablePath: string): string {
         return tablePath
