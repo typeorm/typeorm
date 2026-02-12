@@ -2969,6 +2969,16 @@ export class CockroachQueryRunner
                 dropViewQueries.map((q) => this.query(q["query"])),
             )
 
+            const selectMatViewDropsQuery =
+                `SELECT 'DROP MATERIALIZED VIEW IF EXISTS ' || quote_ident(schemaname) || '.' || quote_ident(matviewname) || ' CASCADE;' as "query" ` +
+                `FROM "pg_matviews" WHERE "schemaname" IN (${schemaNamesString})`
+            const dropMatViewQueries: ObjectLiteral[] = await this.query(
+                selectMatViewDropsQuery,
+            )
+            await Promise.all(
+                dropMatViewQueries.map((q) => this.query(q["query"])),
+            )
+
             const selectDropsQuery = `SELECT 'DROP TABLE IF EXISTS ' || quote_ident(table_schema) || '.' || quote_ident(table_name) || ' CASCADE;' as "query" FROM "information_schema"."tables" WHERE "table_schema" IN (${schemaNamesString})`
             const dropQueries: ObjectLiteral[] =
                 await this.query(selectDropsQuery)
@@ -3032,9 +3042,9 @@ export class CockroachQueryRunner
             `SELECT "t".*, "v"."check_option" FROM ${this.escapePath(
                 this.getTypeormMetadataTableName(),
             )} "t" ` +
-            `INNER JOIN "information_schema"."views" "v" ON "v"."table_schema" = "t"."schema" AND "v"."table_name" = "t"."name" WHERE "t"."type" = '${
+            `INNER JOIN "information_schema"."views" "v" ON "v"."table_schema" = "t"."schema" AND "v"."table_name" = "t"."name" WHERE "t"."type" IN ('${
                 MetadataTableType.VIEW
-            }' ${viewsCondition ? `AND (${viewsCondition})` : ""}`
+            }', '${MetadataTableType.MATERIALIZED_VIEW}') ${viewsCondition ? `AND (${viewsCondition})` : ""}`
         const dbViews = await this.query(query)
         return dbViews.map((dbView: any) => {
             const view = new View()
@@ -3047,6 +3057,8 @@ export class CockroachQueryRunner
             view.schema = dbView["schema"]
             view.name = this.driver.buildTableName(dbView["name"], schema)
             view.expression = dbView["value"]
+            view.materialized =
+                dbView["type"] === MetadataTableType.MATERIALIZED_VIEW
             return view
         })
     }
@@ -3882,13 +3894,15 @@ export class CockroachQueryRunner
     }
 
     protected createViewSql(view: View): Query {
+        const materializedClause = view.materialized ? "MATERIALIZED " : ""
+
         if (typeof view.expression === "string") {
             return new Query(
-                `CREATE VIEW ${this.escapePath(view)} AS ${view.expression}`,
+                `CREATE ${materializedClause}VIEW ${this.escapePath(view)} AS ${view.expression}`,
             )
         } else {
             return new Query(
-                `CREATE VIEW ${this.escapePath(view)} AS ${view
+                `CREATE ${materializedClause}VIEW ${this.escapePath(view)} AS ${view
                     .expression(this.connection)
                     .getQuery()}`,
             )
@@ -3906,8 +3920,11 @@ export class CockroachQueryRunner
             typeof view.expression === "string"
                 ? view.expression.trim()
                 : view.expression(this.connection).getQuery()
+        const type = view.materialized
+            ? MetadataTableType.MATERIALIZED_VIEW
+            : MetadataTableType.VIEW
         return this.insertTypeormMetadataSql({
-            type: MetadataTableType.VIEW,
+            type: type,
             schema: schema,
             name: name,
             value: expression,
@@ -3917,9 +3934,13 @@ export class CockroachQueryRunner
     /**
      * Builds drop view sql.
      * @param viewOrPath
+     * @param view
      */
-    protected dropViewSql(viewOrPath: View | string): Query {
-        return new Query(`DROP VIEW ${this.escapePath(viewOrPath)}`)
+    protected dropViewSql(view: View): Query {
+        const materializedClause = view.materialized ? "MATERIALIZED " : ""
+        return new Query(
+            `DROP ${materializedClause}VIEW ${this.escapePath(view)}`,
+        )
     }
 
     /**
@@ -3937,8 +3958,13 @@ export class CockroachQueryRunner
             schema = currentSchema
         }
 
+        const type =
+            InstanceChecker.isView(viewOrPath) && viewOrPath.materialized
+                ? MetadataTableType.MATERIALIZED_VIEW
+                : MetadataTableType.VIEW
+
         return this.deleteTypeormMetadataSql({
-            type: MetadataTableType.VIEW,
+            type: type,
             schema,
             name,
         })
