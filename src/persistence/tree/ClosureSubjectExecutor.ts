@@ -12,15 +12,20 @@ import { ColumnMetadata } from "../../metadata/ColumnMetadata"
 export class ClosureSubjectExecutor {
     /**
      * Gets the closure junction table's level column from metadata when TreeLevelColumn is defined.
-     * Derived from metadata rather than hardcoded for future compatibility.
+     * Matches by the entity's treeLevelColumn property or database name for robustness.
      * @param subject
      */
     private getClosureJunctionLevelColumn(
         subject: Subject,
     ): ColumnMetadata | undefined {
-        if (!subject.metadata.treeLevelColumn) return undefined
+        const treeLevelColumn = subject.metadata.treeLevelColumn
+        if (!treeLevelColumn) return undefined
+
         return subject.metadata.closureJunctionTable.ownColumns.find(
-            (column) => !column.closureType,
+            (column) =>
+                !column.closureType &&
+                (column.propertyName === treeLevelColumn.propertyName ||
+                    column.databaseName === treeLevelColumn.databaseName),
         )
     }
     // -------------------------------------------------------------------------
@@ -117,7 +122,7 @@ export class ClosureSubjectExecutor {
             let levelColumnName2 = ""
             if (levelColumn) {
                 levelColumnName = escape(levelColumn.databaseName)
-                levelColumnName2 = escape(levelColumn.databaseName) + " + 1"
+                levelColumnName2 = `(${levelColumnName} + 1)`
             }
 
             const whereCondition =
@@ -163,6 +168,12 @@ export class ClosureSubjectExecutor {
         const treeLevelColumn = subject.metadata.treeLevelColumn
         if (!treeLevelColumn) return
 
+        // Do not overwrite explicitly set level values
+        const existingLevel = treeLevelColumn.getEntityValue(subject.entity!)
+        if (existingLevel !== undefined && existingLevel !== null) return
+
+        subject.insertedValueSet = subject.insertedValueSet || {}
+
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
             subject.entity!,
         ) // if entity was attached via parent
@@ -189,18 +200,15 @@ export class ClosureSubjectExecutor {
             } else {
                 const parentId = subject.metadata.getEntityIdMap(parent)
                 if (parentId) {
+                    const alias = subject.metadata.targetName
+                    const columnName =
+                        this.queryRunner.connection.driver.escape(
+                            treeLevelColumn.databaseName,
+                        )
                     const parentEntity = await this.queryRunner.manager
                         .createQueryBuilder()
-                        .select(
-                            subject.metadata.targetName +
-                                "." +
-                                treeLevelColumn.propertyPath,
-                            "level",
-                        )
-                        .from(
-                            subject.metadata.target,
-                            subject.metadata.targetName,
-                        )
+                        .select(`${alias}.${columnName}`, "level")
+                        .from(subject.metadata.target, alias)
                         .whereInIds(parentId)
                         .getRawOne()
                     const raw = parentEntity ? parentEntity["level"] : 0
@@ -356,6 +364,11 @@ export class ClosureSubjectExecutor {
             const superAlias = escape("supertree")
             const subAlias = escape("subtree")
 
+            const levelColumn = this.getClosureJunctionLevelColumn(subject)
+            const levelColumnName = levelColumn
+                ? escape(levelColumn.databaseName)
+                : ""
+
             const select = [
                 ...ancestorColumnNames.map(
                     (columnName) => `${superAlias}.${columnName}`,
@@ -363,6 +376,11 @@ export class ClosureSubjectExecutor {
                 ...descendantColumnNames.map(
                     (columnName) => `${subAlias}.${columnName}`,
                 ),
+                ...(levelColumn
+                    ? [
+                          `(${superAlias}.${levelColumnName} + 1 + ${subAlias}.${levelColumnName})`,
+                      ]
+                    : []),
             ]
 
             const entityWhereCondition =
@@ -410,6 +428,7 @@ export class ClosureSubjectExecutor {
                 `INSERT INTO ${tableName} (${[
                     ...ancestorColumnNames,
                     ...descendantColumnNames,
+                    ...(levelColumn ? [levelColumnName] : []),
                 ].join(", ")}) ` +
                     `SELECT ${select.join(", ")} ` +
                     `FROM ${tableName} AS ${superAlias}, ${tableName} AS ${subAlias} ` +
