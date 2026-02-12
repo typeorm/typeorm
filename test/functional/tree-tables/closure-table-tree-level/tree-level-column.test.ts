@@ -40,21 +40,21 @@ describe("tree tables > closure-table with TreeLevelColumn", () => {
 
                 const rootCategories = await categoryRepository.findRoots()
                 rootCategories.length.should.be.equal(1)
-                rootCategories[0].id.should.equal(1)
+                rootCategories[0].id.should.equal(a1.id)
                 rootCategories[0].name.should.equal("a1")
 
                 const a11Parent = await categoryRepository.findAncestors(a11)
                 a11Parent.length.should.be.equal(2)
                 const a11ParentIds = a11Parent.map((c) => c.id)
-                a11ParentIds.should.include(1)
-                a11ParentIds.should.include(2)
+                a11ParentIds.should.include(a1.id)
+                a11ParentIds.should.include(a11.id)
 
                 const a1Children = await categoryRepository.findDescendants(a1)
                 a1Children.length.should.be.equal(3)
                 const a1ChildrenIds = a1Children.map((c) => c.id)
-                a1ChildrenIds.should.include(1)
-                a1ChildrenIds.should.include(2)
-                a1ChildrenIds.should.include(3)
+                a1ChildrenIds.should.include(a1.id)
+                a1ChildrenIds.should.include(a11.id)
+                a1ChildrenIds.should.include(a12.id)
             }),
         ))
 
@@ -78,7 +78,7 @@ describe("tree tables > closure-table with TreeLevelColumn", () => {
 
                 const rootCategories = await categoryRepository.findRoots()
                 rootCategories.length.should.be.equal(1)
-                rootCategories[0].id.should.equal(1)
+                rootCategories[0].id.should.equal(a1.id)
                 rootCategories[0].name.should.equal("a1")
 
                 const a1Children = await categoryRepository.findDescendants(a1)
