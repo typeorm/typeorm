@@ -85,4 +85,42 @@ describe("tree tables > closure-table with TreeLevelColumn", () => {
                 a1Children.length.should.be.equal(3)
             }),
         ))
+
+    it("should correctly populate TreeLevelColumn values (root=1, children=2, grandchildren=3)", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const categoryRepository =
+                    connection.getTreeRepository(Category)
+
+                const a1 = new Category()
+                a1.name = "a1"
+                await categoryRepository.save(a1)
+
+                const a11 = new Category()
+                a11.name = "a11"
+                a11.parentCategory = a1
+                await categoryRepository.save(a11)
+
+                const a111 = new Category()
+                a111.name = "a111"
+                a111.parentCategory = a11
+                await categoryRepository.save(a111)
+
+                a1.level!.should.equal(1)
+                a11.level!.should.equal(2)
+                a111.level!.should.equal(3)
+
+                const roots = await categoryRepository.findRoots()
+                roots[0].level!.should.equal(1)
+
+                const allDescendants =
+                    await categoryRepository.findDescendants(a1)
+                const byName = Object.fromEntries(
+                    allDescendants.map((c) => [c.name, c]),
+                )
+                byName["a1"].level!.should.equal(1)
+                byName["a11"].level!.should.equal(2)
+                byName["a111"].level!.should.equal(3)
+            }),
+        ))
 })

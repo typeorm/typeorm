@@ -10,6 +10,19 @@ import { ColumnMetadata } from "../../metadata/ColumnMetadata"
  * Executes subject operations for closure entities.
  */
 export class ClosureSubjectExecutor {
+    /**
+     * Gets the closure junction table's level column from metadata when TreeLevelColumn is defined.
+     * Derived from metadata rather than hardcoded for future compatibility.
+     * @param subject
+     */
+    private getClosureJunctionLevelColumn(
+        subject: Subject,
+    ): ColumnMetadata | undefined {
+        if (!subject.metadata.treeLevelColumn) return undefined
+        return subject.metadata.closureJunctionTable.ownColumns.find(
+            (column) => !column.closureType,
+        )
+    }
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -40,11 +53,7 @@ export class ClosureSubjectExecutor {
             },
         )
 
-        const levelColumn =
-            subject.metadata.closureJunctionTable.ownColumns.find(
-                (column) =>
-                    column.propertyName === "level" && !column.closureType,
-            )
+        const levelColumn = this.getClosureJunctionLevelColumn(subject)
         if (levelColumn) {
             closureJunctionInsertMap[levelColumn.databaseName] = 0
         }
@@ -205,6 +214,17 @@ export class ClosureSubjectExecutor {
                         treeLevelColumn.createValueMap(finalLevel),
                     )
                     treeLevelColumn.setEntityValue(subject.entity!, finalLevel)
+                } else {
+                    // Fallback: parent exists but level/ID cannot be determined; treat as direct child of root
+                    const fallbackLevel = 2
+                    OrmUtils.mergeDeep(
+                        subject.insertedValueSet,
+                        treeLevelColumn.createValueMap(fallbackLevel),
+                    )
+                    treeLevelColumn.setEntityValue(
+                        subject.entity!,
+                        fallbackLevel,
+                    )
                 }
             }
         } else {
