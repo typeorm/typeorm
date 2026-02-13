@@ -85,12 +85,14 @@ jobs:
         if: needs.determine.outputs.type == 'nightly'
         run: |
           cd build/package
-          CURRENT_VERSION=$(node -p "require('./package.json').version")
-          BASE_VERSION=$(echo "$CURRENT_VERSION" | sed 's/-.*//')
-          IFS='.' read -r -a V <<< "$BASE_VERSION"
-          NIGHTLY_VERSION="${V[0]}.${V[1]}.$((V[2] + 1))-nightly.$(date +'%Y%m%d')"
-          npm version "$NIGHTLY_VERSION" --no-git-tag-version
-          echo "Publishing nightly version: $NIGHTLY_VERSION"
+          node -e "
+            const pkg = require('./package.json');
+            const base = pkg.version.replace(/-.*/, '');
+            const [major, minor, patch] = base.split('.').map(Number);
+            pkg.version = major + '.' + minor + '.' + (patch + 1) + '-nightly.' + new Date().toISOString().slice(0,10).replace(/-/g, '');
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            console.log('Publishing nightly version: ' + pkg.version);
+          "
 
       - name: Publish (release)
         if: needs.determine.outputs.type == 'release'
