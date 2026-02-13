@@ -809,6 +809,7 @@ export class EntityManager {
      * @param target
      * @param criteria
      * @param partialEntity
+     * @param options
      */
     update<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -867,6 +868,7 @@ export class EntityManager {
      * WARNING! This method updates ALL rows in the target table.
      * @param target
      * @param partialEntity
+     * @param options
      */
     updateAll<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -1193,6 +1195,75 @@ export class EntityManager {
     }
 
     /**
+     * Checks if WHERE conditions contain at least one valid (non-null, non-undefined) value.
+     * Used to prevent security issues where findOneBy({ id: null }) would return the first record.
+     * @param where
+     */
+    private hasValidWhereConditions<Entity extends ObjectLiteral>(
+        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): boolean {
+        const invalidWhereValuesBehavior =
+            this.connection.options.invalidWhereValuesBehavior || {}
+        const nullBehavior = invalidWhereValuesBehavior.null || "ignore"
+        const undefinedBehavior =
+            invalidWhereValuesBehavior.undefined || "ignore"
+
+        // Helper to check if a single where object has valid conditions
+        const hasValidConditionsInObject = (
+            whereObj: FindOptionsWhere<Entity>,
+        ): boolean => {
+            for (const key in whereObj) {
+                const value = whereObj[key]
+
+                // Check for undefined
+                if (value === undefined) {
+                    if (undefinedBehavior !== "ignore") {
+                        return true // Will be handled by buildWhere (throw or process)
+                    }
+                    continue
+                }
+
+                // Check for null
+                if (value === null) {
+                    if (nullBehavior !== "ignore") {
+                        return true // Will be handled by buildWhere (sql-null or throw)
+                    }
+                    continue
+                }
+
+                // Check for nested objects (embeds/relations)
+                if (typeof value === "object" && !Array.isArray(value)) {
+                    // For FindOperators or nested where conditions
+                    if (
+                        value.constructor &&
+                        value.constructor.name === "FindOperator"
+                    ) {
+                        return true
+                    }
+                    // Recursively check nested objects
+                    if (this.hasValidWhereConditions([value] as any)) {
+                        return true
+                    }
+                    continue
+                }
+
+                // Any other value is valid
+                return true
+            }
+            return false
+        }
+
+        // Handle array of where conditions (OR logic)
+        if (Array.isArray(where)) {
+            // At least one condition must be valid
+            return where.some(hasValidConditionsInObject)
+        }
+
+        // Single where object
+        return hasValidConditionsInObject(where)
+    }
+
+    /**
      * Finds entities that match given find options.
      * @param entityClass
      * @param options
@@ -1321,6 +1392,13 @@ export class EntityManager {
             )
         }
 
+        // Check if all WHERE conditions are null/undefined (would result in empty WHERE clause)
+        // This prevents the security issue where findOne({ where: { id: null } }) returns the first record
+        const hasValidConditions = this.hasValidWhereConditions(options.where)
+        if (!hasValidConditions) {
+            return null
+        }
+
         // create query builder and apply find options
         return this.createQueryBuilder<Entity>(entityClass, alias)
             .setFindOptions({
@@ -1341,6 +1419,13 @@ export class EntityManager {
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<Entity | null> {
         const metadata = this.connection.getMetadata(entityClass)
+
+        // Check if all WHERE conditions are null/undefined (would result in empty WHERE clause)
+        // This prevents the security issue where findOneBy({ id: null }) returns the first record
+        const hasValidConditions = this.hasValidWhereConditions(where)
+        if (!hasValidConditions) {
+            return null
+        }
 
         // create query builder and apply find options
         return this.createQueryBuilder<Entity>(entityClass, metadata.name)
