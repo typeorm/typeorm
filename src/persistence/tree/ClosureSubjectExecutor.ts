@@ -223,8 +223,39 @@ export class ClosureSubjectExecutor {
                     )
                     treeLevelColumn.setEntityValue(subject.entity!, finalLevel)
                 } else {
-                    // Fallback: parent exists but level/ID cannot be determined; treat as direct child of root
-                    const fallbackLevel = 2
+                    // Parent exists but we cannot determine its level or id.
+                    // If parent is in the same persistence graph, try to compute its level first.
+                    if (subject.parentSubject?.entity) {
+                        await this.insertLevel(subject.parentSubject)
+
+                        const computedParentLevel =
+                            treeLevelColumn.getEntityValue(
+                                subject.parentSubject.entity,
+                            )
+                        if (
+                            computedParentLevel !== undefined &&
+                            computedParentLevel !== null
+                        ) {
+                            const computedNum =
+                                typeof computedParentLevel === "string"
+                                    ? parseInt(computedParentLevel, 10)
+                                    : Number(computedParentLevel)
+                            const finalLevel =
+                                (isNaN(computedNum) ? 0 : computedNum) + 1
+                            OrmUtils.mergeDeep(
+                                subject.insertedValueSet,
+                                treeLevelColumn.createValueMap(finalLevel),
+                            )
+                            treeLevelColumn.setEntityValue(
+                                subject.entity!,
+                                finalLevel,
+                            )
+                            return
+                        }
+                    }
+
+                    // Conservative fallback: if parent cannot be resolved, treat as root.
+                    const fallbackLevel = 1
                     OrmUtils.mergeDeep(
                         subject.insertedValueSet,
                         treeLevelColumn.createValueMap(fallbackLevel),
