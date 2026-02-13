@@ -1233,15 +1233,15 @@ export class EntityManager {
 
                 // Check for nested objects (embeds/relations)
                 if (typeof value === "object" && !Array.isArray(value)) {
-                    // For FindOperators or nested where conditions
-                    if (
-                        value.constructor &&
-                        value.constructor.name === "FindOperator"
-                    ) {
+                    // Use InstanceChecker for robust FindOperator detection
+                    if (InstanceChecker.isFindOperator(value)) {
                         return true
                     }
                     // Recursively check nested objects
-                    if (this.hasValidWhereConditions([value] as any)) {
+                    const nested: FindOptionsWhere<Entity>[] = [
+                        value as FindOptionsWhere<Entity>,
+                    ]
+                    if (this.hasValidWhereConditions(nested)) {
                         return true
                     }
                     continue
