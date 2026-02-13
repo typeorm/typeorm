@@ -48,6 +48,8 @@ export class OneToManySubjectBuilder {
      * Builds operations for a given subject and relation.
      *
      * by example: subject is "post" entity we are saving here and relation is "categories" inside it here.
+     * @param subject
+     * @param relation
      */
     protected buildForSubjectRelation(
         subject: Subject,
@@ -198,13 +200,27 @@ export class OneToManySubjectBuilder {
                     !relation.inverseRelation ||
                     relation.inverseRelation.orphanedRowAction === "nullify"
                 ) {
-                    removedRelatedEntitySubject.canBeUpdated = true
-                    removedRelatedEntitySubject.changeMaps = [
-                        {
-                            relation: relation.inverseRelation!,
-                            value: null,
-                        },
-                    ]
+                    // if the relation is nullable, we just set it to null
+                    if (
+                        !relation.inverseRelation ||
+                        relation.inverseRelation.joinColumns.every(
+                            (column) => column.isNullable,
+                        )
+                    ) {
+                        removedRelatedEntitySubject.canBeUpdated = true
+                        removedRelatedEntitySubject.changeMaps = [
+                            {
+                                relation: relation.inverseRelation!,
+                                value: null,
+                            },
+                        ]
+                    } else {
+                        // if the relation is not nullable, we delete the entity
+                        // this is because if we don't delete it, it will stay in the database with the old relation
+                        // creating an inconsistency between the object in memory and the database
+                        // and we cannot set it to null because the column is not nullable
+                        removedRelatedEntitySubject.mustBeRemoved = true
+                    }
                 } else if (
                     relation.inverseRelation.orphanedRowAction === "delete"
                 ) {
