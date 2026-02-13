@@ -208,12 +208,14 @@ export class OneToManySubjectBuilder {
                         )
                     ) {
                         removedRelatedEntitySubject.canBeUpdated = true
-                        removedRelatedEntitySubject.changeMaps = [
-                            {
-                                relation: relation.inverseRelation!,
-                                value: null,
-                            },
-                        ]
+                        if (relation.inverseRelation) {
+                            removedRelatedEntitySubject.changeMaps = [
+                                {
+                                    relation: relation.inverseRelation,
+                                    value: null,
+                                },
+                            ]
+                        }
                     } else {
                         // if the relation is not nullable, we delete the entity
                         // this is because if we don't delete it, it will stay in the database with the old relation
