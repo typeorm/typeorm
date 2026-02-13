@@ -2213,15 +2213,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         const joinAttributeMetadata = joinAttribute.metadata
         if (joinAttributeMetadata) {
-            if (
-                joinAttributeMetadata.deleteDateColumn &&
-                !this.expressionMap.withDeleted
-            ) {
-                const conditionDeleteColumn = `${aliasName}.${joinAttributeMetadata.deleteDateColumn.propertyName} IS NULL`
-                joinAttribute.condition = joinAttribute.condition
-                    ? ` ${joinAttribute.condition} AND ${conditionDeleteColumn}`
-                    : `${conditionDeleteColumn}`
-            }
             // todo: find and set metadata right there?
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
@@ -2421,8 +2412,22 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             const relation = joinAttr.relation
             const destinationTableName = joinAttr.tablePath
             const destinationTableAlias = joinAttr.alias.name
-            let appendedCondition = joinAttr.condition
-                ? " AND (" + joinAttr.condition + ")"
+
+            // Apply soft-delete filter at query build time (not join declaration time)
+            // so that .withDeleted() works regardless of call position in the chain
+            let joinCondition = joinAttr.condition
+            if (
+                joinAttr.metadata?.deleteDateColumn &&
+                !this.expressionMap.withDeleted
+            ) {
+                const softDeleteCondition = `${destinationTableAlias}.${joinAttr.metadata.deleteDateColumn.propertyName} IS NULL`
+                joinCondition = joinCondition
+                    ? `${joinCondition} AND ${softDeleteCondition}`
+                    : softDeleteCondition
+            }
+
+            let appendedCondition = joinCondition
+                ? " AND (" + joinCondition + ")"
                 : ""
             const parentAlias = joinAttr.parentAlias
 
