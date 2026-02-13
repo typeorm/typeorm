@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, EntityManager } from "../../../src"
+import { DataSource, EntityManager, In } from "../../../src"
 import { Parent } from "./entity/Parent"
 import { Child } from "./entity/Child"
 import { expect } from "chai"
@@ -72,15 +72,15 @@ describe("github issues > #3105 Error with cascading saves using EntityManager i
                     loadedParent!.children.map((c) => c.data),
                 ).to.include.members([4, 5])
 
+                // validate that orphaned children are removed
+                const orphanedChildren = await childRepo.find({
+                    where: {
+                        id: In([1, 2]),
+                    },
+                })
+                expect(orphanedChildren).to.be.empty
                 const allChildren = await childRepo.find()
-                // Children 1 and 2 should be nullified (if nullable) or deleted (if cascade delete/orphan removal)
-                // In this case, if Child.parent is nullable, they should have parentId = null.
-                // If Child.parent is NOT nullable, they might be deleted or cause error depending on configuration.
-                // Assuming standard behavior, they should be nullified.
-                // But the bug report says "Nullify can hard-delete rows".
-                // If they are deleted, that's the bug.
-                // Let's check how many children exist.
-                expect(allChildren.length).to.be.greaterThanOrEqual(2)
+                expect(allChildren).to.have.length(2)
             }),
         ))
 })
