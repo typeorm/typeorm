@@ -81,6 +81,20 @@ jobs:
       - run: pnpm install
       - run: pnpm run package
 
+      # The gulp package task copies the root package.json into build/package.
+      # Dev-only fields like "prepare" (husky), "scripts", and "devEngines"
+      # cause publish to fail since their dependencies aren't installed there.
+      - name: Clean built package.json
+        run: |
+          node -e "
+            const pkg = require('./build/package/package.json');
+            delete pkg.scripts;
+            delete pkg.devDependencies;
+            delete pkg.devEngines;
+            delete pkg.private;
+            require('fs').writeFileSync('./build/package/package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
       - name: Set nightly version
         if: needs.determine.outputs.type == 'nightly'
         run: |
