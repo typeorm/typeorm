@@ -12,6 +12,7 @@ import { Category } from "./entity/Category"
 import { CategoryWithCompositePK } from "./entity/CategoryWithCompositePK"
 import { Image } from "./entity/Image"
 import { User } from "./entity/User"
+import { Photo } from "./entity/Photo"
 
 describe("query builder > joins", () => {
     let connections: DataSource[]
@@ -1685,4 +1686,44 @@ describe("query builder > joins", () => {
                 }),
             ))
     })
+
+    it("should return correct number of results when limit is used with left joins", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const manager = connection.manager
+
+                // create users and photos
+                const user1 = new User()
+                user1.name = "User 1"
+                await manager.save(user1)
+
+                const photo1 = new Photo()
+                photo1.name = "Photo 1"
+                photo1.user = user1
+                await manager.save(photo1)
+
+                const photo2 = new Photo()
+                photo2.name = "Photo 2"
+                photo2.user = user1
+                await manager.save(photo2)
+
+                const user2 = new User()
+                user2.name = "User 2"
+                await manager.save(user2)
+
+                const photo3 = new Photo()
+                photo3.name = "Photo 3"
+                photo3.user = user2
+                await manager.save(photo3)
+
+                const users = await manager
+                    .createQueryBuilder(User, "user")
+                    .leftJoinAndSelect("user.photos", "photo")
+                    .limit(1)
+                    .getMany()
+
+                expect(users.length).to.be.equal(1)
+                expect(users[0].photos.length).to.be.equal(2)
+            }),
+        ))
 })

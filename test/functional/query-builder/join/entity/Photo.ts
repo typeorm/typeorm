@@ -1,19 +1,19 @@
 import {
     Column,
     Entity,
-    OneToMany,
+    ManyToOne,
     PrimaryGeneratedColumn,
 } from "../../../../../src"
-import { Photo } from "./Photo"
+import { User } from "./User"
 
 @Entity()
-export class User {
+export class Photo {
     @PrimaryGeneratedColumn()
     id: number
 
     @Column()
     name: string
 
-    @OneToMany(() => Photo, (photo) => photo.user)
-    photos: Photo[]
+    @ManyToOne(() => User, (user) => user.photos)
+    user: User
 }

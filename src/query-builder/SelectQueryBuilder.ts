@@ -3588,7 +3588,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // first query find ids in skip and take range
         // and second query loads the actual data in given ids range
         if (
-            (this.expressionMap.skip || this.expressionMap.take) &&
+            (this.expressionMap.skip ||
+                this.expressionMap.take ||
+                this.expressionMap.offset ||
+                this.expressionMap.limit) &&
             this.expressionMap.joinAttributes.length > 0
         ) {
             // we are skipping order by here because its not working in subqueries anyway
@@ -3628,6 +3631,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             const originalQuery = this.clone()
 
+            // clear limit/offset from the inner query since pagination is handled by the outer distinct query
+            originalQuery.expressionMap.limit = undefined
+            originalQuery.expressionMap.offset = undefined
+
             // preserve original timeTravel value since we set it to "false" in subquery
             const originalQueryTimeTravel =
                 originalQuery.expressionMap.timeTravel
@@ -3646,8 +3653,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     "distinctAlias",
                 )
                 .timeTravelQuery(originalQueryTimeTravel)
-                .offset(this.expressionMap.skip)
-                .limit(this.expressionMap.take)
+                .offset(this.expressionMap.skip ?? this.expressionMap.offset)
+                .limit(this.expressionMap.take ?? this.expressionMap.limit)
                 .orderBy(orderBys)
                 .cache(
                     this.expressionMap.cache && this.expressionMap.cacheId
@@ -3708,12 +3715,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             " IN (:...orm_distinct_ids)"
                     }
                 }
-                rawResults = await this.clone()
+                const secondQuery = this.clone()
                     .mergeExpressionMap({
                         extraAppendedAndWhereCondition: condition,
                     })
                     .setParameters(parameters)
-                    .loadRawResults(queryRunner)
+                secondQuery.expressionMap.limit = undefined
+                secondQuery.expressionMap.offset = undefined
+                rawResults = await secondQuery.loadRawResults(queryRunner)
             }
         } else {
             rawResults = await this.loadRawResults(queryRunner)
