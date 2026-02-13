@@ -98,10 +98,10 @@ jobs:
         if: needs.determine.outputs.type == 'release'
         run: |
           cd build/package
-          pnpm publish --provenance --access public
+          pnpm publish --provenance --access public --no-git-checks
 
       - name: Publish (nightly)
         if: needs.determine.outputs.type == 'nightly'
         run: |
           cd build/package
-          pnpm publish --provenance --access public --tag nightly
+          pnpm publish --provenance --access public --no-git-checks --tag nightly
