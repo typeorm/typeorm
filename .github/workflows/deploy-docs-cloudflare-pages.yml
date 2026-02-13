@@ -1,0 +1,46 @@
+name: Deploy Docs to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - v0.3
+    paths:
+      - "docs/**"
+      - ".github/workflows/deploy-docs-cloudflare-pages.yml"
+
+concurrency:
+  group: deploy-docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Docs
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./docs
+        run: npm ci
+
+      - name: Build docs
+        working-directory: ./docs
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy docs/build --project-name=typeorm
