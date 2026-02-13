@@ -1,11 +1,64 @@
 name: Publish Package to npmjs
+
+# Single workflow file: Trusted Publishing only supports one workflow file per package.
+
 on:
   release:
     types:
       - published
+  schedule:
+    - cron: "0 2 * * *" # Nightly at 02:00 UTC
+  workflow_dispatch:
+    inputs:
+      publish_type:
+        description: "Type of publish"
+        required: true
+        type: choice
+        options:
+          - release
+          - nightly
+
+concurrency:
+  group: publish-package
+  cancel-in-progress: false
 
 jobs:
+  determine:
+    runs-on: ubuntu-latest
+    outputs:
+      should_publish: ${{ steps.config.outputs.should_publish }}
+      type: ${{ steps.config.outputs.type }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Determine publish type
+        id: config
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUBLISH_TYPE: ${{ inputs.publish_type }}
+        run: |
+          if [ "$EVENT_NAME" == "release" ]; then
+            echo "type=release" >> $GITHUB_OUTPUT
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          elif [ "$EVENT_NAME" == "workflow_dispatch" ]; then
+            echo "type=$PUBLISH_TYPE" >> $GITHUB_OUTPUT
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          else
+            COMMITS=$(git rev-list --count --since="24 hours" HEAD)
+            echo "Commits in last 24h: $COMMITS"
+            echo "type=nightly" >> $GITHUB_OUTPUT
+            if [ "$COMMITS" -eq 0 ]; then
+              echo "should_publish=false" >> $GITHUB_OUTPUT
+            else
+              echo "should_publish=true" >> $GITHUB_OUTPUT
+            fi
+          fi
+
   publish:
+    needs: determine
+    if: needs.determine.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     environment: npm
     permissions:
@@ -13,7 +66,12 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6
+
       - uses: pnpm/action-setup@v4
+
+      # registry-url is deliberately omitted: with Trusted Publishing, the npm
+      # CLI handles OIDC auth automatically. Setting registry-url would create
+      # an .npmrc with an empty auth token placeholder that blocks the OIDC flow.
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -22,6 +80,26 @@ jobs:
       - run: npm install -g npm@latest
       - run: pnpm install
       - run: pnpm run package
-      - run: |
+
+      - name: Set nightly version
+        if: needs.determine.outputs.type == 'nightly'
+        run: |
+          cd build/package
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          BASE_VERSION=$(echo "$CURRENT_VERSION" | sed 's/-.*//')
+          IFS='.' read -r -a V <<< "$BASE_VERSION"
+          NIGHTLY_VERSION="${V[0]}.${V[1]}.$((V[2] + 1))-nightly.$(date +'%Y%m%d')"
+          npm version "$NIGHTLY_VERSION" --no-git-tag-version
+          echo "Publishing nightly version: $NIGHTLY_VERSION"
+
+      - name: Publish (release)
+        if: needs.determine.outputs.type == 'release'
+        run: |
           cd build/package
           pnpm publish --provenance --access public
+
+      - name: Publish (nightly)
+        if: needs.determine.outputs.type == 'nightly'
+        run: |
+          cd build/package
+          pnpm publish --provenance --access public --tag nightly
