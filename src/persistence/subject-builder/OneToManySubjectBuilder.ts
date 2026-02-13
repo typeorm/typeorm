@@ -180,7 +180,7 @@ export class OneToManySubjectBuilder {
         })
 
         // find what related entities were added and what were removed based on difference between what we save and what database has
-        if (relation.inverseRelation?.orphanedRowAction !== "disable") {
+        if (relation.inverseRelation!.orphanedRowAction !== "disable") {
             EntityMetadata.difference(
                 relatedEntityDatabaseRelationIds,
                 relatedPersistedEntityRelationIds,
@@ -196,26 +196,20 @@ export class OneToManySubjectBuilder {
                     identifier: removedRelatedEntityRelationId,
                 })
 
-                if (
-                    !relation.inverseRelation ||
-                    relation.inverseRelation.orphanedRowAction === "nullify"
-                ) {
+                if (relation.inverseRelation!.orphanedRowAction === "nullify") {
                     // if the relation is nullable, we just set it to null
                     if (
-                        !relation.inverseRelation ||
-                        relation.inverseRelation.joinColumns.every(
+                        relation.inverseRelation!.joinColumns.every(
                             (column) => column.isNullable,
                         )
                     ) {
                         removedRelatedEntitySubject.canBeUpdated = true
-                        if (relation.inverseRelation) {
-                            removedRelatedEntitySubject.changeMaps = [
-                                {
-                                    relation: relation.inverseRelation,
-                                    value: null,
-                                },
-                            ]
-                        }
+                        removedRelatedEntitySubject.changeMaps = [
+                            {
+                                relation: relation.inverseRelation!,
+                                value: null,
+                            },
+                        ]
                     } else {
                         // if the relation is not nullable, we delete the entity
                         // this is because if we don't delete it, it will stay in the database with the old relation
@@ -224,11 +218,12 @@ export class OneToManySubjectBuilder {
                         removedRelatedEntitySubject.mustBeRemoved = true
                     }
                 } else if (
-                    relation.inverseRelation.orphanedRowAction === "delete"
+                    relation.inverseRelation!.orphanedRowAction === "delete"
                 ) {
                     removedRelatedEntitySubject.mustBeRemoved = true
                 } else if (
-                    relation.inverseRelation.orphanedRowAction === "soft-delete"
+                    relation.inverseRelation!.orphanedRowAction ===
+                    "soft-delete"
                 ) {
                     removedRelatedEntitySubject.canBeSoftRemoved = true
                 }

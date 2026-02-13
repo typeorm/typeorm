@@ -26,8 +26,10 @@ describe("github issues > #3105 Error with cascading saves using EntityManager i
     it("should save with cascading using EntityManager in a transaction", () =>
         Promise.all(
             connections.map(async function (connection) {
-                let findChildOne
-                let findChildTwo
+                const parentRepo = connection.getRepository(Parent)
+                const childRepo = connection.getRepository(Child)
+
+                let firstChildIds: number[] = []
 
                 await expect(
                     connection.manager.transaction(
@@ -35,32 +37,19 @@ describe("github issues > #3105 Error with cascading saves using EntityManager i
                             const parent = new Parent()
                             parent.children = [new Child(1), new Child(2)]
 
-                            let newParent =
-                                await transactionalEntityManager.save(parent)
+                            await transactionalEntityManager.save(parent)
+                            firstChildIds = parent.children.map(
+                                (child) => child.id,
+                            )
 
-                            newParent.children = [new Child(4), new Child(5)]
-                            newParent =
-                                await transactionalEntityManager.save(parent)
-
-                            // Check that the correct children are persisted with the parent.
-                            findChildOne = newParent.children.find((child) => {
-                                return child.data === 4
-                            })
-
-                            findChildTwo = newParent.children.find((child) => {
-                                return child.data === 5
-                            })
+                            // Replace children to orphan the previous ones
+                            parent.children = [new Child(4), new Child(5)]
+                            await transactionalEntityManager.save(parent)
                         },
                     ),
                 ).not.to.be.rejected
 
-                expect(findChildOne).to.not.equal(undefined)
-                expect(findChildTwo).to.not.equal(undefined)
-
-                // Additional DB assertions
-                const parentRepo = connection.getRepository(Parent)
-                const childRepo = connection.getRepository(Child)
-
+                // Additional DB assertions to verify orphan handling
                 const loadedParent = await parentRepo.findOne({
                     where: { id: 1 },
                     relations: ["children"],
@@ -72,15 +61,18 @@ describe("github issues > #3105 Error with cascading saves using EntityManager i
                     loadedParent!.children.map((c) => c.data),
                 ).to.include.members([4, 5])
 
-                // validate that orphaned children are removed
+                // validate that orphaned children are removed from the database
+                // since parent_id is non-nullable, TypeORM should delete them
                 const orphanedChildren = await childRepo.find({
                     where: {
-                        id: In([1, 2]),
+                        id: In(firstChildIds),
                     },
                 })
                 expect(orphanedChildren).to.be.empty
-                const allChildren = await childRepo.find()
-                expect(allChildren).to.have.length(2)
+
+                // verify no other unexpected rows exist
+                const allChildrenCount = await childRepo.count()
+                expect(allChildrenCount).to.equal(2)
             }),
         ))
 })
