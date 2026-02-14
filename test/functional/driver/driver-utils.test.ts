@@ -74,7 +74,7 @@ describe("DriverUtils", () => {
                                         (alias) => `EXISTS (
                                             SELECT 1 
                                             FROM third_element
-                                            WHERE "id"= ${alias}
+                                            WHERE id= ${alias}
                                           )`,
                                     ),
                                 },
