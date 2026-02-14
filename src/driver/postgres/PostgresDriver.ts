@@ -1438,8 +1438,6 @@ export class PostgresDriver implements Driver {
                         columnMetadata.enum.map((val) => val + ""),
                     )) || // enums in postgres are always strings
                 tableColumn.isGenerated !== columnMetadata.isGenerated ||
-                tableColumn.primaryKeyConstraintName !==
-                    columnMetadata.primaryKeyConstraintName ||
                 (tableColumn.spatialFeatureType || "").toLowerCase() !==
                     (columnMetadata.spatialFeatureType || "").toLowerCase() ||
                 tableColumn.srid !== columnMetadata.srid ||

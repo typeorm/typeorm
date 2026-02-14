@@ -848,8 +848,6 @@ export class OracleDriver implements Driver {
                 // || tableColumn.comment !== columnMetadata.comment
                 tableColumn.default !== this.normalizeDefault(columnMetadata) ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
-                tableColumn.primaryKeyConstraintName !==
-                    columnMetadata.primaryKeyConstraintName ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||

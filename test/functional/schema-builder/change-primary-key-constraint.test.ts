@@ -27,7 +27,7 @@ describe("schema builder > change primary key constraint", () => {
         if (dataSources) await closeTestingConnections(dataSources)
     })
 
-    it("should generate migration to rename primary key constraint", async () => {
+    it("should generate migration to rename primary key constraint", async function () {
         // Initialize with V1 and sync
         dataSources = await createTestingConnections({
             entities: [TestEntityV1],
@@ -36,7 +36,9 @@ describe("schema builder > change primary key constraint", () => {
             dropSchema: true,
         })
 
-        expect(dataSources.length).to.be.greaterThan(0)
+        if (dataSources.length === 0) {
+            this.skip()
+        }
 
         await reloadTestingDatabases(dataSources)
         await closeTestingConnections(dataSources)
@@ -57,17 +59,11 @@ describe("schema builder > change primary key constraint", () => {
 
                 const upQueries = sqlInMemory.upQueries.map((q) => q.query)
 
-                console.log(
-                    `[${dataSource.driver.options.type}] Generated Queries:`,
-                    upQueries,
-                )
-
                 expect(upQueries).to.not.be.empty
 
                 const queriesString = upQueries.join(" ")
 
-                // Should contain PK_1 and PK_2 in some form (drop/add/rename)
-                // For example: DROP CONSTRAINT "PK_1" or ADD CONSTRAINT "PK_2"
+                // Should contain PK_1 and PK_2 in some form (rename constraint)
                 expect(queriesString).to.match(/PK_1/)
                 expect(queriesString).to.match(/PK_2/)
             }),

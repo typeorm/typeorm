@@ -856,6 +856,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const pkNameChanged =
                 primaryTableColumns.length > 0 &&
                 primaryMetadataColumns.length > 0 &&
+                primaryTableColumns.length === primaryMetadataColumns.length &&
                 primaryTableColumns[0].primaryKeyConstraintName !==
                     primaryMetadataColumns[0].primaryKeyConstraintName &&
                 (DriverUtils.isPostgresFamily(this.connection.driver) ||

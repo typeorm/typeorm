@@ -964,8 +964,6 @@ export class CockroachDriver implements Driver {
                         this.normalizeDefault(columnMetadata),
                     ) !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
-                tableColumn.primaryKeyConstraintName !==
-                    columnMetadata.primaryKeyConstraintName ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||

@@ -853,8 +853,6 @@ export class SqlServerDriver implements Driver {
                             tableColumn.default,
                         )) || // we included check for generated here, because generated columns already can have default values
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
-                tableColumn.primaryKeyConstraintName !==
-                    columnMetadata.primaryKeyConstraintName ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.asExpression !== columnMetadata.asExpression ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
