@@ -195,7 +195,7 @@ describe("repository > update methods", function () {
                     .whereInIds(post1.id)
 
                 const query = qb.getQuery()
-                expect(query).to.not.contain("IN")
+                expect(query).to.not.match(/\bIN\s*\(/)
                 expect(query).to.contain("=")
 
                 // execute and verify only the target row is updated
