@@ -1533,9 +1533,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Sets LIMIT - maximum number of rows to be selected.
-     * NOTE that it may not work as you expect if you are using joins.
-     * If you want to implement pagination, and you are having join in your query,
-     * then use the take method instead.
+     * When joins are present, a two-query distinct-id strategy is used
+     * so that LIMIT applies to root entities rather than raw joined rows.
      * @param limit
      */
     limit(limit?: number): this {
@@ -1553,9 +1552,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Sets OFFSET - selection offset.
-     * NOTE that it may not work as you expect if you are using joins.
-     * If you want to implement pagination, and you are having join in your query,
-     * then use the skip method instead.
+     * When joins are present, a two-query distinct-id strategy is used
+     * so that OFFSET applies to root entities rather than raw joined rows.
      * @param offset
      */
     offset(offset?: number): this {

@@ -1692,38 +1692,36 @@ describe("query builder > joins", () => {
             connections.map(async (connection) => {
                 const manager = connection.manager
 
-                // create users and photos
-                const user1 = new User()
-                user1.name = "User 1"
-                await manager.save(user1)
+                for (let i = 1; i <= 7; i++) {
+                    const user = new User()
+                    user.name = `User ${i}`
+                    await manager.save(user)
 
-                const photo1 = new Photo()
-                photo1.name = "Photo 1"
-                photo1.user = user1
-                await manager.save(photo1)
+                    for (let j = 1; j <= 2; j++) {
+                        const photo = new Photo()
+                        photo.name = `Photo ${i}-${j}`
+                        photo.user = user
+                        await manager.save(photo)
+                    }
+                }
 
-                const photo2 = new Photo()
-                photo2.name = "Photo 2"
-                photo2.user = user1
-                await manager.save(photo2)
-
-                const user2 = new User()
-                user2.name = "User 2"
-                await manager.save(user2)
-
-                const photo3 = new Photo()
-                photo3.name = "Photo 3"
-                photo3.user = user2
-                await manager.save(photo3)
-
-                const users = await manager
+                const qb = manager
                     .createQueryBuilder(User, "user")
                     .leftJoinAndSelect("user.photos", "photo")
-                    .limit(1)
-                    .getMany()
+                    .orderBy("user.id")
+                    .limit(5)
 
-                expect(users.length).to.be.equal(1)
-                expect(users[0].photos.length).to.be.equal(2)
+                const users = await qb.getMany()
+                expect(users).to.have.lengthOf(5)
+                users.forEach((user) => {
+                    expect(user.photos).to.have.lengthOf(2)
+                })
+
+                const rows = await qb.execute()
+                const uniqueIds = new Set(
+                    rows.map((row: { user_id: string }) => row.user_id),
+                )
+                expect(uniqueIds.size).to.equal(3)
             }),
         ))
 })
