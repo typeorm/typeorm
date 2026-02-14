@@ -122,6 +122,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Create the typeorm_metadata table if necessary.
+     * @param queryRunner
      */
     async createMetadataTableIfNecessary(
         queryRunner: QueryRunner,
@@ -851,9 +852,20 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const primaryTableColumns = table.columns.filter(
                 (column) => column.isPrimary,
             )
+
+            const pkNameChanged =
+                primaryTableColumns.length > 0 &&
+                primaryMetadataColumns.length > 0 &&
+                primaryTableColumns[0].primaryKeyConstraintName !==
+                    primaryMetadataColumns[0].primaryKeyConstraintName &&
+                (DriverUtils.isPostgresFamily(this.connection.driver) ||
+                    this.connection.driver.options.type === "mssql" ||
+                    this.connection.driver.options.type === "oracle")
+
             if (
-                primaryTableColumns.length !== primaryMetadataColumns.length &&
-                primaryMetadataColumns.length > 1
+                (primaryTableColumns.length !== primaryMetadataColumns.length &&
+                    primaryMetadataColumns.length > 1) ||
+                pkNameChanged
             ) {
                 const changedPrimaryColumns = primaryMetadataColumns.map(
                     (primaryMetadataColumn) => {
@@ -1219,6 +1231,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Drops all foreign keys where given column of the given table is being used.
+     * @param tablePath
+     * @param columnName
      */
     protected async dropColumnReferencedForeignKeys(
         tablePath: string,
@@ -1280,6 +1294,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Drops all composite indices, related to given column.
+     * @param tablePath
+     * @param columnName
      */
     protected async dropColumnCompositeIndices(
         tablePath: string,
@@ -1307,6 +1323,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Drops all composite uniques, related to given column.
+     * @param tablePath
+     * @param columnName
      */
     protected async dropColumnCompositeUniques(
         tablePath: string,
@@ -1334,6 +1352,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Creates new columns from the given column metadatas.
+     * @param columns
      */
     protected metadataColumnsToTableColumnOptions(
         columns: ColumnMetadata[],
@@ -1348,6 +1367,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Creates typeorm service table for storing user defined Views and generate columns.
+     * @param queryRunner
      */
     protected async createTypeormMetadataTable(queryRunner: QueryRunner) {
         const schema = this.currentSchema

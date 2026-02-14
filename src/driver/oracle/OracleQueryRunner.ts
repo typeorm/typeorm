@@ -1867,8 +1867,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             .filter((column) => columnNames.indexOf(column.name) !== -1)
             .forEach((column) => (column.isPrimary = true))
 
-        const pkName = primaryColumns[0].primaryKeyConstraintName
-            ? primaryColumns[0].primaryKeyConstraintName
+        const pkName = columns[0].primaryKeyConstraintName
+            ? columns[0].primaryKeyConstraintName
             : this.connection.namingStrategy.primaryKeyName(
                   clonedTable,
                   columnNames,
