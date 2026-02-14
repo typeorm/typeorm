@@ -71,11 +71,7 @@ describe("DriverUtils", () => {
                             second: {
                                 third: {
                                     id: Raw(
-                                        (alias) => `EXISTS (
-                                            SELECT 1 
-                                            FROM third_element
-                                            WHERE id= ${alias}
-                                          )`,
+                                        (alias) => `${alias} IS NOT NULL`,
                                     ),
                                 },
                             },
