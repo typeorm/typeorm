@@ -70,9 +70,7 @@ describe("DriverUtils", () => {
                         where: {
                             second: {
                                 third: {
-                                    id: Raw(
-                                        (alias) => `${alias} IS NOT NULL`,
-                                    ),
+                                    id: Raw((alias) => `${alias} IS NOT NULL`),
                                 },
                             },
                         },
