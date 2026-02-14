@@ -30,7 +30,7 @@ jobs:
           subjectPatternError: |
             Our pull requests titles should follow Conventional Commits spec:
             https://www.conventionalcommits.org 
-            
+
             The description "{subject}" found in this pull request title "{title}"
             didn't match the configured pattern. Please ensure that it doesn't
             start with an uppercase character and contain only allowed characters.

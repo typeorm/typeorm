@@ -25,6 +25,8 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Builds EntityMetadata for the junction of the given many-to-many relation.
+     * @param relation
+     * @param joinTable
      */
     build(
         relation: RelationMetadata,
@@ -295,6 +297,8 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Collects referenced columns from the given join column args.
+     * @param relation
+     * @param joinTable
      */
     protected collectReferencedColumns(
         relation: RelationMetadata,
@@ -330,6 +334,8 @@ export class JunctionEntityMetadataBuilder {
 
     /**
      * Collects inverse referenced columns from the given join column args.
+     * @param relation
+     * @param joinTable
      */
     protected collectInverseReferencedColumns(
         relation: RelationMetadata,

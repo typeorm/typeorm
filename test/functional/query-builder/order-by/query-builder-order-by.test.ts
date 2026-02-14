@@ -7,6 +7,7 @@ import {
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
+import { Comment } from "./entity/Comment"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > order-by", () => {
@@ -148,6 +149,126 @@ describe("query builder > order-by", () => {
 
                 expect(loadedPost2!.num1).to.be.equal(10)
                 expect(loadedPost2!.num2).to.be.equal(2)
+            }),
+        ))
+
+    it("should order by joined entity column using database column name without pagination", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const commentRepository = connection.getRepository(Comment)
+
+                for (let i = 0; i < 5; i++) {
+                    const post = new Post()
+                    post.myOrder = i
+                    await postRepository.save(post)
+
+                    const comment = new Comment()
+                    comment.text = `comment-${i}`
+                    comment.postId = post.id
+                    await commentRepository.save(comment)
+                }
+
+                const query = commentRepository
+                    .createQueryBuilder("comment")
+                    .leftJoinAndSelect("comment.post", "post")
+                    .addOrderBy("post.created_at", "ASC")
+
+                const result = await query.getMany()
+
+                expect(result).to.have.lengthOf(5)
+                expect(result[0].post).to.not.be.undefined
+            }),
+        ))
+
+    it("should order by joined entity column using database column name with pagination", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const commentRepository = connection.getRepository(Comment)
+
+                for (let i = 0; i < 20; i++) {
+                    const post = new Post()
+                    post.myOrder = i
+                    await postRepository.save(post)
+
+                    const comment = new Comment()
+                    comment.text = `comment-${i}`
+                    comment.postId = post.id
+                    await commentRepository.save(comment)
+                }
+
+                const query = commentRepository
+                    .createQueryBuilder("comment")
+                    .leftJoinAndSelect("comment.post", "post")
+                    .addOrderBy("post.created_at", "ASC")
+                    .skip(0)
+                    .take(10)
+
+                const result = await query.getMany()
+
+                expect(result).to.have.lengthOf(10)
+                expect(result[0].post).to.not.be.undefined
+            }),
+        ))
+
+    it("should order by joined entity column using property name without pagination", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const commentRepository = connection.getRepository(Comment)
+
+                for (let i = 0; i < 5; i++) {
+                    const post = new Post()
+                    post.myOrder = i
+                    await postRepository.save(post)
+
+                    const comment = new Comment()
+                    comment.text = `comment-${i}`
+                    comment.postId = post.id
+                    await commentRepository.save(comment)
+                }
+
+                const query = commentRepository
+                    .createQueryBuilder("comment")
+                    .leftJoinAndSelect("comment.post", "post")
+                    .addOrderBy("post.createdAt", "ASC")
+
+                const result = await query.getMany()
+
+                expect(result).to.have.lengthOf(5)
+                expect(result[0].post).to.not.be.undefined
+            }),
+        ))
+
+    it("should order by joined entity column using property name with pagination", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const commentRepository = connection.getRepository(Comment)
+
+                for (let i = 0; i < 20; i++) {
+                    const post = new Post()
+                    post.myOrder = i
+                    await postRepository.save(post)
+
+                    const comment = new Comment()
+                    comment.text = `comment-${i}`
+                    comment.postId = post.id
+                    await commentRepository.save(comment)
+                }
+
+                const query = commentRepository
+                    .createQueryBuilder("comment")
+                    .leftJoinAndSelect("comment.post", "post")
+                    .addOrderBy("post.createdAt", "ASC")
+                    .skip(0)
+                    .take(10)
+
+                const result = await query.getMany()
+
+                expect(result).to.have.lengthOf(10)
+                expect(result[0].post).to.not.be.undefined
             }),
         ))
 })

@@ -69,7 +69,7 @@ Note that we uniquely named `:sheepId` and `:cowId` instead of using `:id` twice
 
 There are several ways how you can create a `Query Builder`:
 
--   Using DataSource:
+- Using DataSource:
 
     ```typescript
     const user = await dataSource
@@ -80,7 +80,7 @@ There are several ways how you can create a `Query Builder`:
         .getOne()
     ```
 
--   Using entity manager:
+- Using entity manager:
 
     ```typescript
     const user = await dataSource.manager
@@ -89,7 +89,7 @@ There are several ways how you can create a `Query Builder`:
         .getOne()
     ```
 
--   Using repository:
+- Using repository:
 
     ```typescript
     const user = await dataSource
@@ -101,7 +101,7 @@ There are several ways how you can create a `Query Builder`:
 
 There are 5 different `QueryBuilder` types available:
 
--   `SelectQueryBuilder` - used to build and execute `SELECT` queries. Example:
+- `SelectQueryBuilder` - used to build and execute `SELECT` queries. Example:
 
     ```typescript
     const user = await dataSource
@@ -112,7 +112,7 @@ There are 5 different `QueryBuilder` types available:
         .getOne()
     ```
 
--   `InsertQueryBuilder` - used to build and execute `INSERT` queries. Example:
+- `InsertQueryBuilder` - used to build and execute `INSERT` queries. Example:
 
     ```typescript
     await dataSource
@@ -126,7 +126,7 @@ There are 5 different `QueryBuilder` types available:
         .execute()
     ```
 
--   `UpdateQueryBuilder` - used to build and execute `UPDATE` queries. Example:
+- `UpdateQueryBuilder` - used to build and execute `UPDATE` queries. Example:
 
     ```typescript
     await dataSource
@@ -137,7 +137,7 @@ There are 5 different `QueryBuilder` types available:
         .execute()
     ```
 
--   `DeleteQueryBuilder` - used to build and execute `DELETE` queries. Example:
+- `DeleteQueryBuilder` - used to build and execute `DELETE` queries. Example:
 
     ```typescript
     await dataSource
@@ -148,8 +148,8 @@ There are 5 different `QueryBuilder` types available:
         .execute()
     ```
 
--   `RelationQueryBuilder` - used to build and execute relation-specific operations [TBD].
-    Example:
+- `RelationQueryBuilder` - used to build and execute relation-specific operations [TBD].
+  Example:
 
     ```typescript
     await dataSource
@@ -995,10 +995,10 @@ const users = await dataSource
 
 Database support for `setOnLocked` based on [lock mode](#lock-modes):
 
--   Postgres: `pessimistic_read`, `pessimistic_write`, `for_no_key_update`, `for_key_share`
--   MySQL 8+: `pessimistic_read`, `pessimistic_write`
--   MySQL < 8, Maria DB: `pessimistic_write`
--   Cockroach: `pessimistic_write` (`nowait` only)
+- Postgres: `pessimistic_read`, `pessimistic_write`, `for_no_key_update`, `for_key_share`
+- MySQL 8+: `pessimistic_read`, `pessimistic_write`
+- MySQL < 8, Maria DB: `pessimistic_write`
+- Cockroach: `pessimistic_write` (`nowait` only)
 
 ## Use custom index
 

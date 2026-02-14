@@ -195,8 +195,8 @@ This configuration will:
 
 This combination is useful when you want to:
 
--   Be explicit about searching for NULL values in the database
--   Catch potential programming errors where undefined values might slip into your queries
+- Be explicit about searching for NULL values in the database
+- Catch potential programming errors where undefined values might slip into your queries
 
 ## Works with all where operations
 
@@ -213,7 +213,7 @@ await dataSource
     .where({ text: null }) // Respects invalidWhereValuesBehavior
     .execute()
 
-// DeleteQueryBuilder  
+// DeleteQueryBuilder
 await dataSource
     .createQueryBuilder()
     .delete()

@@ -18,8 +18,8 @@ await userRepository.save(user)
 
 There are 3 types of repositories:
 
--   `Repository` - Regular repository for any entity.
--   `TreeRepository` - Repository, extensions of `Repository` used for tree-entities
-    (like entities marked with `@Tree` decorator).
-    Has special methods to work with tree structures.
--   `MongoRepository` - Repository with special functions used only with MongoDB.
+- `Repository` - Regular repository for any entity.
+- `TreeRepository` - Repository, extensions of `Repository` used for tree-entities
+  (like entities marked with `@Tree` decorator).
+  Has special methods to work with tree structures.
+- `MongoRepository` - Repository with special functions used only with MongoDB.

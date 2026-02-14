@@ -15,6 +15,7 @@ export class SubjectChangedColumnsComputer {
 
     /**
      * Finds what columns are changed in the subject entities.
+     * @param subjects List of subjects for which to compute changed columns.
      */
     compute(subjects: Subject[]) {
         subjects.forEach((subject) => {
@@ -29,6 +30,7 @@ export class SubjectChangedColumnsComputer {
 
     /**
      * Differentiate columns from the updated entity and entity stored in the database.
+     * @param subject Subject for which to compute differentiated columns.
      */
     protected computeDiffColumns(subject: Subject): void {
         // if there is no persisted entity then nothing to compute changed in it
@@ -210,6 +212,8 @@ export class SubjectChangedColumnsComputer {
 
     /**
      * Difference columns of the owning one-to-one and many-to-one columns.
+     * @param allSubjects List of all subjects in the current operation.
+     * @param subject Subject for which to compute differentiated relational columns.
      */
     protected computeDiffRelationalColumns(
         allSubjects: Subject[],
@@ -219,6 +223,8 @@ export class SubjectChangedColumnsComputer {
         if (!subject.entity) return
 
         subject.metadata.relationsWithJoinColumns.forEach((relation) => {
+            if (relation.persistenceEnabled === false) return
+
             // get the related entity from the persisted entity
             let relatedEntity = relation.getEntityValue(subject.entity!)
 

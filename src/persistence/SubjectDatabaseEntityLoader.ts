@@ -30,6 +30,7 @@ export class SubjectDatabaseEntityLoader {
      *
      * loadAllRelations flag is used to load all relation ids of the object, no matter if they present in subject entity or not.
      * This option is used for deletion.
+     * @param operationType
      */
     async load(
         operationType: "save" | "remove" | "soft-remove" | "recover",

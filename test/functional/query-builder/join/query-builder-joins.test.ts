@@ -12,6 +12,7 @@ import { Category } from "./entity/Category"
 import { CategoryWithCompositePK } from "./entity/CategoryWithCompositePK"
 import { Image } from "./entity/Image"
 import { User } from "./entity/User"
+import { Photo } from "./entity/Photo"
 
 describe("query builder > joins", () => {
     let connections: DataSource[]
@@ -571,6 +572,41 @@ describe("query builder > joins", () => {
                 }),
             ))
 
+        it("should not load join data when join subquery does not find results", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const tag = new Tag()
+                    tag.name = "audi"
+                    await connection.manager.save(tag)
+
+                    const post = new Post()
+                    post.title = "about China"
+                    post.tag = tag
+                    await connection.manager.save(post)
+
+                    const loadedPost = await connection.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndMapOne(
+                            "post.tag",
+                            (qb) =>
+                                qb
+                                    .subQuery()
+                                    .from(Tag, "tag")
+                                    .where("tag.name != :name", {
+                                        name: "audi",
+                                    }),
+                            "tag",
+                            "tag.id = post.tagId",
+                            undefined,
+                            Tag,
+                        )
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost!.tag).to.be.null
+                }),
+            ))
+
         it("should load and map selected data when data will given from same entity but with different conditions", () =>
             Promise.all(
                 connections.map(async (connection) => {
@@ -1019,6 +1055,41 @@ describe("query builder > joins", () => {
 
                     expect(loadedPost!.tag).to.not.be.undefined
                     expect(loadedPost!.tag.id).to.be.equal(1)
+                }),
+            ))
+
+        it("should not find results when join subquery with conditions does not find join data", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const tag = new Tag()
+                    tag.name = "audi"
+                    await connection.manager.save(tag)
+
+                    const post = new Post()
+                    post.title = "about China"
+                    post.tag = tag
+                    await connection.manager.save(post)
+
+                    const loadedPost = await connection.manager
+                        .createQueryBuilder(Post, "post")
+                        .innerJoinAndMapOne(
+                            "post.tag",
+                            (qb) =>
+                                qb
+                                    .subQuery()
+                                    .from(Tag, "tag")
+                                    .where("tag.name != :name", {
+                                        name: "audi",
+                                    }),
+                            "tag",
+                            "tag.id = post.tagId",
+                            undefined,
+                            Tag,
+                        )
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost).to.be.null
                 }),
             ))
 
@@ -1615,4 +1686,42 @@ describe("query builder > joins", () => {
                 }),
             ))
     })
+
+    it("should return correct number of results when limit is used with left joins", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const manager = connection.manager
+
+                for (let i = 1; i <= 7; i++) {
+                    const user = new User()
+                    user.name = `User ${i}`
+                    await manager.save(user)
+
+                    for (let j = 1; j <= 2; j++) {
+                        const photo = new Photo()
+                        photo.name = `Photo ${i}-${j}`
+                        photo.user = user
+                        await manager.save(photo)
+                    }
+                }
+
+                const qb = manager
+                    .createQueryBuilder(User, "user")
+                    .leftJoinAndSelect("user.photos", "photo")
+                    .orderBy("user.id")
+                    .limit(5)
+
+                const users = await qb.getMany()
+                expect(users).to.have.lengthOf(5)
+                users.forEach((user) => {
+                    expect(user.photos).to.have.lengthOf(2)
+                })
+
+                const rows = await qb.execute()
+                const uniqueIds = new Set(
+                    rows.map((row: { user_id: string }) => row.user_id),
+                )
+                expect(uniqueIds.size).to.equal(3)
+            }),
+        ))
 })
