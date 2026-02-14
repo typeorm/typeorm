@@ -4,7 +4,7 @@
 
 All repository and manager `.find*` methods accept special options you can use to query data you need without using `QueryBuilder`:
 
--   `select` - indicates which properties of the main object must be selected
+- `select` - indicates which properties of the main object must be selected
 
 ```typescript
 userRepository.find({
@@ -21,7 +21,7 @@ will execute following query:
 SELECT "firstName", "lastName" FROM "user"
 ```
 
--   `relations` - relations needs to be loaded with the main entity. Sub-relations can also be loaded (shorthand for `join` and `leftJoinAndSelect`)
+- `relations` - relations needs to be loaded with the main entity. Sub-relations can also be loaded (shorthand for `join` and `leftJoinAndSelect`)
 
 ```typescript
 userRepository.find({
@@ -57,7 +57,7 @@ LEFT JOIN "videos" ON "videos"."id" = "user"."videoId"
 LEFT JOIN "video_attributes" ON "video_attributes"."id" = "videos"."video_attributesId"
 ```
 
--   `where` - simple conditions by which entity should be queried.
+- `where` - simple conditions by which entity should be queried.
 
 ```typescript
 userRepository.find({
@@ -116,7 +116,7 @@ will execute following query:
 SELECT * FROM "user" WHERE ("firstName" = 'Timber' AND "lastName" = 'Saw') OR ("firstName" = 'Stan' AND "lastName" = 'Lee')
 ```
 
--   `order` - selection order.
+- `order` - selection order.
 
 ```typescript
 userRepository.find({
@@ -134,7 +134,7 @@ SELECT * FROM "user"
 ORDER BY "name" ASC, "id" DESC
 ```
 
--   `withDeleted` - include entities which have been soft deleted with `softDelete` or `softRemove`, e.g. have their `@DeleteDateColumn` column set. By default, soft deleted entities are not included.
+- `withDeleted` - include entities which have been soft deleted with `softDelete` or `softRemove`, e.g. have their `@DeleteDateColumn` column set. By default, soft deleted entities are not included.
 
 ```typescript
 userRepository.find({
@@ -144,7 +144,7 @@ userRepository.find({
 
 `find*` methods which return multiple entities (`find`, `findBy`, `findAndCount`, `findAndCountBy`) also accept following options:
 
--   `skip` - offset (paginated) from where entities should be taken.
+- `skip` - offset (paginated) from where entities should be taken.
 
 ```typescript
 userRepository.find({
@@ -157,7 +157,7 @@ SELECT * FROM "user"
 OFFSET 5
 ```
 
--   `take` - limit (paginated) - max number of entities that should be taken.
+- `take` - limit (paginated) - max number of entities that should be taken.
 
 ```typescript
 userRepository.find({
@@ -194,7 +194,7 @@ ORDER BY "columnName" ASC
 LIMIT 10 OFFSET 0
 ```
 
--   `cache` - Enables or disables query result caching. See [caching](../query-builder/6-caching.md) for more information and options.
+- `cache` - Enables or disables query result caching. See [caching](../query-builder/6-caching.md) for more information and options.
 
 ```typescript
 userRepository.find({
@@ -202,8 +202,8 @@ userRepository.find({
 })
 ```
 
--   `lock` - Enables locking mechanism for query. Can be used only in `findOne` and `findOneBy` methods.
-    `lock` is an object which can be defined as:
+- `lock` - Enables locking mechanism for query. Can be used only in `findOne` and `findOneBy` methods.
+  `lock` is an object which can be defined as:
 
 ```ts
 { mode: "optimistic", version: number | Date }
@@ -291,7 +291,7 @@ SELECT * FROM "user"
 
 TypeORM provides a lot of built-in operators that can be used to create more complex comparisons:
 
--   `Not`
+- `Not`
 
 ```ts
 import { Not } from "typeorm"
@@ -307,7 +307,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" != 'About #1'
 ```
 
--   `LessThan`
+- `LessThan`
 
 ```ts
 import { LessThan } from "typeorm"
@@ -323,7 +323,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "likes" < 10
 ```
 
--   `LessThanOrEqual`
+- `LessThanOrEqual`
 
 ```ts
 import { LessThanOrEqual } from "typeorm"
@@ -339,7 +339,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "likes" <= 10
 ```
 
--   `MoreThan`
+- `MoreThan`
 
 ```ts
 import { MoreThan } from "typeorm"
@@ -355,7 +355,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "likes" > 10
 ```
 
--   `MoreThanOrEqual`
+- `MoreThanOrEqual`
 
 ```ts
 import { MoreThanOrEqual } from "typeorm"
@@ -371,7 +371,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "likes" >= 10
 ```
 
--   `Equal`
+- `Equal`
 
 ```ts
 import { Equal } from "typeorm"
@@ -387,7 +387,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" = 'About #2'
 ```
 
--   `Like`
+- `Like`
 
 ```ts
 import { Like } from "typeorm"
@@ -403,7 +403,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" LIKE '%out #%'
 ```
 
--   `ILike`
+- `ILike`
 
 ```ts
 import { ILike } from "typeorm"
@@ -419,7 +419,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" ILIKE '%out #%'
 ```
 
--   `Between`
+- `Between`
 
 ```ts
 import { Between } from "typeorm"
@@ -435,7 +435,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "likes" BETWEEN 1 AND 10
 ```
 
--   `In`
+- `In`
 
 ```ts
 import { In } from "typeorm"
@@ -451,7 +451,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" IN ('About #2','About #3')
 ```
 
--   `Any`
+- `Any`
 
 ```ts
 import { Any } from "typeorm"
@@ -467,7 +467,7 @@ will execute following query (Postgres notation):
 SELECT * FROM "post" WHERE "title" = ANY(['About #2','About #3'])
 ```
 
--   `IsNull`
+- `IsNull`
 
 ```ts
 import { IsNull } from "typeorm"
@@ -483,7 +483,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" IS NULL
 ```
 
--   `ArrayContains`
+- `ArrayContains`
 
 ```ts
 import { ArrayContains } from "typeorm"
@@ -499,7 +499,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "categories" @> '{TypeScript}'
 ```
 
--   `ArrayContainedBy`
+- `ArrayContainedBy`
 
 ```ts
 import { ArrayContainedBy } from "typeorm"
@@ -515,7 +515,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "categories" <@ '{TypeScript}'
 ```
 
--   `ArrayOverlap`
+- `ArrayOverlap`
 
 ```ts
 import { ArrayOverlap } from "typeorm"
@@ -531,7 +531,23 @@ will execute following query:
 SELECT * FROM "post" WHERE "categories" && '{TypeScript}'
 ```
 
--   `Raw`
+- `JsonContains` (PostgreSQL/CockroachDB only)
+
+```ts
+import { JsonContains } from "typeorm"
+
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+    metadata: JsonContains({ author: { name: "John" } }),
+})
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "metadata" ::jsonb @> '{"author":{"name":"John"}}'
+```
+
+- `Raw`
 
 ```ts
 import { Raw } from "typeorm"
@@ -605,7 +621,7 @@ SELECT * FROM "post" WHERE "title" IN ('Go To Statement Considered Harmful', 'St
 
 Also you can combine these operators with below:
 
--   `Not`
+- `Not`
 
 ```ts
 import { Not, MoreThan, Equal } from "typeorm"
@@ -622,7 +638,7 @@ will execute following query:
 SELECT * FROM "post" WHERE NOT("likes" > 10) AND NOT("title" = 'About #2')
 ```
 
--   `Or`
+- `Or`
 
 ```ts
 import { Or, Equal, ILike } from "typeorm"
@@ -638,7 +654,7 @@ will execute following query:
 SELECT * FROM "post" WHERE "title" = 'About #2' OR "title" ILIKE 'About%'
 ```
 
--   `And`
+- `And`
 
 ```ts
 import { And, Not, Equal, ILike } from "typeorm"

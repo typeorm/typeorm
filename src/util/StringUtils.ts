@@ -96,6 +96,7 @@ export function shorten(input: string, options: IShortenOptions = {}): string {
         // split the given segment into many terms based on an eventual camel cased name
         const segmentTerms = val
             .replace(/([a-z\xE0-\xFF])([A-Z\xC0-\xDF])/g, "$1 $2")
+            .replace(/(_)([a-z])/g, " $2")
             .split(" ")
         // "OrderItemList" becomes "OrItLi", while "company" becomes "comp"
         const length = segmentTerms.length > 1 ? termLength : segmentLength

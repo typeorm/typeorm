@@ -2,34 +2,34 @@
 
 ## `Repository` API
 
--   `manager` - The `EntityManager` used by this repository.
+- `manager` - The `EntityManager` used by this repository.
 
 ```typescript
 const manager = repository.manager
 ```
 
--   `metadata` - The `EntityMetadata` of the entity managed by this repository.
+- `metadata` - The `EntityMetadata` of the entity managed by this repository.
 
 ```typescript
 const metadata = repository.metadata
 ```
 
--   `queryRunner` - The query runner used by `EntityManager`.
-    Used only in transactional instances of EntityManager.
+- `queryRunner` - The query runner used by `EntityManager`.
+  Used only in transactional instances of EntityManager.
 
 ```typescript
 const queryRunner = repository.queryRunner
 ```
 
--   `target` - The target entity class managed by this repository.
-    Used only in transactional instances of EntityManager.
+- `target` - The target entity class managed by this repository.
+  Used only in transactional instances of EntityManager.
 
 ```typescript
 const target = repository.target
 ```
 
--   `createQueryBuilder` - Creates a query builder use to build SQL queries.
-    Learn more about [QueryBuilder](../query-builder/1-select-query-builder.md).
+- `createQueryBuilder` - Creates a query builder use to build SQL queries.
+  Learn more about [QueryBuilder](../query-builder/1-select-query-builder.md).
 
 ```typescript
 const users = await repository
@@ -38,7 +38,7 @@ const users = await repository
     .getMany()
 ```
 
--   `hasId` - Checks if the given entity's primary column property is defined.
+- `hasId` - Checks if the given entity's primary column property is defined.
 
 ```typescript
 if (repository.hasId(user)) {
@@ -46,15 +46,15 @@ if (repository.hasId(user)) {
 }
 ```
 
--   `getId` - Gets the primary column property values of the given entity.
-    If entity has composite primary keys then the returned value will be an object with names and values of primary columns.
+- `getId` - Gets the primary column property values of the given entity.
+  If entity has composite primary keys then the returned value will be an object with names and values of primary columns.
 
 ```typescript
 const userId = repository.getId(user) // userId === 1
 ```
 
--   `create` - Creates a new instance of `User`. Optionally accepts an object literal with user properties
-    which will be written into newly created user object
+- `create` - Creates a new instance of `User`. Optionally accepts an object literal with user properties
+  which will be written into newly created user object
 
 ```typescript
 const user = repository.create() // same as const user = new User();
@@ -65,17 +65,17 @@ const user = repository.create({
 }) // same as const user = new User(); user.firstName = "Timber"; user.lastName = "Saw";
 ```
 
--   `merge` - Merges multiple entities into a single entity.
+- `merge` - Merges multiple entities into a single entity.
 
 ```typescript
 const user = new User()
 repository.merge(user, { firstName: "Timber" }, { lastName: "Saw" }) // same as user.firstName = "Timber"; user.lastName = "Saw";
 ```
 
--   `preload` - Creates a new entity from the given plain javascript object. If the entity already exists in the database, then
-    it loads it (and everything related to it), replaces all values with the new ones from the given object,
-    and returns the new entity. The new entity is actually an entity loaded from the database with all properties
-    replaced from the new object.
+- `preload` - Creates a new entity from the given plain javascript object. If the entity already exists in the database, then
+  it loads it (and everything related to it), replaces all values with the new ones from the given object,
+  and returns the new entity. The new entity is actually an entity loaded from the database with all properties
+  replaced from the new object.
 
     > Note that given entity-like object must have an entity id / primary key to find entity by. Returns undefined if entity with given id was not found.
 
@@ -92,28 +92,28 @@ const user = await repository.preload(partialUser)
 // { id: 1, firstName: "Rizzrak", lastName: "Saw", profile: { id: 1, ... } }
 ```
 
--   `save` - Saves a given entity or array of entities.
-    If the entity already exist in the database, it is updated.
-    If the entity does not exist in the database, it is inserted.
-    It saves all given entities in a single transaction (in the case of entity, manager is not transactional).
-    Also supports partial updating since all undefined properties are skipped.
-    Returns the saved entity/entities.
+- `save` - Saves a given entity or array of entities.
+  If the entity already exist in the database, it is updated.
+  If the entity does not exist in the database, it is inserted.
+  It saves all given entities in a single transaction (in the case of entity, manager is not transactional).
+  Also supports partial updating since all undefined properties are skipped.
+  Returns the saved entity/entities.
 
 ```typescript
 await repository.save(user)
 await repository.save([category1, category2, category3])
 ```
 
--   `remove` - Removes a given entity or array of entities.
-    It removes all given entities in a single transaction (in the case of entity, manager is not transactional).
-    Returns the removed entity/entities.
+- `remove` - Removes a given entity or array of entities.
+  It removes all given entities in a single transaction (in the case of entity, manager is not transactional).
+  Returns the removed entity/entities.
 
 ```typescript
 await repository.remove(user)
 await repository.remove([category1, category2, category3])
 ```
 
--   `insert` - Inserts a new entity, or array of entities.
+- `insert` - Inserts a new entity, or array of entities.
 
 ```typescript
 await repository.insert({
@@ -133,7 +133,7 @@ await repository.insert([
 ])
 ```
 
--   `update` - Updates entities by entity id, ids or given conditions. Sets fields from supplied partial entity.
+- `update` - Updates entities by entity id, ids or given conditions. Sets fields from supplied partial entity.
 
 ```typescript
 await repository.update({ age: 18 }, { category: "ADULT" })
@@ -151,7 +151,7 @@ const result = await repository.update(
 console.log(result.raw) // [{ id: 1, firstName: "Rizzrak" }]
 ```
 
--   `updateAll` - Updates _all_ entities of target type (without WHERE clause). Sets fields from supplied partial entity.
+- `updateAll` - Updates _all_ entities of target type (without WHERE clause). Sets fields from supplied partial entity.
 
 ```typescript
 await repository.updateAll({ category: "ADULT" })
@@ -163,7 +163,7 @@ await repository.updateAll(
 )
 ```
 
--   `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
+- `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
 
 When an upsert operation results in an update (due to a conflict), special columns like `@UpdateDateColumn` and `@VersionColumn` are automatically updated to their current values.
 
@@ -180,7 +180,7 @@ await repository.upsert(
  *  VALUES
  *      (externalId = abc123, firstName = Rizzrak),
  *      (externalId = cba321, firstName = Karzzir),
- *  ON CONFLICT (externalId) DO UPDATE 
+ *  ON CONFLICT (externalId) DO UPDATE
  *  SET firstName = EXCLUDED.firstName,
  *      updatedDate = CURRENT_TIMESTAMP,
  *      version = version + 1
@@ -247,7 +247,7 @@ await repository.upsert(
  **/
 ```
 
--   `delete` - Deletes entities by entity id, ids or given conditions:
+- `delete` - Deletes entities by entity id, ids or given conditions:
 
 ```typescript
 await repository.delete(1)
@@ -255,7 +255,7 @@ await repository.delete([1, 2, 3])
 await repository.delete({ firstName: "Timber" })
 ```
 
--   `deleteAll` - Deletes _all_ entities of target type (without WHERE clause).
+- `deleteAll` - Deletes _all_ entities of target type (without WHERE clause).
 
 ```typescript
 await repository.deleteAll()
@@ -264,7 +264,7 @@ await repository.deleteAll()
 
 Refer also to the `clear` method, which performs database `TRUNCATE TABLE` operation instead.
 
--   `softDelete` and `restore` - Soft deleting and restoring a row by id, ids, or given conditions:
+- `softDelete` and `restore` - Soft deleting and restoring a row by id, ids, or given conditions:
 
 ```typescript
 const repository = dataSource.getRepository(Entity)
@@ -278,7 +278,7 @@ await repository.softDelete([1, 2, 3])
 await repository.softDelete({ firstName: "Jake" })
 ```
 
--   `softRemove` and `recover` - This is alternative to `softDelete` and `restore`.
+- `softRemove` and `recover` - This is alternative to `softDelete` and `restore`.
 
 ```typescript
 // You can soft-delete them using softRemove
@@ -289,19 +289,19 @@ const entitiesAfterSoftRemove = await repository.softRemove(entities)
 await repository.recover(entitiesAfterSoftRemove)
 ```
 
--   `increment` - Increments some column by provided value of entities that match given options.
+- `increment` - Increments some column by provided value of entities that match given options.
 
 ```typescript
 await repository.increment({ firstName: "Timber" }, "age", 3)
 ```
 
--   `decrement` - Decrements some column by provided value that match given options.
+- `decrement` - Decrements some column by provided value that match given options.
 
 ```typescript
 await repository.decrement({ firstName: "Timber" }, "age", 3)
 ```
 
--   `exists` - Check whether any entity exists that matches `FindOptions`.
+- `exists` - Check whether any entity exists that matches `FindOptions`.
 
 ```typescript
 const exists = await repository.exists({
@@ -311,13 +311,13 @@ const exists = await repository.exists({
 })
 ```
 
--   `existsBy` - Checks whether any entity exists that matches `FindOptionsWhere`.
+- `existsBy` - Checks whether any entity exists that matches `FindOptionsWhere`.
 
 ```typescript
 const exists = await repository.existsBy({ firstName: "Timber" })
 ```
 
--   `count` - Counts entities that match `FindOptions`. Useful for pagination.
+- `count` - Counts entities that match `FindOptions`. Useful for pagination.
 
 ```typescript
 const count = await repository.count({
@@ -327,37 +327,37 @@ const count = await repository.count({
 })
 ```
 
--   `countBy` - Counts entities that match `FindOptionsWhere`. Useful for pagination.
+- `countBy` - Counts entities that match `FindOptionsWhere`. Useful for pagination.
 
 ```typescript
 const count = await repository.countBy({ firstName: "Timber" })
 ```
 
--   `sum` - Returns the sum of a numeric field for all entities that match `FindOptionsWhere`.
+- `sum` - Returns the sum of a numeric field for all entities that match `FindOptionsWhere`.
 
 ```typescript
 const sum = await repository.sum("age", { firstName: "Timber" })
 ```
 
--   `average` - Returns the average of a numeric field for all entities that match `FindOptionsWhere`.
+- `average` - Returns the average of a numeric field for all entities that match `FindOptionsWhere`.
 
 ```typescript
 const average = await repository.average("age", { firstName: "Timber" })
 ```
 
--   `minimum` - Returns the minimum of a numeric field for all entities that match `FindOptionsWhere`.
+- `minimum` - Returns the minimum of a numeric field for all entities that match `FindOptionsWhere`.
 
 ```typescript
 const minimum = await repository.minimum("age", { firstName: "Timber" })
 ```
 
--   `maximum` - Returns the maximum of a numeric field for all entities that match `FindOptionsWhere`.
+- `maximum` - Returns the maximum of a numeric field for all entities that match `FindOptionsWhere`.
 
 ```typescript
 const maximum = await repository.maximum("age", { firstName: "Timber" })
 ```
 
--   `find` - Finds entities that match given `FindOptions`.
+- `find` - Finds entities that match given `FindOptions`.
 
 ```typescript
 const timbers = await repository.find({
@@ -367,7 +367,7 @@ const timbers = await repository.find({
 })
 ```
 
--   `findBy` - Finds entities that match given `FindWhereOptions`.
+- `findBy` - Finds entities that match given `FindWhereOptions`.
 
 ```typescript
 const timbers = await repository.findBy({
@@ -375,9 +375,9 @@ const timbers = await repository.findBy({
 })
 ```
 
--   `findAndCount` - Finds entities that match given `FindOptions`.
-    Also counts all entities that match given conditions,
-    but ignores pagination settings (from and take options).
+- `findAndCount` - Finds entities that match given `FindOptions`.
+  Also counts all entities that match given conditions,
+  but ignores pagination settings (from and take options).
 
 ```typescript
 const [timbers, timbersCount] = await repository.findAndCount({
@@ -387,9 +387,9 @@ const [timbers, timbersCount] = await repository.findAndCount({
 })
 ```
 
--   `findAndCountBy` - Finds entities that match given `FindOptionsWhere`.
-    Also counts all entities that match given conditions,
-    but ignores pagination settings (from and take options).
+- `findAndCountBy` - Finds entities that match given `FindOptionsWhere`.
+  Also counts all entities that match given conditions,
+  but ignores pagination settings (from and take options).
 
 ```typescript
 const [timbers, timbersCount] = await repository.findAndCountBy({
@@ -397,7 +397,7 @@ const [timbers, timbersCount] = await repository.findAndCountBy({
 })
 ```
 
--   `findOne` - Finds the first entity that matches given `FindOptions`.
+- `findOne` - Finds the first entity that matches given `FindOptions`.
 
 ```typescript
 const timber = await repository.findOne({
@@ -407,14 +407,14 @@ const timber = await repository.findOne({
 })
 ```
 
--   `findOneBy` - Finds the first entity that matches given `FindOptionsWhere`.
+- `findOneBy` - Finds the first entity that matches given `FindOptionsWhere`.
 
 ```typescript
 const timber = await repository.findOneBy({ firstName: "Timber" })
 ```
 
--   `findOneOrFail` - Finds the first entity that matches some id or find options.
-    Rejects the returned promise if nothing matches.
+- `findOneOrFail` - Finds the first entity that matches some id or find options.
+  Rejects the returned promise if nothing matches.
 
 ```typescript
 const timber = await repository.findOneOrFail({
@@ -424,14 +424,14 @@ const timber = await repository.findOneOrFail({
 })
 ```
 
--   `findOneByOrFail` - Finds the first entity that matches given `FindOptions`.
-    Rejects the returned promise if nothing matches.
+- `findOneByOrFail` - Finds the first entity that matches given `FindOptions`.
+  Rejects the returned promise if nothing matches.
 
 ```typescript
 const timber = await repository.findOneByOrFail({ firstName: "Timber" })
 ```
 
--   `query` - Executes a raw SQL query.
+- `query` - Executes a raw SQL query.
 
 ```typescript
 const rawData = await repository.query(`SELECT * FROM USERS`)
@@ -472,7 +472,7 @@ const rawData = await repository.query(
 )
 ```
 
--   `clear` - Clears all the data from the given table (truncates/drops it).
+- `clear` - Clears all the data from the given table (truncates/drops it).
 
 ```typescript
 await repository.clear()
@@ -482,11 +482,11 @@ await repository.clear()
 
 Optional `SaveOptions` can be passed as parameter for `save`.
 
--   `data` - Additional data to be passed with persist method. This data can be used in subscribers then.
--   `listeners`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
--   `transaction`: boolean - By default transactions are enabled and all queries in persistence operation are wrapped into the transaction. You can disable this behaviour by setting `{ transaction: false }` in the persistence options.
--   `chunk`: number - Breaks save execution into multiple groups of chunks. For example, if you want to save 100.000 objects but you have issues with saving them, you can break them into 10 groups of 10.000 objects (by setting `{ chunk: 10000 }`) and save each group separately. This option is needed to perform very big insertions when you have issues with underlying driver parameter number limitation.
--   `reload`: boolean - Flag to determine whether the entity that is being persisted should be reloaded during the persistence operation. It will work only on databases which do not support RETURNING / OUTPUT statement. Enabled by default.
+- `data` - Additional data to be passed with persist method. This data can be used in subscribers then.
+- `listeners`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
+- `transaction`: boolean - By default transactions are enabled and all queries in persistence operation are wrapped into the transaction. You can disable this behaviour by setting `{ transaction: false }` in the persistence options.
+- `chunk`: number - Breaks save execution into multiple groups of chunks. For example, if you want to save 100.000 objects but you have issues with saving them, you can break them into 10 groups of 10.000 objects (by setting `{ chunk: 10000 }`) and save each group separately. This option is needed to perform very big insertions when you have issues with underlying driver parameter number limitation.
+- `reload`: boolean - Flag to determine whether the entity that is being persisted should be reloaded during the persistence operation. It will work only on databases which do not support RETURNING / OUTPUT statement. Enabled by default.
 
 Example:
 
@@ -496,10 +496,10 @@ userRepository.save(users, { chunk: 1000 })
 
 Optional `RemoveOptions` can be passed as parameter for `remove` and `delete`.
 
--   `data` - Additional data to be passed with remove method. This data can be used in subscribers then.
--   `listeners`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
--   `transaction`: boolean - By default transactions are enabled and all queries in persistence operation are wrapped into the transaction. You can disable this behaviour by setting `{ transaction: false }` in the persistence options.
--   `chunk`: number - Breaks removal execution into multiple groups of chunks. For example, if you want to remove 100.000 objects but you have issues doing so, you can break them into 10 groups of 10.000 objects, by setting `{ chunk: 10000 }`, and remove each group separately. This option is needed to perform very big deletions when you have issues with underlying driver parameter number limitation.
+- `data` - Additional data to be passed with remove method. This data can be used in subscribers then.
+- `listeners`: boolean - Indicates if listeners and subscribers are called for this operation. By default they are enabled, you can disable them by setting `{ listeners: false }` in save/remove options.
+- `transaction`: boolean - By default transactions are enabled and all queries in persistence operation are wrapped into the transaction. You can disable this behaviour by setting `{ transaction: false }` in the persistence options.
+- `chunk`: number - Breaks removal execution into multiple groups of chunks. For example, if you want to remove 100.000 objects but you have issues doing so, you can break them into 10 groups of 10.000 objects, by setting `{ chunk: 10000 }`, and remove each group separately. This option is needed to perform very big deletions when you have issues with underlying driver parameter number limitation.
 
 Example:
 
