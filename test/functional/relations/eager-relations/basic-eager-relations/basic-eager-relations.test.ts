@@ -198,4 +198,42 @@ describe("relations > eager relations > basic", () => {
                 })
             }),
         ))
+
+    it("should not join eager relations twice when explicitly specified with DeleteDateColumn entity", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await prepareData(connection)
+
+                const nestedProfile = new Profile()
+                nestedProfile.about = "I am nested!"
+                await connection.manager.save(nestedProfile)
+
+                const user = (await connection.manager.findOne(User, {
+                    where: { id: 1 },
+                }))!
+                user.nestedProfile = nestedProfile
+                await connection.manager.save(user)
+
+                // Build the query to inspect the generated SQL
+                const sql = connection.manager
+                    .getRepository(Editor)
+                    .metadata.connection.createQueryBuilder(Editor, "Editor")
+                    .setFindOptions({
+                        where: { userId: 1 },
+                        relations: {
+                            user: {
+                                nestedProfile: true,
+                            },
+                        },
+                    })
+                    .getQuery()
+
+                // The user table should only be joined once, not twice
+                // Previously, eager relations with DeleteDateColumn would
+                // cause the user table to be joined twice with different aliases
+                const userJoinCount = (sql.match(/LEFT JOIN .user./gi) || [])
+                    .length
+                expect(userJoinCount).to.equal(1)
+            }),
+        ))
 })
