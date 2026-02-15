@@ -2429,12 +2429,25 @@ export class CockroachQueryRunner
         // Check if only the PK constraint name changed (same columns)
         const oldPkName = primaryColumns[0]?.primaryKeyConstraintName
         const newPkName = columns[0]?.primaryKeyConstraintName
+
+        // Compute effective old and new PK names, considering default naming strategy
+        const effectiveOldPkName = oldPkName
+            ? oldPkName
+            : this.connection.namingStrategy.primaryKeyName(
+                  clonedTable,
+                  primaryColumns.map((c) => c.name),
+              )
+        const effectiveNewPkName = newPkName
+            ? newPkName
+            : this.connection.namingStrategy.primaryKeyName(
+                  clonedTable,
+                  columnNames,
+              )
+
         if (
             primaryColumns.length > 0 &&
             primaryColumns.length === columns.length &&
-            oldPkName &&
-            newPkName &&
-            oldPkName !== newPkName &&
+            effectiveOldPkName !== effectiveNewPkName &&
             [...primaryColumns.map((c) => c.name)].sort().join(",") ===
                 [...columnNames].sort().join(",")
         ) {
