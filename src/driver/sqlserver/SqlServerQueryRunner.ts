@@ -2229,10 +2229,8 @@ export class SqlServerQueryRunner
             oldPkName &&
             newPkName &&
             oldPkName !== newPkName &&
-            primaryColumns
-                .map((c) => c.name)
-                .sort()
-                .join(",") === columnNames.sort().join(",")
+            [...primaryColumns.map((c) => c.name)].sort().join(",") ===
+                [...columnNames].sort().join(",")
         ) {
             upQueries.push(
                 new Query(

@@ -8,7 +8,7 @@ import {
 } from "../../utils/test-utils"
 import { Entity, PrimaryGeneratedColumn } from "../../../src"
 
-describe("schema builder > change primary key constraint", () => {
+describe("schema builder > #11636 change primary key constraint", () => {
     @Entity("test_entity")
     class TestEntityV1 {
         @PrimaryGeneratedColumn("uuid", { primaryKeyConstraintName: "PK_1" })

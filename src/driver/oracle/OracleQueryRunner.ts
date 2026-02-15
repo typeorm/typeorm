@@ -1844,10 +1844,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             oldPkName &&
             newPkName &&
             oldPkName !== newPkName &&
-            primaryColumns
-                .map((c) => c.name)
-                .sort()
-                .join(",") === columnNames.sort().join(",")
+            [...primaryColumns.map((c) => c.name)].sort().join(",") ===
+                [...columnNames].sort().join(",")
         ) {
             upQueries.push(
                 new Query(
