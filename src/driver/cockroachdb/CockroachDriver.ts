@@ -372,8 +372,6 @@ export class CockroachDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
-     * @param value
-     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
