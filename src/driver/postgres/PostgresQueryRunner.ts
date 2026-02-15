@@ -2729,14 +2729,14 @@ export class PostgresQueryRunner
                 new Query(
                     `ALTER TABLE ${this.escapePath(
                         table,
-                    )} RENAME CONSTRAINT "${oldPkName}" TO "${newPkName}"`,
+                    )} RENAME CONSTRAINT "${effectiveOldPkName}" TO "${effectiveNewPkName}"`,
                 ),
             )
             downQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(
                         table,
-                    )} RENAME CONSTRAINT "${newPkName}" TO "${oldPkName}"`,
+                    )} RENAME CONSTRAINT "${effectiveNewPkName}" TO "${effectiveOldPkName}"`,
                 ),
             )
 
@@ -2744,7 +2744,8 @@ export class PostgresQueryRunner
             clonedTable.columns
                 .filter((column) => column.isPrimary)
                 .forEach(
-                    (column) => (column.primaryKeyConstraintName = newPkName),
+                    (column) =>
+                        (column.primaryKeyConstraintName = effectiveNewPkName),
                 )
 
             await this.executeQueries(upQueries, downQueries)

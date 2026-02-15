@@ -2249,21 +2249,22 @@ export class SqlServerQueryRunner
                 new Query(
                     `EXEC sp_rename "${this.getTablePath(
                         table,
-                    )}.${oldPkName}", "${newPkName}"`,
+                    )}.${effectiveOldPkName}", "${effectiveNewPkName}"`,
                 ),
             )
             downQueries.push(
                 new Query(
                     `EXEC sp_rename "${this.getTablePath(
                         table,
-                    )}.${newPkName}", "${oldPkName}"`,
+                    )}.${effectiveNewPkName}", "${effectiveOldPkName}"`,
                 ),
             )
 
             clonedTable.columns
                 .filter((column) => column.isPrimary)
                 .forEach(
-                    (column) => (column.primaryKeyConstraintName = newPkName),
+                    (column) =>
+                        (column.primaryKeyConstraintName = effectiveNewPkName),
                 )
 
             await this.executeQueries(upQueries, downQueries)
