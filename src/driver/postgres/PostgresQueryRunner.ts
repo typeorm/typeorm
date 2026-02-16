@@ -3791,7 +3791,7 @@ export class PostgresQueryRunner
                                         dbTable["table_schema"]
                                     }' AND "t"."typname" = '${
                                         enumName || name
-                                    }'`
+                                    }' ORDER BY "e"."enumsortorder"`
                                 const results: ObjectLiteral[] =
                                     await this.query(sql)
 
@@ -3994,14 +3994,11 @@ export class PostgresQueryRunner
                                     tableColumn.default =
                                         dbColumn["column_default"]
                                 } else {
-                                    tableColumn.default = dbColumn[
-                                        "column_default"
-                                    ].replace(/::[\w\s.[\]\-"]+/g, "")
-                                    tableColumn.default =
-                                        tableColumn.default.replace(
-                                            /^(-?\d+)$/,
-                                            "'$1'",
+                                    tableColumn.default = this.driver
+                                        .stripTypeCastsOutsideQuotes(
+                                            dbColumn["column_default"],
                                         )
+                                        .replace(/^(-?\d+)$/, "'$1'")
                                 }
                             }
 
