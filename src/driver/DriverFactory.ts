@@ -19,6 +19,7 @@ import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver"
 import { CapacitorDriver } from "./capacitor/CapacitorDriver"
 import { SpannerDriver } from "./spanner/SpannerDriver"
 import { ExpoDriver } from "./expo/ExpoDriver"
+import { DriverRegistry } from "./DriverRegistry"
 
 /**
  * Helps to create drivers.
@@ -31,6 +32,13 @@ export class DriverFactory {
      */
     create(connection: DataSource): Driver {
         const { type } = connection.options
+
+        // Check custom registry first
+        if (DriverRegistry.has(type)) {
+            const CustomDriver = DriverRegistry.get(type)!
+            return new CustomDriver(connection)
+        }
+
         switch (type) {
             case "mysql":
                 return new MysqlDriver(connection)
@@ -72,6 +80,7 @@ export class DriverFactory {
                 return new SpannerDriver(connection)
             default:
                 throw new MissingDriverError(type, [
+                    ...DriverRegistry.getCustomTypes(),
                     "aurora-mysql",
                     "aurora-postgres",
                     "better-sqlite3",

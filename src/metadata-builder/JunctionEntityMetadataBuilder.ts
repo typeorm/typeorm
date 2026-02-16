@@ -99,11 +99,9 @@ export class JunctionEntityMetadataBuilder {
                         name: columnName,
                         length:
                             !referencedColumn.length &&
-                            (DriverUtils.isMySQLFamily(
+                            DriverUtils.requiresColumnLength(
                                 this.connection.driver,
-                            ) ||
-                                this.connection.driver.options.type ===
-                                    "aurora-mysql") &&
+                            ) &&
                             // some versions of mariadb support the column type and should not try to provide the length property
                             this.connection.driver.normalizeType(
                                 referencedColumn,
@@ -167,11 +165,9 @@ export class JunctionEntityMetadataBuilder {
                         options: {
                             length:
                                 !inverseReferencedColumn.length &&
-                                (DriverUtils.isMySQLFamily(
+                                DriverUtils.requiresColumnLength(
                                     this.connection.driver,
-                                ) ||
-                                    this.connection.driver.options.type ===
-                                        "aurora-mysql") &&
+                                ) &&
                                 // some versions of mariadb support the column type and should not try to provide the length property
                                 this.connection.driver.normalizeType(
                                     inverseReferencedColumn,

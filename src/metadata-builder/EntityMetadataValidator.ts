@@ -37,6 +37,8 @@ export class EntityMetadataValidator {
 
     /**
      * Validates all given entity metadatas.
+     * @param entityMetadatas
+     * @param driver
      */
     validateMany(entityMetadatas: EntityMetadata[], driver: Driver) {
         entityMetadatas.forEach((entityMetadata) =>
@@ -48,6 +50,9 @@ export class EntityMetadataValidator {
 
     /**
      * Validates given entity metadata.
+     * @param entityMetadata
+     * @param allEntityMetadatas
+     * @param driver
      */
     validate(
         entityMetadata: EntityMetadata,
@@ -153,10 +158,7 @@ export class EntityMetadataValidator {
                 })
         }
 
-        if (
-            DriverUtils.isMySQLFamily(driver) ||
-            driver.options.type === "aurora-mysql"
-        ) {
+        if (DriverUtils.requiresColumnLength(driver)) {
             const generatedColumns = entityMetadata.columns.filter(
                 (column) =>
                     column.isGenerated && column.generationStrategy !== "uuid",
@@ -170,7 +172,7 @@ export class EntityMetadataValidator {
         // for mysql we are able to not define a default selected database, instead all entities can have their database
         // defined in their decorators. To make everything work either all entities must have database define and we
         // can live without database set in the connection options, either database in the connection options must be set
-        if (DriverUtils.isMySQLFamily(driver)) {
+        if (DriverUtils.requiresColumnLength(driver)) {
             const metadatasWithDatabase = allEntityMetadatas.filter(
                 (metadata) => metadata.database,
             )
@@ -315,6 +317,7 @@ export class EntityMetadataValidator {
 
     /**
      * Validates dependencies of the entity metadatas.
+     * @param entityMetadatas
      */
     protected validateDependencies(entityMetadatas: EntityMetadata[]) {
         const graph = new DepGraph()
@@ -342,6 +345,7 @@ export class EntityMetadataValidator {
 
     /**
      * Validates eager relations to prevent circular dependency in them.
+     * @param entityMetadatas
      */
     protected validateEagerRelations(entityMetadatas: EntityMetadata[]) {
         entityMetadatas.forEach((entityMetadata) => {

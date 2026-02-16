@@ -347,9 +347,11 @@ export class DataSource {
         try {
             if (
                 this.driver.options.type === "mssql" ||
-                DriverUtils.isMySQLFamily(this.driver) ||
+                DriverUtils.requiresColumnLength(this.driver) ||
                 this.driver.options.type === "aurora-mysql" ||
-                DriverUtils.isSQLiteFamily(this.driver)
+                (DriverUtils.getUpsertStyle(this.driver) === "ON_CONFLICT" &&
+                    DriverUtils.getPaginationStyle(this.driver) ===
+                        "LIMIT_OFFSET")
             ) {
                 const databases: string[] = []
                 this.entityMetadatas.forEach((metadata) => {

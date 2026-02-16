@@ -1,4 +1,5 @@
 import { Driver } from "../Driver"
+import { DriverCapabilities } from "../types/DriverCapabilities"
 import { PostgresDriver } from "../postgres/PostgresDriver"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { DataSource } from "../../data-source/DataSource"
@@ -36,6 +37,62 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
      * Represent transaction support by this driver
      */
     transactionSupport = "nested" as const
+
+    capabilities: DriverCapabilities = {
+        // Dialect - Same as Postgres
+        stringAggregation: "STRING_AGG",
+        pagination: "LIMIT_OFFSET",
+        useIndexHint: false,
+        maxExecutionTimeHint: false,
+        distinctOn: true,
+
+        // Upsert
+        upsertStyle: "ON_CONFLICT",
+        upsertConflictWhere: true,
+
+        // Returning
+        returningInsert: true,
+        returningUpdate: true,
+        returningDelete: true,
+        returningStyle: "RETURNING",
+        returningRequiresInto: false,
+
+        // Update/Delete
+        limitInUpdate: false,
+        limitInDelete: false,
+        joinInUpdate: true,
+
+        // Locking
+        forUpdate: true,
+        forShareStyle: "FOR_SHARE",
+        forKeyShare: true,
+        forNoKeyUpdate: true,
+        skipLocked: true,
+        nowait: true,
+        lockOfTables: true,
+
+        // CTE
+        cteEnabled: true,
+        cteRecursive: true,
+        cteRequiresRecursiveKeyword: true,
+        cteWritable: true,
+        cteMaterializedHint: true,
+
+        // DDL
+        indexTypes: ["brin", "btree", "gin", "gist", "hash", "spgist"],
+        defaultIndexType: "btree",
+        partialIndexes: true,
+        expressionIndexes: true,
+
+        // Column types
+        requiresColumnLength: false,
+        jsonColumnType: true,
+        uuidColumnType: true,
+        arrayColumnType: true,
+
+        // Transactions
+        transactionSupport: "nested",
+    }
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -96,6 +153,7 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new AuroraPostgresQueryRunner(
@@ -116,6 +174,8 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (
@@ -136,6 +196,8 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (
@@ -172,6 +234,8 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Executes given query.
+     * @param connection
+     * @param query
      */
     protected executeQuery(connection: any, query: string) {
         return this.connection.query(query)

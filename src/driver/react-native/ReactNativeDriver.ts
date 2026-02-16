@@ -5,6 +5,7 @@ import { DateUtils } from "../../util/DateUtils"
 import { DataSource } from "../../data-source/DataSource"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
 import { CteCapabilities } from "../types/CteCapabilities"
+import { DriverCapabilities } from "../types/DriverCapabilities"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ColumnType } from "../types/ColumnTypes"
 import { QueryRunner } from "../../query-runner/QueryRunner"
@@ -91,7 +92,6 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
-     *
      * @see https://www.tutorialspoint.com/sqlite/sqlite_data_types.htm
      * @see https://sqlite.org/datatype3.html
      */
@@ -230,6 +230,62 @@ export class ReactNativeDriver implements Driver {
         requiresRecursiveHint: true,
     }
 
+    capabilities: DriverCapabilities = {
+        // Dialect
+        stringAggregation: null,
+        pagination: "LIMIT_OFFSET",
+        useIndexHint: false,
+        maxExecutionTimeHint: false,
+        distinctOn: false,
+
+        // Upsert
+        upsertStyle: "ON_CONFLICT",
+        upsertConflictWhere: false,
+
+        // Returning - SQLite doesn't support RETURNING
+        returningInsert: false,
+        returningUpdate: false,
+        returningDelete: false,
+        returningStyle: null,
+        returningRequiresInto: false,
+
+        // Update/Delete
+        limitInUpdate: false,
+        limitInDelete: false,
+        joinInUpdate: false,
+
+        // Locking - SQLite has limited locking
+        forUpdate: false,
+        forShareStyle: null,
+        forKeyShare: false,
+        forNoKeyUpdate: false,
+        skipLocked: false,
+        nowait: false,
+        lockOfTables: false,
+
+        // CTE
+        cteEnabled: true,
+        cteRecursive: true,
+        cteRequiresRecursiveKeyword: true,
+        cteWritable: false,
+        cteMaterializedHint: false,
+
+        // DDL
+        indexTypes: [],
+        defaultIndexType: undefined,
+        partialIndexes: false,
+        expressionIndexes: false,
+
+        // Column types
+        requiresColumnLength: false,
+        jsonColumnType: true,
+        uuidColumnType: false,
+        arrayColumnType: false,
+
+        // Transactions
+        transactionSupport: "nested",
+    }
+
     // -------------------------------------------------------------------------
     // Protected Properties
     // -------------------------------------------------------------------------
@@ -258,6 +314,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner)
@@ -319,6 +376,8 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -360,6 +419,8 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Prepares given value to a value to be hydrated, based on its column type or metadata.
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -437,6 +498,9 @@ export class ReactNativeDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     * @param sql
+     * @param parameters
+     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
@@ -519,6 +583,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Escapes a column name.
+     * @param columnName
      */
     escape(columnName: string): string {
         return '"' + columnName + '"'
@@ -529,6 +594,9 @@ export class ReactNativeDriver implements Driver {
      * E.g. myDB.mySchema.myTable
      *
      * Returns only simple table name because all inherited drivers does not supports schema and database.
+     * @param tableName
+     * @param schema
+     * @param database
      */
     buildTableName(
         tableName: string,
@@ -540,6 +608,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -613,6 +682,11 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
      */
     normalizeType(column: {
         type?: ColumnType
@@ -643,6 +717,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -672,6 +747,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.uniques.some(
@@ -681,6 +757,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Calculates column length taking into account the default length values.
+     * @param column
      */
     getColumnLength(column: ColumnMetadata): string {
         return column.length ? column.length.toString() : ""
@@ -688,6 +765,7 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     * @param column
      */
     createFullType(column: TableColumn): string {
         let type = column.type
@@ -735,6 +813,10 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     * @param metadata
+     * @param insertResult
+     * @param entityIndex
+     * @param entityNum
      */
     createGeneratedMap(
         metadata: EntityMetadata,
@@ -771,6 +853,8 @@ export class ReactNativeDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -901,6 +985,8 @@ export class ReactNativeDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         // return "$" + (index + 1);

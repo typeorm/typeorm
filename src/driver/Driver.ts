@@ -3,6 +3,7 @@ import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { ColumnType } from "./types/ColumnTypes"
 import { CteCapabilities } from "./types/CteCapabilities"
+import { DriverCapabilities } from "./types/DriverCapabilities"
 import { MappedColumnTypes } from "./types/MappedColumnTypes"
 import { SchemaBuilder } from "../schema-builder/SchemaBuilder"
 import { DataTypeDefaults } from "./types/DataTypeDefaults"
@@ -131,6 +132,12 @@ export interface Driver {
     maxAliasLength?: number
 
     cteCapabilities: CteCapabilities
+
+    /**
+     * Driver capabilities declaration.
+     * Used for feature detection instead of type/family checks.
+     */
+    capabilities: DriverCapabilities
 
     /**
      * Dummy table name

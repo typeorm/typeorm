@@ -51,6 +51,8 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Builds a foreign key of the many-to-one or one-to-one owner relations.
+     * @param joinColumns
+     * @param relation
      */
     build(
         joinColumns: JoinColumnMetadataArgs[],
@@ -120,6 +122,8 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Collects referenced columns from the given join column args.
+     * @param joinColumns
+     * @param relation
      */
     protected collectReferencedColumns(
         joinColumns: JoinColumnMetadataArgs[],
@@ -160,6 +164,9 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Collects columns from the given join column args.
+     * @param joinColumns
+     * @param relation
+     * @param referencedColumns
      */
     private collectColumns(
         joinColumns: JoinColumnMetadataArgs[],
@@ -204,11 +211,9 @@ export class RelationJoinColumnBuilder {
                             type: referencedColumn.type,
                             length:
                                 !referencedColumn.length &&
-                                (DriverUtils.isMySQLFamily(
+                                DriverUtils.requiresColumnLength(
                                     this.connection.driver,
-                                ) ||
-                                    this.connection.driver.options.type ===
-                                        "aurora-mysql") &&
+                                ) &&
                                 // some versions of mariadb support the column type and should not try to provide the length property
                                 this.connection.driver.normalizeType(
                                     referencedColumn,

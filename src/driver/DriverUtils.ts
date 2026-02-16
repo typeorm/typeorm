@@ -12,6 +12,8 @@ export class DriverUtils {
 
     /**
      * Returns true if given driver is SQLite-based driver.
+     * @param driver
+     * @deprecated Use specific capability checks instead (e.g., getUpsertStyle, getPaginationStyle)
      */
     static isSQLiteFamily(driver: Driver): boolean {
         return [
@@ -28,6 +30,8 @@ export class DriverUtils {
 
     /**
      * Returns true if given driver is MySQL-based driver.
+     * @param driver
+     * @deprecated Use specific capability checks instead (e.g., supportsUseIndexHint, getStringAggregationStyle, supportsLimitInUpdate)
      */
     static isMySQLFamily(driver: Driver): boolean {
         return ["mysql", "mariadb"].includes(driver.options.type)
@@ -37,15 +41,279 @@ export class DriverUtils {
         return VersionUtils.isGreaterOrEqual(driver.version, version)
     }
 
+    /**
+     * Returns true if given driver is PostgreSQL-based driver.
+     * @param driver
+     * @deprecated Use specific capability checks instead (e.g., supportsDistinctOn, getForShareStyle, supportsLockOfTables)
+     */
     static isPostgresFamily(driver: Driver): boolean {
         return ["postgres", "aurora-postgres", "cockroachdb"].includes(
             driver.options.type,
         )
     }
 
+    // =========================================================================
+    // CAPABILITY-BASED HELPER METHODS
+    // These replace all is*Family checks with specific feature detection
+    // =========================================================================
+
+    /**
+     * Check if driver supports USE INDEX hint
+     * @param driver
+     */
+    static supportsUseIndexHint(driver: Driver): boolean {
+        return driver.capabilities.useIndexHint === true
+    }
+
+    /**
+     * Check if driver supports MAX_EXECUTION_TIME hint
+     * @param driver
+     */
+    static supportsMaxExecutionTimeHint(driver: Driver): boolean {
+        return driver.capabilities.maxExecutionTimeHint === true
+    }
+
+    /**
+     * Check if driver supports DISTINCT ON syntax
+     * @param driver
+     */
+    static supportsDistinctOn(driver: Driver): boolean {
+        return driver.capabilities.distinctOn === true
+    }
+
+    /**
+     * Get the string aggregation function style
+     * @param driver
+     */
+    static getStringAggregationStyle(
+        driver: Driver,
+    ): "GROUP_CONCAT" | "STRING_AGG" | "LISTAGG" | null {
+        return driver.capabilities.stringAggregation ?? null
+    }
+
+    /**
+     * Get the pagination style
+     * @param driver
+     */
+    static getPaginationStyle(
+        driver: Driver,
+    ): "LIMIT_OFFSET" | "TOP" | "FETCH_FIRST" | "ROWNUM" {
+        return driver.capabilities.pagination ?? "LIMIT_OFFSET"
+    }
+
+    /**
+     * Get the upsert style for this driver
+     * @param driver
+     */
+    static getUpsertStyle(
+        driver: Driver,
+    ): "ON_CONFLICT" | "ON_DUPLICATE_KEY" | "MERGE_INTO" | null {
+        return driver.capabilities.upsertStyle ?? null
+    }
+
+    /**
+     * Check if driver supports WHERE clause in ON CONFLICT
+     * @param driver
+     */
+    static supportsUpsertConflictWhere(driver: Driver): boolean {
+        return driver.capabilities.upsertConflictWhere === true
+    }
+
+    /**
+     * Check if driver supports RETURNING for a specific operation
+     * @param driver
+     * @param operation
+     */
+    static supportsReturning(
+        driver: Driver,
+        operation: "insert" | "update" | "delete",
+    ): boolean {
+        switch (operation) {
+            case "insert":
+                return driver.capabilities.returningInsert === true
+            case "update":
+                return driver.capabilities.returningUpdate === true
+            case "delete":
+                return driver.capabilities.returningDelete === true
+        }
+    }
+
+    /**
+     * Get the RETURNING clause style
+     * @param driver
+     */
+    static getReturningStyle(driver: Driver): "RETURNING" | "OUTPUT" | null {
+        return driver.capabilities.returningStyle ?? null
+    }
+
+    /**
+     * Check if RETURNING requires INTO clause (Oracle)
+     * @param driver
+     */
+    static returningRequiresInto(driver: Driver): boolean {
+        return driver.capabilities.returningRequiresInto === true
+    }
+
+    /**
+     * Check if driver supports LIMIT in UPDATE
+     * @param driver
+     */
+    static supportsLimitInUpdate(driver: Driver): boolean {
+        return driver.capabilities.limitInUpdate === true
+    }
+
+    /**
+     * Check if driver supports LIMIT in DELETE
+     * @param driver
+     */
+    static supportsLimitInDelete(driver: Driver): boolean {
+        return driver.capabilities.limitInDelete === true
+    }
+
+    /**
+     * Check if driver supports JOIN in UPDATE
+     * @param driver
+     */
+    static supportsJoinInUpdate(driver: Driver): boolean {
+        return driver.capabilities.joinInUpdate === true
+    }
+
+    /**
+     * Check if driver supports FOR UPDATE
+     * @param driver
+     */
+    static supportsForUpdate(driver: Driver): boolean {
+        return driver.capabilities.forUpdate === true
+    }
+
+    /**
+     * Get the FOR SHARE locking style
+     * @param driver
+     */
+    static getForShareStyle(
+        driver: Driver,
+    ): "FOR_SHARE" | "LOCK_IN_SHARE_MODE" | null {
+        return driver.capabilities.forShareStyle ?? null
+    }
+
+    /**
+     * Check if driver supports FOR KEY SHARE (Postgres)
+     * @param driver
+     */
+    static supportsForKeyShare(driver: Driver): boolean {
+        return driver.capabilities.forKeyShare === true
+    }
+
+    /**
+     * Check if driver supports FOR NO KEY UPDATE (Postgres)
+     * @param driver
+     */
+    static supportsForNoKeyUpdate(driver: Driver): boolean {
+        return driver.capabilities.forNoKeyUpdate === true
+    }
+
+    /**
+     * Check if driver supports SKIP LOCKED
+     * @param driver
+     */
+    static supportsSkipLocked(driver: Driver): boolean {
+        return driver.capabilities.skipLocked === true
+    }
+
+    /**
+     * Check if driver supports NOWAIT
+     * @param driver
+     */
+    static supportsNowait(driver: Driver): boolean {
+        return driver.capabilities.nowait === true
+    }
+
+    /**
+     * Check if driver supports OF table_name in locking
+     * @param driver
+     */
+    static supportsLockOfTables(driver: Driver): boolean {
+        return driver.capabilities.lockOfTables === true
+    }
+
+    /**
+     * Check if columns require explicit length (e.g., VARCHAR(255))
+     * @param driver
+     */
+    static requiresColumnLength(driver: Driver): boolean {
+        return driver.capabilities.requiresColumnLength === true
+    }
+
+    /**
+     * Get supported index types
+     * @param driver
+     */
+    static getSupportedIndexTypes(driver: Driver): string[] {
+        return driver.capabilities.indexTypes ?? []
+    }
+
+    /**
+     * Get default index type
+     * @param driver
+     */
+    static getDefaultIndexType(driver: Driver): string | undefined {
+        return driver.capabilities.defaultIndexType
+    }
+
+    /**
+     * Check if driver supports partial indexes
+     * @param driver
+     */
+    static supportsPartialIndexes(driver: Driver): boolean {
+        return driver.capabilities.partialIndexes === true
+    }
+
+    /**
+     * Check if driver supports expression indexes
+     * @param driver
+     */
+    static supportsExpressionIndexes(driver: Driver): boolean {
+        return driver.capabilities.expressionIndexes === true
+    }
+
+    /**
+     * Get transaction support level
+     * @param driver
+     */
+    static getTransactionSupport(driver: Driver): "nested" | "simple" | "none" {
+        return driver.capabilities.transactionSupport ?? "none"
+    }
+
+    /**
+     * Check if driver supports CTEs
+     * @param driver
+     */
+    static supportsCte(driver: Driver): boolean {
+        return driver.capabilities.cteEnabled === true
+    }
+
+    /**
+     * Check if driver supports recursive CTEs
+     * @param driver
+     */
+    static supportsRecursiveCte(driver: Driver): boolean {
+        return driver.capabilities.cteRecursive === true
+    }
+
+    /**
+     * Check if driver supports writable CTEs
+     * @param driver
+     */
+    static supportsWritableCte(driver: Driver): boolean {
+        return driver.capabilities.cteWritable === true
+    }
+
     /**
      * Normalizes and builds a new driver options.
      * Extracts settings from connection url and sets to a new options object.
+     * @param options
+     * @param buildOptions
+     * @param buildOptions.useSid
      */
     static buildDriverOptions(
         options: any,
@@ -77,6 +345,9 @@ export class DriverUtils {
 
     /**
      * buildDriverOptions for MongodDB only to support replica set
+     * @param options
+     * @param buildOptions
+     * @param buildOptions.useSid
      */
     static buildMongoDBDriverOptions(
         options: any,
@@ -112,12 +383,11 @@ export class DriverUtils {
      * If the alias length is greater than the limit allowed by the current
      * driver, replaces it with a shortend string, if the shortend string
      * is still too long, it will then hash the alias.
-     *
      * @param driver Current `Driver`.
+     * @param driver.maxAliasLength
      * @param buildOptions Optional settings.
      * @param alias Alias parts.
-     *
-     * @return An alias that is no longer than the divers max alias length.
+     * @returns An alias that is no longer than the divers max alias length.
      */
     static buildAlias(
         { maxAliasLength }: Driver,
@@ -148,6 +418,10 @@ export class DriverUtils {
     }
 
     /**
+     * @param root0
+     * @param root0.maxAliasLength
+     * @param buildOptions
+     * @param alias
      * @deprecated use `buildAlias` instead.
      */
     static buildColumnAlias(
@@ -177,6 +451,7 @@ export class DriverUtils {
 
     /**
      * Extracts connection data from the connection url.
+     * @param url
      */
     private static parseConnectionUrl(url: string) {
         const type = url.split(":")[0]
@@ -217,6 +492,7 @@ export class DriverUtils {
 
     /**
      * Extracts connection data from the connection url for MongoDB to support replica set.
+     * @param url
      */
     private static parseMongoDBConnectionUrl(url: string) {
         const type = url.split(":")[0]
