@@ -199,7 +199,7 @@ describe("relations > eager relations > basic", () => {
             }),
         ))
 
-    it("should not join eager relations twice when explicitly specified with DeleteDateColumn entity", () =>
+    it("should not join eager relations twice when explicitly specified with DeleteDateColumn entity (issue #11823)", () =>
         Promise.all(
             connections.map(async (connection) => {
                 await prepareData(connection)
