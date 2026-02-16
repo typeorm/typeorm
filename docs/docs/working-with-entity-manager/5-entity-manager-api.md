@@ -177,7 +177,7 @@ await manager.insert(User, [
 ])
 ```
 
-- `update` - Updates entities by entity id, ids or given conditions. Sets fields from supplied partial entity.
+- `update` - Updates entities by entity id, ids, given conditions, or an array of condition objects. Sets fields from supplied partial entity.
 
 ```typescript
 await manager.update(User, { age: 18 }, { category: "ADULT" })
@@ -185,6 +185,17 @@ await manager.update(User, { age: 18 }, { category: "ADULT" })
 
 await manager.update(User, 1, { firstName: "Rizzrak" })
 // executes UPDATE user SET firstName = Rizzrak WHERE id = 1
+
+// Bulk updates with different conditions for each operation
+await manager.update(User, [
+    { criteria: { id: 1 }, data: { firstName: "Rizzrak" } },
+    { criteria: { id: 2 }, data: { firstName: "Karzzir" } },
+    { criteria: { age: 18 }, data: { category: "ADULT" } },
+])
+// executes three separate UPDATE queries:
+// UPDATE user SET firstName = Rizzrak WHERE id = 1
+// UPDATE user SET firstName = Karzzir WHERE id = 2
+// UPDATE user SET category = ADULT WHERE age = 18
 ```
 
 - `updateAll` - Updates _all_ entities of target type (without WHERE clause). Sets fields from supplied partial entity.
@@ -216,12 +227,23 @@ await manager.upsert(
  **/
 ```
 
-- `delete` - Deletes entities by entity id, ids or given conditions.
+- `delete` - Deletes entities by entity id, ids, given conditions, or an array of condition objects.
 
 ```typescript
 await manager.delete(User, 1)
 await manager.delete(User, [1, 2, 3])
 await manager.delete(User, { firstName: "Timber" })
+
+// Bulk deletes with different conditions for each operation
+await manager.delete(User, [
+    { firstName: "Timber" },
+    { age: 18 },
+    { id: 42 },
+])
+// executes three separate DELETE queries:
+// DELETE FROM user WHERE firstName = Timber
+// DELETE FROM user WHERE age = 18
+// DELETE FROM user WHERE id = 42
 ```
 
 - `deleteAll` - Deletes _all_ entities of target type (without WHERE clause).
