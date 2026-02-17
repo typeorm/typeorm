@@ -22,6 +22,11 @@ export class RelationIdMetadataToAttributeTransformer {
         // we load post and join category
         // we expect post.categoryIds and post.category.imageIds to have relation ids
 
+        const selections = new Set(
+            this.expressionMap.selects.map((s) => s.selection),
+        )
+        const fullSelectionCache = new Map<string, boolean>()
+
         // Helper function to check if a relationId should be loaded
         const shouldLoadRelationId = (
             aliasName: string,
@@ -31,21 +36,31 @@ export class RelationIdMetadataToAttributeTransformer {
             if (this.expressionMap.selects.length === 0) return true
 
             // Check if the whole entity (alias) is selected
-            if (
-                this.expressionMap.selects.some(
-                    (s) => s.selection === aliasName,
-                )
-            )
-                return true
+            if (selections.has(aliasName)) return true
 
             // Check if the specific relationId property is selected
             const propertySelection = aliasName + "." + relationIdPropertyName
-            if (
-                this.expressionMap.selects.some(
-                    (s) => s.selection === propertySelection,
-                )
+            if (selections.has(propertySelection)) return true
+
+            // Check if all columns are selected
+            if (fullSelectionCache.has(aliasName)) {
+                return !!fullSelectionCache.get(aliasName)
+            }
+
+            const alias = this.expressionMap.aliases.find(
+                (alias) => alias.name === aliasName,
             )
-                return true
+            if (alias && alias.metadata) {
+                const allColumnsSelected = alias.metadata.columns
+                    .filter((column) => column.isSelect)
+                    .every((column) =>
+                        selections.has(aliasName + "." + column.propertyPath),
+                    )
+                fullSelectionCache.set(aliasName, allColumnsSelected)
+                if (allColumnsSelected) return true
+            } else {
+                fullSelectionCache.set(aliasName, false)
+            }
 
             return false
         }
