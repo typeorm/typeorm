@@ -110,6 +110,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Starts transaction on the current connection.
+     * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         this.isTransactionActive = true
@@ -180,6 +181,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Executes a raw SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -290,6 +294,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Returns raw data stream.
+     * @param query
+     * @param parameters
+     * @param onEnd
+     * @param onError
      */
     stream(
         query: string,
@@ -326,6 +334,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
+     * @param database
      */
     async getSchemas(database?: string): Promise<string[]> {
         throw new TypeORMError(`MySql driver does not support table schemas`)
@@ -333,6 +342,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if database with the given name exist.
+     * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
         const result = await this.query(
@@ -351,6 +361,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if schema with the given name exist.
+     * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
         throw new TypeORMError(`MySql driver does not support table schemas`)
@@ -366,6 +377,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if table with the given name exist in the database.
+     * @param tableOrName
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
@@ -376,6 +388,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if column with the given name exist in the given table.
+     * @param tableOrName
+     * @param column
      */
     async hasColumn(
         tableOrName: Table | string,
@@ -392,6 +406,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new database.
+     * @param database
+     * @param ifNotExist
      */
     async createDatabase(
         database: string,
@@ -406,6 +422,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops database.
+     * @param database
+     * @param ifExist
      */
     async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
         const up = ifExist
@@ -417,6 +435,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new table schema.
+     * @param schemaPath
+     * @param ifNotExist
      */
     async createSchema(
         schemaPath: string,
@@ -429,6 +449,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops table schema.
+     * @param schemaPath
+     * @param ifExist
      */
     async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
         throw new TypeORMError(
@@ -438,6 +460,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new table.
+     * @param table
+     * @param ifNotExist
+     * @param createForeignKeys
      */
     async createTable(
         table: Table,
@@ -502,6 +527,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drop the table.
+     * @param target
+     * @param ifExist
+     * @param dropForeignKeys
      */
     async dropTable(
         target: Table | string,
@@ -566,6 +594,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new view.
+     * @param view
+     * @param syncWithMetadata
      */
     async createView(
         view: View,
@@ -584,6 +614,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops the view.
+     * @param target
      */
     async dropView(target: View | string): Promise<void> {
         const viewName = InstanceChecker.isView(target) ? target.name : target
@@ -600,6 +631,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Renames a table.
+     * @param oldTableOrName
+     * @param newTableName
      */
     async renameTable(
         oldTableOrName: Table | string,
@@ -750,6 +783,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Change table comment.
+     * @param tableOrName
+     * @param newComment
      */
     async changeTableComment(
         tableOrName: Table | string,
@@ -794,6 +829,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new column from the column in the table.
+     * @param tableOrName
+     * @param column
      */
     async addColumn(
         tableOrName: Table | string,
@@ -985,6 +1022,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new columns from the column in the table.
+     * @param tableOrName
+     * @param columns
      */
     async addColumns(
         tableOrName: Table | string,
@@ -997,6 +1036,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Renames column in the given table.
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newTableColumnOrName
      */
     async renameColumn(
         tableOrName: Table | string,
@@ -1027,6 +1069,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Changes a column in the table.
+     * @param tableOrName
+     * @param oldColumnOrName
+     * @param newColumn
      */
     async changeColumn(
         tableOrName: Table | string,
@@ -1051,8 +1096,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
@@ -1060,11 +1103,27 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newColumn.generatedType === "VIRTUAL") ||
             (oldColumn.generatedType === "VIRTUAL" && !newColumn.generatedType)
         ) {
+            // Generated column changes require DROP+ADD
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            oldColumn.type !== newColumn.type ||
+            oldColumn.length !== newColumn.length
+        ) {
+            // Use MODIFY COLUMN instead of DROP+ADD to preserve existing data.
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} MODIFY ${this.buildCreateColumnSql(newColumn, true)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} MODIFY ${this.buildCreateColumnSql(oldColumn, true)}`,
+                ),
+            )
         } else {
             if (newColumn.name !== oldColumn.name) {
                 // We don't change any column properties, just rename it.
@@ -1557,6 +1616,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Changes a column in the table.
+     * @param tableOrName
+     * @param changedColumns
      */
     async changeColumns(
         tableOrName: Table | string,
@@ -1569,6 +1630,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops column in the table.
+     * @param tableOrName
+     * @param columnOrName
      */
     async dropColumn(
         tableOrName: Table | string,
@@ -1796,6 +1859,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops the columns in the table.
+     * @param tableOrName
+     * @param columns
      */
     async dropColumns(
         tableOrName: Table | string,
@@ -1808,6 +1873,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new primary key.
+     * @param tableOrName
+     * @param columnNames
      */
     async createPrimaryKey(
         tableOrName: Table | string,
@@ -1831,6 +1898,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Updates composite primary keys.
+     * @param tableOrName
+     * @param columns
      */
     async updatePrimaryKeys(
         tableOrName: Table | string,
@@ -1954,6 +2023,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a primary key.
+     * @param tableOrName
      */
     async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
@@ -1972,6 +2042,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new unique constraint.
+     * @param tableOrName
+     * @param uniqueConstraint
      */
     async createUniqueConstraint(
         tableOrName: Table | string,
@@ -1984,6 +2056,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new unique constraints.
+     * @param tableOrName
+     * @param uniqueConstraints
      */
     async createUniqueConstraints(
         tableOrName: Table | string,
@@ -1996,6 +2070,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a unique constraint.
+     * @param tableOrName
+     * @param uniqueOrName
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
@@ -2008,6 +2084,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a unique constraints.
+     * @param tableOrName
+     * @param uniqueConstraints
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
@@ -2020,6 +2098,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new check constraint.
+     * @param tableOrName
+     * @param checkConstraint
      */
     async createCheckConstraint(
         tableOrName: Table | string,
@@ -2030,6 +2110,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new check constraints.
+     * @param tableOrName
+     * @param checkConstraints
      */
     async createCheckConstraints(
         tableOrName: Table | string,
@@ -2040,6 +2122,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops check constraint.
+     * @param tableOrName
+     * @param checkOrName
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
@@ -2050,6 +2134,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops check constraints.
+     * @param tableOrName
+     * @param checkConstraints
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
@@ -2060,6 +2146,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new exclusion constraint.
+     * @param tableOrName
+     * @param exclusionConstraint
      */
     async createExclusionConstraint(
         tableOrName: Table | string,
@@ -2070,6 +2158,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new exclusion constraints.
+     * @param tableOrName
+     * @param exclusionConstraints
      */
     async createExclusionConstraints(
         tableOrName: Table | string,
@@ -2080,6 +2170,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops exclusion constraint.
+     * @param tableOrName
+     * @param exclusionOrName
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
@@ -2090,6 +2182,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops exclusion constraints.
+     * @param tableOrName
+     * @param exclusionConstraints
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
@@ -2100,6 +2194,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new foreign key.
+     * @param tableOrName
+     * @param foreignKey
      */
     async createForeignKey(
         tableOrName: Table | string,
@@ -2126,6 +2222,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new foreign keys.
+     * @param tableOrName
+     * @param foreignKeys
      */
     async createForeignKeys(
         tableOrName: Table | string,
@@ -2139,6 +2237,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a foreign key.
+     * @param tableOrName
+     * @param foreignKeyOrName
      */
     async dropForeignKey(
         tableOrName: Table | string,
@@ -2172,6 +2272,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a foreign keys from the table.
+     * @param tableOrName
+     * @param foreignKeys
      */
     async dropForeignKeys(
         tableOrName: Table | string,
@@ -2185,6 +2287,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new index.
+     * @param tableOrName
+     * @param index
      */
     async createIndex(
         tableOrName: Table | string,
@@ -2205,6 +2309,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new indices
+     * @param tableOrName
+     * @param indices
      */
     async createIndices(
         tableOrName: Table | string,
@@ -2218,6 +2324,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops an index.
+     * @param tableOrName
+     * @param indexOrName
      */
     async dropIndex(
         tableOrName: Table | string,
@@ -2245,6 +2353,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops an indices from the table.
+     * @param tableOrName
+     * @param indices
      */
     async dropIndices(
         tableOrName: Table | string,
@@ -2259,6 +2369,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     * @param tableOrName
      */
     async clearTable(tableOrName: Table | string): Promise<void> {
         await this.query(`TRUNCATE TABLE ${this.escapePath(tableOrName)}`)
@@ -2268,6 +2379,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Removes all tables from the currently connected database.
      * Be careful using this method and avoid using it in production or migrations
      * (because it can clear all your database).
+     * @param database
      */
     async clearDatabase(database?: string): Promise<void> {
         const dbName = database ? database : this.driver.database
@@ -2368,6 +2480,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
+     * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         if (tableNames && tableNames.length === 0) {
@@ -2990,6 +3103,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create table sql
+     * @param table
+     * @param createForeignKeys
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
         const columnDefinitions = table.columns
@@ -3125,6 +3240,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop table sql
+     * @param tableOrName
      */
     protected dropTableSql(tableOrName: Table | string): Query {
         return new Query(`DROP TABLE ${this.escapePath(tableOrName)}`)
@@ -3160,6 +3276,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop view sql.
+     * @param viewOrPath
      */
     protected dropViewSql(viewOrPath: View | string): Query {
         return new Query(`DROP VIEW ${this.escapePath(viewOrPath)}`)
@@ -3167,6 +3284,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds remove view sql.
+     * @param viewOrPath
      */
     protected async deleteViewDefinitionSql(
         viewOrPath: View | string,
@@ -3184,6 +3302,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create index sql.
+     * @param table
+     * @param index
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
@@ -3207,6 +3327,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop index sql.
+     * @param table
+     * @param indexOrName
      */
     protected dropIndexSql(
         table: Table,
@@ -3222,6 +3344,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create primary key sql.
+     * @param table
+     * @param columnNames
      */
     protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
         const columnNamesString = columnNames
@@ -3236,6 +3360,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop primary key sql.
+     * @param table
      */
     protected dropPrimaryKeySql(table: Table): Query {
         return new Query(
@@ -3245,6 +3370,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create foreign key sql.
+     * @param table
+     * @param foreignKey
      */
     protected createForeignKeySql(
         table: Table,
@@ -3271,6 +3398,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop foreign key sql.
+     * @param table
+     * @param foreignKeyOrName
      */
     protected dropForeignKeySql(
         table: Table,
@@ -3290,6 +3419,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Escapes a given comment so it's safe to include in a query.
+     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (!comment || comment.length === 0) {
@@ -3306,6 +3436,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Escapes given table or view path.
+     * @param target
      */
     protected escapePath(target: Table | View | string): string {
         const { database, tableName } = this.driver.parseTableName(target)
@@ -3319,6 +3450,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds a part of query to create/change a column.
+     * @param column
+     * @param skipPrimary
+     * @param skipName
      */
     protected buildCreateColumnSql(
         column: TableColumn,
@@ -3397,6 +3531,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if column display width is by default.
+     * @param table
+     * @param column
+     * @param width
      * @deprecated MySQL no longer supports column width in newer versions.
      */
     protected isDefaultColumnWidth(

@@ -1277,20 +1277,41 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
+            // These changes are incompatible with ALTER COLUMN, so we must recreate
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            oldColumn.type !== newColumn.type ||
+            oldColumn.length !== newColumn.length
+        ) {
+            // Use ALTER COLUMN TYPE instead of DROP+ADD to preserve existing data.
+            // PostgreSQL supports ALTER COLUMN TYPE with USING for type conversions.
+            const newFullType = this.driver.createFullType(newColumn)
+            const oldFullType = this.driver.createFullType(oldColumn)
+
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${newFullType} USING "${newColumn.name}"::${newFullType}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        oldColumn.name
+                    }" TYPE ${oldFullType} USING "${oldColumn.name}"::${oldFullType}`,
+                ),
+            )
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column

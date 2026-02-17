@@ -1303,18 +1303,47 @@ export class SqlServerQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
             newColumn.asExpression !== oldColumn.asExpression ||
             newColumn.generatedType !== oldColumn.generatedType
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            // Also, we recreate column if column type changed
+            // Also, we recreate column if generated expression changed.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            newColumn.type !== oldColumn.type ||
+            newColumn.length !== oldColumn.length
+        ) {
+            // Use ALTER COLUMN instead of DROP+ADD to preserve existing data.
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER COLUMN ${this.buildCreateColumnSql(
+                        table,
+                        newColumn,
+                        true,
+                        false,
+                        true,
+                    )}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER COLUMN ${this.buildCreateColumnSql(
+                        table,
+                        oldColumn,
+                        true,
+                        false,
+                        true,
+                    )}`,
+                ),
+            )
         } else {
             if (newColumn.name !== oldColumn.name) {
                 // we need database name and schema name to rename FK constraints
