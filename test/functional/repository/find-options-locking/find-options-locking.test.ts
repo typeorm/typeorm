@@ -37,7 +37,6 @@ describe("repository > find options > locking", () => {
             connections.map(async (connection) => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
-                    connection.driver.options.type === "sap" ||
                     connection.driver.options.type === "spanner"
                 ) {
                     return
@@ -86,10 +85,10 @@ describe("repository > find options > locking", () => {
             connections.map(async (connection) => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
-                    connection.driver.options.type === "sap" ||
                     connection.driver.options.type === "spanner"
-                )
+                ) {
                     return
+                }
 
                 if (connection.driver.options.type === "cockroachdb") {
                     return connection.manager.transaction((entityManager) =>
@@ -122,10 +121,10 @@ describe("repository > find options > locking", () => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
                     connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "sap" ||
                     connection.driver.options.type === "spanner"
-                )
+                ) {
                     return
+                }
 
                 const executedSql: string[] = []
 
@@ -160,6 +159,8 @@ describe("repository > find options > locking", () => {
                     }
                 } else if (connection.driver.options.type === "postgres") {
                     expect(executedSql[0]).to.contain("FOR SHARE")
+                } else if (connection.driver.options.type === "sap") {
+                    expect(executedSql[0]).to.contain("FOR SHARE LOCK")
                 } else if (connection.driver.options.type === "oracle") {
                     expect(executedSql[0]).to.contain("FOR UPDATE")
                 } else if (connection.driver.options.type === "mssql") {
@@ -205,7 +206,9 @@ describe("repository > find options > locking", () => {
     it("should attach for key share lock statement on query if locking enabled", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (!(connection.driver.options.type === "postgres")) return
+                if (!(connection.driver.options.type === "postgres")) {
+                    return
+                }
 
                 const executedSql: string[] = []
 
@@ -238,6 +241,7 @@ describe("repository > find options > locking", () => {
                 if (
                     !(
                         connection.driver.options.type === "postgres" ||
+                        connection.driver.options.type === "sap" ||
                         (connection.driver.options.type === "mysql" &&
                             DriverUtils.isReleaseVersionOrGreater(
                                 connection.driver,
@@ -272,9 +276,15 @@ describe("repository > find options > locking", () => {
                         })
                 })
 
-                expect(executedSql.join(" ")).to.contain(
-                    "FOR SHARE SKIP LOCKED",
-                )
+                if (connection.driver.options.type === "sap") {
+                    expect(executedSql.join(";\n")).to.contain(
+                        "FOR SHARE LOCK IGNORE LOCKED",
+                    )
+                } else {
+                    expect(executedSql.join(";\n")).to.contain(
+                        "FOR SHARE SKIP LOCKED",
+                    )
+                }
             }),
         ))
 
@@ -284,6 +294,7 @@ describe("repository > find options > locking", () => {
                 if (
                     !(
                         connection.driver.options.type === "postgres" ||
+                        connection.driver.options.type === "sap" ||
                         (DriverUtils.isMySQLFamily(connection.driver) &&
                             DriverUtils.isReleaseVersionOrGreater(
                                 connection.driver,
@@ -327,7 +338,6 @@ describe("repository > find options > locking", () => {
             connections.map(async (connection) => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
-                    connection.driver.options.type === "sap" ||
                     connection.driver.options.type === "spanner"
                 ) {
                     return
@@ -351,15 +361,10 @@ describe("repository > find options > locking", () => {
                         lock: { mode: "pessimistic_write" },
                     })
                 })
-
-                if (
-                    DriverUtils.isMySQLFamily(connection.driver) ||
-                    connection.driver.options.type === "postgres" ||
-                    connection.driver.options.type === "oracle"
-                ) {
-                    expect(executedSql[0]).to.contain("FOR UPDATE")
-                } else if (connection.driver.options.type === "mssql") {
+                if (connection.driver.options.type === "mssql") {
                     expect(executedSql[0]).to.contain("WITH (UPDLOCK, ROWLOCK)")
+                } else {
+                    expect(executedSql[0]).to.contain("FOR UPDATE")
                 }
             }),
         ))
@@ -367,11 +372,13 @@ describe("repository > find options > locking", () => {
     it("should attach dirty read lock statement on query if locking enabled", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (!(connection.driver.options.type === "mssql")) return
+                if (!(connection.driver.options.type === "mssql")) {
+                    return
+                }
 
                 const executedSql: string[] = []
 
-                await connection.manager.transaction((entityManager) => {
+                await connection.manager.transaction(async (entityManager) => {
                     const originalQuery = entityManager.queryRunner!.query.bind(
                         entityManager.queryRunner,
                     )
@@ -382,12 +389,10 @@ describe("repository > find options > locking", () => {
                         return originalQuery(...args)
                     }
 
-                    return entityManager
-                        .getRepository(PostWithVersion)
-                        .findOne({
-                            where: { id: 1 },
-                            lock: { mode: "dirty_read" },
-                        })
+                    await entityManager.getRepository(PostWithVersion).findOne({
+                        where: { id: 1 },
+                        lock: { mode: "dirty_read" },
+                    })
                 })
 
                 expect(executedSql[0]).to.contain("WITH (NOLOCK)")
@@ -541,42 +546,34 @@ describe("repository > find options > locking", () => {
     it("should throw error if pessimistic locking not supported by given driver", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (
-                    DriverUtils.isSQLiteFamily(connection.driver) ||
-                    connection.driver.options.type === "sap"
-                )
-                    await connection.manager
-                        .transaction((entityManager) =>
-                            Promise.all([
-                                entityManager
-                                    .getRepository(PostWithVersion)
-                                    .findOne({
-                                        where: { id: 1 },
-                                        lock: { mode: "pessimistic_read" },
-                                    }),
-                                entityManager
-                                    .getRepository(PostWithVersion)
-                                    .findOne({
-                                        where: { id: 1 },
-                                        lock: { mode: "pessimistic_write" },
-                                    }),
-                            ]),
-                        )
-                        .should.be.rejectedWith(
-                            LockNotSupportedOnGivenDriverError,
-                        )
-
-                return
+                if (!DriverUtils.isSQLiteFamily(connection.driver)) {
+                    return
+                }
+                await connection.manager
+                    .transaction((entityManager) =>
+                        Promise.all([
+                            entityManager
+                                .getRepository(PostWithVersion)
+                                .findOne({
+                                    where: { id: 1 },
+                                    lock: { mode: "pessimistic_read" },
+                                }),
+                            entityManager
+                                .getRepository(PostWithVersion)
+                                .findOne({
+                                    where: { id: 1 },
+                                    lock: { mode: "pessimistic_write" },
+                                }),
+                        ]),
+                    )
+                    .should.be.rejectedWith(LockNotSupportedOnGivenDriverError)
             }),
         ))
 
     it("should not allow empty array for lockTables", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (
-                    connection.driver.options.type !== "postgres" &&
-                    connection.driver.options.type !== "cockroachdb"
-                ) {
+                if (!DriverUtils.isPostgresFamily(connection.driver)) {
                     return
                 }
 
@@ -596,10 +593,7 @@ describe("repository > find options > locking", () => {
     it("should throw error when specifying a table that is not part of the query", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (
-                    connection.driver.options.type !== "postgres" &&
-                    connection.driver.options.type !== "cockroachdb"
-                ) {
+                if (!DriverUtils.isPostgresFamily(connection.driver)) {
                     return
                 }
 
@@ -621,10 +615,7 @@ describe("repository > find options > locking", () => {
     it("should allow on a left join", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (
-                    connection.driver.options.type !== "postgres" &&
-                    connection.driver.options.type !== "cockroachdb"
-                ) {
+                if (!DriverUtils.isPostgresFamily(connection.driver)) {
                     return
                 }
 
@@ -717,10 +708,7 @@ describe("repository > find options > locking", () => {
     it("should allow locking a relation of a relation", () =>
         Promise.all(
             connections.map(async (connection) => {
-                if (
-                    connection.driver.options.type !== "postgres" &&
-                    connection.driver.options.type !== "cockroachdb"
-                ) {
+                if (!DriverUtils.isPostgresFamily(connection.driver)) {
                     return
                 }
 
