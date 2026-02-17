@@ -198,4 +198,106 @@ describe("relations > eager relations > basic", () => {
                 })
             }),
         ))
+
+    it("should not duplicate joins when eager relation with DeleteDateColumn is also manually requested", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await prepareData(connection)
+
+                const nestedProfile = new Profile()
+                nestedProfile.about = "I am nested!"
+                await connection.manager.save(nestedProfile)
+
+                const user = (await connection.manager.findOne(User, {
+                    where: { id: 1 },
+                }))!
+                user.nestedProfile = nestedProfile
+                await connection.manager.save(user)
+
+                const editorRepo = connection.getRepository(Editor)
+                const qb = editorRepo
+                    .createQueryBuilder("Editor")
+                    .setFindOptions({
+                        where: { userId: 1 },
+                        relations: {
+                            user: {
+                                nestedProfile: true,
+                            },
+                        },
+                    })
+
+                const sql = qb.getSql()
+
+                // The user table should be joined exactly once
+                const userJoinMatches = sql.match(
+                    /JOIN\s+"user"/gi,
+                )
+                expect(userJoinMatches).to.not.be.null
+                expect(userJoinMatches!.length).to.equal(
+                    1,
+                    "User table should be joined exactly once, but was joined " +
+                        userJoinMatches!.length +
+                        " times. SQL: " +
+                        sql,
+                )
+
+                // The profile table should also not be duplicated
+                const profileJoinMatches = sql.match(
+                    /JOIN\s+"profile"/gi,
+                )
+                expect(profileJoinMatches).to.not.be.null
+                // profile is joined twice: once for eager profile, once for nestedProfile
+                expect(profileJoinMatches!.length).to.equal(
+                    2,
+                    "Profile table should be joined exactly twice (for profile and nestedProfile), but was joined " +
+                        profileJoinMatches!.length +
+                        " times. SQL: " +
+                        sql,
+                )
+            }),
+        ))
+
+    it("should not duplicate joins when using find with relations option on entity with DeleteDateColumn", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await prepareData(connection)
+
+                const nestedProfile = new Profile()
+                nestedProfile.about = "I am nested!"
+                await connection.manager.save(nestedProfile)
+
+                const user = (await connection.manager.findOne(User, {
+                    where: { id: 1 },
+                }))!
+                user.nestedProfile = nestedProfile
+                await connection.manager.save(user)
+
+                // Use the repository's find method which exercises FindOptionsUtils
+                const editors = await connection.manager.find(Editor, {
+                    where: { userId: 1 },
+                    relations: {
+                        user: {
+                            nestedProfile: true,
+                        },
+                    },
+                })
+
+                expect(editors).to.have.length(1)
+                const editor = editors[0]
+
+                // All eager and manually specified relations should be loaded
+                expect(editor.user).to.not.be.undefined
+                expect(editor.user.firstName).to.equal("Timber")
+
+                // Eager profile relation should be loaded
+                expect(editor.user.profile).to.not.be.undefined
+                expect(editor.user.profile.about).to.equal("I cut trees!")
+
+                // Manually requested nestedProfile should also be loaded
+                expect(editor.user.nestedProfile).to.not.be.undefined
+                expect(editor.user.nestedProfile.about).to.equal(
+                    "I am nested!",
+                )
+            }),
+        ))
 })
