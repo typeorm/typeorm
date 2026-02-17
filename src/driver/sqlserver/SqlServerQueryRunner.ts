@@ -1304,7 +1304,13 @@ export class SqlServerQueryRunner
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             newColumn.asExpression !== oldColumn.asExpression ||
-            newColumn.generatedType !== oldColumn.generatedType
+            newColumn.generatedType !== oldColumn.generatedType ||
+            // Enum type conversions are incompatible with ALTER COLUMN
+            ((oldColumn.type === "enum" ||
+                oldColumn.type === "simple-enum" ||
+                newColumn.type === "enum" ||
+                newColumn.type === "simple-enum") &&
+                oldColumn.type !== newColumn.type)
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if generated expression changed.
@@ -1313,38 +1319,50 @@ export class SqlServerQueryRunner
 
             // update cloned table
             clonedTable = table.clone()
-        } else if (
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length
-        ) {
-            // Use ALTER COLUMN instead of DROP+ADD to preserve existing data.
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        table,
-                    )} ALTER COLUMN ${this.buildCreateColumnSql(
-                        table,
-                        newColumn,
-                        true,
-                        false,
-                        true,
-                    )}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        table,
-                    )} ALTER COLUMN ${this.buildCreateColumnSql(
-                        table,
-                        oldColumn,
-                        true,
-                        false,
-                        true,
-                    )}`,
-                ),
-            )
         } else {
+            if (
+                newColumn.type !== oldColumn.type ||
+                newColumn.length !== oldColumn.length
+            ) {
+                // Use ALTER COLUMN instead of DROP+ADD to preserve existing data.
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN ${this.buildCreateColumnSql(
+                            table,
+                            newColumn,
+                            true,
+                            false,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN ${this.buildCreateColumnSql(
+                            table,
+                            oldColumn,
+                            true,
+                            false,
+                            true,
+                        )}`,
+                    ),
+                )
+
+                // update cloned table column type/length
+                const clonedColumn = clonedTable.columns.find(
+                    (column) => column.name === oldColumn.name,
+                )
+                if (clonedColumn) {
+                    clonedColumn.type = newColumn.type
+                    clonedColumn.length = newColumn.length
+                    clonedColumn.precision = newColumn.precision
+                    clonedColumn.scale = newColumn.scale
+                }
+            }
             if (newColumn.name !== oldColumn.name) {
                 // we need database name and schema name to rename FK constraints
                 let dbName: string | undefined = undefined

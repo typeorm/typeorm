@@ -1363,7 +1363,13 @@ export class CockroachQueryRunner
         if (
             newColumn.isArray !== oldColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
-            oldColumn.asExpression !== newColumn.asExpression
+            oldColumn.asExpression !== newColumn.asExpression ||
+            // Enum type conversions are incompatible with ALTER COLUMN TYPE
+            ((oldColumn.type === "enum" ||
+                oldColumn.type === "simple-enum" ||
+                newColumn.type === "enum" ||
+                newColumn.type === "simple-enum") &&
+                oldColumn.type !== newColumn.type)
         ) {
             // These changes are incompatible with ALTER COLUMN, so we must recreate
             await this.dropColumn(table, oldColumn)
@@ -1371,29 +1377,41 @@ export class CockroachQueryRunner
 
             // update cloned table
             clonedTable = table.clone()
-        } else if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length
-        ) {
-            // Use ALTER COLUMN TYPE instead of DROP+ADD to preserve existing data.
-            const newFullType = this.driver.createFullType(newColumn)
-            const oldFullType = this.driver.createFullType(oldColumn)
-
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                        newColumn.name
-                    }" TYPE ${newFullType}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                        oldColumn.name
-                    }" TYPE ${oldFullType}`,
-                ),
-            )
         } else {
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length
+            ) {
+                // Use ALTER COLUMN TYPE instead of DROP+ADD to preserve existing data.
+                const newFullType = this.driver.createFullType(newColumn)
+                const oldFullType = this.driver.createFullType(oldColumn)
+
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${newFullType}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${oldFullType}`,
+                    ),
+                )
+
+                // update cloned table column type/length
+                const clonedColumn = clonedTable.columns.find(
+                    (column) => column.name === oldColumn.name,
+                )
+                if (clonedColumn) {
+                    clonedColumn.type = newColumn.type
+                    clonedColumn.length = newColumn.length
+                    clonedColumn.precision = newColumn.precision
+                    clonedColumn.scale = newColumn.scale
+                }
+            }
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(

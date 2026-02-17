@@ -1101,30 +1101,49 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.generatedType !== newColumn.generatedType) ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "VIRTUAL") ||
-            (oldColumn.generatedType === "VIRTUAL" && !newColumn.generatedType)
+            (oldColumn.generatedType === "VIRTUAL" &&
+                !newColumn.generatedType) ||
+            // Enum type conversions are incompatible with MODIFY COLUMN
+            ((oldColumn.type === "enum" ||
+                oldColumn.type === "simple-enum" ||
+                newColumn.type === "enum" ||
+                newColumn.type === "simple-enum") &&
+                oldColumn.type !== newColumn.type)
         ) {
-            // Generated column changes require DROP+ADD
+            // Generated column changes and enum type conversions require DROP+ADD
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
-        } else if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length
-        ) {
-            // Use MODIFY COLUMN instead of DROP+ADD to preserve existing data.
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} MODIFY ${this.buildCreateColumnSql(newColumn, true)}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} MODIFY ${this.buildCreateColumnSql(oldColumn, true)}`,
-                ),
-            )
         } else {
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length
+            ) {
+                // Use MODIFY COLUMN instead of DROP+ADD to preserve existing data.
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY ${this.buildCreateColumnSql(newColumn, true)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY ${this.buildCreateColumnSql(oldColumn, true)}`,
+                    ),
+                )
+
+                // update cloned table column type/length
+                const clonedColumn = clonedTable.columns.find(
+                    (column) => column.name === oldColumn.name,
+                )
+                if (clonedColumn) {
+                    clonedColumn.type = newColumn.type
+                    clonedColumn.length = newColumn.length
+                    clonedColumn.precision = newColumn.precision
+                    clonedColumn.scale = newColumn.scale
+                }
+            }
             if (newColumn.name !== oldColumn.name) {
                 // We don't change any column properties, just rename it.
                 upQueries.push(

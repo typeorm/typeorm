@@ -1,13 +1,13 @@
-import "reflect-metadata"
-import {
-    createTestingConnections,
-    closeTestingConnections,
-} from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
-import { Post } from "./entity/Post"
+import "reflect-metadata"
+import { DataSource } from "../../../src"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../utils/test-utils"
+import { Album } from "./entity/Album"
 
-describe("github issues > #3357 Migration generation should use ALTER COLUMN instead of DROP+ADD to prevent data loss", () => {
+describe("schema builder > alter column type", () => {
     let connections: DataSource[]
 
     before(
@@ -20,7 +20,7 @@ describe("github issues > #3357 Migration generation should use ALTER COLUMN ins
                     "mariadb",
                     "mssql",
                 ],
-                entities: [__dirname + "/entity/*{.js,.ts}"],
+                entities: [Album],
                 schemaCreate: true,
                 dropSchema: true,
             })),
@@ -30,7 +30,7 @@ describe("github issues > #3357 Migration generation should use ALTER COLUMN ins
     it("should generate ALTER COLUMN instead of DROP+ADD when column length changes", async () => {
         await Promise.all(
             connections.map(async (connection) => {
-                const meta = connection.getMetadata(Post)
+                const meta = connection.getMetadata(Album)
                 const col = meta.columns.find(
                     (c) => c.propertyName === "title",
                 )!
@@ -88,9 +88,9 @@ describe("github issues > #3357 Migration generation should use ALTER COLUMN ins
     it("should generate ALTER COLUMN instead of DROP+ADD when column type changes", async () => {
         await Promise.all(
             connections.map(async (connection) => {
-                const meta = connection.getMetadata(Post)
+                const meta = connection.getMetadata(Album)
                 const col = meta.columns.find(
-                    (c) => c.propertyName === "content",
+                    (c) => c.propertyName === "description",
                 )!
 
                 const originalType = col.type
@@ -111,7 +111,8 @@ describe("github issues > #3357 Migration generation should use ALTER COLUMN ins
 
                 // Should NOT contain DROP COLUMN
                 const hasDropColumn = upQueries.some(
-                    (q) => q.includes("DROP COLUMN") && q.includes("content"),
+                    (q) =>
+                        q.includes("DROP COLUMN") && q.includes("description"),
                 )
                 expect(
                     hasDropColumn,
@@ -122,7 +123,7 @@ describe("github issues > #3357 Migration generation should use ALTER COLUMN ins
                 const hasAlterColumn = upQueries.some(
                     (q) =>
                         (q.includes("ALTER COLUMN") || q.includes("MODIFY")) &&
-                        q.includes("content"),
+                        q.includes("description"),
                 )
                 expect(
                     hasAlterColumn,
