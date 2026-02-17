@@ -22,10 +22,46 @@ export class RelationIdMetadataToAttributeTransformer {
         // we load post and join category
         // we expect post.categoryIds and post.category.imageIds to have relation ids
 
+        // Helper function to check if a relationId should be loaded
+        const shouldLoadRelationId = (
+            aliasName: string,
+            relationIdPropertyName: string,
+        ): boolean => {
+            // If no specific selects are defined, we assume everything is selected (default behavior)
+            if (this.expressionMap.selects.length === 0) return true
+
+            // Check if the whole entity (alias) is selected
+            if (
+                this.expressionMap.selects.some(
+                    (s) => s.selection === aliasName,
+                )
+            )
+                return true
+
+            // Check if the specific relationId property is selected
+            const propertySelection = aliasName + "." + relationIdPropertyName
+            if (
+                this.expressionMap.selects.some(
+                    (s) => s.selection === propertySelection,
+                )
+            )
+                return true
+
+            return false
+        }
+
         // first create relation id attributes for all relation id metadatas of the main selected object (post from example)
         if (this.expressionMap.mainAlias) {
             this.expressionMap.mainAlias.metadata.relationIds.forEach(
                 (relationId) => {
+                    if (
+                        !shouldLoadRelationId(
+                            this.expressionMap.mainAlias!.name,
+                            relationId.propertyName,
+                        )
+                    )
+                        return
+
                     const attribute = this.metadataToAttribute(
                         this.expressionMap.mainAlias!.name,
                         relationId,
@@ -41,6 +77,14 @@ export class RelationIdMetadataToAttributeTransformer {
             if (!join.metadata || join.metadata.isJunction) return
 
             join.metadata.relationIds.forEach((relationId) => {
+                if (
+                    !shouldLoadRelationId(
+                        join.alias.name,
+                        relationId.propertyName,
+                    )
+                )
+                    return
+
                 const attribute = this.metadataToAttribute(
                     join.alias.name,
                     relationId,
