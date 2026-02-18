@@ -565,7 +565,11 @@ export class MigrationExecutor {
         if (this.connection.driver.options.type === "mongodb") {
             const mongoRunner = queryRunner as MongoQueryRunner
             return mongoRunner
-                .cursor(this.migrationsTableName, {})
+                .cursor(
+                    this.connection.driver.database!,
+                    this.migrationsTableName,
+                    {},
+                )
                 .sort({ _id: -1 })
                 .toArray()
         } else {
