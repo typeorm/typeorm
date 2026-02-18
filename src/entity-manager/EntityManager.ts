@@ -1201,6 +1201,7 @@ export class EntityManager {
                 )}.${this.connection.driver.escape(column.databaseName)})`,
                 fnName,
             )
+            .setOption("disable-global-order")
             .getRawOne()
         return result[fnName] === null ? null : parseFloat(result[fnName])
     }
