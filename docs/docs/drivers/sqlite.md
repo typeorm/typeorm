@@ -2,7 +2,7 @@
 
 ## Installation
 
--   for **Better SQLite**:
+- for **Better SQLite**:
 
 ```shell
 npm install better-sqlite3
