@@ -2187,6 +2187,60 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         joinAttribute.isMappingMany = isMappingMany
         joinAttribute.entityOrProperty = entityOrProperty // relationName
         joinAttribute.condition = condition // joinInverseSideCondition
+
+        // If this is a subquery join with explicit column selections, store them
+        // so the transformer can respect the partial select
+        // We need to check if it's a QueryBuilder function (not an Entity class)
+        if (
+            typeof entityOrProperty === "function" &&
+            !this.connection.hasMetadata(entityOrProperty)
+        ) {
+            const subQuery = entityOrProperty(
+                this.subQuery() as SelectQueryBuilder<any>,
+            )
+
+            if (subQuery.expressionMap.selects.length > 0) {
+                const mainAliasName = subQuery.expressionMap.mainAlias?.name
+                const selectedColumns = subQuery.expressionMap.selects
+                    .map((select: SelectQuery) => {
+                        const selection = select.selection
+                        if (!selection || !mainAliasName) return selection
+
+                        // Full alias select means "select everything"
+                        if (selection === mainAliasName) {
+                            return undefined
+                        }
+
+                        // Remove only alias prefix, preserve full property path
+                        const aliasPrefix = `${mainAliasName}.`
+                        if (selection.startsWith(aliasPrefix)) {
+                            return selection.slice(aliasPrefix.length)
+                        }
+                        return selection
+                    })
+                    .filter(
+                        (name: string | undefined): name is string => !!name,
+                    )
+
+                if (selectedColumns.length > 0) {
+                    joinAttribute.selectedColumns = selectedColumns
+                }
+            }
+
+            // Store the subquery's entity metadata for transformation
+            // (without setting mapAsEntity which would change the JOIN type)
+            if (subQuery.expressionMap.mainAlias) {
+                const subQueryEntity = subQuery.expressionMap.mainAlias.target
+                if (
+                    subQueryEntity &&
+                    this.connection.hasMetadata(subQueryEntity)
+                ) {
+                    joinAttribute["__subqueryMetadata"] =
+                        this.connection.getMetadata(subQueryEntity)
+                }
+            }
+        }
+
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
         this.expressionMap.joinAttributes.push(joinAttribute)
         const isEntity = this.connection.hasMetadata(entityOrProperty)
