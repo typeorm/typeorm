@@ -2024,7 +2024,27 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         checkConstraint: TableCheck,
     ): Promise<void> {
-        throw new TypeORMError(`MySql does not support check constraints.`)
+        if (!this.driver.isCheckConstraintsSupported) {
+            throw new TypeORMError(
+                `MySql version does not support check constraints.`,
+            )
+        }
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+
+        if (!checkConstraint.name) {
+            checkConstraint.name =
+                this.connection.namingStrategy.checkConstraintName(
+                    table,
+                    checkConstraint.expression!,
+                )
+        }
+
+        const up = this.createCheckConstraintSql(table, checkConstraint)
+        const down = this.dropCheckConstraintSql(table, checkConstraint)
+        await this.executeQueries(up, down)
+        table.addCheckConstraint(checkConstraint)
     }
 
     /**
@@ -2034,7 +2054,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
     ): Promise<void> {
-        throw new TypeORMError(`MySql does not support check constraints.`)
+        if (!this.driver.isCheckConstraintsSupported) {
+            throw new TypeORMError(
+                `MySql version does not support check constraints.`,
+            )
+        }
+        const promises = checkConstraints.map((checkConstraint) =>
+            this.createCheckConstraint(tableOrName, checkConstraint),
+        )
+        await Promise.all(promises)
     }
 
     /**
@@ -2044,7 +2072,26 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         checkOrName: TableCheck | string,
     ): Promise<void> {
-        throw new TypeORMError(`MySql does not support check constraints.`)
+        if (!this.driver.isCheckConstraintsSupported) {
+            throw new TypeORMError(
+                `MySql version does not support check constraints.`,
+            )
+        }
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const checkConstraint = InstanceChecker.isTableCheck(checkOrName)
+            ? checkOrName
+            : table.checks.find((c) => c.name === checkOrName)
+        if (!checkConstraint)
+            throw new TypeORMError(
+                `Supplied check constraint was not found in table ${table.name}`,
+            )
+
+        const up = this.dropCheckConstraintSql(table, checkConstraint)
+        const down = this.createCheckConstraintSql(table, checkConstraint)
+        await this.executeQueries(up, down)
+        table.removeCheckConstraint(checkConstraint)
     }
 
     /**
@@ -2054,7 +2101,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
     ): Promise<void> {
-        throw new TypeORMError(`MySql does not support check constraints.`)
+        if (!this.driver.isCheckConstraintsSupported) {
+            throw new TypeORMError(
+                `MySql version does not support check constraints.`,
+            )
+        }
+        const promises = checkConstraints.map((checkConstraint) =>
+            this.dropCheckConstraint(tableOrName, checkConstraint),
+        )
+        await Promise.all(promises)
     }
 
     /**
@@ -2552,18 +2607,37 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     \`rc\`.\`CONSTRAINT_NAME\` = \`kcu\`.\`CONSTRAINT_NAME\`
             `
 
+        const checksSubquerySql = dbTables
+            .map(({ TABLE_SCHEMA, TABLE_NAME }) => {
+                return `
+                SELECT tc.TABLE_SCHEMA, tc.TABLE_NAME, tc.CONSTRAINT_NAME, cc.CHECK_CLAUSE
+                FROM information_schema.TABLE_CONSTRAINTS tc
+                INNER JOIN information_schema.CHECK_CONSTRAINTS cc
+                    ON cc.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+                    AND cc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+                WHERE tc.TABLE_SCHEMA = '${TABLE_SCHEMA}'
+                    AND tc.TABLE_NAME = '${TABLE_NAME}'
+                    AND tc.CONSTRAINT_TYPE = 'CHECK'
+                `
+            })
+            .join(" UNION ")
+
         const [
             dbColumns,
             dbPrimaryKeys,
             dbCollations,
             dbIndices,
             dbForeignKeys,
+            dbChecks,
         ]: ObjectLiteral[][] = await Promise.all([
             this.query(columnsSql),
             this.query(primaryKeySql),
             this.query(collationsSql),
             this.query(indicesSql),
             this.query(foreignKeysSql),
+            this.driver.isCheckConstraintsSupported
+                ? this.query(checksSubquerySql)
+                : Promise.resolve([]),
         ])
 
         const isMariaDb = this.driver.options.type === "mariadb"
@@ -2982,6 +3056,70 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                 table.comment = dbTable["TABLE_COMMENT"]
 
+                if (this.driver.isCheckConstraintsSupported) {
+                    let tableChecks = dbChecks.filter(
+                        (c) =>
+                            c["TABLE_NAME"] === dbTable["TABLE_NAME"] &&
+                            c["TABLE_SCHEMA"] === dbTable["TABLE_SCHEMA"],
+                    )
+                    if (isMariaDb) {
+                        /**
+                         * MariaDB "JSON" columns are not true JSON types like in MySQL.
+                         * Internally, MariaDB stores them as LONGTEXT and automatically adds
+                         * a system CHECK constraint of the form `CHECK (json_valid(`column`))`
+                         * to ensure the stored text is valid JSON.
+                         *
+                         * These checks are not user-defined, and they
+                         * are not actually managed by TypeORM or any migration logic, they
+                         * are generated automatically by MariaDB whenever a column is defined
+                         * as type "JSON".
+                         *
+                         * Unfortunately, MariaDB does not provide any metadata flag to
+                         * distinguish these system-generated checks from user-created ones.
+                         * Because of that, we have to detect and ignore them manually.
+                         *
+                         * The best practical approach i could think of is to filter them out using a simple
+                         * regex that matches CHECK clauses like `json_valid(column)` or
+                         * `json_valid(`column`)`.
+                         */
+                        const makeSystemJsonChecker = (
+                            jsonColumnNames: string[],
+                        ) => {
+                            const jsonSet = new Set(
+                                jsonColumnNames.map((n) => n.toLowerCase()),
+                            )
+                            // Matches: json_valid(`col`), json_valid(col), with arbitrary spaces/case
+                            const rx =
+                                /^json_valid\s*\(\s*`?([a-z0-9_]+)`?\s*\)$/i
+
+                            return (clause: string) => {
+                                const m = clause.match(rx)
+                                if (!m) return false
+                                const col = m[1].toLowerCase()
+
+                                return jsonSet.has(col)
+                            }
+                        }
+
+                        const jsonCols = table.columns
+                            .filter((c) => c.type === "longtext")
+                            .map((c) => c.name)
+                        const isSystemJson = makeSystemJsonChecker(jsonCols)
+
+                        tableChecks = tableChecks.filter(
+                            (c) => !isSystemJson(c["CHECK_CLAUSE"]),
+                        )
+                    }
+
+                    table.checks = tableChecks.map(
+                        (c) =>
+                            new TableCheck({
+                                name: c["CONSTRAINT_NAME"],
+                                expression: c["CHECK_CLAUSE"],
+                            }),
+                    )
+                }
+
                 return table
             }),
         )
@@ -3104,6 +3242,26 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 .join(", ")
 
             sql += `, ${foreignKeysSql}`
+        }
+
+        if (
+            this.driver.isCheckConstraintsSupported &&
+            table.checks &&
+            table.checks.length > 0
+        ) {
+            const checksSql = table.checks
+                .filter((check) => !!check.expression)
+                .map((check) => {
+                    const checkName = check.name
+                        ? check.name
+                        : this.connection.namingStrategy.checkConstraintName(
+                              table,
+                              check.expression!,
+                          )
+                    return `CONSTRAINT \`${checkName}\` CHECK (${check.expression})`
+                })
+                .join(", ")
+            sql += `, ${checksSql}`
         }
 
         if (table.primaryColumns.length > 0) {
@@ -3284,6 +3442,43 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             `ALTER TABLE ${this.escapePath(
                 table,
             )} DROP FOREIGN KEY \`${foreignKeyName}\``,
+        )
+    }
+
+    /**
+     * Builds create check constraint sql.
+     * @param table The table.
+     * @param checkConstraint The check constraint metadata.
+     * @returns Query to create the check constraint.
+     */
+    protected createCheckConstraintSql(
+        table: Table,
+        checkConstraint: TableCheck,
+    ): Query {
+        return new Query(
+            `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT \`${
+                checkConstraint.name
+            }\` CHECK (${checkConstraint.expression})`,
+        )
+    }
+
+    /**
+     * Builds drop check constraint sql.
+     * @param table The table.
+     * @param checkOrName The check constraint object or its name.
+     * @returns Query to drop the check constraint.
+     */
+    protected dropCheckConstraintSql(
+        table: Table,
+        checkOrName: TableCheck | string,
+    ): Query {
+        const checkName = InstanceChecker.isTableCheck(checkOrName)
+            ? checkOrName.name
+            : checkOrName
+        return new Query(
+            `ALTER TABLE ${this.escapePath(
+                table,
+            )} DROP CONSTRAINT \`${checkName}\``,
         )
     }
 
