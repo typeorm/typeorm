@@ -101,11 +101,16 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
 
         const stmt = await this.getStmt(query)
 
+        // better-sqlite3 cannot bind booleans, convert to 0/1
+        const normalizedParameters = parameters.map((p) =>
+            typeof p === "boolean" ? (p ? 1 : 0) : p,
+        )
+
         try {
             const result = new QueryResult()
 
             if (stmt.reader) {
-                const raw = stmt.all(...parameters)
+                const raw = stmt.all(...normalizedParameters)
 
                 result.raw = raw
 
@@ -113,7 +118,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
                     result.records = raw
                 }
             } else {
-                const raw = stmt.run(...parameters)
+                const raw = stmt.run(...normalizedParameters)
                 result.affected = raw.changes
                 result.raw = raw.lastInsertRowid
             }
