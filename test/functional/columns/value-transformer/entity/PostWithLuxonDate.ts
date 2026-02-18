@@ -22,7 +22,7 @@ export class DateTime {
     }
 }
 
-export class LuxonTimestampTzTypeT implements ValueTransformer {
+export class LuxonTimestampTzTransformer implements ValueTransformer {
     public to(
         value: DateTime | null | undefined | FindOperator<any>,
     ): Date | null | FindOperator<any> {
@@ -49,6 +49,9 @@ export class PostWithLuxonDate {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column({ type: "timestamp", transformer: new LuxonTimestampTzTypeT() })
+    @Column({
+        type: "timestamp",
+        transformer: new LuxonTimestampTzTransformer(),
+    })
     date: DateTime
 }

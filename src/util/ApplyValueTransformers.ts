@@ -20,6 +20,7 @@ export class ApplyValueTransformers {
         transformer: ValueTransformer | ValueTransformer[],
         entityValue: any,
     ) {
+        if (entityValue === null) return null
         if (Array.isArray(transformer)) {
             return transformer.reduce((transformedValue, _transformer) => {
                 return _transformer.to(transformedValue)
