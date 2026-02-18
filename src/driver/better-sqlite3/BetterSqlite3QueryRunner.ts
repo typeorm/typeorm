@@ -76,6 +76,9 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -161,9 +164,12 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
         tableOrIndex: "table" | "index",
     ) {
         const [database, tableName] = this.splitTablePath(tablePath)
+        const relativePath = database
+            ? this.driver.getAttachedDatabasePathRelativeByHandle(database)
+            : undefined
         const res = await this.query(
             `SELECT ${
-                database ? `'${database}'` : null
+                relativePath ? `'${relativePath}'` : null
             } as database, * FROM ${this.escapePath(
                 `${database ? `${database}.` : ""}sqlite_master`,
             )} WHERE "type" = '${tableOrIndex}' AND "${
