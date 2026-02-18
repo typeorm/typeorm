@@ -182,6 +182,66 @@ describe("query runner > change column", () => {
             }),
         ))
 
+    it("should preserve data when changing column length", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                // CockroachDB and Spanner does not allow changing column types easily
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
+
+                // SQLite does not impose length restrictions
+                if (DriverUtils.isSQLiteFamily(connection.driver)) return
+
+                const queryRunner = connection.createQueryRunner()
+
+                // Insert data before changing column length
+                await queryRunner.query(
+                    `INSERT INTO "post" ("id", "version", "name", "text", "tag") ` +
+                        `VALUES (1, 1, 'test data', 'some text', 'tag1')`,
+                )
+
+                let table = await queryRunner.getTable("post")
+                const nameColumn = table!.findColumnByName("name")!
+
+                // Change the column length
+                const changedNameColumn = nameColumn.clone()
+                changedNameColumn.length = "500"
+                await queryRunner.changeColumn(
+                    table!,
+                    nameColumn,
+                    changedNameColumn,
+                )
+
+                // Verify the column length was changed
+                table = await queryRunner.getTable("post")
+                table!
+                    .findColumnByName("name")!
+                    .length!.should.be.equal("500")
+
+                // Verify data is preserved (this is the core assertion for #3357)
+                const rows = await queryRunner.query(
+                    `SELECT "name" FROM "post" WHERE "id" = 1`,
+                )
+                expect(rows[0]["name"]).to.be.equal("test data")
+
+                // Revert and verify
+                await queryRunner.executeMemoryDownSql()
+
+                // Verify data is still preserved after revert
+                const rowsAfterRevert = await queryRunner.query(
+                    `SELECT "name" FROM "post" WHERE "id" = 1`,
+                )
+                expect(rowsAfterRevert[0]["name"]).to.be.equal("test data")
+
+                // Clean up
+                await queryRunner.query(`DELETE FROM "post" WHERE "id" = 1`)
+                await queryRunner.release()
+            }),
+        ))
+
     it("should correctly change generated as expression", () =>
         Promise.all(
             connections.map(async (connection) => {
