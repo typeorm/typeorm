@@ -6,7 +6,12 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-const sqlite3 = require("sqlite3")
+
+// Standard SQLite C API open flag constants (from sqlite3.h)
+const SQLITE_OPEN_READWRITE = 0x00000002
+const SQLITE_OPEN_CREATE = 0x00000004
+const SQLITE_OPEN_URI = 0x00000040
+const SQLITE_OPEN_SHAREDCACHE = 0x00020000
 
 describe("sqlite driver > file open flags", () => {
     let connections: DataSource[]
@@ -18,10 +23,10 @@ describe("sqlite driver > file open flags", () => {
                 enabledDrivers: ["better-sqlite3"],
                 driverSpecific: {
                     flags:
-                        sqlite3.OPEN_URI |
-                        sqlite3.OPEN_SHAREDCACHE |
-                        sqlite3.OPEN_READWRITE |
-                        sqlite3.OPEN_CREATE,
+                        SQLITE_OPEN_URI |
+                        SQLITE_OPEN_SHAREDCACHE |
+                        SQLITE_OPEN_READWRITE |
+                        SQLITE_OPEN_CREATE,
                 },
             })),
     )
