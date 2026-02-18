@@ -298,6 +298,48 @@ describe("mongodb > MongoRepository", () => {
                 expect(loadedPosts[1].title).to.eql("Post #1")
             }),
         ))
+
+    it("should return correct count of documents with next and toArray", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getMongoRepository(Post)
+
+                // save few posts
+                for (let i = 1; i <= 10; i++) {
+                    const post = new Post()
+                    post.title = `Post #${i}`
+                    post.text = `Everything about post #${i}`
+                    await postRepository.save(post)
+                }
+
+                const cursor = postRepository.createEntityCursor()
+                const loadedPosts = []
+                loadedPosts.push(await cursor.next())
+                loadedPosts.push(await cursor.next())
+                loadedPosts.push(await cursor.next())
+                loadedPosts.push(...(await cursor.toArray()))
+                expect(loadedPosts).to.have.length(10)
+            }),
+        ))
+
+    it("should return correct count of documents with toArray only", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getMongoRepository(Post)
+
+                // save few posts
+                for (let i = 1; i <= 10; i++) {
+                    const post = new Post()
+                    post.title = `Post #${i}`
+                    post.text = `Everything about post #${i}`
+                    await postRepository.save(post)
+                }
+
+                const cursor = postRepository.createEntityCursor()
+                const loadedPosts = await cursor.toArray()
+                expect(loadedPosts).to.have.length(10)
+            }),
+        ))
 })
 
 async function seedPosts(postRepository: MongoRepository<PostWithDeleted>) {
