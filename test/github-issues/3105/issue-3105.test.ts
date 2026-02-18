@@ -4,10 +4,9 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, EntityManager } from "../../../src"
+import { DataSource, EntityManager, In } from "../../../src"
 import { Parent } from "./entity/Parent"
 import { Child } from "./entity/Child"
-import { xfail } from "../../utils/xfail"
 import { expect } from "chai"
 
 describe("github issues > #3105 Error with cascading saves using EntityManager in a transaction", () => {
@@ -24,60 +23,56 @@ describe("github issues > #3105 Error with cascading saves using EntityManager i
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    xfail
-        .unless(() => connections.length > 0)
-        .it(
-            "error with cascading saves using EntityManager in a transaction",
-            () =>
-                Promise.all(
-                    connections.map(async function (connection) {
-                        let findChildOne
-                        let findChildTwo
+    it("should save with cascading using EntityManager in a transaction", () =>
+        Promise.all(
+            connections.map(async function (connection) {
+                const parentRepo = connection.getRepository(Parent)
+                const childRepo = connection.getRepository(Child)
 
-                        await expect(
-                            connection.manager.transaction(
-                                async (
-                                    transactionalEntityManager: EntityManager,
-                                ) => {
-                                    const parent = new Parent()
-                                    parent.children = [
-                                        new Child(1),
-                                        new Child(2),
-                                    ]
+                let firstChildIds: number[] = []
 
-                                    let newParent =
-                                        await transactionalEntityManager.save(
-                                            parent,
-                                        )
+                await expect(
+                    connection.manager.transaction(
+                        async (transactionalEntityManager: EntityManager) => {
+                            const parent = new Parent()
+                            parent.children = [new Child(1), new Child(2)]
 
-                                    newParent.children = [
-                                        new Child(4),
-                                        new Child(5),
-                                    ]
-                                    newParent =
-                                        await transactionalEntityManager.save(
-                                            parent,
-                                        )
+                            await transactionalEntityManager.save(parent)
+                            firstChildIds = parent.children.map(
+                                (child) => child.id,
+                            )
 
-                                    // Check that the correct children are persisted with the parent.
-                                    findChildOne = newParent.children.find(
-                                        (child) => {
-                                            return child.data === 4
-                                        },
-                                    )
+                            // Replace children to orphan the previous ones
+                            parent.children = [new Child(4), new Child(5)]
+                            await transactionalEntityManager.save(parent)
+                        },
+                    ),
+                ).not.to.be.rejected
 
-                                    findChildTwo = newParent.children.find(
-                                        (child) => {
-                                            return child.data === 5
-                                        },
-                                    )
-                                },
-                            ),
-                        ).not.to.be.rejected
+                // Additional DB assertions to verify orphan handling
+                const loadedParent = await parentRepo.findOne({
+                    where: { id: 1 },
+                    relations: ["children"],
+                })
 
-                        expect(findChildOne).to.not.equal(undefined)
-                        expect(findChildTwo).to.not.equal(undefined)
-                    }),
-                ),
-        )
+                expect(loadedParent).not.to.be.null
+                expect(loadedParent!.children).to.have.length(2)
+                expect(
+                    loadedParent!.children.map((c) => c.data),
+                ).to.include.members([4, 5])
+
+                // validate that orphaned children are removed from the database
+                // since parent_id is non-nullable, TypeORM should delete them
+                const orphanedChildren = await childRepo.find({
+                    where: {
+                        id: In(firstChildIds),
+                    },
+                })
+                expect(orphanedChildren).to.be.empty
+
+                // verify no other unexpected rows exist
+                const allChildrenCount = await childRepo.count()
+                expect(allChildrenCount).to.equal(2)
+            }),
+        ))
 })

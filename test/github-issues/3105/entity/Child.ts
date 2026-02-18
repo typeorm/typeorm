@@ -18,6 +18,7 @@ export class Child {
     @Column({
         name: "parent_id",
         type: "int",
+        nullable: false,
     })
     public parentId: number
 
