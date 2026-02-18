@@ -2,6 +2,7 @@ import { format } from "@sqltools/formatter/lib/sqlFormatter"
 import ansi from "ansis"
 import path from "path"
 import process from "process"
+import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
 import yargs from "yargs"
 import { DataSource } from "../data-source"
 import { PlatformTools } from "../platform/PlatformTools"
@@ -17,17 +18,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
         "Generates a new migration file with sql needs to be executed to update schema."
 
     builder(args: yargs.Argv) {
-        return args
+        return new DefaultCliArgumentsBuilder(args)
+            .addDataSourceOption()
+            .builder()
             .positional("path", {
                 type: "string",
                 describe: "Path of the migration file",
-                demandOption: true,
-            })
-            .option("dataSource", {
-                alias: "d",
-                type: "string",
-                describe:
-                    "Path to the file where your DataSource instance is defined.",
                 demandOption: true,
             })
             .option("p", {
@@ -215,6 +211,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
     /**
      * Formats query parameters for migration queries if parameters actually exist
+     * @param parameters
      */
     protected static queryParams(parameters: any[] | undefined): string {
         if (!parameters || !parameters.length) {
@@ -226,6 +223,10 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the migration file.
+     * @param name
+     * @param timestamp
+     * @param upSqls
+     * @param downSqls
      */
     protected static getTemplate(
         name: string,
@@ -256,6 +257,11 @@ ${downSqls.join(`
 
     /**
      * Gets contents of the migration file in Javascript.
+     * @param name
+     * @param timestamp
+     * @param upSqls
+     * @param downSqls
+     * @param esm
      */
     protected static getJavascriptTemplate(
         name: string,
@@ -301,6 +307,7 @@ ${downSqls.join(`
 
     /**
      *
+     * @param query
      */
     protected static prettifyQuery(query: string) {
         const formattedQuery = format(query, { indent: "    " })

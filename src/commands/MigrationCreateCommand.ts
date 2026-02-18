@@ -1,5 +1,6 @@
 import ansi from "ansis"
 import path from "path"
+import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
 import yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
 import { camelCase } from "../util/StringUtils"
@@ -13,7 +14,16 @@ export class MigrationCreateCommand implements yargs.CommandModule {
     describe = "Creates a new migration file."
 
     builder(args: yargs.Argv) {
-        return args
+        return new DefaultCliArgumentsBuilder(args)
+            .addDataSourceOption({
+                // This command is the only one that does not use a data source
+                // However, it's added here to create a similar experience to the
+                // rest of the migration commands, so that the user will not be
+                // interrupted should they add a data source option by mistake.
+                // it enhances the developer experience.
+                demandOption: false,
+            })
+            .builder()
             .positional("path", {
                 type: "string",
                 describe: "Path of the migration file",
@@ -79,6 +89,8 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the migration file.
+     * @param name
+     * @param timestamp
      */
     protected static getTemplate(name: string, timestamp: number): string {
         return `import { MigrationInterface, QueryRunner } from "typeorm";
@@ -100,6 +112,9 @@ export class ${camelCase(
 
     /**
      * Gets contents of the migration file in Javascript.
+     * @param name
+     * @param timestamp
+     * @param esm
      */
     protected static getJavascriptTemplate(
         name: string,
