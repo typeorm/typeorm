@@ -278,6 +278,7 @@
     "cloud-spanner-orm",
     "sqlite",
     "sqlite-orm",
+    "better-sqlite3",
     "sql-server",
     "sql-server-orm"
   ]

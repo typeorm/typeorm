@@ -745,7 +745,7 @@ Steps to run this project:
                 packageJson.dependencies["pg"] =
                     ourPackageJson.devDependencies.pg
                 break
-            case "sqlite":
+            case "better-sqlite3":
                 packageJson.dependencies["better-sqlite3"] =
                     ourPackageJson.devDependencies["better-sqlite3"]
                 break
