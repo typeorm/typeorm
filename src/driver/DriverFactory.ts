@@ -85,7 +85,6 @@ export class DriverFactory {
                     "postgres",
                     "react-native",
                     "sap",
-                    "sqlite",
                     "sqljs",
                     "spanner",
                 ])

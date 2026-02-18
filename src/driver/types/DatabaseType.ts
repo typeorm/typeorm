@@ -7,7 +7,6 @@ export type DatabaseType =
     | "cockroachdb"
     | "sap"
     | "mariadb"
-    | "sqlite"
     | "cordova"
     | "react-native"
     | "nativescript"

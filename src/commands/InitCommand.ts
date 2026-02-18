@@ -198,7 +198,7 @@ export class InitCommand implements yargs.CommandModule {
                 ]
                 break
 
-            case "sqlite":
+            case "better-sqlite3":
                 dbSettings = [
                     'type: "better-sqlite3"',
                     'database: "database.sqlite"',
