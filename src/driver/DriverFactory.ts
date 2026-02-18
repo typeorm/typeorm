@@ -41,7 +41,6 @@ export class DriverFactory {
                 return new SapDriver(connection)
             case "mariadb":
                 return new MysqlDriver(connection)
-            case "sqlite":
             case "better-sqlite3":
                 return new BetterSqlite3Driver(connection)
             case "cordova":

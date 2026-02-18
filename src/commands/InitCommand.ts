@@ -166,6 +166,8 @@ export class InitCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the ormconfig file.
+     * @param isEsm
+     * @param database
      */
     protected static getAppDataSourceTemplate(
         isEsm: boolean,
@@ -184,6 +186,7 @@ export class InitCommand implements yargs.CommandModule {
                     'database: "test"',
                 ]
                 break
+
             case "mariadb":
                 dbSettings = [
                     'type: "mariadb"',
@@ -194,9 +197,14 @@ export class InitCommand implements yargs.CommandModule {
                     'database: "test"',
                 ]
                 break
+
             case "sqlite":
-                dbSettings = ['type: "sqlite"', 'database: "database.sqlite"']
+                dbSettings = [
+                    'type: "better-sqlite3"',
+                    'database: "database.sqlite"',
+                ]
                 break
+
             case "postgres":
                 dbSettings = [
                     'type: "postgres"',
@@ -207,6 +215,7 @@ export class InitCommand implements yargs.CommandModule {
                     'database: "test"',
                 ]
                 break
+
             case "cockroachdb":
                 dbSettings = [
                     'type: "cockroachdb"',
@@ -217,6 +226,7 @@ export class InitCommand implements yargs.CommandModule {
                     'database: "defaultdb"',
                 ]
                 break
+
             case "mssql":
                 dbSettings = [
                     'type: "mssql"',
@@ -226,6 +236,7 @@ export class InitCommand implements yargs.CommandModule {
                     'database: "tempdb"',
                 ]
                 break
+
             case "oracle":
                 dbSettings = [
                     'type: "oracle"',
@@ -236,9 +247,11 @@ export class InitCommand implements yargs.CommandModule {
                     'sid: "xe.oracle.docker"',
                 ]
                 break
+
             case "mongodb":
                 dbSettings = ['type: "mongodb"', 'database: "test"']
                 break
+
             case "spanner":
                 dbSettings = [
                     'type: "spanner"',
@@ -247,6 +260,7 @@ export class InitCommand implements yargs.CommandModule {
                     'databaseId: "test"',
                 ]
                 break
+
             default:
                 throw new Error(`Unknown database "${database}"`)
         }
@@ -256,7 +270,7 @@ import { DataSource } from "typeorm"
 import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 export const AppDataSource = new DataSource({
-${dbSettings.map((s) => `  ${s},`).join("\n")}
+${dbSettings.map((s) => `    ${s},`).join("\n")}
     synchronize: true,
     logging: false,
     entities: [User],
@@ -268,6 +282,7 @@ ${dbSettings.map((s) => `  ${s},`).join("\n")}
 
     /**
      * Gets contents of the ormconfig file.
+     * @param esmModule
      */
     protected static getTsConfigTemplate(esmModule: boolean): string {
         if (esmModule)
@@ -321,6 +336,7 @@ temp/`
 
     /**
      * Gets contents of the user entity.
+     * @param database
      */
     protected static getUserEntityTemplate(database: string): string {
         return `import { Entity, ${
@@ -354,6 +370,7 @@ export class User {
 
     /**
      * Gets contents of the route file (used when express is enabled).
+     * @param isEsm
      */
     protected static getRoutesTemplate(isEsm: boolean): string {
         return `import { UserController } from "./controllers/UserController${
@@ -385,6 +402,7 @@ export const Routes = [{
 
     /**
      * Gets contents of the user controller file (used when express is enabled).
+     * @param isEsm
      */
     protected static getControllerTemplate(isEsm: boolean): string {
         return `import { AppDataSource } from "../data-source${
@@ -446,6 +464,8 @@ export class UserController {
 
     /**
      * Gets contents of the main (index) application file.
+     * @param express
+     * @param isEsm
      */
     protected static getAppIndexTemplate(
         express: boolean,
@@ -534,6 +554,8 @@ AppDataSource.initialize().then(async () => {
 
     /**
      * Gets contents of the new package.json file.
+     * @param projectName
+     * @param projectIsEsm
      */
     protected static getPackageJsonTemplate(
         projectName?: string,
@@ -556,6 +578,7 @@ AppDataSource.initialize().then(async () => {
 
     /**
      * Gets contents of the new docker-compose.yml file.
+     * @param database
      */
     protected static getDockerComposeTemplate(database: string): string {
         switch (database) {
@@ -654,6 +677,8 @@ AppDataSource.initialize().then(async () => {
 
     /**
      * Gets contents of the new readme.md file.
+     * @param options
+     * @param options.docker
      */
     protected static getReadmeTemplate(options: { docker: boolean }): string {
         let template = `# Awesome Project Build with TypeORM
@@ -678,6 +703,10 @@ Steps to run this project:
 
     /**
      * Appends to a given package.json template everything needed.
+     * @param packageJsonContents
+     * @param database
+     * @param express
+     * @param projectIsEsm
      */
     protected static async appendPackageJson(
         packageJsonContents: string,
