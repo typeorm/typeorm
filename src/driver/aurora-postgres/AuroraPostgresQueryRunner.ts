@@ -8,6 +8,8 @@ import { ReplicationMode } from "../types/ReplicationMode"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { Table } from "../../schema-builder/table/Table"
 import { TypeORMError } from "../../error"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import { DriverNotSupportNamedPlaceholdersError } from "../../error/DriverNotSupportNamedPlaceholdersError"
 
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
     declare driver: any
@@ -90,6 +92,7 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Starts transaction on the current connection.
+     * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         this.isTransactionActive = true
@@ -156,13 +159,18 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         useStructuredResult = false,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        if (parameters && !Array.isArray(parameters))
+            throw new DriverNotSupportNamedPlaceholdersError()
 
         const raw = await this.client.query(query, parameters)
 
@@ -187,6 +195,8 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Change table comment.
+     * @param tableOrName
+     * @param comment
      */
     changeTableComment(
         tableOrName: Table | string,

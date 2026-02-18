@@ -470,6 +470,13 @@ const rawData = await repository.query(
     "SELECT * FROM USERS WHERE name = @0 and age = @1",
     ["John", 24],
 )
+
+// mysql2 additionally supports named placeholders
+// when extras.namedPlaceholders is true
+const rawData = await repository.query(
+    "SELECT * FROM USERS WHERE name = :name and age = :age",
+    { name: "John", age: 24 },
+)
 ```
 
 - `clear` - Clears all the data from the given table (truncates/drops it).

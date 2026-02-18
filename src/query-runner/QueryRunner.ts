@@ -116,17 +116,26 @@ export interface QueryRunner extends AsyncDisposable {
 
     /**
      * Executes a given SQL query and returns raw database results.
+     *
+     * Note: Parameters may be named if using mysql2 with extras.namedPlaceholders set:
+     * Example:
+     * ```ts
+     * query(
+     *   "SELECT * FROM USERS WHERE name = :name and age = :age",
+     *   { name: "John", age: 24 },
+     * )
+     * ```
      */
     query(
         query: string,
-        parameters: any[] | undefined,
+        parameters: any[] | ObjectLiteral | undefined,
         useStructuredResult: true,
     ): Promise<QueryResult>
 
     /**
      * Executes a given SQL query and returns raw database results.
      */
-    query(query: string, parameters?: any[]): Promise<any>
+    query(query: string, parameters?: any[] | ObjectLiteral): Promise<any>
 
     /**
      * Tagged template function that executes raw SQL query and returns raw database results.
