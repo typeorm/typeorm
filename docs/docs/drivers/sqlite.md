@@ -76,3 +76,44 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 ## Column Types
 
 `int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`, `numeric`, `float`, `double`, `real`, `double precision`, `datetime`, `varying character`, `character`, `native character`, `varchar`, `nchar`, `nvarchar2`, `unsigned big int`, `boolean`, `blob`, `text`, `clob`, `date`
+
+## Strict Tables
+
+SQLite supports strict tables (requires SQLite 3.37.0+), which enforce type safety and enhance data integrity. To enable strict mode for an entity, use the `strict` option in the `@Entity` decorator:
+
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+
+@Entity({ strict: true })
+export class User {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    name: string
+
+    @Column()
+    email: string
+}
+```
+
+When strict mode is enabled, TypeORM will:
+
+- Create the table with the `STRICT` keyword
+- Automatically convert column types to SQLite strict-compatible types:
+    - Text types (`varchar`, `char`, `nchar`, etc.) → `text`
+    - Integer types (`int`, `tinyint`, `smallint`, `bigint`, etc.) → `integer`
+    - Numeric/decimal types → `real`
+    - Date/time types → `text` (SQLite stores as text)
+    - Boolean → `integer` (SQLite stores as 0/1)
+    - JSON → `text`
+    - BLOB → `blob`
+    - Other types → `any`
+
+Benefits of strict tables:
+
+- **Type safety**: Ensures data stored matches the declared column type
+- **Data integrity**: Prevents type coercion issues
+- **Standards compliance**: Aligns SQLite behavior more closely with other SQL databases
+
+For more information, see the [SQLite strict tables documentation](https://www.sqlite.org/stricttables.html).

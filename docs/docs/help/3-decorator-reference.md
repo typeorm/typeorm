@@ -22,6 +22,7 @@ You can also specify some additional entity options:
 - `engine` - database engine to be set during table creation (works only in some databases).
 - `synchronize` - entities marked with `false` are skipped from schema updates.
 - `orderBy` - specifies default ordering for entities when using `find` operations and `QueryBuilder`.
+- `strict` - enables strict mode for SQLite. When set to `true`, columns are enforced to have their defined types. Supported only for SQLite (requires SQLite 3.37.0+). For more information, see [SQLite strict tables](https://www.sqlite.org/stricttables.html).
 
 Example:
 
@@ -39,6 +40,18 @@ Example:
 })
 export class User {}
 ```
+
+For SQLite, you can also enable strict mode:
+
+```typescript
+@Entity({
+    name: "users",
+    strict: true,
+})
+export class User {}
+```
+
+This will create a table with the `STRICT` keyword, ensuring type safety and data integrity in SQLite.
 
 Learn more about [Entities](../entity/1-entities.md).
 

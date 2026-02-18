@@ -80,6 +80,26 @@ When using an entity constructor its arguments **must be optional**. Since ORM c
 
 Learn more about parameters `@Entity` in [Decorators reference](../help/3-decorator-reference.md).
 
+### SQLite Strict Mode
+
+For SQLite databases, you can enable strict mode to enforce type safety on your tables. When enabled, strict mode ensures that columns are always treated with their defined types, preventing type coercion issues. To enable this, set the `strict` option to `true` in the `@Entity` decorator:
+
+```typescript
+@Entity({ strict: true })
+export class User {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    firstName: string
+
+    @Column()
+    lastName: string
+}
+```
+
+Strict mode requires SQLite 3.37.0 or later. For more information, see [SQLite Strict Tables](../drivers/sqlite.md#strict-tables).
+
 ## Entity columns
 
 Since database tables consist of columns your entities must consist of columns too.
