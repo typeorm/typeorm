@@ -291,6 +291,10 @@ export class SapDriver implements Driver {
                 (this.options.pool?.idleTimeout
                     ? this.options.pool.idleTimeout / 1000
                     : 30),
+            maxWaitTimeoutIfPoolExhausted:
+                this.options.pool?.maxWaitTimeoutIfPoolExhausted ??
+                this.options.pool?.requestTimeout ??
+                0,
         }
         if (this.options.pool?.pingCheck) {
             poolOptions.pingCheck = this.options.pool.pingCheck
@@ -406,15 +410,7 @@ export class SapDriver implements Driver {
         nativeParameters: ObjectLiteral,
     ): [string, any[]] {
         const escapedParameters: any[] = Object.keys(nativeParameters).map(
-            (key) => {
-                if (nativeParameters[key] instanceof Date)
-                    return DateUtils.mixedDateToDatetimeString(
-                        nativeParameters[key],
-                        true,
-                    )
-
-                return nativeParameters[key]
-            },
+            (key) => nativeParameters[key],
         )
 
         if (!parameters || !Object.keys(parameters).length)
@@ -443,10 +439,6 @@ export class SapDriver implements Driver {
 
                 if (typeof value === "function") {
                     return value()
-                }
-
-                if (value instanceof Date) {
-                    return DateUtils.mixedDateToDatetimeString(value, true)
                 }
 
                 escapedParameters.push(value)

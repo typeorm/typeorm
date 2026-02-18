@@ -663,9 +663,9 @@ export class MysqlDriver implements Driver {
                 utc: columnMetadata.utc,
             })
         } else if (columnMetadata.type === "json") {
-            // mysql2 only parse if it's a valid JSON string representation
-            // but not if it's already an object or a JSON primitive
-            // If it's not a string, mysql2 has already parsed it correctly
+            // Only parse if it's a valid JSON string representation,
+            // but not if it's already an object or a JSON primitive.
+            // If it's not a string, mysql2 has already parsed it correctly.
             if (typeof value === "string") {
                 try {
                     // Try to parse it - if it fails, it's already a parsed string value

@@ -4,6 +4,7 @@ import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterf
 import { ColumnMetadata } from "./ColumnMetadata"
 import { EmbeddedMetadata } from "./EmbeddedMetadata"
 import { TypeORMError } from "../error"
+import { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
 
 /**
  * Index metadata contains all information about table's index.
@@ -120,6 +121,13 @@ export class IndexMetadata {
     where?: string
 
     /**
+     * The `type` option defines the type of the index being created.
+     * Supported types include B-tree, Hash, GiST, SP-GiST, GIN, and BRIN
+     * This option is only applicable in PostgreSQL.
+     */
+    type?: TableIndexTypes
+
+    /**
      * Map of column names with order set.
      * Used only by MongoDB driver.
      */
@@ -135,6 +143,19 @@ export class IndexMetadata {
         columns?: ColumnMetadata[]
         args?: IndexMetadataArgs
     }) {
+        // check if index type is supported
+        if (
+            options.args &&
+            options.args.type &&
+            ((options.entityMetadata.connection.driver.supportedIndexTypes &&
+                !options.entityMetadata.connection.driver.supportedIndexTypes.find(
+                    (idx) => idx === options.args?.type,
+                )) ||
+                !options.entityMetadata.connection.driver.supportedIndexTypes)
+        ) {
+            throw new TypeORMError(`Unsupported index type`)
+        }
+
         this.entityMetadata = options.entityMetadata
         this.embeddedMetadata = options.embeddedMetadata
         if (options.columns) this.columns = options.columns
@@ -147,7 +168,8 @@ export class IndexMetadata {
             )
                 this.synchronize = options.args.synchronize
             this.isUnique = !!options.args.unique
-            this.isSpatial = !!options.args.spatial
+            this.isSpatial =
+                !!options.args.spatial || options.args.type === "gist"
             this.isFulltext = !!options.args.fulltext
             this.isNullFiltered = !!options.args.nullFiltered
             this.parser = options.args.parser
@@ -158,6 +180,7 @@ export class IndexMetadata {
             this.expireAfterSeconds = options.args.expireAfterSeconds
             this.givenName = options.args.name
             this.givenColumnNames = options.args.columns
+            this.type = options.args.type
         }
     }
 

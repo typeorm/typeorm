@@ -1,9 +1,11 @@
-import shajs from "sha.js"
+import { RandomGenerator } from "./RandomGenerator"
 
 /**
  * Converts string into camelCase.
- *
+ * @param str String to be converted.
+ * @param firstCapital If true, the first character will be capitalized.
  * @see http://stackoverflow.com/questions/2970525/converting-any-string-into-camel-case
+ * @returns camelCase string
  */
 export function camelCase(str: string, firstCapital: boolean = false): string {
     if (firstCapital) str = " " + str
@@ -15,7 +17,8 @@ export function camelCase(str: string, firstCapital: boolean = false): string {
 
 /**
  * Converts string into snake_case.
- *
+ * @param str String to be converted.
+ * @returns snake_case string
  */
 export function snakeCase(str: string): string {
     return (
@@ -30,7 +33,8 @@ export function snakeCase(str: string): string {
 
 /**
  * Converts string into Title Case.
- *
+ * @param str String to be converted.
+ * @returns Title Case string
  * @see http://stackoverflow.com/questions/196972/convert-string-to-title-case-with-javascript
  */
 export function titleCase(str: string): string {
@@ -42,6 +46,9 @@ export function titleCase(str: string): string {
 
 /**
  * Builds abbreviated string from given string;
+ * @param str String to be abbreviated.
+ * @param abbrLettersCount Number of letters to be used for abbreviation.
+ * @returns abbreviated string
  */
 export function abbreviate(str: string, abbrLettersCount: number = 1): string {
     const words = str
@@ -65,12 +72,9 @@ export interface IShortenOptions {
 /**
  * Shorten a given `input`. Useful for RDBMS imposing a limit on the
  * maximum length of aliases and column names in SQL queries.
- *
  * @param input String to be shortened.
  * @param options Default to `4` for segments length, `2` for terms length, `'__'` as a separator.
- *
- * @return Shortened `input`.
- *
+ * @returns Shortened `input`.
  * @example
  * // returns: "UsShCa__orde__mark__dire"
  * shorten('UserShoppingCart__order__market__director')
@@ -92,6 +96,7 @@ export function shorten(input: string, options: IShortenOptions = {}): string {
         // split the given segment into many terms based on an eventual camel cased name
         const segmentTerms = val
             .replace(/([a-z\xE0-\xFF])([A-Z\xC0-\xDF])/g, "$1 $2")
+            .replace(/(_)([a-z])/g, " $2")
             .split(" ")
         // "OrderItemList" becomes "OrItLi", while "company" becomes "comp"
         const length = segmentTerms.length > 1 ? termLength : segmentLength
@@ -106,22 +111,39 @@ export function shorten(input: string, options: IShortenOptions = {}): string {
     return shortSegments.join(separator)
 }
 
+/**
+ * Checks if the current environment is Node.js.
+ * @returns `true` if the current environment is Node.js, `false` otherwise.
+ */
+function isNode(): boolean {
+    return typeof process !== "undefined" && !!process.versions?.node
+}
+
 interface IHashOptions {
     length?: number
 }
 
 /**
  * Returns a SHA-1 hex digest for internal IDs/aliases (not for cryptographic security)
- *
  * @param input String to be hashed.
+ * @param options - Options object.
  * @param options.length Optionally, shorten the output to desired length.
+ * @returns SHA-1 hex digest
  */
 export function hash(input: string, options: IHashOptions = {}): string {
-    const hashFunction = shajs("sha1")
-    hashFunction.update(input, "utf8")
-    const hashedInput = hashFunction.digest("hex")
-    if (options.length && options.length > 0) {
-        return hashedInput.slice(0, options.length)
+    let sha1: string
+    if (isNode()) {
+        const crypto = require("node:crypto") as typeof import("node:crypto")
+        const hashFunction = crypto.createHash("sha1")
+        hashFunction.update(input, "utf8")
+        sha1 = hashFunction.digest("hex")
+    } else {
+        sha1 = RandomGenerator.sha1(input)
     }
-    return hashedInput
+
+    if (options.length && options.length > 0) {
+        return sha1.slice(0, options.length)
+    }
+
+    return sha1
 }

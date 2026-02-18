@@ -172,6 +172,7 @@ export class MaterializedPathSubjectExecutor {
                     }
                 }),
             )
+            .withDeleted()
             .getRawOne()
             .then((result) => (result ? result["path"] : ""))
     }

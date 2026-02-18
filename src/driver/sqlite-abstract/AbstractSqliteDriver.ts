@@ -669,6 +669,13 @@ export abstract class AbstractSqliteDriver implements Driver {
             return undefined
         }
 
+        if (
+            Array.isArray(defaultValue) &&
+            columnMetadata.type === "simple-enum"
+        ) {
+            return `'${defaultValue.join(",")}'`
+        }
+
         return `${defaultValue}`
     }
 

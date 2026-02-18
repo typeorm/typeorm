@@ -1,5 +1,5 @@
 import path from "path"
-import * as process from "process"
+import process from "process"
 import * as yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
 import { DataSource } from "../data-source"

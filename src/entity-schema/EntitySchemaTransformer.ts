@@ -363,6 +363,7 @@ export class EntitySchemaTransformer {
                     target: options.target || options.name,
                     name: exclusion.name,
                     expression: exclusion.expression,
+                    deferrable: exclusion.deferrable,
                 }
                 metadataArgsStorage.exclusions.push(exclusionArgs)
             })

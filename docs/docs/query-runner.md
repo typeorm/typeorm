@@ -5,6 +5,8 @@
 Each new `QueryRunner` instance takes a single connection from the connection pool, if the RDBMS supports connection pooling.
 For databases that do not support connection pools, it uses the same connection across the entire data source.
 
+The full QueryRunner API is documented in the [migrations section](./migrations/09-api.md).
+
 ## Creating a new `QueryRunner` instance
 
 Use the `createQueryRunner` method to create a new `QueryRunner`:
@@ -37,7 +39,7 @@ await queryRunner.release()
 await queryRunner.release()
 ```
 
-After `QueryRunner` is released, it is no longer possible to use the query runner methods.
+After the `QueryRunner` is released, it is no longer possible to use the query runner methods.
 
 `QueryRunner` also has its own `EntityManager` instance, which you can use through the `manager` property to run `EntityManager` queries on a particular database connection used by the `QueryRunner` instance:
 

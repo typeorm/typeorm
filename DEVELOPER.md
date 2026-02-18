@@ -2,12 +2,6 @@
 
 This document describes how to set up your development environment and run TypeORM test cases.
 
-* [Prerequisite Software](#prerequisite-software)
-* [Getting the Sources](#getting-the-sources)
-* [Installing NPM Modules](#installing-npm-modules)
-* [Building](#building)
-* [Running Tests Locally](#running-tests-locally)
-
 See the [contribution guidelines](https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md)
 if you'd like to contribute to TypeORM.
 
@@ -16,18 +10,15 @@ if you'd like to contribute to TypeORM.
 Before you can build and test TypeORM, you must install and configure the
 following products on your development machine:
 
-* [Git](http://git-scm.com) and/or the **GitHub app** (for [Mac](http://mac.github.com) or [Windows](http://windows.github.com));
-    [GitHub's Guide to Installing Git](https://docs.github.com/get-started/git-basics/set-up-git) is a good source of information.
-* [Node.js](https://nodejs.org) can be installed from the official website, the operating system's package manager, or using a Node.js version manager like [fnm](https://fnm.vercel.app).
-* [MySQL](https://www.mysql.com/) is required to run tests on this platform (or docker)
-* [MariaDB](https://mariadb.com/) is required to run tests on this platform (or docker)
-* [Postgres](https://www.postgresql.org/) is required to run tests on this platform (or docker)
-* [Oracle](https://www.oracle.com/database/index.html) is required to run tests on this platform
-* [Microsoft SQL Server](https://www.microsoft.com/en-us/cloud-platform/sql-server) is required to run tests on this platform
+- [Git](http://git-scm.com) and/or the **GitHub app** (for [Mac](http://mac.github.com) or [Windows](http://windows.github.com)); [GitHub's Guide to Installing Git](https://docs.github.com/get-started/git-basics/set-up-git) is a good source of information.
+- [Node.js](https://nodejs.org) can be installed using a Node.js version manager like [fnm](https://fnm.vercel.app) or [nvm](https://github.com/nvm-sh/nvm).
+- [Mysql](https://www.mysql.com/) is required to run tests on this platform (or docker)
+- [MariaDB](https://mariadb.com/) is required to run tests on this platform (or docker)
+- [Postgres](https://www.postgresql.org/) is required to run tests on this platform (or docker)
+- [Oracle](https://www.oracle.com/database/index.html) is required to run tests on this platform
+- [Microsoft SQL Server](https://www.microsoft.com/en-us/cloud-platform/sql-server) is required to run tests on this platform
 
-For convenience, you can also use the [Docker](https://www.docker.com/) images
-provided in [docker-compose.yml](https://github.com/typeorm/typeorm/blob/master/docker-compose.yml)
-to run databases locally:
+For convenience, you can also use the [Docker](https://www.docker.com/) images provided in [docker-compose.yml](https://github.com/typeorm/typeorm/blob/master/docker-compose.yml) to run databases locally:
 
 ```shell
 docker compose up postgres-17
@@ -53,22 +44,12 @@ cd typeorm
 git remote add upstream https://github.com/typeorm/typeorm.git
 ```
 
-## Node
-
-You should have node installed in the version described in [.nvmrc](.nvmrc).
-
-It is recommended to configure your OS to automatically switch to use this version whenever you enter project folder. This can be achieved in many ways:
-
--   [`fnm`](https://github.com/Schniz/fnm)
--   [`zsh-nvm`](https://github.com/lukechilds/zsh-nvm#auto-use)
--   [`asdf`](https://asdf-vm.com) with `asdf-nodejs` plugin and [`legacy_version_file = true`](https://asdf-vm.com/manage/configuration.html#legacy-version-file) option
-
 ## Installing package dependencies
 
 Install all TypeORM dependencies by running this command:
 
 ```shell
-npm install
+pnpm install
 ```
 
 ## ORM config
@@ -84,7 +65,7 @@ cp ormconfig.sample.json ormconfig.json
 To build a distribution package of TypeORM run:
 
 ```shell
-npm run package
+pnpm run package
 ```
 
 This command will generate a distribution package in the `build/package` directory.
@@ -94,7 +75,7 @@ You can link (or simply copy/paste) this directory into your project and test Ty
 To build the distribution package of TypeORM packed into a `.tgz`, run:
 
 ```shell
-cd build/package && npm pack
+cd build/package && pnpm pack
 ```
 
 This command will generate a distribution package tar in the `build` directory (`build/typeorm-x.x.x.tgz`).
@@ -116,8 +97,8 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../utils/test-utils"
+import { DataSource } from "../../../../src/data-source/DataSource"
 
 describe("description of the functionality you're testing", () => {
     let dataSources: DataSource[]
@@ -154,7 +135,7 @@ To run the tests, setup your environment configuration by copying `ormconfig.sam
 Run the tests as follows:
 
 ```shell
-npm test
+pnpm run test
 ```
 
 You should make sure the test suites pass before submitting a PR to GitHub. Tests are run on PRs via GitHub Actions after approval, but your fork repository should be able to run CI as well. All tests need to pass before a PR will be merged.
@@ -170,32 +151,53 @@ describe.only('your describe test', ....)
 Alternatively, you can use the `--grep` flag to pass a regex to `mocha`. Only the tests that have `describe`/`it` statements that match the regex will be run. For example:
 
 ```shell
-npm run test -- --grep "your test name"
+pnpm run test -- --grep "your test name"
 ```
 
 ### Faster developer cycle for editing code and running tests
 
-The `npm run test` script works by deleting built TypeScript code, rebuilding the codebase, and then running tests. This can take a long time.
+The `pnpm run test` script works by deleting built TypeScript code, rebuilding the codebase, and then running tests. This can take a long time.
 
-Instead, for a quicker feedback cycle, you can run `npm run compile -- --watch` to make a fresh build and instruct TypeScript to watch for changes and only compile what code you've changed.
+Instead, for a quicker feedback cycle, you can run `pnpm run compile -- --watch` to make a fresh build and instruct TypeScript to watch for changes and only compile what code you've changed.
 
-Once TypeScript finishes compiling your changes, you can run `npm run test:fast` (instead of `test`), to trigger a test without causing a full recompile, which allows you to edit and check your changes much faster.
+Once TypeScript finishes compiling your changes, you can run `pnpm run test:fast` (instead of `test`), to trigger a test without causing a full recompile, which allows you to edit and check your changes much faster.
 
 ## Using Docker
 
-To run your tests you need the Database Management Systems (DBMS) installed on your machine. Alternatively, you can use docker with the DBMS running in containers. To have docker run all the DBMS for you simply run `docker-compose up`
-in the root of the project. Once all images are fetched and are running, you can run the tests.
+To run your tests you need the Database Management Systems (DBMS) installed on your machine. Alternatively, you can use docker with the DBMS running in containers. To have docker run all the DBMS for you simply run `docker compose up` in the root of the project. Once all images are fetched and are running, you can run the tests.
 
--   The docker image of mssql-server needs at least 3.25GB of RAM.
--   Make sure to assign enough memory to the Docker VM if you're running on Docker for Mac or Windows
+- The docker image of mssql-server needs at least 3.25GB of RAM.
+- Make sure to assign enough memory to the Docker VM if you're running on Docker for Mac or Windows
 
 ## Release Process
 
-To create a new release, follow these steps:
+TypeORM maintains two active branches:
 
-1. Create a new branch from `master` with the format `release-x.x.x` (e.g. `release-0.3.23`).
-2. Update the version in `package.json` and run `npm install` to update the lock file.
-3. Run the `npm run changelog` command to generate the changelog for the new version.
-4. Commit the changes and create a pull request to merge the release branch into `master`.
-5. Once the pull request is approved and merged, create a new release on GitHub with the same version number.
-6. The `publish-package.yml` script will then run a GitHub Actions workflow that will publish the new version to npm.
+| Branch   | npm dist-tag | Purpose                        |
+| -------- | ------------ | ------------------------------ |
+| `v0.3`   | `latest`     | Current stable release (0.3.x) |
+| `master` | `master`     | v1.0 preview / pre-release     |
+
+Publishing is handled by the `publish-package.yml` workflow using npm trusted publishing (OIDC). No npm tokens are needed.
+
+### Stable release (v0.3.x)
+
+1. Create a branch from `v0.3` (e.g. `release-0.3.29`).
+2. Update the version in `package.json` and run `pnpm install` to update the lock file.
+3. Run `pnpm run changelog` to generate the changelog.
+4. Commit the changes and create a pull request targeting `v0.3`.
+5. Once merged, create a GitHub Release from the `v0.3` branch with a matching tag (e.g. `0.3.29`).
+6. The workflow triggers on the `release: published` event and publishes to npm.
+
+### Pre-release (v1.0)
+
+1. Create a branch from `master` (e.g. `release-1.0.0-alpha.2`).
+2. Update the version in `package.json` and run `pnpm install` to update the lock file.
+3. Run `pnpm run changelog` to generate the changelog.
+4. Commit the changes and create a pull request targeting `master`.
+5. Once merged, create a GitHub Release from `master` with a matching tag and mark it as a **pre-release**.
+6. The workflow publishes to npm. Use the GitHub Release UI to set the appropriate dist-tag (e.g. `next`), or update the workflow if a custom tag is needed.
+
+### Nightly builds
+
+Nightly versions are published automatically at 02:00 UTC for both `master` and `v0.3` when there have been commits in the last 24 hours. They can also be triggered manually via workflow dispatch. Nightlies are tagged `master` and `v0.3` on npm respectively.

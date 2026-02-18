@@ -12,6 +12,8 @@ export class OrmUtils {
 
     /**
      * Chunks array into pieces.
+     * @param array
+     * @param size
      */
     public static chunk<T>(array: T[], size: number): T[][] {
         return Array.from(Array(Math.ceil(array.length / size)), (_, i) => {
@@ -83,6 +85,8 @@ export class OrmUtils {
 
     /**
      * Deep Object.assign.
+     * @param target
+     * @param sources
      */
     public static mergeDeep<T>(
         target: T,
@@ -101,6 +105,7 @@ export class OrmUtils {
 
     /**
      * Creates a shallow copy of the object, without invoking the constructor
+     * @param object
      */
     public static cloneObject<T extends object>(object: T): T {
         if (object === null || object === undefined) {
@@ -115,7 +120,7 @@ export class OrmUtils {
 
     /**
      * Deep compare objects.
-     *
+     * @param args
      * @see http://stackoverflow.com/a/1144249
      */
     public static deepCompare<T>(...args: T[]): boolean {
@@ -147,6 +152,8 @@ export class OrmUtils {
 
     /**
      * Gets deeper value of object.
+     * @param obj
+     * @param path
      */
     public static deepValue(obj: ObjectLiteral, path: string): any {
         const segments = path.split(".")
@@ -198,6 +205,8 @@ export class OrmUtils {
 
     /**
      * Check if two entity-id-maps are the same
+     * @param firstId
+     * @param secondId
      */
     public static compareIds(
         firstId: ObjectLiteral | undefined,
@@ -228,6 +237,7 @@ export class OrmUtils {
 
     /**
      * Transforms given value into boolean value.
+     * @param value
      */
     public static toBoolean(value: any): boolean {
         if (typeof value === "boolean") return value
@@ -241,6 +251,8 @@ export class OrmUtils {
 
     /**
      * Checks if two arrays of unique values contain the same values
+     * @param arr1
+     * @param arr2
      */
     public static isArraysEqual<T>(arr1: T[], arr2: T[]): boolean {
         if (arr1.length !== arr2.length) {
@@ -248,6 +260,22 @@ export class OrmUtils {
         }
 
         return arr1.every((element) => arr2.includes(element))
+    }
+
+    /**
+     * Returns items that are missing/extraneous in the second array
+     */
+    public static getArraysDiff<T>(
+        arr1: T[],
+        arr2: T[],
+    ): { extraItems: T[]; missingItems: T[] } {
+        const extraItems = arr1.filter((item) => !arr2.includes(item))
+        const missingItems = arr2.filter((item) => !arr1.includes(item))
+
+        return {
+            extraItems,
+            missingItems,
+        }
     }
 
     public static areMutuallyExclusive<T>(...lists: T[][]): boolean {
@@ -264,6 +292,8 @@ export class OrmUtils {
      * Parses the CHECK constraint on the specified column and returns
      * all values allowed by the constraint or undefined if the constraint
      * is not present.
+     * @param sql
+     * @param columnName
      */
     public static parseSqlCheckExpression(
         sql: string,
@@ -285,8 +315,8 @@ export class OrmUtils {
             const chars = afterMatch
 
             /**
-             * * When outside quotes: empty string
-             * * When inside single quotes: `'`
+             * When outside quotes: empty string
+             * When inside single quotes: `'`
              */
             let currentQuotes = ""
             let nextValue = ""
@@ -337,6 +367,7 @@ export class OrmUtils {
 
     /**
      * Checks if given criteria is null or empty.
+     * @param criteria
      */
     public static isCriteriaNullOrEmpty(criteria: unknown): boolean {
         return (
@@ -352,6 +383,7 @@ export class OrmUtils {
     /**
      * Checks if given criteria is a primitive value.
      * Primitive values are strings, numbers and dates.
+     * @param criteria
      */
     public static isSinglePrimitiveCriteria(
         criteria: unknown,
@@ -365,6 +397,7 @@ export class OrmUtils {
 
     /**
      * Checks if given criteria is a primitive value or an array of primitive values.
+     * @param criteria
      */
     public static isPrimitiveCriteria(
         criteria: unknown,
@@ -442,24 +475,35 @@ export class OrmUtils {
         if (leftChain.indexOf(x) > -1 || rightChain.indexOf(y) > -1)
             return false
 
+        let iterableX = x
+        let iterableY = y
+
+        if (x instanceof Map) {
+            iterableX = Object.fromEntries(x)
+            iterableY = Object.fromEntries(y)
+        } else if (x instanceof Set) {
+            iterableX = Array.from(x)
+            iterableY = Array.from(y)
+        }
+
         // Quick checking of one object being a subset of another.
         // todo: cache the structure of arguments[0] for performance
-        for (p in y) {
-            if (y.hasOwnProperty(p) !== x.hasOwnProperty(p)) {
+        for (p in iterableY) {
+            if (iterableY.hasOwnProperty(p) !== iterableX.hasOwnProperty(p)) {
                 return false
-            } else if (typeof y[p] !== typeof x[p]) {
+            } else if (typeof iterableY[p] !== typeof iterableX[p]) {
                 return false
             }
         }
 
-        for (p in x) {
-            if (y.hasOwnProperty(p) !== x.hasOwnProperty(p)) {
+        for (p in iterableX) {
+            if (iterableY.hasOwnProperty(p) !== iterableX.hasOwnProperty(p)) {
                 return false
-            } else if (typeof y[p] !== typeof x[p]) {
+            } else if (typeof iterableY[p] !== typeof iterableX[p]) {
                 return false
             }
 
-            switch (typeof x[p]) {
+            switch (typeof iterableX[p]) {
                 case "object":
                 case "function":
                     leftChain.push(x)
@@ -469,8 +513,8 @@ export class OrmUtils {
                         !OrmUtils.compare2Objects(
                             leftChain,
                             rightChain,
-                            x[p],
-                            y[p],
+                            iterableX[p],
+                            iterableY[p],
                         )
                     ) {
                         return false
@@ -481,7 +525,7 @@ export class OrmUtils {
                     break
 
                 default:
-                    if (x[p] !== y[p]) {
+                    if (iterableX[p] !== iterableY[p]) {
                         return false
                     }
                     break

@@ -88,7 +88,7 @@ export class Gulpfile {
     packagePublishNext() {
         return gulp.src("package.json", { read: false })
             .pipe(shell([
-                "cd ./build/package && npm publish --tag next"
+                "cd ./build/package && pnpm publish --tag next"
             ]));
     }
 
@@ -190,16 +190,6 @@ export class Gulpfile {
     }
 
     /**
-     * Move reference to package.json one level up
-     */
-    @Task()
-    movePackageJsonReferenceLevelUp() {
-        return gulp.src("./build/package/commands/InitCommand.js")
-            .pipe(replace(/\.\.\/package.json/g, "package.json"))
-            .pipe(gulp.dest("./build/package/commands"));
-    }
-
-    /**
      * Creates a package that can be published to npm.
      */
     @SequenceTask()
@@ -217,7 +207,6 @@ export class Gulpfile {
                 "packagePreparePackageFile",
                 "packageCopyReadme",
                 "packageCopyShims",
-                "movePackageJsonReferenceLevelUp"
             ],
         ];
     }

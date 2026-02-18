@@ -41,6 +41,15 @@ const config: Config = {
                       defer: true,
                       "data-domain": "typeorm.io",
                   },
+                  {
+                      src: "https://widget.kapa.ai/kapa-widget.bundle.js",
+                      "data-website-id": "a9979852-2282-4862-87b3-b3631fb63d46",
+                      "data-project-name": "TypeORM",
+                      "data-project-color": "#d94400",
+                      "data-project-logo":
+                          "https://typeorm.io/img/typeorm-icon-colored.png",
+                      async: true,
+                  },
               ]
             : [],
 
@@ -97,6 +106,21 @@ const config: Config = {
                     sidebarId: "tutorialSidebar",
                     position: "left",
                     label: "Docs",
+                },
+                {
+                    type: "dropdown",
+                    label: "Version",
+                    position: "right",
+                    items: [
+                        {
+                            label: "Stable (v0.3)",
+                            href: "https://typeorm.io",
+                        },
+                        {
+                            label: "Dev (master)",
+                            href: "https://dev.typeorm.io",
+                        },
+                    ],
                 },
                 {
                     href: "https://github.com/typeorm/typeorm",

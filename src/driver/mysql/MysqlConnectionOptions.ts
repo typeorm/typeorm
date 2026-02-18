@@ -4,7 +4,6 @@ import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsO
 
 /**
  * MySQL specific connection options.
- *
  * @see https://github.com/mysqljs/mysql#connection-options
  */
 export interface MysqlConnectionOptions

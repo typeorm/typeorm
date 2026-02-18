@@ -26,4 +26,8 @@ export interface ReactNativeConnectionOptions extends BaseDataSourceOptions {
     readonly location: string
 
     readonly poolSize?: never
+    /**
+     * Encryption key for encryption supported databases
+     */
+    readonly encryptionKey?: string
 }

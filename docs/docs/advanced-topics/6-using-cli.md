@@ -61,12 +61,12 @@ typeorm init
 
 It creates all files needed for a basic project with TypeORM:
 
--   .gitignore
--   package.json
--   README.md
--   tsconfig.json
--   src/entity/User.ts
--   src/index.ts
+- .gitignore
+- package.json
+- README.md
+- tsconfig.json
+- src/entity/User.ts
+- src/index.ts
 
 Then you can run `npm install` to install all dependencies.
 After that, you can run your application by running `npm start`.
@@ -126,11 +126,11 @@ Learn more about [Subscribers](./4-listeners-and-subscribers.md).
 
 ## Manage migrations
 
-* `typeorm migration:create` - [create](../migrations/03-creating.md) empty migration
-* `typeorm migration:generate` - [generate](../migrations/04-generating.md) migration comparing entities with actual database schema
-* `typeorm migration:run` - [execute](../migrations/05-executing.md) all migrations
-* `typeorm migration:revert` - [revert](../migrations/06-reverting.md) last migration
-* `typeorm migration:show` - [list](../migrations/07-status.md) all migrations with their execution status
+- `typeorm migration:create` - [create](../migrations/03-creating.md) empty migration
+- `typeorm migration:generate` - [generate](../migrations/04-generating.md) migration comparing entities with actual database schema
+- `typeorm migration:run` - [execute](../migrations/05-executing.md) all migrations
+- `typeorm migration:revert` - [revert](../migrations/06-reverting.md) last migration
+- `typeorm migration:show` - [list](../migrations/07-status.md) all migrations with their execution status
 
 Learn more about [Migrations](../migrations/01-why.md).
 

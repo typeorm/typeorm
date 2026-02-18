@@ -8,6 +8,7 @@ import {
 import { Post } from "./entity/Post"
 import { Counters } from "./entity/Counters"
 import { expect } from "chai"
+import { Color } from "./entity/Color"
 
 describe("mongodb > array columns", () => {
     let connections: DataSource[]
@@ -33,9 +34,9 @@ describe("mongodb > array columns", () => {
                 post.numbers = [1, 0, 1]
                 post.booleans = [true, false, false]
                 post.counters = [
-                    new Counters(1, "number #1"),
-                    new Counters(2, "number #2"),
-                    new Counters(3, "number #3"),
+                    new Counters(1, "number #1", new Color("red")),
+                    new Counters(2, "number #2", new Color("green")),
+                    new Counters(3, "number #3", new Color("blue")),
                 ]
                 post.other1 = []
                 await postRepository.save(post)
@@ -77,15 +78,23 @@ describe("mongodb > array columns", () => {
                 loadedPost!.counters[1].text.should.be.equal("number #2")
                 loadedPost!.counters[2].text.should.be.equal("number #3")
 
+                loadedPost!.counters[0].color.should.be.instanceOf(Color)
+                loadedPost!.counters[1].color.should.be.instanceOf(Color)
+                loadedPost!.counters[2].color.should.be.instanceOf(Color)
+
+                loadedPost!.counters[0].color.name.should.be.equal("red")
+                loadedPost!.counters[1].color.name.should.be.equal("green")
+                loadedPost!.counters[2].color.name.should.be.equal("blue")
+
                 // now update the post
                 post.names = ["umed!", "dima!", "bakhrom!"]
                 post.numbers = [11, 10, 11]
                 post.booleans = [true, true, true]
                 post.counters = [
-                    new Counters(11, "number #11"),
-                    new Counters(12, "number #12"),
+                    new Counters(11, "number #11", new Color("yellow")),
+                    new Counters(12, "number #12", new Color("blue")),
                 ]
-                post.other1 = [new Counters(0, "other")]
+                post.other1 = [new Counters(0, "other", new Color("red"))]
                 await postRepository.save(post)
 
                 // now load updated post
@@ -126,9 +135,21 @@ describe("mongodb > array columns", () => {
                     "number #12",
                 )
 
+                loadedUpdatedPost!.counters[0].color.should.be.instanceOf(Color)
+                loadedUpdatedPost!.counters[1].color.should.be.instanceOf(Color)
+
+                loadedUpdatedPost!.counters[0].color.name.should.be.equal(
+                    "yellow",
+                )
+                loadedUpdatedPost!.counters[1].color.name.should.be.equal(
+                    "blue",
+                )
+
                 loadedUpdatedPost!.other1[0].should.be.instanceOf(Counters)
                 loadedUpdatedPost!.other1[0].likes.should.be.equal(0)
                 loadedUpdatedPost!.other1[0].text.should.be.equal("other")
+                loadedUpdatedPost!.other1[0].color.should.be.instanceOf(Color)
+                loadedUpdatedPost!.other1[0].color.name.should.be.equal("red")
             }),
         ))
 
@@ -141,9 +162,9 @@ describe("mongodb > array columns", () => {
                 post.numbers = [1, 0, 1]
                 post.booleans = [true, false, false]
                 post.counters = [
-                    new Counters(1, "number #1"),
-                    new Counters(2, "number #2"),
-                    new Counters(3, "number #3"),
+                    new Counters(1, "number #1", new Color("yellow")),
+                    new Counters(2, "number #2", new Color("blue")),
+                    new Counters(3, "number #3", new Color("green")),
                 ]
                 post.other1 = []
 

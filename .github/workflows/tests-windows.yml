@@ -11,18 +11,20 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
 
-      - run: npm ci
+      - run: pnpm install
       - run: cp .github/workflows/test/better-sqlite3.ormconfig.json ormconfig.json
-      - run: npx c8 npm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
@@ -34,18 +36,20 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
 
-      - run: npm ci
+      - run: pnpm install
       - run: cp .github/workflows/test/sqlite.ormconfig.json ormconfig.json
-      - run: npx c8 npm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
@@ -57,18 +61,20 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: actions/download-artifact@v4
+          cache: "pnpm"
+      - uses: actions/download-artifact@v6
         with:
           name: build
           path: build/
 
-      - run: npm ci
+      - run: pnpm install
       - run: cp .github/workflows/test/sqljs.ormconfig.json ormconfig.json
-      - run: npx c8 npm run test:ci
+      - run: pnpm exec c8 pnpm run test:ci
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2

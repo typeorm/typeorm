@@ -638,7 +638,9 @@ export class ColumnMetadata {
             // { data: { information: { counters: { id: ... } } } } format
 
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            const propertyNames = [...this.embeddedMetadata.parentPropertyNames]
+            const embeddedMetadataTree = [
+                ...this.embeddedMetadata.embeddedMetadataTree,
+            ]
             const isEmbeddedArray = this.embeddedMetadata.isArray
 
             // now need to access post[data][information][counters] to get column value from the counters
@@ -647,29 +649,49 @@ export class ColumnMetadata {
             // then { data: { information: { counters: [this.propertyName]: entity[data][information][counters][this.propertyName] } } }
             // this recursive function helps doing that
             const extractEmbeddedColumnValue = (
-                propertyNames: string[],
+                embeddedMetadataTree: EmbeddedMetadata[],
                 value: ObjectLiteral,
             ): ObjectLiteral => {
                 if (value === undefined) {
                     return {}
                 }
 
-                const propertyName = propertyNames.shift()
+                const embeddedMetadata = embeddedMetadataTree.at(0)
 
-                if (propertyName) {
-                    const submap = extractEmbeddedColumnValue(
-                        propertyNames,
-                        value[propertyName],
-                    )
-                    if (Object.keys(submap).length > 0) {
-                        return { [propertyName]: submap }
+                if (embeddedMetadata) {
+                    const embeddedPropertyName = embeddedMetadata.propertyName
+                    const embeddedPropertyValue = value[embeddedPropertyName]
+
+                    if (
+                        embeddedMetadata.isArray &&
+                        Array.isArray(embeddedPropertyValue)
+                    ) {
+                        return {
+                            [embeddedPropertyName]: embeddedPropertyValue.map(
+                                (element) =>
+                                    extractEmbeddedColumnValue(
+                                        embeddedMetadataTree.slice(1),
+                                        element,
+                                    ),
+                            ),
+                        }
                     }
+
+                    const submap = extractEmbeddedColumnValue(
+                        embeddedMetadataTree.slice(1),
+                        embeddedPropertyValue,
+                    )
+
+                    if (Object.keys(submap).length > 0) {
+                        return { [embeddedPropertyName]: submap }
+                    }
+
                     return {}
                 }
 
                 if (isEmbeddedArray && Array.isArray(value)) {
-                    return value.map((v) => ({
-                        [this.propertyName]: v[this.propertyName],
+                    return value.map((element) => ({
+                        [this.propertyName]: element[this.propertyName],
                     }))
                 }
 
@@ -682,7 +704,7 @@ export class ColumnMetadata {
 
                 return {}
             }
-            const map = extractEmbeddedColumnValue(propertyNames, entity)
+            const map = extractEmbeddedColumnValue(embeddedMetadataTree, entity)
 
             return Object.keys(map).length > 0 ? map : undefined
         } else {
@@ -690,7 +712,7 @@ export class ColumnMetadata {
             /**
              * Object.getOwnPropertyDescriptor checks if the relation is lazy, in which case value is a Promise
              * DO NOT use `entity[
-                this.relationMetadata.propertyName] instanceof Promise`, which will invoke property getter and make unwanted DB request
+             this.relationMetadata.propertyName] instanceof Promise`, which will invoke property getter and make unwanted DB request
              * refer: https://github.com/typeorm/typeorm/pull/8676#issuecomment-1049906331
              */
             if (
@@ -749,7 +771,7 @@ export class ColumnMetadata {
         entity: ObjectLiteral,
         transform: boolean = false,
     ): any | undefined {
-        if (entity === undefined || entity === null) return undefined
+        if (entity === undefined || entity === null) return entity
 
         // extract column value from embeddeds of entity if column is in embedded
         let value: any = undefined

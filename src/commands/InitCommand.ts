@@ -85,7 +85,7 @@ export class InitCommand implements yargs.CommandModule {
                 InitCommand.getTsConfigTemplate(projectIsEsm),
             )
             await CommandUtils.createFile(
-                basePath + "/src/entity/User.ts",
+                basePath + "/src/entities/User.ts",
                 InitCommand.getUserEntityTemplate(database),
             )
             await CommandUtils.createFile(
@@ -96,7 +96,7 @@ export class InitCommand implements yargs.CommandModule {
                 basePath + "/src/index.ts",
                 InitCommand.getAppIndexTemplate(isExpress, projectIsEsm),
             )
-            await CommandUtils.createDirectories(basePath + "/src/migration")
+            await CommandUtils.createDirectories(basePath + "/src/migrations")
 
             // generate extra files for express application
             if (isExpress) {
@@ -105,7 +105,7 @@ export class InitCommand implements yargs.CommandModule {
                     InitCommand.getRoutesTemplate(projectIsEsm),
                 )
                 await CommandUtils.createFile(
-                    basePath + "/src/controller/UserController.ts",
+                    basePath + "/src/controllers/UserController.ts",
                     InitCommand.getControllerTemplate(projectIsEsm),
                 )
             }
@@ -253,7 +253,7 @@ export class InitCommand implements yargs.CommandModule {
 
         return `import "reflect-metadata"
 import { DataSource } from "typeorm"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 export const AppDataSource = new DataSource({
 ${dbSettings.map((s) => `  ${s},`).join("\n")}
@@ -356,7 +356,7 @@ export class User {
      * Gets contents of the route file (used when express is enabled).
      */
     protected static getRoutesTemplate(isEsm: boolean): string {
-        return `import { UserController } from "./controller/UserController${
+        return `import { UserController } from "./controllers/UserController${
             isEsm ? ".js" : ""
         }"
 
@@ -391,7 +391,7 @@ export const Routes = [{
             isEsm ? ".js" : ""
         }"
 import { NextFunction, Request, Response } from "express"
-import { User } from "../entity/User${isEsm ? ".js" : ""}"
+import { User } from "../entities/User${isEsm ? ".js" : ""}"
 
 export class UserController {
 
@@ -457,7 +457,7 @@ import ${!isEsm ? "* as " : ""}bodyParser from "body-parser"
 import { Request, Response } from "express"
 import { AppDataSource } from "./data-source${isEsm ? ".js" : ""}"
 import { Routes } from "./routes${isEsm ? ".js" : ""}"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 AppDataSource.initialize().then(async () => {
 
@@ -509,7 +509,7 @@ AppDataSource.initialize().then(async () => {
             return `import { AppDataSource } from "./data-source${
                 isEsm ? ".js" : ""
             }"
-import { User } from "./entity/User${isEsm ? ".js" : ""}"
+import { User } from "./entities/User${isEsm ? ".js" : ""}"
 
 AppDataSource.initialize().then(async () => {
 
