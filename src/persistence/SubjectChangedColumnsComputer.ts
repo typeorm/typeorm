@@ -80,21 +80,42 @@ export class SubjectChangedColumnsComputer {
                     )
                     if (value !== null && value !== undefined) return
                 }
-                let normalizedValue = entityValue
+            let normalizedValue = entityValue
+            let normalizedDatabaseValue = databaseValue
+            const isDateTimeColumn = column.isDateTimeType()
+            const hasTransformer = !!column.transformer
                 // if both values are not null, normalize special values to make proper comparision
                 if (entityValue !== null && databaseValue !== null) {
+                if (hasTransformer && isDateTimeColumn) {
+                    normalizedValue =
+                        column.isArray && Array.isArray(entityValue)
+                            ? entityValue.map((value: any) =>
+                                  ApplyValueTransformers.transformTo(
+                                      column.transformer!,
+                                      value,
+                                  ),
+                              )
+                            : ApplyValueTransformers.transformTo(
+                                  column.transformer!,
+                                  entityValue,
+                              )
+                }
+
                     switch (column.type) {
                         case "date":
                             normalizedValue = column.isArray
-                                ? entityValue.map((date: Date) =>
+                            ? (normalizedValue as Date[]).map((date: Date) =>
                                       DateUtils.mixedDateToDateString(date),
                                   )
-                                : DateUtils.mixedDateToDateString(entityValue)
-                            databaseValue = column.isArray
-                                ? databaseValue.map((date: Date) =>
+                            : DateUtils.mixedDateToDateString(normalizedValue)
+                        normalizedDatabaseValue = column.isArray
+                            ? (normalizedDatabaseValue as Date[]).map(
+                                  (date: Date) =>
                                       DateUtils.mixedDateToDateString(date),
-                                  )
-                                : DateUtils.mixedDateToDateString(databaseValue)
+                              )
+                            : DateUtils.mixedDateToDateString(
+                                  normalizedDatabaseValue,
+                              )
                             break
 
                         case "time":
@@ -102,15 +123,18 @@ export class SubjectChangedColumnsComputer {
                         case "time without time zone":
                         case "timetz":
                             normalizedValue = column.isArray
-                                ? entityValue.map((date: Date) =>
+                            ? (normalizedValue as Date[]).map((date: Date) =>
                                       DateUtils.mixedDateToTimeString(date),
                                   )
-                                : DateUtils.mixedDateToTimeString(entityValue)
-                            databaseValue = column.isArray
-                                ? databaseValue.map((date: Date) =>
+                            : DateUtils.mixedDateToTimeString(normalizedValue)
+                        normalizedDatabaseValue = column.isArray
+                            ? (normalizedDatabaseValue as Date[]).map(
+                                  (date: Date) =>
                                       DateUtils.mixedDateToTimeString(date),
-                                  )
-                                : DateUtils.mixedDateToTimeString(databaseValue)
+                              )
+                            : DateUtils.mixedDateToTimeString(
+                                  normalizedDatabaseValue,
+                              )
                             break
 
                         case "datetime":
@@ -122,23 +146,24 @@ export class SubjectChangedColumnsComputer {
                         case "timestamp with local time zone":
                         case "timestamptz":
                             normalizedValue = column.isArray
-                                ? entityValue.map((date: Date) =>
+                            ? (normalizedValue as Date[]).map((date: Date) =>
                                       DateUtils.mixedDateToUtcDatetimeString(
                                           date,
                                       ),
                                   )
                                 : DateUtils.mixedDateToUtcDatetimeString(
-                                      entityValue,
+                                  normalizedValue,
                                   )
 
-                            databaseValue = column.isArray
-                                ? databaseValue.map((date: Date) =>
+                        normalizedDatabaseValue = column.isArray
+                            ? (normalizedDatabaseValue as Date[]).map(
+                                  (date: Date) =>
                                       DateUtils.mixedDateToUtcDatetimeString(
                                           date,
                                       ),
-                                  )
+                              )
                                 : DateUtils.mixedDateToUtcDatetimeString(
-                                      databaseValue,
+                                  normalizedDatabaseValue,
                                   )
 
                             break
@@ -157,24 +182,24 @@ export class SubjectChangedColumnsComputer {
                         case "simple-array":
                             normalizedValue =
                                 DateUtils.simpleArrayToString(entityValue)
-                            databaseValue =
+                        normalizedDatabaseValue =
                                 DateUtils.simpleArrayToString(databaseValue)
                             break
                         case "simple-enum":
                             normalizedValue =
                                 DateUtils.simpleEnumToString(entityValue)
-                            databaseValue =
+                        normalizedDatabaseValue =
                                 DateUtils.simpleEnumToString(databaseValue)
                             break
                         case "simple-json":
                             normalizedValue =
                                 DateUtils.simpleJsonToString(entityValue)
-                            databaseValue =
+                        normalizedDatabaseValue =
                                 DateUtils.simpleJsonToString(databaseValue)
                             break
                     }
 
-                    if (column.transformer) {
+                if (column.transformer && !isDateTimeColumn) {
                         normalizedValue = ApplyValueTransformers.transformTo(
                             column.transformer,
                             entityValue,
@@ -184,17 +209,22 @@ export class SubjectChangedColumnsComputer {
 
                 // if value is not changed - then do nothing
                 if (column.isArray) {
-                    if (OrmUtils.deepCompare(normalizedValue, databaseValue))
+                if (
+                    OrmUtils.deepCompare(
+                        normalizedValue,
+                        normalizedDatabaseValue,
+                    )
+                )
                         return
                 } else if (
                     Buffer.isBuffer(normalizedValue) &&
-                    Buffer.isBuffer(databaseValue)
+                Buffer.isBuffer(normalizedDatabaseValue)
                 ) {
-                    if (normalizedValue.equals(databaseValue)) {
+                if (normalizedValue.equals(normalizedDatabaseValue)) {
                         return
                     }
                 } else {
-                    if (normalizedValue === databaseValue) return
+                if (normalizedValue === normalizedDatabaseValue) return
                 }
             }
 
