@@ -144,6 +144,8 @@ const user = await manager.preload(User, partialUser)
   It saves all given entities in a single transaction (in the case of entity manager is not transactional).
   Also supports partial updating since all undefined properties are skipped. In order to make a value `NULL`, you must manually set the property to equal `null`.
 
+    When using `save()` with entities that have a UUID primary key, TypeORM treats UUIDs as case-insensitive for most databases. This means that UUIDs differing only by letter case (e.g., `A...` vs `a...`) are considered the same for insert/update detection. However, SQLite, Oracle, and SAP HANA treat UUIDs as case-sensitive, so `save()` will treat differently-cased UUIDs as distinct.
+
 ```typescript
 await manager.save(user)
 await manager.save([category1, category2, category3])
