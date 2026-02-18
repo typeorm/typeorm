@@ -15,7 +15,7 @@ describe("sqlite driver > file open flags", () => {
             (connections = await createTestingConnections({
                 name: "file:./temp/sqlitedb-memory.db?mode=memory",
                 entities: [],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
                 driverSpecific: {
                     flags:
                         sqlite3.OPEN_URI |
