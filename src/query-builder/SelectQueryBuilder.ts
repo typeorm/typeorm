@@ -2111,6 +2111,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             )
                             if (entities.length > 0) {
                                 this.push(entities[0])
+                            } else {
+                                this.push(chunk)
                             }
                             callback()
                         } catch (err) {
