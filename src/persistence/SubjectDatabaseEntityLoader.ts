@@ -30,6 +30,7 @@ export class SubjectDatabaseEntityLoader {
      *
      * loadAllRelations flag is used to load all relation ids of the object, no matter if they present in subject entity or not.
      * This option is used for deletion.
+     * @param operationType
      */
     async load(
         operationType: "save" | "remove" | "soft-remove" | "recover",
@@ -159,16 +160,22 @@ export class SubjectDatabaseEntityLoader {
         target: Function | string
         subjects: Subject[]
     }[] {
-        return this.subjects.reduce((groups, operatedEntity) => {
-            let group = groups.find(
-                (group) => group.target === operatedEntity.metadata.target,
-            )
-            if (!group) {
-                group = { target: operatedEntity.metadata.target, subjects: [] }
-                groups.push(group)
-            }
-            group.subjects.push(operatedEntity)
-            return groups
-        }, [] as { target: Function | string; subjects: Subject[] }[])
+        return this.subjects.reduce(
+            (groups, operatedEntity) => {
+                let group = groups.find(
+                    (group) => group.target === operatedEntity.metadata.target,
+                )
+                if (!group) {
+                    group = {
+                        target: operatedEntity.metadata.target,
+                        subjects: [],
+                    }
+                    groups.push(group)
+                }
+                group.subjects.push(operatedEntity)
+                return groups
+            },
+            [] as { target: Function | string; subjects: Subject[] }[],
+        )
     }
 }

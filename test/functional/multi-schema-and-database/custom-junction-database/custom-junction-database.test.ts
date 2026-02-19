@@ -26,9 +26,8 @@ describe("multi-schema-and-database > custom-junction-database", () => {
                 const queryRunner = connection.createQueryRunner()
                 if (connection.driver.options.type === "mssql") {
                     const postTable = await queryRunner.getTable("yoman..post")
-                    const categoryTable = await queryRunner.getTable(
-                        "yoman..category",
-                    )
+                    const categoryTable =
+                        await queryRunner.getTable("yoman..category")
                     const junctionMetadata = connection.getManyToManyMetadata(
                         Post,
                         "categories",
@@ -47,9 +46,8 @@ describe("multi-schema-and-database > custom-junction-database", () => {
                 } else {
                     // mysql
                     const postTable = await queryRunner.getTable("yoman.post")
-                    const categoryTable = await queryRunner.getTable(
-                        "yoman.category",
-                    )
+                    const categoryTable =
+                        await queryRunner.getTable("yoman.category")
                     const junctionMetadata = connection.getManyToManyMetadata(
                         Post,
                         "categories",

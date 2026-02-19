@@ -1,1 +1,1 @@
-npm run pre-commit
+pnpm exec lint-staged

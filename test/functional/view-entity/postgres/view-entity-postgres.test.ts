@@ -47,17 +47,15 @@ describe("view entity > postgres", () => {
                 post1.categoryId = category1.id
                 await queryRunner.manager.save(post1)
 
-                const emptyResult = await queryRunner.manager.find(
-                    PostByCategory,
-                )
+                const emptyResult =
+                    await queryRunner.manager.find(PostByCategory)
                 emptyResult.length.should.be.equal(0)
 
                 await queryRunner.query(
                     "REFRESH MATERIALIZED VIEW post_by_category",
                 )
-                const resultWithData = await queryRunner.manager.find(
-                    PostByCategory,
-                )
+                const resultWithData =
+                    await queryRunner.manager.find(PostByCategory)
                 resultWithData.length.should.be.equal(1)
 
                 expect(resultWithData[0].categoryName).to.eq(category1.name)
@@ -88,9 +86,8 @@ describe("view entity > postgres", () => {
                 post2.categoryId = category2.id
                 await connection.manager.save(post2)
 
-                const postCategories = await connection.manager.find(
-                    PostCategory,
-                )
+                const postCategories =
+                    await connection.manager.find(PostCategory)
                 postCategories.length.should.be.equal(2)
 
                 postCategories[0].id.should.be.equal(1)

@@ -148,9 +148,8 @@ describe("github issues > #7558 Child entities' wrong discriminator value when e
 
                 // Save the tree...
                 // We need to first save the parents step by step.
-                const savedMulOperator = await operatorTreeRepo.save(
-                    mulOperator,
-                )
+                const savedMulOperator =
+                    await operatorTreeRepo.save(mulOperator)
                 const plusOperator = nnaryOperatorRepo.create({
                     parent: savedMulOperator,
                     operator: "+",
@@ -158,9 +157,8 @@ describe("github issues > #7558 Child entities' wrong discriminator value when e
                 num3.parent = savedMulOperator
 
                 await operatorTreeRepo.save(num3)
-                const savedPlusOperator = await operatorTreeRepo.save(
-                    plusOperator,
-                )
+                const savedPlusOperator =
+                    await operatorTreeRepo.save(plusOperator)
 
                 num1.parent = savedPlusOperator
                 num2.parent = savedPlusOperator

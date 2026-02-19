@@ -58,9 +58,8 @@ describe("github issues > #9534 materialized-path", () => {
                         },
                     ])
 
-                    const a11Parent = await categoryRepository.findAncestors(
-                        a11,
-                    )
+                    const a11Parent =
+                        await categoryRepository.findAncestors(a11)
                     a11Parent.length.should.be.equal(2)
                     a11Parent.should.deep.include({
                         id: 1,
@@ -75,9 +74,8 @@ describe("github issues > #9534 materialized-path", () => {
                         parentUid: "a1",
                     })
 
-                    const a1Children = await categoryRepository.findDescendants(
-                        a1,
-                    )
+                    const a1Children =
+                        await categoryRepository.findDescendants(a1)
                     a1Children.length.should.be.equal(4)
                     a1Children.should.deep.include({
                         id: 1,

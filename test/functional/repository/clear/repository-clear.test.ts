@@ -37,9 +37,8 @@ describe("repository > clear method", () => {
                 await connection.getRepository(Post).clear()
 
                 // check find method
-                const loadedPostsAfterClear = await connection.manager.find(
-                    Post,
-                )
+                const loadedPostsAfterClear =
+                    await connection.manager.find(Post)
                 loadedPostsAfterClear.should.be.instanceOf(Array)
                 loadedPostsAfterClear.length.should.be.equal(0)
             }),
@@ -64,9 +63,8 @@ describe("repository > clear method", () => {
                 await connection.manager.clear(Post)
 
                 // check find method
-                const loadedPostsAfterClear = await connection.manager.find(
-                    Post,
-                )
+                const loadedPostsAfterClear =
+                    await connection.manager.find(Post)
                 loadedPostsAfterClear.should.be.instanceOf(Array)
                 loadedPostsAfterClear.length.should.be.equal(0)
             }),

@@ -3,12 +3,18 @@ import { ExpoConnectionOptions } from "./ExpoConnectionOptions"
 import { ExpoQueryRunner } from "./ExpoQueryRunner"
 import { QueryRunner } from "../../query-runner/QueryRunner"
 import { DataSource } from "../../data-source/DataSource"
+import { TypeORMError } from "../../error"
 
 export class ExpoDriver extends AbstractSqliteDriver {
-    options: ExpoConnectionOptions
+    declare options: ExpoConnectionOptions
 
     constructor(connection: DataSource) {
         super(connection)
+
+        if (this.isLegacyDriver) {
+            throw new TypeORMError("Legacy Expo driver is not supported.")
+        }
+
         this.sqlite = this.options.driver
     }
 
@@ -30,5 +36,9 @@ export class ExpoDriver extends AbstractSqliteDriver {
         )
         await this.databaseConnection.runAsync("PRAGMA foreign_keys = ON")
         return this.databaseConnection
+    }
+
+    private get isLegacyDriver(): boolean {
+        return !("openDatabaseAsync" in this.options.driver)
     }
 }

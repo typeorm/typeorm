@@ -31,9 +31,8 @@ describe("other issues > hydration performance", () => {
 
                 // select them using raw sql
                 // console.time("select using raw sql");
-                const loadedRawPosts = await connection.manager.query(
-                    "SELECT * FROM post",
-                )
+                const loadedRawPosts =
+                    await connection.manager.query("SELECT * FROM post")
                 loadedRawPosts.length.should.be.equal(100000)
                 // console.timeEnd("select using raw sql");
 

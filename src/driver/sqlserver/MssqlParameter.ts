@@ -1,6 +1,5 @@
 /**
  * Sql server driver requires parameter types to be specified fo input parameters used in the query.
- *
  * @see https://github.com/patriksimek/node-mssql#data-types
  */
 export class MssqlParameter {
@@ -50,7 +49,11 @@ export class MssqlParameter {
     constructor(value: any, type: "geometry")
     constructor(value: any, type: "rowversion")
     constructor(value: any, type: "vector", length: number)
-    constructor(public value: any, public type: string, ...params: number[]) {
+    constructor(
+        public value: any,
+        public type: string,
+        ...params: number[]
+    ) {
         this.params = params || []
     }
 }

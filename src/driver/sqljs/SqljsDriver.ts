@@ -21,7 +21,7 @@ declare let window: Window
 
 export class SqljsDriver extends AbstractSqliteDriver {
     // The driver specific options.
-    options: SqljsConnectionOptions
+    declare options: SqljsConnectionOptions
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -65,6 +65,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner) this.queryRunner = new SqljsQueryRunner(this)
@@ -75,6 +76,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * Loads a database from a given file (Node.js), local storage key (browser) or array.
      * This will delete the current database!
+     * @param fileNameOrLocalStorageOrData
+     * @param checkIfFileOrLocalStorageExists
      */
     async load(
         fileNameOrLocalStorageOrData: string | Uint8Array,
@@ -148,6 +151,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * Saved the current database to the given file (Node.js), local storage key (browser) or
      * indexedDB key (browser with enabled useLocalForage option).
      * If no location path is given, the location path in the options (if specified) will be used.
+     * @param location
      */
     async save(location?: string) {
         if (!location && !this.options.location) {
@@ -220,6 +224,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     * @param metadata
+     * @param insertResult
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
         const generatedMap = metadata.generatedColumns.reduce(
@@ -271,6 +277,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * Creates connection with an optional database.
      * If database is specified it is loaded, otherwise a new empty database is created.
+     * @param database
      */
     protected async createDatabaseConnectionWithImport(
         database?: Uint8Array,

@@ -6,8 +6,7 @@ import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCred
  * Microsoft Sql Server specific connection options.
  */
 export interface SqlServerConnectionOptions
-    extends BaseDataSourceOptions,
-        SqlServerConnectionCredentialsOptions {
+    extends BaseDataSourceOptions, SqlServerConnectionCredentialsOptions {
     /**
      * Database type.
      */

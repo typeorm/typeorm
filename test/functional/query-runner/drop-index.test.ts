@@ -154,9 +154,8 @@ describe("query runner > drop index", () => {
                     )
 
                     // Verify all test indices were dropped
-                    const finalTable = await queryRunner.getTable(
-                        "test_index_table",
-                    )
+                    const finalTable =
+                        await queryRunner.getTable("test_index_table")
                     if (!finalTable) {
                         throw new Error("Final test table not found")
                     }

@@ -84,9 +84,8 @@ describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() 
                     const successfulBarQuery = connection.manager.create(Bar, {
                         description: "default id value",
                     })
-                    const bar = await connection.manager.save(
-                        successfulBarQuery,
-                    )
+                    const bar =
+                        await connection.manager.save(successfulBarQuery)
                     expect(bar.id).to.be.a("number")
                 }),
         ))

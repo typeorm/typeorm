@@ -4,5 +4,8 @@
 export class Query {
     readonly "@instanceof" = Symbol.for("Query")
 
-    constructor(public query: string, public parameters?: any[]) {}
+    constructor(
+        public query: string,
+        public parameters?: any[],
+    ) {}
 }

@@ -14,6 +14,7 @@ describe("github issues > #8459 Can not create indexes of materialized views", (
     const tableIndex: TableIndex = new TableIndex({
         columnNames: ["name"],
         name: "name-idx",
+        type: "btree",
     })
 
     let dataSources: DataSource[]

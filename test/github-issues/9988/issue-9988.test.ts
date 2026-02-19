@@ -44,7 +44,7 @@ describe("github issues > #9988 RelationIdLoader reuses the same queryplanner wi
                         relationLoadStrategy: "query",
                         where: { id },
                         relations: { categories: true },
-                    } as FindManyOptions<Product>)
+                    }) as FindManyOptions<Product>
 
                 // Create a custom repository that uses a query builder without query planner
                 // For both methods, relationLoadStrategy is set to "query", where the bug lies.

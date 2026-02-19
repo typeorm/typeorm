@@ -1,6 +1,5 @@
 /**
  * Container options.
- *
  * @deprecated
  */
 export interface UseContainerOptions {
@@ -30,34 +29,33 @@ export interface ContainerInterface {
 /**
  * Container to be used by this library for inversion control. If container was not implicitly set then by default
  * container simply creates a new instance of the given class.
- *
  * @deprecated
  */
-const defaultContainer: ContainerInterface = new (class
-    implements ContainerInterface
-{
-    private instances: { type: Function; object: any }[] = []
+const defaultContainer: ContainerInterface =
+    new (class implements ContainerInterface {
+        private instances: { type: Function; object: any }[] = []
 
-    get<T>(someClass: ContainedType<T>): T {
-        let instance = this.instances.find((i) => i.type === someClass)
-        if (!instance) {
-            instance = {
-                type: someClass,
-                object: new (someClass as new () => T)(),
+        get<T>(someClass: ContainedType<T>): T {
+            let instance = this.instances.find((i) => i.type === someClass)
+            if (!instance) {
+                instance = {
+                    type: someClass,
+                    object: new (someClass as new () => T)(),
+                }
+                this.instances.push(instance)
             }
-            this.instances.push(instance)
-        }
 
-        return instance.object
-    }
-})()
+            return instance.object
+        }
+    })()
 
 let userContainer: ContainerInterface
 let userContainerOptions: UseContainerOptions | undefined
 
 /**
  * Sets container to be used by this library.
- *
+ * @param iocContainer
+ * @param options
  * @deprecated
  */
 export function useContainer(
@@ -70,7 +68,7 @@ export function useContainer(
 
 /**
  * Gets the IOC container used by this library.
- *
+ * @param someClass
  * @deprecated
  */
 export function getFromContainer<T>(someClass: ContainedType<T>): T {

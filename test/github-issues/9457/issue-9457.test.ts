@@ -30,18 +30,18 @@ describe("github issues > #9457 No changes in database schema were found, when s
 
                 expect(sqlInMemory.upQueries.length).to.eql(2)
                 expect(sqlInMemory.upQueries[0].query).to.eql(
-                    'ALTER TABLE "example_entity" DROP CONSTRAINT "CHK_a80c9d6a2a8749d7aadb857dc6_ENUM"',
+                    'ALTER TABLE "example_entity" DROP CONSTRAINT "CHK_0528bff24af57f1513a83e5cfe_ENUM"',
                 )
                 expect(sqlInMemory.upQueries[1].query).to.eql(
-                    `ALTER TABLE "example_entity" ADD CONSTRAINT "CHK_be8ed063b3976da24df4213baf_ENUM" CHECK (enumcolumn IN ('enumvalue1','enumvalue2','enumvalue3','enumvalue4'))`,
+                    `ALTER TABLE "example_entity" ADD CONSTRAINT "CHK_ffdedc852f72174c29f8187223_ENUM" CHECK (enumcolumn IN ('enumvalue1','enumvalue2','enumvalue3','enumvalue4'))`,
                 )
 
                 expect(sqlInMemory.downQueries.length).to.eql(2)
                 expect(sqlInMemory.downQueries[0].query).to.eql(
-                    'ALTER TABLE "example_entity" DROP CONSTRAINT "CHK_be8ed063b3976da24df4213baf_ENUM"',
+                    'ALTER TABLE "example_entity" DROP CONSTRAINT "CHK_ffdedc852f72174c29f8187223_ENUM"',
                 )
                 expect(sqlInMemory.downQueries[1].query).to.eql(
-                    `ALTER TABLE "example_entity" ADD CONSTRAINT "CHK_a80c9d6a2a8749d7aadb857dc6_ENUM" CHECK (enumcolumn IN ('enumvalue1','enumvalue2','enumvalue3'))`,
+                    `ALTER TABLE "example_entity" ADD CONSTRAINT "CHK_0528bff24af57f1513a83e5cfe_ENUM" CHECK (enumcolumn IN ('enumvalue1','enumvalue2','enumvalue3'))`,
                 )
             }),
         ))

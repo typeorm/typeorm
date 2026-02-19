@@ -8,7 +8,7 @@ import { ReplicationMode } from "../types/ReplicationMode"
 
 export class CapacitorDriver extends AbstractSqliteDriver {
     driver: any
-    options: CapacitorConnectionOptions
+    declare options: CapacitorConnectionOptions
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -49,6 +49,7 @@ export class CapacitorDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner) this.queryRunner = new CapacitorQueryRunner(this)

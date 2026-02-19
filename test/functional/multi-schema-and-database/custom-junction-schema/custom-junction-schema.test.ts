@@ -25,9 +25,8 @@ describe("multi-schema-and-database > custom-junction-schema", () => {
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const postTable = await queryRunner.getTable("yoman.post")
-                const categoryTable = await queryRunner.getTable(
-                    "yoman.category",
-                )
+                const categoryTable =
+                    await queryRunner.getTable("yoman.category")
                 const junctionMetadata = connection.getManyToManyMetadata(
                     Post,
                     "categories",

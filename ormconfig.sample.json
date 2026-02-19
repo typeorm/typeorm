@@ -3,7 +3,6 @@
     "skip": false,
     "name": "mysql",
     "type": "mysql",
-    "connectorPackage": "mysql2",
     "host": "localhost",
     "port": 3306,
     "username": "root",
@@ -16,7 +15,6 @@
     "skip": false,
     "name": "mariadb",
     "type": "mariadb",
-    "connectorPackage": "mysql2",
     "host": "localhost",
     "port": 3307,
     "username": "root",
@@ -66,7 +64,7 @@
     "logging": false
   },
   {
-    "skip": true,
+    "skip": false,
     "name": "mssql",
     "type": "mssql",
     "host": "localhost",

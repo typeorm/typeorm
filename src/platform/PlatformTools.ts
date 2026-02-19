@@ -30,6 +30,7 @@ export class PlatformTools {
     /**
      * Reads the version string from package.json of the given package.
      * This operation is only supported in node.
+     * @param name
      */
     static readPackageVersion(name: string): string {
         try {
@@ -44,6 +45,7 @@ export class PlatformTools {
     /**
      * Loads ("require"-s) given file or package.
      * This operation only supports on node platform
+     * @param name
      */
     static load(name: string): any {
         // if name is not absolute or relative, then try to load package from the node_modules of the directory we are currently in
@@ -77,9 +79,6 @@ export class PlatformTools {
                 /**
                  * mysql
                  */
-                case "mysql":
-                    return require("mysql")
-
                 case "mysql2":
                     return require("mysql2")
 
@@ -144,9 +143,9 @@ export class PlatformTools {
                     return require("react-native-sqlite-storage")
             }
         } catch (err) {
-            return require(path.resolve(
-                process.cwd() + "/node_modules/" + name,
-            ))
+            return require(
+                path.resolve(process.cwd() + "/node_modules/" + name),
+            )
         }
 
         // If nothing above matched and we get here, the package was not listed within PlatformTools
@@ -158,6 +157,7 @@ export class PlatformTools {
 
     /**
      * Normalizes given path. Does "path.normalize" and replaces backslashes with forward slashes on Windows.
+     * @param pathStr
      */
     static pathNormalize(pathStr: string): string {
         let normalizedPath = path.normalize(pathStr)
@@ -168,6 +168,7 @@ export class PlatformTools {
 
     /**
      * Gets file extension. Does "path.extname".
+     * @param pathStr
      */
     static pathExtname(pathStr: string): string {
         return path.extname(pathStr)
@@ -175,6 +176,7 @@ export class PlatformTools {
 
     /**
      * Resolved given path. Does "path.resolve".
+     * @param pathStr
      */
     static pathResolve(pathStr: string): string {
         return path.resolve(pathStr)
@@ -182,6 +184,7 @@ export class PlatformTools {
 
     /**
      * Synchronously checks if file exist. Does "fs.existsSync".
+     * @param pathStr
      */
     static fileExist(pathStr: string): boolean {
         return fs.existsSync(pathStr)
@@ -201,8 +204,8 @@ export class PlatformTools {
 
     /**
      * Loads a dotenv file into the environment variables.
-     *
      * @param path The file to load as a dotenv configuration
+     * @param pathStr
      */
     static dotenv(pathStr: string): void {
         dotenv.config({ path: pathStr })
@@ -210,6 +213,7 @@ export class PlatformTools {
 
     /**
      * Gets environment variable.
+     * @param name
      */
     static getEnvVariable(name: string): any {
         return process.env[name]
@@ -217,6 +221,7 @@ export class PlatformTools {
 
     /**
      * Highlights sql string to be printed in the console.
+     * @param sql
      */
     static highlightSql(sql: string) {
         return highlight(sql, {
@@ -236,6 +241,8 @@ export class PlatformTools {
 
     /**
      * Pretty-print sql string to be print in the console.
+     * @param sql
+     * @param dataSourceType
      */
     static formatSql(sql: string, dataSourceType?: DatabaseType): string {
         const databaseLanguageMap: Record<
@@ -257,6 +264,8 @@ export class PlatformTools {
 
     /**
      * Logging functions needed by AdvancedConsoleLogger
+     * @param prefix
+     * @param info
      */
     static logInfo(prefix: string, info: any) {
         console.log(ansi.gray.underline(prefix), info)

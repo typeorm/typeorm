@@ -44,6 +44,9 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -110,6 +113,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
 
                 result.records = resultSet
                 result.raw = resultSet
+                result.affected = raw.rowsAffected
             }
 
             if (useStructuredResult) {
@@ -151,7 +155,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
         const generatedColumns = this.connection.hasMetadata(tableName) ? this.connection.getMetadata(tableName).generatedColumns : [];
         const sql = columns.length > 0 ? (`INSERT INTO "${tableName}"(${columns}) VALUES (${values})`) : `INSERT INTO "${tableName}" DEFAULT VALUES`;
         const parameters = keys.map(key => keyValues[key]);
-
+     
         return new Promise<InsertResult>(async (ok, fail) => {
             this.driver.connection.logger.logQuery(sql, parameters, this);
             const __this = this;
@@ -162,7 +166,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                     if (!value) return map;
                     return OrmUtils.mergeDeep(map, generatedColumn.createValueMap(value));
                 }, {} as ObjectLiteral);
-
+     
                 ok({
                     result: undefined,
                     generatedMap: Object.keys(generatedMap).length > 0 ? generatedMap : undefined
@@ -172,7 +176,8 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
                 fail(err);
             });
         });
-    }*/
+    }
+     */
 
     /**
      * Would start a transaction but this driver does not support transactions.
@@ -210,9 +215,8 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
         await this.query(`PRAGMA foreign_keys = OFF`)
         try {
             const selectViewDropsQuery = `SELECT 'DROP VIEW "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'view'`
-            const dropViewQueries: ObjectLiteral[] = await this.query(
-                selectViewDropsQuery,
-            )
+            const dropViewQueries: ObjectLiteral[] =
+                await this.query(selectViewDropsQuery)
 
             const selectTableDropsQuery = `SELECT 'DROP TABLE "' || name || '";' as query FROM "sqlite_master" WHERE "type" = 'table' AND "name" != 'sqlite_sequence'`
             const dropTableQueries: ObjectLiteral[] = await this.query(
@@ -236,6 +240,8 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
+     * @param objectLiteral
+     * @param startIndex
      */
     protected parametrize(
         objectLiteral: ObjectLiteral,

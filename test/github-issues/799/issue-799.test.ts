@@ -1,6 +1,6 @@
 import { expect } from "chai"
+import { rm } from "fs/promises"
 import { dirname } from "path"
-import { rimraf } from "rimraf"
 
 import { DataSource } from "../../../src/data-source/DataSource"
 import { getTypeOrmConfig } from "../../utils/test-utils"
@@ -10,8 +10,8 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
 
     const path = `${__dirname}/tmp/sqlitedb.db`
 
-    before(() => rimraf(dirname(path)))
-    after(() => rimraf(dirname(path)))
+    before(() => rm(dirname(path), { recursive: true, force: true }))
+    after(() => rm(dirname(path), { recursive: true, force: true }))
 
     afterEach(async () => {
         if (dataSource?.isInitialized) {

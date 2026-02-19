@@ -10,7 +10,6 @@ import { NativescriptDriver } from "./nativescript/NativescriptDriver"
 import { SqljsDriver } from "./sqljs/SqljsDriver"
 import { MysqlDriver } from "./mysql/MysqlDriver"
 import { PostgresDriver } from "./postgres/PostgresDriver"
-import { ExpoDriverFactory } from "./expo/ExpoDriverFactory"
 import { AuroraMysqlDriver } from "./aurora-mysql/AuroraMysqlDriver"
 import { AuroraPostgresDriver } from "./aurora-postgres/AuroraPostgresDriver"
 import { Driver } from "./Driver"
@@ -19,6 +18,7 @@ import { SapDriver } from "./sap/SapDriver"
 import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver"
 import { CapacitorDriver } from "./capacitor/CapacitorDriver"
 import { SpannerDriver } from "./spanner/SpannerDriver"
+import { ExpoDriver } from "./expo/ExpoDriver"
 
 /**
  * Helps to create drivers.
@@ -26,6 +26,8 @@ import { SpannerDriver } from "./spanner/SpannerDriver"
 export class DriverFactory {
     /**
      * Creates a new driver depend on a given connection's driver type.
+     * @param connection DataSource instance.
+     * @returns Driver
      */
     create(connection: DataSource): Driver {
         const { type } = connection.options
@@ -59,7 +61,7 @@ export class DriverFactory {
             case "mongodb":
                 return new MongoDriver(connection)
             case "expo":
-                return new ExpoDriverFactory(connection).create()
+                return new ExpoDriver(connection)
             case "aurora-mysql":
                 return new AuroraMysqlDriver(connection)
             case "aurora-postgres":

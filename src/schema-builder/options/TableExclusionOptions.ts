@@ -15,4 +15,10 @@ export interface TableExclusionOptions {
      * Exclusion expression.
      */
     expression?: string
+
+    /**
+     * Set this exclusion constraint as "DEFERRABLE" e.g. check constraints at start
+     * or at the end of a transaction
+     */
+    deferrable?: string
 }

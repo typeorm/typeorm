@@ -6,8 +6,8 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 
-import { Master } from "./entities/master"
-import { Detail } from "./entities/detail"
+import { Master } from "./entity/master"
+import { Detail } from "./entity/detail"
 
 describe("github issues > #863 indices > create schema", () => {
     let connections: DataSource[]

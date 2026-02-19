@@ -24,11 +24,6 @@ export class SqliteDriver extends AbstractSqliteDriver {
      */
     options: SqliteConnectionOptions
 
-    /**
-     * SQLite underlying library.
-     */
-    sqlite: any
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -61,6 +56,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner) this.queryRunner = new SqliteQueryRunner(this)
@@ -87,6 +83,9 @@ export class SqliteDriver extends AbstractSqliteDriver {
 
     /**
      * For SQLite, the database may be added in the decorator metadata. It will be a filepath to a database file.
+     * @param tableName
+     * @param _schema
+     * @param database
      */
     buildTableName(
         tableName: string,
@@ -154,6 +153,10 @@ export class SqliteDriver extends AbstractSqliteDriver {
         })
 
         // Internal function to run a command on the connection and fail if an error occured.
+        /**
+         *
+         * @param line
+         */
         function run(line: string): Promise<void> {
             return new Promise((ok, fail) => {
                 databaseConnection.run(line, (err: any) => {
@@ -201,6 +204,7 @@ export class SqliteDriver extends AbstractSqliteDriver {
 
     /**
      * Auto creates database directory if it does not exist.
+     * @param fullPath
      */
     protected async createDatabaseDirectory(fullPath: string): Promise<void> {
         await fs.mkdir(path.dirname(fullPath), { recursive: true })

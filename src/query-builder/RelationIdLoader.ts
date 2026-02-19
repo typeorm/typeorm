@@ -25,6 +25,9 @@ export class RelationIdLoader {
 
     /**
      * Loads relation ids of the given entity or entities.
+     * @param relation
+     * @param entityOrEntities
+     * @param relatedEntityOrRelatedEntities
      */
     load(
         relation: RelationMetadata,
@@ -37,8 +40,8 @@ export class RelationIdLoader {
         const relatedEntities = Array.isArray(relatedEntityOrRelatedEntities)
             ? relatedEntityOrRelatedEntities
             : relatedEntityOrRelatedEntities
-            ? [relatedEntityOrRelatedEntities]
-            : undefined
+              ? [relatedEntityOrRelatedEntities]
+              : undefined
 
         // load relation ids depend of relation type
         if (relation.isManyToMany) {
@@ -63,6 +66,10 @@ export class RelationIdLoader {
      * Loads relation ids of the given entities and groups them into the object with parent and children.
      *
      * todo: extract this method?
+     * @param relation
+     * @param entitiesOrEntities
+     * @param relatedEntityOrEntities
+     * @param queryBuilder
      */
     async loadManyToManyRelationIdsAndGroup<
         E1 extends ObjectLiteral,
@@ -148,9 +155,13 @@ export class RelationIdLoader {
                     return column.compareEntityValue(
                         entity,
                         relationId[
-                            column.entityMetadata.name +
-                                "_" +
-                                column.propertyAliasName
+                            DriverUtils.buildAlias(
+                                this.connection.driver,
+                                undefined,
+                                column.entityMetadata.name +
+                                    "_" +
+                                    column.propertyAliasName,
+                            )
                         ],
                     )
                 })
@@ -224,7 +235,8 @@ export class RelationIdLoader {
                 }
             });
         });
-    }*/
+    }
+     */
 
     // -------------------------------------------------------------------------
     // Protected Methods
@@ -232,6 +244,9 @@ export class RelationIdLoader {
 
     /**
      * Loads relation ids for the many-to-many relation.
+     * @param relation
+     * @param entities
+     * @param relatedEntities
      */
     protected loadForManyToMany(
         relation: RelationMetadata,
@@ -414,6 +429,9 @@ export class RelationIdLoader {
 
     /**
      * Loads relation ids for the many-to-one and one-to-one owner relations.
+     * @param relation
+     * @param entities
+     * @param relatedEntities
      */
     protected loadForManyToOneAndOneToOneOwner(
         relation: RelationMetadata,
@@ -437,10 +455,13 @@ export class RelationIdLoader {
                 const relationIdMap: ObjectLiteral = {}
                 relation.entityMetadata.primaryColumns.forEach(
                     (primaryColumn) => {
-                        const key =
+                        const key = DriverUtils.buildAlias(
+                            this.connection.driver,
+                            undefined,
                             primaryColumn.entityMetadata.name +
-                            "_" +
-                            primaryColumn.propertyPath.replace(".", "_")
+                                "_" +
+                                primaryColumn.propertyPath.replace(".", "_"),
+                        )
                         relationIdMap[key] =
                             primaryColumn.getEntityValue(entity)
                     },
@@ -461,16 +482,19 @@ export class RelationIdLoader {
                             return
 
                         if (entityColumnValue === relatedEntityColumnValue) {
-                            const key =
+                            const key = DriverUtils.buildAlias(
+                                this.connection.driver,
+                                undefined,
                                 joinColumn.referencedColumn!.entityMetadata
                                     .name +
-                                "_" +
-                                relation.propertyPath.replace(".", "_") +
-                                "_" +
-                                joinColumn.referencedColumn!.propertyPath.replace(
-                                    ".",
-                                    "_",
-                                )
+                                    "_" +
+                                    relation.propertyPath.replace(".", "_") +
+                                    "_" +
+                                    joinColumn.referencedColumn!.propertyPath.replace(
+                                        ".",
+                                        "_",
+                                    ),
+                            )
                             relationIdMap[key] = relatedEntityColumnValue
                         }
                     })
@@ -575,6 +599,9 @@ export class RelationIdLoader {
 
     /**
      * Loads relation ids for the one-to-many and one-to-one not owner relations.
+     * @param relation
+     * @param entities
+     * @param relatedEntities
      */
     protected loadForOneToManyAndOneToOneNotOwner(
         relation: RelationMetadata,
@@ -596,28 +623,34 @@ export class RelationIdLoader {
                 return Promise.resolve(
                     entities.map((entity) => {
                         const result: ObjectLiteral = {}
-                        relation.joinColumns.forEach(function (joinColumn) {
+                        relation.joinColumns.forEach((joinColumn) => {
                             const value =
                                 joinColumn.referencedColumn!.getEntityValue(
                                     entity,
                                 )
-                            const joinColumnName =
+                            const joinColumnName = DriverUtils.buildAlias(
+                                this.connection.driver,
+                                undefined,
                                 joinColumn.referencedColumn!.entityMetadata
                                     .name +
-                                "_" +
-                                joinColumn.referencedColumn!.propertyPath.replace(
-                                    ".",
-                                    "_",
-                                )
-                            const primaryColumnName =
+                                    "_" +
+                                    joinColumn.referencedColumn!.propertyPath.replace(
+                                        ".",
+                                        "_",
+                                    ),
+                            )
+                            const primaryColumnName = DriverUtils.buildAlias(
+                                this.connection.driver,
+                                undefined,
                                 joinColumn.entityMetadata.name +
-                                "_" +
-                                originalRelation.propertyPath.replace(
-                                    ".",
-                                    "_",
-                                ) +
-                                "_" +
-                                joinColumn.propertyPath.replace(".", "_")
+                                    "_" +
+                                    originalRelation.propertyPath.replace(
+                                        ".",
+                                        "_",
+                                    ) +
+                                    "_" +
+                                    joinColumn.propertyPath.replace(".", "_"),
+                            )
                             result[joinColumnName] = value
                             result[primaryColumnName] = value
                         })

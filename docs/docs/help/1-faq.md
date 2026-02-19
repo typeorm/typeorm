@@ -5,7 +5,7 @@
 One of the main responsibilities of TypeORM is to keep your database tables in sync with your entities.
 There are two ways that help you achieve this:
 
--   Use `synchronize: true` in data source options:
+- Use `synchronize: true` in data source options:
 
     ```typescript
     import { DataSource } from "typeorm"
@@ -19,7 +19,7 @@ There are two ways that help you achieve this:
     This option automatically syncs your database tables with the given entities each time you run this code.
     This option is perfect during development, but in production you may not want this option to be enabled.
 
--   Use command line tools and run schema sync manually in the command line:
+- Use command line tools and run schema sync manually in the command line:
 
     ```shell
     typeorm schema:sync
@@ -135,10 +135,10 @@ That's why when you remove and move entities with `outDir` enabled, it's strongl
 You can prevent compiling files each time using [ts-node](https://github.com/TypeStrong/ts-node).
 If you are using ts-node, you can specify `ts` entities inside data source options:
 
-```javascript
+```typescript
 {
-    entities: ["src/entity/*.ts"],
-    subscribers: ["src/subscriber/*.ts"]
+    entities: [__dirname + "/entities/**/*{.js,.ts}"],
+    subscribers: [__dirname + "/subscribers/**/*{.js,.ts}"]
 }
 ```
 
@@ -168,9 +168,9 @@ const FilterWarningsPlugin = require('webpack-filter-warnings-plugin');
 module.exports = {
     ...
     plugins: [
-        //ignore the drivers you don't want. This is the complete list of all drivers -- remove the suppressions for drivers you want to use.
+        // ignore the drivers you don't want. This is the complete list of all drivers -- remove the suppressions for drivers you want to use.
         new FilterWarningsPlugin({
-            exclude: [/mongodb/, /mssql/, /mysql/, /mysql2/, /oracledb/, /pg/, /pg-native/, /pg-query-stream/, /react-native-sqlite-storage/, /redis/, /sqlite3/, /sql.js/, /typeorm-aurora-data-api-driver/]
+            exclude: [/mongodb/, /mssql/, /mysql2/, /oracledb/, /pg/, /pg-native/, /pg-query-stream/, /react-native-sqlite-storage/, /redis/, /sqlite3/, /sql.js/, /typeorm-aurora-data-api-driver/]
         })
     ]
 };
@@ -181,21 +181,22 @@ module.exports = {
 By default Webpack tries to bundle everything into one file. This can be problematic when your project has migration files which are meant to be executed after bundled code is deployed to production. To make sure all your [migrations](../migrations/01-why.md) can be recognized and executed by TypeORM, you may need to use "Object Syntax" for the `entry` configuration for the migration files only.
 
 ```javascript
-const glob = require("glob")
-const path = require("path")
+const { globSync } = require("node:fs")
+const path = require("node:path")
 
 module.exports = {
     // ... your webpack configurations here...
     // Dynamically generate a `{ [name]: sourceFileName }` map for the `entry` option
-    // change `src/db/migrations` to the relative path to your migration folder
-    entry: glob
-        .sync(path.resolve("src/db/migrations/*.ts"))
-        .reduce((entries, filename) => {
+    // change `src/db/migrations` to the relative path to your migrations folder
+    entry: globSync(path.resolve("src/db/migrations/*.ts")).reduce(
+        (entries, filename) => {
             const migrationName = path.basename(filename, ".ts")
             return Object.assign({}, entries, {
                 [migrationName]: filename,
             })
-        }, {}),
+        },
+        {},
+    ),
     resolve: {
         // assuming all your migration files are written in TypeScript
         extensions: [".ts"],
@@ -247,12 +248,7 @@ Lastly, make sure in your data source options, the transpiled migration files ar
 // TypeORM Configurations
 module.exports = {
     // ...
-    migrations: [
-        // this is the relative path to the transpiled migration files in production
-        "db/migrations/**/*.js",
-        // your source migration files, used in development mode
-        "src/db/migrations/**/*.ts",
-    ],
+    migrations: [__dirname + "/migrations/**/*{.js,.ts}"],
 }
 ```
 

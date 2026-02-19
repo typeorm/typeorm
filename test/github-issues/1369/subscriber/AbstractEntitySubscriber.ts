@@ -7,9 +7,7 @@ import {
 import { AbstractEntity } from "../entity/AbstractEntity"
 
 @EventSubscriber()
-export class AbstractEntitySubscriber
-    implements EntitySubscriberInterface<AbstractEntity>
-{
+export class AbstractEntitySubscriber implements EntitySubscriberInterface<AbstractEntity> {
     listenTo() {
         return AbstractEntity
     }

@@ -86,6 +86,7 @@ export class SqlServerQueryRunner
 
     /**
      * Starts transaction.
+     * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
@@ -199,6 +200,9 @@ export class SqlServerQueryRunner
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -333,6 +337,10 @@ export class SqlServerQueryRunner
 
     /**
      * Returns raw data stream.
+     * @param query
+     * @param parameters
+     * @param onEnd
+     * @param onError
      */
     async stream(
         query: string,
@@ -406,6 +414,7 @@ export class SqlServerQueryRunner
     /**
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
+     * @param database
      */
     async getSchemas(database?: string): Promise<string[]> {
         const query = database
@@ -417,6 +426,7 @@ export class SqlServerQueryRunner
 
     /**
      * Checks if database with the given name exist.
+     * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
         const result = await this.query(
@@ -436,6 +446,7 @@ export class SqlServerQueryRunner
 
     /**
      * Checks if schema with the given name exist.
+     * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
         const result = await this.query(
@@ -457,6 +468,7 @@ export class SqlServerQueryRunner
 
     /**
      * Checks if table with the given name exist in the database.
+     * @param tableOrName
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
@@ -476,6 +488,8 @@ export class SqlServerQueryRunner
 
     /**
      * Checks if column exist in the table.
+     * @param tableOrName
+     * @param columnName
      */
     async hasColumn(
         tableOrName: Table | string,
@@ -498,6 +512,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new database.
+     * @param database
+     * @param ifNotExist
      */
     async createDatabase(
         database: string,
@@ -512,6 +528,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops database.
+     * @param database
+     * @param ifExist
      */
     async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
         const up = ifExist
@@ -524,6 +542,8 @@ export class SqlServerQueryRunner
     /**
      * Creates table schema.
      * If database name also specified (e.g. 'dbName.schemaName') schema will be created in specified database.
+     * @param schemaPath
+     * @param ifNotExist
      */
     async createSchema(
         schemaPath: string,
@@ -561,6 +581,8 @@ export class SqlServerQueryRunner
     /**
      * Drops table schema.
      * If database name also specified (e.g. 'dbName.schemaName') schema will be dropped in specified database.
+     * @param schemaPath
+     * @param ifExist
      */
     async dropSchema(schemaPath: string, ifExist?: boolean): Promise<void> {
         const upQueries: Query[] = []
@@ -594,6 +616,10 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new table.
+     * @param table
+     * @param ifNotExist
+     * @param createForeignKeys
+     * @param createIndices
      */
     async createTable(
         table: Table,
@@ -670,6 +696,10 @@ export class SqlServerQueryRunner
 
     /**
      * Drops the table.
+     * @param tableOrName
+     * @param ifExist
+     * @param dropForeignKeys
+     * @param dropIndices
      */
     async dropTable(
         tableOrName: Table | string,
@@ -748,6 +778,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new view.
+     * @param view
+     * @param syncWithMetadata
      */
     async createView(
         view: View,
@@ -766,6 +798,7 @@ export class SqlServerQueryRunner
 
     /**
      * Drops the view.
+     * @param target
      */
     async dropView(target: View | string): Promise<void> {
         const viewName = InstanceChecker.isView(target) ? target.name : target
@@ -782,6 +815,8 @@ export class SqlServerQueryRunner
 
     /**
      * Renames a table.
+     * @param oldTableOrName
+     * @param newTableName
      */
     async renameTable(
         oldTableOrName: Table | string,
@@ -1010,6 +1045,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new column from the column in the table.
+     * @param tableOrName
+     * @param column
      */
     async addColumn(
         tableOrName: Table | string,
@@ -1190,6 +1227,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new columns from the column in the table.
+     * @param tableOrName
+     * @param columns
      */
     async addColumns(
         tableOrName: Table | string,
@@ -1202,6 +1241,9 @@ export class SqlServerQueryRunner
 
     /**
      * Renames column in the given table.
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newTableColumnOrName
      */
     async renameColumn(
         tableOrName: Table | string,
@@ -1232,6 +1274,9 @@ export class SqlServerQueryRunner
 
     /**
      * Changes a column in the table.
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newColumn
      */
     async changeColumn(
         tableOrName: Table | string,
@@ -1886,6 +1931,8 @@ export class SqlServerQueryRunner
 
     /**
      * Changes a column in the table.
+     * @param tableOrName
+     * @param changedColumns
      */
     async changeColumns(
         tableOrName: Table | string,
@@ -1898,6 +1945,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops column in the table.
+     * @param tableOrName
+     * @param columnOrName
      */
     async dropColumn(
         tableOrName: Table | string,
@@ -2110,6 +2159,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops the columns in the table.
+     * @param tableOrName
+     * @param columns
      */
     async dropColumns(
         tableOrName: Table | string,
@@ -2122,6 +2173,9 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new primary key.
+     * @param tableOrName
+     * @param columnNames
+     * @param constraintName
      */
     async createPrimaryKey(
         tableOrName: Table | string,
@@ -2148,6 +2202,8 @@ export class SqlServerQueryRunner
 
     /**
      * Updates composite primary keys.
+     * @param tableOrName
+     * @param columns
      */
     async updatePrimaryKeys(
         tableOrName: Table | string,
@@ -2228,6 +2284,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops a primary key.
+     * @param tableOrName
+     * @param constraintName
      */
     async dropPrimaryKey(
         tableOrName: Table | string,
@@ -2250,6 +2308,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new unique constraint.
+     * @param tableOrName
+     * @param uniqueConstraint
      */
     async createUniqueConstraint(
         tableOrName: Table | string,
@@ -2275,6 +2335,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new unique constraints.
+     * @param tableOrName
+     * @param uniqueConstraints
      */
     async createUniqueConstraints(
         tableOrName: Table | string,
@@ -2288,6 +2350,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops unique constraint.
+     * @param tableOrName
+     * @param uniqueOrName
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
@@ -2312,6 +2376,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops unique constraints.
+     * @param tableOrName
+     * @param uniqueConstraints
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
@@ -2325,6 +2391,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new check constraint.
+     * @param tableOrName
+     * @param checkConstraint
      */
     async createCheckConstraint(
         tableOrName: Table | string,
@@ -2350,6 +2418,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new check constraints.
+     * @param tableOrName
+     * @param checkConstraints
      */
     async createCheckConstraints(
         tableOrName: Table | string,
@@ -2363,6 +2433,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops check constraint.
+     * @param tableOrName
+     * @param checkOrName
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
@@ -2387,6 +2459,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops check constraints.
+     * @param tableOrName
+     * @param checkConstraints
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
@@ -2400,6 +2474,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new exclusion constraint.
+     * @param tableOrName
+     * @param exclusionConstraint
      */
     async createExclusionConstraint(
         tableOrName: Table | string,
@@ -2412,6 +2488,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new exclusion constraints.
+     * @param tableOrName
+     * @param exclusionConstraints
      */
     async createExclusionConstraints(
         tableOrName: Table | string,
@@ -2424,6 +2502,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops exclusion constraint.
+     * @param tableOrName
+     * @param exclusionOrName
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
@@ -2436,6 +2516,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops exclusion constraints.
+     * @param tableOrName
+     * @param exclusionConstraints
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
@@ -2448,6 +2530,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new foreign key.
+     * @param tableOrName
+     * @param foreignKey
      */
     async createForeignKey(
         tableOrName: Table | string,
@@ -2489,6 +2573,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new foreign keys.
+     * @param tableOrName
+     * @param foreignKeys
      */
     async createForeignKeys(
         tableOrName: Table | string,
@@ -2502,6 +2588,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops a foreign key from the table.
+     * @param tableOrName
+     * @param foreignKeyOrName
      */
     async dropForeignKey(
         tableOrName: Table | string,
@@ -2518,6 +2606,15 @@ export class SqlServerQueryRunner
                 `Supplied foreign key was not found in table ${table.name}`,
             )
 
+        if (!foreignKey.name) {
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+                table,
+                foreignKey.columnNames,
+                this.getTablePath(foreignKey),
+                foreignKey.referencedColumnNames,
+            )
+        }
+
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
         await this.executeQueries(up, down)
@@ -2526,6 +2623,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops a foreign keys from the table.
+     * @param tableOrName
+     * @param foreignKeys
      */
     async dropForeignKeys(
         tableOrName: Table | string,
@@ -2539,6 +2638,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new index.
+     * @param tableOrName
+     * @param index
      */
     async createIndex(
         tableOrName: Table | string,
@@ -2559,6 +2660,8 @@ export class SqlServerQueryRunner
 
     /**
      * Creates a new indices
+     * @param tableOrName
+     * @param indices
      */
     async createIndices(
         tableOrName: Table | string,
@@ -2572,6 +2675,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops an index.
+     * @param tableOrName
+     * @param indexOrName
      */
     async dropIndex(
         tableOrName: Table | string,
@@ -2599,6 +2704,8 @@ export class SqlServerQueryRunner
 
     /**
      * Drops an indices from the table.
+     * @param tableOrName
+     * @param indices
      */
     async dropIndices(
         tableOrName: Table | string,
@@ -2613,6 +2720,7 @@ export class SqlServerQueryRunner
     /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     * @param tablePath
      */
     async clearTable(tablePath: string): Promise<void> {
         await this.query(`TRUNCATE TABLE ${this.escapePath(tablePath)}`)
@@ -2620,6 +2728,7 @@ export class SqlServerQueryRunner
 
     /**
      * Removes all tables from the currently connected database.
+     * @param database
      */
     async clearDatabase(database?: string): Promise<void> {
         if (database) {
@@ -2633,9 +2742,8 @@ export class SqlServerQueryRunner
             const allViewsSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."VIEWS"`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."VIEWS"`
-            const allViewsResults: ObjectLiteral[] = await this.query(
-                allViewsSql,
-            )
+            const allViewsResults: ObjectLiteral[] =
+                await this.query(allViewsSql)
 
             await Promise.all(
                 allViewsResults.map((viewResult) => {
@@ -2648,9 +2756,8 @@ export class SqlServerQueryRunner
             const allTablesSql = database
                 ? `SELECT * FROM "${database}"."INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
                 : `SELECT * FROM "INFORMATION_SCHEMA"."TABLES" WHERE "TABLE_TYPE" = 'BASE TABLE'`
-            const allTablesResults: ObjectLiteral[] = await this.query(
-                allTablesSql,
-            )
+            const allTablesResults: ObjectLiteral[] =
+                await this.query(allTablesSql)
 
             if (allTablesResults.length > 0) {
                 const tablesByCatalog: {
@@ -2814,6 +2921,7 @@ export class SqlServerQueryRunner
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
+     * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         // if no tables given then no need to proceed
@@ -2835,9 +2943,8 @@ export class SqlServerQueryRunner
                 `SELECT DISTINCT "name" ` +
                 `FROM "master"."dbo"."sysdatabases" ` +
                 `WHERE "name" NOT IN ('master', 'model', 'msdb')`
-            const dbDatabases: { name: string }[] = await this.query(
-                databasesSql,
-            )
+            const dbDatabases: { name: string }[] =
+                await this.query(databasesSql)
 
             const tablesSql = dbDatabases
                 .map(({ name }) => {
@@ -2859,15 +2966,20 @@ export class SqlServerQueryRunner
         } else {
             const tableNamesByCatalog = tableNames
                 .map((tableName) => this.driver.parseTableName(tableName))
-                .reduce((c, { database, ...other }) => {
-                    database = database || currentDatabase
-                    c[database] = c[database] || []
-                    c[database].push({
-                        schema: other.schema || currentSchema,
-                        tableName: other.tableName,
-                    })
-                    return c
-                }, {} as { [key: string]: { schema: string; tableName: string }[] })
+                .reduce(
+                    (c, { database, ...other }) => {
+                        database = database || currentDatabase
+                        c[database] = c[database] || []
+                        c[database].push({
+                            schema: other.schema || currentSchema,
+                            tableName: other.tableName,
+                        })
+                        return c
+                    },
+                    {} as {
+                        [key: string]: { schema: string; tableName: string }[]
+                    },
+                )
 
             const tablesSql = Object.entries(tableNamesByCatalog)
                 .map(([database, tables]) => {
@@ -3531,6 +3643,8 @@ export class SqlServerQueryRunner
 
     /**
      * Builds and returns SQL for create table.
+     * @param table
+     * @param createForeignKeys
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
         const columnDefinitions = table.columns
@@ -3651,6 +3765,8 @@ export class SqlServerQueryRunner
 
     /**
      * Builds drop table sql.
+     * @param tableOrName
+     * @param ifExist
      */
     protected dropTableSql(
         tableOrName: Table | string,
@@ -3705,6 +3821,7 @@ export class SqlServerQueryRunner
 
     /**
      * Builds drop view sql.
+     * @param viewOrPath
      */
     protected dropViewSql(viewOrPath: View | string): Query {
         return new Query(`DROP VIEW ${this.escapePath(viewOrPath)}`)
@@ -3712,6 +3829,7 @@ export class SqlServerQueryRunner
 
     /**
      * Builds remove view sql.
+     * @param viewOrPath
      */
     protected async deleteViewDefinitionSql(
         viewOrPath: View | string,
@@ -3732,6 +3850,8 @@ export class SqlServerQueryRunner
 
     /**
      * Builds create index sql.
+     * @param table
+     * @param index
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
@@ -3748,6 +3868,8 @@ export class SqlServerQueryRunner
 
     /**
      * Builds drop index sql.
+     * @param table
+     * @param indexOrName
      */
     protected dropIndexSql(
         table: Table,
@@ -3763,6 +3885,9 @@ export class SqlServerQueryRunner
 
     /**
      * Builds create primary key sql.
+     * @param table
+     * @param columnNames
+     * @param constraintName
      */
     protected createPrimaryKeySql(
         table: Table,
@@ -3785,6 +3910,7 @@ export class SqlServerQueryRunner
 
     /**
      * Builds drop primary key sql.
+     * @param table
      */
     protected dropPrimaryKeySql(table: Table): Query {
         const columnNames = table.primaryColumns.map((column) => column.name)
@@ -3802,6 +3928,8 @@ export class SqlServerQueryRunner
 
     /**
      * Builds create unique constraint sql.
+     * @param table
+     * @param uniqueConstraint
      */
     protected createUniqueConstraintSql(
         table: Table,
@@ -3819,6 +3947,8 @@ export class SqlServerQueryRunner
 
     /**
      * Builds drop unique constraint sql.
+     * @param table
+     * @param uniqueOrName
      */
     protected dropUniqueConstraintSql(
         table: Table,
@@ -3836,6 +3966,8 @@ export class SqlServerQueryRunner
 
     /**
      * Builds create check constraint sql.
+     * @param table
+     * @param checkConstraint
      */
     protected createCheckConstraintSql(
         table: Table,
@@ -3850,6 +3982,8 @@ export class SqlServerQueryRunner
 
     /**
      * Builds drop check constraint sql.
+     * @param table
+     * @param checkOrName
      */
     protected dropCheckConstraintSql(
         table: Table,
@@ -3867,6 +4001,8 @@ export class SqlServerQueryRunner
 
     /**
      * Builds create foreign key sql.
+     * @param table
+     * @param foreignKey
      */
     protected createForeignKeySql(
         table: Table,
@@ -3893,6 +4029,8 @@ export class SqlServerQueryRunner
 
     /**
      * Builds drop foreign key sql.
+     * @param table
+     * @param foreignKeyOrName
      */
     protected dropForeignKeySql(
         table: Table,
@@ -3912,6 +4050,7 @@ export class SqlServerQueryRunner
 
     /**
      * Escapes given table or View path.
+     * @param target
      */
     protected escapePath(target: Table | View | string): string {
         const { database, schema, tableName } =
@@ -3935,6 +4074,9 @@ export class SqlServerQueryRunner
     /**
      * Concat database name and schema name to the foreign key name.
      * Needs because FK name is relevant to the schema and database.
+     * @param fkName
+     * @param schemaName
+     * @param dbName
      */
     protected buildForeignKeyName(
         fkName: string,
@@ -3956,6 +4098,7 @@ export class SqlServerQueryRunner
      *  ('My text') - for string
      *  ((1)) - for number
      *  (newsequentialId()) - for function
+     * @param defaultValue
      */
     protected removeParenthesisFromDefault(defaultValue: string): any {
         if (defaultValue.substr(0, 1) !== "(") return defaultValue
@@ -3968,6 +4111,11 @@ export class SqlServerQueryRunner
 
     /**
      * Builds a query for create column.
+     * @param table
+     * @param column
+     * @param skipIdentity
+     * @param createDefault
+     * @param skipEnum
      */
     protected buildCreateColumnSql(
         table: Table,
@@ -4061,6 +4209,7 @@ export class SqlServerQueryRunner
 
     /**
      * Converts MssqlParameter into real mssql parameter type.
+     * @param parameter
      */
     protected mssqlParameterToNativeParameter(parameter: MssqlParameter): any {
         switch (this.driver.normalizeType({ type: parameter.type as any })) {
@@ -4152,6 +4301,7 @@ export class SqlServerQueryRunner
     /**
      * Converts string literal of isolation level to enum.
      * The underlying mssql driver requires an enum for the isolation level.
+     * @param isolation
      */
     convertIsolationLevel(isolation: IsolationLevel) {
         const ISOLATION_LEVEL = this.driver.mssql.ISOLATION_LEVEL
@@ -4171,6 +4321,8 @@ export class SqlServerQueryRunner
 
     /**
      * Change table comment.
+     * @param tableOrName
+     * @param comment
      */
     changeTableComment(
         tableOrName: Table | string,

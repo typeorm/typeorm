@@ -57,11 +57,6 @@ export class MysqlDriver implements Driver {
      */
     poolCluster: any
 
-    /**
-     * The actual connector package that was loaded ("mysql" or "mysql2").
-     */
-    private loadedConnectorPackage: "mysql" | "mysql2" | undefined
-
     // -------------------------------------------------------------------------
     // Public Implemented Properties
     // -------------------------------------------------------------------------
@@ -98,7 +93,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
-     *
      * @see https://www.tutorialspoint.com/mysql/mysql-data-types.htm
      * @see https://dev.mysql.com/doc/refman/8.0/en/data-types.html
      */
@@ -463,6 +457,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new MysqlQueryRunner(this, mode)
@@ -471,6 +466,9 @@ export class MysqlDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
+     * @param sql
+     * @param parameters
+     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
@@ -517,6 +515,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Escapes a column name.
+     * @param columnName
      */
     escape(columnName: string): string {
         return "`" + columnName + "`"
@@ -525,6 +524,9 @@ export class MysqlDriver implements Driver {
     /**
      * Build full table name with database name, schema name and table name.
      * E.g. myDB.mySchema.myTable
+     * @param tableName
+     * @param schema
+     * @param database
      */
     buildTableName(
         tableName: string,
@@ -542,6 +544,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
+     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -594,15 +597,9 @@ export class MysqlDriver implements Driver {
     }
 
     /**
-     * Checks if the driver is using mysql2 package.
-     */
-    protected isUsingMysql2(): boolean {
-        // Check which package was actually loaded during initialization
-        return this.loadedConnectorPackage === "mysql2"
-    }
-
-    /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -650,6 +647,8 @@ export class MysqlDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -676,27 +675,19 @@ export class MysqlDriver implements Driver {
                 utc: columnMetadata.utc,
             })
         } else if (columnMetadata.type === "json") {
-            // mysql2 returns JSON values already parsed, but may still be a string
-            // if the JSON value itself is a string (e.g., "\"hello\"")
-            // mysql (classic) always returns JSON as strings that need parsing
-            if (this.isUsingMysql2()) {
-                // With mysql2, only parse if it's a valid JSON string representation
-                // but not if it's already an object or a JSON primitive
-                if (typeof value === "string") {
-                    try {
-                        // Try to parse it - if it fails, it's already a parsed string value
-                        const parsed = JSON.parse(value)
-                        value = parsed
-                    } catch {
-                        // It's a string that's not valid JSON, which means mysql2
-                        // already parsed it and it's just a string value
-                        // Keep value as is
-                    }
+            // Only parse if it's a valid JSON string representation,
+            // but not if it's already an object or a JSON primitive.
+            // If it's not a string, mysql2 has already parsed it correctly.
+            if (typeof value === "string") {
+                try {
+                    // Try to parse it - if it fails, it's already a parsed string value
+                    const parsed = JSON.parse(value)
+                    value = parsed
+                } catch {
+                    // It's a string that's not valid JSON, which means mysql2
+                    // already parsed it and it's just a string value
+                    // Keep value as is
                 }
-                // If it's not a string, mysql2 has already parsed it correctly
-            } else {
-                // Classic mysql always returns JSON as strings
-                value = typeof value === "string" ? JSON.parse(value) : value
             }
         } else if (columnMetadata.type === "time") {
             value = DateUtils.mixedTimeToString(value)
@@ -731,6 +722,11 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
+     * @param column
+     * @param column.type
+     * @param column.length
+     * @param column.precision
+     * @param column.scale
      */
     normalizeType(column: {
         type: ColumnType
@@ -797,6 +793,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
+     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -840,6 +837,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
+     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.indices.some(
@@ -852,6 +850,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
+     * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
         if (column.length) return column.length.toString()
@@ -881,6 +880,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
+     * @param column
      */
     createFullType(column: TableColumn): string {
         let type = column.type
@@ -969,6 +969,9 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     * @param metadata
+     * @param insertResult
+     * @param entityIndex
      */
     createGeneratedMap(
         metadata: EntityMetadata,
@@ -1022,6 +1025,8 @@ export class MysqlDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
+     * @param tableColumns
+     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -1162,6 +1167,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
+     * @param returningType
      */
     isReturningSqlSupported(returningType: ReturningType): boolean {
         return this._isReturningSqlSupported[returningType]
@@ -1183,6 +1189,8 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
+     * @param parameterName
+     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         return "?"
@@ -1196,69 +1204,17 @@ export class MysqlDriver implements Driver {
      * Loads all driver dependencies.
      */
     protected loadDependencies(): void {
-        // Warn if driver is provided directly but connectorPackage is not specified
-        if (this.options.driver && !this.options.connectorPackage) {
-            console.warn(
-                "Warning: MySQL driver instance provided directly without specifying connectorPackage. " +
-                    "This may lead to unexpected JSON parsing behavior differences between mysql and mysql2. " +
-                    "Consider explicitly setting connectorPackage: 'mysql' or 'mysql2' in your configuration.",
-            )
-        }
-
-        const connectorPackage = this.options.connectorPackage ?? "mysql"
-        const fallbackConnectorPackage =
-            connectorPackage === "mysql"
-                ? ("mysql2" as const)
-                : ("mysql" as const)
         try {
-            // try to load first supported package
-            const mysql =
-                this.options.driver || PlatformTools.load(connectorPackage)
-            this.mysql = mysql
-            /*
-             * Some frameworks (such as Jest) may mess up Node's require cache and provide garbage for the 'mysql' module
-             * if it was not installed. We check that the object we got actually contains something otherwise we treat
-             * it as if the `require` call failed.
-             *
-             * @see https://github.com/typeorm/typeorm/issues/1373
-             */
-            if (Object.keys(this.mysql).length === 0) {
-                throw new TypeORMError(
-                    `'${connectorPackage}' was found but it is empty. Falling back to '${fallbackConnectorPackage}'.`,
-                )
-            }
-            // Successfully loaded the requested package
-            // If driver was provided directly, try to detect which package it is
-            if (this.options.driver && !this.options.connectorPackage) {
-                // Try to detect if it's mysql2 based on unique properties
-                if (
-                    this.mysql.version ||
-                    (this.mysql.Connection &&
-                        this.mysql.Connection.prototype.execute)
-                ) {
-                    this.loadedConnectorPackage = "mysql2"
-                } else {
-                    this.loadedConnectorPackage = "mysql"
-                }
-            } else {
-                this.loadedConnectorPackage = connectorPackage
-            }
+            this.mysql = this.options.driver || PlatformTools.load("mysql2")
         } catch (e) {
-            try {
-                this.mysql = PlatformTools.load(fallbackConnectorPackage) // try to load second supported package
-                // Successfully loaded the fallback package
-                this.loadedConnectorPackage = fallbackConnectorPackage
-            } catch (e) {
-                throw new DriverPackageNotInstalledError(
-                    "Mysql",
-                    connectorPackage,
-                )
-            }
+            throw new DriverPackageNotInstalledError("Mysql", "mysql2")
         }
     }
 
     /**
      * Creates a new connection pool for a given database credentials.
+     * @param options
+     * @param credentials
      */
     protected createConnectionOptions(
         options: MysqlConnectionOptions,
@@ -1312,6 +1268,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
+     * @param connectionOptions
      */
     protected createPool(connectionOptions: any): Promise<any> {
         // create a connection pool
@@ -1332,6 +1289,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Attaches all required base handlers to a database connection, such as the unhandled error handler.
+     * @param connection
      */
     private prepareDbConnection(connection: any): any {
         const { logger } = this.connection
@@ -1352,6 +1310,8 @@ export class MysqlDriver implements Driver {
 
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
+     * @param columnMetadataValue
+     * @param databaseValue
      */
     protected compareDefaultValues(
         columnMetadataValue: string | undefined,
@@ -1386,6 +1346,7 @@ export class MysqlDriver implements Driver {
     /**
      * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
      * Otherwise returns original input.
+     * @param value
      */
     protected normalizeDatetimeFunction(value?: string) {
         if (!value) return value
@@ -1414,6 +1375,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Escapes a given comment.
+     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (!comment) return comment
@@ -1427,6 +1389,8 @@ export class MysqlDriver implements Driver {
      * A helper to check if column data types have changed
      * This can be used to manage checking any types the
      * database may alias
+     * @param tableColumn
+     * @param columnMetadata
      */
     private isColumnDataTypeChanged(
         tableColumn: TableColumn,

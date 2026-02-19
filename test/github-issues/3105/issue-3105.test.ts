@@ -75,8 +75,8 @@ describe("github issues > #3105 Error with cascading saves using EntityManager i
                             ),
                         ).not.to.be.rejected
 
-                        expect(findChildOne).to.not.be.undefined
-                        expect(findChildTwo).to.not.be.undefined
+                        expect(findChildOne).to.not.equal(undefined)
+                        expect(findChildTwo).to.not.equal(undefined)
                     }),
                 ),
         )
