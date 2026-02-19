@@ -7,10 +7,9 @@ import { PlatformTools } from "../../../src/platform/PlatformTools"
 import { DataSource } from "../../../src/data-source/DataSource"
 
 describe("RedisQueryResultCache", () => {
-    describe("detectRedisVersion", () => {
+    describe("detectPromiseBasedApi", () => {
         let sandbox: sinon.SinonSandbox
         let mockDataSource: sinon.SinonStubbedInstance<DataSource>
-        let readPackageVersionStub: sinon.SinonStub
 
         beforeEach(() => {
             sandbox = sinon.createSandbox()
@@ -23,12 +22,6 @@ describe("RedisQueryResultCache", () => {
                 },
             } as any
 
-            // Stub PlatformTools.readPackageVersion
-            readPackageVersionStub = sandbox.stub(
-                PlatformTools,
-                "readPackageVersion",
-            )
-
             // Stub PlatformTools.load to prevent actual redis loading
             sandbox.stub(PlatformTools, "load").returns({})
         })
@@ -37,72 +30,56 @@ describe("RedisQueryResultCache", () => {
             sandbox.restore()
         })
 
-        it("should detect Redis v3.x and set redisMajorVersion to 3", () => {
-            readPackageVersionStub.returns("3.1.2")
-
+        it("should detect Promise-based API when ping() returns a Promise", () => {
             const cache = new RedisQueryResultCache(
                 mockDataSource as any,
                 "redis",
             )
 
-            // Access the private method via any cast for testing
-            ;(cache as any).detectRedisVersion()
+            // Mock client with Promise-based ping()
+            ;(cache as any).client = {
+                ping: () => Promise.resolve("pong"),
+            }
 
-            expect((cache as any).redisMajorVersion).to.equal(3)
-            expect(readPackageVersionStub.calledOnceWith("redis")).to.be.true
+            // Call the private method
+            ;(cache as any).detectPromiseBasedApi()
+
+            expect((cache as any).isPromiseBasedApi).to.be.true
         })
 
-        it("should detect Redis v4.x and set redisMajorVersion to 3 (callback-based)", () => {
-            readPackageVersionStub.returns("4.6.13")
-
+        it("should detect callback-based API when ping() returns a non-Promise value", () => {
             const cache = new RedisQueryResultCache(
                 mockDataSource as any,
                 "redis",
             )
 
-            ;(cache as any).detectRedisVersion()
+            // Mock client with callback-based ping() (returns undefined)
+            ;(cache as any).client = {
+                ping: () => "PONG",
+            }
 
-            expect((cache as any).redisMajorVersion).to.equal(3)
+            // Call the private method
+            ;(cache as any).detectPromiseBasedApi()
+
+            expect((cache as any).isPromiseBasedApi).to.be.false
         })
 
-        it("should detect Redis v5.x and set redisMajorVersion to 5 (Promise-based)", () => {
-            readPackageVersionStub.returns("5.0.0")
-
+        it("should not detect for ioredis client type", () => {
             const cache = new RedisQueryResultCache(
                 mockDataSource as any,
-                "redis",
+                "ioredis",
             )
 
-            ;(cache as any).detectRedisVersion()
+            // Mock client - shouldn't matter since clientType is ioredis
+            ;(cache as any).client = {
+                ping: () => Promise.resolve("PONG"),
+            }
 
-            expect((cache as any).redisMajorVersion).to.equal(5)
-            expect(readPackageVersionStub.calledOnceWith("redis")).to.be.true
-        })
+            // Call the private method
+            ;(cache as any).detectPromiseBasedApi()
 
-        it("should detect Redis v6.x and set redisMajorVersion to 5 (Promise-based)", () => {
-            readPackageVersionStub.returns("6.2.3")
-
-            const cache = new RedisQueryResultCache(
-                mockDataSource as any,
-                "redis",
-            )
-
-            ;(cache as any).detectRedisVersion()
-
-            expect((cache as any).redisMajorVersion).to.equal(5)
-        })
-
-        it("should detect Redis v7.x and set redisMajorVersion to 5 (Promise-based)", () => {
-            readPackageVersionStub.returns("7.0.0")
-
-            const cache = new RedisQueryResultCache(
-                mockDataSource as any,
-                "redis",
-            )
-
-            ;(cache as any).detectRedisVersion()
-
-            expect((cache as any).redisMajorVersion).to.equal(5)
+            // Should remain false (default) for non-redis clients
+            expect((cache as any).isPromiseBasedApi).to.be.false
         })
     })
 })
