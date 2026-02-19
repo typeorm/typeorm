@@ -6,10 +6,10 @@ This sample demonstrates how to use the `vector` column type in SQL Server with 
 
 SQL Server supports the `vector` data type for storing high-dimensional vectors, which is useful for:
 
--   Semantic search with embeddings
--   Recommendation systems
--   Similarity matching
--   Machine learning applications
+- Semantic search with embeddings
+- Recommendation systems
+- Similarity matching
+- Machine learning applications
 
 ## Features Demonstrated
 
@@ -70,14 +70,14 @@ const results = await connection.query(
 
 The `VECTOR_DISTANCE` function supports different distance metrics:
 
--   `'cosine'` - Cosine distance (most common for semantic search)
--   `'euclidean'` - Euclidean (L2) distance
--   `'dot'` - Negative dot product
+- `'cosine'` - Cosine distance (most common for semantic search)
+- `'euclidean'` - Euclidean (L2) distance
+- `'dot'` - Negative dot product
 
 ## Requirements
 
--   SQL Server with vector support enabled
--   TypeORM with SQL Server driver (`mssql` package)
+- SQL Server with vector support enabled
+- TypeORM with SQL Server driver (`mssql` package)
 
 ## Running the Sample
 
@@ -91,6 +91,6 @@ The `VECTOR_DISTANCE` function supports different distance metrics:
 
 ## Notes
 
--   Vector dimensions must be specified using the `length` option
--   Embeddings are stored as JSON strings internally and converted to/from arrays automatically
--   The maximum vector dimension depends on your SQL Server version and configuration
+- Vector dimensions must be specified using the `length` option
+- Embeddings are stored as JSON strings internally and converted to/from arrays automatically
+- The maximum vector dimension depends on your SQL Server version and configuration

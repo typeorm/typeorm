@@ -53,9 +53,6 @@ importers:
       typeorm-aurora-data-api-driver:
         specifier: ^3.0.0
         version: 3.0.2(@aws-sdk/client-rds-data@3.957.0)
-      uuid:
-        specifier: ^11.1.0
-        version: 11.1.0
       yargs:
         specifier: ^18.0.0
         version: 18.0.0
@@ -67,8 +64,8 @@ importers:
         specifier: ^8.3.1
         version: 8.3.1(encoding@0.1.13)
       '@sap/hana-client':
-        specifier: ^2.26.26
-        version: 2.26.26
+        specifier: ^2.27.19
+        version: 2.27.19
       '@stryker-mutator/core':
         specifier: ^9.4.0
         version: 9.4.0(@types/node@20.19.26)
@@ -196,8 +193,14 @@ importers:
         specifier: ^0.0.62
         version: 0.0.62
       prettier:
-        specifier: ^3.7.4
-        version: 3.7.4
+        specifier: ^3.8.1
+        version: 3.8.1
+      prettier-plugin-packagejson:
+        specifier: ^3.0.0
+        version: 3.0.0(prettier@3.8.1)
+      prettier-plugin-toml:
+        specifier: ^2.0.6
+        version: 2.0.6(prettier@3.8.1)
       redis:
         specifier: ^5.10.0
         version: 5.10.0
@@ -1097,8 +1100,8 @@ packages:
     peerDependencies:
       '@redis/client': ^5.10.0
 
-  '@sap/hana-client@2.26.26':
-    resolution: {integrity: sha512-r5OSJKDLcuRCA1Ka5O4CMtTmKp9BD9EsrrqSLZ6mwCIxQd7WL+Km7aIKveyJZ0Bt511dZY279DGgvs3fXB20Tw==}
+  '@sap/hana-client@2.27.19':
+    resolution: {integrity: sha512-Bqx9isM8uW/ud/jLqUh7BCHnoTor6hwuC4fOtOxPub00oHQ6LNExLnOrofFskom+4V0po1303dJ8geXlStdFuw==}
     engines: {node: '>=4.0.0'}
 
   '@sec-ant/readable-stream@0.4.1':
@@ -1326,6 +1329,12 @@ packages:
 
   '@stryker-mutator/util@9.4.0':
     resolution: {integrity: sha512-xtL8hCY/3LvorlaM19bdbTvTL822Bh1S7L4s9z0wO4XvzU9ZXv5GsLeMVnkcOxRWJ1VLWO97U87eM12HZXyzag==}
+
+  '@taplo/core@0.2.0':
+    resolution: {integrity: sha512-r8bl54Zj1In3QLkiW/ex694bVzpPJ9EhwqT9xkcUVODnVUGirdB1JTsmiIv0o1uwqZiwhi8xNnTOQBRQCpizrQ==}
+
+  '@taplo/lib@0.5.0':
+    resolution: {integrity: sha512-+xIqpQXJco3T+VGaTTwmhxLa51qpkQxCjRwezjFZgr+l21ExlywJFcDfTrNmL6lG6tqb0h8GyJKO3UPGPtSCWg==}
 
   '@tediousjs/connection-string@0.6.0':
     resolution: {integrity: sha512-GxlsW354Vi6QqbUgdPyQVcQjI7cZBdGV5vOYVYuCVDTylx2wl3WHR2HlhcxxHTrMigbelpXsdcZso+66uxPfow==}
@@ -3987,8 +3996,22 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
 
-  prettier@3.7.4:
-    resolution: {integrity: sha512-v6UNi1+3hSlVvv8fSaoUbggEM5VErKmmpGA7Pl3HF8V6uKY7rvClBOJlH6yNwQtfTueNkGVpOv/mtWL9L4bgRA==}
+  prettier-plugin-packagejson@3.0.0:
+    resolution: {integrity: sha512-z8/QmPSqx/ANvvQMWJSkSq1+ihBXeuwDEYdjX3ZjRJ5Ty1k7vGbFQfhzk2eDe0rwS/TNyRjWK/qnjJEStAOtDw==}
+    peerDependencies:
+      prettier: ^3
+    peerDependenciesMeta:
+      prettier:
+        optional: true
+
+  prettier-plugin-toml@2.0.6:
+    resolution: {integrity: sha512-12N/wBuHa9jd/KVy9pRP20NMKxQfQLMseQCt66lIbLaPLItvGUcSIryE1eZZMJ7loSws6Ig3M2Elc2EreNh76w==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      prettier: ^3.0.3
+
+  prettier@3.8.1:
+    resolution: {integrity: sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -6322,7 +6345,7 @@ snapshots:
     dependencies:
       '@redis/client': 5.10.0
 
-  '@sap/hana-client@2.26.26':
+  '@sap/hana-client@2.27.19':
     dependencies:
       debug: 3.1.0
     transitivePeerDependencies:
@@ -6696,6 +6719,12 @@ snapshots:
       tslib: 2.8.1
 
   '@stryker-mutator/util@9.4.0': {}
+
+  '@taplo/core@0.2.0': {}
+
+  '@taplo/lib@0.5.0':
+    dependencies:
+      '@taplo/core': 0.2.0
 
   '@tediousjs/connection-string@0.6.0': {}
 
@@ -9642,7 +9671,18 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier@3.7.4: {}
+  prettier-plugin-packagejson@3.0.0(prettier@3.8.1):
+    dependencies:
+      sort-package-json: 3.6.0
+    optionalDependencies:
+      prettier: 3.8.1
+
+  prettier-plugin-toml@2.0.6(prettier@3.8.1):
+    dependencies:
+      '@taplo/lib': 0.5.0
+      prettier: 3.8.1
+
+  prettier@3.8.1: {}
 
   pretty-hrtime@1.0.3: {}
 

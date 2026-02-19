@@ -762,25 +762,26 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             ? tableOrName
             : await this.getCachedTable(tableOrName)
 
-        newComment = this.escapeComment(newComment)
-        const comment = this.escapeComment(table.comment)
+        const escapedNewComment = this.escapeComment(newComment)
+        const escapedComment = this.escapeComment(table.comment)
 
-        if (newComment === comment) {
+        if (escapedNewComment === escapedComment) {
             return
         }
 
         const newTable = table.clone()
+        newTable.comment = newComment
 
         upQueries.push(
             new Query(
                 `ALTER TABLE ${this.escapePath(
                     newTable,
-                )} COMMENT ${newComment}`,
+                )} COMMENT ${escapedNewComment}`,
             ),
         )
         downQueries.push(
             new Query(
-                `ALTER TABLE ${this.escapePath(table)} COMMENT ${comment}`,
+                `ALTER TABLE ${this.escapePath(table)} COMMENT ${escapedComment}`,
             ),
         )
 
@@ -3378,8 +3379,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     async getVersion(): Promise<string> {
-        const result: [{ "version()": string }] =
-            await this.query("SELECT version()")
+        const result: [{ version: string }] = await this.query(
+            "SELECT version() as version",
+        )
 
         // MariaDB: https://mariadb.com/kb/en/version/
         // - "10.2.27-MariaDB-10.2.27+maria~jessie-log"
@@ -3388,7 +3390,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // - "8.4.3"
         // - "8.4.4-standard"
 
-        const versionString = result[0]["version()"]
+        const versionString = result[0]["version"]
 
         return versionString.replace(/^([\d.]+).*$/, "$1")
     }

@@ -7,6 +7,8 @@ import {
 } from "../../../utils/test-utils"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
+import { Post } from "./entity/Post"
+import { Author } from "./entity/Author"
 import { Brackets } from "../../../../src/query-builder/Brackets"
 
 describe("query builder > brackets", () => {
@@ -15,7 +17,7 @@ describe("query builder > brackets", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["sqlite", "postgres"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -54,15 +56,27 @@ describe("query builder > brackets", () => {
                 .disableEscaping()
                 .getSql()
 
-            expect(sql).to.be.equal(
-                "SELECT user.id AS user_id, user.firstName AS user_firstName, " +
-                    "user.lastName AS user_lastName, user.isAdmin AS user_isAdmin " +
-                    "FROM user user " +
-                    "WHERE user.isAdmin = ? " +
-                    "OR (user.firstName = ? AND user.lastName = ?) " +
-                    "OR (user.firstName = ? AND user.lastName = ?) " +
-                    "AND (user.firstName = ? AND foo = bar)",
-            )
+            if (connection.driver.options.type === "postgres") {
+                expect(sql).to.be.equal(
+                    "SELECT user.id AS user_id, user.firstName AS user_firstName, " +
+                        "user.lastName AS user_lastName, user.isAdmin AS user_isAdmin " +
+                        "FROM user user " +
+                        "WHERE user.isAdmin = $1 " +
+                        "OR (user.firstName = $2 AND user.lastName = $3) " +
+                        "OR (user.firstName = $4 AND user.lastName = $5) " +
+                        "AND (user.firstName = $6 AND foo = bar)",
+                )
+            } else {
+                expect(sql).to.be.equal(
+                    "SELECT user.id AS user_id, user.firstName AS user_firstName, " +
+                        "user.lastName AS user_lastName, user.isAdmin AS user_isAdmin " +
+                        "FROM user user " +
+                        "WHERE user.isAdmin = ? " +
+                        "OR (user.firstName = ? AND user.lastName = ?) " +
+                        "OR (user.firstName = ? AND user.lastName = ?) " +
+                        "AND (user.firstName = ? AND foo = bar)",
+                )
+            }
         }
     })
 
@@ -111,6 +125,38 @@ describe("query builder > brackets", () => {
                     .getMany()
 
                 expect(users.length).to.be.equal(3)
+            }),
+        ))
+
+    it("should be able to use join attributes in brackets", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const author = new Author()
+                author.name = "gioboa"
+                await connection.manager.save(author)
+
+                const post = new Post()
+                post.title = "About TypeORM"
+                post.author = author
+                await connection.manager.save(post)
+
+                const posts = await connection
+                    .createQueryBuilder(Post, "post")
+                    .leftJoinAndSelect("post.author", "author")
+                    .andWhere(
+                        new Brackets((qb) => {
+                            qb.where({
+                                author: {
+                                    name: "gioboa",
+                                },
+                            })
+                        }),
+                    )
+                    .getMany()
+
+                expect(posts.length).to.be.equal(1)
+                expect(posts[0].author).to.be.not.undefined
+                expect(posts[0].author.name).to.be.equal("gioboa")
             }),
         ))
 })

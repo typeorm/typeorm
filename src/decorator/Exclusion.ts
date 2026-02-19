@@ -1,6 +1,7 @@
 import { getMetadataArgsStorage } from "../globals"
 import { ExclusionMetadataArgs } from "../metadata-args/ExclusionMetadataArgs"
 import { TypeORMError } from "../error"
+import { ExclusionOptions } from "./options/ExclusionOptions"
 
 /**
  * Creates a database exclusion.
@@ -9,6 +10,7 @@ import { TypeORMError } from "../error"
  */
 export function Exclusion(
     expression: string,
+    options?: ExclusionOptions,
 ): ClassDecorator & PropertyDecorator
 
 /**
@@ -19,6 +21,7 @@ export function Exclusion(
 export function Exclusion(
     name: string,
     expression: string,
+    options?: ExclusionOptions,
 ): ClassDecorator & PropertyDecorator
 
 /**
@@ -28,10 +31,14 @@ export function Exclusion(
  */
 export function Exclusion(
     nameOrExpression: string,
-    maybeExpression?: string,
+    expressionOrOptions?: string | ExclusionOptions,
+    maybeOptions?: ExclusionOptions,
 ): ClassDecorator & PropertyDecorator {
-    const name = maybeExpression ? nameOrExpression : undefined
-    const expression = maybeExpression ? maybeExpression : nameOrExpression
+    const hasName = typeof expressionOrOptions === "string"
+
+    const name = hasName ? nameOrExpression : undefined
+    const expression = hasName ? expressionOrOptions : nameOrExpression
+    const options = hasName ? maybeOptions : expressionOrOptions
 
     if (!expression) throw new TypeORMError(`Exclusion expression is required`)
 
@@ -45,6 +52,7 @@ export function Exclusion(
                 : (clsOrObject as Function),
             name: name,
             expression: expression,
+            deferrable: options ? options.deferrable : undefined,
         } as ExclusionMetadataArgs)
     }
 }

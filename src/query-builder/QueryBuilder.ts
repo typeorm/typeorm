@@ -16,6 +16,7 @@ import { QueryDeepPartialEntity } from "./QueryPartialEntity"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { FindOperator } from "../find-options/FindOperator"
+import { Equal } from "../find-options/operator/Equal"
 import { In } from "../find-options/operator/In"
 import { TypeORMError } from "../error"
 import { WhereClause, WhereClauseCondition } from "./WhereClause"
@@ -172,6 +173,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     /**
      * Creates SELECT query and selects given data.
      * Replaces all previous selections if they exist.
+     * @param selection
+     * @param selectionAliasName
      */
     select(
         selection?: string | string[],
@@ -234,6 +237,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Creates UPDATE query and applies given update values.
+     * @param entityOrTableNameUpdateSet
+     * @param maybeUpdateSet
      */
     update(
         entityOrTableNameUpdateSet?: EntityTarget<any> | ObjectLiteral,
@@ -306,6 +311,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Sets entity's relation with which this query builder gonna work.
+     * @param entityTargetOrPropertyPath
+     * @param maybePropertyPath
      */
     relation(
         entityTargetOrPropertyPath: Function | string,
@@ -352,6 +359,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Returns true if relation exists, false otherwise.
      *
      * todo: move this method to manager? or create a shortcut?
+     * @param target
+     * @param relation
      */
     hasRelation<T>(
         target: EntityTarget<T>,
@@ -366,6 +375,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Check the existence of a parameter for this query builder.
+     * @param key
      */
     hasParameter(key: string): boolean {
         return (
@@ -378,6 +388,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Sets parameter name and its value.
      *
      * The key for this parameter may contain numbers, letters, underscores, or periods.
+     * @param key
+     * @param value
      */
     setParameter(key: string, value: any): this {
         if (typeof value === "function") {
@@ -402,6 +414,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Adds all parameters from the given object.
+     * @param parameters
      */
     setParameters(parameters: ObjectLiteral): this {
         for (const [key, value] of Object.entries(parameters)) {
@@ -425,7 +438,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Adds native parameters from the given object.
-     *
+     * @param parameters
      * @deprecated Use `setParameters` instead
      */
     setNativeParameters(parameters: ObjectLiteral): this {
@@ -520,6 +533,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     /**
      * Creates a completely new query builder.
      * Uses same query runner as current QueryBuilder.
+     * @param queryRunner
      */
     createQueryBuilder(queryRunner?: QueryRunner): this {
         return new (this.constructor as any)(
@@ -542,6 +556,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Includes a Query comment in the query builder.  This is helpful for debugging purposes,
      * such as finding a specific query in the database server's logs, or for categorization using
      * an APM product.
+     * @param comment
      */
     comment(comment: string): this {
         this.expressionMap.comment = comment
@@ -558,6 +573,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Escapes table name, column name or alias name using current database's escaping character.
+     * @param name
      */
     escape(name: string): string {
         if (!this.expressionMap.disableEscaping) return name
@@ -566,6 +582,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Sets or overrides query builder's QueryRunner.
+     * @param queryRunner
      */
     setQueryRunner(queryRunner: QueryRunner): this {
         this.queryRunner = queryRunner
@@ -575,6 +592,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     /**
      * Indicates if listeners and subscribers must be called before and after query execution.
      * Enabled by default.
+     * @param enabled
      */
     callListeners(enabled: boolean): this {
         this.expressionMap.callListeners = enabled
@@ -583,6 +601,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * If set to true the query will be wrapped into a transaction.
+     * @param enabled
      */
     useTransaction(enabled: boolean): this {
         this.expressionMap.useTransaction = enabled
@@ -591,6 +610,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Adds CTE to query
+     * @param queryBuilder
+     * @param alias
+     * @param options
      */
     addCommonTableExpression(
         queryBuilder: QueryBuilder<any> | string,
@@ -612,6 +634,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     /**
      * Gets escaped table name with schema name if SqlServer driver used with custom
      * schema name, otherwise returns escaped table name.
+     * @param tablePath
      */
     protected getTableName(tablePath: string): string {
         return tablePath
@@ -642,6 +665,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     /**
      * Specifies FROM which entity's table select/update/delete will be executed.
      * Also sets a main string alias of the selection data.
+     * @param entityTarget
+     * @param aliasName
      */
     protected createFromAlias(
         entityTarget:
@@ -691,6 +716,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
+     * @param statement
      * @deprecated this way of replace property names is too slow.
      *  Instead, we'll replace property names at the end - once query is build.
      */
@@ -713,6 +739,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Replaces all entity's propertyName to name in the given SQL string.
+     * @param statement
      */
     protected replacePropertyNamesForTheWholeQuery(statement: string) {
         const replacements: { [key: string]: { [key: string]: string } } = {}
@@ -925,6 +952,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Creates "RETURNING" / "OUTPUT" expression.
+     * @param returningType
      */
     protected createReturningExpression(returningType: ReturningType): string {
         const columns = this.getReturningColumns()
@@ -1067,6 +1095,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Computes given where argument - transforms to a where string all forms it can take.
+     * @param condition
+     * @param alwaysWrap
      */
     protected createWhereConditionExpression(
         condition: WhereClauseCondition,
@@ -1239,6 +1269,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Creates "WHERE" condition for an in-ids condition.
+     * @param ids
      */
     protected getWhereInIdsCondition(
         ids: any | any[],
@@ -1260,12 +1291,12 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 !primaryColumn.relationMetadata &&
                 !primaryColumn.embeddedMetadata
             ) {
+                const values = normalized.map((id) =>
+                    primaryColumn.getEntityValue(id, false),
+                )
                 return {
-                    [primaryColumn.propertyName]: In(
-                        normalized.map((id) =>
-                            primaryColumn.getEntityValue(id, false),
-                        ),
-                    ),
+                    [primaryColumn.propertyName]:
+                        values.length === 1 ? Equal(values[0]) : In(values),
                 }
             }
         }
@@ -1366,6 +1397,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * Creates a property paths for a given ObjectLiteral.
+     * @param metadata
+     * @param entity
+     * @param prefix
      */
     protected createPropertyPath(
         metadata: EntityMetadata,
@@ -1426,15 +1460,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         paths.push(path)
                         continue
                     }
-                }
-
-                if (
-                    relation.relationType === "one-to-many" ||
-                    relation.relationType === "many-to-many"
-                ) {
-                    throw new Error(
-                        `Cannot query across ${relation.relationType} for property ${path}`,
-                    )
                 }
 
                 // For any other case, if the `entity[key]` contains all of the primary keys we can do a
@@ -1658,6 +1683,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 this.expressionMap.parameters
             whereQueryBuilder.expressionMap.nativeParameters =
                 this.expressionMap.nativeParameters
+            whereQueryBuilder.expressionMap.joinAttributes =
+                this.expressionMap.joinAttributes
 
             whereQueryBuilder.expressionMap.wheres = []
 
