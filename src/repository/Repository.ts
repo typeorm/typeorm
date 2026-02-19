@@ -75,8 +75,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Creates a new query builder that can be used to build a SQL query.
-     * @param alias
-     * @param queryRunner
      */
     createQueryBuilder(
         alias?: string,
@@ -92,7 +90,6 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Checks if entity has an id.
      * If entity composite compose ids, it will check them all.
-     * @param entity
      */
     hasId(entity: Entity): boolean {
         return this.manager.hasId(this.metadata.target, entity)
@@ -100,7 +97,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Gets entity mixed id.
-     * @param entity
      */
     getId(entity: Entity): any {
         return this.manager.getId(this.metadata.target, entity)
@@ -126,7 +122,6 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Creates a new entity instance or instances.
      * Can copy properties from the given object into new entities.
-     * @param plainEntityLikeOrPlainEntityLikes
      */
     create(
         plainEntityLikeOrPlainEntityLikes?:
@@ -141,8 +136,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Merges multiple entities (or entity-like objects) into a given entity.
-     * @param mergeIntoEntity
-     * @param entityLikes
      */
     merge(
         mergeIntoEntity: Entity,
@@ -163,7 +156,6 @@ export class Repository<Entity extends ObjectLiteral> {
      *
      * Note that given entity-like object must have an entity id / primary key to find entity by.
      * Returns undefined if entity with given id was not found.
-     * @param entityLike
      */
     preload(entityLike: DeepPartial<Entity>): Promise<Entity | undefined> {
         return this.manager.preload(this.metadata.target as any, entityLike)
@@ -207,8 +199,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Saves one or many given entities.
-     * @param entityOrEntities
-     * @param options
      */
     save<T extends DeepPartial<Entity>>(
         entityOrEntities: T | T[],
@@ -233,8 +223,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Removes one or many given entities.
-     * @param entityOrEntities
-     * @param options
      */
     remove(
         entityOrEntities: Entity | Entity[],
@@ -281,8 +269,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Records the delete date of one or many given entities.
-     * @param entityOrEntities
-     * @param options
      */
     softRemove<T extends DeepPartial<Entity>>(
         entityOrEntities: T | T[],
@@ -329,8 +315,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Recovers one or many given entities.
-     * @param entityOrEntities
-     * @param options
      */
     recover<T extends DeepPartial<Entity>>(
         entityOrEntities: T | T[],
@@ -348,7 +332,6 @@ export class Repository<Entity extends ObjectLiteral> {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT query.
      * Does not check if entity exist in the database, so query will fail if duplicate entity is being inserted.
-     * @param entity
      */
     insert(
         entity:
@@ -363,9 +346,6 @@ export class Repository<Entity extends ObjectLiteral> {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
-     * @param criteria
-     * @param partialEntity
-     * @param options
      */
     update(
         criteria:
@@ -396,8 +376,6 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes fast and efficient UPDATE query without WHERE clause.
      *
      * WARNING! This method updates ALL rows in the target table.
-     * @param partialEntity
-     * @param options
      */
     updateAll(
         partialEntity: QueryDeepPartialEntity<Entity>,
@@ -414,8 +392,6 @@ export class Repository<Entity extends ObjectLiteral> {
      * Inserts a given entity into the database, unless a unique constraint conflicts then updates the entity
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient INSERT ... ON CONFLICT DO UPDATE/ON DUPLICATE KEY UPDATE query.
-     * @param entityOrEntities
-     * @param conflictPathsOrOptions
      */
     upsert(
         entityOrEntities:
@@ -435,7 +411,6 @@ export class Repository<Entity extends ObjectLiteral> {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient DELETE query.
      * Does not check if entity exist in the database.
-     * @param criteria
      */
     delete(
         criteria:
@@ -469,7 +444,6 @@ export class Repository<Entity extends ObjectLiteral> {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
-     * @param criteria
      */
     softDelete(
         criteria:
@@ -495,7 +469,6 @@ export class Repository<Entity extends ObjectLiteral> {
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
-     * @param criteria
      */
     restore(
         criteria:
@@ -518,7 +491,7 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Checks whether any entity exists that matches the given options.
-     * @param options
+     *
      * @deprecated use `exists` method instead, for example:
      *
      * .exists()
@@ -529,7 +502,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Checks whether any entity exists that matches the given options.
-     * @param options
      */
     exists(options?: FindManyOptions<Entity>): Promise<boolean> {
         return this.manager.exists(this.metadata.target, options)
@@ -537,7 +509,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Checks whether any entity exists that matches the given conditions.
-     * @param where
      */
     existsBy(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
@@ -548,7 +519,6 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Counts entities that match given options.
      * Useful for pagination.
-     * @param options
      */
     count(options?: FindManyOptions<Entity>): Promise<number> {
         return this.manager.count(this.metadata.target, options)
@@ -557,7 +527,6 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Counts entities that match given conditions.
      * Useful for pagination.
-     * @param where
      */
     countBy(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
@@ -567,8 +536,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Return the SUM of a column
-     * @param columnName
-     * @param where
      */
     sum(
         columnName: PickKeysByType<Entity, number>,
@@ -579,8 +546,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Return the AVG of a column
-     * @param columnName
-     * @param where
      */
     average(
         columnName: PickKeysByType<Entity, number>,
@@ -591,8 +556,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Return the MIN of a column
-     * @param columnName
-     * @param where
      */
     minimum(
         columnName: PickKeysByType<Entity, number>,
@@ -603,8 +566,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Return the MAX of a column
-     * @param columnName
-     * @param where
      */
     maximum(
         columnName: PickKeysByType<Entity, number>,
@@ -615,7 +576,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Finds entities that match given find options.
-     * @param options
      */
     async find(options?: FindManyOptions<Entity>): Promise<Entity[]> {
         return this.manager.find(this.metadata.target, options)
@@ -623,7 +583,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Finds entities that match given find options.
-     * @param where
      */
     async findBy(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
@@ -635,7 +594,6 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entities that match given find options.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
-     * @param options
      */
     findAndCount(
         options?: FindManyOptions<Entity>,
@@ -647,7 +605,6 @@ export class Repository<Entity extends ObjectLiteral> {
      * Finds entities that match given WHERE conditions.
      * Also counts all entities that match given conditions,
      * but ignores pagination settings (from and take options).
-     * @param where
      */
     findAndCountBy(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
@@ -658,7 +615,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds entities with ids.
      * Optionally find options or conditions can be applied.
-     * @param ids
+     *
      * @deprecated use `findBy` method instead in conjunction with `In` operator, for example:
      *
      * .findBy({
@@ -672,7 +629,6 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - returns null.
-     * @param options
      */
     async findOne(options: FindOneOptions<Entity>): Promise<Entity | null> {
         return this.manager.findOne(this.metadata.target, options)
@@ -681,7 +637,6 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given where condition.
      * If entity was not found in the database - returns null.
-     * @param where
      */
     async findOneBy(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
@@ -692,7 +647,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given id.
      * If entity was not found in the database - returns null.
-     * @param id
+     *
      * @deprecated use `findOneBy` method instead in conjunction with `In` operator, for example:
      *
      * .findOneBy({
@@ -708,7 +663,6 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity by a given find options.
      * If entity was not found in the database - rejects with error.
-     * @param options
      */
     async findOneOrFail(options: FindOneOptions<Entity>): Promise<Entity> {
         return this.manager.findOneOrFail(this.metadata.target, options)
@@ -717,7 +671,6 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Finds first entity that matches given where condition.
      * If entity was not found in the database - rejects with error.
-     * @param where
      */
     async findOneByOrFail(
         where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
@@ -728,8 +681,7 @@ export class Repository<Entity extends ObjectLiteral> {
     /**
      * Executes a raw SQL query and returns a raw database results.
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
-     * @param query
-     * @param parameters
+     *
      * @see [Official docs](https://typeorm.io/repository-api) for examples.
      */
     query<T = any>(query: string, parameters?: any[]): Promise<T> {
@@ -742,8 +694,6 @@ export class Repository<Entity extends ObjectLiteral> {
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
      * Example: repository.sql`SELECT * FROM table_name WHERE id = ${id}`
-     * @param strings
-     * @param values
      */
     async sql<T = any>(
         strings: TemplateStringsArray,
@@ -770,9 +720,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Increments some column by provided value of the entities matched given conditions.
-     * @param conditions
-     * @param propertyPath
-     * @param value
      */
     increment(
         conditions: FindOptionsWhere<Entity>,
@@ -789,9 +736,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Decrements some column by provided value of the entities matched given conditions.
-     * @param conditions
-     * @param propertyPath
-     * @param value
      */
     decrement(
         conditions: FindOptionsWhere<Entity>,
@@ -808,7 +752,6 @@ export class Repository<Entity extends ObjectLiteral> {
 
     /**
      * Extends repository with provided functions.
-     * @param customs
      */
     extend<CustomRepository>(
         customs: CustomRepository & ThisType<this & CustomRepository>,

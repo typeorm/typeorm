@@ -264,8 +264,6 @@ export class OrmUtils {
 
     /**
      * Returns items that are missing/extraneous in the second array
-     * @param arr1
-     * @param arr2
      */
     public static getArraysDiff<T>(
         arr1: T[],

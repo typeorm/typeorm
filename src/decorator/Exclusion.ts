@@ -7,8 +7,6 @@ import { ExclusionOptions } from "./options/ExclusionOptions"
  * Creates a database exclusion.
  * Can be used on entity.
  * Can create exclusions with composite columns when used on entity.
- * @param expression
- * @param options
  */
 export function Exclusion(
     expression: string,
@@ -19,9 +17,6 @@ export function Exclusion(
  * Creates a database exclusion.
  * Can be used on entity.
  * Can create exclusions with composite columns when used on entity.
- * @param name
- * @param expression
- * @param options
  */
 export function Exclusion(
     name: string,
@@ -33,9 +28,6 @@ export function Exclusion(
  * Creates a database exclusion.
  * Can be used on entity.
  * Can create exclusions with composite columns when used on entity.
- * @param nameOrExpression
- * @param expressionOrOptions
- * @param maybeOptions
  */
 export function Exclusion(
     nameOrExpression: string,

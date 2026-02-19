@@ -93,6 +93,7 @@ export class MysqlDriver implements Driver {
 
     /**
      * Gets list of supported column data types by a driver.
+     *
      * @see https://www.tutorialspoint.com/mysql/mysql-data-types.htm
      * @see https://dev.mysql.com/doc/refman/8.0/en/data-types.html
      */
@@ -457,7 +458,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
-     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new MysqlQueryRunner(this, mode)
@@ -466,9 +466,6 @@ export class MysqlDriver implements Driver {
     /**
      * Replaces parameters in the given sql with special escaping character
      * and an array of parameter names to be passed to a query.
-     * @param sql
-     * @param parameters
-     * @param nativeParameters
      */
     escapeQueryWithParameters(
         sql: string,
@@ -515,7 +512,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Escapes a column name.
-     * @param columnName
      */
     escape(columnName: string): string {
         return "`" + columnName + "`"
@@ -524,9 +520,6 @@ export class MysqlDriver implements Driver {
     /**
      * Build full table name with database name, schema name and table name.
      * E.g. myDB.mySchema.myTable
-     * @param tableName
-     * @param schema
-     * @param database
      */
     buildTableName(
         tableName: string,
@@ -544,7 +537,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Parse a target table name or other types and return a normalized table definition.
-     * @param target
      */
     parseTableName(
         target: EntityMetadata | Table | View | TableForeignKey | string,
@@ -598,8 +590,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
-     * @param value
-     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (columnMetadata.transformer)
@@ -647,8 +637,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type or metadata.
-     * @param value
-     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
@@ -722,11 +710,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates a database type from a given column metadata.
-     * @param column
-     * @param column.type
-     * @param column.length
-     * @param column.precision
-     * @param column.scale
      */
     normalizeType(column: {
         type: ColumnType
@@ -793,7 +776,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Normalizes "default" value of the column.
-     * @param columnMetadata
      */
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
@@ -837,7 +819,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Normalizes "isUnique" value of the column.
-     * @param column
      */
     normalizeIsUnique(column: ColumnMetadata): boolean {
         return column.entityMetadata.indices.some(
@@ -850,7 +831,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Returns default column lengths, which is required on column creation.
-     * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
         if (column.length) return column.length.toString()
@@ -880,7 +860,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates column type definition including length, precision and scale
-     * @param column
      */
     createFullType(column: TableColumn): string {
         let type = column.type
@@ -969,9 +948,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
-     * @param metadata
-     * @param insertResult
-     * @param entityIndex
      */
     createGeneratedMap(
         metadata: EntityMetadata,
@@ -1025,8 +1001,6 @@ export class MysqlDriver implements Driver {
     /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
-     * @param tableColumns
-     * @param columnMetadatas
      */
     findChangedColumns(
         tableColumns: TableColumn[],
@@ -1167,7 +1141,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Returns true if driver supports RETURNING / OUTPUT statement.
-     * @param returningType
      */
     isReturningSqlSupported(returningType: ReturningType): boolean {
         return this._isReturningSqlSupported[returningType]
@@ -1189,8 +1162,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates an escaped parameter.
-     * @param parameterName
-     * @param index
      */
     createParameter(parameterName: string, index: number): string {
         return "?"
@@ -1213,8 +1184,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
-     * @param options
-     * @param credentials
      */
     protected createConnectionOptions(
         options: MysqlConnectionOptions,
@@ -1268,7 +1237,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Creates a new connection pool for a given database credentials.
-     * @param connectionOptions
      */
     protected createPool(connectionOptions: any): Promise<any> {
         // create a connection pool
@@ -1289,7 +1257,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Attaches all required base handlers to a database connection, such as the unhandled error handler.
-     * @param connection
      */
     private prepareDbConnection(connection: any): any {
         const { logger } = this.connection
@@ -1310,8 +1277,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
-     * @param columnMetadataValue
-     * @param databaseValue
      */
     protected compareDefaultValues(
         columnMetadataValue: string | undefined,
@@ -1346,7 +1311,6 @@ export class MysqlDriver implements Driver {
     /**
      * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
      * Otherwise returns original input.
-     * @param value
      */
     protected normalizeDatetimeFunction(value?: string) {
         if (!value) return value
@@ -1375,7 +1339,6 @@ export class MysqlDriver implements Driver {
 
     /**
      * Escapes a given comment.
-     * @param comment
      */
     protected escapeComment(comment?: string) {
         if (!comment) return comment
@@ -1389,8 +1352,6 @@ export class MysqlDriver implements Driver {
      * A helper to check if column data types have changed
      * This can be used to manage checking any types the
      * database may alias
-     * @param tableColumn
-     * @param columnMetadata
      */
     private isColumnDataTypeChanged(
         tableColumn: TableColumn,

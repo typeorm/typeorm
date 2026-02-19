@@ -31,7 +31,6 @@ export class EntitySchemaTransformer {
 
     /**
      * Transforms entity schema into new metadata args storage object.
-     * @param schemas
      */
     transform(schemas: EntitySchema<any>[]): MetadataArgsStorage {
         const metadataArgsStorage = new MetadataArgsStorage()

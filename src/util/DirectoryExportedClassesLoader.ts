@@ -7,9 +7,6 @@ import { ObjectUtils } from "./ObjectUtils"
 
 /**
  * Loads all exported classes from the given directory.
- * @param logger
- * @param directories
- * @param formats
  */
 export async function importClassesFromDirectories(
     logger: Logger,
@@ -20,11 +17,6 @@ export async function importClassesFromDirectories(
     const classesNotFoundMessage =
         "No classes were found using the provided glob pattern: "
     const classesFoundMessage = "All classes found using provided glob pattern"
-    /**
-     *
-     * @param exported
-     * @param allLoaded
-     */
     function loadFileClasses(exported: any, allLoaded: Function[]) {
         if (
             typeof exported === "function" ||

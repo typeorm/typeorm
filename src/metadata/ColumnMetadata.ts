@@ -558,8 +558,6 @@ export class ColumnMetadata {
 
     /**
      * Creates entity id map from the given entity ids array.
-     * @param value
-     * @param useDatabaseName
      */
     createValueMap(value: any, useDatabaseName = false) {
         // extract column value from embeds of entity if column is in embedded
@@ -626,9 +624,6 @@ export class ColumnMetadata {
      *
      * Examples what this method can return depend if this column is in embeds.
      * { id: 1 } or { title: "hello" }, { counters: { code: 1 } }, { data: { information: { counters: { code: 1 } } } }
-     * @param entity
-     * @param options
-     * @param options.skipNulls
      */
     getEntityValueMap(
         entity: ObjectLiteral,
@@ -771,8 +766,6 @@ export class ColumnMetadata {
     /**
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
-     * @param entity
-     * @param transform
      */
     getEntityValue(
         entity: ObjectLiteral,
@@ -896,8 +889,6 @@ export class ColumnMetadata {
     /**
      * Sets given entity's column value.
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
-     * @param entity
-     * @param value
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
         if (this.embeddedMetadata) {
@@ -952,8 +943,6 @@ export class ColumnMetadata {
 
     /**
      * Compares given entity's column value with a given value.
-     * @param entity
-     * @param valueToCompareWith
      */
     compareEntityValue(entity: any, valueToCompareWith: any) {
         const columnValue = this.getEntityValue(entity)

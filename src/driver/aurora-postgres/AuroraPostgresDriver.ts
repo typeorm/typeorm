@@ -96,7 +96,6 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
-     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new AuroraPostgresQueryRunner(
@@ -117,8 +116,6 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
-     * @param value
-     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (
@@ -139,8 +136,6 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
-     * @param value
-     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (
@@ -177,8 +172,6 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Executes given query.
-     * @param connection
-     * @param query
      */
     protected executeQuery(connection: any, query: string) {
         return this.connection.query(query)

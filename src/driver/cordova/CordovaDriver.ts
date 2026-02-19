@@ -50,7 +50,6 @@ export class CordovaDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
-     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner) this.queryRunner = new CordovaQueryRunner(this)

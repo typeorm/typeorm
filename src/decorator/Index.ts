@@ -7,7 +7,6 @@ import { ObjectUtils } from "../util/ObjectUtils"
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
- * @param options
  */
 export function Index(
     options?: IndexOptions,
@@ -17,8 +16,6 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
- * @param name
- * @param options
  */
 export function Index(
     name: string,
@@ -29,9 +26,6 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
- * @param name
- * @param options
- * @param options.synchronize
  */
 export function Index(
     name: string,
@@ -42,9 +36,6 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
- * @param name
- * @param fields
- * @param options
  */
 export function Index(
     name: string,
@@ -56,8 +47,6 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
- * @param fields
- * @param options
  */
 export function Index(
     fields: string[],
@@ -68,8 +57,6 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
- * @param fields
- * @param options
  */
 export function Index(
     fields: (object?: any) => any[] | { [key: string]: number },
@@ -80,9 +67,6 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
- * @param name
- * @param fields
- * @param options
  */
 export function Index(
     name: string,
@@ -94,9 +78,6 @@ export function Index(
  * Creates a database index.
  * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
- * @param nameOrFieldsOrOptions
- * @param maybeFieldsOrOptions
- * @param maybeOptions
  */
 export function Index(
     nameOrFieldsOrOptions?:

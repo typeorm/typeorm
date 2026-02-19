@@ -3,6 +3,7 @@ export class RandomGenerator {
      * Generates a RFC 4122 version 4 UUID.
      * Uses native crypto.randomUUID() if available, otherwise falls back to
      * a custom implementation using crypto.getRandomValues().
+     *
      * @returns A version 4 UUID string
      */
     static uuidv4(): string {

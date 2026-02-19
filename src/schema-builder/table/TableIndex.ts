@@ -117,7 +117,6 @@ export class TableIndex {
 
     /**
      * Creates index from the index metadata object.
-     * @param indexMetadata
      */
     static create(indexMetadata: IndexMetadata): TableIndex {
         return new TableIndex(<TableIndexOptions>{

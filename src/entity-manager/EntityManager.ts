@@ -809,7 +809,6 @@ export class EntityManager {
      * @param target
      * @param criteria
      * @param partialEntity
-     * @param options
      */
     update<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -868,7 +867,6 @@ export class EntityManager {
      * WARNING! This method updates ALL rows in the target table.
      * @param target
      * @param partialEntity
-     * @param options
      */
     updateAll<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,

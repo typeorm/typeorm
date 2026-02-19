@@ -58,7 +58,6 @@ export class TableExclusion {
 
     /**
      * Creates exclusions from the exclusion metadata object.
-     * @param exclusionMetadata
      */
     static create(exclusionMetadata: ExclusionMetadata): TableExclusion {
         return new TableExclusion(<TableExclusionOptions>{
