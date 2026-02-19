@@ -25,6 +25,17 @@ export class InitCommand implements yargs.CommandModule {
             .option("db", {
                 alias: "database",
                 describe: "Database type you'll use in your project.",
+                choices: [
+                    "postgres",
+                    "mysql",
+                    "mariadb",
+                    "better-sqlite3",
+                    "mssql",
+                    "oracle",
+                    "mongodb",
+                    "cockroachdb",
+                    "spanner",
+                ],
             })
             .option("express", {
                 describe:
