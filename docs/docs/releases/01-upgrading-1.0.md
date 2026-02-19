@@ -8,7 +8,7 @@ This is the migration guide for upgrading from version `0.3.x` to `1.0`.
 
 ## SQLite
 
-Drop support to `sqlite3` in favour of `better-sqlite3` as the default driver for `sqlite` databases:
+Drop support to `sqlite3` in favour of `better-sqlite3` as the primary driver for `sqlite` databases:
 
 ```typescript
 new DataSource({
@@ -25,7 +25,7 @@ The `sqlite3` package used `busyTimeout` to configure SQLite's busy timeout. `be
 new DataSource({
     type: "better-sqlite3",
     database: "db.sqlite",
-    timeout: 2000, // was busyTimeout in sqlite3
+    timeout: 2000, // was `busyTimeout` in sqlite3
 })
 ```
 
