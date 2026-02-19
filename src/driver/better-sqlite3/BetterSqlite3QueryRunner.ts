@@ -89,22 +89,26 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
 
         const connection = this.driver.connection
 
-        const broadcasterResult = new BroadcasterResult()
-
-        this.driver.connection.logger.logQuery(query, parameters, this)
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
-            query,
-            parameters,
-        )
-        const queryStartTime = Date.now()
-
-        const stmt = await this.getStmt(query)
-
         // better-sqlite3 cannot bind booleans, convert to 0/1
         const normalizedParameters = parameters.map((p) =>
             typeof p === "boolean" ? (p ? 1 : 0) : p,
         )
+
+        const broadcasterResult = new BroadcasterResult()
+
+        this.driver.connection.logger.logQuery(
+            query,
+            normalizedParameters,
+            this,
+        )
+        this.broadcaster.broadcastBeforeQueryEvent(
+            broadcasterResult,
+            query,
+            normalizedParameters,
+        )
+        const queryStartTime = Date.now()
+
+        const stmt = await this.getStmt(query)
 
         try {
             const result = new QueryResult()
@@ -135,14 +139,14 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
                 connection.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
-                    parameters,
+                    normalizedParameters,
                     this,
                 )
 
             this.broadcaster.broadcastAfterQueryEvent(
                 broadcasterResult,
                 query,
-                parameters,
+                normalizedParameters,
                 true,
                 queryExecutionTime,
                 result.raw,
@@ -155,8 +159,13 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
 
             return result
         } catch (err) {
-            connection.logger.logQueryError(err, query, parameters, this)
-            throw new QueryFailedError(query, parameters, err)
+            connection.logger.logQueryError(
+                err,
+                query,
+                normalizedParameters,
+                this,
+            )
+            throw new QueryFailedError(query, normalizedParameters, err)
         }
     }
 
