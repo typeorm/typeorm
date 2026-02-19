@@ -10,6 +10,24 @@ import { ColumnMetadata } from "../../metadata/ColumnMetadata"
  * Executes subject operations for closure entities.
  */
 export class ClosureSubjectExecutor {
+    /**
+     * Gets the closure junction table's level column from metadata when TreeLevelColumn is defined.
+     * Matches by the entity's treeLevelColumn property or database name for robustness.
+     * @param subject
+     */
+    private getClosureJunctionLevelColumn(
+        subject: Subject,
+    ): ColumnMetadata | undefined {
+        const treeLevelColumn = subject.metadata.treeLevelColumn
+        if (!treeLevelColumn) return undefined
+
+        return subject.metadata.closureJunctionTable.ownColumns.find(
+            (column) =>
+                !column.closureType &&
+                (column.propertyName === treeLevelColumn.propertyName ||
+                    column.databaseName === treeLevelColumn.databaseName),
+        )
+    }
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -22,6 +40,7 @@ export class ClosureSubjectExecutor {
 
     /**
      * Executes operations when subject is being inserted.
+     * @param subject
      */
     async insert(subject: Subject): Promise<void> {
         // create values to be inserted into the closure junction
@@ -38,6 +57,11 @@ export class ClosureSubjectExecutor {
                     subject.identifier
             },
         )
+
+        const levelColumn = this.getClosureJunctionLevelColumn(subject)
+        if (levelColumn) {
+            closureJunctionInsertMap[levelColumn.databaseName] = 0
+        }
 
         // insert values into the closure junction table
         await this.queryRunner.manager
@@ -94,6 +118,13 @@ export class ClosureSubjectExecutor {
                 },
             )
 
+            let levelColumnName = ""
+            let levelColumnName2 = ""
+            if (levelColumn) {
+                levelColumnName = escape(levelColumn.databaseName)
+                levelColumnName2 = `(${levelColumnName} + 1)`
+            }
+
             const whereCondition =
                 subject.metadata.closureJunctionTable.descendantColumns.map(
                     (column) => {
@@ -121,19 +152,132 @@ export class ClosureSubjectExecutor {
                 `INSERT INTO ${tableName} (${[
                     ...ancestorColumnNames,
                     ...descendantColumnNames,
+                    ...(levelColumn ? [levelColumnName] : []),
                 ].join(", ")}) ` +
                     `SELECT ${ancestorColumnNames.join(
                         ", ",
-                    )}, ${childEntityIds1.join(
-                        ", ",
-                    )} FROM ${tableName} WHERE ${whereCondition.join(" AND ")}`,
+                    )}, ${childEntityIds1.join(", ")}${
+                        levelColumn ? ", " + levelColumnName2 : ""
+                    } FROM ${tableName} WHERE ${whereCondition.join(" AND ")}`,
                 queryParams,
             )
         }
     }
 
+    async insertLevel(subject: Subject): Promise<void> {
+        const treeLevelColumn = subject.metadata.treeLevelColumn
+        if (!treeLevelColumn) return
+
+        // Do not overwrite explicitly set level values
+        const existingLevel = treeLevelColumn.getEntityValue(subject.entity!)
+        if (existingLevel !== undefined && existingLevel !== null) return
+
+        subject.insertedValueSet = subject.insertedValueSet || {}
+
+        let parent = subject.metadata.treeParentRelation!.getEntityValue(
+            subject.entity!,
+        ) // if entity was attached via parent
+        if (!parent && subject.parentSubject && subject.parentSubject.entity)
+            // if entity was attached via children
+            parent = subject.parentSubject.insertedValueSet
+                ? subject.parentSubject.insertedValueSet
+                : subject.parentSubject.entity
+
+        if (parent) {
+            const parentLevel = treeLevelColumn.getEntityValue(parent)
+            if (parentLevel !== undefined && parentLevel !== null) {
+                const parentLevelNum =
+                    typeof parentLevel === "string"
+                        ? parseInt(parentLevel, 10)
+                        : Number(parentLevel)
+                const finalLevel =
+                    (isNaN(parentLevelNum) ? 0 : parentLevelNum) + 1
+                OrmUtils.mergeDeep(
+                    subject.insertedValueSet,
+                    treeLevelColumn.createValueMap(finalLevel),
+                )
+                treeLevelColumn.setEntityValue(subject.entity!, finalLevel)
+            } else {
+                const parentId = subject.metadata.getEntityIdMap(parent)
+                if (parentId) {
+                    const alias = subject.metadata.targetName
+                    const columnName =
+                        this.queryRunner.connection.driver.escape(
+                            treeLevelColumn.databaseName,
+                        )
+                    const parentEntity = await this.queryRunner.manager
+                        .createQueryBuilder()
+                        .select(`${alias}.${columnName}`, "level")
+                        .from(subject.metadata.target, alias)
+                        .whereInIds(parentId)
+                        .getRawOne()
+                    const raw = parentEntity ? parentEntity["level"] : 0
+                    const levelNum =
+                        typeof raw === "string"
+                            ? parseInt(raw, 10)
+                            : Number(raw)
+                    const finalLevel = (isNaN(levelNum) ? 0 : levelNum) + 1
+                    OrmUtils.mergeDeep(
+                        subject.insertedValueSet,
+                        treeLevelColumn.createValueMap(finalLevel),
+                    )
+                    treeLevelColumn.setEntityValue(subject.entity!, finalLevel)
+                } else {
+                    // Parent exists but we cannot determine its level or id.
+                    // If parent is in the same persistence graph, try to compute its level first.
+                    if (subject.parentSubject?.entity) {
+                        await this.insertLevel(subject.parentSubject)
+
+                        const computedParentLevel =
+                            treeLevelColumn.getEntityValue(
+                                subject.parentSubject.entity,
+                            )
+                        if (
+                            computedParentLevel !== undefined &&
+                            computedParentLevel !== null
+                        ) {
+                            const computedNum =
+                                typeof computedParentLevel === "string"
+                                    ? parseInt(computedParentLevel, 10)
+                                    : Number(computedParentLevel)
+                            const finalLevel =
+                                (isNaN(computedNum) ? 0 : computedNum) + 1
+                            OrmUtils.mergeDeep(
+                                subject.insertedValueSet,
+                                treeLevelColumn.createValueMap(finalLevel),
+                            )
+                            treeLevelColumn.setEntityValue(
+                                subject.entity!,
+                                finalLevel,
+                            )
+                            return
+                        }
+                    }
+
+                    // Conservative fallback: if parent cannot be resolved, treat as root.
+                    const fallbackLevel = 1
+                    OrmUtils.mergeDeep(
+                        subject.insertedValueSet,
+                        treeLevelColumn.createValueMap(fallbackLevel),
+                    )
+                    treeLevelColumn.setEntityValue(
+                        subject.entity!,
+                        fallbackLevel,
+                    )
+                }
+            }
+        } else {
+            OrmUtils.mergeDeep(
+                subject.insertedValueSet,
+                treeLevelColumn.createValueMap(1),
+            )
+            treeLevelColumn.setEntityValue(subject.entity!, 1)
+        }
+    }
+
     /**
      * Executes operations when subject is being updated.
+     * @param subject
      */
     async update(subject: Subject): Promise<void> {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
@@ -251,6 +395,11 @@ export class ClosureSubjectExecutor {
             const superAlias = escape("supertree")
             const subAlias = escape("subtree")
 
+            const levelColumn = this.getClosureJunctionLevelColumn(subject)
+            const levelColumnName = levelColumn
+                ? escape(levelColumn.databaseName)
+                : ""
+
             const select = [
                 ...ancestorColumnNames.map(
                     (columnName) => `${superAlias}.${columnName}`,
@@ -258,6 +407,11 @@ export class ClosureSubjectExecutor {
                 ...descendantColumnNames.map(
                     (columnName) => `${subAlias}.${columnName}`,
                 ),
+                ...(levelColumn
+                    ? [
+                          `(${superAlias}.${levelColumnName} + 1 + ${subAlias}.${levelColumnName})`,
+                      ]
+                    : []),
             ]
 
             const entityWhereCondition =
@@ -305,6 +459,7 @@ export class ClosureSubjectExecutor {
                 `INSERT INTO ${tableName} (${[
                     ...ancestorColumnNames,
                     ...descendantColumnNames,
+                    ...(levelColumn ? [levelColumnName] : []),
                 ].join(", ")}) ` +
                     `SELECT ${select.join(", ")} ` +
                     `FROM ${tableName} AS ${superAlias}, ${tableName} AS ${subAlias} ` +
@@ -319,6 +474,7 @@ export class ClosureSubjectExecutor {
 
     /**
      * Executes operations when subject is being removed.
+     * @param subjects
      */
     async remove(subjects: Subject | Subject[]): Promise<void> {
         // Only mssql need to execute deletes for the juntion table as it doesn't support multi cascade paths.
@@ -362,6 +518,7 @@ export class ClosureSubjectExecutor {
     /**
      * Gets escaped table name with schema name if SqlServer or Postgres driver used with custom
      * schema name, otherwise returns escaped table name.
+     * @param tablePath
      */
     protected getTableName(tablePath: string): string {
         return tablePath
