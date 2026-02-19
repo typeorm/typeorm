@@ -633,6 +633,9 @@ AppDataSource.initialize().then(async () => {
       - "26257:26257"
 
 `
+            case "better-sqlite3":
+                throw new TypeORMError(`SQLite does not require docker`)
+
             case "oracle":
                 throw new TypeORMError(
                     `You cannot initialize a project with docker for Oracle driver yet.`,
