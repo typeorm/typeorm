@@ -68,11 +68,13 @@ export interface BetterSqlite3ConnectionOptions extends BaseDataSourceOptions {
      */
     readonly nativeBinding?: string
 
+    /**
+     * Not supported by better-sqlite3 (synchronous, single-connection driver).
+     */
     readonly poolSize?: never
 
     /**
      * Enables WAL mode. By default its disabled.
-     *
      * @see https://www.sqlite.org/wal.html
      */
     readonly enableWAL?: boolean
