@@ -25,6 +25,13 @@ new DataSource({
 })
 ```
 
+### `flags` option removed
+
+The `sqlite3` package accepted C-level open flags (`OPEN_URI`, `OPEN_SHAREDCACHE`, etc.). `better-sqlite3` does not support this — use the dedicated options instead:
+
+- `readonly` for read-only mode
+- `enableWAL` for WAL journal mode
+
 ### `busyTimeout` option renamed to `timeout`
 
 The `sqlite3` package used `busyTimeout` to configure SQLite's busy timeout. `better-sqlite3` uses `timeout` instead (default: 5000ms). Update your DataSource options accordingly:
