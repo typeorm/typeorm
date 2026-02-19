@@ -226,6 +226,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             this.expressionMap.wheres = [
                 { type: "simple", condition: condition },
             ]
+        this.validateWhereParameters(parameters)
         if (parameters) this.setParameters(parameters)
         return this
     }
@@ -247,6 +248,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             type: "and",
             condition: this.getWhereCondition(where),
         })
+        this.validateWhereParameters(parameters)
         if (parameters) this.setParameters(parameters)
         return this
     }
@@ -268,6 +270,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             type: "or",
             condition: this.getWhereCondition(where),
         })
+        this.validateWhereParameters(parameters)
         if (parameters) this.setParameters(parameters)
         return this
     }

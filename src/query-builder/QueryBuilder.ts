@@ -411,6 +411,36 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         return this
     }
 
+    /**
+     * Validates parameters for null/undefined values based on invalidWhereValuesBehavior config.
+     * Should be called before setParameters in where/andWhere/orWhere methods.
+     */
+    protected validateWhereParameters(parameters?: ObjectLiteral): void {
+        if (!parameters) return
+
+        const nullBehavior =
+            this.connection.options.invalidWhereValuesBehavior?.null || "ignore"
+        const undefinedBehavior =
+            this.connection.options.invalidWhereValuesBehavior?.undefined ||
+            "ignore"
+
+        for (const [key, value] of Object.entries(parameters)) {
+            if (value === null && nullBehavior === "throw") {
+                throw new TypeORMError(
+                    `Null value encountered in parameter ':${key}' of a where condition. ` +
+                        `To match with SQL NULL, the IsNull() operator must be used. ` +
+                        `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                )
+            }
+            if (value === undefined && undefinedBehavior === "throw") {
+                throw new TypeORMError(
+                    `Undefined value encountered in parameter ':${key}' of a where condition. ` +
+                        `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                )
+            }
+        }
+    }
+
     protected createParameter(value: any): string {
         let parameterName
 
@@ -1383,6 +1413,30 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
             if (metadata.hasRelationWithPropertyPath(path)) {
                 const relation = metadata.findRelationWithPropertyPath(path)!
+
+                // Check if all properties of the nested relation object are undefined
+                // This handles the case when user defines conditional queries with undefined values
+                if (typeof entity[key] === "object") {
+                    const undefinedKeys = Object.keys(entity[key]).filter(
+                        (k) => entity[key][k] === undefined,
+                    )
+                    const allAllUndefined =
+                        undefinedKeys.length === Object.keys(entity[key]).length
+                    if (allAllUndefined) {
+                        const undefinedBehavior =
+                            this.connection.options.invalidWhereValuesBehavior
+                                ?.undefined || "ignore"
+                        if (undefinedBehavior === "throw") {
+                            const firstUndefinedKey = undefinedKeys[0]
+                            throw new TypeORMError(
+                                `Undefined value encountered in property '${this.alias}.${path}.${firstUndefinedKey}' of a where condition. ` +
+                                    `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                            )
+                        }
+                        // Skip this relation if behavior is 'ignore'
+                        continue
+                    }
+                }
 
                 // There's also cases where we don't want to return back all of the properties.
                 // These handles the situation where someone passes the model & we don't need to make
