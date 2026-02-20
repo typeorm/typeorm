@@ -767,6 +767,24 @@ export class ColumnMetadata {
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
      */
+    isDateTimeType(): boolean {
+        return (
+            this.type === "date" ||
+            this.type === "time" ||
+            this.type === "time with time zone" ||
+            this.type === "time without time zone" ||
+            this.type === "timetz" ||
+            this.type === "datetime" ||
+            this.type === "datetime2" ||
+            this.type === "timestamp" ||
+            this.type === "timestamp without time zone" ||
+            this.type === "timestamp with time zone" ||
+            this.type === "timestamp with local time zone" ||
+            this.type === "timestamptz" ||
+            this.type === Date
+        )
+    }
+
     getEntityValue(
         entity: ObjectLiteral,
         transform: boolean = false,

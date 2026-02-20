@@ -22,6 +22,22 @@ export class DateUtils {
             : (mixedDate as Date)
     }
 
+    static normalizeDateLikeValue(value: any): Date | string | undefined {
+        if (value === null || value === undefined) return value
+        if (value instanceof Date || typeof value === "string") return value
+
+        if (typeof value === "object") {
+            if (typeof value.toJSDate === "function") {
+                return value.toJSDate()
+            }
+            if (typeof value.toDate === "function") {
+                return value.toDate()
+            }
+        }
+
+        return value
+    }
+
     /**
      * Converts given value into date string in a "YYYY-MM-DD" format.
      */
@@ -30,26 +46,32 @@ export class DateUtils {
         options?: { utc?: boolean },
     ): string {
         const utc = options?.utc ?? false
-        if (value instanceof Date) {
+        const normalizedValue = this.normalizeDateLikeValue(value)
+        if (normalizedValue instanceof Date) {
             if (utc) {
                 return (
-                    this.formatZerolessValue(value.getUTCFullYear(), 4) +
+                    this.formatZerolessValue(
+                        normalizedValue.getUTCFullYear(),
+                        4,
+                    ) +
                     "-" +
-                    this.formatZerolessValue(value.getUTCMonth() + 1) +
+                    this.formatZerolessValue(
+                        normalizedValue.getUTCMonth() + 1,
+                    ) +
                     "-" +
-                    this.formatZerolessValue(value.getUTCDate())
+                    this.formatZerolessValue(normalizedValue.getUTCDate())
                 )
             }
             return (
-                this.formatZerolessValue(value.getFullYear(), 4) +
+                this.formatZerolessValue(normalizedValue.getFullYear(), 4) +
                 "-" +
-                this.formatZerolessValue(value.getMonth() + 1) +
+                this.formatZerolessValue(normalizedValue.getMonth() + 1) +
                 "-" +
-                this.formatZerolessValue(value.getDate())
+                this.formatZerolessValue(normalizedValue.getDate())
             )
         }
 
-        return value
+        return normalizedValue as string
     }
 
     /**
@@ -102,17 +124,18 @@ export class DateUtils {
         value: Date | any,
         skipSeconds: boolean = false,
     ): string | any {
-        if (value instanceof Date)
+        const normalizedValue = this.normalizeDateLikeValue(value)
+        if (normalizedValue instanceof Date)
             return (
-                this.formatZerolessValue(value.getHours()) +
+                this.formatZerolessValue(normalizedValue.getHours()) +
                 ":" +
-                this.formatZerolessValue(value.getMinutes()) +
+                this.formatZerolessValue(normalizedValue.getMinutes()) +
                 (!skipSeconds
-                    ? ":" + this.formatZerolessValue(value.getSeconds())
+                    ? ":" + this.formatZerolessValue(normalizedValue.getSeconds())
                     : "")
             )
 
-        return value
+        return normalizedValue
     }
 
     /**
@@ -162,8 +185,11 @@ export class DateUtils {
         value: Date | any,
         useMilliseconds?: boolean,
     ): string | any {
-        if (typeof value === "string") {
-            value = new Date(value)
+        const normalizedValue = this.normalizeDateLikeValue(value)
+        if (typeof normalizedValue === "string") {
+            value = new Date(normalizedValue)
+        } else {
+            value = normalizedValue
         }
         if (value instanceof Date) {
             let finalValue =
@@ -194,8 +220,11 @@ export class DateUtils {
      * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss.sss" format.
      */
     static mixedDateToUtcDatetimeString(value: Date | any): string | any {
-        if (typeof value === "string") {
-            value = new Date(value)
+        const normalizedValue = this.normalizeDateLikeValue(value)
+        if (typeof normalizedValue === "string") {
+            value = new Date(normalizedValue)
+        } else {
+            value = normalizedValue
         }
         if (value instanceof Date) {
             return (
