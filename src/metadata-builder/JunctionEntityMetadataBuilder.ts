@@ -78,19 +78,20 @@ export class JunctionEntityMetadataBuilder {
                       )
                   })
                 : undefined
-            const columnName =
-                joinColumn && joinColumn.name
-                    ? joinColumn.name
-                    : this.connection.namingStrategy.joinTableColumnName(
-                          relation.entityMetadata.tableNameWithoutPrefix,
-                          referencedColumn.propertyName,
-                          referencedColumn.databaseName,
-                      )
+            const isExplicitlyNamed = !!(joinColumn && joinColumn.name)
+            const columnName = isExplicitlyNamed
+                ? joinColumn.name!
+                : this.connection.namingStrategy.joinTableColumnName(
+                      relation.entityMetadata.tableNameWithoutPrefix,
+                      referencedColumn.propertyName,
+                      referencedColumn.databaseName,
+                  )
 
             return new ColumnMetadata({
                 connection: this.connection,
                 entityMetadata: entityMetadata,
                 referencedColumn: referencedColumn,
+                isExplicitlyNamed: isExplicitlyNamed,
                 args: {
                     target: "",
                     mode: "virtual",
@@ -146,20 +147,20 @@ export class JunctionEntityMetadataBuilder {
                           )
                       })
                     : undefined
-                const columnName =
-                    joinColumn && joinColumn.name
-                        ? joinColumn.name
-                        : this.connection.namingStrategy.joinTableInverseColumnName(
-                              relation.inverseEntityMetadata
-                                  .tableNameWithoutPrefix,
-                              inverseReferencedColumn.propertyName,
-                              inverseReferencedColumn.databaseName,
-                          )
+                const isExplicitlyNamed = !!(joinColumn && joinColumn.name)
+                const columnName = isExplicitlyNamed
+                    ? joinColumn.name!
+                    : this.connection.namingStrategy.joinTableInverseColumnName(
+                          relation.inverseEntityMetadata.tableNameWithoutPrefix,
+                          inverseReferencedColumn.propertyName,
+                          inverseReferencedColumn.databaseName,
+                      )
 
                 return new ColumnMetadata({
                     connection: this.connection,
                     entityMetadata: entityMetadata,
                     referencedColumn: inverseReferencedColumn,
+                    isExplicitlyNamed: isExplicitlyNamed,
                     args: {
                         target: "",
                         mode: "virtual",
@@ -208,6 +209,11 @@ export class JunctionEntityMetadataBuilder {
             junctionColumns,
             inverseJunctionColumns,
         )
+
+        // Shared columns on inverse side are non-insertable/updatable to prevent
+        // duplicate column bindings in DML operations (e.g., INSERT INTO table (tenant_id, tenant_id, ...))
+        // Only the owner side (with @JoinTable) controls shared column values
+        this.configureSharedColumns(junctionColumns, inverseJunctionColumns)
 
         // set junction table columns
         entityMetadata.ownerColumns = junctionColumns
@@ -378,23 +384,62 @@ export class JunctionEntityMetadataBuilder {
                     junctionColumn.givenDatabaseName ===
                     inverseJunctionColumn.givenDatabaseName
                 ) {
-                    const junctionColumnName =
-                        this.connection.namingStrategy.joinTableColumnDuplicationPrefix(
-                            junctionColumn.propertyName,
-                            1,
-                        )
-                    junctionColumn.propertyName = junctionColumnName
-                    junctionColumn.givenDatabaseName = junctionColumnName
+                    let index = 1
+                    // If explicit name is provided, don't rename
+                    // If implicit, rename them (backward compatibility)
+                    if (!junctionColumn.isExplicitlyNamed) {
+                        const junctionColumnName =
+                            this.connection.namingStrategy.joinTableColumnDuplicationPrefix(
+                                junctionColumn.propertyName,
+                                index++,
+                            )
+                        junctionColumn.propertyName = junctionColumnName
+                        junctionColumn.givenDatabaseName = junctionColumnName
+                    }
 
-                    const inverseJunctionColumnName =
-                        this.connection.namingStrategy.joinTableColumnDuplicationPrefix(
-                            inverseJunctionColumn.propertyName,
-                            2,
-                        )
-                    inverseJunctionColumn.propertyName =
-                        inverseJunctionColumnName
-                    inverseJunctionColumn.givenDatabaseName =
-                        inverseJunctionColumnName
+                    if (!inverseJunctionColumn.isExplicitlyNamed) {
+                        const inverseJunctionColumnName =
+                            this.connection.namingStrategy.joinTableColumnDuplicationPrefix(
+                                inverseJunctionColumn.propertyName,
+                                index++,
+                            )
+                        inverseJunctionColumn.propertyName =
+                            inverseJunctionColumnName
+                        inverseJunctionColumn.givenDatabaseName =
+                            inverseJunctionColumnName
+                    }
+                }
+            })
+        })
+    }
+
+    /**
+     * Handles shared columns in junction tables by preventing duplicate column bindings.
+     *
+     * When both sides of a many-to-many relation reference the same physical database column
+     * (e.g., both sides use "tenant_id"), we need to ensure only one side controls the column
+     * to avoid SQL errors like: INSERT INTO junction (tenant_id, tenant_id, ...) VALUES (1, 1, ...)
+     *
+     * This enables composite foreign key constraints in partitioned many-to-many relationships
+     * where a shared column (like tenant_id) is part of both foreign keys.
+     *
+     * @param junctionColumns Columns from the owner side (entity with @JoinTable)
+     * @param inverseJunctionColumns Columns from the inverse side
+     */
+    protected configureSharedColumns(
+        junctionColumns: ColumnMetadata[],
+        inverseJunctionColumns: ColumnMetadata[],
+    ) {
+        junctionColumns.forEach((junctionColumn) => {
+            inverseJunctionColumns.forEach((inverseJunctionColumn) => {
+                if (
+                    junctionColumn.givenDatabaseName ===
+                    inverseJunctionColumn.givenDatabaseName
+                ) {
+                    // Mark inverse side column as read-only to prevent duplicate bindings
+                    // The owner side (with @JoinTable) retains control over shared column values
+                    inverseJunctionColumn.isInsert = false
+                    inverseJunctionColumn.isUpdate = false
                 }
             })
         })
