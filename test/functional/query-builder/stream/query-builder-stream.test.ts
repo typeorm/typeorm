@@ -52,6 +52,12 @@ describe("query builder > stream", () => {
                 item.order = order
                 await dataSource.manager.save(item)
 
+                const item2 = new Item()
+                item2.quantity = 2
+                item2.product = product
+                item2.order = order
+                await dataSource.manager.save(item2)
+
                 const payment = new Payment()
                 payment.amount = 100
                 payment.order = order
@@ -65,7 +71,7 @@ describe("query builder > stream", () => {
                     .leftJoinAndSelect("item.product", "product")
                     .leftJoinAndSelect("product.category", "category")
                     .where("order.enabled = :enabled", { enabled: true })
-                    .orderBy("order.created_at", "DESC")
+                    .orderBy("order.createdAt", "DESC")
                     .stream()
 
                 const results: any[] = []
@@ -73,7 +79,7 @@ describe("query builder > stream", () => {
                     results.push(chunk)
                 }
 
-                expect(results.length).to.be.greaterThan(0)
+                expect(results.length).to.equal(1)
                 const result = results[0]
 
                 expect(result).to.be.instanceOf(Order)
@@ -83,6 +89,7 @@ describe("query builder > stream", () => {
                 expect(result.user).to.have.property("name", "Alice")
                 expect(result).to.have.property("items")
                 expect(result.items).to.be.an("array")
+                expect(result.items.length).to.equal(2)
                 expect(result.items[0].product).to.be.an("object")
                 expect(result.items[0].product).to.have.property(
                     "name",
@@ -90,6 +97,16 @@ describe("query builder > stream", () => {
                 )
                 expect(result.items[0].product.category).to.be.an("object")
                 expect(result.items[0].product.category).to.have.property(
+                    "name",
+                    "Electronics",
+                )
+                expect(result.items[1].product).to.be.an("object")
+                expect(result.items[1].product).to.have.property(
+                    "name",
+                    "Computer",
+                )
+                expect(result.items[1].product.category).to.be.an("object")
+                expect(result.items[1].product.category).to.have.property(
                     "name",
                     "Electronics",
                 )

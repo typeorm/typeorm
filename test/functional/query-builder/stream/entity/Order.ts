@@ -19,7 +19,7 @@ export class Order {
     enabled: boolean
 
     @CreateDateColumn()
-    created_at: Date
+    createdAt: Date
 
     @ManyToOne(() => User)
     user: User
