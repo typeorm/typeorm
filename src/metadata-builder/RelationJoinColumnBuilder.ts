@@ -14,25 +14,25 @@ import { OrmUtils } from "../util/OrmUtils"
  * Cases it should cover:
  * 1. when join column is set with custom name and without referenced column name
  * we need automatically set referenced column name - primary ids by default
- * @JoinColumn({ name: "custom_name" })
+ * `@JoinColumn({ name: "custom_name" })`
  *
  * 2. when join column is set with only referenced column name
  * we need automatically set join column name - relation name + referenced column name
- * @JoinColumn({ referencedColumnName: "title" })
+ * `@JoinColumn({ referencedColumnName: "title" })`
  *
  * 3. when join column is set without both referenced column name and join column name
  * we need to automatically set both of them
- * @JoinColumn()
+ * `@JoinColumn()`
  *
- * 4. when join column is not set at all (as in case of @ManyToOne relation)
+ * 4. when join column is not set at all (as in case of `@ManyToOne` relation)
  * we need to create join column for it with proper referenced column name and join column name
  *
  * 5. when multiple join columns set none of referencedColumnName and name can be optional
  * both options are required
- * @JoinColumn([
+ * `@JoinColumn([
  *      { name: "category_title", referencedColumnName: "type" },
  *      { name: "category_title", referencedColumnName: "name" },
- * ])
+ * ])`
  *
  * Since for many-to-one relations having JoinColumn decorator is not required,
  * we need to go through each many-to-one relation without join column decorator set
@@ -51,6 +51,8 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Builds a foreign key of the many-to-one or one-to-one owner relations.
+     * @param joinColumns
+     * @param relation
      */
     build(
         joinColumns: JoinColumnMetadataArgs[],
@@ -120,6 +122,8 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Collects referenced columns from the given join column args.
+     * @param joinColumns
+     * @param relation
      */
     protected collectReferencedColumns(
         joinColumns: JoinColumnMetadataArgs[],
@@ -160,6 +164,9 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Collects columns from the given join column args.
+     * @param joinColumns
+     * @param relation
+     * @param referencedColumns
      */
     private collectColumns(
         joinColumns: JoinColumnMetadataArgs[],
