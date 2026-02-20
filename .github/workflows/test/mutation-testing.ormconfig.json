@@ -1,0 +1,56 @@
+[
+  {
+    "skip": false,
+    "name": "better-sqlite3",
+    "type": "better-sqlite3",
+    "database": "./temp/better-sqlite3db.db",
+    "logging": false
+  },
+  {
+    "skip": false,
+    "name": "mysql",
+    "type": "mysql",
+    "host": "localhost",
+    "port": 3306,
+    "username": "root",
+    "password": "admin",
+    "database": "test",
+    "logging": false
+  },
+  {
+    "skip": false,
+    "name": "mariadb",
+    "type": "mariadb",
+    "host": "localhost",
+    "port": 3307,
+    "username": "root",
+    "password": "admin",
+    "database": "test",
+    "logging": false
+  },
+  {
+    "skip": false,
+    "name": "postgres",
+    "type": "postgres",
+    "host": "localhost",
+    "port": 5432,
+    "username": "postgres",
+    "password": "postgres",
+    "database": "postgres",
+    "logging": false
+  },
+  {
+    "skip": false,
+    "name": "sqlite",
+    "type": "sqlite",
+    "database": "./temp/sqlitedb-1.db",
+    "logging": false,
+    "relationLoadStrategy": "join"
+  },
+  {
+    "skip": false,
+    "name": "sqljs",
+    "type": "sqljs",
+    "logging": false
+  }
+]

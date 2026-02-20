@@ -43,6 +43,9 @@ export class PostWithOptions {
     @Column("timestamp with time zone", { precision: 5 })
     timestampWithTimeZone: Date
 
+    @Column("timestamptz")
+    timestampTz: Date
+
     @Column("time", { precision: 3 })
     time: string
 

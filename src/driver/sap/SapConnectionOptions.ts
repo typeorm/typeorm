@@ -45,6 +45,14 @@ export interface SapConnectionOptions
         readonly maxPooledIdleTime?: number
 
         /**
+         * Defines the maximum time, in milliseconds, to wait for a connection
+         * to become available once the specified number of `maxConnectedOrPooled`
+         * open connections have been reached (default: 0, no wait).
+         * @remarks Requires `@sap/hana-client` version `2.27` or later.
+         */
+        readonly maxWaitTimeoutIfPoolExhausted?: number
+
+        /**
          * Determines whether or not the pooled connection should be tested for
          * viability before being reused (default: false).
          */
@@ -76,7 +84,7 @@ export interface SapConnectionOptions
 
         /**
          * Max milliseconds a request will wait for a resource before timing out.
-         * @deprecated Obsolete, no alternative exists.
+         * @deprecated Use {@link maxWaitTimeoutIfPoolExhausted} instead.
          */
         readonly requestTimeout?: number
 

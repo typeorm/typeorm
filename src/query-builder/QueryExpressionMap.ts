@@ -301,6 +301,12 @@ export class QueryExpressionMap {
     insertColumns: string[] = []
 
     /**
+     * SelectQueryBuilder to use for INSERT INTO ... SELECT FROM.
+     * When set, the insert will use a SELECT query as the source of values.
+     */
+    insertFromSelect?: QueryBuilder<any>
+
+    /**
      * Used if user wants to update or delete a specific entities.
      */
     whereEntities: ObjectLiteral[] = []
@@ -536,6 +542,9 @@ export class QueryExpressionMap {
         map.relationPropertyPath = this.relationPropertyPath
         map.of = this.of
         map.insertColumns = this.insertColumns
+        map.insertFromSelect = this.insertFromSelect
+            ? this.insertFromSelect.clone()
+            : undefined
         map.whereEntities = this.whereEntities
         map.updateEntity = this.updateEntity
         map.callListeners = this.callListeners

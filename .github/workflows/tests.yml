@@ -41,7 +41,8 @@ jobs:
 
             lint: &lint
               - *src-or-tests
-              - .prettierrc.json
+              - .prettierignore
+              - .prettierrc.js
               - eslint.config.mjs
 
   formatting:

@@ -6,8 +6,8 @@ import {
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
-import { Foo } from "./entities/Foo"
-import { FooView } from "./entities/FooView"
+import { Foo } from "./entity/Foo"
+import { FooView } from "./entity/FooView"
 
 const customTypeormMetadataTableName = "custom_typeorm_metadata_table_name"
 
