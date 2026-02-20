@@ -16,7 +16,7 @@ export type FindOptionsRelationsProperty<Property> =
                 ? never
                 : Property extends Function
                   ? never
-                  : Property extends Buffer
+                  : Property extends Uint8Array
                     ? never
                     : Property extends Date
                       ? never

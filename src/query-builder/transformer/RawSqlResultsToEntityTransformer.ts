@@ -11,6 +11,7 @@ import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { QueryRunner } from "../.."
 import { DriverUtils } from "../../driver/DriverUtils"
 import { ObjectUtils } from "../../util/ObjectUtils"
+import { isUint8Array, uint8ArrayToHex } from "../../util/Uint8ArrayUtils"
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -134,8 +135,8 @@ export class RawSqlResultsToEntityTransformer {
                     .map((key) => {
                         const keyValue = rawResult[key]
 
-                        if (Buffer.isBuffer(keyValue)) {
-                            return keyValue.toString("hex")
+                        if (isUint8Array(keyValue)) {
+                            return uint8ArrayToHex(keyValue)
                         }
 
                         if (ObjectUtils.isObject(keyValue)) {

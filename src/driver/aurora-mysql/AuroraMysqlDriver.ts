@@ -646,7 +646,7 @@ export class AuroraMysqlDriver implements Driver {
             return "varchar"
         } else if (column.type === Date) {
             return "datetime"
-        } else if ((column.type as any) === Buffer) {
+        } else if ((column.type as any) === Uint8Array) {
             return "blob"
         } else if (column.type === Boolean) {
             return "tinyint"

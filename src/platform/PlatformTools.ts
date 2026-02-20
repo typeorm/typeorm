@@ -190,7 +190,7 @@ export class PlatformTools {
         return fs.existsSync(pathStr)
     }
 
-    static readFileSync(filename: string): Buffer {
+    static readFileSync(filename: string): Uint8Array {
         return fs.readFileSync(filename)
     }
 

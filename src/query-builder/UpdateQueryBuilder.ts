@@ -18,6 +18,7 @@ import { TypeORMError } from "../error"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { DriverUtils } from "../driver/DriverUtils"
+import { isUint8Array } from "../util/Uint8ArrayUtils"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -520,7 +521,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             typeof value === "object" &&
                             !(value instanceof Date) &&
                             value !== null &&
-                            !Buffer.isBuffer(value)
+                            !isUint8Array(value)
                         ) {
                             value =
                                 column.referencedColumn.getEntityValue(value)
