@@ -4069,8 +4069,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 metadata.findColumnWithPropertyPathStrict(propertyPath)
             const embed = metadata.findEmbeddedWithPropertyPath(propertyPath)
             const relation = metadata.findRelationWithPropertyPath(propertyPath)
+            const relationId = metadata.relationIds.find(
+                (rid) => rid.propertyName === propertyPath,
+            )
 
-            if (!embed && !column && !relation)
+            if (!embed && !column && !relation && !relationId)
                 throw new EntityPropertyNotFoundError(propertyPath, metadata)
 
             if (column) {
@@ -4083,6 +4086,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     alias,
                     propertyPath,
                 )
+            } else if (relationId) {
+                if (
+                    relationId.relation.isManyToOne ||
+                    relationId.relation.isOneToOneOwner
+                ) {
+                    for (const joinColumn of relationId.relation.joinColumns) {
+                        this.selects.push(alias + "." + joinColumn.propertyPath)
+                    }
+                }
 
                 // } else if (relation) {
                 //     const joinAlias = alias + "_" + relation.propertyName;
