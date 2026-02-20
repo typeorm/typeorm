@@ -19,7 +19,7 @@ import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { UpsertType } from "../types/UpsertType"
-import { SpannerConnectionOptions } from "./SpannerConnectionOptions"
+import { SpannerDataSourceOptions } from "./SpannerDataSourceOptions"
 import { SpannerQueryRunner } from "./SpannerQueryRunner"
 
 /**
@@ -62,7 +62,7 @@ export class SpannerDriver implements Driver {
     /**
      * Connection options.
      */
-    options: SpannerConnectionOptions
+    options: SpannerDataSourceOptions
 
     /**
      * Indicates if replication is enabled.
@@ -178,7 +178,7 @@ export class SpannerDriver implements Driver {
 
     constructor(connection: DataSource) {
         this.connection = connection
-        this.options = connection.options as SpannerConnectionOptions
+        this.options = connection.options as SpannerDataSourceOptions
         this.isReplicated = this.options.replication ? true : false
 
         // load mysql package

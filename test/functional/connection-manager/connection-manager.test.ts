@@ -43,7 +43,7 @@ describe("ConnectionManager", () => {
         })
 
         /* it("should create a postgres connection when postgres driver is specified", () => {
-            const options: ConnectionOptions = {
+            const options = {
                 name: "myPostgresConnection",
                 driver: createTestingConnectionOptions("postgres")
             };
@@ -58,7 +58,7 @@ describe("ConnectionManager", () => {
     /*describe("createAndConnect", function() {
 
         it("should create a mysql connection when mysql driver is specified AND connect to it", async () => {
-            const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
+            const options = setupSingleTestingConnection("mysql", {
                 name: "default",
                 entities: []
             });
@@ -106,7 +106,7 @@ describe("ConnectionManager", () => {
         });
 
     /!*    it("should create a postgres connection when postgres driver is specified AND connect to it", async () => {
-            const options: ConnectionOptions = {
+            const options = {
                 name: "myPostgresConnection",
                 driver: createTestingConnectionOptions("postgres")
             };
@@ -212,7 +212,7 @@ describe("ConnectionManager", () => {
         })
 
         /*   it("should drop the database if dropSchema was set to true (postgres)", async () => {
-            const options: ConnectionOptions = {
+            const options = {
                 dropSchema: true,
                 synchronize: true,
                 driver: createTestingConnectionOptions("postgres"),
@@ -235,7 +235,7 @@ describe("ConnectionManager", () => {
          });*/
 
         /*    it("should drop the database if dropSchema was set to true (postgres)", async () => {
-            const options: ConnectionOptions = {
+            const options = {
                 dropSchema: true,
                 synchronize: true,
                 driver: createTestingConnectionOptions("postgres"),

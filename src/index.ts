@@ -143,7 +143,6 @@ export * from "./subscriber/event/QueryEvent"
 // export * from "./data-source";
 
 export { ConnectionOptionsReader } from "./connection/ConnectionOptionsReader"
-export { ConnectionOptions } from "./connection/ConnectionOptions"
 export { DataSource } from "./data-source/DataSource"
 export { ConnectionManager } from "./connection/ConnectionManager"
 export { DataSourceOptions } from "./data-source/DataSourceOptions"

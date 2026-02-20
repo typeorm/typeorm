@@ -5,7 +5,7 @@ import {
     CannotExecuteNotConnectedError,
 } from "../../../src"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { PostgresConnectionOptions } from "../../../src/driver/postgres/PostgresConnectionOptions"
+import { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
 import { EntityManager } from "../../../src/entity-manager/EntityManager"
 import { CannotGetEntityManagerNotConnectedError } from "../../../src/error/CannotGetEntityManagerNotConnectedError"
 import { NoConnectionForRepositoryError } from "../../../src/error/NoConnectionForRepositoryError"
@@ -366,7 +366,7 @@ describe("DataSource", () => {
                 dataSources.map(async (dataSource) => {
                     await dataSource.synchronize(true)
                     const schemaName = (
-                        dataSource.options as PostgresConnectionOptions
+                        dataSource.options as PostgresDataSourceOptions
                     ).schema
                     const comment = new CommentV1()
                     comment.title = "Change SchemaName"

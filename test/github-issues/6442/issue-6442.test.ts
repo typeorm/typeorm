@@ -8,7 +8,7 @@ import {
 import { DataSource } from "../../../src"
 import { fail } from "assert"
 import { Query } from "../../../src/driver/Query"
-import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions"
+import { MysqlDataSourceOptions } from "../../../src/driver/mysql/MysqlDataSourceOptions"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #6442 JoinTable does not respect inverseJoinColumns referenced column width", () => {
@@ -53,7 +53,7 @@ describe("github issues > #6442 JoinTable does not respect inverseJoinColumns re
                         dropSchema: false,
                         schemaCreate: false,
                     },
-                ) as MysqlConnectionOptions
+                ) as MysqlDataSourceOptions
 
                 if (!options) {
                     await connection.destroy()
