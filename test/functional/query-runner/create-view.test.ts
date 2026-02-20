@@ -13,7 +13,7 @@ describe("query runner > create view", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [__dirname + "/view/*{.js,.ts}"],
-            enabledDrivers: ["postgres", "oracle"],
+            enabledDrivers: ["postgres", "postgres-js", "oracle"],
             schemaCreate: true,
             dropSchema: true,
         })

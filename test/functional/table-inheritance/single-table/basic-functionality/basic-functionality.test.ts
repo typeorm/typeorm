@@ -512,7 +512,12 @@ describe("table-inheritance > single-table > basic-functionality", () => {
             async () =>
                 (connections = await createTestingConnections({
                     entities: [Human, Male],
-                    enabledDrivers: ["postgres", "cockroachdb", "mssql"],
+                    enabledDrivers: [
+                        "postgres",
+                        "postgres-js",
+                        "cockroachdb",
+                        "mssql",
+                    ],
                     schema: "my_schema",
                 })),
         )

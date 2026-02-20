@@ -16,7 +16,13 @@ describe("repository > returning", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres", "mysql", "mssql", "spanner"],
+                enabledDrivers: [
+                    "postgres",
+                    "postgres-js",
+                    "mysql",
+                    "mssql",
+                    "spanner",
+                ],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

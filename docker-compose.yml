@@ -51,8 +51,22 @@ services:
     # it's probably time to create a purpose-built image.
     image: "ghcr.io/naorpeled/typeorm-postgres:pg14-postgis3-pgvectorv0.8.0"
     container_name: "typeorm-postgres-14"
+    platform: linux/amd64
     ports:
       - "5432:5432"
+    environment:
+      POSTGRES_USER: "test"
+      POSTGRES_PASSWORD: "test"
+      POSTGRES_DB: "test"
+
+  postgres-1422:
+    # postgis is postgres + PostGIS (only). If you need additional extensions,
+    # it's probably time to create a purpose-built image.
+    image: "ghcr.io/naorpeled/typeorm-postgres:pg14-postgis3-pgvectorv0.8.0"
+    container_name: "typeorm-postgres-1422"
+    platform: linux/amd64
+    ports:
+      - "5433:5432"
     environment:
       POSTGRES_USER: "test"
       POSTGRES_PASSWORD: "test"

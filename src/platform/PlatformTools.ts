@@ -94,6 +94,9 @@ export class PlatformTools {
                 case "pg":
                     return require("pg")
 
+                case "postgres":
+                    return require("postgres")
+
                 case "pg-native":
                     return require("pg-native")
 

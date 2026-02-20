@@ -13,7 +13,7 @@ describe("github issues > #10054 Nested 'Or' Condition/Operation Support in Repo
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [Person],
-            enabledDrivers: ["postgres", "mysql"],
+            enabledDrivers: ["postgres", "postgres-js", "mysql"],
             schemaCreate: true,
             dropSchema: true,
         })

@@ -18,7 +18,7 @@ describe("github issues > #7266 rename table typeorm_metadata name.", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [Foo, FooView],
-                enabledDrivers: ["postgres", "mysql", "mariadb"],
+                enabledDrivers: ["postgres", "postgres-js", "mysql", "mariadb"],
                 metadataTableName: customTypeormMetadataTableName,
             })),
     )

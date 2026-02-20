@@ -11,7 +11,7 @@ describe("github issues > #1758 Synchronization bug in PostgreSQL bug occurs whe
         before(async () => {
             connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres", "cockroachdb"],
+                enabledDrivers: ["postgres", "postgres-js", "cockroachdb"],
                 schema: "public",
                 schemaCreate: true,
                 dropSchema: true,

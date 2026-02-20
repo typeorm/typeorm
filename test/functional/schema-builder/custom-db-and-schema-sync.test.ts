@@ -108,7 +108,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
         let connections: DataSource[]
         before(async () => {
             connections = await createTestingConnections({
-                enabledDrivers: ["postgres", "sap"],
+                enabledDrivers: ["postgres", "postgres-js", "sap"],
                 entities: [Album, Photo],
                 dropSchema: true,
             })

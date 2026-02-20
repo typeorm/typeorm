@@ -901,7 +901,7 @@ describe("repository > find options > operators", () => {
             async () =>
                 (connections = await createTestingConnections({
                     entities: [Comment],
-                    enabledDrivers: ["postgres", "cockroachdb"],
+                    enabledDrivers: ["postgres", "postgres-js", "cockroachdb"],
                 })),
         )
         beforeEach(() => reloadTestingDatabases(connections))

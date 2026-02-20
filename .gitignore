@@ -31,3 +31,6 @@ ormlogs.log
 # stryker temp files
 .stryker-tmp
 /reports
+
+# Vs Code Plugins
+.history/

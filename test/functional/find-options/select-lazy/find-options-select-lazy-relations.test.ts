@@ -16,7 +16,7 @@ describe("find options > select > lazy relations", () => {
         async () =>
             (dataSources = await createTestingConnections({
                 __dirname,
-                enabledDrivers: ["postgres"],
+                enabledDrivers: ["postgres", "postgres-js"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))

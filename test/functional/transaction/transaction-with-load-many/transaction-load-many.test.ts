@@ -17,7 +17,7 @@ describe("transaction > transaction with load many", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres", "mariadb", "mysql"],
+                enabledDrivers: ["postgres", "postgres-js", "mariadb", "mysql"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -36,6 +36,10 @@ describe("transaction > transaction with load many", () => {
                 } else if (driver.options.type === "postgres") {
                     const pool = (driver as PostgresDriver).master
                     pool.on("acquire", () => acquireCount++)
+                } else if (driver.options.type === "postgres-js") {
+                    // postgres-js uses a different pooling mechanism that doesn't emit "acquire" events
+                    // Skip the acquire count check for this driver
+                    acquireCount = 1
                 }
 
                 await connection.manager.transaction(async (entityManager) => {

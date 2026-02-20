@@ -17,7 +17,7 @@ describe("github issues > #5132: Default of -1 (minus 1) generates useless migra
                     schemaCreate: false,
                     dropSchema: true,
                     entities: [Foo],
-                    enabledDrivers: ["postgres", "cockroachdb"],
+                    enabledDrivers: ["postgres", "postgres-js", "cockroachdb"],
                 })),
         )
         after(() => closeTestingConnections(connections))

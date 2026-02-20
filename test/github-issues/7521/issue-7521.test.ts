@@ -11,7 +11,12 @@ describe("github issues > #7521 Only first \0 is removed in comments, only first
     before(
         async () =>
             (connections = await createTestingConnections({
-                enabledDrivers: ["postgres", "cockroachdb", "mysql"],
+                enabledDrivers: [
+                    "postgres",
+                    "postgres-js",
+                    "cockroachdb",
+                    "mysql",
+                ],
                 schemaCreate: false,
                 dropSchema: true,
                 entities: [Post],

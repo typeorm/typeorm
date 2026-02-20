@@ -17,7 +17,7 @@ describe("github issues > #7110: Typeorm Migrations ignore existing default valu
                     schemaCreate: false,
                     dropSchema: true,
                     entities: [Foo],
-                    enabledDrivers: ["postgres", "cockroachdb"],
+                    enabledDrivers: ["postgres", "postgres-js", "cockroachdb"],
                 })),
         )
         after(() => closeTestingConnections(connections))

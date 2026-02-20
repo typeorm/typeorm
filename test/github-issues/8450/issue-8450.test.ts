@@ -15,7 +15,7 @@ describe("github issues > #8450 Generated column not in RETURNING clause on save
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres", "mysql"],
+                enabledDrivers: ["postgres", "postgres-js", "mysql"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

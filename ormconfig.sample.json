@@ -65,6 +65,17 @@
   },
   {
     "skip": false,
+    "name": "postgres-js",
+    "type": "postgres-js",
+    "host": "localhost",
+    "port": 5432,
+    "username": "test",
+    "password": "test",
+    "database": "test",
+    "logging": false
+  },
+  {
+    "skip": false,
     "name": "mssql",
     "type": "mssql",
     "host": "localhost",

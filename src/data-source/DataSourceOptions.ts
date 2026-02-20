@@ -1,6 +1,7 @@
 import { CockroachConnectionOptions } from "../driver/cockroachdb/CockroachConnectionOptions"
 import { MysqlConnectionOptions } from "../driver/mysql/MysqlConnectionOptions"
 import { PostgresConnectionOptions } from "../driver/postgres/PostgresConnectionOptions"
+import { PostgresJSConnectionOptions } from "../driver/postgres-js/PostgresJSConnectionOptions"
 import { SqliteConnectionOptions } from "../driver/sqlite/SqliteConnectionOptions"
 import { SqlServerConnectionOptions } from "../driver/sqlserver/SqlServerConnectionOptions"
 import { OracleConnectionOptions } from "../driver/oracle/OracleConnectionOptions"
@@ -23,6 +24,7 @@ import { SpannerConnectionOptions } from "../driver/spanner/SpannerConnectionOpt
 export type DataSourceOptions =
     | MysqlConnectionOptions
     | PostgresConnectionOptions
+    | PostgresJSConnectionOptions
     | CockroachConnectionOptions
     | SqliteConnectionOptions
     | SqlServerConnectionOptions
