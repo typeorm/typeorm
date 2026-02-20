@@ -2,6 +2,7 @@ import "reflect-metadata"
 import { expect } from "chai"
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
+import { UuidPost } from "./entity/UuidPost"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -170,6 +171,46 @@ describe("repository > update methods", function () {
                     loadedPosts.filter((p) => p.title === "Updated post title")
                         .length,
                 ).to.equal(4)
+            }),
+        ))
+
+    it("should use = operator instead of IN when updating by a single uuid primary key", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(UuidPost)
+
+                const post1 = postRepository.create()
+                post1.title = "Post #1"
+                const post2 = postRepository.create()
+                post2.title = "Post #2"
+
+                await postRepository.save(post1)
+                await postRepository.save(post2)
+
+                // verify the generated query uses = instead of IN
+                const qb = postRepository
+                    .createQueryBuilder()
+                    .update(UuidPost)
+                    .set({ title: "Updated Post #1" })
+                    .whereInIds(post1.id)
+
+                const query = qb.getQuery()
+                expect(query).to.not.match(/\bIN\s*\(/)
+                expect(query).to.contain("=")
+
+                // execute and verify only the target row is updated
+                await qb.execute()
+
+                const loadedPosts = await postRepository.find()
+                expect(loadedPosts.length).to.equal(2)
+
+                const updatedPost = loadedPosts.find((p) => p.id === post1.id)
+                expect(updatedPost).to.not.be.undefined
+                expect(updatedPost!.title).to.equal("Updated Post #1")
+
+                const untouchedPost = loadedPosts.find((p) => p.id === post2.id)
+                expect(untouchedPost).to.not.be.undefined
+                expect(untouchedPost!.title).to.equal("Post #2")
             }),
         ))
 })
