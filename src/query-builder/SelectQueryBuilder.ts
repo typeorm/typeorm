@@ -2093,35 +2093,93 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             if (this.expressionMap.queryEntity) {
                 const expressionMap = this.expressionMap
+                const alias = expressionMap.mainAlias!
+                const driver = this.connection.driver
+                const selfQueryRunner = this.queryRunner
+
                 const transformer = new RawSqlResultsToEntityTransformer(
                     expressionMap,
-                    this.connection.driver,
+                    driver,
                     [],
                     [],
-                    this.queryRunner,
+                    selfQueryRunner,
                 )
+
+                // Build primary key column aliases matching the group() logic in
+                // RawSqlResultsToEntityTransformer, so we can buffer contiguous rows
+                // that belong to the same root entity before emitting a merged result.
+                const primaryKeyAliases: string[] =
+                    alias.metadata.tableType === "view"
+                        ? alias.metadata.columns.map((column) =>
+                              DriverUtils.buildAlias(
+                                  driver,
+                                  undefined,
+                                  alias.name,
+                                  column.databaseName,
+                              ),
+                          )
+                        : alias.metadata.primaryColumns.map((column) =>
+                              DriverUtils.buildAlias(
+                                  driver,
+                                  undefined,
+                                  alias.name,
+                                  column.databaseName,
+                              ),
+                          )
+
+                const getRowId = (chunk: any): string =>
+                    primaryKeyAliases
+                        .map((key) => {
+                            const val = chunk[key]
+                            if (Buffer.isBuffer(val)) return val.toString("hex")
+                            if (ObjectUtils.isObject(val))
+                                return JSON.stringify(val)
+                            return val
+                        })
+                        .join("_")
+
+                let bufferedRows: any[] = []
+                let currentId: string | null = null
+
+                const emitBuffered = (stream: Transform) => {
+                    if (bufferedRows.length === 0) return
+                    const entities = transformer.transform(bufferedRows, alias)
+                    if (entities.length > 0) {
+                        for (const entity of entities) stream.push(entity)
+                    } else {
+                        stream.push(bufferedRows[0])
+                    }
+                    bufferedRows = []
+                }
 
                 const transformStream = new Transform({
                     objectMode: true,
                     transform(chunk, encoding, callback) {
                         try {
-                            const entities = transformer.transform(
-                                [chunk],
-                                expressionMap.mainAlias!,
-                            )
-                            if (entities.length > 0) {
-                                this.push(entities[0])
+                            const id = getRowId(chunk)
+                            if (currentId === null || id !== currentId) {
+                                emitBuffered(this)
+                                currentId = id
+                                bufferedRows = [chunk]
                             } else {
-                                this.push(chunk)
+                                bufferedRows.push(chunk)
                             }
                             callback()
                         } catch (err) {
-                            callback(err)
+                            callback(err as Error)
+                        }
+                    },
+                    flush(callback) {
+                        try {
+                            emitBuffered(this)
+                            callback()
+                        } catch (err) {
+                            callback(err as Error)
                         }
                     },
                 })
 
-                return results.pipe(transformStream) as any
+                return results.pipe(transformStream) as unknown as ReadStream
             }
 
             return results
