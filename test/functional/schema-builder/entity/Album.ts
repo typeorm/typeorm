@@ -1,12 +1,15 @@
 import { Entity } from "../../../../src/decorator/entity/Entity"
 import { Column } from "../../../../src/decorator/columns/Column"
-import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
+import { PrimaryGeneratedColumn } from "../../../../src/decorator/columns/PrimaryGeneratedColumn"
 
-@Entity({ synchronize: false })
+@Entity()
 export class Album {
-    @PrimaryColumn()
+    @PrimaryGeneratedColumn()
     id: number
 
-    @Column()
-    name: string
+    @Column({ type: "varchar", length: "50" })
+    title: string
+
+    @Column({ type: "varchar", length: "200" })
+    description: string
 }
