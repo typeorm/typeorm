@@ -18,7 +18,7 @@ describe("deferrable foreign key constraint", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["better-sqlite3", "postgres", "sap", "sqlite"],
+                enabledDrivers: ["better-sqlite3", "postgres", "sap"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

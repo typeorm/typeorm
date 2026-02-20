@@ -13,9 +13,9 @@ describe("sqlite driver > busy-timeout", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
                 driverSpecific: {
-                    busyTimeout: 2000,
+                    timeout: 2000,
                 },
             })),
     )

@@ -14,7 +14,7 @@ describe("github issues > #4958 getRepository returns results from another Repo"
         async () =>
             (connections = await createTestingConnections({
                 entities: [First, Second],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

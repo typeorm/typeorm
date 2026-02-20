@@ -13,7 +13,7 @@ describe("sqlite driver > throws an error when queried after closing connection"
         async () =>
             (connections = await createTestingConnections({
                 entities: [],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -25,9 +25,7 @@ describe("sqlite driver > throws an error when queried after closing connection"
                 await connection.close()
                 await expect(
                     connection.query("select * from sqlite_master;"),
-                ).to.rejectedWith(
-                    "Connection with sqlite database is not established. Check connection configuration.",
-                )
+                ).to.rejectedWith("The database connection is not open")
             }),
         ))
 })

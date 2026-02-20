@@ -21,7 +21,6 @@ describe("github issues > #3158 Cannot run sync a second time", () => {
                     "oracle",
                     "mssql",
                     "sqljs",
-                    "sqlite",
                     "better-sqlite3",
                 ],
                 // todo(AlexMesser): check why tests are failing under postgres driver

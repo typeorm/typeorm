@@ -14,7 +14,7 @@ describe("github issues > #9715 Database schema is not updated by sync/migration
                 migrations: [__dirname + "/migration/*{.js,.ts}"],
                 schemaCreate: false,
                 dropSchema: true,
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
             })),
     )
     after(() => closeTestingConnections(dataSources))

@@ -22,7 +22,6 @@ describe("github issues > #2518 TreeRepository.findDescendantsTree does not load
                     "mariadb",
                     "mssql",
                     "mysql",
-                    "sqlite",
                     "better-sqlite3",
                     "sqljs",
                 ],

@@ -19,7 +19,7 @@ describe("github issues > #10626 Regression in transactionDepth handling", () =>
         async () =>
             (connections = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["better-sqlite3", "postgres", "sqlite"],
+                enabledDrivers: ["better-sqlite3", "postgres"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

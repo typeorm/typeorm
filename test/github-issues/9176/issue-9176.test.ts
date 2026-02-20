@@ -23,7 +23,7 @@ describe("github issues > #9176 The names of foreign keys created by queryRunner
             async () =>
                 (dataSources = await createTestingConnections({
                     entities: [Author, Post],
-                    enabledDrivers: ["sqlite"],
+                    enabledDrivers: ["better-sqlite3"],
                     migrations: [
                         CreatePostTable1656926770819,
                         CreateAuthorTable1656939116999,
@@ -55,7 +55,7 @@ describe("github issues > #9176 The names of foreign keys created by queryRunner
             async () =>
                 (dataSources = await createTestingConnections({
                     entities: [User],
-                    enabledDrivers: ["sqlite"],
+                    enabledDrivers: ["better-sqlite3"],
                     migrations: [
                         CreateUserTable1657066872930,
                         CreateUniqueConstraintToUser1657067039714,
@@ -86,7 +86,7 @@ describe("github issues > #9176 The names of foreign keys created by queryRunner
             async () =>
                 (dataSources = await createTestingConnections({
                     entities: [CheckedUser],
-                    enabledDrivers: ["sqlite"],
+                    enabledDrivers: ["better-sqlite3"],
                     migrations: [
                         CreateCheckedUserTable1657067039715,
                         CreateCheckConstraintToUser1657067039716,

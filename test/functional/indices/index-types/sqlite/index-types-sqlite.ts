@@ -11,7 +11,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
     it("Should throw an error if index type is set and sqlite does not support index types", async () => {
         const connections = await createTestingConnections({
             entities: [User3],
-            enabledDrivers: ["sqlite"],
+            enabledDrivers: ["better-sqlite3"],
             schemaCreate: true,
         })
 
@@ -22,7 +22,7 @@ describe("github issues > Add support of 'hash' indexes for postgres", () => {
             await expect(
                 createTestingConnections({
                     entities: [User2],
-                    enabledDrivers: ["sqlite"],
+                    enabledDrivers: ["better-sqlite3"],
                     schemaCreate: true,
                 }),
             ).to.be.rejectedWith(TypeORMError)

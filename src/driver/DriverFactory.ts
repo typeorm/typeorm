@@ -3,7 +3,6 @@ import { CockroachDriver } from "./cockroachdb/CockroachDriver"
 import { MongoDriver } from "./mongodb/MongoDriver"
 import { SqlServerDriver } from "./sqlserver/SqlServerDriver"
 import { OracleDriver } from "./oracle/OracleDriver"
-import { SqliteDriver } from "./sqlite/SqliteDriver"
 import { CordovaDriver } from "./cordova/CordovaDriver"
 import { ReactNativeDriver } from "./react-native/ReactNativeDriver"
 import { NativescriptDriver } from "./nativescript/NativescriptDriver"
@@ -42,8 +41,6 @@ export class DriverFactory {
                 return new SapDriver(connection)
             case "mariadb":
                 return new MysqlDriver(connection)
-            case "sqlite":
-                return new SqliteDriver(connection)
             case "better-sqlite3":
                 return new BetterSqlite3Driver(connection)
             case "cordova":
@@ -88,7 +85,6 @@ export class DriverFactory {
                     "postgres",
                     "react-native",
                     "sap",
-                    "sqlite",
                     "sqljs",
                     "spanner",
                 ])

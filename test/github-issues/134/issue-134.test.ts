@@ -17,7 +17,6 @@ describe("github issues > #134 Error TIME is converted to 'HH-mm' instead of 'HH
                 enabledDrivers: [
                     "mysql",
                     "mariadb",
-                    "sqlite",
                     "better-sqlite3",
                     "mssql",
                     "postgres",

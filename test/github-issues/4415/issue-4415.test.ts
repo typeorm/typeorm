@@ -30,7 +30,6 @@ describe.skip("github issues > #4415 allow beautify generated migrations", () =>
         "mssql",
         "mysql",
         "mariadb",
-        "sqlite",
         "better-sqlite3",
         "oracle",
         "cockroachdb",

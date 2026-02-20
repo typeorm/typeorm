@@ -378,12 +378,9 @@ describe("basic-lazy-relations", () => {
         Promise.all(
             connections
                 .filter((connection) =>
-                    new Set([
-                        "mysql",
-                        "sqlite",
-                        "better-sqlite3",
-                        "postgres",
-                    ]).has(connection.options.type),
+                    new Set(["mysql", "better-sqlite3", "postgres"]).has(
+                        connection.options.type,
+                    ),
                 )
                 .map(async (connection) => {
                     await connection.manager.transaction(async (manager) => {
@@ -412,12 +409,9 @@ describe("basic-lazy-relations", () => {
         Promise.all(
             connections
                 .filter((connection) =>
-                    new Set([
-                        "mysql",
-                        "sqlite",
-                        "better-sqlite3",
-                        "postgres",
-                    ]).has(connection.options.type),
+                    new Set(["mysql", "better-sqlite3", "postgres"]).has(
+                        connection.options.type,
+                    ),
                 )
                 .map(async (connection) => {
                     const loadedCategory = await connection.manager.transaction(

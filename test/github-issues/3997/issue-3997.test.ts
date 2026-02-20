@@ -18,7 +18,7 @@ describe("github issues > #3997 synchronize=true always failing when using decim
                     "cockroachdb",
                     "mssql",
                     "mysql",
-                    "sqlite",
+                    "better-sqlite3",
                 ],
                 schemaCreate: false,
                 dropSchema: true,
