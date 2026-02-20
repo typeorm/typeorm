@@ -38,7 +38,7 @@ export function getMetadataArgsStorage(): MetadataArgsStorage {
 
 /**
  * Reads connection options stored in ormconfig configuration file.
- *
+ * @param connectionName
  * @deprecated
  */
 export async function getConnectionOptions(
@@ -49,7 +49,6 @@ export async function getConnectionOptions(
 
 /**
  * Gets a ConnectionManager which creates connections.
- *
  * @deprecated
  */
 export function getConnectionManager(): ConnectionManager {
@@ -59,21 +58,20 @@ export function getConnectionManager(): ConnectionManager {
 /**
  * Creates a new connection and registers it in the manager.
  * Only one connection from ormconfig will be created (name "default" or connection without name).
- *
  * @deprecated
  */
 export async function createConnection(): Promise<DataSource>
 
 /**
  * Creates a new connection from the ormconfig file with a given name.
- *
+ * @param name
  * @deprecated
  */
 export async function createConnection(name: string): Promise<DataSource>
 
 /**
  * Creates a new connection and registers it in the manager.
- *
+ * @param options
  * @deprecated
  */
 export async function createConnection(
@@ -86,7 +84,7 @@ export async function createConnection(
  * If connection options were not specified, then it will try to create connection automatically,
  * based on content of ormconfig (json/js/env) file or environment variables.
  * Only one connection from ormconfig will be created (name "default" or connection without name).
- *
+ * @param optionsOrName
  * @deprecated
  */
 export async function createConnection(
@@ -97,7 +95,7 @@ export async function createConnection(
     const options = ObjectUtils.isObject(optionsOrName)
         ? (optionsOrName as DataSourceOptions)
         : await getConnectionOptions(connectionName)
-    return getConnectionManager().create(options).connect()
+    return getConnectionManager().create(options).initialize()
 }
 
 /**
@@ -106,7 +104,7 @@ export async function createConnection(
  * If connection options were not specified, then it will try to create connection automatically,
  * based on content of ormconfig (json/js/env) file or environment variables.
  * All connections from the ormconfig will be created.
- *
+ * @param options
  * @deprecated
  */
 export async function createConnections(
@@ -118,7 +116,7 @@ export async function createConnections(
     )
     // Do not use Promise.all or test 8522 will produce a dangling sqlite connection
     for (const connection of connections) {
-        await connection.connect()
+        await connection.initialize()
     }
     return connections
 }
@@ -126,7 +124,7 @@ export async function createConnections(
 /**
  * Gets connection from the connection manager.
  * If connection name wasn't specified, then "default" connection will be retrieved.
- *
+ * @param connectionName
  * @deprecated
  */
 export function getConnection(connectionName: string = "default"): DataSource {
@@ -136,7 +134,7 @@ export function getConnection(connectionName: string = "default"): DataSource {
 /**
  * Gets entity manager from the connection.
  * If connection name wasn't specified, then "default" connection will be retrieved.
- *
+ * @param connectionName
  * @deprecated
  */
 export function getManager(connectionName: string = "default"): EntityManager {
@@ -146,7 +144,7 @@ export function getManager(connectionName: string = "default"): EntityManager {
 /**
  * Gets MongoDB entity manager from the connection.
  * If connection name wasn't specified, then "default" connection will be retrieved.
- *
+ * @param connectionName
  * @deprecated
  */
 export function getMongoManager(
@@ -160,7 +158,7 @@ export function getMongoManager(
  * Gets Sqljs entity manager from connection name.
  * "default" connection is used, when no name is specified.
  * Only works when Sqljs driver is used.
- *
+ * @param connectionName
  * @deprecated
  */
 export function getSqljsManager(
@@ -172,7 +170,8 @@ export function getSqljsManager(
 
 /**
  * Gets repository for the given entity class.
- *
+ * @param entityClass
+ * @param connectionName
  * @deprecated
  */
 export function getRepository<Entity extends ObjectLiteral>(
@@ -186,7 +185,8 @@ export function getRepository<Entity extends ObjectLiteral>(
 
 /**
  * Gets tree repository for the given entity class.
- *
+ * @param entityClass
+ * @param connectionName
  * @deprecated
  */
 export function getTreeRepository<Entity extends ObjectLiteral>(
@@ -200,7 +200,8 @@ export function getTreeRepository<Entity extends ObjectLiteral>(
 
 /**
  * Gets tree repository for the given entity class.
- *
+ * @param customRepository
+ * @param connectionName
  * @deprecated
  */
 export function getCustomRepository<T>(
@@ -214,7 +215,8 @@ export function getCustomRepository<T>(
 
 /**
  * Gets mongodb repository for the given entity class or name.
- *
+ * @param entityClass
+ * @param connectionName
  * @deprecated
  */
 export function getMongoRepository<Entity extends ObjectLiteral>(
@@ -228,7 +230,9 @@ export function getMongoRepository<Entity extends ObjectLiteral>(
 
 /**
  * Creates a new query builder.
- *
+ * @param entityClass
+ * @param alias
+ * @param connectionName
  * @deprecated
  */
 export function createQueryBuilder<Entity extends ObjectLiteral>(

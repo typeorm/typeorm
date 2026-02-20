@@ -49,9 +49,6 @@ registerQueryBuilders()
  * DataSource is a pre-defined connection configuration to a specific database.
  * You can have multiple data sources connected (with multiple connections in it),
  * connected to multiple databases in your application.
- *
- * Before, it was called `Connection`, but now `Connection` is deprecated
- * because `Connection` isn't the best name for what it's actually is.
  */
 export class DataSource {
     readonly "@instanceof" = Symbol.for("DataSource")
@@ -164,18 +161,11 @@ export class DataSource {
     // -------------------------------------------------------------------------
 
     /**
-     Indicates if DataSource is initialized or not.
-     * @deprecated use .isInitialized instead
-     */
-    get isConnected() {
-        return this.isInitialized
-    }
-
-    /**
      * Gets the mongodb entity manager that allows to perform mongodb-specific repository operations
      * with any entity in this connection.
      *
      * Available only in mongodb connections.
+     * @returns the mongodb entity manager
      */
     get mongoManager(): MongoEntityManager {
         if (!InstanceChecker.isMongoEntityManager(this.manager))
@@ -190,6 +180,7 @@ export class DataSource {
      * Gets a sql.js specific Entity Manager that allows to perform special load and save operations
      *
      * Available only in connection with the sqljs driver.
+     * @returns an sqljs specific Entity Manager
      */
     get sqljsManager(): SqljsEntityManager {
         if (!InstanceChecker.isSqljsEntityManager(this.manager))
@@ -286,17 +277,6 @@ export class DataSource {
     }
 
     /**
-     * Performs connection to the database.
-     * This method should be called once on application bootstrap.
-     * This method not necessarily creates database connection (depend on database type),
-     * but it also can setup a connection pool with database to use.
-     * @deprecated use .initialize method instead
-     */
-    async connect(): Promise<this> {
-        return this.initialize()
-    }
-
-    /**
      * Closes connection with the database.
      * Once connection is closed, you cannot use repositories or perform any operations except opening connection again.
      */
@@ -310,15 +290,6 @@ export class DataSource {
         if (this.queryResultCache) await this.queryResultCache.disconnect()
 
         ObjectUtils.assign(this, { isInitialized: false })
-    }
-
-    /**
-     * Closes connection with the database.
-     * Once connection is closed, you cannot use repositories or perform any operations except opening connection again.
-     * @deprecated use .destroy method instead
-     */
-    async close(): Promise<void> {
-        return this.destroy()
     }
 
     /**
@@ -531,7 +502,8 @@ export class DataSource {
      * @param query
      * @param parameters
      * @param queryRunner
-     * @see [Official docs](https://typeorm.io/data-source-api) for examples.
+     * @returns a raw response from the database client
+     * @see {@link https://typeorm.io/data-source-api | Official docs} for examples.
      */
     async query<T = any>(
         query: string,
@@ -561,6 +533,7 @@ export class DataSource {
      * Example: dataSource.sql`SELECT * FROM table_name WHERE id = ${id}`
      * @param strings
      * @param values
+     * @returns a raw response from the database client
      */
     async sql<T = any>(
         strings: TemplateStringsArray,

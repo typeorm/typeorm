@@ -56,7 +56,7 @@ describe("github issues > #6442 JoinTable does not respect inverseJoinColumns re
                 ) as MysqlConnectionOptions
 
                 if (!options) {
-                    await connection.close()
+                    await connection.destroy()
                     fail()
                 }
 
@@ -77,8 +77,8 @@ describe("github issues > #6442 JoinTable does not respect inverseJoinColumns re
                         "ALTER TABLE `foo_bars` ADD CONSTRAINT `FK_b7fd4be386fa7cdb87ef8b12b69` FOREIGN KEY (`bar_id`) REFERENCES `bar_entity`(`id`) ON DELETE CASCADE ON UPDATE CASCADE",
                     ])
                 } finally {
-                    await connection.close()
-                    await migrationDataSource.close()
+                    await connection.destroy()
+                    await migrationDataSource.destroy()
                 }
             }),
         )

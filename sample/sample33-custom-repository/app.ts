@@ -10,7 +10,7 @@ Sample33CustomRepositoryConnection.setOptions({
     entities: [Post, Author, User],
 })
 
-Sample33CustomRepositoryConnection.connect()
+Sample33CustomRepositoryConnection.initialize()
     .then(async () => {
         const post = PostRepository.create()
         post.title = "Hello Custom Repositories!"

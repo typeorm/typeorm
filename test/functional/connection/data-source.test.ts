@@ -29,12 +29,10 @@ import { Subject } from "./entity/Subject"
 import { SiteLocation } from "./entity/SiteLocation"
 import { Site } from "./entity/Site"
 
-describe("Connection", () => {
-    // const resourceDir = __dirname + "/../../../../../test/functional/connection/";
-
+describe("DataSource", () => {
     describe("before connection is established", () => {
         let dataSource: DataSource
-        before(async () => {
+        before(() => {
             const options = setupSingleTestingConnection("mysql", {
                 name: "default",
                 entities: [],
@@ -51,32 +49,17 @@ describe("Connection", () => {
             return Promise.resolve()
         })
 
-        it("connection.isConnected should be false", () => {
+        it("dataSource.isInitialized should be false", () => {
             if (!dataSource) return
 
             expect(dataSource.isInitialized).to.equal(false)
         })
 
-        it.skip("entity manager and reactive entity manager should not be accessible", () => {
+        it.skip("entity manager should not be accessible", () => {
             expect(() => dataSource.manager).to.throw(
                 CannotGetEntityManagerNotConnectedError,
             )
-            // expect(() => connection.reactiveEntityManager).to.throw(CannotGetEntityManagerNotConnectedError);
         })
-
-        // todo: they aren't promises anymore
-        /*it("import entities, entity schemas, subscribers and naming strategies should work", () => {
-         return Promise.all([
-         connection.importEntities([Post]).should.be.fulfilled,
-         connection.importEntitySchemas([]).should.be.fulfilled,
-         connection.importSubscribers([]).should.be.fulfilled,
-         connection.importNamingStrategies([]).should.be.fulfilled,
-         connection.importEntitiesFromDirectories([]).should.be.fulfilled,
-         connection.importEntitySchemaFromDirectories([]).should.be.fulfilled,
-         connection.importSubscribersFromDirectories([]).should.be.fulfilled,
-         connection.importNamingStrategiesFromDirectories([]).should.be.fulfilled
-         ]);
-         });*/
 
         it("should not be able to close", async () => {
             if (!dataSource) return
@@ -103,8 +86,8 @@ describe("Connection", () => {
             expect(() => dataSource.getTreeRepository(Category)).to.throw(
                 NoConnectionForRepositoryError,
             )
-            // expect(() => connection.getReactiveRepository(Post)).to.throw(NoConnectionForRepositoryError);
-            // expect(() => connection.getReactiveTreeRepository(Category)).to.throw(NoConnectionForRepositoryError);
+            // expect(() => dataSource.getReactiveRepository(Post)).to.throw(NoConnectionForRepositoryError);
+            // expect(() => dataSource.getReactiveTreeRepository(Category)).to.throw(NoConnectionForRepositoryError);
         })
 
         it("should be able to connect", async () => {
@@ -130,32 +113,31 @@ describe("Connection", () => {
     })
 
     describe("after connection is established successfully", () => {
-        let connections: DataSource[]
-        beforeEach(() =>
-            createTestingConnections({
+        let dataSources: DataSource[]
+        beforeEach(async () => {
+            dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
-            }).then((all) => (connections = all)),
-        )
-        afterEach(() => closeTestingConnections(connections))
+            })
+        })
+        afterEach(() => closeTestingConnections(dataSources))
 
-        it("connection.isConnected should be true", () =>
-            connections.forEach((connection) => {
-                expect(connection.isInitialized).to.equal(true)
+        it("dataSource.isInitialized should be true", () =>
+            dataSources.forEach((dataSource) => {
+                expect(dataSource.isInitialized).to.equal(true)
             }))
 
-        it("entity manager and reactive entity manager should be accessible", () =>
-            connections.forEach((connection) => {
-                expect(connection.manager).to.be.instanceOf(EntityManager)
-                // expect(connection.reactiveEntityManager).to.be.instanceOf(ReactiveEntityManager);
+        it("entity manager should be accessible", () =>
+            dataSources.forEach((dataSource) => {
+                expect(dataSource.manager).to.be.instanceOf(EntityManager)
             }))
 
         it("should not be able to connect again", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     await expect(
-                        connection.initialize(),
+                        dataSource.initialize(),
                     ).to.eventually.be.rejectedWith(
                         CannotConnectAlreadyConnectedError,
                     )
@@ -164,82 +146,68 @@ describe("Connection", () => {
 
         it("should be able to close a connection", async () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    await expect(connection.destroy()).to.eventually.be
+                dataSources.map(async (dataSource) => {
+                    await expect(dataSource.destroy()).to.eventually.be
                         .fulfilled
                 }),
             ))
     })
 
     describe("working with repositories after connection is established successfully", () => {
-        let connections: DataSource[]
-        before(() =>
-            createTestingConnections({
+        let dataSources: DataSource[]
+        beforeEach(async () => {
+            dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
-            }).then((all) => (connections = all)),
-        )
-        after(() => closeTestingConnections(connections))
+            })
+        })
+        after(() => closeTestingConnections(dataSources))
 
         it("should be able to get simple entity repository", () =>
-            connections.forEach((connection) => {
-                connection.getRepository(Post).should.be.instanceOf(Repository)
-                connection
+            dataSources.forEach((dataSource) => {
+                dataSource.getRepository(Post).should.be.instanceOf(Repository)
+                dataSource
                     .getRepository(Post)
                     .should.not.be.instanceOf(TreeRepository)
-                connection.getRepository(Post).target.should.be.eql(Post)
+                dataSource.getRepository(Post).target.should.be.eql(Post)
             }))
 
         it("should be able to get tree entity repository", () =>
-            connections.forEach((connection) => {
-                connection
+            dataSources.forEach((dataSource) => {
+                dataSource
                     .getTreeRepository(Category)
                     .should.be.instanceOf(TreeRepository)
-                connection
+                dataSource
                     .getTreeRepository(Category)
                     .target.should.be.eql(Category)
             }))
 
-        // it("should be able to get simple entity reactive repository", () => connections.forEach(connection => {
-        //     connection.getReactiveRepository(Post).should.be.instanceOf(ReactiveRepository);
-        //     connection.getReactiveRepository(Post).should.not.be.instanceOf(TreeReactiveRepository);
-        //     connection.getReactiveRepository(Post).target.should.be.eql(Post);
+        // it("should not be able to get tree entity repository of the non-tree entities", () => dataSources.forEach(dataSource => {
+        //     expect(() => dataSource.getTreeRepository(Post)).to.throw(Error); // RepositoryNotTreeError
         // }));
 
-        // it("should be able to get tree entity reactive repository", () => connections.forEach(connection => {
-        //     connection.getReactiveTreeRepository(Category).should.be.instanceOf(TreeReactiveRepository);
-        //     connection.getReactiveTreeRepository(Category).target.should.be.eql(Category);
-        // }));
-
-        // it("should not be able to get tree entity repository of the non-tree entities", () => connections.forEach(connection => {
-        //     expect(() => connection.getTreeRepository(Post)).to.throw(Error); // RepositoryNotTreeError
-        //     // expect(() => connection.getReactiveTreeRepository(Post)).to.throw(RepositoryNotTreeError);
-        // }));
-
-        // it("should not be able to get repositories that are not registered", () => connections.forEach(connection => {
-        //     expect(() => connection.getRepository("SomeEntity")).to.throw(Error); // RepositoryNotTreeError
-        //     expect(() => connection.getTreeRepository("SomeEntity")).to.throw(Error); // RepositoryNotTreeError
-        //     // expect(() => connection.getReactiveRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
-        //     // expect(() => connection.getReactiveTreeRepository("SomeEntity")).to.throw(RepositoryNotFoundError);
+        // it("should not be able to get repositories that are not registered", () => dataSources.forEach(dataSource => {
+        //     expect(() => dataSource.getRepository("SomeEntity")).to.throw(Error); // RepositoryNotTreeError
+        //     expect(() => dataSource.getTreeRepository("SomeEntity")).to.throw(Error); // RepositoryNotTreeError
         // }));
     })
 
-    describe("generate a schema when connection.synchronize is called", () => {
-        let connections: DataSource[]
-        before(() =>
-            createTestingConnections({
+    describe("generate a schema when dataSource.synchronize is called", () => {
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
                 entities: [Post],
                 schemaCreate: true,
                 dropSchema: true,
-            }).then((all) => (connections = all)),
-        )
-        after(() => closeTestingConnections(connections))
+            })
+        })
+        after(() => closeTestingConnections(dataSources))
 
         it("database should be empty after schema is synced with dropDatabase flag", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    const postRepository = connection.getRepository(Post)
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
                     const post = new Post()
                     post.title = "new post"
                     await postRepository.save(post)
@@ -247,7 +215,7 @@ describe("Connection", () => {
                         id: post.id,
                     })
                     expect(loadedPost).to.be.eql(post)
-                    await connection.synchronize(true)
+                    await dataSource.synchronize(true)
                     const againLoadedPost = await postRepository.findOneBy({
                         id: post.id,
                     })
@@ -256,71 +224,70 @@ describe("Connection", () => {
             ))
     })
 
-    describe("log a schema when connection.logSyncSchema is called", () => {
-        let connections: DataSource[]
-        before(
-            async () =>
-                (connections = await createTestingConnections({
-                    entities: [Post],
-                })),
-        )
-        after(() => closeTestingConnections(connections))
+    describe("log a schema when dataSource.logSyncSchema is called", () => {
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [Post],
+            })
+        })
+        after(() => closeTestingConnections(dataSources))
 
         it("should return sql log properly", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    await connection.driver.createSchemaBuilder().log()
+                dataSources.map(async (dataSource) => {
+                    await dataSource.driver.createSchemaBuilder().log()
                     // console.log(sql);
                 }),
             ))
     })
 
     describe("after connection is closed successfully", () => {
-        // open a close connections
-        let connections: DataSource[] = []
+        // open and close connections
+        let dataSources: DataSource[] = []
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Post],
                 schemaCreate: true,
                 dropSchema: true,
             })
             await Promise.all(
-                connections.map((connection) => connection.destroy()),
+                dataSources.map((dataSource) => dataSource.destroy()),
             )
         })
 
         it("should not be able to close already closed connection", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (dataSource) => {
                     await expect(
-                        connection.destroy(),
+                        dataSource.destroy(),
                     ).to.eventually.be.rejectedWith(
                         CannotExecuteNotConnectedError,
                     )
                 }),
             ))
 
-        it("connection.isInitialized should be false", () =>
-            connections.forEach((connection) => {
-                expect(connection.isInitialized).to.equal(false)
+        it("dataSource.isInitialized should be false", () =>
+            dataSources.forEach((dataSource) => {
+                expect(dataSource.isInitialized).to.equal(false)
             }))
     })
 
     describe("skip schema generation when synchronize option is set to false", () => {
-        let connections: DataSource[]
-        beforeEach(() =>
-            createTestingConnections({
+        let dataSources: DataSource[]
+        beforeEach(async () => {
+            dataSources = await createTestingConnections({
                 entities: [View],
                 dropSchema: true,
-            }).then((all) => (connections = all)),
-        )
-        afterEach(() => closeTestingConnections(connections))
+            })
+        })
+        afterEach(() => closeTestingConnections(dataSources))
 
         it("database should be empty after schema sync", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    await connection.synchronize(true)
-                    const queryRunner = connection.createQueryRunner()
+                dataSources.map(async (dataSource) => {
+                    await dataSource.synchronize(true)
+                    const queryRunner = dataSource.createQueryRunner()
                     const tables = await queryRunner.getTables(["view"])
                     const tableNames = tables.map((table) => table.name)
                     await queryRunner.release()
@@ -330,30 +297,30 @@ describe("Connection", () => {
     })
 
     describe("different names of the same content of the schema", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         beforeEach(async () => {
-            const connections1 = await createTestingConnections({
+            const dataSources1 = await createTestingConnections({
                 name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schema: "test-schema",
                 dropSchema: true,
             })
-            const connections2 = await createTestingConnections({
+            const dataSources2 = await createTestingConnections({
                 name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schema: "another-schema",
                 dropSchema: true,
             })
-            connections = [...connections1, ...connections2]
+            dataSources = [...dataSources1, ...dataSources2]
         })
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should not interfere with each other", async () => {
-            await Promise.all(connections.map((c) => c.synchronize()))
-            await closeTestingConnections(connections)
-            const connections1 = await createTestingConnections({
+            await Promise.all(dataSources.map((c) => c.synchronize()))
+            await closeTestingConnections(dataSources)
+            const dataSources1 = await createTestingConnections({
                 name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV2, GuestV2],
@@ -361,7 +328,7 @@ describe("Connection", () => {
                 dropSchema: false,
                 schemaCreate: true,
             })
-            const connections2 = await createTestingConnections({
+            const dataSources2 = await createTestingConnections({
                 name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV2, GuestV2],
@@ -369,46 +336,46 @@ describe("Connection", () => {
                 dropSchema: false,
                 schemaCreate: true,
             })
-            connections = [...connections1, ...connections2]
+            dataSources = [...dataSources1, ...dataSources2]
         })
     })
 
     describe("can change postgres default schema name", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         beforeEach(async () => {
-            const connections1 = await createTestingConnections({
+            const dataSources1 = await createTestingConnections({
                 name: "test",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schema: "test-schema",
                 dropSchema: true,
             })
-            const connections2 = await createTestingConnections({
+            const dataSources2 = await createTestingConnections({
                 name: "another",
                 enabledDrivers: ["postgres"],
                 entities: [CommentV1, GuestV1],
                 schema: "another-schema",
                 dropSchema: true,
             })
-            connections = [...connections1, ...connections2]
+            dataSources = [...dataSources1, ...dataSources2]
         })
-        afterEach(() => closeTestingConnections(connections))
+        afterEach(() => closeTestingConnections(dataSources))
 
         it("schema name can be set", () =>
             Promise.all(
-                connections.map(async (connection) => {
-                    await connection.synchronize(true)
+                dataSources.map(async (dataSource) => {
+                    await dataSource.synchronize(true)
                     const schemaName = (
-                        connection.options as PostgresConnectionOptions
+                        dataSource.options as PostgresConnectionOptions
                     ).schema
                     const comment = new CommentV1()
                     comment.title = "Change SchemaName"
                     comment.context = `To ${schemaName}`
 
-                    const commentRepo = connection.getRepository(CommentV1)
+                    const commentRepo = dataSource.getRepository(CommentV1)
                     await commentRepo.save(comment)
 
-                    const queryRunner = connection.createQueryRunner()
+                    const queryRunner = dataSource.createQueryRunner()
                     const rows = await queryRunner.query(
                         `select * from "${schemaName}"."comment" where id = $1`,
                         [comment.id],
@@ -421,20 +388,19 @@ describe("Connection", () => {
 
     // GitHub issue #7738
     describe("synchronize with multiple foreign keys to same table", () => {
-        let connections: DataSource[]
-        beforeEach(
-            async () =>
-                (connections = await createTestingConnections({
-                    enabledDrivers: ["postgres"],
-                    entities: [Professor, Subject, Site, SiteLocation],
-                    dropSchema: true,
-                })),
-        )
-        afterEach(() => closeTestingConnections(connections))
+        let dataSources: DataSource[]
+        beforeEach(async () => {
+            dataSources = await createTestingConnections({
+                enabledDrivers: ["postgres"],
+                entities: [Professor, Subject, Site, SiteLocation],
+                dropSchema: true,
+            })
+        })
+        afterEach(() => closeTestingConnections(dataSources))
 
         it("should not fail with constraint already exists error when synchronizing multiple times", () =>
             Promise.all(
-                connections.map(async (dataSource) => {
+                dataSources.map(async (dataSource) => {
                     // First synchronization
                     await dataSource.synchronize()
 
