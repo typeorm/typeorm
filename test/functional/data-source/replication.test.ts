@@ -1,6 +1,4 @@
 import { expect } from "chai"
-import "reflect-metadata"
-
 import { QueryRunner } from "../../../src"
 import { DataSource } from "../../../src/data-source/DataSource"
 import "../../utils/test-setup"
@@ -32,10 +30,10 @@ describe("Connection replication", () => {
     }
 
     describe("after connection is established successfully", function () {
-        let connection: DataSource
+        let dataSource: DataSource
 
         beforeEach(async () => {
-            connection = (
+            dataSource = (
                 await createTestingConnections({
                     entities: [Post, Category],
                     enabledDrivers: ["postgres"],
@@ -61,7 +59,7 @@ describe("Connection replication", () => {
             const post = new Post()
             post.title = "TypeORM Intro"
 
-            await connection
+            await dataSource
                 .createQueryBuilder()
                 .insert()
                 .into(Post)
@@ -69,14 +67,14 @@ describe("Connection replication", () => {
                 .execute()
         })
 
-        afterEach(() => closeTestingConnections([connection]))
+        afterEach(() => closeTestingConnections([dataSource]))
 
         it("connection.isInitialized should be true", () => {
-            connection.isInitialized.should.be.true
+            dataSource.isInitialized.should.be.true
         })
 
         it("query runners should go to the master by default", async () => {
-            const queryRunner = connection.createQueryRunner()
+            const queryRunner = dataSource.createQueryRunner()
             expect(queryRunner.getReplicationMode()).to.equal("master")
 
             await expectCurrentApplicationName(queryRunner, "master")
@@ -84,19 +82,19 @@ describe("Connection replication", () => {
         })
 
         it("query runners can have their replication mode overridden", async () => {
-            let queryRunner = connection.createQueryRunner("master")
+            let queryRunner = dataSource.createQueryRunner("master")
             queryRunner.getReplicationMode().should.equal("master")
             await expectCurrentApplicationName(queryRunner, "master")
             await queryRunner.release()
 
-            queryRunner = connection.createQueryRunner("slave")
+            queryRunner = dataSource.createQueryRunner("slave")
             queryRunner.getReplicationMode().should.equal("slave")
             await expectCurrentApplicationName(queryRunner, "slave")
             await queryRunner.release()
         })
 
         it("read queries should go to the slaves by default", async () => {
-            const result = await connection.manager
+            const result = await dataSource.manager
                 .createQueryBuilder(Post, "post")
                 .select("id")
                 .addSelect(
@@ -108,7 +106,7 @@ describe("Connection replication", () => {
         })
 
         it("write queries should go to the master", async () => {
-            const result = await connection.manager
+            const result = await dataSource.manager
                 .createQueryBuilder(Post, "post")
                 .insert()
                 .into(Post)
@@ -123,10 +121,10 @@ describe("Connection replication", () => {
     })
 
     describe("with custom replication default mode", function () {
-        let connection: DataSource
+        let dataSource: DataSource
 
         beforeEach(async () => {
-            connection = (
+            dataSource = (
                 await createTestingConnections({
                     entities: [Post, Category],
                     enabledDrivers: ["postgres"],
@@ -153,7 +151,7 @@ describe("Connection replication", () => {
             const post = new Post()
             post.title = "TypeORM Intro"
 
-            await connection
+            await dataSource
                 .createQueryBuilder()
                 .insert()
                 .into(Post)
@@ -161,10 +159,10 @@ describe("Connection replication", () => {
                 .execute()
         })
 
-        afterEach(() => closeTestingConnections([connection]))
+        afterEach(() => closeTestingConnections([dataSource]))
 
         it("query runners should go to the master by default", async () => {
-            const queryRunner = connection.createQueryRunner()
+            const queryRunner = dataSource.createQueryRunner()
             expect(queryRunner.getReplicationMode()).to.equal("master")
 
             await expectCurrentApplicationName(queryRunner, "master")
@@ -172,19 +170,19 @@ describe("Connection replication", () => {
         })
 
         it("query runners can have their replication mode overridden", async () => {
-            let queryRunner = connection.createQueryRunner("master")
+            let queryRunner = dataSource.createQueryRunner("master")
             queryRunner.getReplicationMode().should.equal("master")
             await expectCurrentApplicationName(queryRunner, "master")
             await queryRunner.release()
 
-            queryRunner = connection.createQueryRunner("slave")
+            queryRunner = dataSource.createQueryRunner("slave")
             queryRunner.getReplicationMode().should.equal("slave")
             await expectCurrentApplicationName(queryRunner, "slave")
             await queryRunner.release()
         })
 
         it("read queries should go to the master by default", async () => {
-            const result = await connection.manager
+            const result = await dataSource.manager
                 .createQueryBuilder(Post, "post")
                 .select("id")
                 .addSelect(
@@ -197,10 +195,10 @@ describe("Connection replication", () => {
     })
 
     describe("with undefined replication", function () {
-        let connection: DataSource
+        let dataSource: DataSource
 
         beforeEach(async () => {
-            connection = (
+            dataSource = (
                 await createTestingConnections({
                     entities: [Post, Category],
                     enabledDrivers: ["postgres"],
@@ -215,7 +213,7 @@ describe("Connection replication", () => {
             const post = new Post()
             post.title = "TypeORM Intro"
 
-            await connection
+            await dataSource
                 .createQueryBuilder()
                 .insert()
                 .into(Post)
@@ -223,10 +221,10 @@ describe("Connection replication", () => {
                 .execute()
         })
 
-        afterEach(() => closeTestingConnections([connection]))
+        afterEach(() => closeTestingConnections([dataSource]))
 
         it("query runners should go to the available instance", async () => {
-            const queryRunner = connection.createQueryRunner()
+            const queryRunner = dataSource.createQueryRunner()
             expect(queryRunner.getReplicationMode()).to.equal("master")
 
             await expectCurrentApplicationName(queryRunner, "")
@@ -234,7 +232,7 @@ describe("Connection replication", () => {
         })
 
         it("read queries should go to the available instance", async () => {
-            const result = await connection.manager
+            const result = await dataSource.manager
                 .createQueryBuilder(Post, "post")
                 .select("id")
                 .addSelect(
