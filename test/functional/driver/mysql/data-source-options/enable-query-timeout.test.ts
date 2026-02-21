@@ -8,7 +8,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 
-describe("driver > mysql > connection options > enableQueryTimeout", () => {
+describe("driver > mysql > DataSource options > enableQueryTimeout", () => {
     let dataSources: DataSource[]
     const commonConnectionOptions: TestingOptions = {
         entities: [__dirname + "/entity/*{.js,.ts}"],

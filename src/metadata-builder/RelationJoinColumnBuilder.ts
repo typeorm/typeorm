@@ -43,7 +43,7 @@ export class RelationJoinColumnBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: DataSource) {}
+    constructor(private dataSource: DataSource) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -82,7 +82,7 @@ export class RelationJoinColumnBuilder {
             name: joinColumns[0]?.foreignKeyConstraintName,
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
-            namingStrategy: this.connection.namingStrategy,
+            namingStrategy: this.dataSource.namingStrategy,
             columns,
             referencedColumns,
             onDelete: relation.onDelete,
@@ -104,14 +104,14 @@ export class RelationJoinColumnBuilder {
             entityMetadata: relation.entityMetadata,
             columns: foreignKey.columns,
             args: {
-                name: this.connection.namingStrategy.relationConstraintName(
+                name: this.dataSource.namingStrategy.relationConstraintName(
                     relation.entityMetadata.tableName,
                     foreignKey.columns.map((column) => column.databaseName),
                 ),
                 target: relation.entityMetadata.target,
             },
         })
-        uniqueConstraint.build(this.connection.namingStrategy)
+        uniqueConstraint.build(this.dataSource.namingStrategy)
 
         return { foreignKey, columns, uniqueConstraint }
     }
@@ -185,7 +185,7 @@ export class RelationJoinColumnBuilder {
             })
             const joinColumnName = joinColumnMetadataArg
                 ? joinColumnMetadataArg.name
-                : this.connection.namingStrategy.joinColumnName(
+                : this.dataSource.namingStrategy.joinColumnName(
                       relation.propertyName,
                       referencedColumn.propertyName,
                   )
@@ -199,7 +199,7 @@ export class RelationJoinColumnBuilder {
             )
             if (!relationalColumn) {
                 relationalColumn = new ColumnMetadata({
-                    connection: this.connection,
+                    connection: this.dataSource,
                     entityMetadata: relation.entityMetadata,
                     embeddedMetadata: relation.embeddedMetadata,
                     args: {
@@ -212,12 +212,12 @@ export class RelationJoinColumnBuilder {
                             length:
                                 !referencedColumn.length &&
                                 (DriverUtils.isMySQLFamily(
-                                    this.connection.driver,
+                                    this.dataSource.driver,
                                 ) ||
-                                    this.connection.driver.options.type ===
+                                    this.dataSource.driver.options.type ===
                                         "aurora-mysql") &&
                                 // some versions of mariadb support the column type and should not try to provide the length property
-                                this.connection.driver.normalizeType(
+                                this.dataSource.driver.normalizeType(
                                     referencedColumn,
                                 ) !== "uuid" &&
                                 (referencedColumn.generationStrategy ===
@@ -250,7 +250,7 @@ export class RelationJoinColumnBuilder {
             relationalColumn.referencedColumn = referencedColumn // its important to set it here because we need to set referenced column for user defined join column
             relationalColumn.type = referencedColumn.type // also since types of relational column and join column must be equal we override user defined column type
             relationalColumn.relationMetadata = relation
-            relationalColumn.build(this.connection)
+            relationalColumn.build(this.dataSource)
             return relationalColumn
         })
     }
