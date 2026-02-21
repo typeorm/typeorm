@@ -777,10 +777,72 @@ export class CockroachDriver implements Driver {
         }
 
         if (ObjectUtils.isObject(defaultValue) && defaultValue !== null) {
-            return `'${JSON.stringify(defaultValue)}'`
+            return `'${JSON.stringify(defaultValue).replace(/'/g, "''")}'`
         }
 
         return `${defaultValue}`
+    }
+
+    /**
+     * Compares "default" value of the column.
+     * @param columnMetadata
+     * @param tableColumn
+     */
+    private defaultEqual(
+        columnMetadata: ColumnMetadata,
+        tableColumn: TableColumn,
+    ): boolean {
+        // defaults are equal if both are undefined or null
+        if (
+            (columnMetadata.default === null ||
+                columnMetadata.default === undefined) &&
+            (tableColumn.default === null || tableColumn.default === undefined)
+        )
+            return true
+
+        if (
+            ["json", "jsonb"].includes(columnMetadata.type as string) &&
+            !["function", "undefined"].includes(typeof columnMetadata.default)
+        ) {
+            let jsonString = tableColumn.default
+            if (typeof jsonString === "string") {
+                jsonString = jsonString.trim()
+                if (
+                    jsonString.startsWith("e'") && // CockroachDB escapes JSON/JSONB default values with e'...'
+                    jsonString.endsWith("'")
+                ) {
+                    jsonString = jsonString.slice(2, -1).replace(/\\'/g, "'")
+                } else if (
+                    jsonString.startsWith("'") &&
+                    jsonString.endsWith("'")
+                ) {
+                    jsonString = jsonString.slice(1, -1).replace(/''/g, "'")
+                }
+            }
+
+            if (typeof jsonString === "string") {
+                try {
+                    const tableColumnDefault = JSON.parse(jsonString)
+                    return OrmUtils.deepCompare(
+                        columnMetadata.default,
+                        tableColumnDefault,
+                    )
+                } catch (err) {
+                    if (!(err instanceof SyntaxError)) {
+                        throw new TypeORMError(
+                            `Failed to compare default values of ${columnMetadata.propertyName} column`,
+                        )
+                    }
+                }
+            } else {
+                return OrmUtils.deepCompare(columnMetadata.default, jsonString)
+            }
+        }
+
+        const columnDefault = this.lowerDefaultValueIfNecessary(
+            this.normalizeDefault(columnMetadata),
+        )
+        return columnDefault === tableColumn.default
     }
 
     /**
@@ -960,9 +1022,7 @@ export class CockroachDriver implements Driver {
                 tableColumn.comment !==
                     this.escapeComment(columnMetadata.comment) ||
                 (!tableColumn.isGenerated &&
-                    this.lowerDefaultValueIfNecessary(
-                        this.normalizeDefault(columnMetadata),
-                    ) !== tableColumn.default) || // we included check for generated here, because generated columns already can have default values
+                    !this.defaultEqual(columnMetadata, tableColumn)) || // we included check for generated here, because generated columns already can have default values
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.isUnique !==
