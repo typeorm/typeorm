@@ -3,7 +3,7 @@ import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 /**
  * Sqlite-specific connection options.
  */
-export interface BetterSqlite3ConnectionOptions extends BaseDataSourceOptions {
+export interface BetterSqlite3DataSourceOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */
@@ -72,7 +72,6 @@ export interface BetterSqlite3ConnectionOptions extends BaseDataSourceOptions {
 
     /**
      * Enables WAL mode. By default its disabled.
-     *
      * @see https://www.sqlite.org/wal.html
      */
     readonly enableWAL?: boolean

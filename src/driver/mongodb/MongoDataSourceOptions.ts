@@ -4,7 +4,7 @@ import { ReadPreference } from "./typings"
 /**
  * MongoDB specific connection options.
  */
-export interface MongoConnectionOptions extends BaseDataSourceOptions {
+export interface MongoDataSourceOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */
