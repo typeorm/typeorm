@@ -247,6 +247,23 @@ await repository.upsert(
  **/
 ```
 
+```typescript
+await repository.upsert(
+    [{ externalId: "abc123", firstName: "Rizzrak", lastName: "Goblin" }],
+    {
+        conflictPaths: ["externalId"],
+        updateOnly: ["firstName"], // only update firstName if the entity already exists
+    },
+)
+/** executes
+ *  INSERT INTO user
+ *  VALUES
+ *      (externalId = abc123, firstName = Rizzrak, lastName = Goblin),
+ *  ON CONFLICT (externalId) DO UPDATE
+ *  SET firstName = EXCLUDED.firstName
+ **/
+```
+
 - `delete` - Deletes entities by entity id, ids or given conditions:
 
 ```typescript
