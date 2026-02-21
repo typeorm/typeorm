@@ -17,7 +17,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     /**
      * Normalizes table name.
      * @param targetName Name of the target entity that can be used to generate a table name.
-     * @param userSpecifiedName For example if user specified a table name in a decorator, e.g. @Entity("name")
+     * @param userSpecifiedName For example if user specified a table name in a decorator, e.g. `@Entity("name")`
      */
     tableName(
         targetName: string,

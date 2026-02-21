@@ -8,8 +8,8 @@ import { ClosureTreeOptions } from "../../metadata/types/ClosureTreeOptions"
  * Tree pattern that will be used for the tree entity should be specified.
  * @param type
  * @param options
- * @TreeParent decorator must be used in tree entities.
- * TreeRepository can be used to manipulate with tree entities.
+ * `@TreeParent` decorator must be used in tree entities.
+ * `TreeRepository` can be used to manipulate tree entities.
  */
 export function Tree(
     type: TreeType,

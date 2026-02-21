@@ -7,13 +7,18 @@ import { RelationMetadata } from "../../metadata/RelationMetadata"
 /**
  * Builds operations needs to be executed for one-to-many relations of the given subjects.
  *
- * by example: post contains one-to-many relation with category in the property called "categories", e.g.
- *             @OneToMany(type => Category, category => category.post) categories: Category[]
- *             If user adds categories into the post and saves post we need to bind them.
- *             This operation requires updation of category table since its owner of the relation and contains a join column.
+ * Example:
  *
- * note: this class shares lot of things with OneToOneInverseSideOperationBuilder, so when you change this class
- *       make sure to reflect changes there as well.
+ * `Post` contains one-to-many relation with `Category` in the property called `categories`, e.g.:
+ *
+ * `@OneToMany(type => Category, category => category.post) categories: Category[]`
+ *
+ * If user adds categories into the post and saves post we need to bind them.
+ * This operation requires updating the category table since it's the owner of
+ * the relation and contains a join column.
+ *
+ * Note: this class shares lot of things with OneToOneInverseSideOperationBuilder,
+ * so when you change this class make sure to reflect changes there as well.
  */
 export class OneToManySubjectBuilder {
     // ---------------------------------------------------------------------

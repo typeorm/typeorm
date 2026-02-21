@@ -6,10 +6,14 @@ import { RelationMetadata } from "../../metadata/RelationMetadata"
 /**
  * Builds operations needs to be executed for many-to-many relations of the given subjects.
  *
- * by example: post contains owner many-to-many relation with categories in the property called "categories", e.g.
- *             @ManyToMany(type => Category, category => category.posts) categories: Category[]
- *             If user adds categories into the post and saves post we need to bind them.
- *             This operation requires updation of junction table.
+ * Example:
+ *
+ * `Post` owns a many-to-many relation with `Category` in the property called `categories`, e.g.:
+ *
+ * `@ManyToMany(type => Category, category => category.posts) categories: Category[]`
+ *
+ *  If the user adds categories into the post and saves post we need to bind them.
+ *  This operation requires updating the junction table.
  */
 export class ManyToManySubjectBuilder {
     // ---------------------------------------------------------------------

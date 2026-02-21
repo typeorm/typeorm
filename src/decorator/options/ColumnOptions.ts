@@ -77,7 +77,7 @@ export interface ColumnOptions extends ColumnCommonOptions {
 
     /**
      * Indicates if this column is a primary key.
-     * Same can be achieved when @PrimaryColumn decorator is used.
+     * Same can be achieved when `@PrimaryColumn` decorator is used.
      */
     primary?: boolean
 
@@ -195,7 +195,7 @@ export interface ColumnOptions extends ColumnCommonOptions {
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
-     * @See https://typeorm.io/decorator-reference#virtualcolumn for more details.
+     * @see https://typeorm.io/decorator-reference#virtualcolumn for more details.
      */
     query?: (alias: string) => string
 
@@ -204,8 +204,10 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * instead of local timezone. Only applies to "date" column type.
      * Default value is "false" (uses local timezone for backward compatibility).
      * @example
-     * @Column({ type: "date", utc: true })
+     * ```
+     * \@Column({ type: "date", utc: true })
      * birthDate: Date
+     * ```
      */
     utc?: boolean
 }

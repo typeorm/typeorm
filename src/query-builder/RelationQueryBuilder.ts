@@ -166,20 +166,6 @@ export class RelationQueryBuilder<
     }
 
     /**
-     * Gets entity's relation id.
-    async getId(): Promise<any> {
-     
-    }
-     */
-
-    /**
-     * Gets entity's relation ids.
-    async getIds(): Promise<any[]> {
-        return [];
-    }
-     */
-
-    /**
      * Loads a single entity (relational) from the relation.
      * You can also provide id of relational entity to filter by.
      */
