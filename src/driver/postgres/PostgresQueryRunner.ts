@@ -4557,7 +4557,22 @@ export class PostgresQueryRunner
         const indexTypeClause = this.buildIndexTypeClause(index)
 
         const columns = index.columnNames
-            .map((columnName) => `"${columnName}"`)
+            .map((columnName) => {
+                let columnExpression = `"${columnName}"`
+
+                // add per-column options if specified
+                if (index.columnOptions && index.columnOptions[columnName]) {
+                    const options = index.columnOptions[columnName]
+                    if (options.order) {
+                        columnExpression += ` ${options.order}`
+                    }
+                    if (options.nulls) {
+                        columnExpression += ` ${options.nulls}`
+                    }
+                }
+
+                return columnExpression
+            })
             .join(", ")
         return new Query(
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX${
@@ -4577,7 +4592,22 @@ export class PostgresQueryRunner
         const indexTypeClause = this.buildIndexTypeClause(index)
 
         const columns = index.columnNames
-            .map((columnName) => `"${columnName}"`)
+            .map((columnName) => {
+                let columnExpression = `"${columnName}"`
+
+                // add per-column options if specified
+                if (index.columnOptions && index.columnOptions[columnName]) {
+                    const options = index.columnOptions[columnName]
+                    if (options.order) {
+                        columnExpression += ` ${options.order}`
+                    }
+                    if (options.nulls) {
+                        columnExpression += ` ${options.nulls}`
+                    }
+                }
+
+                return columnExpression
+            })
             .join(", ")
         return new Query(
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${

@@ -68,6 +68,18 @@ export class TableIndex {
     type?: TableIndexTypes
 
     /**
+     * Per-column options for the index.
+     * Allows specifying sort order (ASC/DESC) and null ordering (NULLS FIRST/NULLS LAST) for each column.
+     * Works only in PostgreSQL and CockroachDB.
+     */
+    columnOptions?: {
+        [columnName: string]: {
+            order?: "ASC" | "DESC"
+            nulls?: "NULLS FIRST" | "NULLS LAST"
+        }
+    }
+
+    /**
      * Index filter condition.
      */
     where: string
@@ -87,6 +99,7 @@ export class TableIndex {
         this.parser = options.parser
         this.where = options.where ? options.where : ""
         this.type = options.type
+        this.columnOptions = options.columnOptions
     }
 
     // -------------------------------------------------------------------------
@@ -108,6 +121,7 @@ export class TableIndex {
             parser: this.parser,
             where: this.where,
             type: this.type,
+            columnOptions: this.columnOptions,
         })
     }
 
@@ -132,6 +146,7 @@ export class TableIndex {
             parser: indexMetadata.parser,
             where: indexMetadata.where,
             type: indexMetadata.type,
+            columnOptions: indexMetadata.columnOptions,
         })
     }
 }

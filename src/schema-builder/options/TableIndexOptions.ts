@@ -67,4 +67,16 @@ export interface TableIndexOptions {
      * This option is only applicable in PostgreSQL.
      */
     type?: TableIndexTypes
+
+    /**
+     * Per-column options for the index.
+     * Allows specifying sort order (ASC/DESC) and null ordering (NULLS FIRST/NULLS LAST) for each column.
+     * Works only in PostgreSQL and CockroachDB.
+     */
+    columnOptions?: {
+        [columnName: string]: {
+            order?: "ASC" | "DESC"
+            nulls?: "NULLS FIRST" | "NULLS LAST"
+        }
+    }
 }

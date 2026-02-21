@@ -144,6 +144,9 @@ export function Index(
             expireAfterSeconds: options
                 ? options.expireAfterSeconds
                 : undefined,
+            order: options ? options.order : undefined,
+            nulls: options ? options.nulls : undefined,
+            columnOptions: options ? options.columnOptions : undefined,
         } as IndexMetadataArgs)
     }
 }
