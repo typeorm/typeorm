@@ -26,50 +26,50 @@ import { SqlServerDriver } from "./sqlserver/SqlServerDriver"
 export class DriverFactory {
     /**
      * Creates a new driver depend on a given connection's driver type.
-     * @param connection DataSource instance.
+     * @param dataSource DataSource instance.
      * @returns Driver
      */
-    create(connection: DataSource): Driver {
-        const { type } = connection.options
+    create(dataSource: DataSource): Driver {
+        const { type } = dataSource.options
         switch (type) {
             case "aurora-mysql":
-                return new AuroraMysqlDriver(connection)
+                return new AuroraMysqlDriver(dataSource)
             case "aurora-postgres":
-                return new AuroraPostgresDriver(connection)
+                return new AuroraPostgresDriver(dataSource)
             case "better-sqlite3":
-                return new BetterSqlite3Driver(connection)
+                return new BetterSqlite3Driver(dataSource)
             case "capacitor":
-                return new CapacitorDriver(connection)
+                return new CapacitorDriver(dataSource)
             case "cockroachdb":
-                return new CockroachDriver(connection)
+                return new CockroachDriver(dataSource)
             case "cordova":
-                return new CordovaDriver(connection)
+                return new CordovaDriver(dataSource)
             case "expo":
-                return new ExpoDriver(connection)
+                return new ExpoDriver(dataSource)
             case "mariadb":
-                return new MysqlDriver(connection)
+                return new MysqlDriver(dataSource)
             case "mongodb":
-                return new MongoDriver(connection)
+                return new MongoDriver(dataSource)
             case "mssql":
-                return new SqlServerDriver(connection)
+                return new SqlServerDriver(dataSource)
             case "mysql":
-                return new MysqlDriver(connection)
+                return new MysqlDriver(dataSource)
             case "nativescript":
-                return new NativescriptDriver(connection)
+                return new NativescriptDriver(dataSource)
             case "oracle":
-                return new OracleDriver(connection)
+                return new OracleDriver(dataSource)
             case "postgres":
-                return new PostgresDriver(connection)
+                return new PostgresDriver(dataSource)
             case "react-native":
-                return new ReactNativeDriver(connection)
+                return new ReactNativeDriver(dataSource)
             case "sap":
-                return new SapDriver(connection)
+                return new SapDriver(dataSource)
             case "spanner":
-                return new SpannerDriver(connection)
+                return new SpannerDriver(dataSource)
             case "sqlite":
-                return new SqliteDriver(connection)
+                return new SqliteDriver(dataSource)
             case "sqljs":
-                return new SqljsDriver(connection)
+                return new SqljsDriver(dataSource)
             default:
                 throw new MissingDriverError(type, [
                     "aurora-mysql",

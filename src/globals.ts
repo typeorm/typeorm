@@ -79,22 +79,22 @@ export async function createConnection(
 ): Promise<DataSource>
 
 /**
- * Creates a new connection and registers it in the manager.
+ * Creates a new DataSource and registers it in the manager.
  *
- * If connection options were not specified, then it will try to create connection automatically,
- * based on content of ormconfig (json/js/env) file or environment variables.
- * Only one connection from ormconfig will be created (name "default" or connection without name).
+ * If the data source options were not specified, then it will try to create the DataSource automatically,
+ * based on the content of the ormconfig (json/js/env) file or environment variables.
+ * Only one DataSource from ormconfig will be created (name "default" or DataSource without name).
  * @param optionsOrName
  * @deprecated
  */
 export async function createConnection(
     optionsOrName?: any,
 ): Promise<DataSource> {
-    const connectionName =
+    const dataSourceName =
         typeof optionsOrName === "string" ? optionsOrName : "default"
     const options = ObjectUtils.isObject(optionsOrName)
         ? (optionsOrName as DataSourceOptions)
-        : await getConnectionOptions(connectionName)
+        : await getConnectionOptions(dataSourceName)
     return getConnectionManager().create(options).initialize()
 }
 

@@ -1,19 +1,16 @@
 import { promisify } from "node:util"
-import {
-    ColumnType,
-    DataSource,
-    EntityMetadata,
-    ObjectLiteral,
-    Table,
-    TableColumn,
-    TableForeignKey,
-} from "../.."
+import { ObjectLiteral } from "../../common/ObjectLiteral"
+import { DataSource } from "../../data-source"
 import { ConnectionIsNotSetError } from "../../error/ConnectionIsNotSetError"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
 import { TypeORMError } from "../../error/TypeORMError"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
+import { Table } from "../../schema-builder/table/Table"
+import { TableColumn } from "../../schema-builder/table/TableColumn"
+import { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
 import { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
@@ -21,6 +18,7 @@ import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
+import { ColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"

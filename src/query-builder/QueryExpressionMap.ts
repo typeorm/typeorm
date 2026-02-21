@@ -1,21 +1,21 @@
-import { Alias } from "./Alias"
 import { ObjectLiteral } from "../common/ObjectLiteral"
+import { DataSource } from "../data-source/DataSource"
+import { CockroachDataSourceOptions } from "../driver/cockroachdb/CockroachDataSourceOptions"
+import { UpsertType } from "../driver/types/UpsertType"
+import { TypeORMError } from "../error"
 import { OrderByCondition } from "../find-options/OrderByCondition"
+import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import { EntityMetadata } from "../metadata/EntityMetadata"
+import { RelationMetadata } from "../metadata/RelationMetadata"
+import { Alias } from "./Alias"
 import { JoinAttribute } from "./JoinAttribute"
 import { QueryBuilder } from "./QueryBuilder"
 import { QueryBuilderCteOptions } from "./QueryBuilderCte"
-import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
 import { RelationCountAttribute } from "./relation-count/RelationCountAttribute"
-import { DataSource } from "../data-source/DataSource"
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
 import { SelectQuery } from "./SelectQuery"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { RelationMetadata } from "../metadata/RelationMetadata"
 import { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
-import { TypeORMError } from "../error"
 import { WhereClause } from "./WhereClause"
-import { UpsertType } from "../driver/types/UpsertType"
-import { CockroachDataSourceOptions } from "../driver/cockroachdb/CockroachDataSourceOptions"
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -361,13 +361,13 @@ export class QueryExpressionMap {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: DataSource) {
-        if (connection.options.relationLoadStrategy) {
-            this.relationLoadStrategy = connection.options.relationLoadStrategy
+    constructor(protected dataSource: DataSource) {
+        if (dataSource.options.relationLoadStrategy) {
+            this.relationLoadStrategy = dataSource.options.relationLoadStrategy
         }
 
         this.timeTravel =
-            (connection.options as CockroachDataSourceOptions)
+            (dataSource.options as CockroachDataSourceOptions)
                 ?.timeTravelQueries || false
     }
 
@@ -444,7 +444,7 @@ export class QueryExpressionMap {
         if (aliasName) alias.name = aliasName
         if (options.metadata) alias.metadata = options.metadata
         if (options.target && !alias.hasMetadata)
-            alias.metadata = this.connection.getMetadata(options.target)
+            alias.metadata = this.dataSource.getMetadata(options.target)
         if (options.tablePath) alias.tablePath = options.tablePath
         if (options.subQuery) alias.subQuery = options.subQuery
 
@@ -501,7 +501,7 @@ export class QueryExpressionMap {
      * Useful when QueryBuilder needs to create a copy of itself.
      */
     clone(): QueryExpressionMap {
-        const map = new QueryExpressionMap(this.connection)
+        const map = new QueryExpressionMap(this.dataSource)
         map.queryType = this.queryType
         map.selects = this.selects.map((select) => select)
         map.maxExecutionTime = this.maxExecutionTime
@@ -516,7 +516,7 @@ export class QueryExpressionMap {
         map.onIgnore = this.onIgnore
         map.onUpdate = this.onUpdate
         map.joinAttributes = this.joinAttributes.map(
-            (join) => new JoinAttribute(this.connection, this, join),
+            (join) => new JoinAttribute(this.dataSource, this, join),
         )
         map.relationIdAttributes = this.relationIdAttributes.map(
             (relationId) => new RelationIdAttribute(this, relationId),

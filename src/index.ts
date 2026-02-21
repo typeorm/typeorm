@@ -140,8 +140,6 @@ export * from "./driver/types/ReplicationMode"
 export * from "./driver/sqlserver/MssqlParameter"
 export * from "./subscriber/event/QueryEvent"
 
-// export * from "./data-source";
-
 export { ConnectionOptionsReader } from "./connection/ConnectionOptionsReader"
 export { DataSource } from "./data-source/DataSource"
 export { ConnectionManager } from "./connection/ConnectionManager"
