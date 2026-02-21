@@ -22,7 +22,7 @@ describe("persistence > custom-column-names", function () {
 
         dataSource = new DataSource(options)
     })
-    after(() => dataSource.close())
+    after(() => dataSource.destroy())
 
     // clean up database before each test
     function reloadDatabase() {
