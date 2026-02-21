@@ -12,6 +12,32 @@ import { Photo } from "./entity/Photo"
 import { UpdateValuesMissingError } from "../../../../src/error/UpdateValuesMissingError"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { PostWithOnUpdate } from "./entity/PostWithOnUpdate"
+import { In } from "../../../../src"
+import { setTimeout } from "timers/promises"
+
+const onUpdateExpressionByDriver: Record<string, string | undefined> = {
+    postgres: "clock_timestamp()",
+    cockroachdb: "clock_timestamp()",
+    mysql: "CURRENT_TIMESTAMP(6)",
+    mariadb: "CURRENT_TIMESTAMP(6)",
+    "aurora-mysql": "CURRENT_TIMESTAMP(6)",
+    sqlite: "datetime('now')",
+    "better-sqlite3": "datetime('now')",
+    cordova: "datetime('now')",
+    capacitor: "datetime('now')",
+    "react-native": "datetime('now')",
+    mssql: "getdate()",
+    sap: "CURRENT_TIMESTAMP",
+    oracle: "CURRENT_TIMESTAMP",
+}
+
+function getOnUpdateExpression(connection: DataSource) {
+    return (
+        onUpdateExpressionByDriver[connection.driver.options.type] ||
+        connection.driver.mappedDataTypes.updateDateDefault
+    )
+}
 
 describe("query builder > update", () => {
     let connections: DataSource[]
@@ -245,6 +271,108 @@ describe("query builder > update", () => {
                 expect(error).to.be.an.instanceof(UpdateValuesMissingError)
             }),
         ))
+
+    it("should respect onUpdate expression for update date columns", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const expression = getOnUpdateExpression(connection)
+                if (!expression) return
+
+                const metadata = connection
+                    .getMetadata(PostWithOnUpdate)
+                    .findColumnWithPropertyName("updatedAt")!
+                metadata.onUpdate = expression
+
+                const post = new PostWithOnUpdate()
+                post.title = "initial"
+                post.updatedAt = new Date(Date.now() - 1000)
+                await connection.manager.save(post)
+
+                const initialDate = post.updatedAt
+
+                const qb = connection
+                    .createQueryBuilder()
+                    .update(PostWithOnUpdate)
+                    .set({ title: "updated" })
+                    .where("id = :id", { id: post.id })
+
+                expect(qb.getQuery()).to.contain(expression)
+
+                await qb.execute()
+
+                const updated = await connection.manager.findOneBy(
+                    PostWithOnUpdate,
+                    { id: post.id },
+                )
+
+                expect(updated).to.exist
+                expect(updated!.updatedAt).to.be.instanceof(Date)
+                expect(updated!.updatedAt.getTime()).to.be.greaterThan(
+                    initialDate.getTime(),
+                )
+            }),
+        ))
+
+    it("postgres should store different update dates in one statement with clock_timestamp()", async () => {
+        const connection = connections.find(
+            (conn) => conn.driver.options.type === "postgres",
+        )
+        if (!connection) return
+
+        const metadata = connection
+            .getMetadata(PostWithOnUpdate)
+            .findColumnWithPropertyName("updatedAt")!
+        metadata.onUpdate = "clock_timestamp()"
+
+        const queryRunner = connection.createQueryRunner()
+        await queryRunner.startTransaction()
+        let post1Id: number | undefined
+        let post2Id: number | undefined
+        try {
+            const post1 = new PostWithOnUpdate()
+            post1.title = "first"
+            post1.updatedAt = new Date(Date.now() - 2000)
+
+            const post2 = new PostWithOnUpdate()
+            post2.title = "second"
+            post2.updatedAt = new Date(Date.now() - 2000)
+
+            await queryRunner.manager.save([post1, post2])
+            post1Id = post1.id
+            post2Id = post2.id
+
+            const qb = queryRunner.manager
+                .createQueryBuilder()
+                .update(PostWithOnUpdate)
+                .set({ title: () => "title || '_updated'" })
+
+            await qb.clone().where("id = :id", { id: post1Id }).execute()
+            await setTimeout(10)
+            await qb.clone().where("id = :id", { id: post2Id }).execute()
+
+            await queryRunner.commitTransaction()
+        } catch (err) {
+            await queryRunner.rollbackTransaction()
+            throw err
+        } finally {
+            await queryRunner.release()
+        }
+
+        const reloaded = await connection.manager.findBy(PostWithOnUpdate, {
+            id: In([post1Id!, post2Id!]),
+        })
+
+        expect(reloaded).to.have.length(2)
+        const byId = new Map(reloaded.map((p) => [p.id, p]))
+        const updated1 = byId.get(post1Id!)!
+        const updated2 = byId.get(post2Id!)!
+
+        expect(updated1.updatedAt).to.be.instanceof(Date)
+        expect(updated2.updatedAt).to.be.instanceof(Date)
+        expect(updated1.updatedAt.getTime()).to.be.below(
+            updated2.updatedAt.getTime(),
+        )
+    })
 
     it("should throw error when update value is missing 2", () =>
         Promise.all(

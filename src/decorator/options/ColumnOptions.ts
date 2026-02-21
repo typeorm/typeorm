@@ -74,6 +74,7 @@ export interface ColumnOptions extends ColumnCommonOptions {
 
     /**
      * ON UPDATE trigger. Works only for MySQL.
+     * Also used as the auto-set expression for UpdateDateColumn when present.
      */
     onUpdate?: string
 
