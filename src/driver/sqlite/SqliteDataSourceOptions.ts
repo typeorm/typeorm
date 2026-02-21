@@ -3,7 +3,7 @@ import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 /**
  * Sqlite-specific connection options.
  */
-export interface SqliteConnectionOptions extends BaseDataSourceOptions {
+export interface SqliteDataSourceOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */
@@ -40,7 +40,6 @@ export interface SqliteConnectionOptions extends BaseDataSourceOptions {
 
     /**
      * Enables WAL mode. By default its disabled.
-     *
      * @see https://www.sqlite.org/wal.html
      */
     readonly enableWAL?: boolean
@@ -57,7 +56,6 @@ export interface SqliteConnectionOptions extends BaseDataSourceOptions {
     /**
      * Query or change the setting of the busy timeout.
      * Time in milliseconds.
-     *
      * @see https://www.sqlite.org/pragma.html#pragma_busy_timeout
      */
     readonly busyTimeout?: number

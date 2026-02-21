@@ -23,7 +23,7 @@ export class EntityPersistExecutor {
     // -------------------------------------------------------------------------
 
     constructor(
-        protected connection: DataSource,
+        protected dataSource: DataSource,
         protected queryRunner: QueryRunner | undefined,
         protected mode: "save" | "remove" | "soft-remove" | "recover",
         protected target: Function | string | undefined,
@@ -49,7 +49,7 @@ export class EntityPersistExecutor {
         // if query runner is already defined in this class, it means this entity manager was already created for a single connection
         // if its not defined we create a new query runner - single connection where we'll execute all our operations
         const queryRunner =
-            this.queryRunner || this.connection.createQueryRunner()
+            this.queryRunner || this.dataSource.createQueryRunner()
 
         // save data in the query runner - this is useful functionality to share data from outside of the world
         // with third classes - like subscribers and listener methods
@@ -81,7 +81,7 @@ export class EntityPersistExecutor {
                         if (entityTarget === Object)
                             throw new CannotDetermineEntityError(this.mode)
 
-                        const metadata = this.connection
+                        const metadata = this.dataSource
                             .getMetadata(entityTarget)
                             .findInheritanceMetadata(entity)
 
@@ -167,7 +167,7 @@ export class EntityPersistExecutor {
                 // open transaction if its not opened yet
                 if (!queryRunner.isTransactionActive) {
                     if (
-                        this.connection.driver.transactionSupport !== "none" &&
+                        this.dataSource.driver.transactionSupport !== "none" &&
                         (!this.options || this.options.transaction !== false)
                     ) {
                         // start transaction until it was not explicitly disabled

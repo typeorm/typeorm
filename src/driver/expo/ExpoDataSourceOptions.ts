@@ -3,7 +3,7 @@ import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 /**
  * Sqlite-specific connection options.
  */
-export interface ExpoConnectionOptions extends BaseDataSourceOptions {
+export interface ExpoDataSourceOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */

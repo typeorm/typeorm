@@ -22,7 +22,7 @@ describe("sqlite driver > throws an error when queried after closing connection"
     it("should throw", () =>
         Promise.all(
             connections.map(async (connection) => {
-                await connection.close()
+                await connection.destroy()
                 await expect(
                     connection.query("select * from sqlite_master;"),
                 ).to.rejectedWith(

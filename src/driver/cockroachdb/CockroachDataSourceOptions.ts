@@ -5,7 +5,7 @@ import { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCred
 /**
  * Cockroachdb-specific connection options.
  */
-export interface CockroachConnectionOptions
+export interface CockroachDataSourceOptions
     extends BaseDataSourceOptions, CockroachConnectionCredentialsOptions {
     /**
      * Database type.
