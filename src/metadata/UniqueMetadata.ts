@@ -93,6 +93,7 @@ export class UniqueMetadata {
     /**
      * Builds some depend unique constraint properties.
      * Must be called after all entity metadata's properties map, columns and relations are built.
+     * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface): this {
         const map: { [key: string]: number } = {}

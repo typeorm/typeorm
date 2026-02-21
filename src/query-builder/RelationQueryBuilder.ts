@@ -32,6 +32,7 @@ export class RelationQueryBuilder<
 
     /**
      * Sets entity (target) which relations will be updated.
+     * @param entity
      */
     of(entity: any | any[]): this {
         this.expressionMap.of = entity
@@ -43,6 +44,7 @@ export class RelationQueryBuilder<
      * Value can be entity, entity id or entity id map (if entity has composite ids).
      * Works only for many-to-one and one-to-one relations.
      * For many-to-many and one-to-many relations use #add and #remove methods instead.
+     * @param value
      */
     async set(value: any): Promise<void> {
         const relation = this.expressionMap.relationMetadata
@@ -81,6 +83,7 @@ export class RelationQueryBuilder<
      * Value also can be array of entities, array of entity ids or array of entity id maps (if entity has composite ids).
      * Works only for many-to-many and one-to-many relations.
      * For many-to-one and one-to-one use #set method instead.
+     * @param value
      */
     async add(value: any | any[]): Promise<void> {
         if (Array.isArray(value) && value.length === 0) return
@@ -121,6 +124,7 @@ export class RelationQueryBuilder<
      * Value also can be array of entities, array of entity ids or array of entity id maps (if entity has composite ids).
      * Works only for many-to-many and one-to-many relations.
      * For many-to-one and one-to-one use #set method instead.
+     * @param value
      */
     async remove(value: any | any[]): Promise<void> {
         if (Array.isArray(value) && value.length === 0) return
@@ -150,6 +154,8 @@ export class RelationQueryBuilder<
      * Value also can be array of entities, array of entity ids or array of entity id maps (if entity has composite ids).
      * Works only for many-to-many and one-to-many relations.
      * For many-to-one and one-to-one use #set method instead.
+     * @param added
+     * @param removed
      */
     async addAndRemove(
         added: any | any[],
@@ -158,18 +164,6 @@ export class RelationQueryBuilder<
         await this.remove(removed)
         await this.add(added)
     }
-
-    /**
-     * Gets entity's relation id.
-    async getId(): Promise<any> {
-
-    }*/
-
-    /**
-     * Gets entity's relation ids.
-    async getIds(): Promise<any[]> {
-        return [];
-    }*/
 
     /**
      * Loads a single entity (relational) from the relation.

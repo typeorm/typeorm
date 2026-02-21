@@ -48,6 +48,7 @@ export class SubscriberCreateCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the entity file.
+     * @param name
      */
     protected static getTemplate(name: string): string {
         return `import { EventSubscriber, EntitySubscriberInterface } from "typeorm"

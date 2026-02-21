@@ -6,6 +6,7 @@ import { TypeORMError } from "../error"
  * Creates a database check.
  * Can be used on entity property or on entity.
  * Can create checks with composite columns when used on entity.
+ * @param expression
  */
 export function Check(expression: string): ClassDecorator & PropertyDecorator
 
@@ -13,6 +14,8 @@ export function Check(expression: string): ClassDecorator & PropertyDecorator
  * Creates a database check.
  * Can be used on entity property or on entity.
  * Can create checks with composite columns when used on entity.
+ * @param name
+ * @param expression
  */
 export function Check(
     name: string,
@@ -23,6 +26,8 @@ export function Check(
  * Creates a database check.
  * Can be used on entity property or on entity.
  * Can create checks with composite columns when used on entity.
+ * @param nameOrExpression
+ * @param maybeExpression
  */
 export function Check(
     nameOrExpression: string,

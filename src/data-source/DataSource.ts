@@ -443,7 +443,7 @@ export class DataSource {
 
     /**
      * Gets tree repository for the given entity class or name.
-     * Only tree-type entities can have a TreeRepository, like ones decorated with @Tree decorator.
+     * Only tree-type entities can have a TreeRepository, like ones decorated with `@Tree` decorator.
      * @param target
      */
     getTreeRepository<Entity extends ObjectLiteral>(
@@ -469,7 +469,7 @@ export class DataSource {
     }
 
     /**
-     * Gets custom entity repository marked with @EntityRepository decorator.
+     * Gets custom entity repository marked with `@EntityRepository` decorator.
      * @param customRepository
      * @deprecated use Repository.extend function to create a custom repository
      */

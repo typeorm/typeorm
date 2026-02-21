@@ -31,7 +31,7 @@ export class ColumnMetadata {
     /**
      * Entity metadata where this column metadata is.
      *
-     * For example for @Column() name: string in Post, entityMetadata will be metadata of Post entity.
+     * For example for `@Column() name: string` in `Post`, `entityMetadata` will be metadata of `Post` entity.
      */
     entityMetadata: EntityMetadata
 
@@ -248,14 +248,14 @@ export class ColumnMetadata {
     /**
      * Indicates if column is a virtual property. Virtual properties are not mapped to the entity.
      * This property is used in tandem the virtual column decorator.
-     * @See https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
+     * @see https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     isVirtualProperty: boolean = false
 
     /**
      * Query to be used to populate the column data. This query is used when generating the relational db script.
      * The query function is called with the current entities alias either defined by the Entity Decorator or automatically
-     * @See https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
+     * @see https://typeorm.io/docs/Help/decorator-reference/#virtualcolumn for more details.
      */
     query?: (alias: string) => string
 

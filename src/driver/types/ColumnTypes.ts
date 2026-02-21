@@ -1,5 +1,5 @@
 /**
- * Column types used for @PrimaryGeneratedColumn() decorator.
+ * Column types used for `@PrimaryGeneratedColumn()` decorator.
  */
 export type PrimaryGeneratedColumnType =
     | "int" // mysql, mssql, oracle, sqlite, sap

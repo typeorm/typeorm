@@ -4,6 +4,9 @@ import { ColumnOptions } from "../options/ColumnOptions"
 
 /**
  * Sets for entity to use table inheritance pattern.
+ * @param options
+ * @param options.pattern
+ * @param options.column
  */
 export function TableInheritance(options?: {
     pattern?: "STI" /*|"CTI"*/

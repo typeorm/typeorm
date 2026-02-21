@@ -13,7 +13,6 @@ import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
  * Provides abstract class for custom repositories that do not inherit from original orm Repository.
  * Contains all most-necessary methods to simplify code in the custom repository.
  * All methods are protected thus not exposed and it allows to create encapsulated custom repository.
- *
  * @deprecated use Repository.extend function to create a custom repository
  */
 export class AbstractRepository<Entity extends ObjectLiteral> {
@@ -61,6 +60,7 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
     /**
      * Creates a new query builder for the repository's entity that can be used to build a SQL query.
      * If current repository does not manage any entity, then exception will be thrown.
+     * @param alias
      */
     protected createQueryBuilder(alias: string): SelectQueryBuilder<Entity> {
         const target = this.getCustomRepositoryTarget(this.constructor)
@@ -74,6 +74,8 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
 
     /**
      * Creates a new query builder for the given entity that can be used to build a SQL query.
+     * @param entity
+     * @param alias
      */
     protected createQueryBuilderFor<T extends ObjectLiteral>(
         entity: ObjectType<T>,
@@ -84,6 +86,7 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
 
     /**
      * Gets the original ORM repository for the given entity class.
+     * @param entity
      */
     protected getRepositoryFor<T extends ObjectLiteral>(
         entity: ObjectType<T>,
@@ -93,6 +96,7 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
 
     /**
      * Gets the original ORM tree repository for the given entity class.
+     * @param entity
      */
     protected getTreeRepositoryFor<T extends ObjectLiteral>(
         entity: ObjectType<T>,
@@ -107,6 +111,7 @@ export class AbstractRepository<Entity extends ObjectLiteral> {
     /**
      * Gets custom repository's managed entity.
      * If given custom repository does not manage any entity then undefined will be returned.
+     * @param customRepository
      */
     private getCustomRepositoryTarget(
         customRepository: any,

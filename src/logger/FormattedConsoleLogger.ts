@@ -10,6 +10,9 @@ import { QueryRunner } from "../query-runner/QueryRunner"
 export class FormattedConsoleLogger extends AbstractLogger {
     /**
      * Write log to specific output.
+     * @param level
+     * @param logMessage
+     * @param queryRunner
      */
     protected writeLog(
         level: LogLevel,

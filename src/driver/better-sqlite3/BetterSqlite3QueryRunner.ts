@@ -76,6 +76,9 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,

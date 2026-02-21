@@ -22,6 +22,9 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs query and parameters used in it.
+     * @param query
+     * @param parameters
+     * @param queryRunner
      */
     logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
         if (!this.isLogEnabledFor("query")) {
@@ -43,6 +46,10 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs query that is failed.
+     * @param error
+     * @param query
+     * @param parameters
+     * @param queryRunner
      */
     logQueryError(
         error: string,
@@ -76,6 +83,10 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs query that is slow.
+     * @param time
+     * @param query
+     * @param parameters
+     * @param queryRunner
      */
     logQuerySlow(
         time: number,
@@ -112,6 +123,8 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs events from the schema build process.
+     * @param message
+     * @param queryRunner
      */
     logSchemaBuild(message: string, queryRunner?: QueryRunner) {
         if (!this.isLogEnabledFor("schema-build")) {
@@ -130,6 +143,8 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs events from the migration run process.
+     * @param message
+     * @param queryRunner
      */
     logMigration(message: string, queryRunner?: QueryRunner) {
         if (!this.isLogEnabledFor("migration")) {
@@ -149,6 +164,9 @@ export abstract class AbstractLogger implements Logger {
     /**
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
+     * @param level
+     * @param message
+     * @param queryRunner
      */
     log(
         level: "log" | "info" | "warn",
@@ -210,6 +228,7 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Check is logging for level or message type is enabled.
+     * @param type
      */
     protected isLogEnabledFor(type?: LogLevel | LogMessageType) {
         switch (type) {
@@ -285,6 +304,9 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Prepare and format log messages
+     * @param logMessage
+     * @param options
+     * @param queryRunner
      */
     protected prepareLogMessages(
         logMessage:
@@ -351,6 +373,7 @@ export abstract class AbstractLogger implements Logger {
     /**
      * Converts parameters to a string.
      * Sometimes parameters can have circular objects and therefor we are handle this case too.
+     * @param parameters
      */
     protected stringifyParams(parameters: any[]) {
         try {
