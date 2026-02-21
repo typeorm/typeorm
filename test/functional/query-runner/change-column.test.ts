@@ -104,6 +104,48 @@ describe("query runner > change column", () => {
             }),
         ))
 
+    it("should preserve data when only length changes (postgres)", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (connection.driver.options.type !== "postgres") return
+
+                const queryRunner = connection.createQueryRunner()
+                queryRunner.enableSqlMemory()
+                const testId = Math.floor(Math.random() * 1_000_000_000)
+                try {
+                    await queryRunner.query(
+                        `INSERT INTO "post"("id","version","name","text","tag") VALUES ($1, 1, $2, $3, $4)`,
+                        [testId, "Custom name", "text", "tag"],
+                    )
+
+                    const table = await queryRunner.getTable("post")
+                    const nameColumn = table!.findColumnByName("name")!
+                    const changedNameColumn = nameColumn.clone()
+                    changedNameColumn.length = "500"
+
+                    await queryRunner.changeColumn(
+                        table!,
+                        nameColumn,
+                        changedNameColumn,
+                    )
+
+                    const rows = await queryRunner.query(
+                        `SELECT "name" FROM "post" WHERE "id" = $1`,
+                        [testId],
+                    )
+                    expect(rows[0].name).to.equal("Custom name")
+                } finally {
+                    await queryRunner.query(
+                        `DELETE FROM "post" WHERE "id" = $1`,
+                        [testId],
+                    )
+                    await queryRunner.executeMemoryDownSql()
+                    queryRunner.clearSqlMemory()
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
     it("should correctly change column 'isGenerated' property and revert change", () =>
         Promise.all(
             connections.map(async (connection) => {
