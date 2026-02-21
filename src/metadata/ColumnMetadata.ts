@@ -782,6 +782,7 @@ export class ColumnMetadata {
 
         // extract column value from embeddeds of entity if column is in embedded
         let value: any = undefined
+
         if (this.embeddedMetadata) {
             // example: post[data][information][counters].id where "data", "information" and "counters" are embeddeds
             // we need to get value of "id" column from the post real entity object
@@ -812,26 +813,16 @@ export class ColumnMetadata {
             )
             if (embeddedObject) {
                 if (this.relationMetadata && this.referencedColumn) {
-                    const relatedEntity =
+                    const relatedEntityValue =
                         this.relationMetadata.getEntityValue(embeddedObject)
-                    if (
-                        relatedEntity &&
-                        ObjectUtils.isObject(relatedEntity) &&
-                        !InstanceChecker.isFindOperator(relatedEntity) &&
-                        !Buffer.isBuffer(relatedEntity)
-                    ) {
+
+                    if (this.isEntityLike(relatedEntityValue)) {
                         value =
-                            this.referencedColumn.getEntityValue(relatedEntity)
+                            this.referencedColumn.getEntityValue(
+                                relatedEntityValue,
+                            )
                     } else if (
-                        embeddedObject[this.propertyName] &&
-                        ObjectUtils.isObject(
-                            embeddedObject[this.propertyName],
-                        ) &&
-                        !InstanceChecker.isFindOperator(
-                            embeddedObject[this.propertyName],
-                        ) &&
-                        !Buffer.isBuffer(embeddedObject[this.propertyName]) &&
-                        !(embeddedObject[this.propertyName] instanceof Date)
+                        this.isEntityLike(embeddedObject[this.propertyName])
                     ) {
                         value = this.referencedColumn.getEntityValue(
                             embeddedObject[this.propertyName],
@@ -851,39 +842,40 @@ export class ColumnMetadata {
             }
         } else {
             // no embeds - no problems. Simply return column name by property name of the entity
+            const rawValue = entity[this.propertyName]
+
             if (this.relationMetadata && this.referencedColumn) {
-                const relatedEntity =
+                const relatedEntityValue =
                     this.relationMetadata.getEntityValue(entity)
-                if (
-                    relatedEntity &&
-                    ObjectUtils.isObject(relatedEntity) &&
-                    !InstanceChecker.isFindOperator(relatedEntity) &&
-                    !(typeof relatedEntity === "function") &&
-                    !Buffer.isBuffer(relatedEntity)
-                ) {
-                    value = this.referencedColumn.getEntityValue(relatedEntity)
-                } else if (
-                    entity[this.propertyName] &&
-                    ObjectUtils.isObject(entity[this.propertyName]) &&
-                    !InstanceChecker.isFindOperator(
-                        entity[this.propertyName],
-                    ) &&
-                    !(typeof entity[this.propertyName] === "function") &&
-                    !Buffer.isBuffer(entity[this.propertyName]) &&
-                    !(entity[this.propertyName] instanceof Date)
-                ) {
-                    value = this.referencedColumn.getEntityValue(
-                        entity[this.propertyName],
-                    )
+
+                if (this.isEntityLike(relatedEntityValue)) {
+                    value =
+                        this.referencedColumn.getEntityValue(relatedEntityValue)
+                } else if (this.isEntityLike(rawValue)) {
+                    // If `rawValue` is actually not an entity, we should assign it to `value`.
+                    // FIXME
+                    // There is no differentiation between a literal object representing an entity
+                    // and a literal object which is the column value verbatim.
+                    // This means that we will know that `rawValue` is definitely not an entity if
+                    // `referencedColumn.getEntityValue` returns undefined. And that's when we should assign
+                    // `rawValue` to `value.
+                    // However, if `referencedColumn.getEntityValue` returns some defined value we cannot be certain
+                    // that `rawValue` actually was an entity, because it might have been the case where `rawValue`
+                    // object literal contained a property with exactly the same name as `referencedColumn.propertyName`.
+                    // In such cases we will incorrectly assign some arbitrary object property to `value` variable,
+                    // where the correct behaviour would be to assign whole `rawValue`.
+                    // To resolve this bug, we need to be able to differentiate an object literal representing an entity
+                    // from an object literal representing arbitrary data.
+                    value =
+                        this.referencedColumn.getEntityValue(rawValue) ??
+                        rawValue
                 } else {
-                    value = entity[this.propertyName]
+                    value = rawValue
                 }
             } else if (this.referencedColumn) {
-                value = this.referencedColumn.getEntityValue(
-                    entity[this.propertyName],
-                )
+                value = this.referencedColumn.getEntityValue(rawValue)
             } else {
-                value = entity[this.propertyName]
+                value = rawValue
             }
         }
 
@@ -1039,6 +1031,23 @@ export class ColumnMetadata {
             this.propertyName,
             this.givenDatabaseName,
             propertyNames,
+        )
+    }
+
+    /**
+     * Apply some heuristics to be more certain that `value` is an object representing
+     * another entity.
+     *
+     * This is not 100% correct -- `value` might be an object literal
+     * representing a column value that is **not** an entity.
+     */
+    private isEntityLike(value: unknown): boolean {
+        return (
+            ObjectUtils.isObject(value) &&
+            value &&
+            !InstanceChecker.isFindOperator(value) &&
+            !Buffer.isBuffer(value) &&
+            !(value instanceof Date)
         )
     }
 }
