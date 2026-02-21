@@ -28,6 +28,7 @@ import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { PostgresDriver } from "./PostgresDriver"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -3637,6 +3638,11 @@ export class PostgresQueryRunner
                     schema,
                 )
 
+                let tableMetadata: EntityMetadata | undefined
+                if (this.connection.hasMetadata(table.name)) {
+                    tableMetadata = this.connection.getMetadata(table.name)
+                }
+
                 // create columns from the loaded columns
                 table.columns = await Promise.all(
                     dbColumns
@@ -3768,16 +3774,24 @@ export class PostgresQueryRunner
                                         table,
                                         tableColumn,
                                     )
-
+                                const columnMetadata =
+                                    tableMetadata?.findColumnWithDatabaseName(
+                                        tableColumn.name,
+                                    )
+                                const givenName = columnMetadata?.enumName
                                 // check if `enumName` is specified by user
-                                const builtEnumName = this.buildEnumName(
-                                    table,
-                                    tableColumn,
-                                    false,
-                                    true,
-                                )
+                                const builtEnumName =
+                                    givenName ??
+                                    this.buildEnumName(
+                                        table,
+                                        tableColumn,
+                                        false,
+                                        true,
+                                    )
                                 const enumName =
-                                    builtEnumName !== name ? name : undefined
+                                    builtEnumName !== name || !!givenName
+                                        ? name
+                                        : undefined
 
                                 // check if type is ENUM
                                 const sql =
