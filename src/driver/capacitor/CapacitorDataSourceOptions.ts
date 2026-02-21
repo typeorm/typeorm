@@ -3,7 +3,7 @@ import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 /**
  * Sqlite-specific connection options.
  */
-export interface CapacitorConnectionOptions extends BaseDataSourceOptions {
+export interface CapacitorDataSourceOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */

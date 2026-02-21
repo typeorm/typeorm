@@ -19,7 +19,7 @@ describe("mssql -> add column to existing table", () => {
                 await connection
                     .getRepository<Post>("Post")
                     .insert({ title: "test" })
-                await connection.close()
+                await connection.destroy()
             }),
         )
     })

@@ -71,7 +71,7 @@ describe("sqljs driver > autosave", () => {
                     await repository.remove(savedPost)
                 }
 
-                await connection.close()
+                await connection.destroy()
 
                 expect(saves).to.be.equal(8)
             }),
@@ -118,7 +118,7 @@ describe("sqljs driver > autosave off", () => {
                     await repository.remove(savedPost)
                 }
 
-                await connection.close()
+                await connection.destroy()
 
                 expect(saves).to.be.equal(0)
             }),

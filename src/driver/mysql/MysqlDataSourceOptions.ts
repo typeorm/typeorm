@@ -1,28 +1,23 @@
-import { BaseConnectionOptions } from "../../connection/BaseConnectionOptions"
+import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 import { ReplicationMode } from "../types/ReplicationMode"
-import { SpannerConnectionCredentialsOptions } from "./SpannerConnectionCredentialsOptions"
+import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
 
 /**
- * Spanner specific connection options.
+ * MySQL specific connection options.
+ * @see https://github.com/mysqljs/mysql#connection-options
  */
-export interface SpannerConnectionOptions
-    extends BaseConnectionOptions, SpannerConnectionCredentialsOptions {
+export interface MysqlDataSourceOptions
+    extends BaseDataSourceOptions, MysqlConnectionCredentialsOptions {
     /**
      * Database type.
      */
-    readonly type: "spanner"
+    readonly type: "mysql" | "mariadb"
 
     /**
      * The driver object
-     * This defaults to require("@google-cloud/spanner").
+     * This defaults to require("mysql2").
      */
     readonly driver?: any
-
-    // todo
-    readonly database?: string
-
-    // todo
-    readonly schema?: string
 
     /**
      * The charset for the connection. This is called "collation" in the SQL-level of MySQL (like utf8_general_ci).
@@ -94,10 +89,23 @@ export interface SpannerConnectionOptions
     readonly multipleStatements?: boolean
 
     /**
+     * Use spatial functions like GeomFromText and AsText which are removed in MySQL 8.
+     * (Default: true)
+     */
+    readonly legacySpatialSupport?: boolean
+
+    /**
      * List of connection flags to use other than the default ones. It is also possible to blacklist default ones.
      * For more information, check https://github.com/mysqljs/mysql#connection-flags.
      */
     readonly flags?: string[]
+
+    /**
+     * If a value is specified for maxQueryExecutionTime, in addition to generating a warning log when a query exceeds this time limit,
+     * the specified maxQueryExecutionTime value is also used as the timeout for the query.
+     * For more information, check https://github.com/mysqljs/mysql?tab=readme-ov-file#timeouts
+     */
+    readonly enableQueryTimeout?: boolean
 
     /**
      * Replication setup.
@@ -106,12 +114,12 @@ export interface SpannerConnectionOptions
         /**
          * Master server used by orm to perform writes.
          */
-        readonly master: SpannerConnectionCredentialsOptions
+        readonly master: MysqlConnectionCredentialsOptions
 
         /**
          * List of read-from servers (slaves).
          */
-        readonly slaves: SpannerConnectionCredentialsOptions[]
+        readonly slaves: MysqlConnectionCredentialsOptions[]
 
         /**
          * If true, PoolCluster will attempt to reconnect when connection fails. (Default: true)
@@ -144,6 +152,4 @@ export interface SpannerConnectionOptions
          */
         readonly defaultMode?: ReplicationMode
     }
-
-    readonly poolSize?: never
 }
