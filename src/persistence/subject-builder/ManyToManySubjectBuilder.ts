@@ -42,6 +42,7 @@ export class ManyToManySubjectBuilder {
 
     /**
      * Builds operations for removal of all many-to-many records of all many-to-many relations of the given subject.
+     * @param subject
      */
     buildForAllRemoval(subject: Subject) {
         // if subject does not have a database entity then it means it does not exist in the database
@@ -87,6 +88,8 @@ export class ManyToManySubjectBuilder {
      * Builds operations for a given subject and relation.
      *
      * by example: subject is "post" entity we are saving here and relation is "categories" inside it here.
+     * @param subject
+     * @param relation
      */
     protected buildForSubjectRelation(
         subject: Subject,
@@ -258,6 +261,9 @@ export class ManyToManySubjectBuilder {
     /**
      * Creates identifiers for junction table.
      * Example: { postId: 1, categoryId: 2 }
+     * @param subject
+     * @param relation
+     * @param relationId
      */
     protected buildJunctionIdentifier(
         subject: Subject,

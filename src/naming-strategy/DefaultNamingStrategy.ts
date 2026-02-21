@@ -16,7 +16,6 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
     }
     /**
      * Normalizes table name.
-     *
      * @param targetName Name of the target entity that can be used to generate a table name.
      * @param userSpecifiedName For example if user specified a table name in a decorator, e.g. @Entity("name")
      */
@@ -29,7 +28,6 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
 
     /**
      * Creates a table name for a junction table of a closure table.
-     *
      * @param originalClosureTableName Name of the closure table which owns this junction table.
      */
     closureJunctionTableName(originalClosureTableName: string): string {
@@ -204,6 +202,8 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
      * This method is executed no matter if prefix was set or not.
      * Table name is either user's given table name, either name generated from entity target.
      * Note that table name comes here already normalized by #tableName method.
+     * @param prefix
+     * @param tableName
      */
     prefixTableName(prefix: string, tableName: string): string {
         return prefix + tableName

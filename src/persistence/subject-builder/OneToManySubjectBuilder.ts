@@ -48,6 +48,8 @@ export class OneToManySubjectBuilder {
      * Builds operations for a given subject and relation.
      *
      * by example: subject is "post" entity we are saving here and relation is "categories" inside it here.
+     * @param subject
+     * @param relation
      */
     protected buildForSubjectRelation(
         subject: Subject,

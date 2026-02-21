@@ -5,7 +5,6 @@
  * Usage example:
  * @Entity()
  * export default class User {
- *
  *     @OneToOne(() => Profile, profile => profile.user)
  *     profile: Relation<Profile>;
  *

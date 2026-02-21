@@ -1,6 +1,5 @@
 /**
  * A class representation of the BSON Binary type.
- * @public
  * @category BSONType
  */
 export declare class Binary extends BSONValue {
@@ -36,27 +35,23 @@ export declare class Binary extends BSONValue {
      * this string will be encoded using ISO-8859-1, **not** using UTF-8.
      * This is almost certainly not what you want. Use `new Binary(Buffer.from(string))`
      * instead to convert the string to a Buffer using UTF-8 first.
-     *
      * @param buffer - a buffer object containing the binary data.
      * @param subType - the option binary type.
      */
     constructor(buffer?: string | BinarySequence, subType?: number)
     /**
      * Updates this binary with byte_value.
-     *
      * @param byteValue - a single byte we wish to write.
      */
     put(byteValue: string | number | Uint8Array | number[]): void
     /**
      * Writes a buffer or string to the binary.
-     *
      * @param sequence - a string or buffer to be written to the Binary BSON object.
      * @param offset - specify the binary of where to write the content.
      */
     write(sequence: string | BinarySequence, offset: number): void
     /**
      * Reads **length** bytes starting at **position**.
-     *
      * @param position - read from the given position in the Binary.
      * @param length - the number of bytes to read.
      */
@@ -82,7 +77,6 @@ export declare class Binary extends BSONValue {
     inspect(): string
 }
 
-/** @public */
 export declare interface BinaryExtended {
     $binary: {
         subType: string
@@ -90,17 +84,14 @@ export declare interface BinaryExtended {
     }
 }
 
-/** @public */
 export declare interface BinaryExtendedLegacy {
     $type: string
     $binary: string
 }
 
-/** @public */
 export declare type BinarySequence = Uint8Array | number[]
 
 /**
- * @public
  * @category Error
  *
  * `BSONError` objects are thrown when BSON ecounters an error.
@@ -112,12 +103,11 @@ export declare class BSONError extends Error {
     get name(): string
     constructor(message: string)
     /**
-     * @public
+     * 
      *
      * All errors thrown from the BSON library inherit from `BSONError`.
      * This method can assist with determining if an error originates from the BSON library
      * even if it does not pass an `instanceof` check against this class' constructor.
-     *
      * @param value - any javascript value that needs type checking
      */
     static isBSONError(value: unknown): value is BSONError
@@ -125,7 +115,6 @@ export declare class BSONError extends Error {
 
 /**
  * A class representation of the BSON RegExp type.
- * @public
  * @category BSONType
  */
 export declare class BSONRegExp extends BSONValue {
@@ -143,7 +132,6 @@ export declare class BSONRegExp extends BSONValue {
     inspect(): string
 }
 
-/** @public */
 export declare interface BSONRegExpExtended {
     $regularExpression: {
         pattern: string
@@ -151,19 +139,16 @@ export declare interface BSONRegExpExtended {
     }
 }
 
-/** @public */
 export declare interface BSONRegExpExtendedLegacy {
     $regex: string | BSONRegExp
     $options: string
 }
 
 /**
- * @public
  * @category Error
  *
  * An error generated when BSON functions encounter an unexpected input
  * or reaches an unexpected/invalid internal state
- *
  */
 export declare class BSONRuntimeError extends BSONError {
     get name(): "BSONRuntimeError"
@@ -172,7 +157,6 @@ export declare class BSONRuntimeError extends BSONError {
 
 /**
  * A class representation of the BSON Symbol type.
- * @public
  * @category BSONType
  */
 export declare class BSONSymbol extends BSONValue {
@@ -191,12 +175,10 @@ export declare class BSONSymbol extends BSONValue {
     /* Excluded from this release type: fromExtendedJSON */
 }
 
-/** @public */
 export declare interface BSONSymbolExtended {
     $symbol: string
 }
 
-/** @public */
 export declare const BSONType: Readonly<{
     readonly double: 1
     readonly string: 2
@@ -221,20 +203,15 @@ export declare const BSONType: Readonly<{
     readonly maxKey: 127
 }>
 
-/** @public */
 export declare type BSONType = (typeof BSONType)[keyof typeof BSONType]
 
-/** @public */
 export declare abstract class BSONValue {
-    /** @public */
     abstract get _bsontype(): string
-    /** @public */
     abstract inspect(): string
     /* Excluded from this release type: toExtendedJSON */
 }
 
 /**
- * @public
  * @category Error
  */
 export declare class BSONVersionError extends BSONError {
@@ -244,17 +221,15 @@ export declare class BSONVersionError extends BSONError {
 
 /**
  * Calculate the bson size for a passed in Javascript object.
- *
  * @param object - the Javascript object to calculate the BSON byte size for
+ * @param options
  * @returns size of BSON object in bytes
- * @public
  */
 export declare function calculateObjectSize(
     object: Document,
     options?: CalculateObjectSizeOptions,
 ): number
 
-/** @public */
 export declare type CalculateObjectSizeOptions = Pick<
     SerializeOptions,
     "serializeFunctions" | "ignoreUndefined"
@@ -262,7 +237,6 @@ export declare type CalculateObjectSizeOptions = Pick<
 
 /**
  * A class representation of the BSON Code type.
- * @public
  * @category BSONType
  */
 export declare class Code extends BSONValue {
@@ -283,7 +257,6 @@ export declare class Code extends BSONValue {
     inspect(): string
 }
 
-/** @public */
 export declare interface CodeExtended {
     $code: string
     $scope?: Document
@@ -291,7 +264,6 @@ export declare interface CodeExtended {
 
 /**
  * A class representation of the BSON DBRef type.
- * @public
  * @category BSONType
  */
 export declare class DBRef extends BSONValue {
@@ -319,7 +291,6 @@ export declare class DBRef extends BSONValue {
     inspect(): string
 }
 
-/** @public */
 export declare interface DBRefLike {
     $ref: string
     $id: ObjectId
@@ -328,7 +299,6 @@ export declare interface DBRefLike {
 
 /**
  * A class representation of the BSON Decimal128 type.
- * @public
  * @category BSONType
  */
 export declare class Decimal128 extends BSONValue {
@@ -341,7 +311,6 @@ export declare class Decimal128 extends BSONValue {
     constructor(bytes: Uint8Array | string)
     /**
      * Create a Decimal128 instance from a string representation
-     *
      * @param representation - a numeric string representation.
      */
     static fromString(representation: string): Decimal128
@@ -353,24 +322,21 @@ export declare class Decimal128 extends BSONValue {
     inspect(): string
 }
 
-/** @public */
 export declare interface Decimal128Extended {
     $numberDecimal: string
 }
 
 /**
  * Deserialize data as BSON.
- *
  * @param buffer - the buffer containing the serialized set of BSON documents.
+ * @param options
  * @returns returns the deserialized Javascript Object.
- * @public
  */
 export declare function deserialize(
     buffer: Uint8Array,
     options?: DeserializeOptions,
 ): Document
 
-/** @public */
 export declare interface DeserializeOptions {
     /** when deserializing a Long will return as a BigInt. */
     useBigInt64?: boolean
@@ -389,9 +355,9 @@ export declare interface DeserializeOptions {
     /** Offset into buffer to begin reading document from */
     index?: number
     raw?: boolean
-    /** Allows for opt-out utf-8 validation for all keys or
+    /**
+     * Allows for opt-out utf-8 validation for all keys or
      * specified keys. Must be all true or all false.
-     *
      * @example
      * ```js
      * // disables validation on all keys
@@ -411,7 +377,6 @@ export declare interface DeserializeOptions {
 
 /**
  * Deserialize stream data as BSON documents.
- *
  * @param data - the buffer containing the serialized set of BSON documents.
  * @param startIndex - the start index in the data Buffer where the deserialization is to start.
  * @param numberOfDocuments - number of documents to deserialize.
@@ -419,7 +384,6 @@ export declare interface DeserializeOptions {
  * @param docStartIndex - the index in the documents array from where to start inserting documents.
  * @param options - additional options used for the deserialization.
  * @returns next index in the buffer after deserialization **x** numbers of documents.
- * @public
  */
 export declare function deserializeStream(
     data: Uint8Array | ArrayBuffer,
@@ -430,14 +394,12 @@ export declare function deserializeStream(
     options: DeserializeOptions,
 ): number
 
-/** @public */
 export declare interface Document {
     [key: string]: any
 }
 
 /**
  * A class representation of the BSON Double type.
- * @public
  * @category BSONType
  */
 export declare class Double extends BSONValue {
@@ -445,13 +407,11 @@ export declare class Double extends BSONValue {
     value: number
     /**
      * Create a Double type
-     *
      * @param value - the number we want to represent as a double.
      */
     constructor(value: number)
     /**
      * Access the number value.
-     *
      * @returns returns the wrapped double number.
      */
     valueOf(): number
@@ -462,12 +422,10 @@ export declare class Double extends BSONValue {
     inspect(): string
 }
 
-/** @public */
 export declare interface DoubleExtended {
     $numberDouble: string
 }
 
-/** @public */
 export declare const EJSON: {
     parse: typeof parse
     stringify: typeof stringify
@@ -477,13 +435,11 @@ export declare const EJSON: {
 
 /**
  * Deserializes an Extended JSON object into a plain JavaScript object with native/BSON types
- *
  * @param ejson - The Extended JSON object to deserialize
  * @param options - Optional settings passed to the parse method
  */
 declare function EJSONdeserialize(ejson: Document, options?: EJSONOptions): any
 
-/** @public */
 export declare type EJSONOptions = {
     /** Output using the Extended JSON v1 spec */
     legacy?: boolean
@@ -495,7 +451,6 @@ export declare type EJSONOptions = {
 
 /**
  * Serializes an object to an Extended JSON string, and reparse it as a JavaScript object.
- *
  * @param value - The object to serialize
  * @param options - Optional settings passed to the `stringify` function
  */
@@ -503,7 +458,6 @@ declare function EJSONserialize(value: any, options?: EJSONOptions): Document
 
 /**
  * A class representation of a BSON Int32 type.
- * @public
  * @category BSONType
  */
 export declare class Int32 extends BSONValue {
@@ -511,13 +465,11 @@ export declare class Int32 extends BSONValue {
     value: number
     /**
      * Create an Int32 type
-     *
      * @param value - the number we want to represent as an int32.
      */
     constructor(value: number | string)
     /**
      * Access the number value.
-     *
      * @returns returns the wrapped int32 number.
      */
     valueOf(): number
@@ -528,7 +480,6 @@ export declare class Int32 extends BSONValue {
     inspect(): string
 }
 
-/** @public */
 export declare interface Int32Extended {
     $numberInt: string
 }
@@ -537,7 +488,6 @@ declare const kId: unique symbol
 
 /**
  * A class representing a 64-bit integer
- * @public
  * @category BSONType
  * @remarks
  * The internal representation of a long is the two given signed, 32-bit values.
@@ -578,7 +528,6 @@ export declare class Long extends BSONValue {
      * - Long(low, high, unsigned?)
      * - Long(bigint, unsigned?)
      * - Long(string, unsigned?)
-     *
      * @param low - The low (signed) 32 bits of the long
      * @param high - The high (signed) 32 bits of the long
      * @param unsigned - Whether unsigned or not, defaults to signed
@@ -864,12 +813,10 @@ export declare class Long extends BSONValue {
     inspect(): string
 }
 
-/** @public */
 export declare interface LongExtended {
     $numberLong: string
 }
 
-/** @public */
 export declare type LongWithoutOverrides = new (
     low: unknown,
     high?: number | boolean,
@@ -878,12 +825,10 @@ export declare type LongWithoutOverrides = new (
     [P in Exclude<keyof Long, TimestampOverrides>]: Long[P]
 }
 
-/** @public */
 export declare const LongWithoutOverridesClass: LongWithoutOverrides
 
 /**
  * A class representation of the BSON MaxKey type.
- * @public
  * @category BSONType
  */
 export declare class MaxKey extends BSONValue {
@@ -893,14 +838,12 @@ export declare class MaxKey extends BSONValue {
     inspect(): string
 }
 
-/** @public */
 export declare interface MaxKeyExtended {
     $maxKey: 1
 }
 
 /**
  * A class representation of the BSON MinKey type.
- * @public
  * @category BSONType
  */
 export declare class MinKey extends BSONValue {
@@ -910,14 +853,12 @@ export declare class MinKey extends BSONValue {
     inspect(): string
 }
 
-/** @public */
 export declare interface MinKeyExtended {
     $minKey: 1
 }
 
 /**
  * A class representation of the BSON ObjectId type.
- * @public
  * @category BSONType
  */
 export declare class ObjectId extends BSONValue {
@@ -928,7 +869,6 @@ export declare class ObjectId extends BSONValue {
     /* Excluded from this release type: __id */
     /**
      * Create an ObjectId type
-     *
      * @param inputId - Can be a 24 character hex string, 12 byte binary Buffer, or a number.
      */
     constructor(
@@ -936,7 +876,6 @@ export declare class ObjectId extends BSONValue {
     )
     /**
      * The ObjectId bytes
-     * @readonly
      */
     get id(): Uint8Array
     set id(value: Uint8Array)
@@ -945,7 +884,6 @@ export declare class ObjectId extends BSONValue {
     /* Excluded from this release type: getInc */
     /**
      * Generate a 12 byte id buffer used in ObjectId's
-     *
      * @param time - pass in a second based timestamp.
      */
     static generate(time?: number): Uint8Array
@@ -958,7 +896,6 @@ export declare class ObjectId extends BSONValue {
     toJSON(): string
     /**
      * Compares the equality of this ObjectId with `otherID`.
-     *
      * @param otherId - ObjectId instance to compare against.
      */
     equals(otherId: string | ObjectId | ObjectIdLike): boolean
@@ -967,13 +904,11 @@ export declare class ObjectId extends BSONValue {
     /* Excluded from this release type: createPk */
     /**
      * Creates an ObjectId from a second based number, with the rest of the ObjectId zeroed out. Used for comparisons or sorting the ObjectId.
-     *
      * @param time - an integer number representing a number of seconds.
      */
     static createFromTime(time: number): ObjectId
     /**
      * Creates an ObjectId from a hex string representation of an ObjectId.
-     *
      * @param hexString - create a ObjectId from a passed in 24 character hexstring.
      */
     static createFromHexString(hexString: string): ObjectId
@@ -981,7 +916,6 @@ export declare class ObjectId extends BSONValue {
     static createFromBase64(base64: string): ObjectId
     /**
      * Checks if a value is a valid bson ObjectId
-     *
      * @param id - ObjectId instance to validate.
      */
     static isValid(
@@ -992,12 +926,10 @@ export declare class ObjectId extends BSONValue {
     inspect(): string
 }
 
-/** @public */
 export declare interface ObjectIdExtended {
     $oid: string
 }
 
-/** @public */
 export declare interface ObjectIdLike {
     id: string | Uint8Array
     __id?: string
@@ -1007,7 +939,8 @@ export declare interface ObjectIdLike {
 /**
  * Parse an Extended JSON string, constructing the JavaScript value or object described by that
  * string.
- *
+ * @param text
+ * @param options
  * @example
  * ```js
  * const { EJSON } = require('bson');
@@ -1024,23 +957,21 @@ declare function parse(text: string, options?: EJSONOptions): any
 
 /**
  * Serialize a Javascript object.
- *
  * @param object - the Javascript object to serialize.
+ * @param options
  * @returns Buffer object containing the serialized object.
- * @public
  */
 export declare function serialize(
     object: Document,
     options?: SerializeOptions,
 ): Uint8Array
 
-/** @public */
 export declare interface SerializeOptions {
     /** the serializer will check if keys are valid. */
     checkKeys?: boolean
     /** serialize the javascript functions **(default:false)**. */
     serializeFunctions?: boolean
-    /** serialize will not emit undefined fields **(default:true)** */
+    /** serialize will not emit undefined fields **(default:true)*/
     ignoreUndefined?: boolean
     /* Excluded from this release type: minInternalBufferSize */
     /** the index in the buffer where we wish to start serializing into */
@@ -1050,11 +981,10 @@ export declare interface SerializeOptions {
 /**
  * Serialize a Javascript object using a predefined Buffer and index into the buffer,
  * useful when pre-allocating the space for serialization.
- *
  * @param object - the Javascript object to serialize.
  * @param finalBuffer - the Buffer you pre-allocated to store the serialized BSON object.
+ * @param options
  * @returns the index pointing to the last written byte in the buffer.
- * @public
  */
 export declare function serializeWithBufferAndIndex(
     object: Document,
@@ -1064,9 +994,7 @@ export declare function serializeWithBufferAndIndex(
 
 /**
  * Sets the size of the internal serialization buffer.
- *
  * @param size - The desired size for the internal serialization buffer
- * @public
  */
 export declare function setInternalBufferSize(size: number): void
 
@@ -1074,12 +1002,10 @@ export declare function setInternalBufferSize(size: number): void
  * Converts a BSON document to an Extended JSON string, optionally replacing values if a replacer
  * function is specified or optionally including only the specified properties if a replacer array
  * is specified.
- *
  * @param value - The value to convert to extended JSON
  * @param replacer - A function that alters the behavior of the stringification process, or an array of String and Number objects that serve as a whitelist for selecting/filtering the properties of the value object to be included in the JSON string. If this value is null or not provided, all properties of the object are included in the resulting JSON string
  * @param space - A String or Number object that's used to insert white space into the output JSON string for readability purposes.
  * @param options - Optional settings
- *
  * @example
  * ```js
  * const { EJSON } = require('bson');
@@ -1104,9 +1030,8 @@ declare function stringify(
 ): string
 
 /**
- * @public
  * @category BSONType
- * */
+ */
 export declare class Timestamp extends LongWithoutOverridesClass {
     get _bsontype(): "Timestamp"
     static readonly MAX_VALUE: Long
@@ -1131,14 +1056,12 @@ export declare class Timestamp extends LongWithoutOverridesClass {
     static fromNumber(value: number): Timestamp
     /**
      * Returns a Timestamp for the given high and low bits. Each is assumed to use 32 bits.
-     *
      * @param lowBits - the low 32-bits.
      * @param highBits - the high 32-bits.
      */
     static fromBits(lowBits: number, highBits: number): Timestamp
     /**
      * Returns a Timestamp from the given string, optionally using the given radix.
-     *
      * @param str - the textual representation of the Timestamp.
      * @param optRadix - the radix in which the text is written.
      */
@@ -1148,7 +1071,6 @@ export declare class Timestamp extends LongWithoutOverridesClass {
     inspect(): string
 }
 
-/** @public */
 export declare interface TimestampExtended {
     $timestamp: {
         t: number
@@ -1156,7 +1078,6 @@ export declare interface TimestampExtended {
     }
 }
 
-/** @public */
 export declare type TimestampOverrides =
     | "_bsontype"
     | "toExtendedJSON"
@@ -1165,27 +1086,24 @@ export declare type TimestampOverrides =
 
 /**
  * A class representation of the BSON UUID type.
- * @public
  */
 export declare class UUID extends Binary {
     static cacheHexString: boolean
     /* Excluded from this release type: __id */
     /**
      * Create an UUID type
-     *
      * @param input - Can be a 32 or 36 character hex string (dashes excluded/included) or a 16 byte binary Buffer.
      */
     constructor(input?: string | Uint8Array | UUID)
     /**
      * The UUID bytes
-     * @readonly
      */
     get id(): Uint8Array
     set id(value: Uint8Array)
     /**
      * Returns the UUID id as a 32 or 36 character hex string representation, excluding/including dashes (defaults to 36 character dash separated)
      * @param includeDashes - should the string exclude dash-separators.
-     * */
+     */
     toHexString(includeDashes?: boolean): string
     /**
      * Converts the id into a 36 character (dashes included) hex string, unless a encoding is specified.
@@ -1198,7 +1116,6 @@ export declare class UUID extends Binary {
     toJSON(): string
     /**
      * Compares the equality of this UUID with `otherID`.
-     *
      * @param otherId - UUID instance to compare against.
      */
     equals(otherId: string | Uint8Array | UUID): boolean
@@ -1225,7 +1142,6 @@ export declare class UUID extends Binary {
     inspect(): string
 }
 
-/** @public */
 export declare type UUIDExtended = {
     $uuid: string
 }

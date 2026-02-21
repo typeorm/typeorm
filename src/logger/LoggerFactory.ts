@@ -13,6 +13,8 @@ import { FormattedConsoleLogger } from "./FormattedConsoleLogger"
 export class LoggerFactory {
     /**
      * Creates a new logger depend on a given connection's driver.
+     * @param logger
+     * @param options
      */
     create(
         logger?:

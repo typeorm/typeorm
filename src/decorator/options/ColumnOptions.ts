@@ -41,10 +41,8 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * Indicates if column value is not updated by "save" operation.
      * It means you'll be able to write this value only when you first time insert the object.
      * Default value is "false".
-     *
      * @deprecated Please use the `update` option instead.  Careful, it takes
      * the opposite value to readonly.
-     *
      */
     readonly?: boolean
 
@@ -205,7 +203,6 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * Indicates if date values should be stored and retrieved in UTC timezone
      * instead of local timezone. Only applies to "date" column type.
      * Default value is "false" (uses local timezone for backward compatibility).
-     *
      * @example
      * @Column({ type: "date", utc: true })
      * birthDate: Date
