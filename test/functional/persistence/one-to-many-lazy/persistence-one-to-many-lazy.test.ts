@@ -19,13 +19,12 @@ describe("persistence > #10190 one-to-many-lazy", () => {
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
-                enabledDrivers: ["postgres"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should update the user id of a post when the the user is saved with a list of posts that already exist in the database", () =>
+    it("should update the user id of a post when the user is saved with a list of posts that already exist in the database", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const entityManager = dataSource.manager
@@ -57,7 +56,7 @@ describe("persistence > #10190 one-to-many-lazy", () => {
             }),
         ))
 
-    it("should update the user id of a post when the the user is saved with a list of posts that already exist in the database (with lazy relations)", () =>
+    it("should update the user id of a post when the user is saved with a list of posts that already exist in the database (with lazy relations)", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const entityManager = dataSource.manager
