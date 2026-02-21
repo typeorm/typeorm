@@ -4532,12 +4532,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     // if all properties of where are undefined we don't need to join anything
                     // this can happen when user defines map with conditional queries inside
                     if (typeof where[key] === "object") {
-                        const undefinedKeys = Object.keys(where[key]).filter(
+                        const whereKeys = Object.keys(where[key])
+                        const undefinedKeys = whereKeys.filter(
                             (k) => where[key][k] === undefined,
                         )
                         const allAllUndefined =
-                            undefinedKeys.length ===
-                            Object.keys(where[key]).length
+                            whereKeys.length > 0 &&
+                            undefinedKeys.length === whereKeys.length
                         if (allAllUndefined) {
                             const undefinedBehavior =
                                 this.connection.options
