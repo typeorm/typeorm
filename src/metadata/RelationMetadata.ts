@@ -368,6 +368,7 @@ export class RelationMetadata {
 
     /**
      * Creates join column ids map from the given related entity ids array.
+     * @param entity
      */
     getRelationIdMap(entity: ObjectLiteral): ObjectLiteral | undefined {
         const joinColumns = this.isOwning
@@ -386,6 +387,7 @@ export class RelationMetadata {
      * If given id is an object then it means its already id map.
      * If given id isn't an object then it means its a value of the id column
      * and it creates a new id map with this value and name of the primary column.
+     * @param id
      */
     ensureRelationIdMap(id: any): ObjectLiteral {
         if (ObjectUtils.isObject(id)) return id
@@ -408,6 +410,8 @@ export class RelationMetadata {
     /**
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
+     * @param entity
+     * @param getLazyRelationsPromiseValue
      */
     getEntityValue(
         entity: ObjectLiteral,
@@ -475,6 +479,14 @@ export class RelationMetadata {
                 if (getLazyRelationsPromiseValue === true)
                     return entity[this.propertyName]
 
+                const ownDescriptor = Object.getOwnPropertyDescriptor(
+                    entity,
+                    this.propertyName,
+                )
+                if (ownDescriptor && typeof ownDescriptor.get !== "function") {
+                    return ownDescriptor.value
+                }
+
                 return undefined
             }
             return entity[this.propertyName]
@@ -486,6 +498,8 @@ export class RelationMetadata {
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
      *
      * If merge is set to true, it merges given value into currently
+     * @param entity
+     * @param value
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
         const propertyName = this.isLazy
@@ -531,6 +545,7 @@ export class RelationMetadata {
 
     /**
      * Creates entity id map from the given entity ids array.
+     * @param value
      */
     createValueMap(value: any) {
         // extract column value from embeds of entity if column is in embedded
@@ -582,6 +597,7 @@ export class RelationMetadata {
     /**
      * Registers given foreign keys in the relation.
      * This builder method should be used to register foreign key in the relation.
+     * @param foreignKeys
      */
     registerForeignKeys(...foreignKeys: ForeignKeyMetadata[]) {
         this.foreignKeys.push(...foreignKeys)
@@ -590,6 +606,8 @@ export class RelationMetadata {
     /**
      * Registers given join columns in the relation.
      * This builder method should be used to register join column in the relation.
+     * @param joinColumns
+     * @param inverseJoinColumns
      */
     registerJoinColumns(
         joinColumns: ColumnMetadata[] = [],
@@ -611,6 +629,7 @@ export class RelationMetadata {
     /**
      * Registers a given junction entity metadata.
      * This builder method can be called after junction entity metadata for the many-to-many relation was created.
+     * @param junctionEntityMetadata
      */
     registerJunctionEntityMetadata(junctionEntityMetadata: EntityMetadata) {
         this.junctionEntityMetadata = junctionEntityMetadata
