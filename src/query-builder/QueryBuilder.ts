@@ -102,6 +102,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * QueryBuilder can be initialized from given Connection and QueryRunner objects or from given other QueryBuilder.
+     * @param connectionOrQueryBuilder
+     * @param queryRunner
      */
     constructor(
         connectionOrQueryBuilder: DataSource | QueryBuilder<any>,
@@ -730,13 +732,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     protected replacePropertyNamesForTheWholeQuery(statement: string) {
         const replacements: { [key: string]: { [key: string]: string } } = {}
+        const noMetadataAliasPrefixes = new Set<string>()
 
         for (const alias of this.expressionMap.aliases) {
-            if (!alias.hasMetadata) continue
             const replaceAliasNamePrefix =
                 this.expressionMap.aliasNamePrefixingEnabled && alias.name
                     ? `${alias.name}.`
                     : ""
+
+            if (!alias.hasMetadata) {
+                if (replaceAliasNamePrefix) {
+                    noMetadataAliasPrefixes.add(replaceAliasNamePrefix)
+                }
+                continue
+            }
 
             if (!replacements[replaceAliasNamePrefix]) {
                 replacements[replaceAliasNamePrefix] = {}
@@ -789,11 +798,12 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         }
 
         const replacementKeys = Object.keys(replacements)
-        const replaceAliasNamePrefixes = replacementKeys
+        const allPrefixKeys = [...replacementKeys, ...noMetadataAliasPrefixes]
+        const replaceAliasNamePrefixes = allPrefixKeys
             .map((key) => escapeRegExp(key))
             .join("|")
 
-        if (replacementKeys.length > 0) {
+        if (allPrefixKeys.length > 0) {
             statement = statement.replace(
                 new RegExp(
                     // Avoid a lookbehind here since it's not well supported
@@ -815,10 +825,21 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         pre = matches[1]
                         p = matches[3]
 
-                        if (replacements[matches[2]][p]) {
+                        if (
+                            replacements[matches[2]] &&
+                            replacements[matches[2]][p]
+                        ) {
                             return `${pre}${this.escape(
                                 matches[2].substring(0, matches[2].length - 1),
                             )}.${this.escape(replacements[matches[2]][p])}`
+                        }
+
+                        // For non-metadata aliases (e.g. subquery joins),
+                        // escape both the alias name and property path as-is
+                        if (noMetadataAliasPrefixes.has(matches[2])) {
+                            return `${pre}${this.escape(
+                                matches[2].substring(0, matches[2].length - 1),
+                            )}.${this.escape(p)}`
                         }
                     } else {
                         match = matches[0]
