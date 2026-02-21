@@ -17,21 +17,19 @@ jobs:
       - uses: amannn/action-semantic-pull-request@v6
         with:
           types: |
-            build
             chore
             ci
             docs
             feat
             fix
-            perf
+            lint
             refactor
             revert
-            style
             test
           subjectPattern: ^[a-z][a-zA-Z0-9 \-\/()*.@,_`']+$
           subjectPatternError: |
             Our pull requests titles should follow Conventional Commits spec:
-            https://www.conventionalcommits.org
+            https://www.conventionalcommits.org 
 
             The description "{subject}" found in this pull request title "{title}"
             didn't match the configured pattern. Please ensure that it doesn't
