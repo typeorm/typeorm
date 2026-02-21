@@ -103,6 +103,27 @@ will be inherited and created in final entities.
 
 This example will create 3 tables - `photo`, `question` and `post`.
 
+### Overriding Column Options in Inherited Entities
+
+When using inheritance, you may want to override column options defined in a base or abstract class in your child entity. TypeORM allows you to override the options of a `@Column` decorator in a subclass by redeclaring the property with a new `@Column` decorator. The child entity's column options will take precedence over those defined in the parent class.
+
+**Example:**
+
+```typescript
+export abstract class BaseContent {
+    @Column({ length: 100, nullable: false })
+    title: string
+}
+
+@Entity()
+export class Article extends BaseContent {
+    @Column({ length: 255 }) // This overrides the length from the base class
+    title: string
+}
+```
+
+In this example, the `Article` entity will have a `title` column with a length of 255 and `nullable` set to false, overriding the length of 100 defined in the `BaseContent` class. This works for all column options, such as type, nullable, default, etc.
+
 ## Single Table Inheritance
 
 TypeORM also supports single table inheritance.
