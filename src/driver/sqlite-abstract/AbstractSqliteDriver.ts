@@ -127,6 +127,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         "time",
         "datetime",
         "json",
+        "jsonb",
     ]
 
     /**
@@ -654,6 +655,10 @@ export abstract class AbstractSqliteDriver implements Driver {
             return "text"
         } else if (column.type === "simple-enum") {
             return "varchar"
+        } else if (column.type === "jsonb") {
+            // SQLite does not differentiate between json/jsonb. We keep jsonb as an
+            // accepted column type for cross-db schemas and normalize it to json.
+            return "json"
         } else {
             return (column.type as string) || ""
         }

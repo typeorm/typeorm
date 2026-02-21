@@ -202,7 +202,7 @@ export type SimpleColumnType =
     | "uuid" // postgres, cockroachdb, mariadb
     | "xml" // mssql, postgres
     | "json" // mysql, postgres, cockroachdb, spanner
-    | "jsonb" // postgres, cockroachdb
+    | "jsonb" // postgres, cockroachdb (sqlite drivers normalize this to "json")
     | "jsonpath" // postgres
     | "varbinary" // mssql, sap
     | "hierarchyid" // mssql
