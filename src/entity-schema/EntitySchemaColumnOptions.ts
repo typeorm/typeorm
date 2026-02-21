@@ -117,6 +117,12 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     unique?: boolean
 
     /**
+     * Indicates if NULL values in a unique index should be treated as equal, meaning there will be only one NULL
+     * allowed in the index. Works only in PostgreSQL.
+     */
+    nullsNotDistinct?: boolean
+
+    /**
      * Extra column definition. Should be used only in emergency situations. Note that if you'll use this property
      * auto schema generation will not work properly anymore. Avoid using it.
      */

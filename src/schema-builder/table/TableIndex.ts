@@ -55,6 +55,12 @@ export class TableIndex {
     isNullFiltered: boolean
 
     /**
+     * UNIQUE NULLS NOT DISTINCT constraint allows only a single NULL value to appear in a UNIQUE index.
+     * This option is only applicable in PostgreSQL.
+     */
+    isNullsNotDistinct: boolean
+
+    /**
      * Fulltext parser.
      * Works only in MySQL.
      */
@@ -84,6 +90,7 @@ export class TableIndex {
         this.isConcurrent = !!options.isConcurrent
         this.isFulltext = !!options.isFulltext
         this.isNullFiltered = !!options.isNullFiltered
+        this.isNullsNotDistinct = !!options.isNullsNotDistinct
         this.parser = options.parser
         this.where = options.where ? options.where : ""
         this.type = options.type
@@ -105,6 +112,7 @@ export class TableIndex {
             isConcurrent: this.isConcurrent,
             isFulltext: this.isFulltext,
             isNullFiltered: this.isNullFiltered,
+            isNullsNotDistinct: this.isNullsNotDistinct,
             parser: this.parser,
             where: this.where,
             type: this.type,
@@ -129,6 +137,7 @@ export class TableIndex {
             isConcurrent: indexMetadata.isConcurrent,
             isFulltext: indexMetadata.isFulltext,
             isNullFiltered: indexMetadata.isNullFiltered,
+            isNullsNotDistinct: indexMetadata.isNullsNotDistinct,
             parser: indexMetadata.parser,
             where: indexMetadata.where,
             type: indexMetadata.type,

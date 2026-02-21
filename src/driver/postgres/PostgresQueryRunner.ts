@@ -3550,17 +3550,26 @@ export class PostgresQueryRunner
         const constraintsSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "cnst"."conname" AS "constraint_name", ` +
             `pg_get_constraintdef("cnst"."oid") AS "expression", ` +
-            `CASE "cnst"."contype" WHEN 'p' THEN 'PRIMARY' WHEN 'u' THEN 'UNIQUE' WHEN 'c' THEN 'CHECK' WHEN 'x' THEN 'EXCLUDE' END AS "constraint_type", "a"."attname" AS "column_name" ` +
+            `CASE "cnst"."contype" WHEN 'p' THEN 'PRIMARY' WHEN 'u' THEN 'UNIQUE' WHEN 'c' THEN 'CHECK' WHEN 'x' THEN 'EXCLUDE' END AS "constraint_type", "a"."attname" AS "column_name", ` +
+            (this.driver.isNullsNotDistinctSupported()
+                ? `"ix"."indnullsnotdistinct"`
+                : "FALSE") +
+            ` AS "nulls_not_distinct"` +
             `FROM "pg_constraint" "cnst" ` +
             `INNER JOIN "pg_class" "t" ON "t"."oid" = "cnst"."conrelid" ` +
             `INNER JOIN "pg_namespace" "ns" ON "ns"."oid" = "cnst"."connamespace" ` +
             `LEFT JOIN "pg_attribute" "a" ON "a"."attrelid" = "cnst"."conrelid" AND "a"."attnum" = ANY ("cnst"."conkey") ` +
+            `LEFT JOIN "pg_index" "ix" ON "ix"."indexrelid" = "cnst"."conindid" ` +
             `WHERE "t"."relkind" IN ('r', 'p') AND (${constraintsCondition})`
 
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
-            `"types"."typname" AS "type_name", "am"."amname" AS "index_type" ` +
+            `"types"."typname" AS "type_name", "am"."amname" AS "index_type", ` +
+            (this.driver.isNullsNotDistinctSupported()
+                ? `"ix"."indnullsnotdistinct"`
+                : "FALSE") +
+            ` AS "nulls_not_distinct"` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
             `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
@@ -4068,6 +4077,7 @@ export class PostgresQueryRunner
                         deferrable: constraint["deferrable"]
                             ? constraint["deferred"]
                             : undefined,
+                        isNullsNotDistinct: constraint["nulls_not_distinct"],
                     })
                 })
 
@@ -4205,6 +4215,7 @@ export class PostgresQueryRunner
                         isSpatial: constraint["index_type"] === "gist",
                         type: constraint["index_type"],
                         isFulltext: false,
+                        isNullsNotDistinct: constraint["nulls_not_distinct"],
                     })
                 })
 
@@ -4256,7 +4267,14 @@ export class PostgresQueryRunner
                     const columnNames = unique.columnNames
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
-                    let constraint = `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`
+                    let constraint = `CONSTRAINT "${uniqueName}" UNIQUE`
+                    if (
+                        unique.isNullsNotDistinct &&
+                        this.driver.isNullsNotDistinctSupported()
+                    ) {
+                        constraint += " NULLS NOT DISTINCT"
+                    }
+                    constraint += ` (${columnNames})`
                     if (unique.deferrable)
                         constraint += ` DEFERRABLE ${unique.deferrable}`
                     return constraint
@@ -4564,7 +4582,12 @@ export class PostgresQueryRunner
                 index.isConcurrent ? " CONCURRENTLY" : ""
             } "${index.name}" ON ${this.escapePath(table)} ${
                 indexTypeClause ?? ""
-            } (${columns}) ${index.where ? "WHERE " + index.where : ""}`,
+            } (${columns}) ${
+                index.isNullsNotDistinct &&
+                this.driver.isNullsNotDistinctSupported()
+                    ? "NULLS NOT DISTINCT"
+                    : ""
+            } ${index.where ? "WHERE " + index.where : ""}`,
         )
     }
 
@@ -4678,7 +4701,12 @@ export class PostgresQueryRunner
             .join(", ")
         let sql = `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${
             uniqueConstraint.name
-        }" UNIQUE (${columnNames})`
+        }" UNIQUE ${
+            uniqueConstraint.isNullsNotDistinct &&
+            this.driver.isNullsNotDistinctSupported()
+                ? "NULLS NOT DISTINCT"
+                : ""
+        } (${columnNames})`
         if (uniqueConstraint.deferrable)
             sql += ` DEFERRABLE ${uniqueConstraint.deferrable}`
         return new Query(sql)
