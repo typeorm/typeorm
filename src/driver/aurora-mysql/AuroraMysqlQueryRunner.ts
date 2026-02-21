@@ -23,7 +23,11 @@ import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { AuroraMysqlDriver } from "./AuroraMysqlDriver"
-
+import {
+    handleMysqlLengthOnlyFastPath,
+    handleSafeAlter,
+} from "./AuroraMysqlQueryRunnerHelper"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 /**
  * Runs queries on a single mysql database connection.
  */
@@ -839,8 +843,8 @@ export class AuroraMysqlQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (oldColumn.type !== newColumn.type &&
+                !isSafeAlter(oldColumn, newColumn)) ||
             oldColumn.generatedType !== newColumn.generatedType
         ) {
             await this.dropColumn(table, oldColumn)
@@ -987,6 +991,45 @@ export class AuroraMysqlQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            if (oldColumn.type !== newColumn.type) {
+                await handleSafeAlter({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    Query: Query,
+                    escapePath: (t) => this.escapePath(t as any),
+                    buildCreateColumnSql: (col) =>
+                        this.buildCreateColumnSql(col, true, true),
+                    executeQueries: (up, down) => this.executeQueries(up, down),
+                    replaceCachedTable: (t, ct) =>
+                        this.replaceCachedTable(t, ct),
+                    isSafeAlter,
+                })
+            } else if (
+                oldColumn?.type === newColumn?.type &&
+                oldColumn?.length !== newColumn?.length
+            ) {
+                // BEGIN length-only fast path (MySQL family)
+                await handleMysqlLengthOnlyFastPath({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    Query,
+                    escapePath: this.escapePath.bind(this),
+                    isColumnChanged: this.isColumnChanged.bind(this),
+                    buildCreateColumnSql: this.buildCreateColumnSql.bind(this),
+                    executeQueries: this.executeQueries.bind(this),
+                    replaceCachedTable: this.replaceCachedTable.bind(this),
+                })
+                // END length-only fast path
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
