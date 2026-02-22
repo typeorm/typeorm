@@ -190,11 +190,9 @@ await manager.update(User, 1, { firstName: "Rizzrak" })
 You can pass an **array of condition objects** to match multiple distinct sets of rows in a single call (conditions are OR'd together):
 
 ```typescript
-await manager.update(
-    User,
-    [{ status: "expired" }, { flagged: true }],
-    { active: false },
-)
+await manager.update(User, [{ status: "expired" }, { flagged: true }], {
+    active: false,
+})
 // executes UPDATE user SET active = false WHERE status = 'expired' OR flagged = true
 ```
 
