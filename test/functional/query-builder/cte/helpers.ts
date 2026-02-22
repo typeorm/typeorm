@@ -1,9 +1,10 @@
-import { Connection } from "../../../../src"
+import { DataSource } from "../../../../src"
 import { CteCapabilities } from "../../../../src/driver/types/CteCapabilities"
 
 export function filterByCteCapabilities(
     capability: keyof CteCapabilities,
     equalsTo: boolean = true,
-): (conn: Connection) => boolean {
-    return (conn) => conn.driver.cteCapabilities[capability] === equalsTo
+): (dataSource: DataSource) => boolean {
+    return (dataSource: DataSource) =>
+        dataSource.driver.cteCapabilities[capability] === equalsTo
 }

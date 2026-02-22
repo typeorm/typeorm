@@ -3,7 +3,7 @@ import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 /**
  * Sqlite-specific connection options.
  */
-export interface CordovaConnectionOptions extends BaseDataSourceOptions {
+export interface CordovaDataSourceOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */

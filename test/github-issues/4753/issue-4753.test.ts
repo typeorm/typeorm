@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions"
+import { MysqlDataSourceOptions } from "../../../src/driver/mysql/MysqlDataSourceOptions"
 import {
     closeTestingConnections,
     getTypeOrmConfig,
@@ -8,7 +8,7 @@ import {
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
 
-function isMySql(v: TestingConnectionOptions): v is MysqlConnectionOptions {
+function isMySql(v: TestingConnectionOptions): v is MysqlDataSourceOptions {
     return v.type === "mysql"
 }
 
@@ -17,7 +17,7 @@ describe("github issues > #4753 MySQL Replication Config broken", () => {
     after(() => closeTestingConnections(dataSources))
 
     it("should connect without error when using replication", async () => {
-        const connectionOptions: MysqlConnectionOptions | undefined =
+        const connectionOptions: MysqlDataSourceOptions | undefined =
             getTypeOrmConfig()
                 .filter((v) => !v.skip)
                 .find(isMySql)

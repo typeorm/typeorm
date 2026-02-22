@@ -151,6 +151,16 @@ const result = await repository.update(
 console.log(result.raw) // [{ id: 1, firstName: "Rizzrak" }]
 ```
 
+You can pass an **array of condition objects** to match multiple distinct sets of rows in a single call (conditions are OR'd together):
+
+```typescript
+await repository.update(
+    [{ status: "expired" }, { flagged: true }],
+    { active: false },
+)
+// executes UPDATE user SET active = false WHERE status = 'expired' OR flagged = true
+```
+
 - `updateAll` - Updates _all_ entities of target type (without WHERE clause). Sets fields from supplied partial entity.
 
 ```typescript

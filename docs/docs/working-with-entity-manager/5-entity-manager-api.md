@@ -198,6 +198,17 @@ await manager.update(User, [
 // UPDATE user SET category = ADULT WHERE age = 18
 ```
 
+You can pass an **array of condition objects** to match multiple distinct sets of rows in a single call (conditions are OR'd together):
+
+```typescript
+await manager.update(
+    User,
+    [{ status: "expired" }, { flagged: true }],
+    { active: false },
+)
+// executes UPDATE user SET active = false WHERE status = 'expired' OR flagged = true
+```
+
 - `updateAll` - Updates _all_ entities of target type (without WHERE clause). Sets fields from supplied partial entity.
 
 ```typescript
@@ -245,6 +256,19 @@ await manager.delete(User, [
 // DELETE FROM user WHERE age = 18
 // DELETE FROM user WHERE id = 42
 ```
+
+You can pass an **array of condition objects** to match multiple distinct sets of rows in a single call (conditions are OR'd together). This is different from passing a primitive array, which is treated as a list of IDs:
+
+```typescript
+// Primitive array — interpreted as WHERE id IN (1, 2, 3)
+await manager.delete(User, [1, 2, 3])
+
+// Object array — each element is a separate condition (OR'd together)
+await manager.delete(User, [{ id: 1 }, { email: "old@example.com" }])
+// executes DELETE FROM user WHERE id = 1 OR email = 'old@example.com'
+```
+
+Note: passing an empty object `{}` or `[{}]` throws a `TypeORMError` to prevent accidental full-table deletes.
 
 - `deleteAll` - Deletes _all_ entities of target type (without WHERE clause).
 

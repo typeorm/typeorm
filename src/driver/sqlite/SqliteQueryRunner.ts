@@ -5,7 +5,7 @@ import { QueryResult } from "../../query-runner/QueryResult"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { SqliteConnectionOptions } from "./SqliteConnectionOptions"
+import { SqliteDataSourceOptions } from "./SqliteDataSourceOptions"
 import { SqliteDriver } from "./SqliteDriver"
 
 /**
@@ -47,6 +47,9 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -56,7 +59,7 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         const connection = this.driver.connection
-        const options = connection.options as SqliteConnectionOptions
+        const options = connection.options as SqliteDataSourceOptions
         const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime
         const broadcaster = this.broadcaster
 

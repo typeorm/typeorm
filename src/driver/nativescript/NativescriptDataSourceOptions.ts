@@ -3,7 +3,7 @@ import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 /**
  * NativeScript-specific connection options.
  */
-export interface NativescriptConnectionOptions extends BaseDataSourceOptions {
+export interface NativescriptDataSourceOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */
