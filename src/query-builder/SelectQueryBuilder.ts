@@ -2655,6 +2655,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             : (orderBys[columnName] as any).order +
                               " " +
                               (orderBys[columnName] as any).nulls
+                    const selectionByAlias = this.expressionMap.selects.find(
+                        (s) => s.aliasName === columnName,
+                    )
+                    if (selectionByAlias) {
+                        return this.escape(columnName) + " " + orderValue
+                    }
                     const selection = this.expressionMap.selects.find(
                         (s) => s.selection === columnName,
                     )

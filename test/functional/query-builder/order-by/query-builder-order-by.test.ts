@@ -271,4 +271,31 @@ describe("query builder > order-by", () => {
                 expect(result[0].post).to.not.be.undefined
             }),
         ))
+
+    it("issue #12024: should quote mixed-case SELECT aliases in ORDER BY clause", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+
+                for (let i = 0; i < 3; i++) {
+                    const post = new Post()
+                    post.myOrder = i
+                    await postRepository.save(post)
+                }
+
+                const result = await postRepository
+                    .createQueryBuilder("post")
+                    .select("post.myOrder", "myOrder")
+                    .addSelect("COUNT(*)", "activeCount")
+                    .groupBy("post.myOrder")
+                    .orderBy("activeCount", "DESC")
+                    .getRawMany()
+
+                expect(result).to.have.lengthOf(3)
+                result.forEach((row: any) => {
+                    expect(row).to.have.property("activeCount")
+                    expect(row).to.have.property("myOrder")
+                })
+            }),
+        ))
 })
