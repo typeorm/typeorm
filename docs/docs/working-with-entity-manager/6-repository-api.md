@@ -154,10 +154,9 @@ console.log(result.raw) // [{ id: 1, firstName: "Rizzrak" }]
 You can pass an **array of condition objects** to match multiple distinct sets of rows in a single call (conditions are OR'd together):
 
 ```typescript
-await repository.update(
-    [{ status: "expired" }, { flagged: true }],
-    { active: false },
-)
+await repository.update([{ status: "expired" }, { flagged: true }], {
+    active: false,
+})
 // executes UPDATE user SET active = false WHERE status = 'expired' OR flagged = true
 ```
 
@@ -288,11 +287,7 @@ await repository.softDelete([1, 2, 3])
 await repository.softDelete({ firstName: "Jake" })
 
 // Bulk soft deletes with different conditions for each operation
-await repository.softDelete([
-    { firstName: "Jake" },
-    { age: 25 },
-    { id: 42 },
-])
+await repository.softDelete([{ firstName: "Jake" }, { age: 25 }, { id: 42 }])
 // executes three separate UPDATE queries (setting deletedAt timestamp):
 // UPDATE entity SET deletedAt = NOW() WHERE firstName = Jake
 // UPDATE entity SET deletedAt = NOW() WHERE age = 25

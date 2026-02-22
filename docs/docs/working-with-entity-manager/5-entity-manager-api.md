@@ -201,11 +201,9 @@ await manager.update(User, [
 You can pass an **array of condition objects** to match multiple distinct sets of rows in a single call (conditions are OR'd together):
 
 ```typescript
-await manager.update(
-    User,
-    [{ status: "expired" }, { flagged: true }],
-    { active: false },
-)
+await manager.update(User, [{ status: "expired" }, { flagged: true }], {
+    active: false,
+})
 // executes UPDATE user SET active = false WHERE status = 'expired' OR flagged = true
 ```
 
@@ -246,11 +244,7 @@ await manager.delete(User, [1, 2, 3])
 await manager.delete(User, { firstName: "Timber" })
 
 // Bulk deletes with different conditions for each operation
-await manager.delete(User, [
-    { firstName: "Timber" },
-    { age: 18 },
-    { id: 42 },
-])
+await manager.delete(User, [{ firstName: "Timber" }, { age: 18 }, { id: 42 }])
 // executes three separate DELETE queries:
 // DELETE FROM user WHERE firstName = Timber
 // DELETE FROM user WHERE age = 18
