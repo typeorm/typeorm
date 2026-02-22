@@ -176,6 +176,8 @@ await repository.updateAll(
 
 When an upsert operation results in an update (due to a conflict), special columns like `@UpdateDateColumn` and `@VersionColumn` are automatically updated to their current values.
 
+Columns marked with `update: false` or decorated with a `generatedType` (e.g. `@Generated`) are **never** included in the update set on conflict. If all non-conflict columns are excluded by these rules (i.e. there are no updatable columns), the upsert degrades to an insert-or-ignore operation and the existing row is left completely unchanged.
+
 ```typescript
 await repository.upsert(
     [

@@ -768,17 +768,26 @@ export class EntityManager {
         const overwriteColumns = metadata.columns.filter(
             (col) =>
                 !conflictColumns.includes(col) &&
+                col.isUpdate !== false &&
+                !col.generatedType &&
                 entities.some(
                     (entity) =>
                         typeof col.getEntityValue(entity) !== "undefined",
                 ),
         )
 
+        const upsertType =
+            options.upsertType || this.connection.driver.supportedUpsertTypes[0]
+
         const qb = this.createQueryBuilder()
             .insert()
             .into(target)
             .values(entities)
-            .orUpdate(
+
+        if (overwriteColumns.length === 0) {
+            qb.orIgnore(true)
+        } else {
+            qb.orUpdate(
                 [...conflictColumns, ...overwriteColumns].map(
                     (col) => col.databaseName,
                 ),
@@ -787,11 +796,10 @@ export class EntityManager {
                     skipUpdateIfNoValuesChanged:
                         options.skipUpdateIfNoValuesChanged,
                     indexPredicate: options.indexPredicate,
-                    upsertType:
-                        options.upsertType ||
-                        this.connection.driver.supportedUpsertTypes[0],
+                    upsertType,
                 },
             )
+        }
 
         if (options.returning !== undefined) {
             qb.returning(options.returning)
@@ -809,6 +817,7 @@ export class EntityManager {
      * @param target
      * @param criteria
      * @param partialEntity
+     * @param options
      */
     update<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -867,6 +876,7 @@ export class EntityManager {
      * WARNING! This method updates ALL rows in the target table.
      * @param target
      * @param partialEntity
+     * @param options
      */
     updateAll<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
