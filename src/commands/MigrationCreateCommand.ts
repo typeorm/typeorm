@@ -79,6 +79,8 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the migration file.
+     * @param name
+     * @param timestamp
      */
     protected static getTemplate(name: string, timestamp: number): string {
         return `import { MigrationInterface, QueryRunner } from "typeorm";
@@ -100,6 +102,9 @@ export class ${camelCase(
 
     /**
      * Gets contents of the migration file in Javascript.
+     * @param name
+     * @param timestamp
+     * @param esm
      */
     protected static getJavascriptTemplate(
         name: string,
