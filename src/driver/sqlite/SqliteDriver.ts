@@ -74,6 +74,11 @@ export class SqliteDriver extends AbstractSqliteDriver {
             return "blob"
         }
 
+        if (column.type === "jsonb") {
+            // keep behavior consistent across sqlite drivers: jsonb is treated as json
+            return "json"
+        }
+
         return super.normalizeType(column)
     }
 
