@@ -2425,9 +2425,62 @@ export class CockroachQueryRunner
 
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns
+
+        // Check if only the PK constraint name changed (same columns)
+        const oldPkName = primaryColumns[0]?.primaryKeyConstraintName
+        const newPkName = columns[0]?.primaryKeyConstraintName
+
+        // Compute effective old and new PK names, considering default naming strategy
+        const effectiveOldPkName = oldPkName
+            ? oldPkName
+            : this.connection.namingStrategy.primaryKeyName(
+                  clonedTable,
+                  primaryColumns.map((c) => c.name),
+              )
+        const effectiveNewPkName = newPkName
+            ? newPkName
+            : this.connection.namingStrategy.primaryKeyName(
+                  clonedTable,
+                  columnNames,
+              )
+
+        if (
+            primaryColumns.length > 0 &&
+            primaryColumns.length === columns.length &&
+            effectiveOldPkName !== effectiveNewPkName &&
+            [...primaryColumns.map((c) => c.name)].sort().join(",") ===
+                [...columnNames].sort().join(",")
+        ) {
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} RENAME CONSTRAINT "${effectiveOldPkName}" TO "${effectiveNewPkName}"`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} RENAME CONSTRAINT "${effectiveNewPkName}" TO "${effectiveOldPkName}"`,
+                ),
+            )
+
+            clonedTable.columns
+                .filter((column) => column.isPrimary)
+                .forEach(
+                    (column) =>
+                        (column.primaryKeyConstraintName = effectiveNewPkName),
+                )
+
+            await this.executeQueries(upQueries, downQueries)
+            this.replaceCachedTable(table, clonedTable)
+            return
+        }
+
         if (primaryColumns.length > 0) {
-            const pkName = primaryColumns[0].primaryKeyConstraintName
-                ? primaryColumns[0].primaryKeyConstraintName
+            const pkName = oldPkName
+                ? oldPkName
                 : this.connection.namingStrategy.primaryKeyName(
                       clonedTable,
                       primaryColumns.map((column) => column.name),
@@ -2458,8 +2511,8 @@ export class CockroachQueryRunner
             .filter((column) => columnNames.indexOf(column.name) !== -1)
             .forEach((column) => (column.isPrimary = true))
 
-        const pkName = primaryColumns[0].primaryKeyConstraintName
-            ? primaryColumns[0].primaryKeyConstraintName
+        const pkName = columns[0]?.primaryKeyConstraintName
+            ? columns[0].primaryKeyConstraintName
             : this.connection.namingStrategy.primaryKeyName(
                   clonedTable,
                   columnNames,

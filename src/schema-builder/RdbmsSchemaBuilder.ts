@@ -853,9 +853,40 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const primaryTableColumns = table.columns.filter(
                 (column) => column.isPrimary,
             )
+
+            const effectiveOldPkName = primaryTableColumns[0]
+                ?.primaryKeyConstraintName
+                ? primaryTableColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      table,
+                      primaryTableColumns.map((column) => column.name),
+                  )
+            const effectiveNewPkName = primaryMetadataColumns[0]
+                ?.primaryKeyConstraintName
+                ? primaryMetadataColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      table,
+                      primaryMetadataColumns.map(
+                          (column) => column.databaseName,
+                      ),
+                  )
+
+            const pkNameChanged =
+                primaryTableColumns.length > 0 &&
+                primaryMetadataColumns.length > 0 &&
+                primaryTableColumns.length === primaryMetadataColumns.length &&
+                effectiveOldPkName !== effectiveNewPkName &&
+                (DriverUtils.isPostgresFamily(this.connection.driver) ||
+                    this.connection.driver.options.type === "mssql" ||
+                    this.connection.driver.options.type === "oracle" ||
+                    this.connection.driver.options.type === "cockroachdb")
+
             if (
-                primaryTableColumns.length !== primaryMetadataColumns.length &&
-                primaryMetadataColumns.length > 1
+                (primaryTableColumns.length !== primaryMetadataColumns.length &&
+                    primaryMetadataColumns.length > 1) ||
+                (primaryMetadataColumns.length === primaryTableColumns.length &&
+                    primaryMetadataColumns.length > 0 &&
+                    pkNameChanged)
             ) {
                 const changedPrimaryColumns = primaryMetadataColumns.map(
                     (primaryMetadataColumn) => {
