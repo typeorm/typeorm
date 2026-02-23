@@ -1624,7 +1624,7 @@ export class EntityManager {
     }
 
     /**
-     * Gets custom entity repository marked with @EntityRepository decorator.
+     * Gets custom entity repository marked with `@EntityRepository` decorator.
      * @param customRepository
      * @deprecated use Repository.extend to create custom repositories
      */
