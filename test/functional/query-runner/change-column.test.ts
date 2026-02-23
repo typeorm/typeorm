@@ -268,4 +268,72 @@ describe("query runner > change column", () => {
                 )
             }),
         ))
+
+    it("should preserve data when changing column type or length", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                // SQLite does not impose length restrictions and handles types differently
+                if (DriverUtils.isSQLiteFamily(connection.driver)) return
+
+                // CockroachDB and Spanner may have restrictions on ALTER COLUMN TYPE
+                if (
+                    connection.driver.options.type === "cockroachdb" ||
+                    connection.driver.options.type === "spanner"
+                )
+                    return
+
+                const queryRunner = connection.createQueryRunner()
+
+                try {
+                    // Insert test data before modifying the column
+                    await connection.manager.query(
+                        `INSERT INTO "post" ("id", "version", "name", "text", "tag") VALUES (1, 1, 'Test Post', 'Some text', 'tag1')`,
+                    )
+
+                    let table = await queryRunner.getTable("post")
+                    const nameColumn = table!.findColumnByName("name")!
+
+                    // Change column length (e.g., varchar(255) -> varchar(500))
+                    const changedNameColumn = nameColumn.clone()
+                    changedNameColumn.length = "500"
+                    await queryRunner.changeColumn(
+                        table!,
+                        nameColumn,
+                        changedNameColumn,
+                    )
+
+                    // Verify data is preserved after length change
+                    const rowsAfterLengthChange =
+                        await connection.manager.query(
+                            `SELECT "name" FROM "post" WHERE "id" = 1`,
+                        )
+                    expect(rowsAfterLengthChange).to.have.length(1)
+                    expect(rowsAfterLengthChange[0]["name"]).to.equal(
+                        "Test Post",
+                    )
+
+                    // Verify column length was actually changed
+                    table = await queryRunner.getTable("post")
+                    table!
+                        .findColumnByName("name")!
+                        .length!.should.be.equal("500")
+
+                    // Revert changes and verify data is still intact
+                    await queryRunner.executeMemoryDownSql()
+
+                    const rowsAfterRevert = await connection.manager.query(
+                        `SELECT "name" FROM "post" WHERE "id" = 1`,
+                    )
+                    expect(rowsAfterRevert).to.have.length(1)
+                    expect(rowsAfterRevert[0]["name"]).to.equal("Test Post")
+
+                    // Clean up test data
+                    await connection.manager.query(
+                        `DELETE FROM "post" WHERE "id" = 1`,
+                    )
+                } finally {
+                    await queryRunner.release()
+                }
+            }),
+        ))
 })

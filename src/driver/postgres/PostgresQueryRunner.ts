@@ -1277,15 +1277,13 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
+            // These changes are genuinely destructive and require column recreation
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1569,21 +1567,32 @@ export class PostgresQueryRunner
             }
 
             if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
+                // Use ALTER COLUMN TYPE to change type/length/precision/scale
+                // without dropping and recreating the column, which preserves data.
+                // The USING clause enables PostgreSQL to cast existing data to the new type.
+                const newFullType = this.driver.createFullType(newColumn)
+                const oldFullType = this.driver.createFullType(oldColumn)
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        }" TYPE ${newFullType} USING "${
+                            newColumn.name
+                        }"::${newFullType}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        }" TYPE ${oldFullType} USING "${
+                            newColumn.name
+                        }"::${oldFullType}`,
                     ),
                 )
             }

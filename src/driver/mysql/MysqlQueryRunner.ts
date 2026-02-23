@@ -1096,8 +1096,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
@@ -1105,6 +1103,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newColumn.generatedType === "VIRTUAL") ||
             (oldColumn.generatedType === "VIRTUAL" && !newColumn.generatedType)
         ) {
+            // Generated/identity column changes require drop+add
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1278,7 +1277,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true, true)) {
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                this.isColumnChanged(oldColumn, newColumn, true, true)
+            ) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${

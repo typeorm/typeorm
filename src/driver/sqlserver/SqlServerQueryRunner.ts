@@ -1303,13 +1303,11 @@ export class SqlServerQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
             newColumn.asExpression !== oldColumn.asExpression ||
             newColumn.generatedType !== oldColumn.generatedType
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            // Also, we recreate column if column type changed
+            // Also, we recreate column if generated/computed column properties changed.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1640,6 +1638,8 @@ export class SqlServerQueryRunner
             }
 
             if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
                 this.isColumnChanged(oldColumn, newColumn, false, false, false)
             ) {
                 upQueries.push(

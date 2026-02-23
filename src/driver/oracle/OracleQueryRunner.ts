@@ -1123,13 +1123,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
             // Oracle does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            // Also, we recreate column if column type changed
+            // Also, we recreate column if generated/computed column properties changed.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1348,7 +1346,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true)) {
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                this.isColumnChanged(oldColumn, newColumn, true)
+            ) {
                 let defaultUp: string = ""
                 let defaultDown: string = ""
                 let nullableUp: string = ""
