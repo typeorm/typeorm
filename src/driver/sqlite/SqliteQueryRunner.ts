@@ -31,6 +31,20 @@ export class SqliteQueryRunner extends AbstractSqliteQueryRunner {
         this.broadcaster = new Broadcaster(this)
     }
 
+    protected normalizeTableSqlForCollationParsing(tableSql: string) {
+        if (!tableSql) return tableSql
+
+        const withoutBlockComments = tableSql.replace(
+            /\/\*[\s\S]*?\*\//g,
+            " ",
+        )
+        const withoutLineComments = withoutBlockComments.replace(
+            /--.*?(\r?\n|$)/g,
+            " ",
+        )
+        return withoutLineComments.replace(/\s+/g, " ").trim()
+    }
+
     /**
      * Called before migrations are run.
      */

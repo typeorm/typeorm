@@ -1369,6 +1369,101 @@ export abstract class AbstractSqliteQueryRunner
         return this.query(`PRAGMA ${pragma}("${tableName}")`)
     }
 
+    protected normalizeTableSqlForCollationParsing(tableSql: string) {
+        return tableSql
+    }
+
+    protected loadColumnCollationsFromSql(
+        tableSql: string | undefined,
+        columnNames: string[],
+    ): Record<string, string> {
+        if (!tableSql) return {}
+
+        const normalizedSql = this.normalizeTableSqlForCollationParsing(
+            tableSql,
+        )
+        const columnDefinitions = this.splitTableSqlColumnDefinitions(
+            normalizedSql,
+        )
+        const collations: Record<string, string> = {}
+        const columnNameSet = new Set(columnNames)
+
+        for (const definition of columnDefinitions) {
+            const columnName = this.extractColumnNameFromDefinition(definition)
+            if (!columnName || !columnNameSet.has(columnName)) continue
+
+            const collation = this.extractCollationFromDefinition(definition)
+            if (collation) {
+                collations[columnName] = this.normalizeCollationName(collation)
+            }
+        }
+
+        return collations
+    }
+
+    protected splitTableSqlColumnDefinitions(tableSql: string): string[] {
+        const start = tableSql.indexOf("(")
+        const end = tableSql.lastIndexOf(")")
+        if (start === -1 || end === -1 || end <= start) return []
+
+        const definitions = tableSql.slice(start + 1, end)
+        const parts: string[] = []
+        let depth = 0
+        let current = ""
+        for (const char of definitions) {
+            if (char === "(") depth += 1
+            if (char === ")") depth -= 1
+
+            if (char === "," && depth === 0) {
+                if (current.trim()) parts.push(current.trim())
+                current = ""
+                continue
+            }
+
+            current += char
+        }
+
+        if (current.trim()) parts.push(current.trim())
+        return parts
+    }
+
+    protected extractColumnNameFromDefinition(
+        definition: string,
+    ): string | undefined {
+        const trimmed = definition.trim()
+        if (!trimmed) return undefined
+
+        const firstChar = trimmed[0]
+        if (firstChar === `"` || firstChar === "`" || firstChar === "'") {
+            const end = trimmed.indexOf(firstChar, 1)
+            if (end === -1) return undefined
+            return trimmed.slice(1, end)
+        }
+        if (firstChar === "[") {
+            const end = trimmed.indexOf("]")
+            if (end === -1) return undefined
+            return trimmed.slice(1, end)
+        }
+
+        const match = trimmed.match(/^([^\s]+)\s+/)
+        return match ? match[1] : undefined
+    }
+
+    protected extractCollationFromDefinition(
+        definition: string,
+    ): string | undefined {
+        const match = definition.match(/\bCOLLATE\b\s+([^\s,]+)/i)
+        if (!match) return undefined
+
+        return match[1]
+    }
+
+    protected normalizeCollationName(collation: string): string {
+        return collation
+            .replace(/^[`"'\\[]+/, "")
+            .replace(/[`"'\\]]+$/, "")
+    }
+
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
      * @param tableNames
@@ -1460,6 +1555,10 @@ export abstract class AbstractSqliteQueryRunner
                         this.loadPragmaRecords(tablePath, `index_list`),
                         this.loadPragmaRecords(tablePath, `foreign_key_list`),
                     ])
+                const columnCollations = this.loadColumnCollationsFromSql(
+                    sql,
+                    dbColumns.map((dbColumn) => dbColumn["name"]),
+                )
 
                 // find column name with auto increment
                 let autoIncrementColumnName: string | undefined = undefined
@@ -1518,6 +1617,8 @@ export abstract class AbstractSqliteQueryRunner
                         tableColumn.comment = "" // SQLite does not support column comments
                         tableColumn.isGenerated =
                             autoIncrementColumnName === dbColumn["name"]
+                        tableColumn.collation =
+                            columnCollations[tableColumn.name]
                         if (tableColumn.isGenerated) {
                             tableColumn.generationStrategy = "increment"
                         }

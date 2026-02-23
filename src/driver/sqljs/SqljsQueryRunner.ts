@@ -31,6 +31,16 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         this.broadcaster = new Broadcaster(this)
     }
 
+    protected normalizeTableSqlForCollationParsing(tableSql: string) {
+        if (!tableSql) return tableSql
+
+        const normalizedNewlines = tableSql.replace(/\r\n/g, "\n")
+        const withoutComments = normalizedNewlines
+            .replace(/\/\*[\s\S]*?\*\//g, " ")
+            .replace(/--.*?(\n|$)/g, " ")
+        return withoutComments.replace(/\s+/g, " ").trim()
+    }
+
     // -------------------------------------------------------------------------
     // Public methods
     // -------------------------------------------------------------------------
