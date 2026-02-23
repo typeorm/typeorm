@@ -273,7 +273,7 @@ await repository.deleteAll()
 
 Refer also to the `clear` method, which performs database `TRUNCATE TABLE` operation instead.
 
-- `softDelete` and `restore` - Soft deleting and restoring a row by id, ids, or given conditions:
+- `softDelete` and `restore` - Soft deleting and restoring a row by id, ids, given conditions, or an array of condition objects:
 
 ```typescript
 const repository = dataSource.getRepository(Entity)
@@ -285,6 +285,13 @@ await repository.restore(1)
 await repository.softDelete([1, 2, 3])
 // Or soft delete by other attribute
 await repository.softDelete({ firstName: "Jake" })
+
+// Bulk soft deletes with different conditions for each operation
+await repository.softDelete([{ firstName: "Jake" }, { age: 25 }, { id: 42 }])
+// executes three separate UPDATE queries (setting deletedAt timestamp):
+// UPDATE entity SET deletedAt = NOW() WHERE firstName = Jake
+// UPDATE entity SET deletedAt = NOW() WHERE age = 25
+// UPDATE entity SET deletedAt = NOW() WHERE id = 42
 ```
 
 - `softRemove` and `recover` - This is alternative to `softDelete` and `restore`.

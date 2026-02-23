@@ -25,14 +25,14 @@ export class RelationMetadata {
     /**
      * Entity metadata of the entity where this relation is placed.
      *
-     * For example for @ManyToMany(type => Category) in Post, entityMetadata will be metadata of Post entity.
+     * For example for `@ManyToMany(type => Category)` in `Post`, `entityMetadata` will be metadata of `Post` entity.
      */
     entityMetadata: EntityMetadata
 
     /**
      * Entity metadata of the entity that is targeted by this relation.
      *
-     * For example for @ManyToMany(type => Category) in Post, inverseEntityMetadata will be metadata of Category entity.
+     * For example for `@ManyToMany(type => Category)` in `Post`, `inverseEntityMetadata` will be metadata of `Category` entity.
      */
     inverseEntityMetadata: EntityMetadata
 
@@ -58,9 +58,9 @@ export class RelationMetadata {
      * Target entity to which this relation is applied.
      * Target IS NOT equal to entityMetadata.target, because relation
      *
-     * For example for @ManyToMany(type => Category) in Post, target will be Post.
-     * If @ManyToMany(type => Category) is in Counters which is embedded into Post, target will be Counters.
-     * If @ManyToMany(type => Category) is in abstract class BaseUser which Post extends, target will be BaseUser.
+     * For example for `@ManyToMany(type => Category)` in `Post`, `target` will be `Post`.
+     * If `@ManyToMany(type => Category)` is in `Counters` which is embedded into `Post`, `target` will be `Counters`.
+     * If `@ManyToMany(type => Category)` is in abstract class `BaseUser` which `Post` extends, `target` will be `BaseUser`.
      * Target can be string if its defined in entity schema instead of class.
      */
     target: Function | string
@@ -174,7 +174,7 @@ export class RelationMetadata {
     /**
      * Gets the property's type to which this relation is applied.
      *
-     * For example for @ManyToMany(type => Category) in Post, target will be Category.
+     * For example for `@ManyToMany(type => Category)` in `Post`, `type` will be `Category`.
      */
     type: Function | string
 
