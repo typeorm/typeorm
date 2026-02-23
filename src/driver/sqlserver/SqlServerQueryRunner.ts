@@ -1303,28 +1303,21 @@ export class SqlServerQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
+            newColumn.type !== oldColumn.type ||
             newColumn.asExpression !== oldColumn.asExpression ||
-            newColumn.generatedType !== oldColumn.generatedType ||
-            // Enum type conversions are incompatible with ALTER COLUMN
-            ((oldColumn.type === "enum" ||
-                oldColumn.type === "simple-enum" ||
-                newColumn.type === "enum" ||
-                newColumn.type === "simple-enum") &&
-                oldColumn.type !== newColumn.type)
+            newColumn.generatedType !== oldColumn.generatedType
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            // Also, we recreate column if generated expression changed.
+            // Also, we recreate column if column type changed.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (
-                newColumn.type !== oldColumn.type ||
-                newColumn.length !== oldColumn.length
-            ) {
-                // Use ALTER COLUMN instead of DROP+ADD to preserve existing data.
+            if (newColumn.length !== oldColumn.length) {
+                // Use ALTER COLUMN instead of DROP+ADD to preserve existing data
+                // when only the length changes (same base type).
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1352,15 +1345,12 @@ export class SqlServerQueryRunner
                     ),
                 )
 
-                // update cloned table column type/length
+                // update cloned table column length
                 const clonedColumn = clonedTable.columns.find(
                     (column) => column.name === oldColumn.name,
                 )
                 if (clonedColumn) {
-                    clonedColumn.type = newColumn.type
                     clonedColumn.length = newColumn.length
-                    clonedColumn.precision = newColumn.precision
-                    clonedColumn.scale = newColumn.scale
                 }
             }
             if (newColumn.name !== oldColumn.name) {

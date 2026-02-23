@@ -1361,15 +1361,10 @@ export class CockroachQueryRunner
             )
 
         if (
+            oldColumn.type !== newColumn.type ||
             newColumn.isArray !== oldColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
-            oldColumn.asExpression !== newColumn.asExpression ||
-            // Enum type conversions are incompatible with ALTER COLUMN TYPE
-            ((oldColumn.type === "enum" ||
-                oldColumn.type === "simple-enum" ||
-                newColumn.type === "enum" ||
-                newColumn.type === "simple-enum") &&
-                oldColumn.type !== newColumn.type)
+            oldColumn.asExpression !== newColumn.asExpression
         ) {
             // These changes are incompatible with ALTER COLUMN, so we must recreate
             await this.dropColumn(table, oldColumn)
@@ -1378,11 +1373,9 @@ export class CockroachQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (
-                oldColumn.type !== newColumn.type ||
-                oldColumn.length !== newColumn.length
-            ) {
-                // Use ALTER COLUMN TYPE instead of DROP+ADD to preserve existing data.
+            if (oldColumn.length !== newColumn.length) {
+                // Use ALTER COLUMN TYPE instead of DROP+ADD to preserve existing data
+                // when only the length changes (same base type).
                 const newFullType = this.driver.createFullType(newColumn)
                 const oldFullType = this.driver.createFullType(oldColumn)
 
@@ -1401,15 +1394,12 @@ export class CockroachQueryRunner
                     ),
                 )
 
-                // update cloned table column type/length
+                // update cloned table column length
                 const clonedColumn = clonedTable.columns.find(
                     (column) => column.name === oldColumn.name,
                 )
                 if (clonedColumn) {
-                    clonedColumn.type = newColumn.type
                     clonedColumn.length = newColumn.length
-                    clonedColumn.precision = newColumn.precision
-                    clonedColumn.scale = newColumn.scale
                 }
             }
             if (oldColumn.name !== newColumn.name) {

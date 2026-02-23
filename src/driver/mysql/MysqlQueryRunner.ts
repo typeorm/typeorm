@@ -1103,25 +1103,18 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newColumn.generatedType === "VIRTUAL") ||
             (oldColumn.generatedType === "VIRTUAL" &&
                 !newColumn.generatedType) ||
-            // Enum type conversions are incompatible with MODIFY COLUMN
-            ((oldColumn.type === "enum" ||
-                oldColumn.type === "simple-enum" ||
-                newColumn.type === "enum" ||
-                newColumn.type === "simple-enum") &&
-                oldColumn.type !== newColumn.type)
+            oldColumn.type !== newColumn.type
         ) {
-            // Generated column changes and enum type conversions require DROP+ADD
+            // Generated column changes and type conversions require DROP+ADD
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (
-                oldColumn.type !== newColumn.type ||
-                oldColumn.length !== newColumn.length
-            ) {
-                // Use MODIFY COLUMN instead of DROP+ADD to preserve existing data.
+            if (oldColumn.length !== newColumn.length) {
+                // Use MODIFY COLUMN instead of DROP+ADD to preserve existing data
+                // when only the length changes (same base type).
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} MODIFY ${this.buildCreateColumnSql(newColumn, true)}`,
@@ -1133,15 +1126,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     ),
                 )
 
-                // update cloned table column type/length
+                // update cloned table column length
                 const clonedColumn = clonedTable.columns.find(
                     (column) => column.name === oldColumn.name,
                 )
                 if (clonedColumn) {
-                    clonedColumn.type = newColumn.type
                     clonedColumn.length = newColumn.length
-                    clonedColumn.precision = newColumn.precision
-                    clonedColumn.scale = newColumn.scale
                 }
             }
             if (newColumn.name !== oldColumn.name) {

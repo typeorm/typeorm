@@ -1277,17 +1277,12 @@ export class PostgresQueryRunner
             )
 
         if (
+            oldColumn.type !== newColumn.type ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED") ||
-            // Enum type conversions are incompatible with ALTER COLUMN TYPE
-            ((oldColumn.type === "enum" ||
-                oldColumn.type === "simple-enum" ||
-                newColumn.type === "enum" ||
-                newColumn.type === "simple-enum") &&
-                oldColumn.type !== newColumn.type)
+                newColumn.generatedType === "STORED")
         ) {
             // These changes are incompatible with ALTER COLUMN, so we must recreate
             await this.dropColumn(table, oldColumn)
@@ -1296,12 +1291,9 @@ export class PostgresQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (
-                oldColumn.type !== newColumn.type ||
-                oldColumn.length !== newColumn.length
-            ) {
-                // Use ALTER COLUMN TYPE instead of DROP+ADD to preserve existing data.
-                // PostgreSQL supports ALTER COLUMN TYPE with USING for type conversions.
+            if (oldColumn.length !== newColumn.length) {
+                // Use ALTER COLUMN TYPE instead of DROP+ADD to preserve existing data
+                // when only the length changes (same base type).
                 const newFullType = this.driver.createFullType(newColumn)
                 const oldFullType = this.driver.createFullType(oldColumn)
 
@@ -1320,15 +1312,12 @@ export class PostgresQueryRunner
                     ),
                 )
 
-                // update cloned table column type/length
+                // update cloned table column length
                 const clonedColumn = clonedTable.columns.find(
                     (column) => column.name === oldColumn.name,
                 )
                 if (clonedColumn) {
-                    clonedColumn.type = newColumn.type
                     clonedColumn.length = newColumn.length
-                    clonedColumn.precision = newColumn.precision
-                    clonedColumn.scale = newColumn.scale
                 }
             }
             if (oldColumn.name !== newColumn.name) {

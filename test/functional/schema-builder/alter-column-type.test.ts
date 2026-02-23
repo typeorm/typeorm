@@ -85,7 +85,7 @@ describe("schema builder > alter column type", () => {
         )
     })
 
-    it("should generate ALTER COLUMN instead of DROP+ADD when column type changes", async () => {
+    it("should use DROP+ADD for incompatible type changes to avoid cast errors", async () => {
         await Promise.all(
             connections.map(async (connection) => {
                 const meta = connection.getMetadata(Album)
@@ -96,7 +96,7 @@ describe("schema builder > alter column type", () => {
                 const originalType = col.type
                 const originalLength = col.length
 
-                // Change column type from varchar to text
+                // Change column type from varchar to text (different type)
                 col.type = "text"
                 col.length = ""
 
@@ -109,25 +109,18 @@ describe("schema builder > alter column type", () => {
                     q.query.replace(/\s+/g, " ").trim(),
                 )
 
-                // Should NOT contain DROP COLUMN
+                // Type changes should use DROP+ADD since not all type
+                // conversions are safe (e.g. int -> uuid would fail)
                 const hasDropColumn = upQueries.some(
                     (q) =>
                         q.includes("DROP COLUMN") && q.includes("description"),
                 )
-                expect(
-                    hasDropColumn,
-                    "Migration should NOT use DROP COLUMN for type changes",
-                ).to.be.false
-
-                // Should contain ALTER COLUMN or MODIFY
-                const hasAlterColumn = upQueries.some(
-                    (q) =>
-                        (q.includes("ALTER COLUMN") || q.includes("MODIFY")) &&
-                        q.includes("description"),
+                const hasAddColumn = upQueries.some(
+                    (q) => q.includes("ADD") && q.includes("description"),
                 )
                 expect(
-                    hasAlterColumn,
-                    "Migration should use ALTER COLUMN / MODIFY for type changes",
+                    hasDropColumn && hasAddColumn,
+                    "Migration should use DROP+ADD for type changes",
                 ).to.be.true
 
                 // Restore original
