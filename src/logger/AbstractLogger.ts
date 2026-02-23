@@ -21,6 +21,15 @@ export abstract class AbstractLogger implements Logger {
     // -------------------------------------------------------------------------
 
     /**
+     * Sets logger options. Used to pass DataSource logging options
+     * to custom logger instances.
+     * @param options
+     */
+    setOptions(options: LoggerOptions) {
+        this.options = options
+    }
+
+    /**
      * Logs query and parameters used in it.
      * @param query
      * @param parameters
