@@ -9,6 +9,7 @@ import {
 import { TableColumn } from "../../../src"
 import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { Post } from "./entity/Post"
 
 describe("query runner > change column", () => {
     let connections: DataSource[]
@@ -283,12 +284,17 @@ describe("query runner > change column", () => {
                     return
 
                 const queryRunner = connection.createQueryRunner()
+                const postRepository = connection.getRepository(Post)
 
                 try {
                     // Insert test data before modifying the column
-                    await connection.manager.query(
-                        `INSERT INTO "post" ("id", "version", "name", "text", "tag") VALUES (1, 1, 'Test Post', 'Some text', 'tag1')`,
-                    )
+                    await postRepository.insert({
+                        id: 1,
+                        version: 1,
+                        name: "Test Post",
+                        text: "Some text",
+                        tag: "tag1",
+                    })
 
                     let table = await queryRunner.getTable("post")
                     const nameColumn = table!.findColumnByName("name")!
@@ -303,14 +309,11 @@ describe("query runner > change column", () => {
                     )
 
                     // Verify data is preserved after length change
-                    const rowsAfterLengthChange =
-                        await connection.manager.query(
-                            `SELECT "name" FROM "post" WHERE "id" = 1`,
-                        )
-                    expect(rowsAfterLengthChange).to.have.length(1)
-                    expect(rowsAfterLengthChange[0]["name"]).to.equal(
-                        "Test Post",
-                    )
+                    const postAfterChange = await postRepository.findOneBy({
+                        id: 1,
+                    })
+                    expect(postAfterChange).to.not.be.null
+                    expect(postAfterChange!.name).to.equal("Test Post")
 
                     // Verify column length was actually changed
                     table = await queryRunner.getTable("post")
@@ -321,17 +324,19 @@ describe("query runner > change column", () => {
                     // Revert changes and verify data is still intact
                     await queryRunner.executeMemoryDownSql()
 
-                    const rowsAfterRevert = await connection.manager.query(
-                        `SELECT "name" FROM "post" WHERE "id" = 1`,
-                    )
-                    expect(rowsAfterRevert).to.have.length(1)
-                    expect(rowsAfterRevert[0]["name"]).to.equal("Test Post")
-
-                    // Clean up test data
-                    await connection.manager.query(
-                        `DELETE FROM "post" WHERE "id" = 1`,
-                    )
+                    const postAfterRevert = await postRepository.findOneBy({
+                        id: 1,
+                    })
+                    expect(postAfterRevert).to.not.be.null
+                    expect(postAfterRevert!.name).to.equal("Test Post")
                 } finally {
+                    // Best-effort cleanup regardless of test outcome
+                    await queryRunner
+                        .executeMemoryDownSql()
+                        .catch(() => undefined)
+                    await postRepository
+                        .delete({ id: 1 })
+                        .catch(() => undefined)
                     await queryRunner.release()
                 }
             }),
