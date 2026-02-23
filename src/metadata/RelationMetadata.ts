@@ -479,13 +479,20 @@ export class RelationMetadata {
                 if (getLazyRelationsPromiseValue === true)
                     return entity[this.propertyName]
 
-                const hasGetter =
-                    Object.getOwnPropertyDescriptor(entity, this.propertyName)
-                        ?.get ||
-                    Object.getOwnPropertyDescriptor(
-                        Object.getPrototypeOf(entity),
-                        this.propertyName,
-                    )?.get
+                let hasGetter = false
+                let proto: object | null = entity
+                while (proto) {
+                    if (
+                        Object.getOwnPropertyDescriptor(
+                            proto,
+                            this.propertyName,
+                        )?.get
+                    ) {
+                        hasGetter = true
+                        break
+                    }
+                    proto = Object.getPrototypeOf(proto)
+                }
 
                 if (hasGetter || entity[this.propertyName] instanceof Promise) {
                     return undefined
