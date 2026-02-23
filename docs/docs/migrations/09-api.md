@@ -314,8 +314,8 @@ changeColumns(table: Table|string, changedColumns: { oldColumn: TableColumn, new
 
 - `table` - Table object or name
 - `changedColumns` - array of changed columns.
-  - `oldColumn` - old TableColumn object
-  - `newColumn` - new TableColumn object
+    - `oldColumn` - old TableColumn object
+    - `newColumn` - new TableColumn object
 
 Changes a columns in the table.
 
@@ -568,12 +568,12 @@ Drops an indices.
 ---
 
 ```ts
-clearTable(tableName: string, options?: {cascade?: boolean}): Promise<void>
+clearTable(tableName: string, options?: {cascade: boolean}): Promise<void>
 ```
 
 - `tableName` - table name
 - `options` - additional options
-  - `cascade` - Indicates whether to clear rows of tables that have foreign keys. Works only in PostgreSQL/CockroachDB and Oracle. Default is `false`
+    - `cascade` - Indicates whether to clear rows of tables that have foreign keys. Works only in PostgreSQL/CockroachDB and Oracle. Default is `false`
 
 Clears all table contents.
 

@@ -489,7 +489,7 @@ const rawData = await repository.query(
 ```
 
 - `clear` - Clears all the data from the given table (truncates/drops it). Also supports cascade option
-    to clear all the data from the tables that have foreign keys to this table (supported by PostgreSQL/CockroachDB and Oracle only).
+  to clear all the data from the tables that have foreign keys to this table (supported by PostgreSQL/CockroachDB and Oracle only).
 
 ```typescript
 await repository.clear()
