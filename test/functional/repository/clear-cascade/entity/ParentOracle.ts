@@ -5,6 +5,7 @@ import {
     OneToMany,
 } from "../../../../../src"
 import { ChildOracle } from "./ChildOracle"
+import { ChildNoDelete } from "./ChildNoDelete"
 
 @Entity()
 export class ParentOracle {
@@ -16,4 +17,7 @@ export class ParentOracle {
 
     @OneToMany(() => ChildOracle, (child) => child.parent)
     children: ChildOracle[]
+
+    @OneToMany(() => ChildNoDelete, (child) => child.parent)
+    childrenNoDelete: ChildNoDelete[]
 }

@@ -15,7 +15,7 @@ export class ChildNoDelete {
     @Column()
     value: string
 
-    @ManyToOne(() => ParentOracle, (parent) => parent.children)
+    @ManyToOne(() => ParentOracle, (parent) => parent.childrenNoDelete)
     @JoinColumn({ name: "parent_id" })
     parent: ParentOracle
 }
