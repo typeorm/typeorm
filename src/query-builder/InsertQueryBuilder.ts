@@ -669,6 +669,7 @@ export class InsertQueryBuilder<
 
                     if (
                         Array.isArray(overwrite) &&
+                        overwrite.length > 0 &&
                         skipUpdateIfNoValuesChanged
                     ) {
                         this.expressionMap.onUpdate.overwriteCondition ??= []
