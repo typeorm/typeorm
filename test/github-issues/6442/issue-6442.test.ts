@@ -8,7 +8,7 @@ import {
 import { DataSource } from "../../../src"
 import { fail } from "assert"
 import { Query } from "../../../src/driver/Query"
-import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions"
+import { MysqlDataSourceOptions } from "../../../src/driver/mysql/MysqlDataSourceOptions"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #6442 JoinTable does not respect inverseJoinColumns referenced column width", () => {
@@ -53,10 +53,10 @@ describe("github issues > #6442 JoinTable does not respect inverseJoinColumns re
                         dropSchema: false,
                         schemaCreate: false,
                     },
-                ) as MysqlConnectionOptions
+                ) as MysqlDataSourceOptions
 
                 if (!options) {
-                    await connection.close()
+                    await connection.destroy()
                     fail()
                 }
 
@@ -77,8 +77,8 @@ describe("github issues > #6442 JoinTable does not respect inverseJoinColumns re
                         "ALTER TABLE `foo_bars` ADD CONSTRAINT `FK_b7fd4be386fa7cdb87ef8b12b69` FOREIGN KEY (`bar_id`) REFERENCES `bar_entity`(`id`) ON DELETE CASCADE ON UPDATE CASCADE",
                     ])
                 } finally {
-                    await connection.close()
-                    await migrationDataSource.close()
+                    await connection.destroy()
+                    await migrationDataSource.destroy()
                 }
             }),
         )

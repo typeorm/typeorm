@@ -15,6 +15,8 @@ utilize_auto_best_practices = true
 [review_agent]
 enabled = true
 publish_output = true
+comments_location_policy = "summary"
+persistent_comment = false
 
 [config]
 publish_output_progress = false

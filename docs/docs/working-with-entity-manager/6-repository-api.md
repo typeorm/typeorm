@@ -151,6 +151,15 @@ const result = await repository.update(
 console.log(result.raw) // [{ id: 1, firstName: "Rizzrak" }]
 ```
 
+You can pass an **array of condition objects** to match multiple distinct sets of rows in a single call (conditions are OR'd together):
+
+```typescript
+await repository.update([{ status: "expired" }, { flagged: true }], {
+    active: false,
+})
+// executes UPDATE user SET active = false WHERE status = 'expired' OR flagged = true
+```
+
 - `updateAll` - Updates _all_ entities of target type (without WHERE clause). Sets fields from supplied partial entity.
 
 ```typescript
@@ -264,7 +273,7 @@ await repository.deleteAll()
 
 Refer also to the `clear` method, which performs database `TRUNCATE TABLE` operation instead.
 
-- `softDelete` and `restore` - Soft deleting and restoring a row by id, ids, or given conditions:
+- `softDelete` and `restore` - Soft deleting and restoring a row by id, ids, given conditions, or an array of condition objects:
 
 ```typescript
 const repository = dataSource.getRepository(Entity)
@@ -276,6 +285,13 @@ await repository.restore(1)
 await repository.softDelete([1, 2, 3])
 // Or soft delete by other attribute
 await repository.softDelete({ firstName: "Jake" })
+
+// Bulk soft deletes with different conditions for each operation
+await repository.softDelete([{ firstName: "Jake" }, { age: 25 }, { id: 42 }])
+// executes three separate UPDATE queries (setting deletedAt timestamp):
+// UPDATE entity SET deletedAt = NOW() WHERE firstName = Jake
+// UPDATE entity SET deletedAt = NOW() WHERE age = 25
+// UPDATE entity SET deletedAt = NOW() WHERE id = 42
 ```
 
 - `softRemove` and `recover` - This is alternative to `softDelete` and `restore`.
