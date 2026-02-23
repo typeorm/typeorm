@@ -84,11 +84,7 @@ export class SubjectChangedColumnsComputer {
                 }
                 let normalizedValue = entityValue
 
-                if (
-                    column.transformer &&
-                    shouldTransformDatabaseEntity &&
-                    entityValue !== null
-                ) {
+                if (column.transformer && shouldTransformDatabaseEntity) {
                     normalizedValue = ApplyValueTransformers.transformTo(
                         column.transformer,
                         entityValue,
