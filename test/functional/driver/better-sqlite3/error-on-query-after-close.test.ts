@@ -1,34 +1,31 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../utils/test-utils"
 
-describe("sqlite driver > enable wal", () => {
+describe("sqlite driver > throws an error when queried after closing connection", () => {
     let connections: DataSource[]
     before(
         async () =>
             (connections = await createTestingConnections({
                 entities: [],
                 enabledDrivers: ["better-sqlite3"],
-                driverSpecific: {
-                    enableWAL: true,
-                },
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
-    it("should set the journal mode as expected", () =>
+    it("should throw", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // if we come this far, test was successful as a connection was established
-                const result = await connection.query("PRAGMA journal_mode")
-
-                expect(result).to.eql([{ journal_mode: "wal" }])
+                await connection.destroy()
+                await expect(
+                    connection.query("select * from sqlite_master;"),
+                ).to.rejectedWith("The database connection is not open")
             }),
         ))
 })
