@@ -699,9 +699,7 @@ export class InsertQueryBuilder<
                     "on-duplicate-key-update",
                 )
             ) {
-                if (this.expressionMap.onIgnore) {
-                    // already handled via INSERT IGNORE above
-                } else if (this.expressionMap.onUpdate) {
+                if (this.expressionMap.onUpdate) {
                     const { overwrite, columns } = this.expressionMap.onUpdate
 
                     if (Array.isArray(overwrite) && overwrite.length === 0) {
