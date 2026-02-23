@@ -784,22 +784,18 @@ export class EntityManager {
             .into(target)
             .values(entities)
 
-        if (overwriteColumns.length === 0) {
-            qb.orIgnore(true)
-        } else {
-            qb.orUpdate(
-                [...conflictColumns, ...overwriteColumns].map(
-                    (col) => col.databaseName,
-                ),
-                conflictColumns.map((col) => col.databaseName),
-                {
-                    skipUpdateIfNoValuesChanged:
-                        options.skipUpdateIfNoValuesChanged,
-                    indexPredicate: options.indexPredicate,
-                    upsertType,
-                },
-            )
-        }
+        qb.orUpdate(
+            [...conflictColumns, ...overwriteColumns].map(
+                (col) => col.databaseName,
+            ),
+            conflictColumns.map((col) => col.databaseName),
+            {
+                skipUpdateIfNoValuesChanged:
+                    options.skipUpdateIfNoValuesChanged,
+                indexPredicate: options.indexPredicate,
+                upsertType,
+            },
+        )
 
         if (options.returning !== undefined) {
             qb.returning(options.returning)

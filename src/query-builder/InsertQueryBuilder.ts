@@ -629,7 +629,9 @@ export class InsertQueryBuilder<
                         )
                     }
 
-                    if (updatePart.length > 0) {
+                    if (updatePart.length === 0) {
+                        query += ` ${conflictTarget} DO NOTHING `
+                    } else {
                         query += ` ${conflictTarget} DO UPDATE SET `
 
                         updatePart.push(
@@ -697,10 +699,20 @@ export class InsertQueryBuilder<
                     "on-duplicate-key-update",
                 )
             ) {
-                if (this.expressionMap.onUpdate) {
+                if (this.expressionMap.onIgnore) {
+                    // already handled via INSERT IGNORE above
+                } else if (this.expressionMap.onUpdate) {
                     const { overwrite, columns } = this.expressionMap.onUpdate
 
-                    if (Array.isArray(overwrite)) {
+                    if (Array.isArray(overwrite) && overwrite.length === 0) {
+                        // No columns to update — degrade to INSERT IGNORE
+                        // The IGNORE keyword was not added above, so we
+                        // rewrite the query to include it.
+                        query = query.replace(
+                            /^INSERT INTO/,
+                            "INSERT IGNORE INTO",
+                        )
+                    } else if (Array.isArray(overwrite)) {
                         query += " ON DUPLICATE KEY UPDATE "
                         query += overwrite
                             .map(
