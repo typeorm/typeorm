@@ -57,6 +57,7 @@ export class TableCheck {
 
     /**
      * Creates checks from the check metadata object.
+     * @param checkMetadata
      */
     static create(checkMetadata: CheckMetadata): TableCheck {
         return new TableCheck(<TableCheckOptions>{

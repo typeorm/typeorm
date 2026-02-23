@@ -47,7 +47,6 @@ export interface FindOneOptions<Entity = any> {
 
     /**
      * Specifies what relations should be loaded.
-     *
      * @deprecated
      */
     join?: JoinOptions

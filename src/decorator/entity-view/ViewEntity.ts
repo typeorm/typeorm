@@ -6,12 +6,15 @@ import { ObjectUtils } from "../../util/ObjectUtils"
 /**
  * This decorator is used to mark classes that will be an entity view.
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
+ * @param options
  */
 export function ViewEntity(options?: ViewEntityOptions): ClassDecorator
 
 /**
  * This decorator is used to mark classes that will be an entity view.
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
+ * @param name
+ * @param options
  */
 export function ViewEntity(
     name?: string,
@@ -21,6 +24,8 @@ export function ViewEntity(
 /**
  * This decorator is used to mark classes that will be an entity view.
  * Database schema will be created for all classes decorated with it, and Repository can be retrieved and used for it.
+ * @param nameOrOptions
+ * @param maybeOptions
  */
 export function ViewEntity(
     nameOrOptions?: string | ViewEntityOptions,
