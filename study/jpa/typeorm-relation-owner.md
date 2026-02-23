@@ -290,6 +290,8 @@ JPA의 `orphanRemoval`은 `@OneToMany`에 설정하고, TypeORM의 `cascade`도 
 `orphanedRowAction`도 같은 쪽에 둘 거라고 기대하기 쉽지만, 실제로는 `@ManyToOne`에만 유효하다.
 타입은 허용하는데 런타임은 무시하는 전형적인 silent failure 패턴이므로 주의가 필요하다.
 
+관련 이슈: [typeorm/typeorm#12033](https://github.com/typeorm/typeorm/issues/12033)
+
 ---
 
 ## 6. JPA의 `mappedBy` vs TypeORM의 `inverseSide`
