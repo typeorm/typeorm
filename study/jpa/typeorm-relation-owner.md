@@ -261,6 +261,35 @@ this.orphanedRowAction = args.options.orphanedRowAction || "nullify"
 명시적으로 `"delete"`를 지정하지 않으면 FK를 `null`로 설정할 뿐 row를 삭제하지 않는다.
 `orphanedRowAction: "disable"`를 지정하면 orphan 비교 자체를 건너뛴다.
 
+#### 주의: `@OneToMany`에 설정하면 silent failure
+
+`orphanedRowAction`은 공용 `RelationOptions`에 정의되어 있어서
+`@OneToMany`에도 타입 에러 없이 설정할 수 있다. **하지만 런타임에서 무시된다.**
+
+```typescript
+// ✗ 작동하지 않음 — @OneToMany에 설정
+@OneToMany(() => Image, (image) => image.article, {
+    cascade: true,
+    orphanedRowAction: "delete", // ← 무시됨!
+})
+images: Image[]
+```
+
+```typescript
+// ✓ 올바른 설정 — @ManyToOne에 설정
+@ManyToOne(() => Article, (article) => article.images, {
+    orphanedRowAction: "delete", // ← 여기에 설정해야 동작
+})
+article: Article
+```
+
+`OneToManySubjectBuilder`가 항상 `relation.inverseRelation.orphanedRowAction`으로 읽기 때문이다.
+`@OneToMany`의 `orphanedRowAction`을 읽는 코드는 TypeORM 어디에도 없다.
+
+JPA의 `orphanRemoval`은 `@OneToMany`에 설정하고, TypeORM의 `cascade`도 보통 `@OneToMany`에 설정하므로
+`orphanedRowAction`도 같은 쪽에 둘 거라고 기대하기 쉽지만, 실제로는 `@ManyToOne`에만 유효하다.
+타입은 허용하는데 런타임은 무시하는 전형적인 silent failure 패턴이므로 주의가 필요하다.
+
 ---
 
 ## 6. JPA의 `mappedBy` vs TypeORM의 `inverseSide`
