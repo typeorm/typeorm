@@ -50,11 +50,13 @@ describe("columns > value-transformer > change-detection", () => {
 
                 dataSource.subscribers.push(subscriber)
 
-                await repo.save(loadedPost)
-
-                const index = dataSource.subscribers.indexOf(subscriber)
-                if (index !== -1) {
-                    dataSource.subscribers.splice(index, 1)
+                try {
+                    await repo.save(loadedPost)
+                } finally {
+                    const index = dataSource.subscribers.indexOf(subscriber)
+                    if (index !== -1) {
+                        dataSource.subscribers.splice(index, 1)
+                    }
                 }
 
                 expect(updateCalled).to.be.false
