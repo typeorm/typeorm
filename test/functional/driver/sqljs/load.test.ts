@@ -5,8 +5,8 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../utils/test-utils"
+import { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("sqljs driver > load", () => {
@@ -27,7 +27,7 @@ describe("sqljs driver > load", () => {
         Promise.all(
             connections.map(async (dataSource) => {
                 await dataSource.sqljsManager.loadDatabase(
-                    "test/functional/sqljs/sqlite/test.sqlite",
+                    "test/functional/driver/sqljs/sqlite/test.sqlite",
                 )
 
                 const repository = dataSource.getRepository(Post)
@@ -42,7 +42,7 @@ describe("sqljs driver > load", () => {
                     dataSource.sqljsManager.exportDatabase()
                 expect(exportedDatabase).not.to.be.undefined
                 const originalFileContent = await fs.readFile(
-                    "test/functional/sqljs/sqlite/test.sqlite",
+                    "test/functional/driver/sqljs/sqlite/test.sqlite",
                 )
                 expect(exportedDatabase.length).to.equal(
                     originalFileContent.length,
@@ -55,7 +55,7 @@ describe("sqljs driver > load", () => {
             connections.map(async (dataSource) => {
                 try {
                     await dataSource.sqljsManager.loadDatabase(
-                        "test/functional/sqljs/sqlite/test2.sqlite",
+                        "test/functional/driver/sqljs/sqlite/test2.sqlite",
                     )
                     expect(true).to.be.false
                 } catch (error) {
