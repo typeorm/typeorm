@@ -3,7 +3,7 @@ import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 /**
  * Sql.js-specific connection options.
  */
-export interface SqljsConnectionOptions extends BaseDataSourceOptions {
+export interface SqljsDataSourceOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */

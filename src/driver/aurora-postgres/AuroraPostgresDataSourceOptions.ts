@@ -3,7 +3,7 @@ import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 /**
  * Postgres-specific connection options.
  */
-export interface AuroraPostgresConnectionOptions extends BaseDataSourceOptions {
+export interface AuroraPostgresDataSourceOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */

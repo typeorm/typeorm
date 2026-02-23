@@ -59,7 +59,7 @@ and its `getRepository` method. In order to use custom repositories within trans
 you must use `withRepository` method of the provided entity manager instance:
 
 ```typescript
-await connection.transaction(async (manager) => {
+await dataSource.transaction(async (manager) => {
     // in transactions you MUST use manager instance provided by a transaction,
     // you cannot use global entity managers or repositories,
     // because this manager is exclusive and transactional

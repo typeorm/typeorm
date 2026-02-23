@@ -1,15 +1,14 @@
-import "reflect-metadata"
+import { expect } from "chai"
+import { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Connection } from "../../../src/connection/Connection"
-import { expect } from "chai"
 import { TestEntity } from "./entity/TestEntity"
 
 describe("github issues > #8527 cannot clear database inside a transaction.", () => {
-    let connections: Connection[]
+    let connections: DataSource[]
 
     before(
         async () =>

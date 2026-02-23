@@ -3,7 +3,7 @@ import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 /**
  * Sqlite-specific connection options.
  */
-export interface BetterSqlite3ConnectionOptions extends BaseDataSourceOptions {
+export interface BetterSqlite3DataSourceOptions extends BaseDataSourceOptions {
     /**
      * Database type.
      */
