@@ -27,7 +27,7 @@ describe("sqljs driver > load", () => {
         Promise.all(
             connections.map(async (dataSource) => {
                 await dataSource.sqljsManager.loadDatabase(
-                    "test/functional/driver/sqljs/sqlite/test.sqlite",
+                    "test/functional/driver/sqljs/db/test.sqlite",
                 )
 
                 const repository = dataSource.getRepository(Post)
@@ -42,7 +42,7 @@ describe("sqljs driver > load", () => {
                     dataSource.sqljsManager.exportDatabase()
                 expect(exportedDatabase).not.to.be.undefined
                 const originalFileContent = await fs.readFile(
-                    "test/functional/driver/sqljs/sqlite/test.sqlite",
+                    "test/functional/driver/sqljs/db/test.sqlite",
                 )
                 expect(exportedDatabase.length).to.equal(
                     originalFileContent.length,
