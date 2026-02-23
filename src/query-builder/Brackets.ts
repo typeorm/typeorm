@@ -14,6 +14,7 @@ export class Brackets {
 
     /**
      * Given WHERE query builder that will build a WHERE expression that will be taken into brackets.
+     * @param whereFactory
      */
     constructor(whereFactory: (qb: WhereExpressionBuilder) => any) {
         this.whereFactory = whereFactory

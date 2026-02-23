@@ -1224,7 +1224,7 @@ support [common table expressions](https://en.wikipedia.org/wiki/Hierarchical_an
 , if minimal supported version of your database supports them. Common table expressions aren't supported for Oracle yet.
 
 ```typescript
-const users = await connection
+const users = await dataSource
     .getRepository(User)
     .createQueryBuilder("user")
     .select("user.id", "id")
@@ -1241,7 +1241,7 @@ const users = await connection
 Result values of `InsertQueryBuilder` or `UpdateQueryBuilder` can be used in Postgres:
 
 ```typescript
-const insertQueryBuilder = connection
+const insertQueryBuilder = dataSource
     .getRepository(User)
     .createQueryBuilder()
     .insert({
@@ -1249,7 +1249,7 @@ const insertQueryBuilder = connection
     })
     .returning(["id"])
 
-const users = await connection
+const users = await dataSource
     .getRepository(User)
     .createQueryBuilder("user")
     .addCommonTableExpression(insertQueryBuilder, "insert_results")
@@ -1263,7 +1263,7 @@ const users = await connection
 currently supported only in `CockroachDB` database.
 
 ```typescript
-const repository = connection.getRepository(Account)
+const repository = dataSource.getRepository(Account)
 
 // create a new account
 const account = new Account()

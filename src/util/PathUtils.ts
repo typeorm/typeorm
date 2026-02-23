@@ -3,6 +3,10 @@ import { hash } from "./StringUtils"
 const WINDOWS_PATH_REGEXP = /^([a-zA-Z]:.*)$/
 const UNC_WINDOWS_PATH_REGEXP = /^\\\\(\.\\)?(.*)$/
 
+/**
+ *
+ * @param filepath
+ */
 export function toPortablePath(filepath: string): string {
     if (process.platform !== `win32`) return filepath
 
@@ -20,6 +24,7 @@ export function toPortablePath(filepath: string): string {
 /**
  * Create deterministic valid database name (class, database) of fixed length from any filepath. Equivalent paths for windows/posix systems should
  * be equivalent to enable portability
+ * @param filepath
  */
 export function filepathToName(filepath: string): string {
     const uniq = toPortablePath(filepath).toLowerCase()
@@ -28,6 +33,7 @@ export function filepathToName(filepath: string): string {
 
 /**
  * Cross platform isAbsolute
+ * @param filepath
  */
 export function isAbsolute(filepath: string): boolean {
     return !!filepath.match(/^(?:[a-z]:|[\\]|[/])/i)

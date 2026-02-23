@@ -14,7 +14,7 @@ export class RelationLoader {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: DataSource) {}
+    constructor(private dataSource: DataSource) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -22,6 +22,10 @@ export class RelationLoader {
 
     /**
      * Loads relation data for the given entity and its relation.
+     * @param relation
+     * @param entityOrEntities
+     * @param queryRunner
+     * @param queryBuilder
      */
     load(
         relation: RelationMetadata,
@@ -70,6 +74,10 @@ export class RelationLoader {
      * loaded: category from post
      * example: SELECT category.id AS category_id, category.name AS category_name FROM category category
      *              INNER JOIN post Post ON Post.category=category.id WHERE Post.id=1
+     * @param relation
+     * @param entityOrEntities
+     * @param queryRunner
+     * @param queryBuilder
      */
     loadManyToOneOrOneToOneOwner(
         relation: RelationMetadata,
@@ -84,7 +92,7 @@ export class RelationLoader {
         const joinAliasName = relation.entityMetadata.name
         const qb = queryBuilder
             ? queryBuilder
-            : this.connection
+            : this.dataSource
                   .createQueryBuilder(queryRunner)
                   .select(relation.propertyName) // category
                   .from(relation.type, relation.propertyName)
@@ -175,6 +183,10 @@ export class RelationLoader {
      * SELECT post
      * FROM post post
      * WHERE post.[joinColumn.name] = entity[joinColumn.referencedColumn]
+     * @param relation
+     * @param entityOrEntities
+     * @param queryRunner
+     * @param queryBuilder
      */
     loadOneToManyOrOneToOneNotOwner(
         relation: RelationMetadata,
@@ -188,7 +200,7 @@ export class RelationLoader {
         const columns = relation.inverseRelation!.joinColumns
         const qb = queryBuilder
             ? queryBuilder
-            : this.connection
+            : this.dataSource
                   .createQueryBuilder(queryRunner)
                   .select(relation.propertyName)
                   .from(
@@ -270,6 +282,10 @@ export class RelationLoader {
      * INNER JOIN post_categories post_categories
      * ON post_categories.postId = :postId
      * AND post_categories.categoryId = category.id
+     * @param relation
+     * @param entityOrEntities
+     * @param queryRunner
+     * @param queryBuilder
      */
     loadManyToManyOwner(
         relation: RelationMetadata,
@@ -292,7 +308,7 @@ export class RelationLoader {
 
         const qb = queryBuilder
             ? queryBuilder
-            : this.connection
+            : this.dataSource
                   .createQueryBuilder(queryRunner)
                   .select(relation.propertyName)
                   .from(relation.type, relation.propertyName)
@@ -346,6 +362,10 @@ export class RelationLoader {
      * INNER JOIN post_categories post_categories
      * ON post_categories.postId = post.id
      * AND post_categories.categoryId = post_categories.categoryId
+     * @param relation
+     * @param entityOrEntities
+     * @param queryRunner
+     * @param queryBuilder
      */
     loadManyToManyNotOwner(
         relation: RelationMetadata,
@@ -359,7 +379,7 @@ export class RelationLoader {
 
         const qb = queryBuilder
             ? queryBuilder
-            : this.connection
+            : this.dataSource
                   .createQueryBuilder(queryRunner)
                   .select(relation.propertyName)
                   .from(relation.type, relation.propertyName)
@@ -418,6 +438,9 @@ export class RelationLoader {
     /**
      * Wraps given entity and creates getters/setters for its given relation
      * to be able to lazily load data when accessing this relation.
+     * @param relation
+     * @param entity
+     * @param queryRunner
      */
     enableLazyLoad(
         relation: RelationMetadata,

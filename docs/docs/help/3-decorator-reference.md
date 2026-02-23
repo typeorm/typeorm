@@ -19,6 +19,7 @@ You can also specify some additional entity options:
 - `name` - table name. If not specified, then table name is generated from entity class name.
 - `database` - database name in selected DB server.
 - `schema` - schema name.
+- `comment` - Database table comment. Not supported by all database types. Currently supported by MySQL, MariaDB, PostgreSQL, SAP HANA.
 - `engine` - database engine to be set during table creation (works only in some databases).
 - `synchronize` - entities marked with `false` are skipped from schema updates.
 - `orderBy` - specifies default ordering for entities when using `find` operations and `QueryBuilder`.
@@ -31,6 +32,7 @@ Example:
     engine: "MyISAM",
     database: "example_dev",
     schema: "schema_with_best_tables",
+    comment: "This is users table",
     synchronize: false,
     orderBy: {
         name: "ASC",

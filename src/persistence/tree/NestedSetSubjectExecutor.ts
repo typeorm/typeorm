@@ -26,6 +26,7 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Executes operations when subject is being inserted.
+     * @param subject
      */
     async insert(subject: Subject): Promise<void> {
         const escape = (alias: string) =>
@@ -101,6 +102,7 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Executes operations when subject is being updated.
+     * @param subject
      */
     async update(subject: Subject): Promise<void> {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
@@ -235,6 +237,7 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Executes operations when subject is being removed.
+     * @param subjects
      */
     async remove(subjects: Subject | Subject[]): Promise<void> {
         if (!Array.isArray(subjects)) subjects = [subjects]
@@ -281,6 +284,8 @@ export class NestedSetSubjectExecutor {
 
     /**
      * Get the nested set ids for a given entity
+     * @param metadata
+     * @param ids
      */
     protected getNestedSetIds(
         metadata: EntityMetadata,
@@ -367,6 +372,7 @@ export class NestedSetSubjectExecutor {
     /**
      * Gets escaped table name with schema name if SqlServer or Postgres driver used with custom
      * schema name, otherwise returns escaped table name.
+     * @param tablePath
      */
     protected getTableName(tablePath: string): string {
         return tablePath
