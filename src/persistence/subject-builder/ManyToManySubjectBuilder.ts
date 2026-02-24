@@ -6,10 +6,14 @@ import { RelationMetadata } from "../../metadata/RelationMetadata"
 /**
  * Builds operations needs to be executed for many-to-many relations of the given subjects.
  *
- * by example: post contains owner many-to-many relation with categories in the property called "categories", e.g.
- *             @ManyToMany(type => Category, category => category.posts) categories: Category[]
- *             If user adds categories into the post and saves post we need to bind them.
- *             This operation requires updation of junction table.
+ * Example:
+ *
+ * `Post` owns a many-to-many relation with `Category` in the property called `categories`, e.g.:
+ *
+ * `@ManyToMany(type => Category, category => category.posts) categories: Category[]`
+ *
+ *  If the user adds categories into the post and saves post we need to bind them.
+ *  This operation requires updating the junction table.
  */
 export class ManyToManySubjectBuilder {
     // ---------------------------------------------------------------------
@@ -42,6 +46,7 @@ export class ManyToManySubjectBuilder {
 
     /**
      * Builds operations for removal of all many-to-many records of all many-to-many relations of the given subject.
+     * @param subject
      */
     buildForAllRemoval(subject: Subject) {
         // if subject does not have a database entity then it means it does not exist in the database
@@ -88,6 +93,8 @@ export class ManyToManySubjectBuilder {
      * Builds operations for a given subject and relation.
      *
      * by example: subject is "post" entity we are saving here and relation is "categories" inside it here.
+     * @param subject
+     * @param relation
      */
     protected buildForSubjectRelation(
         subject: Subject,
@@ -261,6 +268,9 @@ export class ManyToManySubjectBuilder {
     /**
      * Creates identifiers for junction table.
      * Example: { postId: 1, categoryId: 2 }
+     * @param subject
+     * @param relation
+     * @param relationId
      */
     protected buildJunctionIdentifier(
         subject: Subject,

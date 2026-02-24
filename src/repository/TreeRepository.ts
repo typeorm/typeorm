@@ -9,7 +9,6 @@ import { Repository } from "./Repository"
 
 /**
  * Repository with additional functions to work with trees.
- *
  * @see Repository
  */
 export class TreeRepository<
@@ -21,6 +20,7 @@ export class TreeRepository<
 
     /**
      * Gets complete trees for all roots in the table.
+     * @param options
      */
     async findTrees(options?: FindTreeOptions): Promise<Entity[]> {
         const roots = await this.findRoots(options)
@@ -32,6 +32,7 @@ export class TreeRepository<
 
     /**
      * Roots are entities that have no ancestors. Finds them all.
+     * @param options
      */
     findRoots(options?: FindTreeOptions): Promise<Entity[]> {
         const escapeAlias = (alias: string) =>
@@ -57,6 +58,8 @@ export class TreeRepository<
 
     /**
      * Gets all children (descendants) of the given entity. Returns them all in a flat array.
+     * @param entity
+     * @param options
      */
     findDescendants(
         entity: Entity,
@@ -73,6 +76,8 @@ export class TreeRepository<
 
     /**
      * Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
+     * @param entity
+     * @param options
      */
     async findDescendantsTree(
         entity: Entity,
@@ -111,6 +116,7 @@ export class TreeRepository<
 
     /**
      * Gets number of descendants of the entity.
+     * @param entity
      */
     countDescendants(entity: Entity): Promise<number> {
         return this.createDescendantsQueryBuilder(
@@ -122,6 +128,9 @@ export class TreeRepository<
 
     /**
      * Creates a query builder used to get descendants of the entities in a tree.
+     * @param alias
+     * @param closureTableAlias
+     * @param entity
      */
     createDescendantsQueryBuilder(
         alias: string,
@@ -236,6 +245,8 @@ export class TreeRepository<
 
     /**
      * Gets all parents (ancestors) of the given entity. Returns them all in a flat array.
+     * @param entity
+     * @param options
      */
     findAncestors(
         entity: Entity,
@@ -252,6 +263,8 @@ export class TreeRepository<
 
     /**
      * Gets all parents (ancestors) of the given entity. Returns them in a tree - nested into each other.
+     * @param entity
+     * @param options
      */
     async findAncestorsTree(
         entity: Entity,
@@ -283,6 +296,7 @@ export class TreeRepository<
 
     /**
      * Gets number of ancestors of the entity.
+     * @param entity
      */
     countAncestors(entity: Entity): Promise<number> {
         return this.createAncestorsQueryBuilder(
@@ -294,6 +308,9 @@ export class TreeRepository<
 
     /**
      * Creates a query builder used to get ancestors of the entities in the tree.
+     * @param alias
+     * @param closureTableAlias
+     * @param entity
      */
     createAncestorsQueryBuilder(
         alias: string,
@@ -413,5 +430,6 @@ export class TreeRepository<
      *
     move(entity: Entity, to: Entity): Promise<void> {
         return Promise.resolve();
-    } */
+    }
+     */
 }
