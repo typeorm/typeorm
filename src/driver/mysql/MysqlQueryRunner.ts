@@ -28,6 +28,11 @@ import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { MysqlDriver } from "./MysqlDriver"
+import {
+    handleMysqlLengthOnlyFastPathChangeColumn,
+    handleSafeAlterMysql,
+} from "./MysqlQueryRunnerHelper"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -1093,11 +1098,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        console.log(oldColumn, newColumn)
+
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (oldColumn.type !== newColumn.type &&
+                !isSafeAlter(oldColumn, newColumn)) ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
@@ -1105,6 +1112,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newColumn.generatedType === "VIRTUAL") ||
             (oldColumn.generatedType === "VIRTUAL" && !newColumn.generatedType)
         ) {
+            console.log("it passed through drop/add")
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1276,6 +1284,51 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            if (oldColumn.type !== newColumn.type) {
+                console.log("it passed through alter")
+
+                await handleSafeAlterMysql({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    Query, // from "../Query"
+                    escapePath: (t) => this.escapePath(t as any),
+
+                    // IMPORTANT: match your runner's signature. Many MySQL runners expose:
+                    //   buildCreateColumnSql(column: TableColumn, skipIdentity?: boolean)
+                    // If that's your case, pass the 2-arg form like below.
+                    buildCreateColumnSql: (col) =>
+                        this.buildCreateColumnSql(col, true, true),
+
+                    executeQueries: (up, down) => this.executeQueries(up, down),
+                    replaceCachedTable: (t, ct) =>
+                        this.replaceCachedTable(t, ct),
+
+                    // Your isSafeAlter() from earlier (the widening rule you provided)
+                    isSafeAlter,
+                })
+            } else if (
+                oldColumn?.type === newColumn?.type &&
+                oldColumn?.length !== newColumn?.length
+            ) {
+                // BEGIN length-only fast path (MySQL family)
+                handleMysqlLengthOnlyFastPathChangeColumn({
+                    table,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    Query,
+                    escapePath: this.escapePath.bind(this),
+                    buildCreateColumnSql: this.buildCreateColumnSql.bind(this),
+                    TableColumnCtor: TableColumn, // from your ORM
+                })
+                // END length-only fast path
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true, true)) {

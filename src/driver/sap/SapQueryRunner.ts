@@ -28,6 +28,11 @@ import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { SapDriver } from "./SapDriver"
+import {
+    handleHanaLengthOnlyFastPath,
+    handleSafeAlterSap,
+} from "./SapQueryRunnerHelper"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -1217,11 +1222,158 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        if (oldColumn.type !== newColumn.type) {
+            await handleSafeAlterSap({
+                table,
+                clonedTable,
+                oldColumn,
+                newColumn,
+                upQueries,
+                downQueries,
+                Query, // from "../Query"
+                escapePath: (t) => this.escapePath(t as any),
+
+                // your widening/safety rule
+                isSafeAlter,
+
+                // derive a HANA TYPE fragment directly from TableColumn
+                buildColumnType: (col) => {
+                    const t = String(col.type ?? "")
+                        .toLowerCase()
+                        .trim()
+                    const len = col.length
+                        ? parseInt(String(col.length), 10)
+                        : undefined
+                    const prec = (col as any).precision
+                    const scale = (col as any).scale
+
+                    const withLen = (base: string) =>
+                        len ? `${base}(${len})` : base
+                    const withPS = (base: string) => {
+                        if (prec == null) return base
+                        if (scale == null) return `${base}(${prec})`
+                        return `${base}(${prec},${scale})`
+                    }
+
+                    // STRING-ish (HANA prefers NVARCHAR for Unicode)
+                    if (
+                        t === "nvarchar" ||
+                        t === "nvarchar2" ||
+                        t === "nchar" ||
+                        t === "varchar" ||
+                        t === "varchar2" ||
+                        t === "char" ||
+                        t === "string"
+                    )
+                        return withLen(
+                            t.startsWith("n")
+                                ? "NVARCHAR"
+                                : t === "char" || t === "nchar"
+                                ? t === "nchar"
+                                    ? "NCHAR"
+                                    : "CHAR"
+                                : "NVARCHAR",
+                        )
+                    if (t === "alphanum") return withLen("ALPHANUM")
+                    if (t === "shorttext") return withLen("SHORTTEXT")
+                    if (t === "text" || t === "clob" || t === "nclob")
+                        return t === "nclob" ? "NCLOB" : "CLOB"
+
+                    // NUMERIC
+                    if (t === "decimal" || t === "numeric" || t === "number")
+                        return withPS("DECIMAL")
+                    if (t === "tinyint") return "TINYINT"
+                    if (t === "smallint") return "SMALLINT"
+                    if (t === "int" || t === "integer") return "INTEGER"
+                    if (t === "bigint") return "BIGINT"
+                    if (t === "real" || t === "float4") return "REAL"
+                    if (
+                        t === "double" ||
+                        t === "double precision" ||
+                        t === "float8" ||
+                        t === "float"
+                    )
+                        return "DOUBLE"
+
+                    // TEMPORAL
+                    if (t === "date") return "DATE"
+                    if (t === "time") return "TIME"
+                    if (
+                        t === "timestamp" ||
+                        t === "seconddate" ||
+                        t === "datetime"
+                    )
+                        return t === "seconddate" ? "SECONDDATE" : "TIMESTAMP"
+
+                    // BYTES / BIN
+                    if (
+                        t === "binary" ||
+                        t === "varbinary" ||
+                        t === "blob" ||
+                        t === "bytes"
+                    )
+                        return withLen(
+                            t === "blob"
+                                ? "BLOB"
+                                : t === "binary"
+                                ? "BINARY"
+                                : "VARBINARY",
+                        )
+
+                    // Fallback: return upper-cased raw type
+                    return t.toUpperCase()
+                },
+            })
+        } else if (
+            oldColumn?.type === newColumn?.type &&
+            oldColumn?.length !== newColumn?.length &&
+            // allow only safe text/binary types
+            [
+                "char",
+                "nchar",
+                "varchar",
+                "nvarchar",
+                "alphanum",
+                "shorttext",
+                "varbinary",
+                "binary",
+            ].includes(String(oldColumn?.type).toLowerCase()) &&
+            // no rename in this fast path
+            newColumn?.name === oldColumn?.name &&
+            // exclude arrays
+            !oldColumn?.isArray &&
+            !newColumn?.isArray &&
+            // exclude primary key columns to avoid HANA constraints
+            !oldColumn?.isPrimary &&
+            !newColumn?.isPrimary &&
+            // ensure only length changed; let general path handle other mutations
+            newColumn?.isNullable === oldColumn?.isNullable &&
+            newColumn?.default === oldColumn?.default &&
+            newColumn?.comment === oldColumn?.comment &&
+            newColumn?.isUnique === oldColumn?.isUnique
+        ) {
+            // BEGIN length-only fast path (SAP HANA)
+
+            handleHanaLengthOnlyFastPath({
+                table,
+                clonedTable,
+                oldColumn,
+                newColumn,
+                upQueries,
+                downQueries,
+                Query,
+                escapePath: this.escapePath.bind(this),
+                buildCreateColumnSql: this.buildCreateColumnSql.bind(this),
+                TableColumnCtor: TableColumn, // pass your ORM's TableColumn class
+            })
+            // END length-only fast path (SAP HANA)
+        }
+
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length
+            (newColumn.type !== oldColumn.type &&
+                !isSafeAlter(oldColumn, newColumn))
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed
@@ -1415,6 +1567,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
+                // UP: apply full column definition change
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1429,20 +1582,59 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         )})`,
                     ),
                 )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(
-                            table,
-                        )} ALTER (${this.buildCreateColumnSql(
-                            oldColumn,
-                            !(
-                                newColumn.default === null ||
-                                newColumn.default === undefined
-                            ),
-                            !newColumn.isNullable,
-                        )})`,
-                    ),
-                )
+
+                // DOWN: revert column definition.
+                // On SAP HANA, in-place *shrink* (e.g., 500 -> 255) is not supported.
+                // If reverting would shrink, keep the widened length but restore other attributes
+                // (default/nullability/unique/etc.) so the revert succeeds.
+                {
+                    const isSap = this.driver.options.type === "sap"
+
+                    const oldLen =
+                        oldColumn.length !== undefined &&
+                        oldColumn.length !== null
+                            ? parseInt(String(oldColumn.length), 10)
+                            : undefined
+                    const newLen =
+                        newColumn.length !== undefined &&
+                        newColumn.length !== null
+                            ? parseInt(String(newColumn.length), 10)
+                            : undefined
+
+                    const wouldShrinkOnDown =
+                        isSap &&
+                        oldLen !== undefined &&
+                        newLen !== undefined &&
+                        newLen > oldLen
+
+                    // Target the *current* column name on the table (may have been renamed earlier)
+                    const targetName = newColumn.name
+
+                    const downColDef = wouldShrinkOnDown
+                        ? Object.assign(new TableColumn(), oldColumn, {
+                              // keep the widened length so DOWN doesn't try to shrink on HANA
+                              length: newColumn.length,
+                              name: targetName,
+                          })
+                        : Object.assign(new TableColumn(), oldColumn, {
+                              name: targetName,
+                          })
+
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER (${this.buildCreateColumnSql(
+                                downColDef,
+                                !(
+                                    newColumn.default === null ||
+                                    newColumn.default === undefined
+                                ),
+                                !newColumn.isNullable,
+                            )})`,
+                        ),
+                    )
+                }
             } else if (oldColumn.comment !== newColumn.comment) {
                 upQueries.push(
                     new Query(

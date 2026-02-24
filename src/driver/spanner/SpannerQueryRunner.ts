@@ -25,6 +25,11 @@ import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { SpannerDriver } from "./SpannerDriver"
+import {
+    handleSpannerLengthOnlyFastPath,
+    handleSafeAlterSpanner,
+} from "./SpannerQueryRunnerHelper"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -866,9 +871,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
 
         if (
+            (oldColumn.type !== newColumn.type &&
+                !isSafeAlter(oldColumn, newColumn)) ||
             oldColumn.name !== newColumn.name ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.isArray !== newColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
@@ -880,6 +885,110 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
+            if (oldColumn.type !== newColumn.type) {
+                await handleSafeAlterSpanner({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    Query, // from "../Query"
+                    escapePath: (t) => this.escapePath(t as any),
+                    executeQueries: (up, down) => this.executeQueries(up, down),
+                    replaceCachedTable: (t, ct) =>
+                        this.replaceCachedTable(t, ct),
+
+                    // your widening/safety rule (the one you shared earlier)
+                    isSafeAlter,
+
+                    // derive a Spanner TYPE fragment directly from TableColumn
+                    buildColumnType: (col) => {
+                        const t = String(col.type ?? "")
+                            .toLowerCase()
+                            .trim()
+                        const rawLen = col.length ?? ""
+                        const len =
+                            rawLen === ""
+                                ? undefined
+                                : String(rawLen).toLowerCase()
+                        const asLen = (base: string) => {
+                            if (!len) return `${base}(MAX)` // Spanner defaults to MAX if omitted; we emit explicitly
+                            if (len === "max") return `${base}(MAX)`
+                            const n = parseInt(len, 10)
+                            return Number.isFinite(n)
+                                ? `${base}(${n})`
+                                : `${base}(MAX)`
+                        }
+
+                        // STRING/BYTES with optional length
+                        if (
+                            t === "string" ||
+                            t === "varchar" ||
+                            t === "character varying" ||
+                            t === "text"
+                        )
+                            return asLen("STRING")
+                        if (t === "bytes" || t === "varbinary" || t === "blob")
+                            return asLen("BYTES")
+
+                        // numerics
+                        if (
+                            t === "int" ||
+                            t === "integer" ||
+                            t === "int64" ||
+                            t === "bigint"
+                        )
+                            return "INT64"
+                        if (
+                            t === "float" ||
+                            t === "double" ||
+                            t === "double precision" ||
+                            t === "float64" ||
+                            t === "real"
+                        )
+                            return "FLOAT64"
+                        if (
+                            t === "numeric" ||
+                            t === "decimal" ||
+                            t === "number"
+                        )
+                            return "NUMERIC"
+
+                        // booleans & temporals
+                        if (t === "bool" || t === "boolean") return "BOOL"
+                        if (t === "timestamp" || t === "datetime")
+                            return "TIMESTAMP"
+                        if (t === "date") return "DATE"
+
+                        // JSON
+                        if (t === "json") return "JSON"
+
+                        // fallback: uppercase raw
+                        return t.toUpperCase()
+                    },
+
+                    // optional: Spanner accepts backticks for identifiers
+                    // quoteIdent: (i) => `\`${i.replace(/`/g, "``")}\``,
+                })
+            } else if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                await handleSpannerLengthOnlyFastPath({
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                    Query,
+                    escapePath: this.escapePath.bind(this),
+                    driver: this.driver,
+                    executeQueries: this.executeQueries.bind(this),
+                })
+            }
+
             if (
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
