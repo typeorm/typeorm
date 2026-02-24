@@ -1,10 +1,30 @@
-export const isUint8Array = (value: unknown): value is Uint8Array =>
-    value instanceof Uint8Array
+const isBuffer = (value: unknown): value is Buffer =>
+    typeof Buffer !== "undefined" && Buffer.isBuffer(value)
+
+export const isUint8Array = (value: unknown): value is Uint8Array => {
+    if (value instanceof Uint8Array) {
+        return true
+    }
+
+    if (!ArrayBuffer.isView(value)) {
+        return false
+    }
+
+    return Object.prototype.toString.call(value) === "[object Uint8Array]"
+}
 
 export const areUint8ArraysEqual = (
     left: Uint8Array,
     right: Uint8Array,
 ): boolean => {
+    if (left === right) {
+        return true
+    }
+
+    if (isBuffer(left) && isBuffer(right)) {
+        return left.equals(right)
+    }
+
     if (left.byteLength !== right.byteLength) {
         return false
     }

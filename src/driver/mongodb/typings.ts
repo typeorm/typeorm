@@ -3891,7 +3891,7 @@ export declare interface GridFSChunk {
     _id: ObjectId
     files_id: ObjectId
     n: number
-    data: Buffer | Uint8Array
+    data: Uint8Array
 }
 
 /** @public */

@@ -4,6 +4,7 @@ import {
     PrimitiveCriteria,
     SinglePrimitiveCriteria,
 } from "../common/PrimitiveCriteria"
+import { areUint8ArraysEqual, isUint8Array } from "./Uint8ArrayUtils"
 
 export class OrmUtils {
     // -------------------------------------------------------------------------
@@ -438,6 +439,10 @@ export class OrmUtils {
         // PR #3776, todo: add tests
         if (x === null || y === null || x === undefined || y === undefined)
             return false
+
+        if (isUint8Array(x) && isUint8Array(y)) {
+            return areUint8ArraysEqual(x, y)
+        }
 
         // Fix the buffer compare bug.
         // See: https://github.com/typeorm/typeorm/issues/3654
