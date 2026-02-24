@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { IndexMetadata } from "../../../src/metadata/IndexMetadata"
 import { UniqueMetadata } from "../../../src/metadata/UniqueMetadata"
 import {

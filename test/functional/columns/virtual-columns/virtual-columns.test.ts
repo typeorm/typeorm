@@ -1,12 +1,12 @@
 import { expect } from "chai"
 import dedent from "dedent"
 import "reflect-metadata"
-import {
+import type {
     DataSource,
     FindManyOptions,
     FindOneOptions,
-    MoreThan,
 } from "../../../../src"
+import { MoreThan } from "../../../../src"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,

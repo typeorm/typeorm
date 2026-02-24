@@ -1,4 +1,4 @@
-import {
+import type {
     ColumnType,
     SimpleColumnType,
     SpatialColumnType,
@@ -8,18 +8,18 @@ import {
 } from "../../driver/types/ColumnTypes"
 import { ColumnTypeUndefinedError } from "../../error/ColumnTypeUndefinedError"
 import { getMetadataArgsStorage } from "../../globals"
-import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
-import { EmbeddedMetadataArgs } from "../../metadata-args/EmbeddedMetadataArgs"
-import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs"
-import { ColumnCommonOptions } from "../options/ColumnCommonOptions"
-import { ColumnEmbeddedOptions } from "../options/ColumnEmbeddedOptions"
-import { ColumnEnumOptions } from "../options/ColumnEnumOptions"
-import { ColumnHstoreOptions } from "../options/ColumnHstoreOptions"
-import { ColumnNumericOptions } from "../options/ColumnNumericOptions"
-import { ColumnOptions } from "../options/ColumnOptions"
-import { ColumnUnsignedOptions } from "../options/ColumnUnsignedOptions"
-import { ColumnWithLengthOptions } from "../options/ColumnWithLengthOptions"
-import { SpatialColumnOptions } from "../options/SpatialColumnOptions"
+import type { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
+import type { EmbeddedMetadataArgs } from "../../metadata-args/EmbeddedMetadataArgs"
+import type { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs"
+import type { ColumnCommonOptions } from "../options/ColumnCommonOptions"
+import type { ColumnEmbeddedOptions } from "../options/ColumnEmbeddedOptions"
+import type { ColumnEnumOptions } from "../options/ColumnEnumOptions"
+import type { ColumnHstoreOptions } from "../options/ColumnHstoreOptions"
+import type { ColumnNumericOptions } from "../options/ColumnNumericOptions"
+import type { ColumnOptions } from "../options/ColumnOptions"
+import type { ColumnUnsignedOptions } from "../options/ColumnUnsignedOptions"
+import type { ColumnWithLengthOptions } from "../options/ColumnWithLengthOptions"
+import type { SpatialColumnOptions } from "../options/SpatialColumnOptions"
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this

@@ -1,6 +1,6 @@
 import { expect } from "chai"
-import { QueryRunner } from "../../../src"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { QueryRunner } from "../../../src"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import "../../utils/test-setup"
 import {
     closeTestingConnections,

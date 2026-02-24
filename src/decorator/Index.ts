@@ -1,6 +1,6 @@
 import { getMetadataArgsStorage } from "../globals"
-import { IndexMetadataArgs } from "../metadata-args/IndexMetadataArgs"
-import { IndexOptions } from "./options/IndexOptions"
+import type { IndexMetadataArgs } from "../metadata-args/IndexMetadataArgs"
+import type { IndexOptions } from "./options/IndexOptions"
 import { ObjectUtils } from "../util/ObjectUtils"
 
 /**

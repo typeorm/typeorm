@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 import { Post } from "./entity/Post"
 
 describe("database schema > custom constraint names > index", () => {

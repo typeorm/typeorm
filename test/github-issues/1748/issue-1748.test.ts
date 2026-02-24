@@ -5,7 +5,8 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, Equal } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Equal } from "../../../src"
 import { Post, Uuid } from "./entity/Post"
 
 describe("github issues > #1748 PrimaryColumn combined with transformer leads to error on save", () => {

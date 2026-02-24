@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 import { expect } from "chai"
 
 describe("entity-schema > columns > virtual column", () => {

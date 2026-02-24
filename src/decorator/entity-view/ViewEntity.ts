@@ -1,6 +1,6 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { TableMetadataArgs } from "../../metadata-args/TableMetadataArgs"
-import { ViewEntityOptions } from "../options/ViewEntityOptions"
+import type { TableMetadataArgs } from "../../metadata-args/TableMetadataArgs"
+import type { ViewEntityOptions } from "../options/ViewEntityOptions"
 import { ObjectUtils } from "../../util/ObjectUtils"
 
 /**

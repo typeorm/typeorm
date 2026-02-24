@@ -1,9 +1,9 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { DriverUtils } from "../driver/DriverUtils"
 import { TypeORMError } from "../error/TypeORMError"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
-import { FindTreeOptions } from "../find-options/FindTreeOptions"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { FindTreeOptions } from "../find-options/FindTreeOptions"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { TreeRepositoryUtils } from "../util/TreeRepositoryUtils"
 import { Repository } from "./Repository"
 

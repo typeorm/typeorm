@@ -1,9 +1,9 @@
-import { DataSource } from "../../data-source/DataSource"
+import type { DataSource } from "../../data-source/DataSource"
 import { DriverPackageNotInstalledError } from "../../error"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { CapacitorDataSourceOptions } from "./CapacitorDataSourceOptions"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { CapacitorDataSourceOptions } from "./CapacitorDataSourceOptions"
 import { CapacitorQueryRunner } from "./CapacitorQueryRunner"
 
 export class CapacitorDriver extends AbstractSqliteDriver {

@@ -4,7 +4,7 @@ import { QueryResult } from "../../query-runner/QueryResult"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { ExpoDriver } from "./ExpoDriver"
+import type { ExpoDriver } from "./ExpoDriver"
 
 export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     driver: ExpoDriver

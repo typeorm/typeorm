@@ -1,4 +1,4 @@
-import { WhereExpressionBuilder } from "./WhereExpressionBuilder"
+import type { WhereExpressionBuilder } from "./WhereExpressionBuilder"
 
 /**
  * Syntax sugar.

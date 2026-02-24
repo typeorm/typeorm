@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import {
+import type {
     DataSource,
     GeometryCollection,
     LineString,

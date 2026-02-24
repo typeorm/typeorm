@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 
 describe("table-inheritance > single-table > database-option-inherited", () => {
     let dataSources: DataSource[]
