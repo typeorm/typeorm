@@ -4,6 +4,7 @@ import * as yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
 import path from "path"
 import { CommandUtils } from "./CommandUtils"
+import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
 
 /**
  * Shows all migrations and whether they have been run or not.
@@ -13,12 +14,9 @@ export class MigrationShowCommand implements yargs.CommandModule {
     describe = "Show all migrations and whether they have been run or not"
 
     builder(args: yargs.Argv) {
-        return args.option("dataSource", {
-            alias: "d",
-            describe:
-                "Path to the file where your DataSource instance is defined.",
-            demandOption: true,
-        })
+        return new DefaultCliArgumentsBuilder(args)
+            .addDataSourceOption()
+            .builder()
     }
 
     async handler(args: yargs.Arguments) {

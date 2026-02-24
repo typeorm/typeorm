@@ -6,6 +6,7 @@ import { DataSource } from "../data-source/DataSource"
 import { PlatformTools } from "../platform/PlatformTools"
 import { QueryRunner } from "../query-runner/QueryRunner"
 import { CommandUtils } from "./CommandUtils"
+import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
 
 /**
  * Executes an SQL query on the given dataSource.
@@ -16,16 +17,12 @@ export class QueryCommand implements yargs.CommandModule {
         "Executes given SQL query on a default dataSource. Specify connection name to run query on a specific dataSource."
 
     builder(args: yargs.Argv) {
-        return args
+        return new DefaultCliArgumentsBuilder(args)
+            .addDataSourceOption()
+            .builder()
             .positional("query", {
                 describe: "The SQL Query to run",
                 type: "string",
-            })
-            .option("dataSource", {
-                alias: "d",
-                describe:
-                    "Path to the file where your DataSource instance is defined.",
-                demandOption: true,
             })
     }
 
