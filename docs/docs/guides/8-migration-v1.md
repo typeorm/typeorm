@@ -14,6 +14,10 @@ TypeORM requires newer versions of the database client libraries.
 
 The `connectorPackage` option was removed, together with the support for the old `mysql` client. The only database client supported is now `mysql2`, which TypeORM will try to load by default. If you were using `mysql` in your project, simply replace it with `mysql2`.
 
+## MongoDB
+
+The internal MongoDB types are no longer exported. You can import `ObjectId` from `mongodb` instead of `typeorm`.
+
 ## SQLite
 
 Drop support to `sqlite3` in favour of `better-sqlite3` as the primary driver for `sqlite` databases:

@@ -38,7 +38,7 @@ This will create following database table:
 ```
 
 Basic entities consist of columns and relations.
-Each entity **MUST** have a primary column (or ObjectId column if are using MongoDB).
+Each entity **MUST** have a primary column (or an `ObjectId` column if are using MongoDB).
 
 Each entity must be registered in your data source options:
 

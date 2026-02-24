@@ -97,7 +97,8 @@ instead of `@PrimaryColumn` or `@PrimaryGeneratedColumn`.
 Simple entity example:
 
 ```typescript
-import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
+import { ObjectId } from "mongodb"
+import { Entity, ObjectIdColumn, Column } from "typeorm"
 
 @Entity()
 export class User {
@@ -130,7 +131,8 @@ const myDataSource = new DataSource({
 Since MongoDB stores objects and objects inside objects (or documents inside documents), you can do the same in TypeORM:
 
 ```typescript
-import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
+import { ObjectId } from "mongodb"
+import { Entity, ObjectIdColumn, Column } from "typeorm"
 
 export class Profile {
     @Column()
@@ -145,7 +147,8 @@ export class Profile {
 ```
 
 ```typescript
-import { Entity, ObjectId, ObjectIdColumn, Column } from "typeorm"
+import { ObjectId } from "mongodb"
+import { Entity, ObjectIdColumn, Column } from "typeorm"
 
 export class Photo {
     @Column()
