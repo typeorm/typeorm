@@ -1,8 +1,9 @@
+import { DataSource } from "../../data-source"
+import { SelectQueryBuilder } from "../../query-builder/SelectQueryBuilder"
+
 /**
  * Describes all entity view's options.
  */
-import { DataSource, SelectQueryBuilder } from "../.."
-
 export interface ViewEntityOptions {
     /**
      * View name.
@@ -13,7 +14,7 @@ export interface ViewEntityOptions {
     /**
      * View expression.
      */
-    expression?: string | ((connection: DataSource) => SelectQueryBuilder<any>)
+    expression?: string | ((dataSource: DataSource) => SelectQueryBuilder<any>)
 
     /**
      * Database name. Used in Mysql and Sql Server.
