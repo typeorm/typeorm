@@ -122,6 +122,10 @@ const manager = dataSource.mongoManager
 const repository = dataSource.getMongoRepository(User)
 ```
 
+### Types
+
+The internal MongoDB types are no longer exported. You can import `ObjectId` from `mongodb` instead of `typeorm`.
+
 ## Expo
 
 Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52, so you'll need to use Expo SDK v52 or later with the modern async SQLite API.

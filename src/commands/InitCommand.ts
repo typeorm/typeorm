@@ -350,11 +350,11 @@ temp/`
      * @param database
      */
     protected static getUserEntityTemplate(database: string): string {
-        return `import { Entity, ${
+        return `${
             database === "mongodb"
-                ? "ObjectIdColumn, ObjectId"
-                : "PrimaryGeneratedColumn"
-        }, Column } from "typeorm"
+                ? `import { Entity, ObjectIdColumn, Column } from "typeorm"\nimport { ObjectId } from "mongodb"`
+                : `import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"`
+        }
 
 @Entity()
 export class User {
