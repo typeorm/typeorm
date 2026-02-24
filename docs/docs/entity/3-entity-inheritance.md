@@ -151,6 +151,38 @@ export class Post extends Content {
 This will create a single table called `content` and all instances of photos, questions and posts
 will be saved into this table.
 
+### Eager relations in STI
+
+When using Single Table Inheritance with eager relations on child entities, TypeORM scopes eager loading to the correct child type. This means that eager relations declared on one child entity will not be loaded when querying a sibling child entity.
+
+For example, if `Photo` has an eager relation to `PhotoMetadata` and `Question` has an eager relation to `Answer`:
+
+```typescript
+@ChildEntity()
+export class Photo extends Content {
+    @Column()
+    size: string
+
+    @OneToOne(() => PhotoMetadata, { eager: true })
+    @JoinColumn()
+    metadata: PhotoMetadata
+}
+```
+
+```typescript
+@ChildEntity()
+export class Question extends Content {
+    @Column()
+    answersCount: number
+
+    @OneToOne(() => Answer, { eager: true })
+    @JoinColumn()
+    topAnswer: Answer
+}
+```
+
+When loading a `Photo`, only `metadata` is eagerly loaded — the `topAnswer` relation from `Question` is not included. When querying the parent `Content` repository directly, all child-specific eager relations are loaded and assigned to the correct entity instances based on the discriminator column.
+
 ## Using embeddeds
 
 There is an amazing way to reduce duplication in your app (using composition over inheritance) by using `embedded columns`.
