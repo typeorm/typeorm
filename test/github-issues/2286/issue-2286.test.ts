@@ -11,10 +11,10 @@ import { Example } from "./entity/Example"
 import { Between } from "../../../src"
 
 describe("github issues > #2286 find operators like MoreThan and LessThan doesn't work properly for date fields", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post, Example],
                 schemaCreate: true,
                 dropSchema: true,
@@ -22,13 +22,13 @@ describe("github issues > #2286 find operators like MoreThan and LessThan doesn'
                 enabledDrivers: ["sqlite"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should find a record by its datetime value with find options", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const start = new Date("2000-01-01")
                 const end = new Date("2001-01-01")
                 const middle = new Date("2000-06-30")
@@ -57,7 +57,7 @@ describe("github issues > #2286 find operators like MoreThan and LessThan doesn'
 
     it("should find a record by its datetime value with query builder", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const now = new Date()
                 const post = new Post()
                 post.dateTimeColumn = now
@@ -75,7 +75,7 @@ describe("github issues > #2286 find operators like MoreThan and LessThan doesn'
 
     it("should save, update, and load with a date PK", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const start = new Date("2000-01-01")
                 const middle = new Date("2000-06-30")
                 const end = new Date("2001-01-01")

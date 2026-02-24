@@ -9,22 +9,22 @@ import { Post, TargetPost } from "./entity/Post"
 import { Comment } from "./entity/Comment"
 
 describe("github issues > #6399 Process extraAppendedAndWhereCondition for inherited entity", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        return (connections = await createTestingConnections({
+        return (dataSources = await createTestingConnections({
             entities: [Post, TargetPost, Comment],
             schemaCreate: true,
             dropSchema: true,
             enabledDrivers: ["mysql"],
         }))
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("Query with join and limit for inhered entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const targetPostRepo = connection.getRepository(TargetPost)
 
                 const posts: TargetPost[] = [

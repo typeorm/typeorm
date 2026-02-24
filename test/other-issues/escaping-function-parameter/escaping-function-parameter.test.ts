@@ -9,19 +9,19 @@ import { Post } from "./entity/Post"
 import { expect } from "chai"
 
 describe("other issues > escaping function parameter", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("select query builder should ignore function-based parameters", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "Super title"
                 await connection.manager.save(post)
@@ -39,7 +39,7 @@ describe("other issues > escaping function parameter", () => {
 
     it("insert query builder should work with function parameters", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.manager
                     .getRepository(Post)
                     .createQueryBuilder()
@@ -58,7 +58,7 @@ describe("other issues > escaping function parameter", () => {
 
     it("update query builder should work with function parameters", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "Super title"
                 await connection.manager.save(post)

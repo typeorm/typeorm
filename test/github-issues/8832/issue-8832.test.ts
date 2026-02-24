@@ -15,9 +15,9 @@ import { Address } from "./entity/Address"
 import { User } from "./entity/User"
 
 describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Address, User],
             enabledDrivers: ["mariadb"],
             driverSpecific: {
@@ -29,7 +29,7 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
         // inet4 is available since 10.10
         // inet6 is available since 10.5
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (
                     !DriverUtils.isReleaseVersionOrGreater(
                         connection.driver,
@@ -45,15 +45,15 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
             }),
         )
 
-        connections = connections.filter(
+        dataSources = dataSources.filter(
             (connection) => connection.isInitialized,
         )
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create table with uuid, inet4, and inet6 type set to column for relevant mariadb versions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userRepository = connection.getRepository(User)
 
                 const newUser = await userRepository.save({
@@ -122,7 +122,7 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
 
     it("should throw error if mariadb uuid is supported and length is provided to property", async () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // version supports all the new types
                 connection.driver.version = "10.10.0"
 

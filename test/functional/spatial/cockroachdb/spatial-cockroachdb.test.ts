@@ -9,16 +9,16 @@ import {
 import { Post } from "./entity/Post"
 
 describe("spatial-cockroachdb", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["cockroachdb"],
         })
     })
     beforeEach(async () => {
         try {
-            await reloadTestingDatabases(connections)
+            await reloadTestingDatabases(dataSources)
         } catch (err) {
             console.warn(err.stack)
             throw err
@@ -26,7 +26,7 @@ describe("spatial-cockroachdb", () => {
     })
     after(async () => {
         try {
-            await closeTestingConnections(connections)
+            await closeTestingConnections(dataSources)
         } catch (err) {
             console.warn(err.stack)
             throw err
@@ -35,7 +35,7 @@ describe("spatial-cockroachdb", () => {
 
     it("should create correct schema with geometry type", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const schema = await queryRunner.getTable("post")
                 await queryRunner.release()
@@ -55,7 +55,7 @@ describe("spatial-cockroachdb", () => {
 
     it("should create correct schema with geography type", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const schema = await queryRunner.getTable("post")
                 await queryRunner.release()
@@ -72,7 +72,7 @@ describe("spatial-cockroachdb", () => {
 
     it("should create correct schema with geometry indices", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const schema = await queryRunner.getTable("post")
                 await queryRunner.release()
@@ -90,7 +90,7 @@ describe("spatial-cockroachdb", () => {
 
     it("should persist geometry correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
@@ -111,7 +111,7 @@ describe("spatial-cockroachdb", () => {
 
     it("should persist geography correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
@@ -132,7 +132,7 @@ describe("spatial-cockroachdb", () => {
 
     it("should update geometry correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
@@ -167,7 +167,7 @@ describe("spatial-cockroachdb", () => {
 
     it("should re-save geometry correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
@@ -196,7 +196,7 @@ describe("spatial-cockroachdb", () => {
 
     it("should be able to order geometries by distance", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const geoJson1: Point = {
                     type: "Point",
                     coordinates: [139.9341032213472, 36.80798008559315],

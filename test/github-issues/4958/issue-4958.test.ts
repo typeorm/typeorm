@@ -9,19 +9,19 @@ import First from "./entity/first"
 import Second from "./entity/second"
 
 describe("github issues > #4958 getRepository returns results from another Repo", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [First, Second],
                 enabledDrivers: ["sqlite"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("sql generated is for correct model", () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const rawSql = connection
                 .getRepository(Second)
                 .createQueryBuilder("a")

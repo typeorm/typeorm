@@ -10,19 +10,19 @@ import { expect } from "chai"
 import { EntityPropertyNotFoundError } from "../../../src/error/EntityPropertyNotFoundError"
 
 describe("other issues > preventing-injection", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not allow selection of non-exist columns via FindOptions", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const post = new Post()
                 post.title = "hello"
                 await connection.manager.save(post)
@@ -43,7 +43,7 @@ describe("other issues > preventing-injection", () => {
 
     it("should throw error for non-exist columns in where expression via FindOptions", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const post = new Post()
                 post.title = "hello"
                 await connection.manager.save(post)
@@ -77,7 +77,7 @@ describe("other issues > preventing-injection", () => {
 
     it("should not allow selection of non-exist columns via FindOptions", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const post = new Post()
                 post.title = "hello"
                 await connection.manager.save(post)
@@ -99,7 +99,7 @@ describe("other issues > preventing-injection", () => {
 
     it("should not allow non-numeric values in skip and take via FindOptions", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 await connection.manager.find(Post, {
                     take: "(WHERE XXX)" as any,
                 }).should.be.rejected
@@ -112,7 +112,7 @@ describe("other issues > preventing-injection", () => {
         ))
 
     it("should not allow non-numeric values in skip and take in QueryBuilder", () => {
-        connections.forEach((connection) => {
+        dataSources.forEach((connection) => {
             expect(() => {
                 connection.manager
                     .createQueryBuilder(Post, "post")
@@ -128,7 +128,7 @@ describe("other issues > preventing-injection", () => {
     })
 
     it("should not allow non-allowed values in order by in QueryBuilder", () => {
-        connections.forEach((connection) => {
+        dataSources.forEach((connection) => {
             expect(() => {
                 connection.manager
                     .createQueryBuilder(Post, "post")

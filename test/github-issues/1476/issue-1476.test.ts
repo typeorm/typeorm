@@ -12,10 +12,10 @@ import { Item } from "./entity/Item"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #1476 subqueries", () => {
-    let connections: DataSource[] = []
+    let dataSources: DataSource[] = []
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: [
                     "mysql",
@@ -26,12 +26,12 @@ describe("github issues > #1476 subqueries", () => {
                 ],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const planRepo = connection.getRepository(Plan)
                 const itemRepo = connection.getRepository(Item)
 

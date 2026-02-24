@@ -9,10 +9,10 @@ import { View } from "../../../src/schema-builder/view/View"
 import { expect } from "chai"
 
 describe("github issues > #9173 missing typeorm_metadata", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
@@ -24,11 +24,11 @@ describe("github issues > #9173 missing typeorm_metadata", () => {
                 ],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create a view without view entity", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await connection.runMigrations({
                 transaction: "all",
             })

@@ -10,19 +10,19 @@ import { Car } from "./entity/Car"
 import { Fruit } from "./entity/Fruit"
 
 describe("github issues > #363 Can't save 2 unrelated entity types in a single persist call", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("entityManager should allow you to save unrelated entities with one persist call", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const car = new Car()
                 car.name = "Ferrari"
 
@@ -55,7 +55,7 @@ describe("github issues > #363 Can't save 2 unrelated entity types in a single p
 
     it("entityManager should allow you to delete unrelated entities with one remove call", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const fruit = new Fruit()
                 fruit.name = "Banana"
 

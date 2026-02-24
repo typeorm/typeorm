@@ -11,19 +11,19 @@ import { Photo } from "./entity/Photo"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
 
 describe("query builder > delete", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should perform deletion correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User()
                 user1.name = "Alex Messer"
                 await connection.manager.save(user1)
@@ -60,7 +60,7 @@ describe("query builder > delete", () => {
 
     it("should be able to delete entities by embed criteria", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // save few photos
                 await connection.manager.save(Photo, { url: "1.jpg" })
                 await connection.manager.save(Photo, {
@@ -119,7 +119,7 @@ describe("query builder > delete", () => {
 
     it("should return correct delete result", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // save some users
                 const user1 = new User()
                 user1.name = "John Doe"
@@ -140,7 +140,7 @@ describe("query builder > delete", () => {
 
     it("should throw error when unknown property in where criteria", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Alex Messer"
 

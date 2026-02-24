@@ -11,19 +11,19 @@ import { prepareData } from "./find-options-test-utils"
 import { expect } from "chai"
 
 describe("find options > order", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 __dirname,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("order by id DESC", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts1 = await connection
@@ -314,7 +314,7 @@ describe("find options > order", () => {
 
     it("order by title", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -356,7 +356,7 @@ describe("find options > order", () => {
 
     it("where two criteria", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -399,7 +399,7 @@ describe("find options > order", () => {
 
     it("order by relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -447,7 +447,7 @@ describe("find options > order", () => {
 
     it("order by relation with where relation applied", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -491,7 +491,7 @@ describe("find options > order", () => {
 
     it("order by nested relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -535,7 +535,7 @@ describe("find options > order", () => {
 
     it("order by complex nested relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -589,7 +589,7 @@ describe("find options > order", () => {
 
     it("order by column in embed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -634,7 +634,7 @@ describe("find options > order", () => {
 
     it("order by relation in embed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection

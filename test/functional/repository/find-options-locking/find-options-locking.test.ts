@@ -22,19 +22,19 @@ import { PostWithVersion } from "./entity/PostWithVersion"
 import { PostWithVersionAndUpdatedDate } from "./entity/PostWithVersionAndUpdatedDate"
 
 describe("repository > find options > locking", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should throw error if pessimistic lock used without transaction", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
                     connection.driver.options.type === "spanner"
@@ -82,7 +82,7 @@ describe("repository > find options > locking", () => {
 
     it("should not throw error if pessimistic lock used with transaction", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
                     connection.driver.options.type === "spanner"
@@ -117,7 +117,7 @@ describe("repository > find options > locking", () => {
 
     it("should attach pessimistic read lock statement on query if locking enabled", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
                     connection.driver.options.type === "cockroachdb" ||
@@ -173,7 +173,7 @@ describe("repository > find options > locking", () => {
 
     it("should attach for no key update lock statement on query if locking enabled", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type !== "postgres") {
                     return
                 }
@@ -205,7 +205,7 @@ describe("repository > find options > locking", () => {
 
     it("should attach for key share lock statement on query if locking enabled", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!(connection.driver.options.type === "postgres")) {
                     return
                 }
@@ -237,7 +237,7 @@ describe("repository > find options > locking", () => {
 
     it("should attach SKIP LOCKED for pessimistic_read", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (
                     !(
                         connection.driver.options.type === "postgres" ||
@@ -290,7 +290,7 @@ describe("repository > find options > locking", () => {
 
     it("should attach NOWAIT for pessimistic_write", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (
                     !(
                         connection.driver.options.type === "postgres" ||
@@ -335,7 +335,7 @@ describe("repository > find options > locking", () => {
 
     it("should attach pessimistic write lock statement on query if locking enabled", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (
                     DriverUtils.isSQLiteFamily(connection.driver) ||
                     connection.driver.options.type === "spanner"
@@ -371,7 +371,7 @@ describe("repository > find options > locking", () => {
 
     it("should attach dirty read lock statement on query if locking enabled", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!(connection.driver.options.type === "mssql")) {
                     return
                 }
@@ -401,7 +401,7 @@ describe("repository > find options > locking", () => {
 
     it("should throw error if optimistic lock used with `find` method", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection
                     .getRepository(PostWithVersion)
                     .find({ lock: { mode: "optimistic", version: 1 } })
@@ -411,7 +411,7 @@ describe("repository > find options > locking", () => {
 
     it("should not throw error if optimistic lock used with `findOne` method", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.getRepository(PostWithVersion).findOne({
                     where: { id: 1 },
                     lock: { mode: "optimistic", version: 1 },
@@ -421,7 +421,7 @@ describe("repository > find options > locking", () => {
 
     it("should throw error if entity does not have version and update date columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new PostWithoutVersionAndUpdateDate()
                 post.title = "New post"
                 await connection.manager.save(post)
@@ -438,7 +438,7 @@ describe("repository > find options > locking", () => {
 
     it("should throw error if actual version does not equal expected version", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new PostWithVersion()
                 post.title = "New post"
                 await connection.manager.save(post)
@@ -455,7 +455,7 @@ describe("repository > find options > locking", () => {
 
     it("should not throw error if actual version and expected versions are equal", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new PostWithVersion()
                 post.title = "New post"
                 await connection.manager.save(post)
@@ -469,7 +469,7 @@ describe("repository > find options > locking", () => {
 
     it("should throw error if actual updated date does not equal expected updated date", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // skipped because inserted milliseconds are not always equal to what we say it to insert, unskip when needed
                 if (connection.driver.options.type === "mssql") {
                     return
@@ -494,7 +494,7 @@ describe("repository > find options > locking", () => {
 
     it("should not throw error if actual updated date and expected updated date are equal", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // skipped because inserted milliseconds are not always equal to what we say it to insert, unskip when needed
                 if (connection.driver.options.type === "mssql") {
                     return
@@ -513,7 +513,7 @@ describe("repository > find options > locking", () => {
 
     it("should work if both version and update date columns applied", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // skipped because inserted milliseconds are not always equal to what we say it to insert, unskip when needed
                 if (connection.driver.options.type === "mssql") {
                     return
@@ -545,7 +545,7 @@ describe("repository > find options > locking", () => {
 
     it("should throw error if pessimistic locking not supported by given driver", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!DriverUtils.isSQLiteFamily(connection.driver)) {
                     return
                 }
@@ -572,7 +572,7 @@ describe("repository > find options > locking", () => {
 
     it("should not allow empty array for lockTables", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!DriverUtils.isPostgresFamily(connection.driver)) {
                     return
                 }
@@ -592,7 +592,7 @@ describe("repository > find options > locking", () => {
 
     it("should throw error when specifying a table that is not part of the query", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!DriverUtils.isPostgresFamily(connection.driver)) {
                     return
                 }
@@ -614,7 +614,7 @@ describe("repository > find options > locking", () => {
 
     it("should allow on a left join", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!DriverUtils.isPostgresFamily(connection.driver)) {
                     return
                 }
@@ -645,7 +645,7 @@ describe("repository > find options > locking", () => {
 
     it("should allow using lockTables on all types of locking", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type !== "postgres") {
                     return
                 }
@@ -707,7 +707,7 @@ describe("repository > find options > locking", () => {
 
     it("should allow locking a relation of a relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!DriverUtils.isPostgresFamily(connection.driver)) {
                     return
                 }

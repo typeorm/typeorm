@@ -8,10 +8,10 @@ import {
 } from "../../utils/test-utils"
 
 describe("sqlite driver > enable wal", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [],
                 enabledDrivers: ["sqlite"],
                 driverSpecific: {
@@ -19,12 +19,12 @@ describe("sqlite driver > enable wal", () => {
                 },
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should set the journal mode as expected", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // if we come this far, test was successful as a connection was established
                 const result = await connection.query("PRAGMA journal_mode")
 

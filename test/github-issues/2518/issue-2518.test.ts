@@ -10,10 +10,10 @@ import { File } from "./entity/file.entity"
 import { TreeRepository } from "../../../src"
 
 describe("github issues > #2518 TreeRepository.findDescendantsTree does not load descendants when relationship id property exist", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 // data type text isn't compatible with oracle
                 enabledDrivers: [
@@ -29,12 +29,12 @@ describe("github issues > #2518 TreeRepository.findDescendantsTree does not load
             })),
     )
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load descendants when findDescendantsTree is called for a tree entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo: TreeRepository<File> =
                     connection.getTreeRepository(File)
                 const root: File = await repo.save({
@@ -59,7 +59,7 @@ describe("github issues > #2518 TreeRepository.findDescendantsTree does not load
 
     it("should load descendants when findTrees are called", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getTreeRepository(File)
                 const root: File = await repo.save({
                     id: 1,

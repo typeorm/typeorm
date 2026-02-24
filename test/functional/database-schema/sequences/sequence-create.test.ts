@@ -10,21 +10,21 @@ import { expect } from "chai"
 import { Person } from "./entity/Person"
 
 describe("sequences > creating a sequence and marking the column as generated", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Person],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("create table and check that primary key column is marked as generated", function () {
         it("should check that the primary key column is generated automatically", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const table = await queryRunner.getTable("person")
                     await queryRunner.release()

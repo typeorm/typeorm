@@ -9,16 +9,16 @@ import { Post, PostStatus } from "./entity/Post"
 import { ArrayContainedBy } from "../../../../src/find-options/operator/ArrayContainedBy"
 
 describe("find options > find operators > ArrayContainedBy", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 __dirname,
                 enabledDrivers: ["postgres", "cockroachdb"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(manager: EntityManager) {
         const post1 = new Post()
@@ -42,7 +42,7 @@ describe("find options > find operators > ArrayContainedBy", () => {
 
     it("should find entries in regular arrays", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const loadedPost1 = await connection.manager.find(Post, {
@@ -101,7 +101,7 @@ describe("find options > find operators > ArrayContainedBy", () => {
 
     it("should find entries in enum arrays", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const loadedPost1 = await connection.manager.find(Post, {

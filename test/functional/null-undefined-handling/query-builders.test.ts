@@ -11,10 +11,10 @@ import { Category } from "./entity/Category"
 import { expect } from "chai"
 
 describe("query builder > invalidWhereValuesBehavior", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,
@@ -26,8 +26,8 @@ describe("query builder > invalidWhereValuesBehavior", () => {
             },
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const category = new Category()
@@ -44,7 +44,7 @@ describe("query builder > invalidWhereValuesBehavior", () => {
     }
 
     it("should throw error for null values in UpdateQueryBuilder", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await prepareData(connection)
 
             try {
@@ -63,7 +63,7 @@ describe("query builder > invalidWhereValuesBehavior", () => {
     })
 
     it("should throw error for undefined values in UpdateQueryBuilder", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await prepareData(connection)
 
             try {
@@ -82,7 +82,7 @@ describe("query builder > invalidWhereValuesBehavior", () => {
     })
 
     it("should throw error for null values in DeleteQueryBuilder", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await prepareData(connection)
 
             try {
@@ -101,7 +101,7 @@ describe("query builder > invalidWhereValuesBehavior", () => {
     })
 
     it("should throw error for undefined values in DeleteQueryBuilder", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await prepareData(connection)
 
             try {
@@ -120,7 +120,7 @@ describe("query builder > invalidWhereValuesBehavior", () => {
     })
 
     it("should throw error for null values in SoftDeleteQueryBuilder", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await prepareData(connection)
 
             try {
@@ -139,7 +139,7 @@ describe("query builder > invalidWhereValuesBehavior", () => {
     })
 
     it("should throw error for undefined values in SoftDeleteQueryBuilder", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await prepareData(connection)
 
             try {
@@ -159,10 +159,10 @@ describe("query builder > invalidWhereValuesBehavior", () => {
 })
 
 describe("query builder > invalidWhereValuesBehavior sql-null", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,
@@ -173,8 +173,8 @@ describe("query builder > invalidWhereValuesBehavior sql-null", () => {
             },
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const category = new Category()
@@ -197,7 +197,7 @@ describe("query builder > invalidWhereValuesBehavior sql-null", () => {
     }
 
     it("should handle null as SQL NULL in UpdateQueryBuilder", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const { post2 } = await prepareData(connection)
 
             const result = await connection
@@ -217,7 +217,7 @@ describe("query builder > invalidWhereValuesBehavior sql-null", () => {
     })
 
     it("should handle null as SQL NULL in DeleteQueryBuilder", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const { post1 } = await prepareData(connection)
 
             const result = await connection
@@ -237,10 +237,10 @@ describe("query builder > invalidWhereValuesBehavior sql-null", () => {
 })
 
 describe("repository methods > invalidWhereValuesBehavior", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,
@@ -252,8 +252,8 @@ describe("repository methods > invalidWhereValuesBehavior", () => {
             },
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const category = new Category()
@@ -270,7 +270,7 @@ describe("repository methods > invalidWhereValuesBehavior", () => {
     }
 
     it("should throw error for null values in Repository.update()", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await prepareData(connection)
 
             try {
@@ -286,7 +286,7 @@ describe("repository methods > invalidWhereValuesBehavior", () => {
     })
 
     it("should throw error for null values in EntityManager.update()", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await prepareData(connection)
 
             try {
@@ -302,7 +302,7 @@ describe("repository methods > invalidWhereValuesBehavior", () => {
     })
 
     it("should throw error for null values in EntityManager.delete()", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await prepareData(connection)
 
             try {
@@ -316,7 +316,7 @@ describe("repository methods > invalidWhereValuesBehavior", () => {
     })
 
     it("should throw error for null values in Repository.delete()", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await prepareData(connection)
 
             try {
@@ -332,7 +332,7 @@ describe("repository methods > invalidWhereValuesBehavior", () => {
     })
 
     it("should throw error for null values in EntityManager.softDelete()", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             await prepareData(connection)
 
             try {

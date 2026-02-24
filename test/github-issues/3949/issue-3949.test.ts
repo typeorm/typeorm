@@ -8,17 +8,17 @@ import {
 import { Post } from "./entity/Post"
 
 describe("github issues > #3949 sqlite date hydration is susceptible to corruption", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
             enabledDrivers: ["sqlite", "better-sqlite3", "sqljs"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     const testDateString =
         (sqlDateString: string, jsDateString: string) =>
@@ -40,7 +40,7 @@ describe("github issues > #3949 sqlite date hydration is susceptible to corrupti
         // Append UTC to javascript date string, because while sqlite assumes naive date strings are UTC,
         // javascript assumes they are in local system time.
         Promise.all(
-            connections.map(
+            dataSources.map(
                 testDateString(
                     "2018-03-14 02:33:33.906",
                     "2018-03-14T02:33:33.906Z",
@@ -50,7 +50,7 @@ describe("github issues > #3949 sqlite date hydration is susceptible to corrupti
 
     it("should correctly read date column that was inserted raw in iso 8601 format", () =>
         Promise.all(
-            connections.map(
+            dataSources.map(
                 testDateString(
                     "2018-03-14T02:33:33.906+00:00",
                     "2018-03-14T02:33:33.906Z",

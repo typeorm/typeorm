@@ -13,20 +13,20 @@ import { Photo } from "./entity/Photo"
 
 describe("schema builder > custom-db-and-schema-sync", () => {
     describe("custom database", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Album, Photo],
                 enabledDrivers: ["mysql"],
                 dropSchema: true,
             })
         })
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should correctly sync tables with custom schema and database", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const photoMetadata = connection.getMetadata("photo")
                     const albumMetadata = connection.getMetadata("album")
@@ -105,20 +105,20 @@ describe("schema builder > custom-db-and-schema-sync", () => {
     })
 
     describe("custom schema", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres", "sap"],
                 entities: [Album, Photo],
                 dropSchema: true,
             })
         })
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should correctly sync tables with custom schema", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const photoMetadata = connection.getMetadata("photo")
                     const albumMetadata = connection.getMetadata("album")
@@ -195,7 +195,7 @@ describe("schema builder > custom-db-and-schema-sync", () => {
 
         it("should correctly sync tables with `public` schema", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const photoMetadata = connection.getMetadata("photo")
                     const albumMetadata = connection.getMetadata("album")
@@ -275,20 +275,20 @@ describe("schema builder > custom-db-and-schema-sync", () => {
     })
 
     describe("custom database and schema", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Album, Photo],
                 enabledDrivers: ["mssql"],
                 dropSchema: true,
             })
         })
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should correctly sync tables with custom schema and database", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const photoMetadata = connection.getMetadata("photo")
                     const albumMetadata = connection.getMetadata("album")

@@ -9,24 +9,24 @@ import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 
 /**
- * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
+ * Because lazy relations are overriding prototype is impossible to run these tests on multiple dataSources.
  * So we run tests only for mysql.
  */
 describe("named-tables-lazy-relations", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post, Category],
                 enabledDrivers: ["postgres"], // we can properly test lazy-relations only on one platform
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should persist and hydrate successfully on a relation without inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const categoryRepository = connection.getRepository(Category)
 
@@ -74,7 +74,7 @@ describe("named-tables-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a relation with inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const categoryRepository = connection.getRepository(Category)
 
@@ -135,7 +135,7 @@ describe("named-tables-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a many-to-one relation without inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 30; i++) {
@@ -176,7 +176,7 @@ describe("named-tables-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a many-to-one relation with inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 8; i++) {
@@ -217,7 +217,7 @@ describe("named-tables-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a one-to-many relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 8; i++) {
@@ -258,7 +258,7 @@ describe("named-tables-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a one-to-one relation owner side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 8; i++) {
@@ -298,7 +298,7 @@ describe("named-tables-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a one-to-one relation inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 8; i++) {

@@ -13,20 +13,20 @@ import { EditHistory } from "./entity/EditHistory"
 import { expect } from "chai"
 
 describe("mongodb > embedded columns", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post, Counters, Information],
                 enabledDrivers: ["mongodb"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert / update / remove entity with embedded correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save few posts
@@ -103,7 +103,7 @@ describe("mongodb > embedded columns", () => {
 
     it("should store results in correct camelCase format", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
 
                 // save few posts
@@ -134,7 +134,7 @@ describe("mongodb > embedded columns", () => {
 
     it("should transform results to correct boolean value", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
 
                 // save few posts
@@ -166,7 +166,7 @@ describe("mongodb > embedded columns", () => {
 
     it("should transform entity with nested embedded columns correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
 
                 // save few posts

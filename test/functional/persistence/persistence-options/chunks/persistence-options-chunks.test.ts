@@ -12,16 +12,16 @@ describe("persistence > persistence options > chunks", () => {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 __dirname,
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -29,7 +29,7 @@ describe("persistence > persistence options > chunks", () => {
 
     it("should save objects in chunks", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const posts: Post[] = []
                 for (let i = 0; i < 25000; i++) {
                     // CI falls on Node 4 with 100000 rows

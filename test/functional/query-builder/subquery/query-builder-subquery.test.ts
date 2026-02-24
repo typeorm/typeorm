@@ -14,15 +14,15 @@ describe("query builder > sub-query", () => {
     // Prepare
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Reusable functions
@@ -73,7 +73,7 @@ describe("query builder > sub-query", () => {
 
     it("should execute sub query in where string using subQuery method", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepare(connection)
 
                 const qb = connection
@@ -102,7 +102,7 @@ describe("query builder > sub-query", () => {
 
     it("should execute sub query in where function using subQuery method", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepare(connection)
 
                 const posts = await connection
@@ -130,7 +130,7 @@ describe("query builder > sub-query", () => {
 
     it("should execute sub query in where function using subQuery method", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepare(connection)
 
                 const posts = await connection
@@ -158,7 +158,7 @@ describe("query builder > sub-query", () => {
 
     it("should execute sub query using different query builder", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepare(connection)
 
                 const userQb = connection
@@ -184,7 +184,7 @@ describe("query builder > sub-query", () => {
 
     it("should execute sub query in from expression (using different query builder)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepare(connection)
 
                 const userQb = connection
@@ -214,7 +214,7 @@ describe("query builder > sub-query", () => {
 
     it("should execute sub query in from expression (using from's query builder)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepare(connection)
 
                 const userQb = connection
@@ -251,7 +251,7 @@ describe("query builder > sub-query", () => {
 
     it("should execute sub query in from expression (using from's query builder)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepare(connection)
 
                 const userQb = connection
@@ -288,7 +288,7 @@ describe("query builder > sub-query", () => {
 
     it("should execute sub query in from expression as second from expression", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepare(connection)
 
                 const posts = await connection
@@ -324,7 +324,7 @@ describe("query builder > sub-query", () => {
 
     it("should execute sub query in selects", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepare(connection)
 
                 const subQuery = connection
@@ -362,7 +362,7 @@ describe("query builder > sub-query", () => {
 
     it("should execute sub query in selects (using provided sub query builder)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepare(connection)
 
                 const posts = await connection
@@ -398,7 +398,7 @@ describe("query builder > sub-query", () => {
 
     it("should execute sub query in joins (using provided sub query builder)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepare(connection)
 
                 const subQuery = connection
@@ -431,7 +431,7 @@ describe("query builder > sub-query", () => {
 
     it("should execute sub query in joins with subquery factory (as selection)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepare(connection)
 
                 const joinConditionSubQuery = connection
@@ -469,7 +469,7 @@ describe("query builder > sub-query", () => {
 
     it("should execute sub query in joins as string (as selection)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepare(connection)
 
                 const joinConditionSubQuery = connection

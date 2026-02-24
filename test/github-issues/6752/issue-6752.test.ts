@@ -10,24 +10,24 @@ import { Block } from "./entity/Block"
 import { PlanOfRecord } from "./entity/PlanOfRecord"
 
 describe("github issues > #6752 column name not been find on unique index decorator", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Block, PlanOfRecord],
             schemaCreate: false,
             dropSchema: true,
             enabledDrivers: ["mssql"],
         })
-        await reloadTestingDatabases(connections)
+        await reloadTestingDatabases(dataSources)
     })
 
     after(async () => {
-        await closeTestingConnections(connections)
+        await closeTestingConnections(dataSources)
     })
 
     it("don't change anything", async () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const schemaBuilder = connection.driver.createSchemaBuilder()
                 const syncQueries = await schemaBuilder.log()
                 expect(syncQueries.downQueries).to.be.eql([])

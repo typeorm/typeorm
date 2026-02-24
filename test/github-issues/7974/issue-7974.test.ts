@@ -10,11 +10,11 @@ import { Category } from "./entity/Category"
 import { Site } from "./entity/Site"
 
 describe("github issues > #7974 Adding relations option to findTrees()", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Category, Site],
                 schemaCreate: true,
                 dropSchema: true,
@@ -22,8 +22,8 @@ describe("github issues > #7974 Adding relations option to findTrees()", () => {
     )
 
     beforeEach(async () => {
-        await reloadTestingDatabases(connections)
-        for (const connection of connections) {
+        await reloadTestingDatabases(dataSources)
+        for (const connection of dataSources) {
             const categoryRepo = connection.getRepository(Category)
             const siteRepo = connection.getRepository(Site)
 
@@ -96,11 +96,11 @@ describe("github issues > #7974 Adding relations option to findTrees()", () => {
         }
     })
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return tree without sites relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const result = await connection
                     .getTreeRepository(Category)
                     .findTrees()
@@ -120,7 +120,7 @@ describe("github issues > #7974 Adding relations option to findTrees()", () => {
 
     it("should return tree with sites relations", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const result = await connection
                     .getTreeRepository(Category)
                     .findTrees({ relations: ["sites"] })

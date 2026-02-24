@@ -9,21 +9,21 @@ import { Foo } from "./entity/Foo"
 import { Bar } from "./entity/Bar"
 
 describe("github issues > #4060 Fail to insert entity with Buffer type of primary column under some circumstances.", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             enabledDrivers: ["mysql", "mariadb"],
             entities: [Foo, Bar],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should save entities", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const id = Buffer.from("foobar")
                 const foo = new Foo()
                 foo.id = id

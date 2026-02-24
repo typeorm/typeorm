@@ -8,21 +8,21 @@ import { UserMeta } from "./entity/UserMeta"
 import { User } from "./entity/User"
 
 describe("github issues > #8158 Typeorm creates migration that creates already existing unique constraint", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 migrations: [],
                 schemaCreate: false,
                 dropSchema: true,
                 entities: [UserMeta, User],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
@@ -33,7 +33,7 @@ describe("github issues > #8158 Typeorm creates migration that creates already e
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const sqlInMemory = await connection.driver

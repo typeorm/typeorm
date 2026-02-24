@@ -12,19 +12,19 @@ import { Author } from "./entity/Author"
 import { Brackets } from "../../../../src/query-builder/Brackets"
 
 describe("query builder > brackets", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["sqlite", "postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should put parentheses in the SQL", () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const sql = connection
                 .createQueryBuilder(User, "user")
                 .where("user.isAdmin = :isAdmin", { isAdmin: true })
@@ -82,7 +82,7 @@ describe("query builder > brackets", () => {
 
     it("should put brackets correctly into WHERE expression", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User()
                 user1.firstName = "Timber"
                 user1.lastName = "Saw"
@@ -130,7 +130,7 @@ describe("query builder > brackets", () => {
 
     it("should be able to use join attributes in brackets", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const author = new Author()
                 author.name = "gioboa"
                 await connection.manager.save(author)

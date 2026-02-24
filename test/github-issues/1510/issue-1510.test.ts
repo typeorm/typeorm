@@ -46,9 +46,9 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
         },
     })
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        return (connections = await createTestingConnections({
+        return (dataSources = await createTestingConnections({
             entities: [
                 __dirname + "/entity/*{.js,.ts}",
                 UserEntity,
@@ -57,12 +57,12 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
             enabledDrivers: ["mongodb"],
         }))
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("throws an error because there is no object id defined", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(UserWithoutObjectIdEntity)
 
                 try {
@@ -79,7 +79,7 @@ describe("github issues > #1510 entity schema does not support mode=objectId", (
 
     it("should create entities without throwing an error when objectId is defined", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(UserEntity)
 
                 const result: InsertResult = await repo.insert({

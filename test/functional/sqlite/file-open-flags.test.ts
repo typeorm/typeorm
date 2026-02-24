@@ -9,10 +9,10 @@ import {
 const sqlite3 = require("sqlite3")
 
 describe("sqlite driver > file open flags", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 name: "file:./temp/sqlitedb-memory.db?mode=memory",
                 entities: [],
                 enabledDrivers: ["sqlite"],
@@ -25,12 +25,12 @@ describe("sqlite driver > file open flags", () => {
                 },
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should open a DB with flags as expected", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // if we come this far, test was successful as a connection was established
                 const result = await connection.query("PRAGMA journal_mode")
 

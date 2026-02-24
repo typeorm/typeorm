@@ -8,10 +8,10 @@ import {
 } from "../../utils/test-utils"
 
 describe("sqlite driver > busy-timeout", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [],
                 enabledDrivers: ["sqlite"],
                 driverSpecific: {
@@ -19,12 +19,12 @@ describe("sqlite driver > busy-timeout", () => {
                 },
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should set the busy_timeout as expected", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const result = await connection.query("PRAGMA busy_timeout")
                 expect(result).to.eql([{ timeout: 2000 }])
             }),

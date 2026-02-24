@@ -10,19 +10,19 @@ import {
 import { Post } from "./entity/Post"
 
 describe("column kinds > update date column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("update date column should automatically be set by a database", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new post
@@ -42,7 +42,7 @@ describe("column kinds > update date column", () => {
 
     it("update column should not update if no changes were detected", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new post
@@ -69,7 +69,7 @@ describe("column kinds > update date column", () => {
 
     it("update date column can also be manually set by user", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 const updatedAt = new Date(
@@ -94,7 +94,7 @@ describe("column kinds > update date column", () => {
 
     it("update date column should be updated automatically on every change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new post
@@ -128,7 +128,7 @@ describe("column kinds > update date column", () => {
 
     it("update date column should set a custom date when specified", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new post

@@ -10,20 +10,20 @@ import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 
 describe("relations > multiple-primary-keys > many-to-one", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("owning side", () => {
         it("should load related entity when JoinColumn is not specified", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
@@ -83,7 +83,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
 
         it("should load related entity when JoinColumn is specified without options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
@@ -156,7 +156,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
 
         it("should load related entity when JoinColumn is specified with options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
@@ -226,7 +226,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
 
         it("should load related entity when JoinColumn references on to non-primary columns", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     category1.type = "common-category"
@@ -312,7 +312,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
     describe("inverse side", () => {
         it("should load related entity when JoinColumn is not specified", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post1 = new Post()
                     post1.title = "About BMW"
                     await connection.manager.save(post1)
@@ -383,7 +383,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
 
         it("should load related entity when JoinColumn is specified without options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post1 = new Post()
                     post1.title = "About BMW"
                     await connection.manager.save(post1)
@@ -473,7 +473,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
 
         it("should load related entity when JoinColumn is specified with options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post1 = new Post()
                     post1.title = "About BMW"
                     await connection.manager.save(post1)
@@ -558,7 +558,7 @@ describe("relations > multiple-primary-keys > many-to-one", () => {
 
         it("should load related entity when JoinColumn references on to non-primary columns", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post1 = new Post()
                     post1.title = "About BMW"
                     await connection.manager.save(post1)

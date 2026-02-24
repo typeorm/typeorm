@@ -9,20 +9,20 @@ import {
 import { FeatureWithoutSRID, FeatureWithSRID } from "./entity/Feature"
 
 describe("column kinds > geometry column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mssql"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("geometry column with SRID defined should be saved without error for valid WKT input", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const featureRepository =
                     connection.getRepository(FeatureWithSRID)
 
@@ -46,7 +46,7 @@ describe("column kinds > geometry column", () => {
 
     it("geometry column with SRID defined should be updated without error for valid WKT input", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const featureRepository =
                     connection.getRepository(FeatureWithSRID)
 
@@ -83,7 +83,7 @@ describe("column kinds > geometry column", () => {
 
     it("geometry column with no SRID should be saved without error for valid WKT input", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const featureRepository =
                     connection.getRepository(FeatureWithoutSRID)
 
@@ -105,7 +105,7 @@ describe("column kinds > geometry column", () => {
 
     it("geometry column with no SRID should be updated without error for valid WKT input", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const featureRepository =
                     connection.getRepository(FeatureWithoutSRID)
 

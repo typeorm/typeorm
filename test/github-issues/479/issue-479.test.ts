@@ -9,19 +9,19 @@ import { expect } from "chai"
 import { Car } from "./entity/Car"
 
 describe("github issues > #479 orWhere breaks skip / take", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("where expression of the skip/take should not break original where query", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const car1 = new Car()
                 car1.name = "Test1"
                 const car2 = new Car()

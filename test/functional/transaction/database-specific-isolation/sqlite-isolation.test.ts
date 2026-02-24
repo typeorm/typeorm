@@ -10,20 +10,20 @@ import { Category } from "./entity/Category"
 import { expect } from "chai"
 
 describe("transaction > transaction with sqlite connection partial isolation support", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["sqlite", "better-sqlite3"], // todo: for some reasons mariadb tests are not passing here
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should execute all operations in a single transaction with READ UNCOMMITTED isolation level", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
@@ -65,7 +65,7 @@ describe("transaction > transaction with sqlite connection partial isolation sup
 
     it("should execute all operations in a single transaction with SERIALIZABLE isolation level", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
