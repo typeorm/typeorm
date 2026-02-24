@@ -19,17 +19,6 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
         }
     })
 
-    it("should create the whole path to database file", async function () {
-        dataSource = new DataSource({
-            name: "better-sqlite3",
-            type: "better-sqlite3",
-            database: path,
-        })
-        await dataSource.initialize()
-
-        expect(dataSource.isInitialized).to.equal(true)
-    })
-
     it("should create the whole path to database file for better-sqlite3", async function () {
         // run test only if better-sqlite3 is enabled in ormconfig
         const isEnabled = getTypeOrmConfig().some(
