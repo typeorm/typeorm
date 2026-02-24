@@ -1,6 +1,7 @@
 build/
 coverage/
-node_modules/
-
+extra/
+src/driver/mongodb/typings.ts
+src/driver/mongodb/bson.typings.ts
 gulpfile.ts
 pnpm-lock.yaml

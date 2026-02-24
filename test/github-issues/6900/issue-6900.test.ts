@@ -7,7 +7,7 @@ import {
 import { MongoDriver } from "../../../src/driver/mongodb/MongoDriver"
 import { DataSource, DataSourceOptions, MongoClient } from "../../../src"
 import { Warn } from "./entity/Warn"
-import { MongoConnectionOptions } from "../../../src/driver/mongodb/MongoConnectionOptions"
+import { MongoDataSourceOptions } from "../../../src/driver/mongodb/MongoDataSourceOptions"
 
 describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given database, creates new database "test" instead', () => {
     const connections: DataSource[] = []
@@ -25,7 +25,7 @@ describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given 
         }
 
         const host: string =
-            (options[0] as MongoConnectionOptions).host || "localhost"
+            (options[0] as MongoDataSourceOptions).host || "localhost"
 
         const dataSource = new DataSource({
             ...options[0],
@@ -54,7 +54,7 @@ describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given 
         }
 
         const host: string =
-            (options[0] as MongoConnectionOptions).host || "localhost"
+            (options[0] as MongoDataSourceOptions).host || "localhost"
 
         const dataSource = new DataSource({
             ...options[0],

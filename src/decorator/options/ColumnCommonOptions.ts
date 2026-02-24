@@ -17,7 +17,7 @@ export interface ColumnCommonOptions {
 
     /**
      * Indicates if this column is a primary key.
-     * Same can be achieved when @PrimaryColumn decorator is used.
+     * Same can be achieved when `@PrimaryColumn` decorator is used.
      */
     primary?: boolean
 
