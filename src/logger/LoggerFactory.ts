@@ -27,7 +27,7 @@ export class LoggerFactory {
     ): Logger {
         if (ObjectUtils.isObject(logger)) {
             if (
-                options &&
+                options !== undefined &&
                 typeof (logger as Logger).setOptions === "function"
             ) {
                 ;(logger as Logger).setOptions!(options)
