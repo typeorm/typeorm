@@ -1,3 +1,4 @@
+import { LoggerOptions } from "./LoggerOptions"
 import { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
@@ -48,6 +49,12 @@ export interface Logger {
         message: any,
         queryRunner?: QueryRunner,
     ): any
+
+    /**
+     * Sets logger options. Used to pass DataSource logging options
+     * to custom logger instances.
+     */
+    setOptions?(options: LoggerOptions): void
 }
 
 /**

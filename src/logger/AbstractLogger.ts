@@ -26,9 +26,7 @@ export abstract class AbstractLogger implements Logger {
      * @param options
      */
     setOptions(options: LoggerOptions) {
-        if (this.options === undefined) {
-            this.options = options
-        }
+        this.options = options
     }
 
     /**
