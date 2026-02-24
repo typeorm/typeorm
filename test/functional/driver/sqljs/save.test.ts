@@ -6,8 +6,8 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../utils/test-utils"
+import { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("sqljs driver > save", () => {
