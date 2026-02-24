@@ -1155,9 +1155,9 @@ export class MongoEntityManager extends EntityManager {
         const entityCache = new Map<string, Entity>()
         const transformer = new DocumentToEntityTransformer()
 
-        const originalToArray = cursor.toArray
+        const originalToArray = cursor.toArray.bind(cursor)
         cursor.toArray = () =>
-            originalToArray.call(cursor).then(async (results: any[]) => {
+            originalToArray().then(async (results: any[]) => {
                 const transformedResults = transformer.transformAll(
                     results,
                     metadata,
@@ -1191,15 +1191,13 @@ export class MongoEntityManager extends EntityManager {
                         newlyLoadedEntities,
                     )
                 }
-                if (cursor.closed) {
-                    entityCache.clear() // cursor is exhausted
-                }
+                entityCache.clear()
                 return entities
             })
 
-        const originalNext = cursor.next
+        const originalNext = cursor.next.bind(cursor)
         cursor.next = () =>
-            originalNext.call(cursor).then(async (result: any) => {
+            originalNext().then(async (result: any) => {
                 if (!result) {
                     entityCache.clear() // cursor is exhausted
                     return null
