@@ -108,4 +108,37 @@ describe("find options > select with @RelationId", () => {
                 posts[0].categoryId.should.be.eql(1)
             }),
         ))
+
+    it("should be able to select @RelationId() on OneToMany side using find()", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource)
+
+                const categories = await dataSource.manager.find(Category, {
+                    select: { id: true, name: true, postIds: true },
+                })
+
+                categories.length.should.be.eql(1)
+                categories[0].id.should.be.eql(1)
+                categories[0].name.should.be.eql("Science")
+                categories[0].postIds.should.be.eql([1])
+            }),
+        ))
+
+    it("should be able to select @RelationId() on OneToMany side using findAndCount()", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource)
+
+                const [categories, count] =
+                    await dataSource.manager.findAndCount(Category, {
+                        select: { id: true, postIds: true },
+                    })
+
+                count.should.be.eql(1)
+                categories.length.should.be.eql(1)
+                categories[0].id.should.be.eql(1)
+                categories[0].postIds.should.be.eql([1])
+            }),
+        ))
 })

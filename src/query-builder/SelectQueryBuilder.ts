@@ -4092,7 +4092,18 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     relationId.relation.isOneToOneOwner
                 ) {
                     for (const joinColumn of relationId.relation.joinColumns) {
-                        this.selects.push(alias + "." + joinColumn.propertyPath)
+                        const selectPath = alias + "." + joinColumn.propertyPath
+                        if (this.selects.indexOf(selectPath) === -1) {
+                            this.selects.push(selectPath)
+                        }
+                    }
+                } else {
+                    for (const primaryColumn of metadata.primaryColumns) {
+                        const selectPath =
+                            alias + "." + primaryColumn.propertyPath
+                        if (this.selects.indexOf(selectPath) === -1) {
+                            this.selects.push(selectPath)
+                        }
                     }
                 }
 
