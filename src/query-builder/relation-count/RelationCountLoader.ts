@@ -10,7 +10,7 @@ export class RelationCountLoader {
     // -------------------------------------------------------------------------
 
     constructor(
-        protected connection: DataSource,
+        protected dataSource: DataSource,
         protected queryRunner: QueryRunner | undefined,
         protected relationCountAttributes: RelationCountAttribute[],
     ) {}
@@ -68,7 +68,7 @@ export class RelationCountLoader {
 
                     // generate query:
                     // SELECT category.post as parentId, COUNT(*) AS cnt FROM category category WHERE category.post IN (1, 2) GROUP BY category.post
-                    const qb = this.connection.createQueryBuilder(
+                    const qb = this.dataSource.createQueryBuilder(
                         this.queryRunner,
                     )
                     qb.select(
@@ -187,7 +187,7 @@ export class RelationCountLoader {
                         "." +
                         inverseJoinColumnName
 
-                    const qb = this.connection.createQueryBuilder(
+                    const qb = this.dataSource.createQueryBuilder(
                         this.queryRunner,
                     )
                     qb.select(

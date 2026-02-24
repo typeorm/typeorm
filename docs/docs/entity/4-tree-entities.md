@@ -224,7 +224,7 @@ const trees = await dataSource.manager.getTreeRepository(Category).findTrees()
 
 There are other special methods to work with tree entities through `TreeRepository`:
 
--   `findTrees` - Returns all trees in the database with all their children, children of children, etc.
+- `findTrees` - Returns all trees in the database with all their children, children of children, etc.
 
 ```typescript
 const treeCategories = await dataSource.manager
@@ -238,8 +238,8 @@ const treeCategoriesWithLimitedDepth = await dataSource.manager
 // returns root categories with sub categories inside, up to depth 2
 ```
 
--   `findRoots` - Roots are entities that have no ancestors. Finds them all.
-    Does not load children's leaves.
+- `findRoots` - Roots are entities that have no ancestors. Finds them all.
+  Does not load children's leaves.
 
 ```typescript
 const rootCategories = await dataSource.manager
@@ -248,7 +248,7 @@ const rootCategories = await dataSource.manager
 // returns root categories without sub categories inside
 ```
 
--   `findDescendants` - Gets all children (descendants) of the given entity. Returns them all in a flat array.
+- `findDescendants` - Gets all children (descendants) of the given entity. Returns them all in a flat array.
 
 ```typescript
 const children = await dataSource.manager
@@ -257,7 +257,7 @@ const children = await dataSource.manager
 // returns all direct subcategories (without its nested categories) of a parentCategory
 ```
 
--   `findDescendantsTree` - Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
+- `findDescendantsTree` - Gets all children (descendants) of the given entity. Returns them in a tree - nested into each other.
 
 ```typescript
 const childrenTree = await repository.findDescendantsTree(parentCategory)
@@ -269,7 +269,7 @@ const childrenTreeWithLimitedDepth = await repository.findDescendantsTree(
 // returns all direct subcategories (with its nested categories) of a parentCategory, up to depth 2
 ```
 
--   `createDescendantsQueryBuilder` - Creates a query builder used to get descendants of the entities in a tree.
+- `createDescendantsQueryBuilder` - Creates a query builder used to get descendants of the entities in a tree.
 
 ```typescript
 const children = await repository
@@ -282,7 +282,7 @@ const children = await repository
     .getMany()
 ```
 
--   `countDescendants` - Gets the number of descendants of the entity.
+- `countDescendants` - Gets the number of descendants of the entity.
 
 ```typescript
 const childrenCount = await dataSource.manager
@@ -290,14 +290,14 @@ const childrenCount = await dataSource.manager
     .countDescendants(parentCategory)
 ```
 
--   `findAncestors` - Gets all parents (ancestors) of the given entity. Returns them all in a flat array.
+- `findAncestors` - Gets all parents (ancestors) of the given entity. Returns them all in a flat array.
 
 ```typescript
 const parents = await repository.findAncestors(childCategory)
 // returns all direct childCategory's parent categories (without "parent of parents")
 ```
 
--   `findAncestorsTree` - Gets all parents (ancestors) of the given entity. Returns them in a tree - nested into each other.
+- `findAncestorsTree` - Gets all parents (ancestors) of the given entity. Returns them in a tree - nested into each other.
 
 ```typescript
 const parentsTree = await dataSource.manager
@@ -306,7 +306,7 @@ const parentsTree = await dataSource.manager
 // returns all direct childCategory's parent categories (with "parent of parents")
 ```
 
--   `createAncestorsQueryBuilder` - Creates a query builder used to get the ancestors of the entities in a tree.
+- `createAncestorsQueryBuilder` - Creates a query builder used to get the ancestors of the entities in a tree.
 
 ```typescript
 const parents = await repository
@@ -315,7 +315,7 @@ const parents = await repository
     .getMany()
 ```
 
--   `countAncestors` - Gets the number of ancestors of the entity.
+- `countAncestors` - Gets the number of ancestors of the entity.
 
 ```typescript
 const parentsCount = await dataSource.manager
@@ -325,16 +325,16 @@ const parentsCount = await dataSource.manager
 
 For the following methods, options can be passed:
 
--   findTrees
--   findRoots
--   findDescendants
--   findDescendantsTree
--   findAncestors
--   findAncestorsTree
+- findTrees
+- findRoots
+- findDescendants
+- findDescendantsTree
+- findAncestors
+- findAncestorsTree
 
 The following options are available:
 
--   `relations` - Indicates what relations of entity should be loaded (simplified left join form).
+- `relations` - Indicates what relations of entity should be loaded (simplified left join form).
 
 Examples:
 

@@ -7,7 +7,7 @@ import {
 import { expect } from "chai"
 import { join } from "path"
 import { DataSource } from "../../../../src"
-import { BetterSqlite3ConnectionOptions } from "../../../../src/driver/better-sqlite3/BetterSqlite3ConnectionOptions"
+import { BetterSqlite3DataSourceOptions } from "../../../../src/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
 
 const pathToBetterSqliteNode = join(
     __dirname,
@@ -35,7 +35,7 @@ describe("option nativeBinding for better-sqlite3", () => {
                 expect(
                     (
                         connection.driver
-                            .options as BetterSqlite3ConnectionOptions
+                            .options as BetterSqlite3DataSourceOptions
                     ).nativeBinding,
                 ).to.be.eql(pathToBetterSqliteNode)
             }),
