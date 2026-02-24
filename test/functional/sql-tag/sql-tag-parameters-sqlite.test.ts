@@ -14,7 +14,7 @@ describe("sql tag parameters (sqlite)", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [Example],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))

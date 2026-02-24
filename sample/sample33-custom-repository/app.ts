@@ -3,14 +3,14 @@ import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"
 import { PostRepository } from "./repository/PostRepository"
 import { User } from "./entity/User"
-import { Sample33CustomRepositoryConnection } from "./connection"
+import { Sample33CustomRepositoryDataSource } from "./data-source"
 
 // testing dynamic options set
-Sample33CustomRepositoryConnection.setOptions({
+Sample33CustomRepositoryDataSource.setOptions({
     entities: [Post, Author, User],
 })
 
-Sample33CustomRepositoryConnection.connect()
+Sample33CustomRepositoryDataSource.initialize()
     .then(async () => {
         const post = PostRepository.create()
         post.title = "Hello Custom Repositories!"
