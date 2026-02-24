@@ -1318,6 +1318,25 @@ export class SqlServerQueryRunner
             if (newColumn.length !== oldColumn.length) {
                 // Use ALTER COLUMN instead of DROP+ADD to preserve existing data
                 // when only the length changes (same base type).
+                // Use oldColumn.name since rename (if any) has not happened yet.
+
+                // SQL Server requires indexes and unique constraints to be
+                // dropped before altering a column's type/length.
+                const columnIndices = clonedTable.indices.filter(
+                    (index) => index.columnNames.indexOf(oldColumn.name) !== -1,
+                )
+                const columnUniques = clonedTable.uniques.filter(
+                    (unique) =>
+                        unique.columnNames.indexOf(oldColumn.name) !== -1,
+                )
+
+                for (const index of columnIndices) {
+                    upQueries.push(this.dropIndexSql(table, index))
+                }
+                for (const unique of columnUniques) {
+                    upQueries.push(this.dropUniqueConstraintSql(table, unique))
+                }
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1331,6 +1350,27 @@ export class SqlServerQueryRunner
                         )}`,
                     ),
                 )
+
+                // Recreate indexes and unique constraints after the ALTER.
+                for (const unique of columnUniques) {
+                    upQueries.push(
+                        this.createUniqueConstraintSql(table, unique),
+                    )
+                }
+                for (const index of columnIndices) {
+                    upQueries.push(this.createIndexSql(table, index))
+                }
+
+                // Down queries: drop indexes, alter back, recreate indexes.
+                for (const index of columnIndices) {
+                    downQueries.push(this.dropIndexSql(table, index))
+                }
+                for (const unique of columnUniques) {
+                    downQueries.push(
+                        this.dropUniqueConstraintSql(table, unique),
+                    )
+                }
+
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(
@@ -1344,6 +1384,15 @@ export class SqlServerQueryRunner
                         )}`,
                     ),
                 )
+
+                for (const unique of columnUniques) {
+                    downQueries.push(
+                        this.createUniqueConstraintSql(table, unique),
+                    )
+                }
+                for (const index of columnIndices) {
+                    downQueries.push(this.createIndexSql(table, index))
+                }
 
                 // update cloned table column length
                 const clonedColumn = clonedTable.columns.find(

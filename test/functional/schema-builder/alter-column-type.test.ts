@@ -5,7 +5,7 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { Album } from "./entity/Album"
+import { AlterColumnEntity } from "./entity/AlterColumnEntity"
 
 describe("schema builder > alter column type", () => {
     let connections: DataSource[]
@@ -20,7 +20,7 @@ describe("schema builder > alter column type", () => {
                     "mariadb",
                     "mssql",
                 ],
-                entities: [Album],
+                entities: [AlterColumnEntity],
                 schemaCreate: true,
                 dropSchema: true,
             })),
@@ -30,7 +30,7 @@ describe("schema builder > alter column type", () => {
     it("should generate ALTER COLUMN instead of DROP+ADD when column length changes", async () => {
         await Promise.all(
             connections.map(async (connection) => {
-                const meta = connection.getMetadata(Album)
+                const meta = connection.getMetadata(AlterColumnEntity)
                 const col = meta.columns.find(
                     (c) => c.propertyName === "title",
                 )!
@@ -88,7 +88,7 @@ describe("schema builder > alter column type", () => {
     it("should use DROP+ADD for incompatible type changes to avoid cast errors", async () => {
         await Promise.all(
             connections.map(async (connection) => {
-                const meta = connection.getMetadata(Album)
+                const meta = connection.getMetadata(AlterColumnEntity)
                 const col = meta.columns.find(
                     (c) => c.propertyName === "description",
                 )!

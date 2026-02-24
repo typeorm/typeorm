@@ -1376,16 +1376,60 @@ export class CockroachQueryRunner
             if (oldColumn.length !== newColumn.length) {
                 // Use ALTER COLUMN TYPE instead of DROP+ADD to preserve existing data
                 // when only the length changes (same base type).
+                // Use oldColumn.name since rename (if any) has not happened yet.
                 const newFullType = this.driver.createFullType(newColumn)
                 const oldFullType = this.driver.createFullType(oldColumn)
+
+                // Drop default before ALTER TYPE to avoid cast errors.
+                if (
+                    oldColumn.default !== null &&
+                    oldColumn.default !== undefined
+                ) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                oldColumn.name
+                            }" DROP DEFAULT`,
+                        ),
+                    )
+                }
 
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
+                            oldColumn.name
                         }" TYPE ${newFullType}`,
                     ),
                 )
+
+                // Re-apply default after ALTER TYPE if one exists on the new column.
+                if (
+                    newColumn.default !== null &&
+                    newColumn.default !== undefined
+                ) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                oldColumn.name
+                            }" SET DEFAULT ${newColumn.default}`,
+                        ),
+                    )
+                }
+
+                // Down: reverse the type change.
+                if (
+                    newColumn.default !== null &&
+                    newColumn.default !== undefined
+                ) {
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                oldColumn.name
+                            }" DROP DEFAULT`,
+                        ),
+                    )
+                }
+
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
@@ -1393,6 +1437,19 @@ export class CockroachQueryRunner
                         }" TYPE ${oldFullType}`,
                     ),
                 )
+
+                if (
+                    oldColumn.default !== null &&
+                    oldColumn.default !== undefined
+                ) {
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                oldColumn.name
+                            }" SET DEFAULT ${oldColumn.default}`,
+                        ),
+                    )
+                }
 
                 // update cloned table column length
                 const clonedColumn = clonedTable.columns.find(

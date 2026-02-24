@@ -1112,7 +1112,45 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (oldColumn.length !== newColumn.length) {
+            if (
+                oldColumn.length !== newColumn.length &&
+                newColumn.name !== oldColumn.name
+            ) {
+                // When both length and name change, use a single CHANGE statement
+                // to apply the new name AND the new column definition together.
+                // Separate MODIFY + CHANGE would fail because MODIFY targets the
+                // new name (not yet renamed) and CHANGE would revert the type/length.
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            oldColumn.name
+                        }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
+                            newColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            newColumn.name
+                        }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                            oldColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+
+                // update cloned table column length
+                const clonedColumn = clonedTable.columns.find(
+                    (column) => column.name === oldColumn.name,
+                )
+                if (clonedColumn) {
+                    clonedColumn.length = newColumn.length
+                }
+            } else if (oldColumn.length !== newColumn.length) {
                 // Use MODIFY COLUMN instead of DROP+ADD to preserve existing data
                 // when only the length changes (same base type).
                 upQueries.push(
@@ -1134,8 +1172,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     clonedColumn.length = newColumn.length
                 }
             }
-            if (newColumn.name !== oldColumn.name) {
-                // We don't change any column properties, just rename it.
+            if (
+                newColumn.name !== oldColumn.name &&
+                oldColumn.length === newColumn.length
+            ) {
+                // Only rename (no length change) — use CHANGE with old column definition.
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
