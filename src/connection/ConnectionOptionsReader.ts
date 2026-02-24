@@ -51,6 +51,7 @@ export class ConnectionOptionsReader {
     /**
      * Gets a connection with a given name read from ormconfig.
      * If connection with such name would not be found then it throw error.
+     * @param name
      */
     async get(name: string): Promise<DataSourceOptions> {
         const allOptions = await this.all()
@@ -68,6 +69,7 @@ export class ConnectionOptionsReader {
 
     /**
      * Checks if there is a TypeORM configuration file.
+     * @param name
      */
     async has(name: string): Promise<boolean> {
         const allOptions = await this.load()
@@ -203,6 +205,7 @@ export class ConnectionOptionsReader {
 
     /**
      * Normalize connection options.
+     * @param connectionOptions
      */
     protected normalizeConnectionOptions(
         connectionOptions: DataSourceOptions | DataSourceOptions[],
@@ -254,10 +257,7 @@ export class ConnectionOptionsReader {
             }
 
             // make database path file in sqlite relative to package.json
-            if (
-                options.type === "sqlite" ||
-                options.type === "better-sqlite3"
-            ) {
+            if (options.type === "better-sqlite3") {
                 if (
                     typeof options.database === "string" &&
                     !isAbsolute(options.database) &&

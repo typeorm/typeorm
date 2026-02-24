@@ -335,6 +335,8 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets.
+     * @param array
+     * @param target
      */
     protected filterByTarget<T extends { target: Function | string }>(
         array: T[],
@@ -349,6 +351,8 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate property names.
+     * @param array
+     * @param target
      */
     protected filterByTargetAndWithoutDuplicateProperties<
         T extends { target: Function | string; propertyName: string },
@@ -379,6 +383,8 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate relation property names.
+     * @param array
+     * @param target
      */
     protected filterByTargetAndWithoutDuplicateRelationProperties<
         T extends RelationMetadataArgs,
@@ -411,6 +417,8 @@ export class MetadataArgsStorage {
 
     /**
      * Filters given array by a given target or targets and prevents duplicate embedded property names.
+     * @param array
+     * @param target
      */
     protected filterByTargetAndWithoutDuplicateEmbeddedProperties<
         T extends EmbeddedMetadataArgs,
