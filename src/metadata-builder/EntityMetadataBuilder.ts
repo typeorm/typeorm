@@ -961,6 +961,40 @@ export class EntityMetadataBuilder {
         entityMetadata.eagerRelations = entityMetadata.relations.filter(
             (relation) => relation.isEager,
         )
+
+        // For STI parent entities, build a per-child scoped map of eager relations.
+        // This prevents relations declared on one child from being eagerly loaded
+        // when querying a sibling child entity.
+        if (
+            entityMetadata.inheritancePattern === "STI" &&
+            entityMetadata.childEntityMetadatas.length > 0
+        ) {
+            // Collect targets that are NOT child entities (i.e., the parent and its own ancestors)
+            const childTargets = new Set(
+                entityMetadata.childEntityMetadatas.map((m) => m.target),
+            )
+
+            for (const childMetadata of entityMetadata.childEntityMetadatas) {
+                const scopedEager = entityMetadata.eagerRelations.filter(
+                    (relation) => {
+                        if (!relation.declaringTarget) return true
+                        // Include if declared on the child itself
+                        if (relation.declaringTarget === childMetadata.target)
+                            return true
+                        // Include if declared on the parent (not on any child)
+                        if (!childTargets.has(relation.declaringTarget))
+                            return true
+                        // Exclude — it belongs to a different child
+                        return false
+                    },
+                )
+                entityMetadata.childEagerRelationsMap.set(
+                    childMetadata.target,
+                    scopedEager,
+                )
+            }
+        }
+
         entityMetadata.lazyRelations = entityMetadata.relations.filter(
             (relation) => relation.isLazy,
         )

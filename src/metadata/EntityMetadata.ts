@@ -335,8 +335,18 @@ export class EntityMetadata {
 
     /**
      * List of eager relations this metadata has.
+     * For STI parent entities this contains eager relations from ALL children.
+     * Use `scopedEagerRelations` to get only relations relevant to a specific child type.
      */
     eagerRelations: RelationMetadata[] = []
+
+    /**
+     * For STI parent entities, maps each child target to its scoped eager relations.
+     * This allows eager-loading only the relations that belong to a specific child type
+     * (plus those inherited from the parent), avoiding cross-child relation leakage.
+     */
+    childEagerRelationsMap: Map<Function | string, RelationMetadata[]> =
+        new Map()
 
     /**
      * List of eager relations this metadata has.
@@ -874,6 +884,34 @@ export class EntityMetadata {
             }
         })
         return relationsAndValues
+    }
+
+    /**
+     * Returns eager relations scoped to the current entity type.
+     * For STI child entities, this filters out eager relations declared on
+     * sibling child entities, returning only relations from the parent plus
+     * those declared on this specific child.
+     * For non-STI entities, returns all eager relations unchanged.
+     */
+    getScopedEagerRelations(): RelationMetadata[] {
+        // For STI child entities, check if the parent has a scoped map
+        if (
+            this.tableType === "entity-child" &&
+            this.parentEntityMetadata?.childEagerRelationsMap.size > 0
+        ) {
+            return (
+                this.parentEntityMetadata.childEagerRelationsMap.get(
+                    this.target,
+                ) ?? this.eagerRelations
+            )
+        }
+
+        // For STI parent entities queried directly, return ALL eager relations
+        // because the result set may contain any child type. The per-row
+        // discriminator-based metadata switching in the transformer will
+        // correctly assign relations to the right entity instances.
+        // Non-STI entities also just return all eager relations.
+        return this.eagerRelations
     }
 
     /**

@@ -4244,8 +4244,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     relationValue === true ||
                     typeof relationValue === "object"
                 ) {
-                    relation.inverseEntityMetadata.eagerRelations.forEach(
-                        (eagerRelation) => {
+                    relation.inverseEntityMetadata
+                        .getScopedEagerRelations()
+                        .forEach((eagerRelation) => {
                             let eagerRelationJoinAlias =
                                 joinAlias +
                                 "_" +
@@ -4283,8 +4284,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                     joinAlias,
                                 )
                             }
-                        },
-                    )
+                        })
                 }
 
                 if (typeof relationValue === "object") {
