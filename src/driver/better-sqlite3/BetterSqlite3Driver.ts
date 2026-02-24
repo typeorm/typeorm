@@ -1,15 +1,15 @@
 import fs from "fs/promises"
 import path from "path"
+import { DataSource } from "../../data-source"
 import { DriverPackageNotInstalledError } from "../../error"
 import { PlatformTools } from "../../platform/PlatformTools"
-import { DataSource } from "../../data-source"
-import { ColumnType } from "../types/ColumnTypes"
 import { QueryRunner } from "../../query-runner/QueryRunner"
-import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { BetterSqlite3ConnectionOptions } from "./BetterSqlite3ConnectionOptions"
-import { BetterSqlite3QueryRunner } from "./BetterSqlite3QueryRunner"
-import { ReplicationMode } from "../types/ReplicationMode"
 import { filepathToName, isAbsolute } from "../../util/PathUtils"
+import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
+import { ColumnType } from "../types/ColumnTypes"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { BetterSqlite3DataSourceOptions } from "./BetterSqlite3DataSourceOptions"
+import { BetterSqlite3QueryRunner } from "./BetterSqlite3QueryRunner"
 
 /**
  * Organizes communication with sqlite DBMS.
@@ -22,7 +22,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     /**
      * Connection options.
      */
-    options: BetterSqlite3ConnectionOptions
+    options: BetterSqlite3DataSourceOptions
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -32,7 +32,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
         super(connection)
 
         this.connection = connection
-        this.options = connection.options as BetterSqlite3ConnectionOptions
+        this.options = connection.options as BetterSqlite3DataSourceOptions
         this.database = this.options.database
 
         // load sqlite package
@@ -53,6 +53,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner)
@@ -83,6 +84,9 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
     /**
      * For SQLite, the database may be added in the decorator metadata. It will be a filepath to a database file.
+     * @param tableName
+     * @param _schema
+     * @param database
      */
     buildTableName(
         tableName: string,
@@ -183,6 +187,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
 
     /**
      * Auto creates database directory if it does not exist.
+     * @param dbPath
      */
     protected async createDatabaseDirectory(dbPath: string): Promise<void> {
         await fs.mkdir(dbPath, { recursive: true })

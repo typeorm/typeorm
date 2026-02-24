@@ -19,7 +19,6 @@ describe("table-inheritance > single-table > database-option-inherited", () => {
                     "mariadb",
                     "mssql",
                     "mysql",
-                    "sqlite",
                     "better-sqlite3",
                     "sqljs",
                 ],

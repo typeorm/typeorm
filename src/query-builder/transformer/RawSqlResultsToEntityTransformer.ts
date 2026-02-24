@@ -1,17 +1,17 @@
-import { Driver } from "../../driver/Driver"
-import { RelationIdLoadResult } from "../relation-id/RelationIdLoadResult"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { Alias } from "../Alias"
-import { RelationCountLoadResult } from "../relation-count/RelationCountLoadResult"
-import { RelationMetadata } from "../../metadata/RelationMetadata"
-import { OrmUtils } from "../../util/OrmUtils"
-import { QueryExpressionMap } from "../QueryExpressionMap"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { QueryRunner } from "../.."
+import { Driver } from "../../driver/Driver"
 import { DriverUtils } from "../../driver/DriverUtils"
+import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
+import { RelationMetadata } from "../../metadata/RelationMetadata"
+import { QueryRunner } from "../../query-runner/QueryRunner"
 import { ObjectUtils } from "../../util/ObjectUtils"
 import { isUint8Array, uint8ArrayToHex } from "../../util/Uint8ArrayUtils"
+import { OrmUtils } from "../../util/OrmUtils"
+import { Alias } from "../Alias"
+import { QueryExpressionMap } from "../QueryExpressionMap"
+import { RelationCountLoadResult } from "../relation-count/RelationCountLoadResult"
+import { RelationIdLoadResult } from "../relation-id/RelationIdLoadResult"
 
 /**
  * Transforms raw sql results returned from the database into entity object.
@@ -58,6 +58,8 @@ export class RawSqlResultsToEntityTransformer {
     /**
      * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
      * we need to group our result and we must have some unique id (primary key in our case)
+     * @param rawResults
+     * @param alias
      */
     transform(rawResults: any[], alias: Alias): any[] {
         const group = this.group(rawResults, alias)
@@ -75,6 +77,8 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Build an alias from a name and column name.
+     * @param aliasName
+     * @param columnName
      */
     protected buildAlias(aliasName: string, columnName: string) {
         let aliases = this.aliasCache.get(aliasName)
@@ -97,6 +101,8 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Groups given raw results by ids of given alias.
+     * @param rawResults
+     * @param alias
      */
     protected group(rawResults: any[], alias: Alias): Map<string, any[]> {
         const map = new Map()
@@ -159,6 +165,8 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Transforms set of data results into single entity.
+     * @param rawResults
+     * @param alias
      */
     protected transformRawResultsGroup(
         rawResults: any[],
@@ -268,6 +276,10 @@ export class RawSqlResultsToEntityTransformer {
 
     /**
      * Transforms joined entities in the given raw results by a given alias and stores to the given (parent) entity
+     * @param rawResults
+     * @param entity
+     * @param alias
+     * @param metadata
      */
     protected transformJoins(
         rawResults: any[],
@@ -382,6 +394,12 @@ export class RawSqlResultsToEntityTransformer {
                     return map
                 }
                 if (property && properties.length > 0) {
+                    if (
+                        typeof map[property] !== "object" ||
+                        map[property] === null
+                    ) {
+                        map[property] = {}
+                    }
                     mapToProperty(properties, map[property], value)
                 } else {
                     return map
@@ -688,6 +706,8 @@ export class RawSqlResultsToEntityTransformer {
      * Use a simple JSON.stringify to create a simple hash of the primary ids of an entity.
      * As this.extractEntityPrimaryIds always creates the primary id object in the same order, if the same relation is
      * given, a simple JSON.stringify should be enough to get a unique hash per entity!
+     * @param relation
+     * @param data
      */
     private hashEntityIds(relation: RelationMetadata, data: ObjectLiteral) {
         const entityPrimaryIds = this.extractEntityPrimaryIds(relation, data)

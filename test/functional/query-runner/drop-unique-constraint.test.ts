@@ -16,7 +16,6 @@ describe("query runner > drop unique constraint", () => {
             enabledDrivers: [
                 "mssql",
                 "postgres",
-                "sqlite",
                 "better-sqlite3",
                 "oracle",
                 "cockroachdb",

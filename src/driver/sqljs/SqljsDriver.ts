@@ -1,16 +1,16 @@
-import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { SqljsConnectionOptions } from "./SqljsConnectionOptions"
-import { SqljsQueryRunner } from "./SqljsQueryRunner"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { DataSource } from "../../data-source/DataSource"
-import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError"
-import { PlatformTools } from "../../platform/PlatformTools"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { OrmUtils } from "../../util/OrmUtils"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { ReplicationMode } from "../types/ReplicationMode"
+import { DataSource } from "../../data-source/DataSource"
 import { TypeORMError } from "../../error"
+import { DriverOptionNotSetError } from "../../error/DriverOptionNotSetError"
+import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
+import { PlatformTools } from "../../platform/PlatformTools"
+import { QueryRunner } from "../../query-runner/QueryRunner"
+import { OrmUtils } from "../../util/OrmUtils"
+import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { SqljsDataSourceOptions } from "./SqljsDataSourceOptions"
+import { SqljsQueryRunner } from "./SqljsQueryRunner"
 
 // This is needed to satisfy the typescript compiler.
 interface Window {
@@ -21,7 +21,7 @@ declare let window: Window
 
 export class SqljsDriver extends AbstractSqliteDriver {
     // The driver specific options.
-    declare options: SqljsConnectionOptions
+    declare options: SqljsDataSourceOptions
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -65,6 +65,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner) this.queryRunner = new SqljsQueryRunner(this)
@@ -75,6 +76,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * Loads a database from a given file (Node.js), local storage key (browser) or array.
      * This will delete the current database!
+     * @param fileNameOrLocalStorageOrData
+     * @param checkIfFileOrLocalStorageExists
      */
     async load(
         fileNameOrLocalStorageOrData: string | Uint8Array,
@@ -148,6 +151,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
      * Saved the current database to the given file (Node.js), local storage key (browser) or
      * indexedDB key (browser with enabled useLocalForage option).
      * If no location path is given, the location path in the options (if specified) will be used.
+     * @param location
      */
     async save(location?: string) {
         if (!location && !this.options.location) {
@@ -220,6 +224,8 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
+     * @param metadata
+     * @param insertResult
      */
     createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
         const generatedMap = metadata.generatedColumns.reduce(
@@ -271,6 +277,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
     /**
      * Creates connection with an optional database.
      * If database is specified it is loaded, otherwise a new empty database is created.
+     * @param database
      */
     protected async createDatabaseConnectionWithImport(
         database?: Uint8Array,
