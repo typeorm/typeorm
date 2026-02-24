@@ -11,6 +11,7 @@ export class DateUtils {
 
     /**
      * Normalizes date object hydrated from the database.
+     * @param mixedDate
      */
     static normalizeHydratedDate(
         mixedDate: Date | string | undefined,
@@ -24,6 +25,9 @@ export class DateUtils {
 
     /**
      * Converts given value into date string in a "YYYY-MM-DD" format.
+     * @param value
+     * @param options
+     * @param options.utc
      */
     static mixedDateToDateString(
         value: string | Date,
@@ -54,6 +58,9 @@ export class DateUtils {
 
     /**
      * Converts given value into date object.
+     * @param mixedDate
+     * @param toUtc
+     * @param useMilliseconds
      */
     static mixedDateToDate(
         mixedDate: Date | string,
@@ -97,6 +104,8 @@ export class DateUtils {
 
     /**
      * Converts given value into time string in a "HH:mm:ss" format.
+     * @param value
+     * @param skipSeconds
      */
     static mixedDateToTimeString(
         value: Date | any,
@@ -117,6 +126,7 @@ export class DateUtils {
 
     /**
      * Converts given value into time string in a "HH:mm:ss" format.
+     * @param value
      */
     static mixedTimeToDate(value: Date | any): string | any {
         if (typeof value === "string") {
@@ -133,6 +143,8 @@ export class DateUtils {
 
     /**
      * Converts given string value with "-" separator into a "HH:mm:ss" format.
+     * @param value
+     * @param skipSeconds
      */
     static mixedTimeToString(
         value: string | any,
@@ -157,6 +169,8 @@ export class DateUtils {
 
     /**
      * Converts given value into datetime string in a "YYYY-MM-DD HH-mm-ss" format.
+     * @param value
+     * @param useMilliseconds
      */
     static mixedDateToDatetimeString(
         value: Date | any,
@@ -192,6 +206,7 @@ export class DateUtils {
 
     /**
      * Converts given value into utc datetime string in a "YYYY-MM-DD HH-mm-ss.sss" format.
+     * @param value
      */
     static mixedDateToUtcDatetimeString(value: Date | any): string | any {
         if (typeof value === "string") {
@@ -220,6 +235,7 @@ export class DateUtils {
 
     /**
      * Converts each item in the given array to string joined by "," separator.
+     * @param value
      */
     static simpleArrayToString(value: any[] | any): string[] | any {
         if (Array.isArray(value)) {
@@ -231,6 +247,7 @@ export class DateUtils {
 
     /**
      * Converts given string to simple array split by "," separator.
+     * @param value
      */
     static stringToSimpleArray(value: string | any): string | any {
         if (typeof value === "string") {
@@ -252,21 +269,38 @@ export class DateUtils {
         return typeof value === "string" ? JSON.parse(value) : value
     }
 
-    static simpleEnumToString(value: any) {
+    /**
+     * Converts given simple enum or array of enums to string.
+     * @param value
+     */
+    static simpleEnumToString(value: any): string {
+        if (Array.isArray(value)) {
+            return value.join(",")
+        }
         return "" + value
     }
 
+    /**
+     *  Converts given string to simple enum or array of enums based on the column metadata.
+     * @param value
+     * @param columnMetadata
+     */
     static stringToSimpleEnum(value: any, columnMetadata: ColumnMetadata) {
-        if (
-            columnMetadata.enum &&
-            !isNaN(value) &&
-            columnMetadata.enum.indexOf(parseInt(value)) >= 0
-        ) {
-            // convert to number if that exists in poosible enum options
-            value = parseInt(value)
+        if (!columnMetadata.enum) {
+            return value
         }
 
-        return value
+        if (columnMetadata.isArray && typeof value === "string") {
+            if (value === "") {
+                return []
+            }
+
+            return value
+                .split(",")
+                .map((item) => this.parseEnumValue(item, columnMetadata.enum!))
+        }
+
+        return this.parseEnumValue(value, columnMetadata.enum)
     }
 
     // -------------------------------------------------------------------------
@@ -274,7 +308,21 @@ export class DateUtils {
     // -------------------------------------------------------------------------
 
     /**
+     * Parses and converts a value to its numeric form if it exists in the provided enum values.
+     * @param value
+     * @param enumValues
+     */
+    private static parseEnumValue(value: any, enumValues: any[]): string | any {
+        const parsedValue = Number(value)
+        return !isNaN(parsedValue) && enumValues.includes(parsedValue)
+            ? parsedValue
+            : value
+    }
+
+    /**
      * Formats given number to "0x" format, e.g. if the totalLength = 2 and the value is 1 then it will return "01".
+     * @param value
+     * @param totalLength
      */
     private static formatZerolessValue(value: number, totalLength = 2): string {
         const pad = "0".repeat(totalLength)
@@ -284,6 +332,7 @@ export class DateUtils {
 
     /**
      * Formats given number to "0x" format, e.g. if it is 1 then it will return "01".
+     * @param value
      */
     private static formatMilliseconds(value: number): string {
         if (value < 10) {

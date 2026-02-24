@@ -135,10 +135,10 @@ That's why when you remove and move entities with `outDir` enabled, it's strongl
 You can prevent compiling files each time using [ts-node](https://github.com/TypeStrong/ts-node).
 If you are using ts-node, you can specify `ts` entities inside data source options:
 
-```javascript
+```typescript
 {
-    entities: ["src/entity/*.ts"],
-    subscribers: ["src/subscriber/*.ts"]
+    entities: [__dirname + "/entities/**/*{.js,.ts}"],
+    subscribers: [__dirname + "/subscribers/**/*{.js,.ts}"]
 }
 ```
 
@@ -170,7 +170,7 @@ module.exports = {
     plugins: [
         // ignore the drivers you don't want. This is the complete list of all drivers -- remove the suppressions for drivers you want to use.
         new FilterWarningsPlugin({
-            exclude: [/mongodb/, /mssql/, /mysql2/, /oracledb/, /pg/, /pg-native/, /pg-query-stream/, /react-native-sqlite-storage/, /redis/, /sqlite3/, /sql.js/, /typeorm-aurora-data-api-driver/]
+            exclude: [/mongodb/, /mssql/, /mysql2/, /oracledb/, /pg/, /pg-native/, /pg-query-stream/, /react-native-sqlite-storage/, /redis/, /sql.js/, /typeorm-aurora-data-api-driver/]
         })
     ]
 };
@@ -187,7 +187,7 @@ const path = require("node:path")
 module.exports = {
     // ... your webpack configurations here...
     // Dynamically generate a `{ [name]: sourceFileName }` map for the `entry` option
-    // change `src/db/migrations` to the relative path to your migration folder
+    // change `src/db/migrations` to the relative path to your migrations folder
     entry: globSync(path.resolve("src/db/migrations/*.ts")).reduce(
         (entries, filename) => {
             const migrationName = path.basename(filename, ".ts")
@@ -248,12 +248,7 @@ Lastly, make sure in your data source options, the transpiled migration files ar
 // TypeORM Configurations
 module.exports = {
     // ...
-    migrations: [
-        // this is the relative path to the transpiled migration files in production
-        "db/migrations/**/*.js",
-        // your source migration files, used in development mode
-        "src/db/migrations/**/*.ts",
-    ],
+    migrations: [__dirname + "/migrations/**/*{.js,.ts}"],
 }
 ```
 

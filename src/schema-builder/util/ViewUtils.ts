@@ -3,6 +3,8 @@ import { EntityMetadata } from "../../metadata/EntityMetadata"
 export class ViewUtils {
     /**
      * Comparator for .sort() that will order views bases on dependencies in creation order
+     * @param metadataA
+     * @param metadataB
      */
     static viewMetadataCmp(
         metadataA: EntityMetadata | undefined,

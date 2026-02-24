@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { User } from "./entities/User"
+import { User } from "./entity/User"
 import { expect } from "chai"
 
 describe("github issues > #9316 specify how should interpret null and undefined values in conditions ", () => {

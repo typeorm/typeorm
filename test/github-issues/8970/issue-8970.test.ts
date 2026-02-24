@@ -5,7 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src"
-import { TestEntity } from "./entities/TestEntity"
+import { TestEntity } from "./entity/TestEntity"
 import { expect } from "chai"
 
 describe("query builder order nulls first/last", () => {
@@ -13,8 +13,8 @@ describe("query builder order nulls first/last", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [__dirname + "/entities/*{.js,.ts}"],
-            enabledDrivers: ["postgres", "sqlite", "better-sqlite3"],
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres", "better-sqlite3"],
             schemaCreate: true,
             dropSchema: false,
         })
