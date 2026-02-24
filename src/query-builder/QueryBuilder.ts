@@ -1010,6 +1010,21 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
             return columnsExpression
         } else if (typeof this.expressionMap.returning === "string") {
+            if (
+                driver.options.type === "mssql" &&
+                this.expressionMap.returning === "*"
+            ) {
+                if (
+                    this.expressionMap.queryType === "insert" ||
+                    this.expressionMap.queryType === "update" ||
+                    this.expressionMap.queryType === "soft-delete" ||
+                    this.expressionMap.queryType === "restore"
+                ) {
+                    return "INSERTED.*"
+                } else if (this.expressionMap.queryType === "delete") {
+                    return "DELETED.*"
+                }
+            }
             return this.expressionMap.returning
         }
 
