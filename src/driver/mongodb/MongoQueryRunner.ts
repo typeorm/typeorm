@@ -1379,8 +1379,18 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops collection.
      * @param collectionName
+     * @param options
+     * @param options.cascade
      */
-    async clearTable(collectionName: string): Promise<void> {
+    async clearTable(
+        collectionName: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
+        if (options?.cascade) {
+            throw new TypeORMError(
+                `MongoDB driver does not support clearing table with cascade option`,
+            )
+        }
         await this.databaseConnection
             .db(this.connection.driver.database!)
             .dropCollection(collectionName)
