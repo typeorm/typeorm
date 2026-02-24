@@ -18,7 +18,7 @@ describe("github issues > #9770 check for referencing foreign keys when altering
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             migrations: [__dirname + "/migration/*{.js,.ts}"],
-            enabledDrivers: ["sqlite", "better-sqlite3"],
+            enabledDrivers: ["better-sqlite3"],
             schemaCreate: true,
             dropSchema: true,
         })

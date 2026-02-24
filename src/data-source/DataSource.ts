@@ -62,7 +62,6 @@ export class DataSource {
 
     /**
      * Connection name.
-     *
      * @deprecated we don't need names anymore since we are going to drop all related methods relying on this property.
      */
     readonly name: string
@@ -165,19 +164,11 @@ export class DataSource {
     // -------------------------------------------------------------------------
 
     /**
-     Indicates if DataSource is initialized or not.
-     *
-     * @deprecated use .isInitialized instead
-     */
-    get isConnected() {
-        return this.isInitialized
-    }
-
-    /**
      * Gets the mongodb entity manager that allows to perform mongodb-specific repository operations
      * with any entity in this connection.
      *
      * Available only in mongodb connections.
+     * @returns the mongodb entity manager
      */
     get mongoManager(): MongoEntityManager {
         if (!InstanceChecker.isMongoEntityManager(this.manager))
@@ -192,6 +183,7 @@ export class DataSource {
      * Gets a sql.js specific Entity Manager that allows to perform special load and save operations
      *
      * Available only in connection with the sqljs driver.
+     * @returns an sqljs specific Entity Manager
      */
     get sqljsManager(): SqljsEntityManager {
         if (!InstanceChecker.isSqljsEntityManager(this.manager))
@@ -207,6 +199,7 @@ export class DataSource {
     // -------------------------------------------------------------------------
     /**
      * Updates current connection options with provided options.
+     * @param options
      */
     setOptions(options: Partial<DataSourceOptions>): this {
         Object.assign(this.options, options)
@@ -287,18 +280,6 @@ export class DataSource {
     }
 
     /**
-     * Performs connection to the database.
-     * This method should be called once on application bootstrap.
-     * This method not necessarily creates database connection (depend on database type),
-     * but it also can setup a connection pool with database to use.
-     *
-     * @deprecated use .initialize method instead
-     */
-    async connect(): Promise<this> {
-        return this.initialize()
-    }
-
-    /**
      * Closes connection with the database.
      * Once connection is closed, you cannot use repositories or perform any operations except opening connection again.
      */
@@ -315,19 +296,8 @@ export class DataSource {
     }
 
     /**
-     * Closes connection with the database.
-     * Once connection is closed, you cannot use repositories or perform any operations except opening connection again.
-     *
-     * @deprecated use .destroy method instead
-     */
-    async close(): Promise<void> {
-        return this.destroy()
-    }
-
-    /**
      * Creates database schema for all entities registered in this connection.
      * Can be used only after connection to the database is established.
-     *
      * @param dropBeforeSync If set to true then it drops the database with all its tables and data
      */
     async synchronize(dropBeforeSync: boolean = false): Promise<void> {
@@ -385,6 +355,9 @@ export class DataSource {
     /**
      * Runs all pending migrations.
      * Can be used only after connection to the database is established.
+     * @param options
+     * @param options.transaction
+     * @param options.fake
      */
     async runMigrations(options?: {
         transaction?: "all" | "none" | "each"
@@ -408,6 +381,9 @@ export class DataSource {
     /**
      * Reverts last executed migration.
      * Can be used only after connection to the database is established.
+     * @param options
+     * @param options.transaction
+     * @param options.fake
      */
     async undoLastMigration(options?: {
         transaction?: "all" | "none" | "each"
@@ -438,6 +414,7 @@ export class DataSource {
 
     /**
      * Checks if entity metadata exist for the given entity class, target name or table name.
+     * @param target
      */
     hasMetadata(target: EntityTarget<any>): boolean {
         return !!this.findMetadata(target)
@@ -445,6 +422,7 @@ export class DataSource {
 
     /**
      * Gets entity metadata for the given entity class or schema name.
+     * @param target
      */
     getMetadata(target: EntityTarget<any>): EntityMetadata {
         const metadata = this.findMetadata(target)
@@ -455,6 +433,7 @@ export class DataSource {
 
     /**
      * Gets repository for the given entity.
+     * @param target
      */
     getRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -464,7 +443,8 @@ export class DataSource {
 
     /**
      * Gets tree repository for the given entity class or name.
-     * Only tree-type entities can have a TreeRepository, like ones decorated with @Tree decorator.
+     * Only tree-type entities can have a TreeRepository, like ones decorated with `@Tree` decorator.
+     * @param target
      */
     getTreeRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -475,6 +455,7 @@ export class DataSource {
     /**
      * Gets mongodb-specific repository for the given entity class or name.
      * Works only if connection is mongodb-specific.
+     * @param target
      */
     getMongoRepository<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -488,8 +469,8 @@ export class DataSource {
     }
 
     /**
-     * Gets custom entity repository marked with @EntityRepository decorator.
-     *
+     * Gets custom entity repository marked with `@EntityRepository` decorator.
+     * @param customRepository
      * @deprecated use Repository.extend function to create a custom repository
      */
     getCustomRepository<T>(customRepository: ObjectType<T>): T {
@@ -521,8 +502,11 @@ export class DataSource {
 
     /**
      * Executes raw SQL query and returns raw database results.
-     *
-     * @see [Official docs](https://typeorm.io/data-source-api) for examples.
+     * @param query
+     * @param parameters
+     * @param queryRunner
+     * @returns a raw response from the database client
+     * @see {@link https://typeorm.io/data-source-api | Official docs} for examples.
      */
     async query<T = any>(
         query: string,
@@ -550,6 +534,9 @@ export class DataSource {
      * Raw query execution is supported only by relational databases (MongoDB is not supported).
      * Note: Don't call this as a regular function, it is meant to be used with backticks to tag a template literal.
      * Example: dataSource.sql`SELECT * FROM table_name WHERE id = ${id}`
+     * @param strings
+     * @param values
+     * @returns a raw response from the database client
      */
     async sql<T = any>(
         strings: TemplateStringsArray,
@@ -580,6 +567,9 @@ export class DataSource {
 
     /**
      * Creates a new query builder that can be used to build a SQL query.
+     * @param entityOrRunner
+     * @param alias
+     * @param queryRunner
      */
     createQueryBuilder<Entity extends ObjectLiteral>(
         entityOrRunner?: EntityTarget<Entity> | QueryRunner,
@@ -614,6 +604,7 @@ export class DataSource {
      * to master database or any of slave databases.
      * If you perform writes you must use master database,
      * if you perform reads you can use slave databases.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode = "master"): QueryRunner {
         const queryRunner = this.driver.createQueryRunner(mode)
@@ -624,6 +615,8 @@ export class DataSource {
 
     /**
      * Gets entity metadata of the junction table (many-to-many table).
+     * @param entityTarget
+     * @param relationPropertyPath
      */
     getManyToManyMetadata(
         entityTarget: EntityTarget<any>,
@@ -648,6 +641,7 @@ export class DataSource {
 
     /**
      * Creates an Entity Manager for the current connection with the help of the EntityManagerFactory.
+     * @param queryRunner
      */
     createEntityManager(queryRunner?: QueryRunner): EntityManager {
         return new EntityManagerFactory().create(this, queryRunner)
@@ -659,6 +653,7 @@ export class DataSource {
 
     /**
      * Finds exist entity metadata by the given entity class, target name or table name.
+     * @param target
      */
     protected findMetadata(
         target: EntityTarget<any>,

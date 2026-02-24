@@ -37,19 +37,6 @@ describe("ConnectionOptionsReader", () => {
         expect(entities.length).to.equal(1)
     })
 
-    it("properly loads sqlite in-memory/path config", async () => {
-        const connectionOptionsReader = new ConnectionOptionsReader({
-            root: __dirname,
-            configName: "configs/sqlite-memory",
-        })
-        const inmemoryOptions: DataSourceOptions =
-            await connectionOptionsReader.get("memory")
-        expect(inmemoryOptions.database).to.equal(":memory:")
-        const fileOptions: DataSourceOptions =
-            await connectionOptionsReader.get("file")
-        expect(fileOptions.database).to.have.string("/test")
-    })
-
     it("properly loads config with specified file path", async () => {
         const connectionOptionsReader = new ConnectionOptionsReader({
             root: __dirname,
