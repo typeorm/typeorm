@@ -12,6 +12,8 @@ import { Complex, Post } from "./entity/Post"
 import { User } from "./entity/User"
 import { Category } from "./entity/Category"
 import { View } from "./entity/View"
+import { Author, AuthorId } from "./entity/Author"
+import { Article, ArticleId } from "./entity/Article"
 import { expect } from "chai"
 
 describe("columns > value-transformer functionality", () => {
@@ -19,7 +21,15 @@ describe("columns > value-transformer functionality", () => {
     before(
         async () =>
             (connections = await createTestingConnections({
-                entities: [Post, PhoneBook, User, Category, View],
+                entities: [
+                    Post,
+                    PhoneBook,
+                    User,
+                    Category,
+                    View,
+                    Author,
+                    Article,
+                ],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -174,6 +184,34 @@ describe("columns > value-transformer functionality", () => {
                 loadedPost = await postRepository.findOneBy({ id: post.id })
                 expect(loadedPost!.complex!.x).to.eq(1.05)
                 expect(loadedPost!.complex!.y).to.eq(2.3)
+            }),
+        ))
+
+    it("should transform foreign key column with custom object type on insert (issue #9565)", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const authorId = new AuthorId("author-1")
+                const articleId = new ArticleId("article-1")
+
+                const author = connection.manager.create(Author, {
+                    id: authorId,
+                    name: "Tom",
+                })
+                await connection.manager.save(author)
+
+                const article = connection.manager.create(Article, {
+                    id: articleId,
+                    authorId: authorId,
+                })
+                await connection.manager.save(article)
+
+                const loadedArticle = await connection.manager.findOneBy(
+                    Article,
+                    { id: articleId },
+                )
+                expect(loadedArticle).to.not.be.null
+                expect(loadedArticle!.authorId).to.be.instanceOf(AuthorId)
+                expect(loadedArticle!.authorId.value).to.equal("author-1")
             }),
         ))
 })
