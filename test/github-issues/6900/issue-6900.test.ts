@@ -1,13 +1,14 @@
 import { expect } from "chai"
+import { MongoClient } from "mongodb"
+import { DataSource, DataSourceOptions } from "../../../src"
+import { MongoDataSourceOptions } from "../../../src/driver/mongodb/MongoDataSourceOptions"
+import { MongoDriver } from "../../../src/driver/mongodb/MongoDriver"
 import {
     closeTestingConnections,
     reloadTestingDatabases,
     setupTestingConnections,
 } from "../../utils/test-utils"
-import { MongoDriver } from "../../../src/driver/mongodb/MongoDriver"
-import { DataSource, DataSourceOptions, MongoClient } from "../../../src"
 import { Warn } from "./entity/Warn"
-import { MongoDataSourceOptions } from "../../../src/driver/mongodb/MongoDataSourceOptions"
 
 describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given database, creates new database "test" instead', () => {
     const connections: DataSource[] = []
@@ -39,7 +40,7 @@ describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given 
 
         const mongoDriver = dataSource.driver as MongoDriver
         const client = mongoDriver.queryRunner!
-            .databaseConnection as any as MongoClient
+            .databaseConnection as unknown as MongoClient
 
         expect(client.db().databaseName).to.be.equal("foo")
         expect(mongoDriver.database).to.be.equal("foo")
@@ -75,16 +76,16 @@ describe('github issues > #6900 MongoDB ConnectionManager doesn\'t select given 
             guild: "Hello",
             user: "WORLD",
             moderator: "Good Moderator",
-            reason: "For Mongo not writing correctly to the databsae!",
+            reason: "For Mongo not writing correctly to the database!",
             createdAt: new Date(),
         })
 
         const mongoDriver = dataSource.driver as MongoDriver
         const client = mongoDriver.queryRunner!
-            .databaseConnection as any as MongoClient
+            .databaseConnection as unknown as MongoClient
 
         expect(
-            await client.db("foo").collection("warnings").count({}),
+            await client.db("foo").collection("warnings").countDocuments(),
         ).to.be.greaterThan(0)
     })
 })

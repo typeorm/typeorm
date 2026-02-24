@@ -246,9 +246,9 @@ Learn more about [entity columns](../entity/1-entities.md#entity-columns).
 
 #### `@ObjectIdColumn`
 
-Marks a property in your entity as ObjectId.
+Marks a property in your entity as `ObjectId`.
 This decorator is only used in MongoDB.
-Every entity in MongoDB must have a ObjectId column.
+Every entity in MongoDB must have an `ObjectId` column.
 Example:
 
 ```typescript

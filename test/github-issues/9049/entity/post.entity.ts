@@ -1,5 +1,5 @@
-import { ObjectId } from "../../../../src/driver/mongodb/typings"
 import { Comment } from "./comment"
+import { ObjectId } from "mongodb"
 import { Column, Entity, ObjectIdColumn } from "../../../../src"
 
 @Entity()

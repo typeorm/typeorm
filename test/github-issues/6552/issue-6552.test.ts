@@ -1,7 +1,6 @@
 import { expect } from "chai"
-import "../../utils/test-setup"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { PlatformTools } from "../../../src/platform/PlatformTools"
+import { ObjectId } from "mongodb"
+import { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -35,12 +34,10 @@ describe("github issues > #6552 MongoRepository delete by ObjectId deletes the w
                 post2.title = "Post 2"
                 await connection.manager.save(post2)
 
-                const objectIdInstance = PlatformTools.load("mongodb").ObjectId
-
                 // double check that post2._id is actually an ObjectId
                 expect(post2._id).to.be.not.null
                 expect(post2._id).to.be.not.undefined
-                expect(post2._id).to.be.instanceof(objectIdInstance)
+                expect(post2._id).to.be.instanceof(ObjectId)
 
                 // delete Post 2 by ObjectId directly
                 await connection.manager.delete(Post, post2._id)
@@ -75,12 +72,10 @@ describe("github issues > #6552 MongoRepository delete by ObjectId deletes the w
                 post2.title = "Post 2"
                 await postV2Repository.save(post2)
 
-                const objectIdInstance = PlatformTools.load("mongodb").ObjectId
-
                 // double check that post2.postId is actually an ObjectId
                 expect(post2.postId).to.be.not.null
                 expect(post2.postId).to.be.not.undefined
-                expect(post2.postId).to.be.instanceof(objectIdInstance)
+                expect(post2.postId).to.be.instanceof(ObjectId)
 
                 // delete Post 2 by ObjectId directly
                 await postV2Repository.delete(post2.postId)
@@ -113,12 +108,10 @@ describe("github issues > #6552 MongoRepository delete by ObjectId deletes the w
                 post2.title = "Post 2"
                 await connection.manager.save(post2)
 
-                const objectIdInstance = PlatformTools.load("mongodb").ObjectId
-
                 // double check that post2._id is actually an ObjectId
                 expect(post2._id).to.be.not.null
                 expect(post2._id).to.be.not.undefined
-                expect(post2._id).to.be.instanceof(objectIdInstance)
+                expect(post2._id).to.be.instanceof(ObjectId)
 
                 // delete Post 2 by ObjectId directly
                 await connection.manager.delete(Post, { _id: post2._id })
