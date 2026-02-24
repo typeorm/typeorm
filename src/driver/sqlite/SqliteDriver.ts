@@ -69,7 +69,10 @@ export class SqliteDriver extends AbstractSqliteDriver {
         precision?: number | null
         scale?: number
     }): string {
-        if ((column.type as any) === Buffer) {
+        if (
+            (column.type as any) === Uint8Array ||
+            (typeof Buffer !== "undefined" && (column.type as any) === Buffer)
+        ) {
             return "blob"
         }
 

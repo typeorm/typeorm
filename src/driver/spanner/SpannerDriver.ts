@@ -470,7 +470,10 @@ export class SpannerDriver implements Driver {
             return "string"
         } else if (column.type === Date) {
             return "timestamp"
-        } else if ((column.type as any) === Buffer) {
+        } else if (
+            (column.type as any) === Uint8Array ||
+            (typeof Buffer !== "undefined" && (column.type as any) === Buffer)
+        ) {
             return "bytes"
         } else if (column.type === Boolean) {
             return "bool"

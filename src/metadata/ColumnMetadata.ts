@@ -10,7 +10,7 @@ import { ValueTransformer } from "../decorator/options/ValueTransformer"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { isUint8Array } from "../util/Uint8ArrayUtils"
+import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
 import { VirtualColumnOptions } from "../decorator/options/VirtualColumnOptions"
 
 /**
@@ -947,6 +947,9 @@ export class ColumnMetadata {
      */
     compareEntityValue(entity: any, valueToCompareWith: any) {
         const columnValue = this.getEntityValue(entity)
+        if (isUint8Array(columnValue) && isUint8Array(valueToCompareWith)) {
+            return areUint8ArraysEqual(columnValue, valueToCompareWith)
+        }
         if (typeof columnValue?.equals === "function") {
             return columnValue.equals(valueToCompareWith)
         }
