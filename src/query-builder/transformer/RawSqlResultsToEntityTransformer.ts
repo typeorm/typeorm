@@ -104,7 +104,7 @@ export class RawSqlResultsToEntityTransformer {
      * @param alias
      */
     protected group(rawResults: any[], alias: Alias): Map<string, any[]> {
-        const map = new Map()
+        const map = new Map<string, any[]>()
         const keys: string[] = []
         if (alias.metadata.tableType === "view") {
             keys.push(
@@ -120,37 +120,23 @@ export class RawSqlResultsToEntityTransformer {
             )
         }
 
-        // Check if primary key columns are actually selected in the raw results
-        const primaryKeysSelected = keys.some(
-            (key) => key in (rawResults[0] ?? {}),
-        )
+        for (let rowIndex = 0; rowIndex < rawResults.length; rowIndex++) {
+            const rawResult = rawResults[rowIndex]
+            const hasPrimaryKeys =
+                keys.length > 0 &&
+                keys.every((key) => {
+                    if (
+                        !Object.prototype.hasOwnProperty.call(rawResult, key)
+                    ) {
+                        return false
+                    }
+                    const value = rawResult[key]
+                    return value !== undefined && value !== null
+                })
 
-        for (const rawResult of rawResults) {
-            let id: string
-
-            if (primaryKeysSelected) {
-                // Use primary key based grouping when available
-                id = keys
-                    .map((key) => {
-                        const keyValue = rawResult[key]
-
-                        if (Buffer.isBuffer(keyValue)) {
-                            return keyValue.toString("hex")
-                        }
-
-                        if (ObjectUtils.isObject(keyValue)) {
-                            return JSON.stringify(keyValue)
-                        }
-
-                        return keyValue
-                    })
-                    .join("_")
-            } else {
-                // Fallback: use row index when primary keys are not available
-                // This ensures each row gets its own group for proper entity mapping
-                const rowIndex = rawResults.indexOf(rawResult)
-                id = `row_${rowIndex}`
-            }
+            const id = hasPrimaryKeys
+                ? this.buildGroupIdFromKeys(rawResult, keys)
+                : `row_${rowIndex}`
 
             const items = map.get(id)
             if (!items) {
@@ -160,6 +146,24 @@ export class RawSqlResultsToEntityTransformer {
             }
         }
         return map
+    }
+
+    private buildGroupIdFromKeys(rawResult: any, keys: string[]): string {
+        return keys
+            .map((key) => this.normalizeGroupKeyValue(rawResult[key]))
+            .join("_")
+    }
+
+    private normalizeGroupKeyValue(value: any) {
+        if (Buffer.isBuffer(value)) {
+            return value.toString("hex")
+        }
+
+        if (ObjectUtils.isObject(value)) {
+            return JSON.stringify(value)
+        }
+
+        return value
     }
 
     /**
@@ -330,6 +334,19 @@ export class RawSqlResultsToEntityTransformer {
             // if nothing was joined then simply continue
             if (result === undefined) continue
 
+            if (join.isMany && Array.isArray(result)) {
+                const existingValue = join.mapToPropertyPropertyName
+                    ? entity[join.mapToPropertyPropertyName]
+                    : join.relation?.getEntityValue(entity, true)
+                if (Array.isArray(existingValue) && existingValue.length > 0) {
+                    result = this.mergeRelationResults(
+                        existingValue,
+                        result,
+                        join.relation,
+                    )
+                }
+            }
+
             // if join was mapped to some property then save result to that property
             if (join.mapToPropertyPropertyName) {
                 entity[join.mapToPropertyPropertyName] = result // todo: fix embeds
@@ -341,6 +358,45 @@ export class RawSqlResultsToEntityTransformer {
             hasData = true
         }
         return hasData
+    }
+
+    private mergeRelationResults(
+        existing: any[],
+        incoming: any[],
+        relation?: RelationMetadata,
+    ): any[] {
+        if (existing.length === 0) return incoming
+        if (incoming.length === 0) return existing
+
+        if (!relation) {
+            return existing.concat(incoming)
+        }
+
+        const metadata = relation.inverseEntityMetadata
+        const merged = [...existing]
+        for (const entity of incoming) {
+            if (!this.containsEntity(merged, entity, metadata)) {
+                merged.push(entity)
+            }
+        }
+        return merged
+    }
+
+    private containsEntity(
+        collection: any[],
+        entity: any,
+        metadata: EntityMetadata,
+    ): boolean {
+        const entityIdMap = metadata.getEntityIdMap(entity)
+        if (!entityIdMap) {
+            return collection.includes(entity)
+        }
+
+        return collection.some((item) => {
+            const itemIdMap = metadata.getEntityIdMap(item)
+            if (!itemIdMap) return item === entity
+            return OrmUtils.compareIds(itemIdMap, entityIdMap)
+        })
     }
 
     protected transformRelationIds(
