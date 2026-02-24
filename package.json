@@ -60,7 +60,6 @@
     "./browser/driver/oracle/OracleDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/postgres/PostgresDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/sap/SapDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/sqlite/SqliteDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/sqlserver/SqlServerDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/entity-manager/MongoEntityManager.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/logger/FileLogger.js": "./browser/platform/BrowserFileLoggerDummy.js",
@@ -80,8 +79,8 @@
     "changelog": "standard-changelog",
     "compile": "gulp clean && tsc",
     "docs:dev": "cd docs && npm run start",
-    "format": "prettier --cache --write \"./**/*.ts\"",
-    "format:ci": "prettier --check \"./**/*.ts\"",
+    "format": "prettier --cache --write .",
+    "format:ci": "prettier --check .",
     "lint": "eslint",
     "package": "gulp package",
     "prepare": "is-ci || husky",
@@ -99,20 +98,21 @@
     "buffer": "^6.0.3",
     "dayjs": "^1.11.19",
     "debug": "^4.4.3",
-    "dedent": "^1.7.0",
-    "dotenv": "^17.2.3",
+    "dedent": "^1.7.1",
+    "dotenv": "^17.3.1",
     "reflect-metadata": "^0.2.2",
     "sql-highlight": "^6.1.0",
     "tinyglobby": "^0.2.15",
     "tslib": "^2.8.1",
-    "uuid": "^11.1.0",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@google-cloud/spanner": "^8.3.1",
-    "@sap/hana-client": "^2.26.26",
-    "@tsconfig/node20": "^20.1.8",
+    "@eslint/js": "^9.39.3",
+    "@google-cloud/spanner": "^8.6.0",
+    "@sap/hana-client": "^2.27.23",
+    "@stryker-mutator/core": "^9.5.1",
+    "@stryker-mutator/mocha-runner": "^9.5.1",
+    "@tsconfig/node20": "^20.1.9",
     "@types/chai": "^5.2.3",
     "@types/chai-as-promised": "^8.0.2",
     "@types/debug": "^4.1.12",
@@ -120,20 +120,20 @@
     "@types/gulp-rename": "^2.0.7",
     "@types/gulp-sourcemaps": "^0.0.38",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^20.19.26",
+    "@types/node": "^20.19.33",
     "@types/sinon": "^21.0.0",
     "@types/sinon-chai": "^4.0.0",
     "@types/source-map-support": "^0.5.10",
     "@types/yargs": "^17.0.35",
-    "better-sqlite3": "^12.5.0",
+    "better-sqlite3": "^12.6.2",
     "c8": "^10.1.3",
-    "chai": "^6.2.1",
+    "chai": "^6.2.2",
     "chai-as-promised": "^8.0.2",
     "class-transformer": "^0.5.1",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.3",
     "eslint-plugin-chai-friendly": "^1.1.0",
-    "eslint-plugin-jsdoc": "^61.5.0",
-    "globals": "^16.5.0",
+    "eslint-plugin-jsdoc": "^62.7.0",
+    "globals": "^17.3.0",
     "gulp": "^4.0.2",
     "gulp-rename": "^2.1.0",
     "gulp-replace": "^1.1.4",
@@ -147,23 +147,24 @@
     "mocha": "^11.7.5",
     "mongodb": "^6.21.0",
     "mssql": "^12.2.0",
-    "mysql2": "^3.15.3",
+    "mysql2": "^3.17.4",
     "oracledb": "^6.10.0",
-    "pg": "^8.16.3",
-    "pg-query-stream": "^4.10.3",
-    "pkg-pr-new": "^0.0.62",
-    "prettier": "^3.7.4",
-    "redis": "^5.10.0",
-    "sinon": "^21.0.0",
+    "pg": "^8.18.0",
+    "pg-query-stream": "^4.12.0",
+    "pkg-pr-new": "^0.0.63",
+    "prettier": "^3.8.1",
+    "prettier-plugin-packagejson": "^3.0.0",
+    "prettier-plugin-toml": "^2.0.6",
+    "redis": "^5.11.0",
+    "sinon": "^21.0.1",
     "sinon-chai": "^4.0.1",
-    "sort-package-json": "^3.6.0",
+    "sort-package-json": "^3.6.1",
     "source-map-support": "^0.5.21",
-    "sql.js": "^1.13.0",
-    "sqlite3": "^5.1.7",
+    "sql.js": "^1.14.0",
     "standard-changelog": "^7.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.49.0"
+    "typescript-eslint": "^8.56.0"
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^8.0.0",
@@ -177,9 +178,8 @@
     "pg": "^8.5.1",
     "pg-native": "^3.0.0",
     "pg-query-stream": "^4.0.0",
-    "redis": "^5.0.14",
+    "redis": "^5.0.0",
     "sql.js": "^1.4.0",
-    "sqlite3": "^5.0.3",
     "ts-node": "^10.9.2",
     "typeorm-aurora-data-api-driver": "^3.0.0"
   },
@@ -223,9 +223,6 @@
     "sql.js": {
       "optional": true
     },
-    "sqlite3": {
-      "optional": true
-    },
     "ts-node": {
       "optional": true
     },
@@ -233,21 +230,20 @@
       "optional": true
     }
   },
-  "packageManager": "pnpm@10.26.2",
+  "packageManager": "pnpm@10.30.1",
   "engines": {
     "node": "^20.19.0 || ^22.12.0 || >=24.11.0"
   },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "^10.26.2",
+      "version": "^10.30.1",
       "onFail": "error"
     }
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "sqlite3"
+      "better-sqlite3"
     ],
     "ignoredBuiltDependencies": [
       "@sap/hana-client",
@@ -255,8 +251,7 @@
       "libpq",
       "oracledb",
       "protobufjs"
-    ],
-    "minimumReleaseAge": 1440
+    ]
   },
   "collective": {
     "type": "opencollective",
@@ -282,6 +277,7 @@
     "cloud-spanner-orm",
     "sqlite",
     "sqlite-orm",
+    "better-sqlite3",
     "sql-server",
     "sql-server-orm"
   ]

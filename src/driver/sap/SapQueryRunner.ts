@@ -103,6 +103,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Starts transaction.
+     * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
@@ -169,8 +170,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
-     * @description Switches on/off AUTOCOMMIT mode
-     * @link https://help.sap.com/docs/HANA_SERVICE_CF/7c78579ce9b14a669c1f3295b0d8ca16/d538d11053bd4f3f847ec5ce817a3d4c.html?locale=en-US
+     * Switches AUTOCOMMIT mode on/off
+     * @see https://help.sap.com/docs/HANA_SERVICE_CF/7c78579ce9b14a669c1f3295b0d8ca16/d538d11053bd4f3f847ec5ce817a3d4c.html?locale=en-US
+     * @param options
+     * @param options.status
      */
     async setAutoCommit(options: { status: "on" | "off" }) {
         const connection = await this.connect()
@@ -187,6 +190,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -327,6 +333,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Returns raw data stream.
+     * @param query
+     * @param parameters
+     * @param onEnd
+     * @param onError
      */
     async stream(
         query: string,
@@ -410,6 +420,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Returns all available schema names including system schemas.
      * If database parameter specified, returns schemas of that database.
+     * @param database
      */
     async getSchemas(database?: string): Promise<string[]> {
         const query = database
@@ -421,6 +432,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if database with the given name exist.
+     * @param database
      */
     async hasDatabase(database: string): Promise<boolean> {
         const databases = await this.getDatabases()
@@ -455,6 +467,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if schema with the given name exist.
+     * @param schema
      */
     async hasSchema(schema: string): Promise<boolean> {
         const schemas = await this.getSchemas()
@@ -474,6 +487,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if table with the given name exist in the database.
+     * @param tableOrName
      */
     async hasTable(tableOrName: Table | string): Promise<boolean> {
         const parsedTableName = this.driver.parseTableName(tableOrName)
@@ -490,6 +504,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Checks if column with the given name exist in the given table.
+     * @param tableOrName
+     * @param columnName
      */
     async hasColumn(
         tableOrName: Table | string,
@@ -509,6 +525,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new database.
+     * @param database
+     * @param ifNotExist
      */
     async createDatabase(
         database: string,
@@ -519,6 +537,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops database.
+     * @param database
+     * @param ifExist
      */
     async dropDatabase(database: string, ifExist?: boolean): Promise<void> {
         return Promise.resolve()
@@ -526,6 +546,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new table schema.
+     * @param schemaPath
+     * @param ifNotExist
      */
     async createSchema(
         schemaPath: string,
@@ -552,6 +574,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops table schema
+     * @param schemaPath
+     * @param ifExist
+     * @param isCascade
      */
     async dropSchema(
         schemaPath: string,
@@ -578,6 +603,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new table.
+     * @param table
+     * @param ifNotExist
+     * @param createForeignKeys
+     * @param createIndices
      */
     async createTable(
         table: Table,
@@ -621,6 +650,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops the table.
+     * @param tableOrName
+     * @param ifExist
+     * @param dropForeignKeys
+     * @param dropIndices
      */
     async dropTable(
         tableOrName: Table | string,
@@ -666,6 +699,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new view.
+     * @param view
+     * @param syncWithMetadata
      */
     async createView(
         view: View,
@@ -684,6 +719,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops the view.
+     * @param target
      */
     async dropView(target: View | string): Promise<void> {
         const viewName = InstanceChecker.isView(target) ? target.name : target
@@ -700,6 +736,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Renames a table.
+     * @param oldTableOrName
+     * @param newTableName
      */
     async renameTable(
         oldTableOrName: Table | string,
@@ -908,6 +946,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new column from the column in the table.
+     * @param tableOrName
+     * @param column
      */
     async addColumn(
         tableOrName: Table | string,
@@ -1104,6 +1144,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new columns from the column in the table.
+     * @param tableOrName
+     * @param columns
      */
     async addColumns(
         tableOrName: Table | string,
@@ -1116,6 +1158,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Renames column in the given table.
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newTableColumnOrName
      */
     async renameColumn(
         tableOrName: Table | string,
@@ -1146,6 +1191,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Changes a column in the table.
+     * @param tableOrName
+     * @param oldTableColumnOrName
+     * @param newColumn
      */
     async changeColumn(
         tableOrName: Table | string,
@@ -1566,6 +1614,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Changes a column in the table.
+     * @param tableOrName
+     * @param changedColumns
      */
     async changeColumns(
         tableOrName: Table | string,
@@ -1578,6 +1628,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops column in the table.
+     * @param tableOrName
+     * @param columnOrName
      */
     async dropColumn(
         tableOrName: Table | string,
@@ -1823,6 +1875,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops the columns in the table.
+     * @param tableOrName
+     * @param columns
      */
     async dropColumns(
         tableOrName: Table | string,
@@ -1835,6 +1889,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new primary key.
+     * @param tableOrName
+     * @param columnNames
      */
     async createPrimaryKey(
         tableOrName: Table | string,
@@ -1860,6 +1916,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Updates composite primary keys.
+     * @param tableOrName
+     * @param columns
      */
     async updatePrimaryKeys(
         tableOrName: Table | string,
@@ -2009,6 +2067,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a primary key.
+     * @param tableOrName
      */
     async dropPrimaryKey(tableOrName: Table | string): Promise<void> {
         const table = InstanceChecker.isTable(tableOrName)
@@ -2110,6 +2169,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new unique constraint.
+     * @param tableOrName
+     * @param uniqueConstraint
      */
     async createUniqueConstraint(
         tableOrName: Table | string,
@@ -2122,6 +2183,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new unique constraints.
+     * @param tableOrName
+     * @param uniqueConstraints
      */
     async createUniqueConstraints(
         tableOrName: Table | string,
@@ -2134,6 +2197,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops unique constraint.
+     * @param tableOrName
+     * @param uniqueOrName
      */
     async dropUniqueConstraint(
         tableOrName: Table | string,
@@ -2146,6 +2211,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops unique constraints.
+     * @param tableOrName
+     * @param uniqueConstraints
      */
     async dropUniqueConstraints(
         tableOrName: Table | string,
@@ -2158,6 +2225,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new check constraint.
+     * @param tableOrName
+     * @param checkConstraint
      */
     async createCheckConstraint(
         tableOrName: Table | string,
@@ -2183,6 +2252,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new check constraints.
+     * @param tableOrName
+     * @param checkConstraints
      */
     async createCheckConstraints(
         tableOrName: Table | string,
@@ -2196,6 +2267,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops check constraint.
+     * @param tableOrName
+     * @param checkOrName
      */
     async dropCheckConstraint(
         tableOrName: Table | string,
@@ -2220,6 +2293,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops check constraints.
+     * @param tableOrName
+     * @param checkConstraints
      */
     async dropCheckConstraints(
         tableOrName: Table | string,
@@ -2233,6 +2308,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new exclusion constraint.
+     * @param tableOrName
+     * @param exclusionConstraint
      */
     async createExclusionConstraint(
         tableOrName: Table | string,
@@ -2245,6 +2322,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new exclusion constraints.
+     * @param tableOrName
+     * @param exclusionConstraints
      */
     async createExclusionConstraints(
         tableOrName: Table | string,
@@ -2257,6 +2336,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops exclusion constraint.
+     * @param tableOrName
+     * @param exclusionOrName
      */
     async dropExclusionConstraint(
         tableOrName: Table | string,
@@ -2269,6 +2350,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops exclusion constraints.
+     * @param tableOrName
+     * @param exclusionConstraints
      */
     async dropExclusionConstraints(
         tableOrName: Table | string,
@@ -2281,6 +2364,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new foreign key.
+     * @param tableOrName
+     * @param foreignKey
      */
     async createForeignKey(
         tableOrName: Table | string,
@@ -2307,6 +2392,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new foreign keys.
+     * @param tableOrName
+     * @param foreignKeys
      */
     async createForeignKeys(
         tableOrName: Table | string,
@@ -2320,6 +2407,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a foreign key from the table.
+     * @param tableOrName
+     * @param foreignKeyOrName
      */
     async dropForeignKey(
         tableOrName: Table | string,
@@ -2336,6 +2425,15 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Supplied foreign key was not found in table ${table.name}`,
             )
 
+        if (!foreignKey.name) {
+            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+                table,
+                foreignKey.columnNames,
+                this.getTablePath(foreignKey),
+                foreignKey.referencedColumnNames,
+            )
+        }
+
         const up = this.dropForeignKeySql(table, foreignKey)
         const down = this.createForeignKeySql(table, foreignKey)
         await this.executeQueries(up, down)
@@ -2344,6 +2442,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops a foreign keys from the table.
+     * @param tableOrName
+     * @param foreignKeys
      */
     async dropForeignKeys(
         tableOrName: Table | string,
@@ -2357,6 +2457,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new index.
+     * @param tableOrName
+     * @param index
      */
     async createIndex(
         tableOrName: Table | string,
@@ -2377,6 +2479,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Creates a new indices
+     * @param tableOrName
+     * @param indices
      */
     async createIndices(
         tableOrName: Table | string,
@@ -2390,6 +2494,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops an index.
+     * @param tableOrName
+     * @param indexOrName
      */
     async dropIndex(
         tableOrName: Table | string,
@@ -2417,6 +2523,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Drops an indices from the table.
+     * @param tableOrName
+     * @param indices
      */
     async dropIndices(
         tableOrName: Table | string,
@@ -2431,8 +2539,19 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
+     * @param tablePath
+     * @param options
+     * @param options.cascade
      */
-    async clearTable(tablePath: string): Promise<void> {
+    async clearTable(
+        tablePath: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
+        if (options?.cascade) {
+            throw new TypeORMError(
+                `SAP HANA does not support clearing table with cascade option`,
+            )
+        }
         await this.query(`TRUNCATE TABLE ${this.escapePath(tablePath)}`)
     }
 
@@ -2538,6 +2657,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Loads all tables (with given names) from the database and creates a Table from them.
+     * @param tableNames
      */
     protected async loadTables(tableNames?: string[]): Promise<Table[]> {
         if (tableNames && tableNames.length === 0) {
@@ -2547,10 +2667,14 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const currentSchema = await this.getCurrentSchema()
         const currentDatabase = await this.getCurrentDatabase()
 
-        const dbTables: { SCHEMA_NAME: string; TABLE_NAME: string }[] = []
+        const dbTables: {
+            SCHEMA_NAME: string
+            TABLE_NAME: string
+            COMMENTS: string
+        }[] = []
 
         if (!tableNames) {
-            const tablesSql = `SELECT "SCHEMA_NAME", "TABLE_NAME" FROM "SYS"."TABLES"`
+            const tablesSql = `SELECT "SCHEMA_NAME", "TABLE_NAME", "COMMENTS" FROM "SYS"."TABLES"`
 
             dbTables.push(...(await this.query(tablesSql)))
         } else {
@@ -2566,7 +2690,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 .join(" OR ")
 
             const tablesSql =
-                `SELECT "SCHEMA_NAME", "TABLE_NAME" FROM "SYS"."TABLES" WHERE ` +
+                `SELECT "SCHEMA_NAME", "TABLE_NAME", "COMMENTS" FROM "SYS"."TABLES" WHERE ` +
                 tablesCondition
 
             dbTables.push(...(await this.query(tablesSql)))
@@ -2636,6 +2760,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             const schema = getSchemaFromKey(dbTable, "SCHEMA_NAME")
             table.database = currentDatabase
             table.schema = dbTable["SCHEMA_NAME"]
+            table.comment = dbTable["COMMENTS"]
             table.name = this.driver.buildTableName(
                 dbTable["TABLE_NAME"],
                 schema,
@@ -2931,6 +3056,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds and returns SQL for create table.
+     * @param table
+     * @param createForeignKeys
      */
     protected createTableSql(table: Table, createForeignKeys?: boolean): Query {
         const columnDefinitions = table.columns
@@ -3068,11 +3195,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         sql += `)`
 
+        if (table.comment) {
+            sql += ` COMMENT ${this.escapeComment(table.comment)}`
+        }
+
         return new Query(sql)
     }
 
     /**
      * Builds drop table sql.
+     * @param tableOrName
+     * @param ifExist
      */
     protected dropTableSql(
         tableOrName: Table | string,
@@ -3119,6 +3252,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop view sql.
+     * @param viewOrPath
      */
     protected dropViewSql(viewOrPath: View | string): Query {
         return new Query(`DROP VIEW ${this.escapePath(viewOrPath)}`)
@@ -3126,6 +3260,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds remove view sql.
+     * @param viewOrPath
      */
     protected async deleteViewDefinitionSql(
         viewOrPath: View | string,
@@ -3155,6 +3290,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create index sql.
+     * @param table
+     * @param index
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
@@ -3177,6 +3314,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop index sql.
+     * @param table
+     * @param indexOrName
      */
     protected dropIndexSql(
         table: Table,
@@ -3198,6 +3337,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create primary key sql.
+     * @param table
+     * @param columnNames
      */
     protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
         const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
@@ -3216,6 +3357,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop primary key sql.
+     * @param table
      */
     protected dropPrimaryKeySql(table: Table): Query {
         const columnNames = table.primaryColumns.map((column) => column.name)
@@ -3232,6 +3374,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create check constraint sql.
+     * @param table
+     * @param checkConstraint
      */
     protected createCheckConstraintSql(
         table: Table,
@@ -3246,6 +3390,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop check constraint sql.
+     * @param table
+     * @param checkOrName
      */
     protected dropCheckConstraintSql(
         table: Table,
@@ -3263,6 +3409,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds create foreign key sql.
+     * @param tableOrName
+     * @param foreignKey
      */
     protected createForeignKeySql(
         tableOrName: Table | string,
@@ -3307,6 +3455,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds drop foreign key sql.
+     * @param tableOrName
+     * @param foreignKeyOrName
      */
     protected dropForeignKeySql(
         tableOrName: Table | string,
@@ -3326,9 +3476,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Escapes a given comment so it's safe to include in a query.
+     * @param comment
      */
     protected escapeComment(comment?: string) {
-        if (!comment) {
+        if (!comment || comment.length === 0) {
             return "NULL"
         }
 
@@ -3339,6 +3490,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Escapes given table or view path.
+     * @param target
      */
     protected escapePath(target: Table | View | string): string {
         const { schema, tableName } = this.driver.parseTableName(target)
@@ -3352,6 +3504,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Builds a query for create column.
+     * @param column
+     * @param explicitDefault
+     * @param explicitNullable
      */
     protected buildCreateColumnSql(
         column: TableColumn,
@@ -3385,13 +3540,44 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
     /**
      * Change table comment.
+     * @param tableOrName
+     * @param newComment
      */
-    changeTableComment(
+    async changeTableComment(
         tableOrName: Table | string,
-        comment?: string,
+        newComment?: string,
     ): Promise<void> {
-        throw new TypeORMError(
-            `spa driver does not support change table comment.`,
+        const upQueries: Query[] = []
+        const downQueries: Query[] = []
+
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+
+        const escapedNewComment = this.escapeComment(newComment)
+        const escapedComment = this.escapeComment(table.comment)
+
+        if (escapedNewComment === escapedComment) {
+            return
+        }
+
+        const newTable = table.clone()
+        newTable.comment = newComment
+        upQueries.push(
+            new Query(
+                `COMMENT ON TABLE ${this.escapePath(
+                    newTable,
+                )} IS ${escapedNewComment}`,
+            ),
         )
+        downQueries.push(
+            new Query(
+                `COMMENT ON TABLE ${this.escapePath(table)} IS ${escapedComment}`,
+            ),
+        )
+        await this.executeQueries(upQueries, downQueries)
+
+        table.comment = newTable.comment
+        this.replaceCachedTable(table, newTable)
     }
 }

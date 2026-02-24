@@ -31,6 +31,7 @@ export class EntitySchemaTransformer {
 
     /**
      * Transforms entity schema into new metadata args storage object.
+     * @param schemas
      */
     transform(schemas: EntitySchema<any>[]): MetadataArgsStorage {
         const metadataArgsStorage = new MetadataArgsStorage()
@@ -363,6 +364,7 @@ export class EntitySchemaTransformer {
                     target: options.target || options.name,
                     name: exclusion.name,
                     expression: exclusion.expression,
+                    deferrable: exclusion.deferrable,
                 }
                 metadataArgsStorage.exclusions.push(exclusionArgs)
             })

@@ -5,10 +5,10 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { DataSource } from "../../../src"
-import { Child1 } from "./enity/Child1"
-import { Child2 } from "./enity/Child2"
-import { Root } from "./enity/Root"
-import { Shared } from "./enity/Shared"
+import { Child1 } from "./entity/Child1"
+import { Child2 } from "./entity/Child2"
+import { Root } from "./entity/Root"
+import { Shared } from "./entity/Shared"
 
 describe("github issues > #5691 RelationId is too slow", () => {
     const setupFixtures = async (

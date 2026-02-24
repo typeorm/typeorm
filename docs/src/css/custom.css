@@ -6,86 +6,85 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #D94400;
-  --ifm-color-primary-dark: #C33D00;
-  --ifm-color-primary-darker: #B33800;
-  --ifm-color-primary-darkest: #992F00;
-  --ifm-color-primary-light: #E64B00;
-  --ifm-color-primary-lighter: #F25200;
-  --ifm-color-primary-lightest: #FF5E0D;
+    --ifm-color-primary: #d94400;
+    --ifm-color-primary-dark: #c33d00;
+    --ifm-color-primary-darker: #b33800;
+    --ifm-color-primary-darkest: #992f00;
+    --ifm-color-primary-light: #e64b00;
+    --ifm-color-primary-lighter: #f25200;
+    --ifm-color-primary-lightest: #ff5e0d;
 
-  /* Secondary color (purple) */
-  --ifm-color-secondary: #2E004B;
-  --ifm-color-secondary-dark: #290043;
-  --ifm-color-secondary-darker: #25003C;
-  --ifm-color-secondary-darkest: #1F0032;
-  --ifm-color-secondary-light: #370059;
-  --ifm-color-secondary-lighter: #410068;
-  --ifm-color-secondary-lightest: #4B0077;
+    /* Secondary color (purple) */
+    --ifm-color-secondary: #2e004b;
+    --ifm-color-secondary-dark: #290043;
+    --ifm-color-secondary-darker: #25003c;
+    --ifm-color-secondary-darkest: #1f0032;
+    --ifm-color-secondary-light: #370059;
+    --ifm-color-secondary-lighter: #410068;
+    --ifm-color-secondary-lightest: #4b0077;
 
-  --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(217, 68, 0, 0.1);
+    --ifm-code-font-size: 95%;
+    --docusaurus-highlighted-code-line-bg: rgba(217, 68, 0, 0.1);
 
-  /* Additional UI colors */
-  --ifm-navbar-background-color: rgba(255, 255, 255, 0.8);
-  --ifm-background-color: #FFFFFF;
-  --ifm-footer-background-color: #3D1B54;
-  --ifm-footer-color: #FFFFFF;
-  --ifm-footer-link-color: #FFE6D9; /* Slightly warmer white for better contrast */
-  --ifm-footer-title-color: #FFFFFF;
+    /* Additional UI colors */
+    --ifm-navbar-background-color: rgba(255, 255, 255, 0.8);
+    --ifm-background-color: #ffffff;
+    --ifm-footer-background-color: #3d1b54;
+    --ifm-footer-color: #ffffff;
+    --ifm-footer-link-color: #ffe6d9; /* Slightly warmer white for better contrast */
+    --ifm-footer-title-color: #ffffff;
 
-  /* Enhanced link colors for better contrast */
-  --ifm-link-color: #B33800;
-  --ifm-link-hover-color: #992F00;
+    /* Enhanced link colors for better contrast */
+    --ifm-link-color: #b33800;
+    --ifm-link-hover-color: #992f00;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
-[data-theme='dark'] {
-  --ifm-color-primary: #FF7733;
-  --ifm-color-primary-dark: #FF6619;
-  --ifm-color-primary-darker: #FF5C0D;
-  --ifm-color-primary-darkest: #E64B00;
-  --ifm-color-primary-light: #FF884D;
-  --ifm-color-primary-lighter: #FF9259;
-  --ifm-color-primary-lightest: #FFAD85;
+[data-theme="dark"] {
+    --ifm-color-primary: #ff7733;
+    --ifm-color-primary-dark: #ff6619;
+    --ifm-color-primary-darker: #ff5c0d;
+    --ifm-color-primary-darkest: #e64b00;
+    --ifm-color-primary-light: #ff884d;
+    --ifm-color-primary-lighter: #ff9259;
+    --ifm-color-primary-lightest: #ffad85;
 
-  /* Secondary colors for dark mode */
-  --ifm-color-secondary: #B366CC;
-  --ifm-color-secondary-dark: #A952C4;
-  --ifm-color-secondary-darker: #9F47BA;
-  --ifm-color-secondary-darkest: #8A3AA3;
-  --ifm-color-secondary-light: #BD7AD3;
-  --ifm-color-secondary-lighter: #C78EDA;
-  --ifm-color-secondary-lightest: #DAB3E6;
+    /* Secondary colors for dark mode */
+    --ifm-color-secondary: #b366cc;
+    --ifm-color-secondary-dark: #a952c4;
+    --ifm-color-secondary-darker: #9f47ba;
+    --ifm-color-secondary-darkest: #8a3aa3;
+    --ifm-color-secondary-light: #bd7ad3;
+    --ifm-color-secondary-lighter: #c78eda;
+    --ifm-color-secondary-lightest: #dab3e6;
 
-  --docusaurus-highlighted-code-line-bg: rgba(255, 119, 51, 0.3);
+    --docusaurus-highlighted-code-line-bg: rgba(255, 119, 51, 0.3);
 
-  /* Additional UI colors for dark mode */
-  --ifm-navbar-background-color: rgba(24, 0, 40, 0.8);
-  --ifm-background-color: #180028;
-  --ifm-footer-background-color: #180028;
-  --ifm-footer-color: #FFFFFF;
-  --ifm-footer-link-color: #FFE6D9; /* Warmer white for better contrast */
-  --ifm-footer-title-color: #FFFFFF;
-  --ifm-heading-color: #FFFFFF;
+    /* Additional UI colors for dark mode */
+    --ifm-navbar-background-color: rgba(24, 0, 40, 0.8);
+    --ifm-background-color: #180028;
+    --ifm-footer-background-color: #180028;
+    --ifm-footer-color: #ffffff;
+    --ifm-footer-link-color: #ffe6d9; /* Warmer white for better contrast */
+    --ifm-footer-title-color: #ffffff;
+    --ifm-heading-color: #ffffff;
 
-  /* Enhanced link colors for dark mode */
-  --ifm-link-color: #FF884D;
-  --ifm-link-hover-color: #FF9259;
+    /* Enhanced link colors for dark mode */
+    --ifm-link-color: #ff884d;
+    --ifm-link-hover-color: #ff9259;
 }
 
-
 html .navbar__link:hover {
-  color: var(--ifm-color-primary);
+    color: var(--ifm-color-primary);
 }
 
 /* Logo visibility based on theme */
-html[data-theme='light'] .dark-mode-only {
-  display: none;
+html[data-theme="light"] .dark-mode-only {
+    display: none;
 }
 
-html[data-theme='dark'] .light-mode-only {
-  display: none;
+html[data-theme="dark"] .light-mode-only {
+    display: none;
 }
 
 div[role="banner"] {
@@ -93,9 +92,9 @@ div[role="banner"] {
 }
 
 div[class*="announcementBarContent_"] b {
-  font-size: 1.05rem;
-  letter-spacing: 0.3px;
-  margin-right: 8px;
+    font-size: 1.05rem;
+    letter-spacing: 0.3px;
+    margin-right: 8px;
 }
 
 div[class*="announcementBarContent_"] a {
@@ -103,190 +102,198 @@ div[class*="announcementBarContent_"] a {
 }
 
 div[class*="announcementBarContent_"] a:hover {
-  filter: brightness(110%);
-  text-decoration: none !important;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+    filter: brightness(110%);
+    text-decoration: none !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
 }
 
 /* Close button styling */
 div[class*="announcementBar"] .close {
-  color: #FFFFFF;
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
+    color: #ffffff;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
 }
 
 div[class*="announcementBar"] .close:hover {
-  opacity: 1;
+    opacity: 1;
 }
 
 .navbar {
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 9996 !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100 !important;
 }
 
 .navbar-sidebar {
-  height: 100vh !important;
-  background: var(--ifm-background-color) !important;
-  z-index: 10000 !important;
+    height: 100vh !important;
+    background: var(--ifm-background-color) !important;
+    z-index: 10000 !important;
 }
 
 .navbar-sidebar__backdrop {
-  z-index: 9999 !important;
-  height: 100vh !important;
+    z-index: 9999 !important;
+    height: 100vh !important;
 }
 
 /* TypeSense search positioning */
 .DocSearch-Container {
-  z-index: 9999 !important;
+    z-index: 9999 !important;
 }
 
-[data-theme='dark'] .navbar {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+[data-theme="dark"] .navbar {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 /* Custom hero section and buttons */
 .hero--primary {
-  background: linear-gradient(135deg, var(--ifm-color-secondary) 0%, var(--ifm-color-secondary-lightest) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--ifm-color-secondary) 0%,
+        var(--ifm-color-secondary-lightest) 100%
+    );
 }
 
-[data-theme='dark'] .hero--primary {
-  background: linear-gradient(135deg, var(--ifm-color-secondary-darkest) 0%, var(--ifm-color-secondary) 100%);
+[data-theme="dark"] .hero--primary {
+    background: linear-gradient(
+        135deg,
+        var(--ifm-color-secondary-darkest) 0%,
+        var(--ifm-color-secondary) 100%
+    );
 }
 
 .button.button--secondary {
-  background-color: var(--ifm-color-primary);
-  border-color: var(--ifm-color-primary);
-  color: white;
-  font-weight: 600; /* Enhanced weight for better readability */
-  transition: all 0.3s ease;
+    background-color: var(--ifm-color-primary);
+    border-color: var(--ifm-color-primary);
+    color: white;
+    font-weight: 600; /* Enhanced weight for better readability */
+    transition: all 0.3s ease;
 }
 
 .button.button--secondary:hover {
-  background-color: var(--ifm-color-primary-dark);
-  border-color: var(--ifm-color-primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(255, 80, 0, 0.3);
+    background-color: var(--ifm-color-primary-dark);
+    border-color: var(--ifm-color-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 80, 0, 0.3);
 }
 
 .button.button--outline {
-  color: var(--ifm-color-primary);
-  border: 1px solid var(--ifm-color-primary);
-  transition: all 0.3s ease;
+    color: var(--ifm-color-primary);
+    border: 1px solid var(--ifm-color-primary);
+    transition: all 0.3s ease;
 }
 
 .hero--primary .button.button--outline {
-  color: white;
-  border: 1px solid white;
+    color: white;
+    border: 1px solid white;
 }
 
 .button.button--outline:hover {
-  background-color: var(--ifm-color-primary);
-  border-color: var(--ifm-color-primary);
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(255, 80, 0, 0.3);
+    background-color: var(--ifm-color-primary);
+    border-color: var(--ifm-color-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 80, 0, 0.3);
 }
 
 .hero--primary .button.button--outline:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-color: white;
-  color: white;
-  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: white;
+    color: white;
+    box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
 }
 
 /* Footer styling */
-[data-theme='light'] .footer {
-  background: linear-gradient(160deg, #3D1B54 0%, #4E2868 100%) !important;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+[data-theme="light"] .footer {
+    background: linear-gradient(160deg, #3d1b54 0%, #4e2868 100%) !important;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
 }
 
-[data-theme='dark'] .footer {
-  background: linear-gradient(160deg, #180028 0%, #2A0045 100%) !important;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+[data-theme="dark"] .footer {
+    background: linear-gradient(160deg, #180028 0%, #2a0045 100%) !important;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .footer {
-  --ifm-footer-background-color: var(--ifm-footer-background-color);
-  --ifm-footer-color: var(--ifm-footer-color);
-  --ifm-footer-link-color: var(--ifm-footer-link-color);
-  --ifm-footer-title-color: var(--ifm-footer-title-color);
-  position: relative;
-  padding-top: 3rem;
-  padding-bottom: 2rem;
+    --ifm-footer-background-color: var(--ifm-footer-background-color);
+    --ifm-footer-color: var(--ifm-footer-color);
+    --ifm-footer-link-color: var(--ifm-footer-link-color);
+    --ifm-footer-title-color: var(--ifm-footer-title-color);
+    position: relative;
+    padding-top: 3rem;
+    padding-bottom: 2rem;
 }
 
 /* Direct override for footer link colors with high specificity */
 .footer .col .footer__title {
-  color: #FFFFFF !important;
-  font-weight: 700 !important;
-  font-size: 1.2rem !important;
-  letter-spacing: 0.5px !important;
-  margin-bottom: 1.2rem !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 1.2rem !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 1.2rem !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
 .footer .col .footer__item a.footer__link-item,
 footer a.footer__link-item,
 .footer__link-item {
-  color: #FFFFFF !important;
-  font-weight: 600 !important;
-  opacity: 0.95 !important;
-  transition: all 0.2s ease !important;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2) !important;
-  position: relative !important;
-  padding: 3px 0 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    opacity: 0.95 !important;
+    transition: all 0.2s ease !important;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2) !important;
+    position: relative !important;
+    padding: 3px 0 !important;
 }
 
 .footer .col .footer__item a.footer__link-item:hover,
 footer a.footer__link-item:hover,
 .footer__link-item:hover {
-  color: #FF7733 !important;
-  opacity: 1 !important;
-  text-decoration: none !important;
-  transform: translateX(3px) !important;
-  text-shadow: 0 0 8px rgba(255, 80, 0, 0.4) !important;
+    color: #ff7733 !important;
+    opacity: 1 !important;
+    text-decoration: none !important;
+    transform: translateX(3px) !important;
+    text-shadow: 0 0 8px rgba(255, 80, 0, 0.4) !important;
 }
 
 /* Add more spacing between footer items */
 .footer .footer__item {
-  margin-top: 0.7rem !important;
-  margin-bottom: 0.7rem !important;
+    margin-top: 0.7rem !important;
+    margin-bottom: 0.7rem !important;
 }
 
 /* Make copyright text more visible */
 .footer .footer__copyright {
-  color: #FFFFFF !important;
-  font-weight: 500 !important;
-  opacity: 0.9 !important;
-  margin-top: 2.5rem !important;
-  padding-top: 1.5rem !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    opacity: 0.9 !important;
+    margin-top: 2.5rem !important;
+    padding-top: 1.5rem !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
 /* Add a subtle orange accent line at the top of the footer */
 .footer:before {
-  content: '';
-  display: block;
-  height: 4px;
-  width: 100%;
-  background: linear-gradient(90deg, #FF5000, #FF7733, #FF5000);
-  position: absolute;
-  top: 0;
-  left: 0;
-  box-shadow: 0 1px 5px rgba(255, 80, 0, 0.3);
+    content: "";
+    display: block;
+    height: 4px;
+    width: 100%;
+    background: linear-gradient(90deg, #ff5000, #ff7733, #ff5000);
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-shadow: 0 1px 5px rgba(255, 80, 0, 0.3);
 }
 
 /* Ensure announcement bar meets contrast requirements */
 div[class*="announcementBarContent_"] {
-  color: #FFFFFF;
+    color: #ffffff;
 }
 
 div[class*="announcementBarContent_"] a {
-  color: #FFE6D9 !important;
-  text-decoration: underline;
+    color: #ffe6d9 !important;
+    text-decoration: underline;
 }
