@@ -1,4 +1,5 @@
-import { Column, ObjectId, ObjectIdColumn } from "../../../../src"
+import { ObjectId } from "mongodb"
+import { Column, ObjectIdColumn } from "../../../../src"
 
 export class Value {
     @ObjectIdColumn()

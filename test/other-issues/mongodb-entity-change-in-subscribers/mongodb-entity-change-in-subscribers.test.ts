@@ -1,12 +1,11 @@
-import "reflect-metadata"
+import { expect } from "chai"
+import { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
-import { expect } from "chai"
 
 describe("other issues > mongodb entity change in subscribers should affect persistence", () => {
     let connections: DataSource[]
