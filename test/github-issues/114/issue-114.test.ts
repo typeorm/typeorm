@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { PostgresConnectionOptions } from "../../../src/driver/postgres/PostgresConnectionOptions"
+import { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
 
 describe.skip("github issues > #114 Can not be parsed correctly the URL of pg.", () => {
     let connection: DataSource
@@ -14,7 +14,7 @@ describe.skip("github issues > #114 Can not be parsed correctly the URL of pg.",
     })
 
     it("should not fail in url parser", () => {
-        const options = connection.options as PostgresConnectionOptions
+        const options = connection.options as PostgresDataSourceOptions
         expect(options.username).to.be.eq("test")
         expect(options.password).to.be.eq("test")
         expect(options.host).to.be.eq("localhost")

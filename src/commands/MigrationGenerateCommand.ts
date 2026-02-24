@@ -215,6 +215,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
     /**
      * Formats query parameters for migration queries if parameters actually exist
+     * @param parameters
      */
     protected static queryParams(parameters: any[] | undefined): string {
         if (!parameters || !parameters.length) {
@@ -226,6 +227,10 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
     /**
      * Gets contents of the migration file.
+     * @param name
+     * @param timestamp
+     * @param upSqls
+     * @param downSqls
      */
     protected static getTemplate(
         name: string,
@@ -256,6 +261,11 @@ ${downSqls.join(`
 
     /**
      * Gets contents of the migration file in Javascript.
+     * @param name
+     * @param timestamp
+     * @param upSqls
+     * @param downSqls
+     * @param esm
      */
     protected static getJavascriptTemplate(
         name: string,
@@ -301,6 +311,7 @@ ${downSqls.join(`
 
     /**
      *
+     * @param query
      */
     protected static prettifyQuery(query: string) {
         const formattedQuery = format(query, { indent: "    " })

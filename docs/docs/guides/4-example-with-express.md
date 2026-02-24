@@ -85,8 +85,8 @@ npm install express
 npm install @types/express --save-dev
 ```
 
--   `express` is the express engine itself. It allows us to create a web api
--   `@types/express` is used to have a type information when using express
+- `express` is the express engine itself. It allows us to create a web api
+- `@types/express` is used to have a type information when using express
 
 Let's edit the `src/app.ts` file and add express-related logic:
 
@@ -140,9 +140,9 @@ Let's install the required packages first:
 npm install typeorm reflect-metadata mysql
 ```
 
--   `typeorm` is the typeorm package itself
--   `reflect-metadata` is required to make decorators to work properly. Remember to import it before your TypeORM code.
--   `mysql` is the underlying database driver. If you are using a different database system, you must install the appropriate package
+- `typeorm` is the typeorm package itself
+- `reflect-metadata` is required to make decorators to work properly. Remember to import it before your TypeORM code.
+- `mysql` is the underlying database driver. If you are using a different database system, you must install the appropriate package
 
 Let's create `app-data-source.ts` where we set up initial database connection options:
 
@@ -156,7 +156,7 @@ export const myDataSource = new DataSource({
     username: "test",
     password: "test",
     database: "test",
-    entities: ["src/entity/*.js"],
+    entities: [__dirname + "/entities/**/*{.js,.ts}"],
     logging: true,
     synchronize: true,
 })
@@ -165,7 +165,7 @@ export const myDataSource = new DataSource({
 Configure each option as you need.
 Learn more about options [here](../data-source/2-data-source-options.md).
 
-Let's create a `user.entity.ts` entity inside `src/entity`:
+Let's create a `user.entity.ts` entity under `entities` folder:
 
 ```typescript
 import { Entity, Column, PrimaryGeneratedColumn } from "typeorm"
@@ -190,7 +190,7 @@ import "reflect-metadata"
 
 import * as express from "express"
 import { Request, Response } from "express"
-import { User } from "./entity/User"
+import { User } from "./entities/User"
 import { myDataSource } from "./app-data-source.ts"
 
 // establish database connection
