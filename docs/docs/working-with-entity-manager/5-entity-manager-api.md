@@ -391,8 +391,7 @@ const timber = await manager.findOneOrFail(User, {
 const timber = await manager.findOneByOrFail(User, { firstName: "Timber" })
 ```
 
-- `clear` - Clears all the data from the given table (truncates/drops it). Also supports cascade option
-  to clear all the data from the tables that have foreign keys to this table (supported by PostgreSQL/CockroachDB and Oracle only).
+- `clear` - Clears all the data from (truncates) the given table. Supports cascade option to also clear all the data from the tables that have foreign keys to this table (supported by PostgreSQL/CockroachDB and Oracle only; other databases throw an error if cascade option is set to true).
 
 ```typescript
 await manager.clear(User)

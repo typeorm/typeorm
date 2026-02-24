@@ -2923,10 +2923,12 @@ export class CockroachQueryRunner
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      * @param tableName
+     * @param options
+     * @param options.cascade
      */
     async clearTable(
         tableName: string,
-        options?: { cascade: boolean },
+        options?: { cascade?: boolean },
     ): Promise<void> {
         const cascade = options?.cascade ? " CASCADE" : ""
         await this.query(

@@ -1429,11 +1429,13 @@ export class EntityManager {
      *
      * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
      * @param entityClass
+     * @param options
+     * @param options.cascade
      * @see https://stackoverflow.com/a/5972738/925151
      */
     async clear<Entity>(
         entityClass: EntityTarget<Entity>,
-        options?: { cascade: boolean },
+        options?: { cascade?: boolean },
     ): Promise<void> {
         const metadata = this.connection.getMetadata(entityClass)
 

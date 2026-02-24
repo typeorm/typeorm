@@ -653,10 +653,12 @@ export class BaseEntity {
 
     /**
      * Clears all the data from the given table/collection (truncates/drops it).
+     * @param options
+     * @param options.cascade
      */
     static clear<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
-        options?: { cascade: boolean },
+        options?: { cascade?: boolean },
     ): Promise<void> {
         return this.getRepository<T>().clear(options)
     }

@@ -1963,10 +1963,12 @@ export class AuroraMysqlQueryRunner
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      * @param tableOrName
+     * @param options
+     * @param options.cascade
      */
     async clearTable(
         tableOrName: Table | string,
-        options?: { cascade: boolean },
+        options?: { cascade?: boolean },
     ): Promise<void> {
         if (options?.cascade)
             throw new TypeORMError(

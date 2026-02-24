@@ -1379,10 +1379,12 @@ export class MongoQueryRunner implements QueryRunner {
     /**
      * Drops collection.
      * @param collectionName
+     * @param options
+     * @param options.cascade
      */
     async clearTable(
         collectionName: string,
-        options?: { cascade: boolean },
+        options?: { cascade?: boolean },
     ): Promise<void> {
         if (options?.cascade) {
             throw new TypeORMError(
