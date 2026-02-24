@@ -89,7 +89,7 @@ describe("repository > returning", () => {
                 )
 
                 expect(result.raw).to.be.an("array")
-                expect(result.raw.length).to.be.at.least(2)
+                expect(result.raw.length).to.equal(2)
                 expect(result.raw).to.deep.include.members([
                     { id: user1.id, name: "updated-all" },
                     { id: user2.id, name: "updated-all" },
@@ -158,7 +158,7 @@ describe("repository > returning", () => {
                 })
 
                 expect(result.raw).to.be.an("array")
-                expect(result.raw.length).to.be.at.least(2)
+                expect(result.raw.length).to.equal(2)
                 expect(result.raw).to.deep.include.members([
                     { id: user1.id, name: "user1" },
                     { id: user2.id, name: "user2" },
