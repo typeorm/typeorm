@@ -1,20 +1,18 @@
-import {
-    DataSource,
-    EntitySchemaEmbeddedColumnOptions,
-    SelectQueryBuilder,
-} from ".."
-import { EntitySchemaIndexOptions } from "./EntitySchemaIndexOptions"
-import { EntitySchemaColumnOptions } from "./EntitySchemaColumnOptions"
-import { EntitySchemaRelationOptions } from "./EntitySchemaRelationOptions"
+import { DataSource } from "../data-source"
 import { OrderByCondition } from "../find-options/OrderByCondition"
+import { TreeMetadataArgs } from "../metadata-args/TreeMetadataArgs"
 import { TableType } from "../metadata/types/TableTypes"
-import { EntitySchemaUniqueOptions } from "./EntitySchemaUniqueOptions"
+import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { EntitySchemaCheckOptions } from "./EntitySchemaCheckOptions"
+import { EntitySchemaColumnOptions } from "./EntitySchemaColumnOptions"
+import { EntitySchemaEmbeddedColumnOptions } from "./EntitySchemaEmbeddedColumnOptions"
 import { EntitySchemaExclusionOptions } from "./EntitySchemaExclusionOptions"
+import { EntitySchemaForeignKeyOptions } from "./EntitySchemaForeignKeyOptions"
+import { EntitySchemaIndexOptions } from "./EntitySchemaIndexOptions"
 import { EntitySchemaInheritanceOptions } from "./EntitySchemaInheritanceOptions"
 import { EntitySchemaRelationIdOptions } from "./EntitySchemaRelationIdOptions"
-import { EntitySchemaForeignKeyOptions } from "./EntitySchemaForeignKeyOptions"
-import { TreeMetadataArgs } from "../metadata-args/TreeMetadataArgs"
+import { EntitySchemaRelationOptions } from "./EntitySchemaRelationOptions"
+import { EntitySchemaUniqueOptions } from "./EntitySchemaUniqueOptions"
 
 /**
  * Interface for entity metadata mappings stored inside "schemas" instead of models decorated by decorators.
@@ -125,7 +123,7 @@ export class EntitySchemaOptions<T> {
     /**
      * View expression.
      */
-    expression?: string | ((connection: DataSource) => SelectQueryBuilder<any>)
+    expression?: string | ((dataSource: DataSource) => SelectQueryBuilder<any>)
 
     /**
      * Inheritance options.

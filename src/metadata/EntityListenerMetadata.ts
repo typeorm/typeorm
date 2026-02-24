@@ -60,6 +60,7 @@ export class EntityListenerMetadata {
 
     /**
      * Checks if entity listener is allowed to be executed on the given entity.
+     * @param entity
      */
     isAllowed(entity: ObjectLiteral) {
         // todo: create in entity metadata method like isInherited?
@@ -73,6 +74,7 @@ export class EntityListenerMetadata {
 
     /**
      * Executes listener method of the given entity.
+     * @param entity
      */
     execute(entity: ObjectLiteral) {
         // Check if the Embedded Metadata does not exist
@@ -111,6 +113,8 @@ export class EntityListenerMetadata {
 
     /**
      * Calls embedded entity listener method no matter how nested it is.
+     * @param entity
+     * @param propertyPaths
      */
     protected callEntityEmbeddedMethod(
         entity: ObjectLiteral,

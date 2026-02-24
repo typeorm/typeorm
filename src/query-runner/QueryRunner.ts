@@ -54,14 +54,12 @@ export interface QueryRunner extends AsyncDisposable {
 
     /**
      * All synchronized tables in the database.
-     *
      * @deprecated Call `getTables()`
      */
     loadedTables: Table[]
 
     /**
      * All synchronized views in the database.
-     *
      * @deprecated Call `getViews()`
      */
     loadedViews: View[]

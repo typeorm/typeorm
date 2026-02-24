@@ -10,6 +10,9 @@ import { SimplePost } from "./entity/SimplePost"
 import { SimpleCounters } from "./entity/SimpleCounters"
 import { Information } from "./entity/Information"
 import { Post } from "./entity/Post"
+import { Parent } from "./entity/Parent"
+import { Account } from "./entity/Account"
+import { Department } from "./entity/Department"
 
 describe("columns > embedded columns", () => {
     let connections: DataSource[]
@@ -157,6 +160,54 @@ describe("columns > embedded columns", () => {
                     // Post.countersWithoutPrefix('').dataWithoutPrefix('').description
                     "descr",
                 ])
+            }),
+        ))
+
+    // GitHub issue #10578 - updating embedded columns with relations doesn't work
+    it("should update embedded columns when saving entity with relations", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const parentRepository = connection.getRepository("Parent")
+                const accountRepository = connection.getRepository("Account")
+
+                const account = new Account()
+                account.name = "Account #1"
+                await accountRepository.save(account)
+
+                const parent = new Parent()
+                parent.department = new Department()
+                parent.department.account = account
+                await parentRepository.save(parent)
+                const loadedParent = await parentRepository.findOne({
+                    where: { id: parent.id },
+                })
+
+                loadedParent!.should.be.eql({
+                    id: parent.id,
+                    department: {
+                        account: {
+                            id: account.id,
+                            name: "Account #1",
+                        },
+                    },
+                })
+
+                parent.department.account.name = "Updated Account #1"
+                await parentRepository.save(parent)
+
+                const loadedParent1 = await parentRepository.findOne({
+                    where: { id: parent.id },
+                })
+
+                loadedParent1!.should.be.eql({
+                    id: parent.id,
+                    department: {
+                        account: {
+                            id: account.id,
+                            name: "Updated Account #1",
+                        },
+                    },
+                })
             }),
         ))
 })
