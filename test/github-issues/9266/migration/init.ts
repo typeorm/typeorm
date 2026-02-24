@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
 
 export class CreateDatabase implements MigrationInterface {
     name = "CreateDatabase1623518107000"

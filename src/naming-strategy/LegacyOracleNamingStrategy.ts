@@ -1,4 +1,4 @@
-import { NamingStrategyInterface } from "./NamingStrategyInterface"
+import type { NamingStrategyInterface } from "./NamingStrategyInterface"
 import { RandomGenerator } from "../util/RandomGenerator"
 import { DefaultNamingStrategy } from "./DefaultNamingStrategy"
 import { TypeORMError } from "../error"

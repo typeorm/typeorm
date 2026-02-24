@@ -1,12 +1,12 @@
-import { DataSource } from "../../data-source/DataSource"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { DataSource } from "../../data-source/DataSource"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
-import { Driver } from "../Driver"
+import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
 import { PostgresDriver } from "../postgres/PostgresDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { AuroraPostgresDataSourceOptions } from "./AuroraPostgresDataSourceOptions"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { AuroraPostgresDataSourceOptions } from "./AuroraPostgresDataSourceOptions"
 import { AuroraPostgresQueryRunner } from "./AuroraPostgresQueryRunner"
 
 abstract class PostgresWrapper extends PostgresDriver {

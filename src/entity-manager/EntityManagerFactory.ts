@@ -1,8 +1,8 @@
-import { DataSource as dataSource } from "../data-source/DataSource"
+import type { DataSource as dataSource } from "../data-source/DataSource"
 import { EntityManager } from "./EntityManager"
 import { MongoEntityManager } from "./MongoEntityManager"
 import { SqljsEntityManager } from "./SqljsEntityManager"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Helps to create entity managers.

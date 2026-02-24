@@ -1,6 +1,6 @@
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
+import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
 
 /**
  * Microsoft Sql Server specific connection options.

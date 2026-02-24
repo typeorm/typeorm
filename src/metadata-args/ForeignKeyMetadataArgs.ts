@@ -1,8 +1,8 @@
-import { DeferrableType } from "../metadata/types/DeferrableType"
-import { OnDeleteType } from "../metadata/types/OnDeleteType"
-import { OnUpdateType } from "../metadata/types/OnUpdateType"
-import { PropertyTypeFactory } from "../metadata/types/PropertyTypeInFunction"
-import { RelationTypeInFunction } from "../metadata/types/RelationTypeInFunction"
+import type { DeferrableType } from "../metadata/types/DeferrableType"
+import type { OnDeleteType } from "../metadata/types/OnDeleteType"
+import type { OnUpdateType } from "../metadata/types/OnUpdateType"
+import type { PropertyTypeFactory } from "../metadata/types/PropertyTypeInFunction"
+import type { RelationTypeInFunction } from "../metadata/types/RelationTypeInFunction"
 
 /**
  * Arguments for ForeignKeyMetadata class.

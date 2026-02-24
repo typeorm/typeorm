@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource, DeepPartial } from "../../../../../src"
+import type { DataSource, DeepPartial } from "../../../../../src"
 import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,

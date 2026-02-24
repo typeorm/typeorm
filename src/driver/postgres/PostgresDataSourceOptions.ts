@@ -1,6 +1,6 @@
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
+import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 
 /**
  * Postgres-specific connection options.

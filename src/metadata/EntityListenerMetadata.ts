@@ -1,8 +1,8 @@
-import { EventListenerType } from "./types/EventListenerTypes"
-import { EntityListenerMetadataArgs } from "../metadata-args/EntityListenerMetadataArgs"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { EntityMetadata } from "./EntityMetadata"
-import { EmbeddedMetadata } from "./EmbeddedMetadata"
+import type { EventListenerType } from "./types/EventListenerTypes"
+import type { EntityListenerMetadataArgs } from "../metadata-args/EntityListenerMetadataArgs"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { EmbeddedMetadata } from "./EmbeddedMetadata"
 
 /**
  * This metadata contains all information about entity's listeners.

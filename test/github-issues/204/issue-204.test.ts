@@ -1,7 +1,7 @@
 import "../../utils/test-setup"
 import { expect } from "chai"
 import { Record } from "./entity/Record"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

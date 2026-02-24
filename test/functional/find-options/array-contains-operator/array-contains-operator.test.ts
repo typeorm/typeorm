@@ -1,4 +1,4 @@
-import { DataSource, EntityManager } from "../../../../src"
+import type { DataSource, EntityManager } from "../../../../src"
 import { ArrayContains } from "../../../../src/find-options/operator/ArrayContains"
 import "../../../utils/test-setup"
 import {

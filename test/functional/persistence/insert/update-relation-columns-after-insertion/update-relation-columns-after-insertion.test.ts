@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,

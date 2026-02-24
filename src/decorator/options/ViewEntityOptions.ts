@@ -1,5 +1,5 @@
-import { DataSource } from "../../data-source"
-import { SelectQueryBuilder } from "../../query-builder/SelectQueryBuilder"
+import type { DataSource } from "../../data-source"
+import type { SelectQueryBuilder } from "../../query-builder/SelectQueryBuilder"
 
 /**
  * Describes all entity view's options.

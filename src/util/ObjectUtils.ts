@@ -1,4 +1,4 @@
-import { MixedList } from "../common/MixedList"
+import type { MixedList } from "../common/MixedList"
 
 export class ObjectUtils {
     /**

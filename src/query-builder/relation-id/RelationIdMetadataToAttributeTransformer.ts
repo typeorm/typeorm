@@ -1,6 +1,6 @@
 import { RelationIdAttribute } from "./RelationIdAttribute"
-import { QueryExpressionMap } from "../QueryExpressionMap"
-import { RelationIdMetadata } from "../../metadata/RelationIdMetadata"
+import type { QueryExpressionMap } from "../QueryExpressionMap"
+import type { RelationIdMetadata } from "../../metadata/RelationIdMetadata"
 
 export class RelationIdMetadataToAttributeTransformer {
     // -------------------------------------------------------------------------

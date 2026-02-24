@@ -1,8 +1,8 @@
-import { ColumnType } from "../../driver/types/ColumnTypes"
+import type { ColumnType } from "../../driver/types/ColumnTypes"
 import { ColumnTypeUndefinedError } from "../../error"
 import { getMetadataArgsStorage } from "../../globals"
-import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
-import { VirtualColumnOptions } from "../options/VirtualColumnOptions"
+import type { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
+import type { VirtualColumnOptions } from "../options/VirtualColumnOptions"
 /**
  * VirtualColumn decorator is used to mark a specific class property as a Virtual column.
  * @param options

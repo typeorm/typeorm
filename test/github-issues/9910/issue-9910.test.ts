@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 
 describe("github issues > #9910 Incorrect behaivor of 'alwaysEnabled: true' after change from issue #9023", () => {

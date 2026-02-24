@@ -1,4 +1,4 @@
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import "../../../utils/test-setup"
 import {
     closeTestingConnections,

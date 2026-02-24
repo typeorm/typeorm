@@ -1,4 +1,4 @@
-import { MigrationInterface } from "./MigrationInterface"
+import type { MigrationInterface } from "./MigrationInterface"
 
 /**
  * Represents entity of the migration in the database.

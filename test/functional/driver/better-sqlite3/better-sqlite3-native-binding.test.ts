@@ -6,8 +6,8 @@ import {
 } from "../../../utils/test-utils"
 import { expect } from "chai"
 import { join } from "path"
-import { DataSource } from "../../../../src"
-import { BetterSqlite3DataSourceOptions } from "../../../../src/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
+import type { DataSource } from "../../../../src"
+import type { BetterSqlite3DataSourceOptions } from "../../../../src/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
 
 const pathToBetterSqliteNode = join(
     __dirname,

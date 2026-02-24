@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 import { PostSchema } from "./entity/Post"
 import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 

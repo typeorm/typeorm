@@ -1,5 +1,5 @@
 import { globSync } from "tinyglobby"
-import { Logger } from "../logger/Logger"
+import type { Logger } from "../logger/Logger"
 import { PlatformTools } from "../platform/PlatformTools"
 import { importOrRequireFile } from "./ImportUtils"
 import { InstanceChecker } from "./InstanceChecker"

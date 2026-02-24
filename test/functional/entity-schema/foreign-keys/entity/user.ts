@@ -1,5 +1,5 @@
 import { EntitySchema } from "../../../../../src"
-import { User } from "../model/user"
+import type { User } from "../model/user"
 
 export const UserEntity = new EntitySchema<User>({
     name: "User",

@@ -1,7 +1,7 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { FindOperatorType } from "./FindOperatorType"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { FindOperatorType } from "./FindOperatorType"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { ValueTransformer } from "../decorator/options/ValueTransformer"
+import type { ValueTransformer } from "../decorator/options/ValueTransformer"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 
 type SqlGeneratorType = (aliasPath: string) => string

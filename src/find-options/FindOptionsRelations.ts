@@ -1,4 +1,4 @@
-import { ObjectId } from "../driver/mongodb/typings"
+import type { ObjectId } from "../driver/mongodb/typings"
 
 /**
  * A single property handler for FindOptionsRelations.

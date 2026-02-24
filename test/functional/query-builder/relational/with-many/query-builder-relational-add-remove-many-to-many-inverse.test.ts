@@ -7,7 +7,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 
 describe("query builder > relational with many > add and remove many to many inverse", () => {
     let dataSources: DataSource[]

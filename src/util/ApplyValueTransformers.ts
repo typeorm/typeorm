@@ -1,4 +1,4 @@
-import { ValueTransformer } from "../decorator/options/ValueTransformer"
+import type { ValueTransformer } from "../decorator/options/ValueTransformer"
 
 export class ApplyValueTransformers {
     static transformFrom(

@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import { DataSource } from "../../src/data-source/DataSource"
-import { Repository } from "../../src/repository/Repository"
+import type { Repository } from "../../src/repository/Repository"
 import { PostDetails } from "../../sample/sample3-many-to-one/entity/PostDetails"
 import { Post } from "../../sample/sample3-many-to-one/entity/Post"
 import { PostCategory } from "../../sample/sample3-many-to-one/entity/PostCategory"

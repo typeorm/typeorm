@@ -7,8 +7,8 @@ import {
 } from "../../../utils/test-utils"
 import { Foo } from "./entity/foo"
 import { filterByCteCapabilities } from "./helpers"
-import { QueryBuilderCteOptions } from "../../../../src/query-builder/QueryBuilderCte"
-import { DataSource } from "../../../../src"
+import type { QueryBuilderCteOptions } from "../../../../src/query-builder/QueryBuilderCte"
+import type { DataSource } from "../../../../src"
 
 describe("query builder > cte > materialized", () => {
     let dataSources: DataSource[]

@@ -1,7 +1,7 @@
-import { FileLoggerOptions, LoggerOptions } from "./LoggerOptions"
-import { LogLevel, LogMessage } from "./Logger"
+import type { FileLoggerOptions, LoggerOptions } from "./LoggerOptions"
+import type { LogLevel, LogMessage } from "./Logger"
 import appRootPath from "app-root-path"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 import { PlatformTools } from "../platform/PlatformTools"
 import { AbstractLogger } from "./AbstractLogger"
 

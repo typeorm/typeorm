@@ -1,4 +1,4 @@
-import { JoinColumnOptions } from "./JoinColumnOptions"
+import type { JoinColumnOptions } from "./JoinColumnOptions"
 
 /**
  * Describes all join table with multiple column options.

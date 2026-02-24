@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import "../../utils/test-setup"
-import { DataSource, LessThanOrEqual, MoreThanOrEqual } from "../../../src"
+import type { DataSource } from "../../../src"
+import { LessThanOrEqual, MoreThanOrEqual } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

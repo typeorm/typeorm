@@ -1,13 +1,13 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     createTypeormMetadataTable,
 } from "../../utils/test-utils"
 import { TableColumn } from "../../../src"
-import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
+import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > change column", () => {

@@ -1,9 +1,10 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions, EntitySchema } from "../../src"
-import { Post } from "./entity/Post"
-import { PostDetails } from "./entity/PostDetails"
-import { Category } from "./entity/Category"
-import { Image } from "./entity/Image"
+import type { DataSourceOptions } from "../../src"
+import { DataSource, EntitySchema } from "../../src"
+import type { Post } from "./entity/Post"
+import type { PostDetails } from "./entity/PostDetails"
+import type { Category } from "./entity/Category"
+import type { Image } from "./entity/Image"
 
 // NOTE: this example is not working yet, only concepts of how this feature must work described here
 

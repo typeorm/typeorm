@@ -1,4 +1,4 @@
-import { RelationIdAttribute } from "./RelationIdAttribute"
+import type { RelationIdAttribute } from "./RelationIdAttribute"
 
 export interface RelationIdLoadResult {
     relationIdAttribute: RelationIdAttribute

@@ -1,4 +1,4 @@
-import { DataSourceOptions } from "../../data-source/DataSourceOptions"
+import type { DataSourceOptions } from "../../data-source/DataSourceOptions"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { OrmUtils } from "../../util/OrmUtils"
 

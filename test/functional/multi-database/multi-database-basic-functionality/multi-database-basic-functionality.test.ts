@@ -4,7 +4,7 @@ import fs from "fs/promises"
 import path from "path"
 import { glob } from "tinyglobby"
 
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { filepathToName } from "../../../../src/util/PathUtils"
 import "../../../utils/test-setup"
 import {

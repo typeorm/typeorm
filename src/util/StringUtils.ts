@@ -133,6 +133,7 @@ interface IHashOptions {
 export function hash(input: string, options: IHashOptions = {}): string {
     let sha1: string
     if (isNode()) {
+        // eslint-disable-next-line @typescript-eslint/consistent-type-imports
         const crypto = require("node:crypto") as typeof import("node:crypto")
         const hashFunction = crypto.createHash("sha1")
         hashFunction.update(input, "utf8")

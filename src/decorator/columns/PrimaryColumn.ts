@@ -1,10 +1,10 @@
 import { getMetadataArgsStorage } from "../../globals"
 import { ColumnTypeUndefinedError } from "../../error/ColumnTypeUndefinedError"
 import { PrimaryColumnCannotBeNullableError } from "../../error/PrimaryColumnCannotBeNullableError"
-import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
-import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs"
-import { ColumnOptions } from "../options/ColumnOptions"
-import { ColumnType } from "../../driver/types/ColumnTypes"
+import type { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
+import type { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs"
+import type { ColumnOptions } from "../options/ColumnOptions"
+import type { ColumnType } from "../../driver/types/ColumnTypes"
 
 /**
  * Describes all primary key column's options.

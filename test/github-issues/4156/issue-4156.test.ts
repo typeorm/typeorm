@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { EntitySchema, In } from "../../../src"
 import { Author, AuthorSchema } from "./entity/Author"
 import { Post, PostSchema } from "./entity/Post"

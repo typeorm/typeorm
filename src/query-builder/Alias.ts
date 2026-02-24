@@ -1,4 +1,4 @@
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { TypeORMError } from "../error"
 

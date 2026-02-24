@@ -6,7 +6,7 @@ import {
 } from "../../utils/test-utils"
 import { UserEntity } from "./entity/UserEntity"
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 describe("github issues > #8450 Generated column not in RETURNING clause on save", () => {
     let dataSources: DataSource[]

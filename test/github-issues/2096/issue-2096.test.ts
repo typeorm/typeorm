@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { DataSource } from "../../../src"
-import { MysqlDataSourceOptions } from "../../../src/driver/mysql/MysqlDataSourceOptions"
+import type { MysqlDataSourceOptions } from "../../../src/driver/mysql/MysqlDataSourceOptions"
 import { getTypeOrmConfig } from "../../utils/test-utils"
 
 describe("github issues > #2096 [mysql] Database name isn't read from url", () => {

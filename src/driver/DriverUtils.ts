@@ -1,4 +1,4 @@
-import { Driver } from "./Driver"
+import type { Driver } from "./Driver"
 import { hash, shorten } from "../util/StringUtils"
 import { VersionUtils } from "../util/VersionUtils"
 

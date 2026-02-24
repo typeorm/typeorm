@@ -1,4 +1,4 @@
-import { FindOneOptions } from "./FindOneOptions"
+import type { FindOneOptions } from "./FindOneOptions"
 
 /**
  * Defines a special criteria to find specific entities.

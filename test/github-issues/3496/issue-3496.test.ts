@@ -1,5 +1,5 @@
 import "../../utils/test-setup"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

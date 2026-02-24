@@ -1,4 +1,5 @@
-import { Or, DataSource, ILike, Equal } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Or, ILike, Equal } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

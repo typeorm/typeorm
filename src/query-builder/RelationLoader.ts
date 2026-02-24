@@ -1,9 +1,9 @@
-import { DataSource } from "../data-source/DataSource"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { RelationMetadata } from "../metadata/RelationMetadata"
+import type { DataSource } from "../data-source/DataSource"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
-import { SelectQueryBuilder } from "./SelectQueryBuilder"
+import type { SelectQueryBuilder } from "./SelectQueryBuilder"
 
 /**
  * Wraps entities and creates getters/setters for their relations

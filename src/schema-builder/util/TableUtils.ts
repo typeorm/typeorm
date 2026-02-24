@@ -1,6 +1,6 @@
-import { TableColumnOptions } from "../options/TableColumnOptions"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
-import { Driver } from "../../driver/Driver"
+import type { TableColumnOptions } from "../options/TableColumnOptions"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { Driver } from "../../driver/Driver"
 
 export class TableUtils {
     static createTableColumnOptions(

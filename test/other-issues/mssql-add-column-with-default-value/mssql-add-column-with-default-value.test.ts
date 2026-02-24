@@ -2,8 +2,8 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
-import { Post } from "./entity/Post-Succeed"
+import type { DataSource } from "../../../src"
+import type { Post } from "./entity/Post-Succeed"
 
 describe("mssql -> add column to existing table", () => {
     let dataSources: DataSource[]

@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src"
+import type { DataSource } from "../../../../../src"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Image } from "./entity/Image"

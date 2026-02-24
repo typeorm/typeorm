@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, QueryRunner } from "../../../src"
+import type { DataSource, QueryRunner } from "../../../src"
 import {
     createTestingConnections,
     closeTestingConnections,

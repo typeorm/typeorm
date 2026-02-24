@@ -4,8 +4,8 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { Migration } from "../../../src/migration/Migration"
+import type { DataSource } from "../../../src/data-source/DataSource"
+import type { Migration } from "../../../src/migration/Migration"
 import { ForbiddenTransactionModeOverrideError } from "../../../src/error/ForbiddenTransactionModeOverrideError"
 
 describe("github issues > #7087 Allow to specify transaction property for individual migrations", () => {

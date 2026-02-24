@@ -1,5 +1,5 @@
 import "../../../utils/test-setup"
-import { DataSource, EntityManager } from "../../../../src"
+import type { DataSource, EntityManager } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

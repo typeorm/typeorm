@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Foo } from "./entity/Foo"
 import { FooWithSpecialChars } from "./entity/FooWithSpecialChars"
 import { CreateTableWithMissingValues1719925118381 } from "./migration/1719925118381-create-table-with-missing-values"

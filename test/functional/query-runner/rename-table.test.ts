@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 import { Table } from "../../../src/schema-builder/table/Table"
 import {

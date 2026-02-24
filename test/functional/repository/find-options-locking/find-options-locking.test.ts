@@ -1,12 +1,11 @@
 import { expect } from "chai"
+import type { DataSource, QueryRunner } from "../../../../src"
 import {
-    DataSource,
     LockNotSupportedOnGivenDriverError,
     NoVersionOrUpdateDateColumnError,
     OptimisticLockCanNotBeUsedError,
     OptimisticLockVersionMismatchError,
     PessimisticLockTransactionRequiredError,
-    QueryRunner,
 } from "../../../../src"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import "../../../utils/test-setup"

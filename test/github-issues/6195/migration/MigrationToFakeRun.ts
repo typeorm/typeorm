@@ -1,4 +1,5 @@
-import { MigrationInterface, QueryRunner, TableColumn } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
+import { TableColumn } from "../../../../src"
 
 export const testTableName = "test_table"
 export const testColumnName = "test_column"

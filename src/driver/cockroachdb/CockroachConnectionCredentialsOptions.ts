@@ -1,4 +1,4 @@
-import { TlsOptions } from "tls"
+import type { TlsOptions } from "tls"
 
 /**
  * Cockroachdb specific connection credential options.

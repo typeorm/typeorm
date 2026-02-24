@@ -4,11 +4,11 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
-import { SapDriver } from "../../../../src/driver/sap/SapDriver"
-import { QueryRunner } from "../../../../src"
-import { ConnectionPool } from "@sap/hana-client"
+import type { SapDriver } from "../../../../src/driver/sap/SapDriver"
+import type { QueryRunner } from "../../../../src"
+import type { ConnectionPool } from "@sap/hana-client"
 
 describe("driver > sap > connection pool", () => {
     let dataSources: DataSource[]

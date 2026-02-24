@@ -4,7 +4,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { Child1 } from "./entity/Child1"
 import { Child2 } from "./entity/Child2"
 import { Root } from "./entity/Root"

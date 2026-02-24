@@ -1,21 +1,19 @@
-import {
+import type {
     DatabaseType,
-    DataSource,
     DataSourceOptions,
     Driver,
     EntitySchema,
     EntitySubscriberInterface,
-    getMetadataArgsStorage,
     InsertEvent,
     Logger,
     NamingStrategyInterface,
     QueryRunner,
-    Table,
 } from "../../src"
-import { QueryResultCache } from "../../src/cache/QueryResultCache"
+import { DataSource, getMetadataArgsStorage, Table } from "../../src"
+import type { QueryResultCache } from "../../src/cache/QueryResultCache"
 import path from "path"
 import { ObjectUtils } from "../../src/util/ObjectUtils"
-import { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
+import type { EntitySubscriberMetadataArgs } from "../../src/metadata-args/EntitySubscriberMetadataArgs"
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
