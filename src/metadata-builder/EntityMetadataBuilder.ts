@@ -51,16 +51,16 @@ export class EntityMetadataBuilder {
     // -------------------------------------------------------------------------
 
     constructor(
-        private connection: DataSource,
+        private dataSource: DataSource,
         private metadataArgsStorage: MetadataArgsStorage,
     ) {
         this.junctionEntityMetadataBuilder = new JunctionEntityMetadataBuilder(
-            connection,
+            dataSource,
         )
         this.closureJunctionEntityMetadataBuilder =
-            new ClosureJunctionEntityMetadataBuilder(connection)
+            new ClosureJunctionEntityMetadataBuilder(dataSource)
         this.relationJoinColumnBuilder = new RelationJoinColumnBuilder(
-            connection,
+            dataSource,
         )
     }
 
@@ -194,14 +194,14 @@ export class EntityMetadataBuilder {
                         if (uniqueConstraint) {
                             if (
                                 DriverUtils.isMySQLFamily(
-                                    this.connection.driver,
+                                    this.dataSource.driver,
                                 ) ||
-                                this.connection.driver.options.type ===
+                                this.dataSource.driver.options.type ===
                                     "aurora-mysql" ||
-                                this.connection.driver.options.type ===
+                                this.dataSource.driver.options.type ===
                                     "mssql" ||
-                                this.connection.driver.options.type === "sap" ||
-                                this.connection.driver.options.type ===
+                                this.dataSource.driver.options.type === "sap" ||
+                                this.dataSource.driver.options.type ===
                                     "spanner"
                             ) {
                                 const index = new IndexMetadata({
@@ -217,12 +217,12 @@ export class EntityMetadataBuilder {
                                 })
 
                                 if (
-                                    this.connection.driver.options.type ===
+                                    this.dataSource.driver.options.type ===
                                     "mssql"
                                 ) {
                                     index.where = index.columns
                                         .map((column) => {
-                                            return `${this.connection.driver.escape(
+                                            return `${this.dataSource.driver.escape(
                                                 column.databaseName,
                                             )} IS NOT NULL`
                                         })
@@ -230,7 +230,7 @@ export class EntityMetadataBuilder {
                                 }
 
                                 if (
-                                    this.connection.driver.options.type ===
+                                    this.dataSource.driver.options.type ===
                                     "spanner"
                                 ) {
                                     index.isNullFiltered = true
@@ -262,7 +262,7 @@ export class EntityMetadataBuilder {
 
                         if (
                             foreignKey &&
-                            this.connection.driver.options.type ===
+                            this.dataSource.driver.options.type ===
                                 "cockroachdb"
                         ) {
                             const index = new IndexMetadata({
@@ -364,28 +364,28 @@ export class EntityMetadataBuilder {
         // build all indices (need to do it after relations and their join columns are built)
         entityMetadatas.forEach((entityMetadata) => {
             entityMetadata.indices.forEach((index) =>
-                index.build(this.connection.namingStrategy),
+                index.build(this.dataSource.namingStrategy),
             )
         })
 
         // build all unique constraints (need to do it after relations and their join columns are built)
         entityMetadatas.forEach((entityMetadata) => {
             entityMetadata.uniques.forEach((unique) =>
-                unique.build(this.connection.namingStrategy),
+                unique.build(this.dataSource.namingStrategy),
             )
         })
 
         // build all check constraints
         entityMetadatas.forEach((entityMetadata) => {
             entityMetadata.checks.forEach((check) =>
-                check.build(this.connection.namingStrategy),
+                check.build(this.dataSource.namingStrategy),
             )
         })
 
         // build all exclusion constraints
         entityMetadatas.forEach((entityMetadata) => {
             entityMetadata.exclusions.forEach((exclusion) =>
-                exclusion.build(this.connection.namingStrategy),
+                exclusion.build(this.dataSource.namingStrategy),
             )
         })
 
@@ -401,7 +401,7 @@ export class EntityMetadataBuilder {
                 entityMetadata.relations
                     .filter((relation) => relation.isLazy)
                     .forEach((relation) => {
-                        this.connection.relationLoader.enableLazyLoad(
+                        this.dataSource.relationLoader.enableLazyLoad(
                             relation,
                             (entityMetadata.target as Function).prototype,
                         )
@@ -425,7 +425,7 @@ export class EntityMetadataBuilder {
                     } else {
                         column.type = column.type || Number
                     }
-                    column.build(this.connection)
+                    column.build(this.dataSource)
                     this.computeEntityMetadataStep2(entityMetadata)
                 }
             })
@@ -474,7 +474,7 @@ export class EntityMetadataBuilder {
         }
 
         return new EntityMetadata({
-            connection: this.connection,
+            connection: this.dataSource,
             args: tableArgs,
             inheritanceTree: inheritanceTree,
             tableTree: tableTree,
@@ -567,7 +567,7 @@ export class EntityMetadataBuilder {
                 }
 
                 const column = new ColumnMetadata({
-                    connection: this.connection,
+                    connection: this.dataSource,
                     entityMetadata,
                     args,
                 })
@@ -595,7 +595,7 @@ export class EntityMetadataBuilder {
             )
             if (!discriminatorColumn) {
                 discriminatorColumn = new ColumnMetadata({
-                    connection: this.connection,
+                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     args: {
                         target: entityMetadata.target,
@@ -650,13 +650,13 @@ export class EntityMetadataBuilder {
             }
         }
 
-        const { namingStrategy } = this.connection
+        const { namingStrategy } = this.dataSource
 
         // check if tree is used then we need to add extra columns for specific tree types
         if (entityMetadata.treeType === "materialized-path") {
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.connection,
+                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     materializedPath: true,
                     args: {
@@ -676,7 +676,7 @@ export class EntityMetadataBuilder {
             const { left, right } = namingStrategy.nestedSetColumnNames
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.connection,
+                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     nestedSetLeft: true,
                     args: {
@@ -694,7 +694,7 @@ export class EntityMetadataBuilder {
             )
             entityMetadata.ownColumns.push(
                 new ColumnMetadata({
-                    connection: this.connection,
+                    connection: this.dataSource,
                     entityMetadata: entityMetadata,
                     nestedSetRight: true,
                     args: {
@@ -776,7 +776,7 @@ export class EntityMetadataBuilder {
             })
 
         // Only PostgreSQL supports exclusion constraints.
-        if (this.connection.driver.options.type === "postgres") {
+        if (this.dataSource.driver.options.type === "postgres") {
             entityMetadata.exclusions = this.metadataArgsStorage
                 .filterExclusions(entityMetadata.inheritanceTree)
                 .map((args) => {
@@ -784,7 +784,7 @@ export class EntityMetadataBuilder {
                 })
         }
 
-        if (this.connection.driver.options.type === "cockroachdb") {
+        if (this.dataSource.driver.options.type === "cockroachdb") {
             entityMetadata.ownIndices = this.metadataArgsStorage
                 .filterIndices(entityMetadata.inheritanceTree)
                 .filter((args) => !args.unique)
@@ -816,10 +816,10 @@ export class EntityMetadataBuilder {
 
         // This drivers stores unique constraints as unique indices.
         if (
-            DriverUtils.isMySQLFamily(this.connection.driver) ||
-            this.connection.driver.options.type === "aurora-mysql" ||
-            this.connection.driver.options.type === "sap" ||
-            this.connection.driver.options.type === "spanner"
+            DriverUtils.isMySQLFamily(this.dataSource.driver) ||
+            this.dataSource.driver.options.type === "aurora-mysql" ||
+            this.dataSource.driver.options.type === "sap" ||
+            this.dataSource.driver.options.type === "spanner"
         ) {
             const indices = this.metadataArgsStorage
                 .filterUniques(entityMetadata.inheritanceTree)
@@ -870,7 +870,7 @@ export class EntityMetadataBuilder {
                 .filterColumns(targets)
                 .map((args) => {
                     return new ColumnMetadata({
-                        connection: this.connection,
+                        connection: this.dataSource,
                         entityMetadata,
                         embeddedMetadata,
                         args,
@@ -941,16 +941,16 @@ export class EntityMetadataBuilder {
      */
     protected computeEntityMetadataStep2(entityMetadata: EntityMetadata) {
         entityMetadata.embeddeds.forEach((embedded) =>
-            embedded.build(this.connection),
+            embedded.build(this.dataSource),
         )
         entityMetadata.embeddeds.forEach((embedded) => {
             embedded.columnsFromTree.forEach((column) =>
-                column.build(this.connection),
+                column.build(this.dataSource),
             )
             embedded.relationsFromTree.forEach((relation) => relation.build())
         })
         entityMetadata.ownColumns.forEach((column) =>
-            column.build(this.connection),
+            column.build(this.dataSource),
         )
         entityMetadata.ownRelations.forEach((relation) => relation.build())
         entityMetadata.relations = entityMetadata.embeddeds.reduce(
@@ -1096,7 +1096,7 @@ export class EntityMetadataBuilder {
             (column) => column.isObjectId,
         )
         entityMetadata.foreignKeys.forEach((foreignKey) =>
-            foreignKey.build(this.connection.namingStrategy),
+            foreignKey.build(this.dataSource.namingStrategy),
         )
         entityMetadata.propertiesMap = entityMetadata.createPropertiesMap()
         entityMetadata.relationIds.forEach((relationId) => relationId.build())
@@ -1294,7 +1294,7 @@ export class EntityMetadataBuilder {
                     new ForeignKeyMetadata({
                         entityMetadata,
                         referencedEntityMetadata,
-                        namingStrategy: this.connection.namingStrategy,
+                        namingStrategy: this.dataSource.namingStrategy,
                         columns,
                         referencedColumns,
                         ...foreignKeyArgs,

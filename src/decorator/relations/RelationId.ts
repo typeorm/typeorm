@@ -4,7 +4,9 @@ import { SelectQueryBuilder } from "../../query-builder/SelectQueryBuilder"
 
 /**
  * Special decorator used to extract relation id into separate entity property.
- *
+ * @param relation
+ * @param alias
+ * @param queryBuilderFactory
  * @experimental
  */
 export function RelationId<T>(

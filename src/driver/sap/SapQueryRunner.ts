@@ -170,10 +170,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Switches AUTOCOMMIT mode on/off
+     * @see https://help.sap.com/docs/HANA_SERVICE_CF/7c78579ce9b14a669c1f3295b0d8ca16/d538d11053bd4f3f847ec5ce817a3d4c.html?locale=en-US
      * @param options
      * @param options.status
-     * @description Switches on/off AUTOCOMMIT mode
-     * @link https://help.sap.com/docs/HANA_SERVICE_CF/7c78579ce9b14a669c1f3295b0d8ca16/d538d11053bd4f3f847ec5ce817a3d4c.html?locale=en-US
      */
     async setAutoCommit(options: { status: "on" | "off" }) {
         const connection = await this.connect()
@@ -2540,8 +2540,18 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      * @param tablePath
+     * @param options
+     * @param options.cascade
      */
-    async clearTable(tablePath: string): Promise<void> {
+    async clearTable(
+        tablePath: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
+        if (options?.cascade) {
+            throw new TypeORMError(
+                `SAP HANA does not support clearing table with cascade option`,
+            )
+        }
         await this.query(`TRUNCATE TABLE ${this.escapePath(tablePath)}`)
     }
 

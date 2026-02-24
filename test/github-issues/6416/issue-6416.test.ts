@@ -18,7 +18,7 @@ describe("github issues > #6399 Combining ManyToOne, Cascade, & Composite Primar
         async () =>
             (connections = await createTestingConnections({
                 entities: [PostSchema, PostTagSchema, PostAttachmentSchema],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
