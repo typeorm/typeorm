@@ -1076,8 +1076,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     protected async recreateModifiedChecks(): Promise<void> {
         // Mysql does not support check constraints
         if (
-            DriverUtils.isMySQLFamily(this.connection.driver) ||
-            this.connection.driver.options.type === "aurora-mysql"
+            DriverUtils.isMySQLFamily(this.dataSource.driver) ||
+            this.dataSource.driver.options.type === "aurora-mysql"
         )
             return
 
@@ -1088,7 +1088,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
             if (!table) continue
 
-            // Find CHECK constraints that have the same name but different expression
             const modifiedChecks: Array<{
                 oldCheck: TableCheck
                 newCheck: TableCheck
@@ -1115,21 +1114,18 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             if (modifiedChecks.length === 0) continue
 
-            // Drop old checks with modified expressions
             const checksToModify = modifiedChecks.map((m) => m.oldCheck)
-            this.connection.logger.logSchemaBuild(
+            this.dataSource.logger.logSchemaBuild(
                 `updating check constraints: ${checksToModify
                     .map((check) => `"${check.name}"`)
                     .join(", ")} in table "${table.name}"`,
             )
             await this.queryRunner.dropCheckConstraints(table, checksToModify)
 
-            // Remove the old checks from table object
             checksToModify.forEach((check) => {
                 table.removeCheckConstraint(check)
             })
 
-            // Create new checks with updated expressions
             const newChecks = modifiedChecks.map((m) => m.newCheck)
             await this.queryRunner.createCheckConstraints(table, newChecks)
         }
@@ -1137,11 +1133,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Normalizes CHECK constraint expressions for comparison.
-     * Removes extra whitespace and normalizes formatting differences between databases.
-     * @param expression The CHECK constraint expression to normalize
-     * @returns The normalized expression string
+     * @param expression
      */
     protected normalizeCheckExpression(expression: string): string {
+        // TODO: normalization is not perfect and may fail in some edge cases.
+        // For example, it does not handle nested parentheses, different logical operator precedence, or complex expressions.
+
         // Remove extra whitespace, newlines, and tabs
         let normalized = expression.replace(/\s+/g, " ").trim().toLowerCase()
 
