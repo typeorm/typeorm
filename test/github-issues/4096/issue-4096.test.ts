@@ -15,7 +15,7 @@ describe("github issues > #4096 SQLite support for orUpdate", () => {
         async () =>
             (connections = await createTestingConnections({
                 entities: [User],
-                enabledDrivers: ["sqlite", "better-sqlite3"],
+                enabledDrivers: ["better-sqlite3"],
                 schemaCreate: true,
                 dropSchema: true,
             })),

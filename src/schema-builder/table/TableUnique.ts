@@ -58,6 +58,7 @@ export class TableUnique {
 
     /**
      * Creates unique from the unique metadata object.
+     * @param uniqueMetadata
      */
     static create(uniqueMetadata: UniqueMetadata): TableUnique {
         return new TableUnique(<TableUniqueOptions>{

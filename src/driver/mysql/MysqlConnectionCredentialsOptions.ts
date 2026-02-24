@@ -1,6 +1,5 @@
 /**
  * MySQL specific connection credential options.
- *
  * @see https://github.com/mysqljs/mysql#connection-options
  */
 export interface MysqlConnectionCredentialsOptions {

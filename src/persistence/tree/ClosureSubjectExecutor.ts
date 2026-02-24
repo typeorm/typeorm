@@ -22,6 +22,7 @@ export class ClosureSubjectExecutor {
 
     /**
      * Executes operations when subject is being inserted.
+     * @param subject
      */
     async insert(subject: Subject): Promise<void> {
         // create values to be inserted into the closure junction
@@ -134,6 +135,7 @@ export class ClosureSubjectExecutor {
 
     /**
      * Executes operations when subject is being updated.
+     * @param subject
      */
     async update(subject: Subject): Promise<void> {
         let parent = subject.metadata.treeParentRelation!.getEntityValue(
@@ -319,6 +321,7 @@ export class ClosureSubjectExecutor {
 
     /**
      * Executes operations when subject is being removed.
+     * @param subjects
      */
     async remove(subjects: Subject | Subject[]): Promise<void> {
         // Only mssql need to execute deletes for the juntion table as it doesn't support multi cascade paths.
@@ -362,6 +365,7 @@ export class ClosureSubjectExecutor {
     /**
      * Gets escaped table name with schema name if SqlServer or Postgres driver used with custom
      * schema name, otherwise returns escaped table name.
+     * @param tablePath
      */
     protected getTableName(tablePath: string): string {
         return tablePath
