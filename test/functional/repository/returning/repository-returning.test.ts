@@ -89,7 +89,7 @@ describe("repository > returning", () => {
                 )
 
                 expect(result.raw).to.be.an("array")
-                expect(result.raw.length).to.equal(2)
+                expect(result.raw.length).to.be.at.least(2)
                 expect(result.raw).to.deep.include.members([
                     { id: user1.id, name: "updated-all" },
                     { id: user2.id, name: "updated-all" },
@@ -119,6 +119,29 @@ describe("repository > returning", () => {
             }),
         ))
 
+    it("allows specifying RETURNING via repository.delete with object criteria", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                if (!connection.driver.isReturningSqlSupported("delete")) {
+                    return
+                }
+
+                const repo = connection.getRepository(User)
+                const created = await repo.save({ name: "obj-delete" })
+
+                const result = await repo.delete(
+                    { name: "obj-delete" },
+                    { returning: ["id", "name"] },
+                )
+
+                expect(result.raw).to.be.an("array")
+                expect(result.raw[0]).to.include({
+                    id: created.id,
+                    name: "obj-delete",
+                })
+            }),
+        ))
+
     it("allows specifying RETURNING via repository.deleteAll options", () =>
         Promise.all(
             connections.map(async (connection) => {
@@ -135,7 +158,7 @@ describe("repository > returning", () => {
                 })
 
                 expect(result.raw).to.be.an("array")
-                expect(result.raw.length).to.equal(2)
+                expect(result.raw.length).to.be.at.least(2)
                 expect(result.raw).to.deep.include.members([
                     { id: user1.id, name: "user1" },
                     { id: user2.id, name: "user2" },

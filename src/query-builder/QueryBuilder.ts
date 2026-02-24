@@ -102,6 +102,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     /**
      * QueryBuilder can be initialized from given Connection and QueryRunner objects or from given other QueryBuilder.
+     * @param connectionOrQueryBuilder
+     * @param queryRunner
      */
     constructor(
         connectionOrQueryBuilder: DataSource | QueryBuilder<any>,
@@ -967,6 +969,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                             this.expressionMap.queryType === "restore"
                         ) {
                             return "INSERTED." + name
+                        } else if (this.expressionMap.queryType === "delete") {
+                            return "DELETED." + name
                         } else {
                             return (
                                 this.escape(this.getMainTableName()) +
