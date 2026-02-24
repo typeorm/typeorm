@@ -13,7 +13,6 @@ import { PostgresDataSourceOptions } from "../driver/postgres/PostgresDataSource
 import { ReactNativeDataSourceOptions } from "../driver/react-native/ReactNativeDataSourceOptions"
 import { SapDataSourceOptions } from "../driver/sap/SapDataSourceOptions"
 import { SpannerDataSourceOptions } from "../driver/spanner/SpannerDataSourceOptions"
-import { SqliteDataSourceOptions } from "../driver/sqlite/SqliteDataSourceOptions"
 import { SqljsDataSourceOptions } from "../driver/sqljs/SqljsDataSourceOptions"
 import { SqlServerDataSourceOptions } from "../driver/sqlserver/SqlServerDataSourceOptions"
 
@@ -36,6 +35,5 @@ export type DataSourceOptions =
     | ReactNativeDataSourceOptions
     | SapDataSourceOptions
     | SpannerDataSourceOptions
-    | SqliteDataSourceOptions
     | SqljsDataSourceOptions
     | SqlServerDataSourceOptions

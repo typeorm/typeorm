@@ -60,7 +60,6 @@
     "./browser/driver/oracle/OracleDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/postgres/PostgresDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/sap/SapDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/sqlite/SqliteDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/sqlserver/SqlServerDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/entity-manager/MongoEntityManager.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/logger/FileLogger.js": "./browser/platform/BrowserFileLoggerDummy.js",
@@ -162,7 +161,6 @@
     "sort-package-json": "^3.6.1",
     "source-map-support": "^0.5.21",
     "sql.js": "^1.14.0",
-    "sqlite3": "^5.1.7",
     "standard-changelog": "^7.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
@@ -182,7 +180,6 @@
     "pg-query-stream": "^4.0.0",
     "redis": "^5.0.0",
     "sql.js": "^1.4.0",
-    "sqlite3": "^5.0.3",
     "ts-node": "^10.9.2",
     "typeorm-aurora-data-api-driver": "^3.0.0"
   },
@@ -226,9 +223,6 @@
     "sql.js": {
       "optional": true
     },
-    "sqlite3": {
-      "optional": true
-    },
     "ts-node": {
       "optional": true
     },
@@ -249,8 +243,7 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "sqlite3"
+      "better-sqlite3"
     ],
     "ignoredBuiltDependencies": [
       "@sap/hana-client",
@@ -284,6 +277,7 @@
     "cloud-spanner-orm",
     "sqlite",
     "sqlite-orm",
+    "better-sqlite3",
     "sql-server",
     "sql-server-orm"
   ]

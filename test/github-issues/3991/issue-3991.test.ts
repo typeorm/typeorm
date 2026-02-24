@@ -123,12 +123,12 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
             ))
     })
 
-    describe("sqlite", () => {
+    describe("better-sqlite3", () => {
         let dataSources: DataSource[]
         before(
             async () =>
                 (dataSources = await createTestingConnections({
-                    enabledDrivers: ["sqlite"],
+                    enabledDrivers: ["better-sqlite3"],
                     schemaCreate: false,
                     dropSchema: true,
                     entities: [SqlitePost],

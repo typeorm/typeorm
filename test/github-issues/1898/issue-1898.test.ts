@@ -11,7 +11,7 @@ describe("github issues > #1898 Simple JSON breaking in @next", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["sqlite", "better-sqlite3"],
+            enabledDrivers: ["better-sqlite3"],
             schemaCreate: true,
             dropSchema: true,
         })

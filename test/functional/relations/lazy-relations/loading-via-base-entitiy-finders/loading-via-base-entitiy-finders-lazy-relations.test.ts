@@ -9,16 +9,14 @@ import {
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import { expect } from "chai"
 
-describe("lazy-relations-loading-via-base-entity-finders", () => {
+describe("relations > lazy relations > loading via base entity finders", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                // we can properly test lazy-relations only on one platform
-                enabledDrivers: ["mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, Category],
+            enabledDrivers: ["mysql", "postgres"],
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

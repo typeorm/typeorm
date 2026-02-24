@@ -17,13 +17,7 @@ describe("github issues > #1476 subqueries", () => {
         async () =>
             (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: [
-                    "mysql",
-                    "mariadb",
-                    "sqlite",
-                    "better-sqlite3",
-                    "sqljs",
-                ],
+                enabledDrivers: ["mysql", "mariadb", "better-sqlite3", "sqljs"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))

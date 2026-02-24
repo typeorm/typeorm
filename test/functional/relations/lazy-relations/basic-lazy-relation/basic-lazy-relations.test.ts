@@ -7,32 +7,23 @@ import {
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { EntitySchema } from "../../../../../src"
+import { EntitySchema, EntitySchemaOptions } from "../../../../../src"
+import UserSchema from "./schema/user.json"
+import ProfileSchema from "./schema/profile.json"
 
-/**
- * Because lazy relations are overriding prototype is impossible to run these tests on multiple dataSources.
- * So we run tests only for mysql.
- */
-describe("basic-lazy-relations", () => {
-    const appRoot = require("app-root-path")
-    const resourceDir =
-        appRoot +
-        "/test/functional/relations/lazy-relations/basic-lazy-relation/"
-    const UserSchema = new EntitySchema(
-        require(resourceDir + "schema/user.json"),
-    )
-    const ProfileSchema = new EntitySchema(
-        require(resourceDir + "schema/profile.json"),
-    )
-
+describe("relations > lazy relations > basic-lazy-relations", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post, Category, UserSchema, ProfileSchema],
-                enabledDrivers: ["postgres"], // we can properly test lazy-relations only on one platform
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [
+                Post,
+                Category,
+                new EntitySchema(UserSchema as EntitySchemaOptions<unknown>),
+                new EntitySchema(ProfileSchema as EntitySchemaOptions<unknown>),
+            ],
+            enabledDrivers: ["mysql", "postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -378,12 +369,9 @@ describe("basic-lazy-relations", () => {
         Promise.all(
             dataSources
                 .filter((connection) =>
-                    new Set([
-                        "mysql",
-                        "sqlite",
-                        "better-sqlite3",
-                        "postgres",
-                    ]).has(connection.options.type),
+                    new Set(["mysql", "better-sqlite3", "postgres"]).has(
+                        connection.options.type,
+                    ),
                 )
                 .map(async (connection) => {
                     await connection.manager.transaction(async (manager) => {
@@ -412,12 +400,9 @@ describe("basic-lazy-relations", () => {
         Promise.all(
             dataSources
                 .filter((connection) =>
-                    new Set([
-                        "mysql",
-                        "sqlite",
-                        "better-sqlite3",
-                        "postgres",
-                    ]).has(connection.options.type),
+                    new Set(["mysql", "better-sqlite3", "postgres"]).has(
+                        connection.options.type,
+                    ),
                 )
                 .map(async (connection) => {
                     const loadedCategory = await connection.manager.transaction(

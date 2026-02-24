@@ -1,5 +1,5 @@
 import js from "@eslint/js"
-import pluginChaiFriendly from "eslint-plugin-chai-friendly"
+import chaiFriendly from "eslint-plugin-chai-friendly"
 import { jsdoc } from "eslint-plugin-jsdoc"
 import { defineConfig, globalIgnores } from "eslint/config"
 import globals from "globals"
@@ -14,6 +14,7 @@ export default defineConfig([
         "temp/**",
         "src/driver/mongodb/{typings.ts,bson.typings.ts}",
     ]),
+
     {
         files: ["**/*.ts"],
         languageOptions: {
@@ -87,15 +88,16 @@ export default defineConfig([
     },
     jsdoc({
         files: ["src/**/*.ts"],
-        config: "flat/recommended-typescript",
+        config: "flat/recommended-typescript", // change to 'flat/recommended-typescript-error' once warnings are fixed
         // Temporarily enable individual rules when they are fixed, until all current warnings are gone,
         // and then remove manual config in favor of `config: "flat/recommended-typescript-error"`
         rules: {
             "jsdoc/valid-types": "error",
         },
     }),
+
     {
         files: ["test/**/*.ts"],
-        ...pluginChaiFriendly.configs.recommendedFlat,
+        ...chaiFriendly.configs.recommendedFlat,
     },
 ])

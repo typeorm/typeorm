@@ -2,12 +2,6 @@
 
 ## Installation
 
-- for **SQLite**:
-
-```shell
-npm install sqlite3
-```
-
 - for **Better SQLite**:
 
 ```shell
@@ -26,16 +20,18 @@ npm install sql.js
 
 See [Data Source Options](../data-source/2-data-source-options.md) for the common data source options.
 
-### `sqlite` data source options
-
-- `database` - Database path. For example, "mydb.sql"
-
 ### `better-sqlite3` data source options
 
-- `database` - Database path. For example, "mydb.sql"
-- `statementCacheSize` - Cache size of the SQLite statement to speed up queries (default 100).
+- `database` - Database path. For example, `"mydb.sqlite"`.
+- `enableWAL` - Enables WAL mode (default `false`). See [SQLite WAL mode](https://www.sqlite.org/wal.html).
+- `fileMustExist` - If the database does not exist, an Error will be thrown instead of creating a new file. Does not affect in-memory or readonly connections (default `false`).
+- `key` - Encryption key for SQLCipher.
+- `nativeBinding` - Relative or absolute path to the native addon (`better_sqlite3.node`).
 - `prepareDatabase` - Function to run before a database is used in typeorm. You can access the original better-sqlite3 Database object here.
-- `nativeBinding` - Relative or absolute path to the native addon (better_sqlite3.node).
+- `readonly` - Open the database connection in readonly mode (default `false`).
+- `statementCacheSize` - Cache size of the SQLite statement to speed up queries (default `100`).
+- `timeout` - The number of milliseconds to wait when executing queries on a locked database, before throwing a SQLITE_BUSY error (default `5000`).
+- `verbose` - A function that gets called with every SQL string executed by the database connection.
 
 ### `sql.js` data source options
 

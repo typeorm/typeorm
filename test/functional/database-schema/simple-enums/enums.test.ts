@@ -22,7 +22,6 @@ describe("database schema > simple-enums", () => {
                 "mysql",
                 "mariadb",
                 "postgres",
-                "sqlite",
                 "better-sqlite3",
                 "mssql",
             ],

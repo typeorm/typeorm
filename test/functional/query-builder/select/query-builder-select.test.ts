@@ -19,7 +19,7 @@ describe("query builder > select", () => {
         async () =>
             (dataSources = await createTestingConnections({
                 entities: [Category, Post, Tag, HeroImage, ExternalPost],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))

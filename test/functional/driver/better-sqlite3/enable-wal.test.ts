@@ -1,34 +1,28 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-const sqlite3 = require("sqlite3")
+} from "../../../utils/test-utils"
 
-describe("sqlite driver > file open flags", () => {
+describe("sqlite driver > enable wal", () => {
     let dataSources: DataSource[]
     before(
         async () =>
             (dataSources = await createTestingConnections({
-                name: "file:./temp/sqlitedb-memory.db?mode=memory",
                 entities: [],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
                 driverSpecific: {
-                    flags:
-                        sqlite3.OPEN_URI |
-                        sqlite3.OPEN_SHAREDCACHE |
-                        sqlite3.OPEN_READWRITE |
-                        sqlite3.OPEN_CREATE,
+                    enableWAL: true,
                 },
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should open a DB with flags as expected", () =>
+    it("should set the journal mode as expected", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 // if we come this far, test was successful as a connection was established

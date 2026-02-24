@@ -14,7 +14,7 @@ describe("entity-metadata > create", () => {
         before(
             async () =>
                 (dataSources = await createTestingConnections({
-                    enabledDrivers: ["sqlite"],
+                    enabledDrivers: ["better-sqlite3"],
                     entities: [TestCreate],
                 })),
         )
@@ -59,7 +59,7 @@ describe("entity-metadata > create", () => {
         before(
             async () =>
                 (dataSources = await createTestingConnections({
-                    enabledDrivers: ["sqlite"],
+                    enabledDrivers: ["better-sqlite3"],
                     entities: [TestCreate],
                     driverSpecific: {
                         entitySkipConstructor: true,

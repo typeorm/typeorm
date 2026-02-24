@@ -12,7 +12,7 @@ describe("github issues > #4897 [MSSQL] Enum column definition removes and recre
         async () =>
             (dataSources = await createTestingConnections({
                 migrations: [],
-                enabledDrivers: ["mssql", "sqlite"],
+                enabledDrivers: ["mssql", "better-sqlite3"],
                 schemaCreate: false,
                 dropSchema: true,
                 entities: [SomeEntity],

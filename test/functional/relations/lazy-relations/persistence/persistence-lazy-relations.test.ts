@@ -3,27 +3,26 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../../utils/test-utils"
+import { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 import { Category } from "./entity/Category"
 
-describe("github issues > #47 wrong sql syntax when loading lazy relation", () => {
+describe("relations > lazy relations > persistence and hydration of bidirectional lazy relations", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql"], // we can properly test lazy-relations only on one platform
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql", "postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should persist successfully and return persisted entity", () =>
         Promise.all(
-            dataSources.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 // create objects to save
                 const category1 = new Category()
                 category1.name = "category #1"
@@ -41,13 +40,13 @@ describe("github issues > #47 wrong sql syntax when loading lazy relation", () =
                 post2.category = Promise.resolve(category2)
 
                 // persist
-                await connection.manager.save(category1)
-                await connection.manager.save(post1)
-                await connection.manager.save(category2)
-                await connection.manager.save(post2)
+                await dataSource.manager.save(category1)
+                await dataSource.manager.save(post1)
+                await dataSource.manager.save(category2)
+                await dataSource.manager.save(post2)
 
                 // check that all persisted objects exist
-                const loadedPost = await connection.manager
+                const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .getMany()
 
@@ -71,7 +70,7 @@ describe("github issues > #47 wrong sql syntax when loading lazy relation", () =
                 loadedPosts2![0].id.should.equal(2)
                 loadedPosts2![0].title.should.equal("Hello Post #2")
 
-                const reloadedPost = await connection.manager.findOneBy(Post, {
+                const reloadedPost = await dataSource.manager.findOneBy(Post, {
                     id: post1.id,
                 })
 

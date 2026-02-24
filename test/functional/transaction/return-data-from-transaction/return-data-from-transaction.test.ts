@@ -15,12 +15,7 @@ describe("transaction > return data from transaction", () => {
         async () =>
             (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: [
-                    "mysql",
-                    "sqlite",
-                    "better-sqlite3",
-                    "postgres",
-                ], // todo: for some reasons mariadb tests are not passing here
+                enabledDrivers: ["mysql", "better-sqlite3", "postgres"], // todo: for some reasons mariadb tests are not passing here
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))

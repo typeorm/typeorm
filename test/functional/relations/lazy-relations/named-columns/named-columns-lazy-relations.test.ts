@@ -8,19 +8,14 @@ import { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 
-/**
- * Because lazy relations are overriding prototype is impossible to run these tests on multiple dataSources.
- * So we run tests only for mysql.
- */
-describe("named-columns-lazy-relations", () => {
+describe("relations > lazy relations > named columns", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post, Category],
-                enabledDrivers: ["postgres"], // we can properly test lazy-relations only on one platform
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, Category],
+            enabledDrivers: ["mysql", "postgres"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

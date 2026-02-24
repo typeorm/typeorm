@@ -18,12 +18,7 @@ describe("database schema > simple enum arrays", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: [
-                "postgres",
-                "cockroachdb",
-                "sqlite",
-                "better-sqlite3",
-            ],
+            enabledDrivers: ["postgres", "cockroachdb", "better-sqlite3"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))

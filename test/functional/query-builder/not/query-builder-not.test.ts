@@ -15,7 +15,7 @@ describe("query builder > not", () => {
         async () =>
             (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))

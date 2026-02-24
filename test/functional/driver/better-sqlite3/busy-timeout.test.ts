@@ -1,34 +1,32 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../utils/test-utils"
 
-describe("sqlite driver > enable wal", () => {
+describe("sqlite driver > busy-timeout", () => {
     let dataSources: DataSource[]
     before(
         async () =>
             (dataSources = await createTestingConnections({
                 entities: [],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
                 driverSpecific: {
-                    enableWAL: true,
+                    timeout: 2000,
                 },
             })),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should set the journal mode as expected", () =>
+    it("should set the busy_timeout as expected", () =>
         Promise.all(
             dataSources.map(async (connection) => {
-                // if we come this far, test was successful as a connection was established
-                const result = await connection.query("PRAGMA journal_mode")
-
-                expect(result).to.eql([{ journal_mode: "wal" }])
+                const result = await connection.query("PRAGMA busy_timeout")
+                expect(result).to.eql([{ timeout: 2000 }])
             }),
         ))
 })
