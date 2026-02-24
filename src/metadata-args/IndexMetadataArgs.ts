@@ -87,6 +87,12 @@ export interface IndexMetadataArgs {
     expireAfterSeconds?: number
 
     /**
+     * UNIQUE NULLS NOT DISTINCT constraint allows only a single NULL value to appear in a UNIQUE index.
+     * This option is only applicable in PostgreSQL.
+     */
+    nullsNotDistinct?: boolean
+
+    /**
      * The `type` option defines the type of the index being created.
      * Supported types include B-tree, Hash, GiST, SP-GiST, GIN, and BRIN
      * This option is only applicable in PostgreSQL.
