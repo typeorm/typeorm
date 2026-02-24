@@ -9,10 +9,6 @@ import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { EntitySchema } from "../../../../../src"
 
-/**
- * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
- * So we run tests only for mysql.
- */
 describe("relations > lazy relations > basic-lazy-relations", () => {
     const appRoot = require("app-root-path")
     const resourceDir =
@@ -25,20 +21,19 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
         require(resourceDir + "schema/profile.json"),
     )
 
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Post, Category, UserSchema, ProfileSchema],
-                enabledDrivers: ["postgres"], // we can properly test lazy-relations only on one platform
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, Category, UserSchema, ProfileSchema],
+            enabledDrivers: ["mysql", "postgres"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should persist and hydrate successfully on a relation without inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const categoryRepository = connection.getRepository(Category)
 
@@ -84,7 +79,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a relation with inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const categoryRepository = connection.getRepository(Category)
 
@@ -143,7 +138,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a one-to-one relation with inverse side loaded from entity schema", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userRepository = connection.getRepository("User")
                 const profileRepository = connection.getRepository("Profile")
 
@@ -173,7 +168,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a many-to-one relation without inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 30; i++) {
@@ -214,7 +209,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a many-to-one relation with inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 8; i++) {
@@ -255,7 +250,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a one-to-many relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 8; i++) {
@@ -296,7 +291,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a one-to-one relation owner side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 8; i++) {
@@ -336,7 +331,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should persist and hydrate successfully on a one-to-one relation inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create some fake posts and categories to make sure that there are several post ids in the db
                 const fakePosts: Post[] = []
                 for (let i = 0; i < 8; i++) {
@@ -376,7 +371,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should successfully load relations within a transaction", () =>
         Promise.all(
-            connections
+            dataSources
                 .filter((connection) =>
                     new Set([
                         "mysql",
@@ -410,7 +405,7 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should successfully load relations outside a transaction with entity generated within a transaction", () =>
         Promise.all(
-            connections
+            dataSources
                 .filter((connection) =>
                     new Set([
                         "mysql",
