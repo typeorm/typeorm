@@ -271,4 +271,27 @@ describe("query builder > order-by", () => {
                 expect(result[0].post).to.not.be.undefined
             }),
         ))
+    it("should properly escape column names or aliases in order by", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                for (let i = 0; i < 5; i++) {
+                    const post = new Post()
+                    post.myOrder = i
+                    await connection.manager.save(post)
+                }
+
+                const query = connection.manager
+                    .createQueryBuilder(Post, "post")
+                    .select("post.id", "postId")
+                    .addSelect("COUNT(*)", "count")
+                    .groupBy("post.id")
+                    .orderBy("count", "DESC")
+
+                expect(query.getSql()).to.contain(
+                    "ORDER BY " + connection.driver.escape("count") + " DESC",
+                )
+                const result = await query.getRawMany()
+                expect(result.length).to.be.equal(5)
+            }),
+        ))
 })
