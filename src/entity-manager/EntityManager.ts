@@ -768,11 +768,16 @@ export class EntityManager {
         const overwriteColumns = metadata.columns.filter(
             (col) =>
                 !conflictColumns.includes(col) &&
+                col.isUpdate !== false &&
+                !col.generatedType &&
                 entities.some(
                     (entity) =>
                         typeof col.getEntityValue(entity) !== "undefined",
                 ),
         )
+
+        const upsertType =
+            options.upsertType || this.connection.driver.supportedUpsertTypes[0]
 
         const qb = this.createQueryBuilder()
             .insert()
@@ -787,9 +792,7 @@ export class EntityManager {
                     skipUpdateIfNoValuesChanged:
                         options.skipUpdateIfNoValuesChanged,
                     indexPredicate: options.indexPredicate,
-                    upsertType:
-                        options.upsertType ||
-                        this.connection.driver.supportedUpsertTypes[0],
+                    upsertType,
                 },
             )
 
