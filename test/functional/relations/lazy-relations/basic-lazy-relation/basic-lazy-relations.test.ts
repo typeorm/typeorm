@@ -7,24 +7,20 @@ import {
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { EntitySchema } from "../../../../../src"
+import { EntitySchema, EntitySchemaOptions } from "../../../../../src"
+import UserSchema from "./schema/user.json"
+import ProfileSchema from "./schema/profile.json"
 
 describe("relations > lazy relations > basic-lazy-relations", () => {
-    const appRoot = require("app-root-path")
-    const resourceDir =
-        appRoot +
-        "/test/functional/relations/lazy-relations/basic-lazy-relation/"
-    const UserSchema = new EntitySchema(
-        require(resourceDir + "schema/user.json"),
-    )
-    const ProfileSchema = new EntitySchema(
-        require(resourceDir + "schema/profile.json"),
-    )
-
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Post, Category, UserSchema, ProfileSchema],
+            entities: [
+                Post,
+                Category,
+                new EntitySchema(UserSchema as EntitySchemaOptions<unknown>),
+                new EntitySchema(ProfileSchema as EntitySchemaOptions<unknown>),
+            ],
             enabledDrivers: ["mysql", "postgres"],
         })
     })
