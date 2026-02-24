@@ -63,6 +63,7 @@ export class CommandUtils {
 
     /**
      * Creates directories recursively.
+     * @param directory
      */
     static async createDirectories(directory: string): Promise<void> {
         await fs.mkdir(directory, { recursive: true })
@@ -70,6 +71,9 @@ export class CommandUtils {
 
     /**
      * Creates a file with the given content in the given path.
+     * @param filePath
+     * @param content
+     * @param override
      */
     static async createFile(
         filePath: string,
@@ -85,6 +89,7 @@ export class CommandUtils {
 
     /**
      * Reads everything from a given file and returns its content as a string.
+     * @param filePath
      */
     static async readFile(filePath: string): Promise<string> {
         const file = await fs.readFile(filePath)
@@ -103,6 +108,7 @@ export class CommandUtils {
 
     /**
      * Gets migration timestamp and validates argument (if sent)
+     * @param timestampOptionArgument
      */
     static getTimestamp(timestampOptionArgument: any): number {
         if (

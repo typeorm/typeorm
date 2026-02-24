@@ -1,0 +1,38 @@
+name: Pull Request
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+
+jobs:
+  semantic:
+    if: github.repository == 'typeorm/typeorm'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@v6
+        with:
+          types: |
+            chore
+            ci
+            docs
+            feat
+            fix
+            lint
+            refactor
+            revert
+            test
+          subjectPattern: ^[a-z][a-zA-Z0-9 \-\/()*.@,_`']+$
+          subjectPatternError: |
+            Our pull requests titles should follow Conventional Commits spec:
+            https://www.conventionalcommits.org 
+
+            The description "{subject}" found in this pull request title "{title}"
+            didn't match the configured pattern. Please ensure that it doesn't
+            start with an uppercase character and contain only allowed characters.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

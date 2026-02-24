@@ -1,5 +1,6 @@
 import { InsertOrUpdateOptions } from "../query-builder/InsertOrUpdateOptions"
 import { UpsertType } from "../driver/types/UpsertType"
+import { ReturningOption } from "../query-builder/ReturningOption"
 
 /**
  * Special options passed to Repository#upsert
@@ -18,4 +19,10 @@ export interface UpsertOptions<Entity> extends InsertOrUpdateOptions {
      * If none provided, it will use the default for the database (first one in the list)
      */
     upsertType?: UpsertType
+
+    /**
+     * Allows selecting custom RETURNING / OUTPUT clause.
+     * Works only on drivers with returning support.
+     */
+    returning?: ReturningOption
 }

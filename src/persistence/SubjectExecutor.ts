@@ -1053,6 +1053,7 @@ export class SubjectExecutor {
     /**
      * Updates all special columns of the saving entities (create date, update date, version, etc.).
      * Also updates nullable columns and columns with default values.
+     * @param subjects
      */
     protected updateSpecialColumnsInInsertedAndUpdatedEntities(
         subjects: Subject[],
@@ -1082,6 +1083,19 @@ export class SubjectExecutor {
                     const columnValue = column.getEntityValue(subject.entity!)
                     if (columnValue === undefined)
                         column.setEntityValue(subject.entity!, null)
+                }
+
+                if (!column.isSelect) {
+                    const target = column.embeddedMetadata
+                        ? OrmUtils.deepValue(
+                              subject.entity!,
+                              column.embeddedMetadata.propertyPath,
+                          )
+                        : subject.entity
+
+                    if (target) {
+                        delete target[column.propertyName]
+                    }
                 }
 
                 // update relational columns
@@ -1129,6 +1143,8 @@ export class SubjectExecutor {
      *
      * Other drivers like postgres and sql server support RETURNING / OUTPUT statement which allows to return generated
      * id for each inserted row, that's why bulk insertion is not limited to junction tables in there.
+     * @param subjects
+     * @param type
      */
     protected groupBulkSubjects(
         subjects: Subject[],

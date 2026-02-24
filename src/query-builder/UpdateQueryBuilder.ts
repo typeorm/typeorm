@@ -201,6 +201,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Values needs to be updated.
+     * @param values
      */
     set(values: QueryDeepPartialEntity<Entity>): this {
         this.expressionMap.valuesSet = values
@@ -242,6 +243,8 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * If you had previously WHERE expression defined,
      * calling this function will override previously set WHERE conditions.
      * Additionally you can add parameters used in where expression.
+     * @param where
+     * @param parameters
      */
     where(
         where:
@@ -265,6 +268,8 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Adds new AND WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
+     * @param where
+     * @param parameters
      */
     andWhere(
         where:
@@ -286,6 +291,8 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     /**
      * Adds new OR WHERE condition in the query builder.
      * Additionally you can add parameters used in where expression.
+     * @param where
+     * @param parameters
      */
     orWhere(
         where:
@@ -308,6 +315,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * Sets WHERE condition in the query builder with a condition for the given ids.
      * If you had previously WHERE expression defined,
      * calling this function will override previously set WHERE conditions.
+     * @param ids
      */
     whereInIds(ids: any | any[]): this {
         return this.where(this.getWhereInIdsCondition(ids))
@@ -315,6 +323,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new AND WHERE with conditions for the given ids.
+     * @param ids
      */
     andWhereInIds(ids: any | any[]): this {
         return this.andWhere(this.getWhereInIdsCondition(ids))
@@ -322,6 +331,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds new OR WHERE with conditions for the given ids.
+     * @param ids
      */
     orWhereInIds(ids: any | any[]): this {
         return this.orWhere(this.getWhereInIdsCondition(ids))
@@ -345,6 +355,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Optional returning/output clause.
+     * @param output
      */
     output(output: string | string[]): this {
         return this.returning(output)
@@ -369,6 +380,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Optional returning/output clause.
+     * @param returning
      */
     returning(returning: string | string[]): this {
         // not all databases support returning/output cause
@@ -411,6 +423,9 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * Sets ORDER BY condition in the query builder.
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
+     * @param sort
+     * @param order
+     * @param nulls
      */
     orderBy(
         sort?: string | OrderByCondition,
@@ -437,6 +452,9 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Adds ORDER BY condition in the query builder.
+     * @param sort
+     * @param order
+     * @param nulls
      */
     addOrderBy(
         sort: string,
@@ -453,6 +471,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Sets LIMIT - maximum number of rows to be selected.
+     * @param limit
      */
     limit(limit?: number): this {
         this.expressionMap.limit = limit
@@ -463,6 +482,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * Indicates if entity must be updated after update operation.
      * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
      * Enabled by default.
+     * @param entity
      */
     whereEntity(entity: Entity | Entity[]): this {
         if (!this.expressionMap.mainAlias!.hasMetadata)
@@ -491,6 +511,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * Indicates if entity must be updated after update operation.
      * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
      * Enabled by default.
+     * @param enabled
      */
     updateEntity(enabled: boolean): this {
         this.expressionMap.updateEntity = enabled
