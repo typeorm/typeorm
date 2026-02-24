@@ -62,7 +62,7 @@ describe("table-inheritance > single-table > relations > eager-scoping", () => {
                 expect(loadedStudent!.settings).to.not.be.null
                 expect(loadedStudent!.settings.theme).to.equal("dark")
                 // Student should NOT have 'verification' from Employee
-                expect((loadedStudent as any).verification).to.be.undefined
+                expect("verification" in loadedStudent!).to.equal(false)
 
                 // When loading an Employee, its eager relation (verification) should load
                 const loadedEmployee = await connection
@@ -76,7 +76,7 @@ describe("table-inheritance > single-table > relations > eager-scoping", () => {
                 expect(loadedEmployee!.verification).to.not.be.null
                 expect(loadedEmployee!.verification.verified).to.equal(true)
                 // Employee should NOT have 'settings' from Student
-                expect((loadedEmployee as any).settings).to.be.undefined
+                expect("settings" in loadedEmployee!).to.equal(false)
             }),
         ))
 

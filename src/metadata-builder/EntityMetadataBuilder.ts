@@ -729,6 +729,7 @@ export class EntityMetadataBuilder {
                     if (parentRelation.type !== type) {
                         const clone = Object.create(parentRelation)
                         clone.type = type
+                        clone.declaringTarget = args.target
                         return clone
                     }
 
@@ -879,11 +880,40 @@ export class EntityMetadataBuilder {
             embeddedMetadata.relations = this.metadataArgsStorage
                 .filterRelations(targets)
                 .map((args) => {
-                    return new RelationMetadata({
+                    // For single-table-inherited children, reuse the parent's
+                    // embedded relation objects.  The join-column registration
+                    // step only runs for the parent entity, so the parent's
+                    // relation is the one that will receive joinColumns,
+                    // isOwning, etc.  By sharing the same object the child
+                    // automatically inherits those computed properties.
+                    if (
+                        entityMetadata.tableType === "entity-child" &&
+                        entityMetadata.parentEntityMetadata
+                    ) {
+                        const parentEmbedded =
+                            entityMetadata.parentEntityMetadata.allEmbeddeds.find(
+                                (e) =>
+                                    e.propertyName ===
+                                    embeddedMetadata.propertyName,
+                            )
+                        if (parentEmbedded) {
+                            const parentRelation =
+                                parentEmbedded.relations.find(
+                                    (r) => r.propertyName === args.propertyName,
+                                )
+                            if (parentRelation) return parentRelation
+                        }
+                    }
+
+                    const relation = new RelationMetadata({
                         entityMetadata,
                         embeddedMetadata,
                         args,
                     })
+                    // For STI scoping: set declaringTarget to the entity class
+                    // that declared this embedded, not the embedded type itself.
+                    relation.declaringTarget = embeddedArgs.target
+                    return relation
                 })
             embeddedMetadata.listeners = this.metadataArgsStorage
                 .filterListeners(targets)
@@ -964,27 +994,67 @@ export class EntityMetadataBuilder {
 
         // For STI parent entities, build a per-child scoped map of eager relations.
         // This prevents relations declared on one child from being eagerly loaded
-        // when querying a sibling child entity.
+        // when querying a sibling child entity, while correctly handling:
+        //   - multi-level STI (Person → Employee → Teacher)
+        //   - intermediate child queries (querying Employee returns Teacher rows)
+        //   - embedded relations (declaringTarget is the entity, not the embed)
         if (
             entityMetadata.inheritancePattern === "STI" &&
             entityMetadata.childEntityMetadatas.length > 0
         ) {
-            // Collect targets that are NOT child entities (i.e., the parent and its own ancestors)
             const childTargets = new Set(
                 entityMetadata.childEntityMetadatas.map((m) => m.target),
             )
 
+            // Pre-compute each child's inheritance tree as a Set for fast lookups
+            const childInheritanceTrees = new Map<
+                Function | string,
+                Set<Function | string>
+            >()
+            for (const child of entityMetadata.childEntityMetadatas) {
+                childInheritanceTrees.set(
+                    child.target,
+                    new Set(child.inheritanceTree),
+                )
+            }
+
             for (const childMetadata of entityMetadata.childEntityMetadatas) {
+                const childTree = childInheritanceTrees.get(
+                    childMetadata.target,
+                )!
+
+                // Build the set of allowed declaring targets for this child:
+                // 1. The child itself
+                // 2. Ancestors of this child within the STI hierarchy
+                // 3. Descendants of this child (their rows appear in queries)
+                const allowedTargets = new Set<Function | string>()
+                allowedTargets.add(childMetadata.target)
+
+                for (const otherChild of entityMetadata.childEntityMetadatas) {
+                    if (otherChild.target === childMetadata.target) continue
+                    // otherChild is an ancestor if it appears in this child's inheritance tree
+                    if (childTree.has(otherChild.target)) {
+                        allowedTargets.add(otherChild.target)
+                    }
+                    // otherChild is a descendant if this child appears in its inheritance tree
+                    const otherTree = childInheritanceTrees.get(
+                        otherChild.target,
+                    )!
+                    if (otherTree.has(childMetadata.target)) {
+                        allowedTargets.add(otherChild.target)
+                    }
+                }
+
                 const scopedEager = entityMetadata.eagerRelations.filter(
                     (relation) => {
                         if (!relation.declaringTarget) return true
-                        // Include if declared on the child itself
-                        if (relation.declaringTarget === childMetadata.target)
+                        // Include if declared on this child, its ancestors, or descendants
+                        if (allowedTargets.has(relation.declaringTarget))
                             return true
                         // Include if declared on the parent (not on any child)
                         if (!childTargets.has(relation.declaringTarget))
                             return true
-                        // Exclude — it belongs to a different child
+                        // Exclude — it belongs to a different branch
                         return false
                     },
                 )
