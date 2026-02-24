@@ -257,10 +257,7 @@ export class ConnectionOptionsReader {
             }
 
             // make database path file in sqlite relative to package.json
-            if (
-                options.type === "sqlite" ||
-                options.type === "better-sqlite3"
-            ) {
+            if (options.type === "better-sqlite3") {
                 if (
                     typeof options.database === "string" &&
                     !isAbsolute(options.database) &&
