@@ -1,12 +1,12 @@
-import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { ExpoConnectionOptions } from "./ExpoConnectionOptions"
-import { ExpoQueryRunner } from "./ExpoQueryRunner"
-import { QueryRunner } from "../../query-runner/QueryRunner"
 import { DataSource } from "../../data-source/DataSource"
 import { TypeORMError } from "../../error"
+import { QueryRunner } from "../../query-runner/QueryRunner"
+import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
+import { ExpoDataSourceOptions } from "./ExpoDataSourceOptions"
+import { ExpoQueryRunner } from "./ExpoQueryRunner"
 
 export class ExpoDriver extends AbstractSqliteDriver {
-    declare options: ExpoConnectionOptions
+    declare options: ExpoDataSourceOptions
 
     constructor(connection: DataSource) {
         super(connection)
