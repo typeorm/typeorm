@@ -324,7 +324,6 @@ const ASchema = new EntitySchema<A>({
     // specified on the 'discriminatorValue' property
     discriminatorValue: "my-custom-discriminator-value-for-A",
     columns: {
-        ...BaseSchema.options.columns,
         a: {
             type: Boolean,
         },
@@ -337,7 +336,6 @@ const BSchema = new EntitySchema<B>({
     type: "entity-child",
     discriminatorValue: undefined, // Defaults to the class name (e.g. "B")
     columns: {
-        ...BaseSchema.options.columns,
         b: {
             type: Number,
         },
@@ -350,7 +348,6 @@ const CSchema = new EntitySchema<C>({
     type: "entity-child",
     discriminatorValue: "my-custom-discriminator-value-for-C",
     columns: {
-        ...BaseSchema.options.columns,
         c: {
             type: String,
         },
