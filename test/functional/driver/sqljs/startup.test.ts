@@ -2,13 +2,13 @@ import "reflect-metadata"
 import * as path from "path"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import { PlatformTools } from "../../../src/platform/PlatformTools"
+} from "../../../utils/test-utils"
+import { PlatformTools } from "../../../../src/platform/PlatformTools"
 
 describe("sqljs driver > startup", () => {
     let connections: DataSource[]
