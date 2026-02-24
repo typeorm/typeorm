@@ -1577,6 +1577,32 @@ export class PostgresQueryRunner
                 // The USING clause enables PostgreSQL to cast existing data to the new type.
                 const newFullType = this.driver.createFullType(newColumn)
                 const oldFullType = this.driver.createFullType(oldColumn)
+
+                // if column has a default, drop it before ALTER TYPE to avoid
+                // casting failures (same pattern used for enum type changes)
+                if (
+                    oldColumn.default !== null &&
+                    oldColumn.default !== undefined
+                ) {
+                    defaultValueChanged = true
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${oldColumn.name}" DROP DEFAULT`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                oldColumn.name
+                            }" SET DEFAULT ${oldColumn.default}`,
+                        ),
+                    )
+                }
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
@@ -1595,6 +1621,29 @@ export class PostgresQueryRunner
                         }"::${oldFullType}`,
                     ),
                 )
+
+                // restore default after type change
+                if (
+                    newColumn.default !== null &&
+                    newColumn.default !== undefined
+                ) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                newColumn.name
+                            }" SET DEFAULT ${newColumn.default}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${newColumn.name}" DROP DEFAULT`,
+                        ),
+                    )
+                }
             }
 
             if (
