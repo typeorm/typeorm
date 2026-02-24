@@ -5,11 +5,14 @@ import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
 import { VirtualColumnOptions } from "../options/VirtualColumnOptions"
 /**
  * VirtualColumn decorator is used to mark a specific class property as a Virtual column.
+ * @param options
  */
 export function VirtualColumn(options: VirtualColumnOptions): PropertyDecorator
 
 /**
  * VirtualColumn decorator is used to mark a specific class property as a Virtual column.
+ * @param typeOrOptions
+ * @param options
  */
 export function VirtualColumn(
     typeOrOptions: ColumnType,
@@ -18,6 +21,8 @@ export function VirtualColumn(
 
 /**
  * VirtualColumn decorator is used to mark a specific class property as a Virtual column.
+ * @param typeOrOptions
+ * @param options
  */
 export function VirtualColumn(
     typeOrOptions?: ColumnType | VirtualColumnOptions,

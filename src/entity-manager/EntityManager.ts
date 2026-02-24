@@ -1440,14 +1440,20 @@ export class EntityManager {
      *
      * Note: this method uses TRUNCATE and may not work as you expect in transactions on some platforms.
      * @param entityClass
+     * @param options
+     * @param options.cascade
      * @see https://stackoverflow.com/a/5972738/925151
      */
-    async clear<Entity>(entityClass: EntityTarget<Entity>): Promise<void> {
+    async clear<Entity>(
+        entityClass: EntityTarget<Entity>,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
         const metadata = this.connection.getMetadata(entityClass)
+
         const queryRunner =
             this.queryRunner || this.connection.createQueryRunner()
         try {
-            return await queryRunner.clearTable(metadata.tablePath) // await is needed here because we are using finally
+            return await queryRunner.clearTable(metadata.tablePath, options)
         } finally {
             if (!this.queryRunner) await queryRunner.release()
         }
@@ -1627,7 +1633,7 @@ export class EntityManager {
     }
 
     /**
-     * Gets custom entity repository marked with @EntityRepository decorator.
+     * Gets custom entity repository marked with `@EntityRepository` decorator.
      * @param customRepository
      * @deprecated use Repository.extend to create custom repositories
      */
