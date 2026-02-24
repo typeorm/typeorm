@@ -12,7 +12,7 @@ import { Category } from "./entity/Category"
  * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
  * So we run tests only for mysql.
  */
-describe("named-columns-lazy-relations", () => {
+describe("relations > lazy relations > named columns", () => {
     let connections: DataSource[]
     before(
         async () =>

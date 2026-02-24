@@ -13,7 +13,7 @@ import { EntitySchema } from "../../../../../src"
  * Because lazy relations are overriding prototype is impossible to run these tests on multiple connections.
  * So we run tests only for mysql.
  */
-describe("basic-lazy-relations", () => {
+describe("relations > lazy relations > basic-lazy-relations", () => {
     const appRoot = require("app-root-path")
     const resourceDir =
         appRoot +

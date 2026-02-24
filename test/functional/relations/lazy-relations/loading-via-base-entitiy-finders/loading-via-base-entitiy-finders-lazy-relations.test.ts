@@ -9,7 +9,7 @@ import {
 import { DataSource } from "../../../../../src/data-source/DataSource"
 import { expect } from "chai"
 
-describe("lazy-relations-loading-via-base-entity-finders", () => {
+describe("relations > lazy relations > loading via base entity finders", () => {
     let connections: DataSource[]
     before(
         async () =>
