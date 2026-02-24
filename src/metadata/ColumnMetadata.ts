@@ -831,7 +831,10 @@ export class ColumnMetadata {
                             embeddedObject[this.propertyName],
                         ) &&
                         !Buffer.isBuffer(embeddedObject[this.propertyName]) &&
-                        !(embeddedObject[this.propertyName] instanceof Date)
+                        !(embeddedObject[this.propertyName] instanceof Date) &&
+                        (!this.transformer ||
+                            embeddedObject[this.propertyName].constructor ===
+                                Object)
                     ) {
                         value = this.referencedColumn.getEntityValue(
                             embeddedObject[this.propertyName],
@@ -870,7 +873,9 @@ export class ColumnMetadata {
                     ) &&
                     !(typeof entity[this.propertyName] === "function") &&
                     !Buffer.isBuffer(entity[this.propertyName]) &&
-                    !(entity[this.propertyName] instanceof Date)
+                    !(entity[this.propertyName] instanceof Date) &&
+                    (!this.transformer ||
+                        entity[this.propertyName].constructor === Object)
                 ) {
                     value = this.referencedColumn.getEntityValue(
                         entity[this.propertyName],
