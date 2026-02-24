@@ -868,6 +868,33 @@ describe("repository > basic methods", () => {
                         .should.be.rejectedWith(TypeORMError)
                 }),
             ))
+
+        it("github issues > #10909: should not throw when upserting a row with identical values (no-op upsert)", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    if (!connection.driver.supportedUpsertTypes.length) return
+
+                    const postRepository = connection.getRepository(Post)
+                    const externalId = "external-noop-upsert"
+
+                    // initial insert via upsert
+                    await postRepository.upsert(
+                        { externalId, title: "Same title" },
+                        ["externalId"],
+                    )
+
+                    // upsert with identical values - should not throw even if MySQL returns insertId=0
+                    await postRepository.upsert(
+                        { externalId, title: "Same title" },
+                        ["externalId"],
+                    )
+
+                    const post = await postRepository.findOneByOrFail({
+                        externalId,
+                    })
+                    post.title.should.equal("Same title")
+                }),
+            ))
     })
 
     describe("preload also should also implement merge functionality", function () {
