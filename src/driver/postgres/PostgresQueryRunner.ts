@@ -4560,7 +4560,6 @@ export class PostgresQueryRunner
             .map((columnName) => {
                 let columnExpression = `"${columnName}"`
 
-                // add per-column options if specified
                 if (index.columnOptions && index.columnOptions[columnName]) {
                     const options = index.columnOptions[columnName]
                     if (options.order) {

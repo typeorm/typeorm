@@ -95,6 +95,73 @@ export class User {
 }
 ```
 
+## Column Ordering Options
+
+- **PostgreSQL** supports specifying the sort order of columns in an index (ASC or DESC) and the nulls order (NULLS FIRST or NULLS LAST).
+- **CockroachDB** supports only the sort order of columns in an index (ASC or DESC); if nulls order is specified, it will be ignored.
+- **Other databases** do not support column ordering in indices; if specified, it will be ignored.
+
+### Single-Column Index with Ordering
+
+For property-level indexes on a single column, use the shorthand syntax with `order` and/or `nulls` options:
+
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm"
+
+@Entity()
+export class User {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column({ nullable: true })
+    @Index("IDX_USER_EMAIL", { order: "ASC", nulls: "NULLS FIRST" })
+    email: string | null
+
+    @Column({ nullable: true })
+    @Index("IDX_USER_SCORE", { order: "DESC", nulls: "NULLS LAST" })
+    score: number | null
+}
+```
+
+This generates:
+
+```sql
+CREATE INDEX "IDX_USER_EMAIL" ON "user" ("email" ASC NULLS FIRST)
+CREATE INDEX "IDX_USER_SCORE" ON "user" ("score" DESC NULLS LAST)
+```
+
+### Multi-Column Index with Per-Column Ordering
+
+For class-level indexes with multiple columns, use the `columnOptions` property to specify ordering for each column:
+
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm"
+
+@Entity()
+@Index("IDX_USER_NAME_COMPOSITE", ["firstName", "lastName"], {
+    columnOptions: {
+        firstName: { order: "ASC", nulls: "NULLS FIRST" },
+        lastName: { order: "DESC", nulls: "NULLS LAST" },
+    },
+})
+export class User {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column({ nullable: true })
+    firstName: string | null
+
+    @Column({ nullable: true })
+    lastName: string | null
+}
+```
+
+This generates:
+
+```sql
+CREATE INDEX "IDX_USER_NAME_COMPOSITE" ON "user" ("firstName" ASC NULLS FIRST, "lastName" DESC NULLS LAST)
+```
+
 ## Spatial Indices
 
 MySQL, CockroachDB and PostgreSQL (when PostGIS is available) supports spatial indices.

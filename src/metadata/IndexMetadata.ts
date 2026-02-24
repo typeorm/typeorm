@@ -136,7 +136,7 @@ export class IndexMetadata {
     /**
      * Per-column options for the index.
      * Allows specifying sort order (ASC/DESC) and null ordering (NULLS FIRST/NULLS LAST) for each column.
-     * Works only in PostgreSQL and CockroachDB.
+     * Supported by PostgreSQL and CockroachDB only.
      */
     columnOptions?: {
         [columnName: string]: {

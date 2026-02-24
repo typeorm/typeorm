@@ -852,6 +852,46 @@ export class User {
 }
 ```
 
+##### Column Ordering in Indexes
+
+- **PostgreSQL** supports specifying the sort order of columns in an index (ASC or DESC) and the nulls order (NULLS FIRST or NULLS LAST).
+- **CockroachDB** supports only the sort order of columns in an index (ASC or DESC); if nulls order is specified, it will be ignored.
+- **Other databases** do not support column ordering in indices; if specified, it will be ignored.
+
+**Property-level indexes (single column)** - use shorthand syntax:
+
+```typescript
+@Entity()
+export class User {
+    @Column({ nullable: true })
+    @Index("IDX_USER_EMAIL", { order: "ASC", nulls: "NULLS FIRST" })
+    email: string | null
+
+    @Column({ nullable: true })
+    @Index("IDX_USER_INFO", { nulls: "NULLS LAST" })
+    info: string | null
+}
+```
+
+**Class-level indexes (multiple columns)** - use `columnOptions`:
+
+```typescript
+@Entity()
+@Index("IDX_USER_COMPOSITE", ["firstName", "lastName"], {
+    columnOptions: {
+        firstName: { order: "ASC", nulls: "NULLS FIRST" },
+        lastName: { order: "DESC", nulls: "NULLS LAST" },
+    },
+})
+export class User {
+    @Column({ nullable: true })
+    firstName: string | null
+
+    @Column({ nullable: true })
+    lastName: string | null
+}
+```
+
 Learn more about [indices](../advanced-topics/3-indices.md).
 
 #### `@Unique`
