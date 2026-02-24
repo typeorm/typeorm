@@ -6,8 +6,6 @@ import { FileLogger } from "./FileLogger"
 import { DebugLogger } from "./DebugLogger"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { FormattedConsoleLogger } from "./FormattedConsoleLogger"
-import { AbstractLogger } from "./AbstractLogger"
-
 /**
  * Helps to create logger instances.
  */
@@ -28,8 +26,11 @@ export class LoggerFactory {
         options?: LoggerOptions,
     ): Logger {
         if (ObjectUtils.isObject(logger)) {
-            if (logger instanceof AbstractLogger && options !== undefined) {
-                logger.setOptions(options)
+            if (
+                options !== undefined &&
+                typeof (logger as any).setOptions === "function"
+            ) {
+                ;(logger as any).setOptions(options)
             }
             return logger as Logger
         }

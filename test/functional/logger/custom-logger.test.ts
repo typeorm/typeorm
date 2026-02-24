@@ -43,20 +43,19 @@ describe("logger > custom logger extending AbstractLogger", () => {
     })
     after(() => closeTestingConnections(dataSources))
 
-    it("should invoke custom logger writeLog for queries when logging is enabled (issue #10174)", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                fakeLog.resetHistory()
+    it("should invoke custom logger writeLog for queries when logging is enabled (issue #10174)", async () => {
+        for (const dataSource of dataSources) {
+            fakeLog.resetHistory()
 
-                const repository = dataSource.getRepository(Post)
-                await repository.save({ title: "test" })
-                await repository.find()
+            const repository = dataSource.getRepository(Post)
+            await repository.save({ title: "test" })
+            await repository.find()
 
-                expect(fakeLog.called).to.be.true
-                const queryLogs = fakeLog
-                    .getCalls()
-                    .filter((call: any) => call.args[0] === "query")
-                expect(queryLogs.length).to.be.greaterThan(0)
-            }),
-        ))
+            expect(fakeLog.called).to.be.true
+            const queryLogs = fakeLog
+                .getCalls()
+                .filter((call) => call.args[0] === "query")
+            expect(queryLogs.length).to.be.greaterThan(0)
+        }
+    })
 })
