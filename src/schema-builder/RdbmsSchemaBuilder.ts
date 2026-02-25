@@ -1128,6 +1128,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             const newChecks = modifiedChecks.map((m) => m.newCheck)
             await this.queryRunner.createCheckConstraints(table, newChecks)
+
+            newChecks.forEach((check) => {
+                table.addCheckConstraint(check)
+            })
         }
     }
 
@@ -1136,67 +1140,42 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * @param expression
      */
     protected normalizeCheckExpression(expression: string): string {
-        // TODO: normalization is not perfect and may fail in some edge cases.
-        // For example, it does not handle nested parentheses, different logical operator precedence, or complex expressions.
-
         // Remove extra whitespace, newlines, and tabs
         let normalized = expression.replace(/\s+/g, " ").trim().toLowerCase()
 
         // Remove parentheses wrapping the entire expression
-        normalized = normalized.replace(/^\(\s*(.+)\s*\)$/g, "$1")
+        normalized = normalized.replace(/^\((.+)\)$/g, "$1").trim()
 
         // Normalize ARRAY syntax (PostgreSQL) to IN syntax for comparison
-        // e.g., "col = ANY (ARRAY['val1', 'val2'])" -> "col in ('val1', 'val2')"
+        // e.g., "col = ANY (ARRAY['val1'::text, 'val2'::text])" -> "col in ('val1', 'val2')"
         normalized = normalized.replace(
             /=\s*any\s*\(\s*array\[([^\]]+)\]\s*\)/gi,
             "in ($1)",
         )
 
         // Remove type casts (::text, ::character varying, etc.)
-        normalized = normalized.replace(/::\w+/g, "")
+        normalized = normalized.replace(/::[a-z][a-z ]*\b/g, "")
 
-        // Normalize SQL Server brackets [col] to plain identifiers
-        normalized = normalized.replace(/\[([^\]]+)\]/g, "$1")
-
-        // Normalize all identifier quotes to plain identifiers for comparison
+        // Normalize identifier quotes to plain identifiers
         normalized = normalized.replace(/"([^"]+)"/g, "$1")
         normalized = normalized.replace(/`([^`]+)`/g, "$1")
+        normalized = normalized.replace(/\[([^\]]+)\]/g, "$1")
 
-        // Normalize OR chains with IN syntax for comparison
-        // e.g., "col='a' OR col='b' OR col='c'" -> "col in ('a','b','c')"
-        const orMatches = Array.from(
-            normalized.matchAll(
-                /(\w+)\s*=\s*'([^']+)'(\s+or\s+\1\s*=\s*'[^']+')+/gi,
-            ),
-        )
-        for (const match of orMatches) {
-            const orChain = match[0]
-            const colName = match[1]
-            const values = (orChain.match(/'([^']+)'/g) || [])
-                .map((v) => v.replace(/'/g, ""))
-                .sort()
-            const inExpr = `${colName} in ('${values.join("','")}')`
-            normalized = normalized.replace(orChain, inExpr)
+        // Remove redundant parentheses around sub-expressions
+        // Repeatedly remove innermost non-essential parens
+        // Preserves IN (...) by only removing parens whose content has no commas
+        // unless the content already contains "in (" (nested IN expression)
+        let prev = ""
+        while (prev !== normalized) {
+            prev = normalized
+            // Remove parens around expressions with no commas and no inner parens
+            normalized = normalized.replace(/\(([^(),]+)\)/g, "$1")
+            // Remove parens wrapping an "X in (...)" expression
+            normalized = normalized.replace(/\((\w+\s+in\s*\([^)]+\))\)/g, "$1")
         }
 
-        // Normalize IN expressions by sorting values for comparison
-        const inMatches = Array.from(
-            normalized.matchAll(
-                /(\w+)\s+in\s*\('[^']+'\s*(?:,\s*'[^']+'\s*)*\)/gi,
-            ),
-        )
-        for (const match of inMatches) {
-            const inExpr = match[0]
-            const colName = match[1]
-            const values = (inExpr.match(/'([^']+)'/g) || [])
-                .map((v) => v.replace(/'/g, ""))
-                .sort()
-            const normalizedIn = `${colName} in ('${values.join("','")}')`
-            normalized = normalized.replace(inExpr, normalizedIn)
-        }
-
-        // Normalize escape characters
-        normalized = normalized.replace(/\\'/g, "''")
+        // Clean up extra spaces introduced by removals
+        normalized = normalized.replace(/\s+/g, " ").trim()
 
         return normalized
     }

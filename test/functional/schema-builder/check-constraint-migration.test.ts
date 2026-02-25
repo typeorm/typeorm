@@ -3,9 +3,9 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { CheckEntity } from "./entity/Check"
+import { CheckEntity } from "./entity/check-migration/CheckEntity"
 
-describe("schema builder > change check constraint with migration", () => {
+describe("schema builder > change check constraint with migration (#11714)", () => {
     let datasources: DataSource[]
     before(async () => {
         datasources = await createTestingConnections({
@@ -18,7 +18,7 @@ describe("schema builder > change check constraint with migration", () => {
     })
     after(() => closeTestingConnections(datasources))
 
-    it("should correctly change check with migration", () =>
+    it("should detect modified check constraints after migration", () =>
         Promise.all(
             datasources.map(async (datasource) => {
                 await datasource.runMigrations()
@@ -26,24 +26,36 @@ describe("schema builder > change check constraint with migration", () => {
                 const sqlInMemory = await datasource.driver
                     .createSchemaBuilder()
                     .log()
-                const upQueries = sqlInMemory.upQueries
-                const downQueries = sqlInMemory.downQueries
-                upQueries.length.should.be.greaterThan(0)
-                downQueries.length.should.be.greaterThan(0)
+
+                // Migration creates constraints with different expressions
+                // than the entity metadata, so sync should detect changes
+                sqlInMemory.upQueries.length.should.be.greaterThan(0)
+                sqlInMemory.downQueries.length.should.be.greaterThan(0)
             }),
         ))
-    it("should not change check if expression is the same", () =>
+})
+
+describe("schema builder > no change for matching check constraints", () => {
+    let datasources: DataSource[]
+    before(async () => {
+        datasources = await createTestingConnections({
+            entities: [CheckEntity],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
+    after(() => closeTestingConnections(datasources))
+
+    it("should not generate queries when check expressions match", () =>
         Promise.all(
             datasources.map(async (datasource) => {
-                await datasource.synchronize()
                 const sqlInMemory = await datasource.driver
                     .createSchemaBuilder()
                     .log()
-                const upQueries = sqlInMemory.upQueries
-                const downQueries = sqlInMemory.downQueries
 
-                upQueries.length.should.be.equal(0)
-                downQueries.length.should.be.equal(0)
+                sqlInMemory.upQueries.length.should.be.equal(0)
+                sqlInMemory.downQueries.length.should.be.equal(0)
             }),
         ))
 })

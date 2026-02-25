@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, Check } from "../../../../src"
+import { Column, Entity, PrimaryGeneratedColumn, Check } from "../../../../../src"
 
 enum MyEnum {
     A = "A",
