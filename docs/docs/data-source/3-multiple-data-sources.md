@@ -259,10 +259,9 @@ try {
     const userFromReplica = await replicaQueryRunner.query(
         "SELECT * FROM users WHERE id = $1",
         [userId],
-        replicaQueryRunner,
     )
 } finally {
-    return replicaQueryRunner.release()
+    await replicaQueryRunner.release()
 }
 ```
 

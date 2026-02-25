@@ -49,6 +49,18 @@ describe("ReplicationConfig helpers", () => {
         )
     })
 
+    it("should throw when slaves is present but empty even if replicas has entries", () => {
+        const replication: ReplicationConfig<Credentials> = {
+            master: { host: "legacy-master" },
+            slaves: [],
+            replicas: [{ host: "alias-replica" }],
+        }
+
+        expect(() => getReplicationReplicas(replication)).to.throw(
+            `Replication options must define at least one "slave" or "replica".`,
+        )
+    })
+
     it("should throw when neither replicas nor slaves is provided", () => {
         const invalidReplication = {
             master: { host: "legacy-master" },
