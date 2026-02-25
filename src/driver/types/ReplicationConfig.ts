@@ -45,13 +45,21 @@ export function getReplicationPrimary<TCredentials extends object>(
 export function getReplicationReplicas<TCredentials extends object>(
     replication: ReplicationConfig<TCredentials>,
 ): TCredentials[] {
-    if ("slaves" in replication && replication.slaves) {
-        return Array.from(replication.slaves) as TCredentials[]
+    if ("slaves" in replication && replication.slaves !== undefined) {
+        const slaves = Array.from(replication.slaves) as TCredentials[]
+        if (slaves.length > 0) {
+            return slaves
+        }
     }
 
-    if ("replicas" in replication && replication.replicas) {
-        return Array.from(replication.replicas) as TCredentials[]
+    if ("replicas" in replication && replication.replicas !== undefined) {
+        const replicas = Array.from(replication.replicas) as TCredentials[]
+        if (replicas.length > 0) {
+            return replicas
+        }
     }
 
-    return []
+    throw new TypeORMError(
+        `Replication options must define at least one "slave" or "replica".`,
+    )
 }
