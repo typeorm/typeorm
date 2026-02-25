@@ -171,10 +171,14 @@ export class EntityMetadataBuilder {
             )
             .forEach((entityMetadata) => {
                 // create entity's relations join columns (for many-to-one and one-to-one owner)
+                // For CTI children, skip inherited relations — their FKs belong on the ancestor table
                 entityMetadata.relations
                     .filter(
                         (relation) =>
-                            relation.isOneToOne || relation.isManyToOne,
+                            (relation.isOneToOne || relation.isManyToOne) &&
+                            !entityMetadata.inheritedRelations.includes(
+                                relation,
+                            ),
                     )
                     .forEach((relation) => {
                         const joinColumns =
