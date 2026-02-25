@@ -2415,6 +2415,49 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // qb.select("category")
         //     .leftJoinAndSelect("category.post", "post");
 
+        // For CTI children, inject INNER JOIN to parent table so inherited columns are accessible.
+        // e.g. FROM user INNER JOIN actor ON actor.id = user.id
+        let ctiJoinSql = ""
+        if (this.expressionMap.mainAlias?.hasMetadata) {
+            const metadata = this.expressionMap.mainAlias.metadata
+            if (metadata.isCtiChild) {
+                const parentMetadata = metadata.parentEntityMetadata
+                const mainAlias = this.expressionMap.mainAlias.name
+                const parentAlias = mainAlias + "__cti_parent"
+                const parentTable = this.getTableName(parentMetadata.tablePath)
+
+                // Build ON condition: parent.pk = child.pk for each primary column
+                const conditions = metadata.primaryColumns
+                    .map((pk) => {
+                        const parentPk = parentMetadata.primaryColumns.find(
+                            (ppk) =>
+                                ppk.propertyName === pk.propertyName,
+                        )
+                        if (!parentPk) return ""
+                        return (
+                            this.escape(parentAlias) +
+                            "." +
+                            this.escape(parentPk.databaseName) +
+                            " = " +
+                            this.escape(mainAlias) +
+                            "." +
+                            this.escape(pk.databaseName)
+                        )
+                    })
+                    .filter((c) => c)
+                    .join(" AND ")
+
+                ctiJoinSql =
+                    " INNER JOIN " +
+                    parentTable +
+                    " " +
+                    this.escape(parentAlias) +
+                    this.createTableLockExpression() +
+                    " ON " +
+                    conditions
+            }
+        }
+
         const joins = this.expressionMap.joinAttributes.map((joinAttr) => {
             const relation = joinAttr.relation
             const destinationTableName = joinAttr.tablePath
@@ -2623,7 +2666,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
         })
 
-        return joins.join(" ")
+        return ctiJoinSql + joins.join(" ")
     }
 
     /**
@@ -3006,12 +3049,27 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const finalSelects: SelectQuery[] = []
 
         const escapedAliasName = this.escape(aliasName)
+        // For CTI children, inherited columns reference the parent table
+        const ctiParentEscapedAlias =
+            metadata.isCtiChild
+                ? this.escape(aliasName + "__cti_parent")
+                : null
+
         allColumns.forEach((column) => {
+            // Determine which table alias to use for the column source.
+            // CTI inherited columns come from the parent table.
+            const isInheritedColumn =
+                ctiParentEscapedAlias !== null &&
+                metadata.inheritedColumns.includes(column)
+            const columnTableAlias = isInheritedColumn
+                ? ctiParentEscapedAlias!
+                : escapedAliasName
+
             let selectionPath =
-                escapedAliasName + "." + this.escape(column.databaseName)
+                columnTableAlias + "." + this.escape(column.databaseName)
 
             if (column.isVirtualProperty && column.query) {
-                selectionPath = `(${column.query(escapedAliasName)})`
+                selectionPath = `(${column.query(columnTableAlias)})`
             }
 
             if (

@@ -899,15 +899,32 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             }
 
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
-                const column = this.expressionMap.aliasNamePrefixingEnabled
-                    ? this.expressionMap.mainAlias!.name +
-                      "." +
-                      metadata.discriminatorColumn.databaseName
-                    : metadata.discriminatorColumn.databaseName
+                let column: string
+                if (metadata.isCtiChild) {
+                    // CTI: discriminator lives on parent table, use parent alias directly (escaped)
+                    column = this.expressionMap.aliasNamePrefixingEnabled
+                        ? this.escape(
+                              this.expressionMap.mainAlias!.name +
+                                  "__cti_parent",
+                          ) +
+                          "." +
+                          this.escape(
+                              metadata.discriminatorColumn.databaseName,
+                          )
+                        : this.escape(
+                              metadata.discriminatorColumn.databaseName,
+                          )
+                } else {
+                    // STI: discriminator on same table
+                    column = this.expressionMap.aliasNamePrefixingEnabled
+                        ? this.expressionMap.mainAlias!.name +
+                          "." +
+                          metadata.discriminatorColumn.databaseName
+                        : metadata.discriminatorColumn.databaseName
+                    column = this.replacePropertyNames(column)
+                }
 
-                const condition = `${this.replacePropertyNames(
-                    column,
-                )} IN (:...discriminatorColumnValues)`
+                const condition = `${column} IN (:...discriminatorColumnValues)`
                 conditionsArray.push(condition)
             }
         }
