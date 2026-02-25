@@ -1,0 +1,126 @@
+import "reflect-metadata"
+import { Category } from "./entity/Category"
+import { DataSource } from "../../../../src/data-source/DataSource"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+
+describe("tree tables > closure-table with TreeLevelColumn", () => {
+    let connections: DataSource[]
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                entities: [Category],
+            })),
+    )
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
+
+    it("should save categories with TreeLevelColumn without not-null constraint violation", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const categoryRepository =
+                    connection.getTreeRepository(Category)
+
+                const a1 = new Category()
+                a1.name = "a1"
+                await categoryRepository.save(a1)
+
+                const a11 = new Category()
+                a11.name = "a11"
+                a11.parentCategory = a1
+                await categoryRepository.save(a11)
+
+                const a12 = new Category()
+                a12.name = "a12"
+                a12.parentCategory = a1
+                await categoryRepository.save(a12)
+
+                const rootCategories = await categoryRepository.findRoots()
+                rootCategories.length.should.be.equal(1)
+                rootCategories[0].id.should.equal(a1.id)
+                rootCategories[0].name.should.equal("a1")
+
+                const a11Parent = await categoryRepository.findAncestors(a11)
+                a11Parent.length.should.be.equal(2)
+                const a11ParentIds = a11Parent.map((c) => c.id)
+                a11ParentIds.should.include(a1.id)
+                a11ParentIds.should.include(a11.id)
+
+                const a1Children = await categoryRepository.findDescendants(a1)
+                a1Children.length.should.be.equal(3)
+                const a1ChildrenIds = a1Children.map((c) => c.id)
+                a1ChildrenIds.should.include(a1.id)
+                a1ChildrenIds.should.include(a11.id)
+                a1ChildrenIds.should.include(a12.id)
+            }),
+        ))
+
+    it("should save categories via children with TreeLevelColumn", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const categoryRepository =
+                    connection.getTreeRepository(Category)
+
+                const a1 = new Category()
+                a1.name = "a1"
+
+                const a11 = new Category()
+                a11.name = "a11"
+
+                const a12 = new Category()
+                a12.name = "a12"
+
+                a1.childCategories = [a11, a12]
+                await categoryRepository.save(a1)
+
+                const rootCategories = await categoryRepository.findRoots()
+                rootCategories.length.should.be.equal(1)
+                rootCategories[0].id.should.equal(a1.id)
+                rootCategories[0].name.should.equal("a1")
+
+                const a1Children = await categoryRepository.findDescendants(a1)
+                a1Children.length.should.be.equal(3)
+            }),
+        ))
+
+    it("should correctly populate TreeLevelColumn values (root=1, children=2, grandchildren=3)", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const categoryRepository =
+                    connection.getTreeRepository(Category)
+
+                const a1 = new Category()
+                a1.name = "a1"
+                await categoryRepository.save(a1)
+
+                const a11 = new Category()
+                a11.name = "a11"
+                a11.parentCategory = a1
+                await categoryRepository.save(a11)
+
+                const a111 = new Category()
+                a111.name = "a111"
+                a111.parentCategory = a11
+                await categoryRepository.save(a111)
+
+                a1.level!.should.equal(1)
+                a11.level!.should.equal(2)
+                a111.level!.should.equal(3)
+
+                const roots = await categoryRepository.findRoots()
+                roots[0].level!.should.equal(1)
+
+                const allDescendants =
+                    await categoryRepository.findDescendants(a1)
+                const byName = Object.fromEntries(
+                    allDescendants.map((c) => [c.name, c]),
+                )
+                byName["a1"].level!.should.equal(1)
+                byName["a11"].level!.should.equal(2)
+                byName["a111"].level!.should.equal(3)
+            }),
+        ))
+})
