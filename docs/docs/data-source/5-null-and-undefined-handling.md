@@ -6,7 +6,7 @@ Passing a known `null` value is disallowed by TypeScript (when you've enabled `s
 
 The acceptance of `null` and `undefined` values can sometimes cause unexpected results and requires caution. This is especially a concern when values are passed from user input without adequate validation.
 
-For example, calling `Repository.findOneBy({ id: undefined })` returns the first row from the table, and `Repository.findBy({ userId: null })` is unfiltered and returns all rows.
+For example, calling `Repository.findBy({ userId: null })` is unfiltered and returns all rows. Note that `findOne` and `findOneBy` are protected against this: if all WHERE conditions are null/undefined (and configured to be ignored), they return `null` instead of the first row, preventing unintended data exposure.
 
 The way in which `null` and `undefined` values are handled can be customised through the `invalidWhereValuesBehavior` configuration option in your data source options. This applies to all operations that support 'WHERE' conditions, including find operations, query builders, and repository methods.
 

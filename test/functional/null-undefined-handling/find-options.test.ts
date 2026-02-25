@@ -189,6 +189,151 @@ describe("find options > null and undefined handling", () => {
                     postsWithRepo.length.should.be.equal(3)
                 }),
             ))
+
+        // Security tests for issue #11873
+        it("should return null when findOneBy is called with all null conditions (security fix)", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await prepareData(connection)
+
+                    // Test with single null condition
+                    const post1 = await connection
+                        .getRepository(Post)
+                        .findOneBy({
+                            // @ts-expect-error - null should be marked as unsafe by default
+                            id: null,
+                        })
+
+                    expect(post1).to.be.null
+
+                    // Test with multiple null conditions
+                    const post2 = await connection
+                        .getRepository(Post)
+                        .findOneBy({
+                            // @ts-expect-error - null should be marked as unsafe by default
+                            id: null,
+                            // @ts-expect-error - null should be marked as unsafe by default
+                            title: null,
+                        })
+
+                    expect(post2).to.be.null
+                }),
+            ))
+
+        it("should return null when findOneBy is called with all undefined conditions (security fix)", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await prepareData(connection)
+
+                    // Test with single undefined condition
+                    const post1 = await connection
+                        .getRepository(Post)
+                        .findOneBy({
+                            id: undefined,
+                        })
+
+                    expect(post1).to.be.null
+
+                    // Test with multiple undefined conditions
+                    const post2 = await connection
+                        .getRepository(Post)
+                        .findOneBy({
+                            id: undefined,
+                            title: undefined,
+                        })
+
+                    expect(post2).to.be.null
+                }),
+            ))
+
+        it("should return null when findOneBy is called with mixed null/undefined conditions (security fix)", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await prepareData(connection)
+
+                    const post = await connection
+                        .getRepository(Post)
+                        .findOneBy({
+                            id: undefined,
+                            // @ts-expect-error - null should be marked as unsafe by default
+                            title: null,
+                        })
+
+                    expect(post).to.be.null
+                }),
+            ))
+
+        it("should return null when findOne is called with all null/undefined conditions (security fix)", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await prepareData(connection)
+
+                    // Test with null
+                    const post1 = await connection.getRepository(Post).findOne({
+                        // @ts-expect-error - null should be marked as unsafe by default
+                        where: {
+                            id: null,
+                        },
+                    })
+
+                    expect(post1).to.be.null
+
+                    // Test with undefined
+                    const post2 = await connection.getRepository(Post).findOne({
+                        where: {
+                            id: undefined,
+                        },
+                    })
+
+                    expect(post2).to.be.null
+                }),
+            ))
+
+        it("should throw EntityNotFoundError when findOneByOrFail is called with all null/undefined conditions", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await prepareData(connection)
+
+                    // Test with null
+                    try {
+                        await connection.getRepository(Post).findOneByOrFail({
+                            // @ts-expect-error - null should be marked as unsafe by default
+                            id: null,
+                        })
+                        expect.fail("Should have thrown EntityNotFoundError")
+                    } catch (error) {
+                        expect(error.name).to.equal("EntityNotFoundError")
+                    }
+
+                    // Test with undefined
+                    try {
+                        await connection.getRepository(Post).findOneByOrFail({
+                            id: undefined,
+                        })
+                        expect.fail("Should have thrown EntityNotFoundError")
+                    } catch (error) {
+                        expect(error.name).to.equal("EntityNotFoundError")
+                    }
+                }),
+            ))
+
+        it("should work normally when at least one condition is valid", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    await prepareData(connection)
+
+                    // This should work - mixing valid and invalid conditions
+                    const post = await connection
+                        .getRepository(Post)
+                        .findOneBy({
+                            title: "Post #1",
+                            text: undefined, // This will be ignored, but title is valid
+                        })
+
+                    expect(post).to.not.be.null
+                    expect(post?.title).to.equal("Post #1")
+                }),
+            ))
     })
 
     describe("with invalidWhereValuesBehavior.null set to 'sql-null'", () => {
