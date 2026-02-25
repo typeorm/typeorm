@@ -419,8 +419,8 @@ describe("query builder > select", () => {
                         expect(sql).to.equal(
                             'SELECT "hero"."id" AS "hero_id", "hero"."url" AS "hero_url" ' +
                                 'FROM "hero_image" "hero" ' +
-                                'LEFT JOIN "post" "posts" ON "posts"."heroImageId"="hero"."id"  ' +
-                                'LEFT JOIN "category" "category" ON "category"."id"="posts"."categoryId" ' +
+                                'LEFT JOIN ( "post" "posts" ' +
+                                'LEFT JOIN "category" "category" ON "category"."id"="posts"."categoryId" ) ON "posts"."heroImageId"="hero"."id" ' +
                                 'WHERE "category"."name" = ?',
                         )
 
@@ -449,8 +449,8 @@ describe("query builder > select", () => {
                         expect(sql).to.equal(
                             'SELECT "hero"."id" AS "hero_id", "hero"."url" AS "hero_url" ' +
                                 'FROM "hero_image" "hero" ' +
-                                'LEFT JOIN "post" "posts" ON "posts"."heroImageId"="hero"."id"  ' +
-                                'LEFT JOIN "category" "category" ON "category"."id"="posts"."categoryId" ' +
+                                'LEFT JOIN ( "post" "posts" ' +
+                                'LEFT JOIN "category" "category" ON "category"."id"="posts"."categoryId" ) ON "posts"."heroImageId"="hero"."id" ' +
                                 'WHERE "category"."name" IN (?, ?, ?)',
                         )
 
