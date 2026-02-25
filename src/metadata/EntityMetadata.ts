@@ -969,12 +969,13 @@ export class EntityMetadata {
      *          was found in the whole inheritance tree.
      */
     findInheritanceMetadata(value: any): EntityMetadata {
-        // Check for single table inheritance and find the correct metadata in that case.
+        // Check for table inheritance and find the correct metadata in that case.
         // Goal is to use the correct discriminator as we could have a repository
         // for an (abstract) base class and thus the target would not match.
 
         if (
-            this.inheritancePattern === "STI" &&
+            (this.inheritancePattern === "STI" ||
+                this.inheritancePattern === "CTI") &&
             this.childEntityMetadatas.length > 0
         ) {
             // There could be a column on the base class that can manually be set to override the type.
@@ -1114,7 +1115,8 @@ export class EntityMetadata {
         }
         this.givenTableName =
             this.tableMetadataArgs.type === "entity-child" &&
-            this.parentEntityMetadata
+            this.parentEntityMetadata &&
+            this.isStiChild
                 ? this.parentEntityMetadata.givenTableName
                 : this.tableMetadataArgs.name
         this.synchronize =
@@ -1128,7 +1130,8 @@ export class EntityMetadata {
                 namingStrategy.closureJunctionTableName(this.givenTableName!)
         } else if (
             this.tableMetadataArgs.type === "entity-child" &&
-            this.parentEntityMetadata
+            this.parentEntityMetadata &&
+            this.isStiChild
         ) {
             this.tableNameWithoutPrefix = namingStrategy.tableName(
                 this.parentEntityMetadata.targetName,
