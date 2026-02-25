@@ -958,10 +958,14 @@ export class EntityMetadataBuilder {
                 entityMetadata,
                 this.metadataArgsStorage.filterEmbeddeds(targets),
             )
-            embeddedMetadata.embeddeds.forEach(
-                (subEmbedded) =>
-                    (subEmbedded.parentEmbeddedMetadata = embeddedMetadata),
-            )
+            embeddedMetadata.embeddeds.forEach((subEmbedded) => {
+                subEmbedded.parentEmbeddedMetadata = embeddedMetadata
+                // Propagate the declaring entity target down through nested
+                // embedded chains so that STI scoping uses the entity class,
+                // not an intermediate embedding class.
+                subEmbedded.declaringEntityTarget =
+                    embeddedMetadata.declaringEntityTarget
+            })
             entityMetadata.allEmbeddeds.push(embeddedMetadata)
             return embeddedMetadata
         })
