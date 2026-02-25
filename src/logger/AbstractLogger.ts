@@ -14,7 +14,7 @@ export abstract class AbstractLogger implements Logger {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected options?: LoggerOptions) {}
+    constructor(public options?: LoggerOptions) {}
 
     // -------------------------------------------------------------------------
     // Public Methods

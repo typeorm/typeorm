@@ -26,7 +26,10 @@ export class LoggerFactory {
             | Logger,
         options?: LoggerOptions,
     ): Logger {
-        if (ObjectUtils.isObject(logger)) return logger as Logger
+        if (ObjectUtils.isObject(logger) && "options" in logger && options) {
+            logger.options = options
+            return logger
+        }
 
         if (logger) {
             switch (logger) {
