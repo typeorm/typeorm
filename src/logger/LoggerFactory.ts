@@ -26,10 +26,9 @@ export class LoggerFactory {
             | Logger,
         options?: LoggerOptions,
     ): Logger {
-        if (ObjectUtils.isObject(logger) && options) {
-            const instance = logger as AbstractLogger
-            instance.options = options
-            return instance
+        if (ObjectUtils.isObject(logger) && "options" in logger && options) {
+            logger.options = options
+            return logger
         }
 
         if (logger) {
