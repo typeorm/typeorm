@@ -141,6 +141,7 @@ export class RelationIdLoader {
             inverseColumns = relation.inverseRelation!.joinColumns.map(
                 (column) => column.referencedColumn!,
             )
+        } else {
         }
 
         return entities.map((entity) => {
@@ -261,7 +262,9 @@ export class RelationIdLoader {
             ? junctionMetadata.inverseColumns
             : junctionMetadata.ownerColumns
         const fieldsToMetadata = new Map<string, ColumnMetadata>()
-        const qb = this.connection.createQueryBuilder(this.queryRunner)
+        const qb = this.dataSource.manager.connection.createQueryBuilder(
+            this.queryRunner,
+        )
 
         // select all columns from junction table
         columns.forEach((column) => {
@@ -415,7 +418,7 @@ export class RelationIdLoader {
                         const column = fieldsToMetadata.get(key)
                         if (column) {
                             data[key] =
-                                this.connection.driver.prepareHydratedValue(
+                                this.dataSource.manager.connection.driver.prepareHydratedValue(
                                     data[key],
                                     column,
                                 )
