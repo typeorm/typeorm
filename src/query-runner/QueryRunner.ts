@@ -181,7 +181,7 @@ export interface QueryRunner extends AsyncDisposable {
     getViews(viewPaths?: string[]): Promise<View[]>
 
     /**
-     * Returns replication mode (ex: `master` or `slave`).
+     * Returns replication mode (ex: `primary` or `replica`).
      */
     getReplicationMode(): ReplicationMode
 
