@@ -303,8 +303,14 @@ export class CockroachDriver implements Driver {
                 this.options.replication.replicas ??
                 this.options.replication.slaves ??
                 []
-            const primaryConfig = (this.options.replication.primary ??
-                this.options.replication.master)!
+            const primaryConfig =
+                this.options.replication.primary ??
+                this.options.replication.master
+            if (!primaryConfig) {
+                throw new TypeORMError(
+                    'Replication configuration requires either "primary" or "master" connection options.',
+                )
+            }
             this.slaves = await Promise.all(
                 replicaConfigs.map((slave) => {
                     return this.createPool(this.options, slave)
