@@ -40,14 +40,26 @@ export interface CockroachDataSourceOptions
      */
     readonly replication?: {
         /**
-         * Master server used by orm to perform writes.
+         * Primary server used by orm to perform writes.
          */
-        readonly master: CockroachConnectionCredentialsOptions
+        readonly primary?: CockroachConnectionCredentialsOptions
+
+        /**
+         * List of read-from servers (replicas).
+         */
+        readonly replicas?: CockroachConnectionCredentialsOptions[]
+
+        /**
+         * Master server used by orm to perform writes.
+         * @deprecated Use `primary` instead. Will be removed in a future major version.
+         */
+        readonly master?: CockroachConnectionCredentialsOptions
 
         /**
          * List of read-from servers (slaves).
+         * @deprecated Use `replicas` instead. Will be removed in a future major version.
          */
-        readonly slaves: CockroachConnectionCredentialsOptions[]
+        readonly slaves?: CockroachConnectionCredentialsOptions[]
 
         /**
          * Default connection pool to use for SELECT queries
