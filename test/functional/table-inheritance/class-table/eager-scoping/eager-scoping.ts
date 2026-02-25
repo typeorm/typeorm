@@ -87,11 +87,7 @@ describe("table-inheritance > class-table > eager-scoping", () => {
             }),
         ))
 
-    // TODO: Implement child-specific eager relation loading for CTI parent polymorphic queries.
-    // This requires the parent query to also LEFT JOIN child-specific eager relation targets,
-    // routed through the child table aliases. Currently, parent queries load child columns
-    // but not child-specific eager relations.
-    it.skip("should load ALL eager relations when querying parent entity", () =>
+    it("should load ALL eager relations when querying parent entity", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const settings = new UserSettings()

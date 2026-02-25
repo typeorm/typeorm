@@ -197,9 +197,7 @@ describe("table-inheritance > class-table > eager-lazy-multi-level", () => {
     // Additional: User queried via Contributor repo should still get all three
     // =========================================================================
 
-    // TODO: Implement child-specific eager relation loading for CTI parent polymorphic queries.
-    // When querying Contributor repo, User-specific eager relations (Profile) are not joined.
-    it.skip("should eagerly load Tag, Badge, and Profile when User is loaded via Contributor repository", () =>
+    it("should eagerly load Tag, Badge, and Profile when User is loaded via Contributor repository", () =>
         Promise.all(
             connections.map(async (connection) => {
                 await createFullUser(connection)
@@ -236,9 +234,7 @@ describe("table-inheritance > class-table > eager-lazy-multi-level", () => {
     // but NOT Profile
     // =========================================================================
 
-    // TODO: Implement child-specific eager relation loading for CTI parent polymorphic queries.
-    // Currently parent queries load child columns but not child-specific eager relations.
-    it.skip("should eagerly load Tag and Badge (but not Profile) for Contributor loaded via Actor repo", () =>
+    it("should eagerly load Tag and Badge (but not Profile) for Contributor loaded via Actor repo", () =>
         Promise.all(
             connections.map(async (connection) => {
                 await createContributor(connection)

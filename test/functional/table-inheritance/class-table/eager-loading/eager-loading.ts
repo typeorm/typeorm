@@ -162,11 +162,7 @@ describe("table-inheritance > class-table > eager-loading", () => {
     // (e) Loading from parent Actor repo should get correct eager relations per type
     // =========================================================================
 
-    // TODO: Implement child-specific eager relation loading for CTI parent polymorphic queries.
-    // This requires the parent query to also LEFT JOIN child-specific eager relation targets,
-    // routed through the child table aliases. Currently, parent queries load child columns
-    // but not child-specific eager relations.
-    it.skip("should load correct eager relations per type when querying parent Actor repository", () =>
+    it("should load correct eager relations per type when querying parent Actor repository", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const profile = new Profile()

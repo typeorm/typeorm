@@ -3997,6 +3997,21 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     entities,
                 )
             }
+
+            // For CTI parent queries, load child-specific eager relations
+            // via follow-up batched queries (the main query only JOINs parent's
+            // own eager relations; child-specific ones are unknown until the
+            // discriminator identifies child types in the result set).
+            if (
+                this.expressionMap.mainAlias.hasMetadata &&
+                this.expressionMap.mainAlias.metadata.isCtiParent &&
+                this.findOptions.loadEagerRelations !== false
+            ) {
+                await this.loadCtiChildEagerRelations(
+                    entities,
+                    queryRunner,
+                )
+            }
         }
 
         if (this.expressionMap.relationLoadStrategy === "query") {
@@ -4074,6 +4089,76 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         return {
             raw: rawResults,
             entities: entities,
+        }
+    }
+
+    /**
+     * For CTI parent polymorphic queries, loads child-specific eager relations
+     * via follow-up batched queries. Groups entities by child type, then for
+     * each child type loads its eager relations that are not on the parent.
+     */
+    protected async loadCtiChildEagerRelations(
+        entities: any[],
+        queryRunner: QueryRunner,
+    ): Promise<void> {
+        const parentMetadata = this.expressionMap.mainAlias!.metadata
+        const parentEagerProps = new Set(
+            parentMetadata.eagerRelations.map((r) => r.propertyName),
+        )
+
+        // Group entities by their leaf (most-derived) entity metadata
+        const groupedByChild = new Map<EntityMetadata, any[]>()
+        for (const entity of entities) {
+            const leafMeta = this.connection.entityMetadatas.find(
+                (m) => m.target === entity.constructor,
+            )
+            if (!leafMeta || leafMeta === parentMetadata) continue
+
+            const group = groupedByChild.get(leafMeta)
+            if (group) {
+                group.push(entity)
+            } else {
+                groupedByChild.set(leafMeta, [entity])
+            }
+        }
+
+        // For each child type, batch-load its child-specific eager relations
+        const loadPromises: Promise<void>[] = []
+
+        for (const [childMeta, childEntities] of groupedByChild) {
+            const childEagerRelations = childMeta.eagerRelations.filter(
+                (r) => !parentEagerProps.has(r.propertyName),
+            )
+
+            for (const relation of childEagerRelations) {
+                loadPromises.push(
+                    (async () => {
+                        const relatedGroups =
+                            await this.connection.relationIdLoader.loadManyToManyRelationIdsAndGroup(
+                                relation,
+                                childEntities,
+                                undefined,
+                                undefined,
+                            )
+                        for (const entity of childEntities) {
+                            const group = relatedGroups.find(
+                                (g) => g.entity === entity,
+                            )
+                            if (group) {
+                                const value =
+                                    group.related === undefined
+                                        ? null
+                                        : group.related
+                                relation.setEntityValue(entity, value)
+                            }
+                        }
+                    })(),
+                )
+            }
+        }
+
+        if (loadPromises.length > 0) {
+            await Promise.all(loadPromises)
         }
     }
 
