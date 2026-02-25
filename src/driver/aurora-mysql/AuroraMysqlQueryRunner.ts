@@ -23,6 +23,7 @@ import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { AuroraMysqlDriver } from "./AuroraMysqlDriver"
+import type { ReplicationMode } from "../types/ReplicationMode"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -56,11 +57,12 @@ export class AuroraMysqlQueryRunner
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AuroraMysqlDriver, client: any) {
+    constructor(driver: AuroraMysqlDriver, client: any, mode: ReplicationMode) {
         super()
         this.driver = driver
         this.connection = driver.connection
         this.client = client
+        this.mode = mode
         this.broadcaster = new Broadcaster(this)
     }
 
