@@ -3,6 +3,7 @@ import { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
 import { ObjectType } from "../../common/ObjectType"
 import { RelationOptions } from "../options/RelationOptions"
 import { ObjectUtils } from "../../util/ObjectUtils"
+import { TypeORMError } from "../../error"
 
 /**
  * One-to-one relation allows the creation of a direct relation between two entities. Entity1 has only one Entity2.
@@ -50,6 +51,35 @@ export function OneToOne<T>(
 
     return function (object: Object, propertyName: string) {
         if (!options) options = {} as RelationOptions
+
+        if (options.polymorphic) {
+            if (typeof options.polymorphic !== "object") {
+                throw new TypeORMError(
+                    `Polymorphic relation on "${object.constructor.name}.${propertyName}" ` +
+                        `must be an object containing "entityColumnName", "idColumnName", and "value".`,
+                )
+            }
+
+            const { entityColumnName, idColumnName, value } =
+                options.polymorphic
+
+            if (
+                typeof entityColumnName !== "string" ||
+                typeof idColumnName !== "string" ||
+                typeof value !== "string" ||
+                !entityColumnName.trim() ||
+                !idColumnName.trim() ||
+                !value.trim()
+            ) {
+                throw new TypeORMError(
+                    `Invalid polymorphic configuration on "${object.constructor.name}.${propertyName}". ` +
+                        `Required fields: entityColumnName, idColumnName, value.`,
+                )
+            }
+            options.createForeignKeyConstraints = false
+            options.cascade = false
+            options.lazy = false
+        }
 
         // now try to determine it its lazy relation
         let isLazy = options && options.lazy === true ? true : false

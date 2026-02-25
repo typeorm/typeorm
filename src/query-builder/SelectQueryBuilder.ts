@@ -2446,6 +2446,55 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             // if real entity relation is involved
             if (relation.isManyToOne || relation.isOneToOneOwner) {
+                // polymorphic relation: join using type + id discriminator instead of FK
+                if (relation.isPolymorphic) {
+                    const { idColumnName, entityColumnName, value } =
+                        relation.polymorphicOptions!
+
+                    const primaryColumns =
+                        relation.inverseEntityMetadata.primaryColumns
+
+                    if (primaryColumns.length === 0) {
+                        throw new TypeORMError(
+                            `Polymorphic relation ${relation.entityMetadata.name}.${relation.propertyName} ` +
+                                `requires the target entity to have a primary column.`,
+                        )
+                    }
+
+                    if (primaryColumns.length > 1) {
+                        throw new TypeORMError(
+                            `Polymorphic relation ${relation.entityMetadata.name}.${relation.propertyName} ` +
+                                `does not support composite primary keys.`,
+                        )
+                    }
+
+                    const primaryColumn = primaryColumns[0]
+
+                    const condition =
+                        `${this.escape(destinationTableAlias)}.${this.escape(
+                            primaryColumn.databaseName,
+                        )} = ` +
+                        `${this.escape(parentAlias)}.${this.escape(
+                            idColumnName,
+                        )} AND ` +
+                        `${this.escape(parentAlias)}.${this.escape(
+                            entityColumnName,
+                        )} = ` +
+                        this.createParameter(value)
+
+                    return (
+                        " " +
+                        joinAttr.direction +
+                        " JOIN " +
+                        this.getTableName(destinationTableName) +
+                        " " +
+                        this.escape(destinationTableAlias) +
+                        this.createTableLockExpression() +
+                        " ON " +
+                        this.replacePropertyNames(condition + appendedCondition)
+                    )
+                }
+
                 // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
                 const condition = relation.joinColumns
                     .map((joinColumn) => {
