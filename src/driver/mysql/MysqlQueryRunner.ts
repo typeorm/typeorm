@@ -2548,15 +2548,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // Full columns: CARDINALITY & INDEX_TYPE - everything else is FRM only
         const statsSubquerySql = dbTables
             .map(({ TABLE_SCHEMA, TABLE_NAME }) => {
-                return `
-                SELECT
-                    *
-                FROM \`INFORMATION_SCHEMA\`.\`STATISTICS\`
-                WHERE
-                    \`TABLE_SCHEMA\` = '${TABLE_SCHEMA}'
-                    AND
-                    \`TABLE_NAME\` = '${TABLE_NAME}'
-            `
+                return (
+                    `SELECT * FROM \`INFORMATION_SCHEMA\`.\`STATISTICS\` ` +
+                    `WHERE ` +
+                    `\`TABLE_SCHEMA\` = '${TABLE_SCHEMA}' ` +
+                    `AND ` +
+                    `\`TABLE_NAME\` = '${TABLE_NAME}'`
+                )
             })
             .join(" UNION ")
 
@@ -2565,15 +2563,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // All columns will hit the full table.
         const kcuSubquerySql = dbTables
             .map(({ TABLE_SCHEMA, TABLE_NAME }) => {
-                return `
-                SELECT
-                    *
-                FROM \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` \`kcu\`
-                WHERE
-                    \`kcu\`.\`TABLE_SCHEMA\` = '${TABLE_SCHEMA}'
-                    AND
-                    \`kcu\`.\`TABLE_NAME\` = '${TABLE_NAME}'
-            `
+                return (
+                    `SELECT * FROM \`INFORMATION_SCHEMA\`.\`KEY_COLUMN_USAGE\` \`kcu\` ` +
+                    `WHERE ` +
+                    `\`kcu\`.\`TABLE_SCHEMA\` = '${TABLE_SCHEMA}' ` +
+                    `AND ` +
+                    `\`kcu\`.\`TABLE_NAME\` = '${TABLE_NAME}'`
+                )
             })
             .join(" UNION ")
 
@@ -2582,15 +2578,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // All columns will hit the full table.
         const rcSubquerySql = dbTables
             .map(({ TABLE_SCHEMA, TABLE_NAME }) => {
-                return `
-                SELECT
-                    *
-                FROM \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\`
-                WHERE
-                    \`CONSTRAINT_SCHEMA\` = '${TABLE_SCHEMA}'
-                    AND
-                    \`TABLE_NAME\` = '${TABLE_NAME}'
-            `
+                return (
+                    `SELECT * FROM \`INFORMATION_SCHEMA\`.\`REFERENTIAL_CONSTRAINTS\` ` +
+                    `WHERE ` +
+                    `\`CONSTRAINT_SCHEMA\` = '${TABLE_SCHEMA}' ` +
+                    `AND ` +
+                    `\`TABLE_NAME\` = '${TABLE_NAME}'`
+                )
             })
             .join(" UNION ")
 
@@ -2599,68 +2593,62 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // OPEN_FRM_ONLY applies to all columns
         const columnsSql = dbTables
             .map(({ TABLE_SCHEMA, TABLE_NAME }) => {
-                return `
-                SELECT
-                    *
-                FROM
-                    \`INFORMATION_SCHEMA\`.\`COLUMNS\`
-                WHERE
-                    \`TABLE_SCHEMA\` = '${TABLE_SCHEMA}'
-                    AND
-                    \`TABLE_NAME\` = '${TABLE_NAME}'
-                `
+                return (
+                    `SELECT * FROM \`INFORMATION_SCHEMA\`.\`COLUMNS\` ` +
+                    `WHERE ` +
+                    `\`TABLE_SCHEMA\` = '${TABLE_SCHEMA}' ` +
+                    `AND ` +
+                    `\`TABLE_NAME\` = '${TABLE_NAME}'`
+                )
             })
             .join(" UNION ")
 
         // No Optimizations are available for COLLATIONS
-        const collationsSql = `
-            SELECT
-                \`SCHEMA_NAME\`,
-                \`DEFAULT_CHARACTER_SET_NAME\` as \`CHARSET\`,
-                \`DEFAULT_COLLATION_NAME\` AS \`COLLATION\`
-            FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\`
-            `
+        const collationsSql =
+            `SELECT ` +
+            `\`SCHEMA_NAME\`, ` +
+            `\`DEFAULT_CHARACTER_SET_NAME\` as \`CHARSET\`, ` +
+            `\`DEFAULT_COLLATION_NAME\` AS \`COLLATION\` ` +
+            `FROM \`INFORMATION_SCHEMA\`.\`SCHEMATA\``
 
         // Key Column Usage but only for PKs
         const primaryKeySql = `SELECT * FROM (${kcuSubquerySql}) \`kcu\` WHERE \`CONSTRAINT_NAME\` = 'PRIMARY'`
 
         // Combine stats & referential constraints
-        const indicesSql = `
-            SELECT
-                \`s\`.*
-            FROM (${statsSubquerySql}) \`s\`
-            LEFT JOIN (${rcSubquerySql}) \`rc\`
-                ON
-                    \`s\`.\`INDEX_NAME\` = \`rc\`.\`CONSTRAINT_NAME\`
-                    AND
-                    \`s\`.\`TABLE_SCHEMA\` = \`rc\`.\`CONSTRAINT_SCHEMA\`
-            WHERE
-                \`s\`.\`INDEX_NAME\` != 'PRIMARY'
-                AND
-                \`rc\`.\`CONSTRAINT_NAME\` IS NULL
-            `
+        const indicesSql =
+            `SELECT ` +
+            `\`s\`.* ` +
+            `FROM (${statsSubquerySql}) \`s\` ` +
+            `LEFT JOIN (${rcSubquerySql}) \`rc\` ` +
+            `ON ` +
+            `\`s\`.\`INDEX_NAME\` = \`rc\`.\`CONSTRAINT_NAME\` ` +
+            `AND ` +
+            `\`s\`.\`TABLE_SCHEMA\` = \`rc\`.\`CONSTRAINT_SCHEMA\` ` +
+            `WHERE ` +
+            `\`s\`.\`INDEX_NAME\` != 'PRIMARY' ` +
+            `AND ` +
+            `\`rc\`.\`CONSTRAINT_NAME\` IS NULL`
 
         // Combine Key Column Usage & Referential Constraints
-        const foreignKeysSql = `
-            SELECT
-                \`kcu\`.\`TABLE_SCHEMA\`,
-                \`kcu\`.\`TABLE_NAME\`,
-                \`kcu\`.\`CONSTRAINT_NAME\`,
-                \`kcu\`.\`COLUMN_NAME\`,
-                \`kcu\`.\`REFERENCED_TABLE_SCHEMA\`,
-                \`kcu\`.\`REFERENCED_TABLE_NAME\`,
-                \`kcu\`.\`REFERENCED_COLUMN_NAME\`,
-                \`rc\`.\`DELETE_RULE\` \`ON_DELETE\`,
-                \`rc\`.\`UPDATE_RULE\` \`ON_UPDATE\`
-            FROM (${kcuSubquerySql}) \`kcu\`
-            INNER JOIN (${rcSubquerySql}) \`rc\`
-                ON
-                    \`rc\`.\`CONSTRAINT_SCHEMA\` = \`kcu\`.\`CONSTRAINT_SCHEMA\`
-                    AND
-                    \`rc\`.\`TABLE_NAME\` = \`kcu\`.\`TABLE_NAME\`
-                    AND
-                    \`rc\`.\`CONSTRAINT_NAME\` = \`kcu\`.\`CONSTRAINT_NAME\`
-            `
+        const foreignKeysSql =
+            `SELECT ` +
+            `\`kcu\`.\`TABLE_SCHEMA\`, ` +
+            `\`kcu\`.\`TABLE_NAME\`, ` +
+            `\`kcu\`.\`CONSTRAINT_NAME\`, ` +
+            `\`kcu\`.\`COLUMN_NAME\`, ` +
+            `\`kcu\`.\`REFERENCED_TABLE_SCHEMA\`, ` +
+            `\`kcu\`.\`REFERENCED_TABLE_NAME\`, ` +
+            `\`kcu\`.\`REFERENCED_COLUMN_NAME\`, ` +
+            `\`rc\`.\`DELETE_RULE\` \`ON_DELETE\`, ` +
+            `\`rc\`.\`UPDATE_RULE\` \`ON_UPDATE\` ` +
+            `FROM (${kcuSubquerySql}) \`kcu\` ` +
+            `INNER JOIN (${rcSubquerySql}) \`rc\` ` +
+            `ON ` +
+            `\`rc\`.\`CONSTRAINT_SCHEMA\` = \`kcu\`.\`CONSTRAINT_SCHEMA\` ` +
+            `AND ` +
+            `\`rc\`.\`TABLE_NAME\` = \`kcu\`.\`TABLE_NAME\` ` +
+            `AND ` +
+            `\`rc\`.\`CONSTRAINT_NAME\` = \`kcu\`.\`CONSTRAINT_NAME\``
 
         const [
             dbColumns,
