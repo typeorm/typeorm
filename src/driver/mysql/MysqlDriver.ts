@@ -26,7 +26,10 @@ import {
     getReplicationPrimary,
     getReplicationReplicas,
 } from "../types/ReplicationConfig"
-import { ReplicationMode } from "../types/ReplicationMode"
+import {
+    normalizeReplicationMode,
+    ReplicationMode,
+} from "../types/ReplicationMode"
 import { UpsertType } from "../types/UpsertType"
 import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
 import { MysqlDataSourceOptions } from "./MysqlDataSourceOptions"
@@ -373,9 +376,15 @@ export class MysqlDriver implements Driver {
                 this.options.replication,
             )
 
-            this.poolCluster = this.mysql.createPoolCluster(
-                this.options.replication,
-            )
+            const {
+                master: _master,
+                slaves: _slaves,
+                primary: _primary,
+                replicas: _replicas,
+                ...poolClusterOptions
+            } = this.options.replication
+
+            this.poolCluster = this.mysql.createPoolCluster(poolClusterOptions)
             replicationReplicas.forEach((replica, index) => {
                 this.poolCluster.add(
                     "SLAVE" + index,
@@ -468,7 +477,7 @@ export class MysqlDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new MysqlQueryRunner(this, mode)
+        return new MysqlQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**

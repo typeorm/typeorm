@@ -27,7 +27,10 @@ import {
     getReplicationPrimary,
     getReplicationReplicas,
 } from "../types/ReplicationConfig"
-import { ReplicationMode } from "../types/ReplicationMode"
+import {
+    normalizeReplicationMode,
+    ReplicationMode,
+} from "../types/ReplicationMode"
 import { UpsertType } from "../types/UpsertType"
 import { OracleConnectionCredentialsOptions } from "./OracleConnectionCredentialsOptions"
 import { OracleDataSourceOptions } from "./OracleDataSourceOptions"
@@ -375,7 +378,7 @@ export class OracleDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new OracleQueryRunner(this, mode)
+        return new OracleQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**

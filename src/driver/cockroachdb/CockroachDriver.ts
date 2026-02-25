@@ -27,7 +27,10 @@ import {
     getReplicationPrimary,
     getReplicationReplicas,
 } from "../types/ReplicationConfig"
-import { ReplicationMode } from "../types/ReplicationMode"
+import {
+    normalizeReplicationMode,
+    ReplicationMode,
+} from "../types/ReplicationMode"
 import { UpsertType } from "../types/UpsertType"
 import { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 import { CockroachDataSourceOptions } from "./CockroachDataSourceOptions"
@@ -378,7 +381,7 @@ export class CockroachDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new CockroachQueryRunner(this, mode)
+        return new CockroachQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**

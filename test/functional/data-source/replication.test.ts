@@ -103,6 +103,13 @@ describe("Connection replication", () => {
             await queryRunner.release()
         })
 
+        it("driver query runners should normalize alias replication mode", async () => {
+            const queryRunner = dataSource.driver.createQueryRunner("replica")
+            queryRunner.getReplicationMode().should.equal("slave")
+            await expectCurrentApplicationName(queryRunner, "slave")
+            await queryRunner.release()
+        })
+
         it("read queries should go to the slaves by default", async () => {
             const result = await dataSource.manager
                 .createQueryBuilder(Post, "post")

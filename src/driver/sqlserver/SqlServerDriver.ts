@@ -26,7 +26,10 @@ import {
     getReplicationPrimary,
     getReplicationReplicas,
 } from "../types/ReplicationConfig"
-import { ReplicationMode } from "../types/ReplicationMode"
+import {
+    normalizeReplicationMode,
+    ReplicationMode,
+} from "../types/ReplicationMode"
 import { UpsertType } from "../types/UpsertType"
 import { MssqlParameter } from "./MssqlParameter"
 import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
@@ -374,7 +377,7 @@ export class SqlServerDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new SqlServerQueryRunner(this, mode)
+        return new SqlServerQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**

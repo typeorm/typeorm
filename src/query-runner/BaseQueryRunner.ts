@@ -9,7 +9,11 @@ import { Table } from "../schema-builder/table/Table"
 import { EntityManager } from "../entity-manager/EntityManager"
 import { TableColumn } from "../schema-builder/table/TableColumn"
 import { Broadcaster } from "../subscriber/Broadcaster"
-import { ReplicationMode } from "../driver/types/ReplicationMode"
+import {
+    LegacyReplicationMode,
+    normalizeReplicationMode,
+    ReplicationMode,
+} from "../driver/types/ReplicationMode"
 import { TypeORMError } from "../error/TypeORMError"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { TableForeignKey } from "../schema-builder/table/TableForeignKey"
@@ -281,8 +285,8 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         }
     }
 
-    getReplicationMode(): ReplicationMode {
-        return this.mode
+    getReplicationMode(): LegacyReplicationMode {
+        return normalizeReplicationMode(this.mode)
     }
 
     // -------------------------------------------------------------------------

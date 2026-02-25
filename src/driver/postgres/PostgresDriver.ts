@@ -30,7 +30,10 @@ import {
     getReplicationPrimary,
     getReplicationReplicas,
 } from "../types/ReplicationConfig"
-import { ReplicationMode } from "../types/ReplicationMode"
+import {
+    normalizeReplicationMode,
+    ReplicationMode,
+} from "../types/ReplicationMode"
 import { UpsertType } from "../types/UpsertType"
 import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 import { PostgresDataSourceOptions } from "./PostgresDataSourceOptions"
@@ -728,7 +731,7 @@ export class PostgresDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): PostgresQueryRunner {
-        return new PostgresQueryRunner(this, mode)
+        return new PostgresQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**

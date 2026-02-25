@@ -664,7 +664,7 @@ export class DataSource {
      * to primary database or any of replica databases.
      * If you perform writes you must use the primary database,
      * if you perform reads you can use replica databases.
-     * `master`/`slave` aliases are still accepted for backward compatibility.
+     * `primary`/`replica` aliases are accepted and normalized for backward compatibility.
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode = "master"): QueryRunner {
