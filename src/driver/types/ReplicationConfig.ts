@@ -25,12 +25,12 @@ export type ReplicationConfig<TCredentials> =
 export function getReplicationPrimary<TCredentials extends object>(
     replication: ReplicationConfig<TCredentials>,
 ): TCredentials {
-    if ("primary" in replication && replication.primary) {
-        return replication.primary as TCredentials
-    }
-
     if ("master" in replication && replication.master) {
         return replication.master as TCredentials
+    }
+
+    if ("primary" in replication && replication.primary) {
+        return replication.primary as TCredentials
     }
 
     throw new TypeORMError(
@@ -45,12 +45,12 @@ export function getReplicationPrimary<TCredentials extends object>(
 export function getReplicationReplicas<TCredentials extends object>(
     replication: ReplicationConfig<TCredentials>,
 ): TCredentials[] {
-    if ("replicas" in replication && replication.replicas) {
-        return Array.from(replication.replicas) as TCredentials[]
-    }
-
     if ("slaves" in replication && replication.slaves) {
         return Array.from(replication.slaves) as TCredentials[]
+    }
+
+    if ("replicas" in replication && replication.replicas) {
+        return Array.from(replication.replicas) as TCredentials[]
     }
 
     return []
