@@ -28,6 +28,11 @@ export class InsertQueryBuilder<
 > extends QueryBuilder<Entity> {
     readonly "@instanceof" = Symbol.for("InsertQueryBuilder")
 
+    /**
+     * List of column names derived from value sets for metadata-less inserts.
+     */
+    private derivedInsertColumns: string[] | undefined
+
     // -------------------------------------------------------------------------
     // Public Implemented Methods
     // -------------------------------------------------------------------------
@@ -261,6 +266,16 @@ export class InsertQueryBuilder<
             | QueryDeepPartialEntity<Entity>[],
     ): this {
         this.expressionMap.valuesSet = values
+        this.derivedInsertColumns = undefined
+        if (
+            !this.expressionMap.mainAlias!.hasMetadata &&
+            !this.expressionMap.insertColumns.length
+        ) {
+            const valueSets = Array.isArray(values) ? values : [values]
+            this.derivedInsertColumns = this.getColumnNamesFromValueSets(
+                valueSets as any,
+            )
+        }
         return this
     }
 
@@ -846,7 +861,9 @@ export class InsertQueryBuilder<
             !this.expressionMap.insertColumns.length
         ) {
             const valueSets = this.getValueSets()
-            const columnNames = this.getColumnNamesFromValueSets(valueSets)
+            const columnNames =
+                this.derivedInsertColumns ||
+                this.getColumnNamesFromValueSets(valueSets)
             if (columnNames.length > 0)
                 return columnNames
                     .map((columnName) => this.escape(columnName))
@@ -934,12 +951,26 @@ export class InsertQueryBuilder<
             // for tables without metadata
             // get values needs to be inserted
             let expression = ""
-            const columnNames = this.getColumnNamesFromValueSets(valueSets)
+            const columnNames =
+                this.derivedInsertColumns ||
+                this.getColumnNamesFromValueSets(valueSets)
 
             valueSets.forEach((valueSet, insertionIndex) => {
                 columnNames.forEach((columnName, columnIndex) => {
                     if (columnIndex === 0) {
-                        expression += "("
+                        if (
+                            this.connection.driver.options.type === "oracle" &&
+                            valueSets.length > 1
+                        ) {
+                            expression += " SELECT "
+                        } else if (
+                            this.connection.driver.options.type === "sap" &&
+                            valueSets.length > 1
+                        ) {
+                            expression += " SELECT "
+                        } else {
+                            expression += "("
+                        }
                     }
 
                     const value = valueSet[columnName]
@@ -967,6 +998,7 @@ export class InsertQueryBuilder<
                         value === null &&
                         this.connection.driver.options.type === "spanner"
                     ) {
+                        expression += "NULL"
                         // just any other regular value
                     } else {
                         expression += this.createParameter(value)
@@ -974,9 +1006,32 @@ export class InsertQueryBuilder<
 
                     if (columnIndex === columnNames.length - 1) {
                         if (insertionIndex === valueSets.length - 1) {
-                            expression += ")"
+                            if (
+                                ["oracle", "sap"].includes(
+                                    this.connection.driver.options.type,
+                                ) &&
+                                valueSets.length > 1
+                            ) {
+                                expression +=
+                                    " FROM " +
+                                    this.connection.driver.dummyTableName
+                            } else {
+                                expression += ")"
+                            }
                         } else {
-                            expression += "), "
+                            if (
+                                ["oracle", "sap"].includes(
+                                    this.connection.driver.options.type,
+                                ) &&
+                                valueSets.length > 1
+                            ) {
+                                expression +=
+                                    " FROM " +
+                                    this.connection.driver.dummyTableName +
+                                    " UNION ALL "
+                            } else {
+                                expression += "), "
+                            }
                         }
                     } else {
                         expression += ", "
