@@ -1079,15 +1079,56 @@ export class EntityManager {
     async count<Entity extends ObjectLiteral>(
         entityClass: EntityTarget<Entity>,
         options?: FindManyOptions<Entity>,
+    ): Promise<number>
+
+    /**
+     * Counts entities that match given options.
+     * Useful for pagination.
+     * @param entityClass
+     * @param options
+     */
+    async count<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        distinctOn: (keyof Entity)[],
+        options?: FindManyOptions<Entity>,
+    ): Promise<number>
+
+    /**
+     * Counts entities that match given options.
+     * Useful for pagination.
+     * @param entityClass
+     * @param distinctOnOrOptions
+     * @param options
+     */
+    async count<Entity extends ObjectLiteral>(
+        entityClass: EntityTarget<Entity>,
+        distinctOnOrOptions?: (keyof Entity)[] | FindManyOptions<Entity>,
+        options?: FindManyOptions<Entity>,
     ): Promise<number> {
         const metadata = this.connection.getMetadata(entityClass)
-        return this.createQueryBuilder(
+        const isDistinctArray = Array.isArray(distinctOnOrOptions)
+        const shouldUseOptionsArgument =
+            distinctOnOrOptions === undefined && options !== undefined
+
+        const findOptionsSource =
+            isDistinctArray || shouldUseOptionsArgument
+                ? options
+                : distinctOnOrOptions
+
+        const countQueryBuilder = this.createQueryBuilder(
             entityClass,
-            FindOptionsUtils.extractFindManyOptionsAlias(options) ||
+            FindOptionsUtils.extractFindManyOptionsAlias(findOptionsSource) ||
                 metadata.name,
         )
-            .setFindOptions(options || {})
-            .getCount()
+
+        const distinctColumns = isDistinctArray
+            ? (distinctOnOrOptions as (keyof Entity)[]).map(
+                  (column) => column as string,
+              )
+            : []
+
+        countQueryBuilder.setFindOptions(findOptionsSource || {})
+        return countQueryBuilder.getCount(distinctColumns)
     }
 
     /**

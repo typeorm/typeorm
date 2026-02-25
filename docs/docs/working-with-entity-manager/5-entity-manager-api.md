@@ -301,12 +301,18 @@ const exists = await manager.exists(User, {
 const exists = await manager.existsBy(User, { firstName: "Timber" })
 ```
 
-- `count` - Counts entities that match `FindOptions`. Useful for pagination.
+- `count` - Counts entities that match `FindOptions`. Useful for pagination. You can optionally pass an array of entity property paths to count distinct values of those columns.
 
 ```typescript
 const count = await manager.count(User, {
     where: {
         firstName: "Timber",
+    },
+})
+
+const uniqueNamePairs = await manager.count(User, ["firstName", "lastName"], {
+    where: {
+        isActive: true,
     },
 })
 ```

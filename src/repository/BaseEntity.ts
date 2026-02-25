@@ -445,8 +445,36 @@ export class BaseEntity {
     static count<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         options?: FindManyOptions<T>,
+    ): Promise<number>
+
+    /**
+     * Counts entities that match given options.
+     */
+    static count<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        countOn: (keyof T)[],
+        options?: FindManyOptions<T>,
+    ): Promise<number>
+
+    /**
+     * Counts entities that match given options.
+     * @param distinctOnOrOptions
+     * @param options
+     */
+    static count<T extends BaseEntity>(
+        this: { new (): T } & typeof BaseEntity,
+        distinctOnOrOptions?: (keyof T)[] | FindManyOptions<T>,
+        options?: FindManyOptions<T>,
     ): Promise<number> {
-        return this.getRepository<T>().count(options)
+        if (Array.isArray(distinctOnOrOptions)) {
+            return this.getRepository<T>().count(distinctOnOrOptions, options)
+        }
+
+        if (distinctOnOrOptions === undefined && options !== undefined) {
+            return this.getRepository<T>().count(options)
+        }
+
+        return this.getRepository<T>().count(distinctOnOrOptions)
     }
 
     /**
