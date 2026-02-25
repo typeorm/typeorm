@@ -9,6 +9,7 @@ import { DataSource } from "../../../../../../src/data-source/DataSource"
 import { Employee } from "./entity/Employee"
 import { Student } from "./entity/Student"
 import { EmployeeBadge } from "./entity/EmployeeBadge"
+import { EmployeeProfile } from "./entity/EmployeeProfile"
 
 /**
  * Tests that eager relations inside an embedded class are properly scoped
@@ -32,16 +33,17 @@ describe("table-inheritance > single-table > relations > eager-scoping-embedded"
     it("should load eager relation from embedded for the declaring child", () =>
         Promise.all(
             connections.map(async (connection) => {
-                // Save badge first
                 const badge = new EmployeeBadge()
                 badge.badgeNumber = "EMB-001"
                 await connection.getRepository(EmployeeBadge).save(badge)
 
-                // Insert Employee via query runner to avoid STI+embedded save issues
-                await connection.query(
-                    `INSERT INTO "person" ("name", "type", "salary", "profileDepartment", "profileBadgeid") VALUES ($1, $2, $3, $4, $5)`,
-                    ["Alice", "Employee", 70000, "Engineering", badge.id],
-                )
+                const employee = new Employee()
+                employee.name = "Alice"
+                employee.salary = 70000
+                employee.profile = new EmployeeProfile()
+                employee.profile.department = "Engineering"
+                employee.profile.badge = badge
+                await connection.getRepository(Employee).save(employee)
 
                 const loaded = await connection
                     .getRepository(Employee)
@@ -63,15 +65,18 @@ describe("table-inheritance > single-table > relations > eager-scoping-embedded"
                 badge.badgeNumber = "EMB-002"
                 await connection.getRepository(EmployeeBadge).save(badge)
 
-                // Insert Employee and Student via query runner
-                await connection.query(
-                    `INSERT INTO "person" ("name", "type", "salary", "profileDepartment", "profileBadgeid") VALUES ($1, $2, $3, $4, $5)`,
-                    ["Bob", "Employee", 60000, "Sales", badge.id],
-                )
-                await connection.query(
-                    `INSERT INTO "person" ("name", "type", "grade") VALUES ($1, $2, $3)`,
-                    ["Carol", "Student", 11],
-                )
+                const employee = new Employee()
+                employee.name = "Bob"
+                employee.salary = 60000
+                employee.profile = new EmployeeProfile()
+                employee.profile.department = "Sales"
+                employee.profile.badge = badge
+                await connection.getRepository(Employee).save(employee)
+
+                const student = new Student()
+                student.name = "Carol"
+                student.grade = 11
+                await connection.getRepository(Student).save(student)
 
                 // Student should NOT have profile.badge from Employee
                 const loaded = await connection

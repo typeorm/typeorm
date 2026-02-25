@@ -729,6 +729,7 @@ export class EntityMetadataBuilder {
                     if (parentRelation.type !== type) {
                         const clone = Object.create(parentRelation)
                         clone.type = type
+                        clone.target = args.target
                         clone.declaringTarget = args.target
                         return clone
                     }
@@ -912,7 +913,8 @@ export class EntityMetadataBuilder {
                     })
                     // For STI scoping: set declaringTarget to the entity class
                     // that declared this embedded, not the embedded type itself.
-                    relation.declaringTarget = embeddedArgs.target
+                    relation.declaringTarget =
+                        embeddedMetadata.declaringEntityTarget
                     return relation
                 })
             embeddedMetadata.listeners = this.metadataArgsStorage
