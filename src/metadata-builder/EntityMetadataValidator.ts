@@ -59,6 +59,14 @@ export class EntityMetadataValidator {
         allEntityMetadatas: EntityMetadata[],
         driver: Driver,
     ) {
+        // check if strict mode is supported by the driver
+        if (entityMetadata.strict && !DriverUtils.isSQLiteFamily(driver)) {
+            throw new TypeORMError(
+                `Entity ${entityMetadata.name} is marked as 'strict', ` +
+                    `but 'strict' mode is only supported for SQLite-based drivers.`,
+            )
+        }
+
         // check if table metadata has an id
         if (!entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
             throw new MissingPrimaryColumnError(entityMetadata)

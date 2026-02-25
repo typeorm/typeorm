@@ -1461,7 +1461,12 @@ export abstract class AbstractSqliteQueryRunner
                 const sql = dbTable["sql"]
 
                 const withoutRowid = sql.includes("WITHOUT ROWID")
-                const table = new Table({ name: tablePath, withoutRowid })
+                const strict = sql.includes("STRICT")
+                const table = new Table({
+                    name: tablePath,
+                    withoutRowid,
+                    strict,
+                })
 
                 // load columns and indices
                 const [dbColumns, dbIndices, dbForeignKeys]: ObjectLiteral[][] =
@@ -1828,7 +1833,9 @@ export abstract class AbstractSqliteQueryRunner
             )
 
         const columnDefinitions = table.columns
-            .map((column) => this.buildCreateColumnSql(column, skipPrimary))
+            .map((column) =>
+                this.buildCreateColumnSql(column, skipPrimary, table.strict),
+            )
             .join(", ")
         const [database] = this.splitTablePath(table.name)
         let sql = `CREATE TABLE ${this.escapePath(
@@ -1950,9 +1957,21 @@ export abstract class AbstractSqliteQueryRunner
 
         sql += `)`
 
+        const otherTableOptions = []
+
         if (table.withoutRowid) {
-            sql += " WITHOUT ROWID"
+            otherTableOptions.push("WITHOUT ROWID")
         }
+        if (table.strict) {
+            otherTableOptions.push("STRICT")
+        }
+
+        const optionsSql =
+            otherTableOptions.length > 0
+                ? ` ${otherTableOptions.join(", ")}`
+                : ""
+
+        sql += optionsSql
 
         return new Query(sql)
     }
@@ -2062,13 +2081,24 @@ export abstract class AbstractSqliteQueryRunner
     protected buildCreateColumnSql(
         column: TableColumn,
         skipPrimary?: boolean,
+        isStrictMode?: boolean,
     ): string {
         let c = '"' + column.name + '"'
+        let columnType: string
         if (InstanceChecker.isColumnMetadata(column)) {
-            c += " " + this.driver.normalizeType(column)
+            columnType = this.driver.normalizeType(column)
         } else {
-            c += " " + this.connection.driver.createFullType(column)
+            columnType = this.connection.driver.createFullType(column)
         }
+
+        if (isStrictMode) {
+            // Convert types to strict-compatible types for SQLite strict mode
+            // Need to extract base type in case of types with length/precision/scale
+            const baseType = columnType.split("(")[0].trim()
+            columnType = this.driver.convertToStrictType(baseType)
+        }
+        c += " " + columnType
+
         if (column.enum && !column.isArray)
             c +=
                 ' CHECK( "' +
