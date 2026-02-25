@@ -73,6 +73,19 @@ export class EntityMetadata {
     inheritanceTree: Function[] = []
 
     /**
+     * Columns inherited from the parent entity in CTI (Class Table Inheritance).
+     * These columns physically live in the parent table but are referenced by
+     * the child for query building purposes.
+     */
+    inheritedColumns: ColumnMetadata[] = []
+
+    /**
+     * Relations inherited from the parent entity in CTI.
+     * These relations have join columns in the parent table.
+     */
+    inheritedRelations: RelationMetadata[] = []
+
+    /**
      * Table type. Tables can be closure, junction, etc.
      */
     tableType: TableType = "regular"
@@ -170,7 +183,7 @@ export class EntityMetadata {
      * If this entity metadata's table using one of the inheritance patterns,
      * then this will contain what pattern it uses.
      */
-    inheritancePattern?: "STI" /*|"CTI"*/
+    inheritancePattern?: "STI" | "CTI"
 
     /**
      * Checks if there any non-nullable column exist in this entity.
@@ -539,7 +552,7 @@ export class EntityMetadata {
     constructor(options: {
         connection: DataSource
         inheritanceTree?: Function[]
-        inheritancePattern?: "STI" /*|"CTI"*/
+        inheritancePattern?: "STI" | "CTI"
         tableTree?: TreeMetadataArgs
         parentClosureEntityMetadata?: EntityMetadata
         args: TableMetadataArgs
@@ -558,6 +571,40 @@ export class EntityMetadata {
         this.expression = this.tableMetadataArgs.expression
         this.withoutRowid = this.tableMetadataArgs.withoutRowid
         this.dependsOn = this.tableMetadataArgs.dependsOn
+    }
+
+    // -------------------------------------------------------------------------
+    // Computed Inheritance Helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * True if this is a CTI child entity (has its own table, joined to parent).
+     */
+    get isCtiChild(): boolean {
+        return (
+            this.tableType === "entity-child" &&
+            this.parentEntityMetadata?.inheritancePattern === "CTI"
+        )
+    }
+
+    /**
+     * True if this is an STI child entity (shares parent's table).
+     */
+    get isStiChild(): boolean {
+        return (
+            this.tableType === "entity-child" &&
+            this.parentEntityMetadata?.inheritancePattern === "STI"
+        )
+    }
+
+    /**
+     * True if this is a CTI parent entity with child tables.
+     */
+    get isCtiParent(): boolean {
+        return (
+            this.inheritancePattern === "CTI" &&
+            this.childEntityMetadatas.length > 0
+        )
     }
 
     // -------------------------------------------------------------------------
