@@ -1,5 +1,10 @@
 # Entity Inheritance
 
+-   [Concrete Table Inheritance](#concrete-table-inheritance)
+-   [Single Table Inheritance](#single-table-inheritance)
+-   [Class Table Inheritance](#class-table-inheritance)
+-   [Using embeddeds](#using-embeddeds)
+
 ## Concrete Table Inheritance
 
 You can reduce duplication in your code by using entity inheritance patterns.
@@ -182,6 +187,144 @@ export class Question extends Content {
 ```
 
 When loading a `Photo`, only `metadata` is eagerly loaded — the `topAnswer` relation from `Question` is not included. When querying the parent `Content` repository directly, all child-specific eager relations are loaded and assigned to the correct entity instances based on the discriminator column.
+
+## Class Table Inheritance
+
+Class Table Inheritance (also known as Joined Table Inheritance) maps an inheritance hierarchy to **multiple tables joined by primary key**. The parent table holds shared columns and a discriminator, while each child table holds only child-specific columns plus a primary key that is also a foreign key to the parent.
+
+Use `pattern: "CTI"` in the `@TableInheritance` decorator to enable this:
+
+```typescript
+@Entity()
+@TableInheritance({ pattern: "CTI", column: { type: "varchar", name: "type" } })
+export class Actor {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    name: string
+}
+```
+
+```typescript
+@ChildEntity()
+export class User extends Actor {
+    @Column()
+    email: string
+}
+```
+
+```typescript
+@ChildEntity()
+export class Organization extends Actor {
+    @Column()
+    industry: string
+}
+```
+
+This creates **three tables**:
+
+- `actor` — columns: `id`, `name`, `type` (discriminator)
+- `user` — columns: `id` (FK to `actor.id`), `email`
+- `organization` — columns: `id` (FK to `actor.id`), `industry`
+
+When querying a child entity (e.g., `User`), TypeORM automatically generates an `INNER JOIN` to the parent table so all inherited columns are available. When querying the parent entity (`Actor`), TypeORM generates `LEFT JOIN`s to each child table and instantiates the correct child type based on the discriminator.
+
+### Multi-level CTI
+
+CTI supports hierarchies deeper than two levels. For example:
+
+```typescript
+@Entity()
+@TableInheritance({ pattern: "CTI", column: { type: "varchar", name: "type" } })
+export class Actor {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    name: string
+}
+```
+
+```typescript
+@ChildEntity()
+export class Contributor extends Actor {
+    @Column()
+    reputation: number
+}
+```
+
+```typescript
+@ChildEntity()
+export class User extends Contributor {
+    @Column()
+    email: string
+}
+```
+
+This creates tables `actor`, `contributor`, and `user`, each with their own columns. Querying `User` will chain `INNER JOIN`s through `contributor` up to `actor` to hydrate all inherited columns.
+
+### Relations in CTI
+
+Relations can be placed at any level of the hierarchy. Each relation's join column is stored on the table where it is declared:
+
+```typescript
+@ChildEntity()
+export class User extends Actor {
+    @Column()
+    email: string
+
+    @OneToOne(() => Profile, { eager: true })
+    @JoinColumn()
+    profile: Profile  // profileId column on `user` table
+}
+```
+
+```typescript
+@ChildEntity()
+export class Organization extends Actor {
+    @Column()
+    industry: string
+
+    @OneToOne(() => License, { eager: true })
+    @JoinColumn()
+    license: License  // licenseId column on `organization` table
+}
+```
+
+Eager relations are scoped to the child type — `User`'s eager `profile` will not be loaded when querying `Organization`, and vice versa.
+
+Relations can also be placed on the parent entity. In that case, the join column lives on the parent table and is available to all children:
+
+```typescript
+@Entity()
+@TableInheritance({ pattern: "CTI", column: { type: "varchar", name: "type" } })
+export class Actor {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    name: string
+
+    @OneToOne(() => Tag, { eager: true })
+    @JoinColumn()
+    tag: Tag  // tagId column on `actor` table, available to all children
+}
+```
+
+### CTI vs STI
+
+| Feature | STI (`pattern: "STI"`) | CTI (`pattern: "CTI"`) |
+|---------|----------------------|----------------------|
+| Tables | One shared table | One table per entity |
+| Nullable columns | Child-specific columns must be nullable | Each table only has its own columns |
+| Query performance | No joins needed | Requires joins across tables |
+| Schema clarity | All columns in one table | Clean separation of concerns |
+| Best for | Few child-specific columns | Many child-specific columns or relations |
+
+### Known limitations
+
+When querying a parent or mid-level entity (e.g., `actorRepository.find()`), the query returns polymorphic results with the correct child type instantiated. However, **child-specific eager relations are not automatically loaded** in polymorphic parent queries — only the parent's own eager relations are loaded. To load child-specific relations, query the child repository directly.
 
 ## Using embeddeds
 
