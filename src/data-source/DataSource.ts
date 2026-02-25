@@ -246,7 +246,17 @@ export class DataSource {
     ): T {
         if (!("replication" in options)) return options
 
-        const replication = (options as { replication?: any }).replication
+        const replication = (
+            options as {
+                replication?: {
+                    primary?: unknown
+                    replicas?: readonly unknown[]
+                    master?: unknown
+                    slaves?: readonly unknown[]
+                    defaultMode?: ReplicationMode
+                }
+            }
+        ).replication
         if (!replication) return options
 
         const hasAliasEndpoints =
@@ -264,10 +274,12 @@ export class DataSource {
             ...options,
             replication: {
                 ...replication,
-                ...(replication.primary !== undefined
+                ...(replication.primary !== undefined &&
+                replication.master === undefined
                     ? { master: replication.primary }
                     : {}),
-                ...(replication.replicas !== undefined
+                ...(replication.replicas !== undefined &&
+                replication.slaves === undefined
                     ? { slaves: replication.replicas }
                     : {}),
                 ...(replication.defaultMode !== undefined
