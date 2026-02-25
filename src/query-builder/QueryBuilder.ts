@@ -732,6 +732,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     protected replacePropertyNamesForTheWholeQuery(statement: string) {
         const replacements: { [key: string]: { [key: string]: string } } = {}
+        // For CTI children, track inherited column names and parent alias per alias prefix
+        const ctiInheritedNames: { [aliasPrefix: string]: Set<string> } = {}
+        const ctiParentAlias: { [aliasPrefix: string]: string } = {}
 
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
@@ -743,6 +746,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             if (!replacements[replaceAliasNamePrefix]) {
                 replacements[replaceAliasNamePrefix] = {}
             }
+
+            // For CTI children, track which property names map to inherited columns
+            // so they can be routed through the parent table alias
+            const inheritedPropertyNames: Set<string> | undefined =
+                alias.metadata.isCtiChild &&
+                alias.metadata.inheritedColumns.length > 0
+                    ? new Set<string>()
+                    : undefined
 
             // Insert & overwrite the replacements from least to most relevant in our replacements object.
             // To do this we iterate and overwrite in the order of relevance.
@@ -777,16 +788,47 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.databaseName] =
                     column.databaseName
+                if (
+                    inheritedPropertyNames &&
+                    alias.metadata.inheritedColumns.includes(column)
+                ) {
+                    inheritedPropertyNames.add(column.databaseName)
+                }
             }
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.propertyName] =
                     column.databaseName
+                if (
+                    inheritedPropertyNames &&
+                    alias.metadata.inheritedColumns.includes(column)
+                ) {
+                    inheritedPropertyNames.add(column.propertyName)
+                }
             }
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.propertyPath] =
                     column.databaseName
+                if (
+                    inheritedPropertyNames &&
+                    alias.metadata.inheritedColumns.includes(column)
+                ) {
+                    inheritedPropertyNames.add(column.propertyPath)
+                }
+            }
+        }
+
+            // For CTI children, store the parent alias prefix for inherited columns
+            if (
+                inheritedPropertyNames &&
+                inheritedPropertyNames.size > 0 &&
+                this.expressionMap.aliasNamePrefixingEnabled
+            ) {
+                ctiInheritedNames[replaceAliasNamePrefix] =
+                    inheritedPropertyNames
+                ctiParentAlias[replaceAliasNamePrefix] =
+                    `${alias.name}__cti_parent`
             }
         }
 
@@ -816,11 +858,28 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         match = matches[0]
                         pre = matches[1]
                         p = matches[3]
+                        const aliasPrefix = matches[2]
 
-                        if (replacements[matches[2]][p]) {
+                        if (replacements[aliasPrefix][p]) {
+                            // For CTI children, route inherited columns to parent table alias
+                            const inherited = ctiInheritedNames[aliasPrefix]
+                            if (
+                                inherited &&
+                                inherited.has(p) &&
+                                ctiParentAlias[aliasPrefix]
+                            ) {
+                                return `${pre}${this.escape(
+                                    ctiParentAlias[aliasPrefix],
+                                )}.${this.escape(
+                                    replacements[aliasPrefix][p],
+                                )}`
+                            }
                             return `${pre}${this.escape(
-                                matches[2].substring(0, matches[2].length - 1),
-                            )}.${this.escape(replacements[matches[2]][p])}`
+                                aliasPrefix.substring(
+                                    0,
+                                    aliasPrefix.length - 1,
+                                ),
+                            )}.${this.escape(replacements[aliasPrefix][p])}`
                         }
                     } else {
                         match = matches[0]
