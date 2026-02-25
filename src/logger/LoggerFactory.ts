@@ -6,7 +6,7 @@ import { FileLogger } from "./FileLogger"
 import { DebugLogger } from "./DebugLogger"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { FormattedConsoleLogger } from "./FormattedConsoleLogger"
-import { AbstractLogger } from "./AbstractLogger"
+
 /**
  * Helps to create logger instances.
  */
