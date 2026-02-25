@@ -322,9 +322,30 @@ export class Actor {
 | Schema clarity | All columns in one table | Clean separation of concerns |
 | Best for | Few child-specific columns | Many child-specific columns or relations |
 
-### Known limitations
+### Polymorphic parent queries and eager relations
 
-When querying a parent or mid-level entity (e.g., `actorRepository.find()`), the query returns polymorphic results with the correct child type instantiated. However, **child-specific eager relations are not automatically loaded** in polymorphic parent queries — only the parent's own eager relations are loaded. To load child-specific relations, query the child repository directly.
+When querying a parent or mid-level entity (e.g., `actorRepository.find()`), the query returns polymorphic results with the correct child type instantiated. Child-specific eager relations are loaded automatically via follow-up batched queries — each child type's eager relations are loaded separately, avoiding cartesian products:
+
+```typescript
+// Parent query:
+//   SELECT actor.*, user.email, org.industry FROM actor
+//     LEFT JOIN user ON user.id = actor.id
+//     LEFT JOIN organization ON organization.id = actor.id
+//
+// Follow-up queries (one per child type per eager relation):
+//   SELECT profile.* FROM profile WHERE profile.id IN (...)  -- for User.profile
+//   SELECT license.* FROM license WHERE license.id IN (...)  -- for Org.license
+
+const actors = await actorRepository.find()
+const user = actors[0] as User
+user.profile  // ← eagerly loaded via batched follow-up query
+```
+
+For snapshot consistency across the main query and follow-up queries, use `transaction: true` in FindOptions:
+
+```typescript
+const actors = await actorRepository.find({ transaction: true })
+```
 
 ## Using embeddeds
 

@@ -410,4 +410,223 @@ describe("table-inheritance > class-table > eager-loading", () => {
                 expect(users[1].posts[0].title).to.equal("Bob Post")
             }),
         ))
+
+    // =========================================================================
+    // Parent repo: OneToMany + OneToOne eager loaded per child type
+    // =========================================================================
+
+    it("should load OneToMany and OneToOne child eager relations when querying parent Actor repo", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const profile = new Profile()
+                profile.name = "Alice Profile"
+                profile.avatar = "alice.png"
+                await connection.getRepository(Profile).save(profile)
+
+                const user = new User()
+                user.name = "Alice"
+                user.email = "alice@example.com"
+                user.profile = profile
+                await connection.getRepository(User).save(user)
+
+                const post1 = new Post()
+                post1.title = "First Post"
+                post1.author = user
+                await connection.getRepository(Post).save(post1)
+
+                const post2 = new Post()
+                post2.title = "Second Post"
+                post2.author = user
+                await connection.getRepository(Post).save(post2)
+
+                const license = new License()
+                license.key = "ORG-001"
+                license.valid = true
+                await connection.getRepository(License).save(license)
+
+                const org = new Organization()
+                org.name = "Acme"
+                org.industry = "Tech"
+                org.license = license
+                await connection.getRepository(Organization).save(org)
+
+                // Query parent repo — polymorphic results
+                const actors = await connection
+                    .getRepository(Actor)
+                    .find({ order: { id: "ASC" } })
+
+                expect(actors).to.have.length(2)
+
+                // User should have both OneToOne (profile) and OneToMany (posts)
+                const loadedUser = actors[0] as User
+                expect(loadedUser).to.be.instanceOf(User)
+                expect(loadedUser.profile).to.not.be.undefined
+                expect(loadedUser.profile).to.not.be.null
+                expect(loadedUser.profile.name).to.equal("Alice Profile")
+                expect(loadedUser.posts).to.not.be.undefined
+                expect(loadedUser.posts).to.be.an("array")
+                expect(loadedUser.posts).to.have.length(2)
+                const titles = loadedUser.posts.map((p) => p.title).sort()
+                expect(titles).to.deep.equal(["First Post", "Second Post"])
+
+                // Organization should have OneToOne (license) but NOT posts
+                const loadedOrg = actors[1] as Organization
+                expect(loadedOrg).to.be.instanceOf(Organization)
+                expect(loadedOrg.license).to.not.be.undefined
+                expect(loadedOrg.license).to.not.be.null
+                expect(loadedOrg.license.key).to.equal("ORG-001")
+                expect((loadedOrg as any).posts).to.be.undefined
+            }),
+        ))
+
+    // =========================================================================
+    // Parent repo: multiple Users with different post counts — no cross-contamination
+    // =========================================================================
+
+    it("should not cross-contaminate OneToMany eager relations between children via parent repo", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const profile1 = new Profile()
+                profile1.name = "Alice Profile"
+                profile1.avatar = "alice.png"
+                await connection.getRepository(Profile).save(profile1)
+
+                const user1 = new User()
+                user1.name = "Alice"
+                user1.email = "alice@example.com"
+                user1.profile = profile1
+                await connection.getRepository(User).save(user1)
+
+                const post1 = new Post()
+                post1.title = "Alice Post"
+                post1.author = user1
+                await connection.getRepository(Post).save(post1)
+
+                const profile2 = new Profile()
+                profile2.name = "Bob Profile"
+                profile2.avatar = "bob.png"
+                await connection.getRepository(Profile).save(profile2)
+
+                const user2 = new User()
+                user2.name = "Bob"
+                user2.email = "bob@example.com"
+                user2.profile = profile2
+                await connection.getRepository(User).save(user2)
+
+                const post2 = new Post()
+                post2.title = "Bob Post 1"
+                post2.author = user2
+                await connection.getRepository(Post).save(post2)
+
+                const post3 = new Post()
+                post3.title = "Bob Post 2"
+                post3.author = user2
+                await connection.getRepository(Post).save(post3)
+
+                // Query parent repo
+                const actors = await connection
+                    .getRepository(Actor)
+                    .find({ order: { id: "ASC" } })
+
+                expect(actors).to.have.length(2)
+
+                // Alice: 1 post
+                const alice = actors[0] as User
+                expect(alice.name).to.equal("Alice")
+                expect(alice.posts).to.have.length(1)
+                expect(alice.posts[0].title).to.equal("Alice Post")
+                expect(alice.profile.name).to.equal("Alice Profile")
+
+                // Bob: 2 posts
+                const bob = actors[1] as User
+                expect(bob.name).to.equal("Bob")
+                expect(bob.posts).to.have.length(2)
+                const bobTitles = bob.posts.map((p) => p.title).sort()
+                expect(bobTitles).to.deep.equal(["Bob Post 1", "Bob Post 2"])
+                expect(bob.profile.name).to.equal("Bob Profile")
+            }),
+        ))
+
+    // =========================================================================
+    // Parent repo: child with eager OneToMany but no related items — empty array
+    // =========================================================================
+
+    it("should return empty array for OneToMany eager relation via parent repo when child has no items", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const profile = new Profile()
+                profile.name = "Charlie Profile"
+                profile.avatar = "charlie.png"
+                await connection.getRepository(Profile).save(profile)
+
+                const user = new User()
+                user.name = "Charlie"
+                user.email = "charlie@example.com"
+                user.profile = profile
+                await connection.getRepository(User).save(user)
+
+                // No posts created for Charlie
+
+                const actors = await connection
+                    .getRepository(Actor)
+                    .find({ order: { id: "ASC" } })
+
+                expect(actors).to.have.length(1)
+
+                const loaded = actors[0] as User
+                expect(loaded).to.be.instanceOf(User)
+                expect(loaded.profile).to.not.be.null
+                expect(loaded.profile.name).to.equal("Charlie Profile")
+                expect(loaded.posts).to.not.be.undefined
+                expect(loaded.posts).to.be.an("array")
+                expect(loaded.posts).to.have.length(0)
+            }),
+        ))
+
+    // =========================================================================
+    // Parent repo: child with no child-specific eager relations (only parent's)
+    // =========================================================================
+
+    it("should handle child with no child-specific eager relations in parent repo query", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const profile = new Profile()
+                profile.name = "Alice Profile"
+                profile.avatar = "alice.png"
+                await connection.getRepository(Profile).save(profile)
+
+                const user = new User()
+                user.name = "Alice"
+                user.email = "alice@example.com"
+                user.profile = profile
+                await connection.getRepository(User).save(user)
+
+                const license = new License()
+                license.key = "ORG-001"
+                license.valid = true
+                await connection.getRepository(License).save(license)
+
+                const org = new Organization()
+                org.name = "Acme"
+                org.industry = "Tech"
+                org.license = license
+                await connection.getRepository(Organization).save(org)
+
+                // Query parent — should work even though both children have
+                // different sets of eager relations
+                const actors = await connection
+                    .getRepository(Actor)
+                    .find({ order: { id: "ASC" } })
+
+                expect(actors).to.have.length(2)
+
+                // Both should be correctly typed
+                expect(actors[0]).to.be.instanceOf(User)
+                expect(actors[1]).to.be.instanceOf(Organization)
+
+                // Verify child-specific properties exist on correct types
+                expect((actors[0] as User).email).to.equal("alice@example.com")
+                expect((actors[1] as Organization).industry).to.equal("Tech")
+            }),
+        ))
 })
