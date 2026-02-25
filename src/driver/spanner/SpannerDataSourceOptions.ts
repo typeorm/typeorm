@@ -1,5 +1,6 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 import { ReplicationMode } from "../types/ReplicationMode"
+import { ReplicationConfig } from "../types/ReplicationConfig"
 import { SpannerConnectionCredentialsOptions } from "./SpannerConnectionCredentialsOptions"
 
 /**
@@ -101,18 +102,9 @@ export interface SpannerDataSourceOptions
 
     /**
      * Replication setup.
+     * Supports both `master`/`slaves` and `primary`/`replicas` keys.
      */
-    readonly replication?: {
-        /**
-         * Master server used by orm to perform writes.
-         */
-        readonly master: SpannerConnectionCredentialsOptions
-
-        /**
-         * List of read-from servers (slaves).
-         */
-        readonly slaves: SpannerConnectionCredentialsOptions[]
-
+    readonly replication?: ReplicationConfig<SpannerConnectionCredentialsOptions> & {
         /**
          * If true, PoolCluster will attempt to reconnect when connection fails. (Default: true)
          */

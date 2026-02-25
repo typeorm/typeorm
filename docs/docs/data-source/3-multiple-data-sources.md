@@ -196,14 +196,14 @@ const datasource = new DataSource({
     type: "mysql",
     logging: true,
     replication: {
-        master: {
+        primary: {
             host: "server1",
             port: 3306,
             username: "test",
             password: "test",
             database: "test",
         },
-        slaves: [
+        replicas: [
             {
                 host: "server2",
                 port: 3306,
@@ -223,43 +223,45 @@ const datasource = new DataSource({
 })
 ```
 
-With replication slaves defined, TypeORM will start sending all possible queries to slaves by default.
+With replication replicas defined, TypeORM will start sending all possible queries to replicas by default.
 
-- all queries performed by the `find` methods or `SelectQueryBuilder` will use a random `slave` instance
-- all write queries performed by `update`, `create`, `InsertQueryBuilder`, `UpdateQueryBuilder`, etc will use the `master` instance
-- all raw queries performed by calling `.query()` will use the `master` instance
-- all schema update operations are performed using the `master` instance
+- all queries performed by the `find` methods or `SelectQueryBuilder` will use a random `replica` instance
+- all write queries performed by `update`, `create`, `InsertQueryBuilder`, `UpdateQueryBuilder`, etc will use the `primary` instance
+- all raw queries performed by calling `.query()` will use the `primary` instance
+- all schema update operations are performed using the `primary` instance
+
+TypeORM also supports legacy `master`/`slaves` keys and `"master"`/`"slave"` replication modes for backward compatibility.
 
 ### Explicitly selecting query destinations
 
-By default, TypeORM will send all read queries to a random read slave, and all writes to the master. This means when you first add the `replication` settings to your configuration, any existing read query runners that don't explicitly specify a replication mode will start going to a slave. This is good for scalability, but if some of those queries _must_ return up to date data, then you need to explicitly pass a replication mode when you create a query runner.
+By default, TypeORM will send all read queries to a random read replica, and all writes to the primary. This means when you first add the `replication` settings to your configuration, any existing read query runners that don't explicitly specify a replication mode will start going to a replica. This is good for scalability, but if some of those queries _must_ return up to date data, then you need to explicitly pass a replication mode when you create a query runner.
 
-If you want to explicitly use the `master` for read queries, pass an explicit `ReplicationMode` when creating your `QueryRunner`;
+If you want to explicitly use the `primary` for read queries, pass an explicit `ReplicationMode` when creating your `QueryRunner`;
 
 ```typescript
-const masterQueryRunner = dataSource.createQueryRunner("master")
+const primaryQueryRunner = dataSource.createQueryRunner("primary")
 try {
-    const postsFromMaster = await dataSource
-        .createQueryBuilder(Post, "post", masterQueryRunner) // you can either pass QueryRunner as an optional argument with query builder
-        .setQueryRunner(masterQueryRunner) // or use setQueryRunner which sets or overrides query builder's QueryRunner
+    const postsFromPrimary = await dataSource
+        .createQueryBuilder(Post, "post", primaryQueryRunner) // you can either pass QueryRunner as an optional argument with query builder
+        .setQueryRunner(primaryQueryRunner) // or use setQueryRunner which sets or overrides query builder's QueryRunner
         .getMany()
 } finally {
-    await masterQueryRunner.release()
+    await primaryQueryRunner.release()
 }
 ```
 
-If you want to use a slave in raw queries, pass `slave` as the replication mode when creating a query runner:
+If you want to use a replica in raw queries, pass `replica` as the replication mode when creating a query runner:
 
 ```typescript
-const slaveQueryRunner = dataSource.createQueryRunner("slave")
+const replicaQueryRunner = dataSource.createQueryRunner("replica")
 try {
-    const userFromSlave = await slaveQueryRunner.query(
+    const userFromReplica = await replicaQueryRunner.query(
         "SELECT * FROM users WHERE id = $1",
         [userId],
-        slaveQueryRunner,
+        replicaQueryRunner,
     )
 } finally {
-    return slaveQueryRunner.release()
+    return replicaQueryRunner.release()
 }
 ```
 
@@ -267,23 +269,23 @@ try {
 
 ### Adjusting the default destination for reads
 
-If you don't want all reads to go to a `slave` instance by default, you can change the default read query destination by passing `defaultMode: "master"` in your replication options:
+If you don't want all reads to go to a `replica` instance by default, you can change the default read query destination by passing `defaultMode: "primary"` in your replication options:
 
 ```typescript
 const datasource = new DataSource({
     type: "mysql",
     logging: true,
     replication: {
-        // set the default destination for read queries as the master instance
-        defaultMode: "master",
-        master: {
+        // set the default destination for read queries as the primary instance
+        defaultMode: "primary",
+        primary: {
             host: "server1",
             port: 3306,
             username: "test",
             password: "test",
             database: "test",
         },
-        slaves: [
+        replicas: [
             {
                 host: "server2",
                 port: 3306,
@@ -296,7 +298,7 @@ const datasource = new DataSource({
 })
 ```
 
-With this mode, no queries will go to the read slaves by default, and you'll have to opt-in to sending queries to read slaves with explicit `.createQueryRunner("slave")` calls.
+With this mode, no queries will go to read replicas by default, and you'll have to opt-in to sending queries to replicas with explicit `.createQueryRunner("replica")` calls.
 
 If you're adding replication options to an existing app for the first time, this is a good option for ensuring no behavior changes right away, and instead you can slowly adopt read replicas on a query runner by query runner basis.
 
@@ -309,14 +311,14 @@ MySQL replication supports extra configuration options:
 ```typescript
 {
   replication: {
-    master: {
+    primary: {
       host: "server1",
       port: 3306,
       username: "test",
       password: "test",
       database: "test"
     },
-    slaves: [{
+    replicas: [{
       host: "server2",
       port: 3306,
       username: "test",
@@ -348,7 +350,7 @@ MySQL replication supports extra configuration options:
      restoreNodeTimeout: 0,
 
     /**
-     * Determines how slaves are selected:
+     * Determines how replicas are selected:
      * RR: Select one alternately (Round-Robin).
      * RANDOM: Select the node by random function.
      * ORDER: Select the first node available unconditionally.
