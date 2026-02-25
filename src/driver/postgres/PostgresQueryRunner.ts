@@ -1624,6 +1624,14 @@ export class PostgresQueryRunner
                     false,
                 )
 
+                // "old_enum" (raw)
+                const oldEnumNameWithoutSchemaRaw = this.buildEnumName(
+                    table,
+                    oldColumn,
+                    false,
+                    true,
+                )
+
                 //"public"."old_enum_old"
                 const oldEnumNameWithSchema_old = this.buildEnumName(
                     table,
@@ -1650,7 +1658,7 @@ export class PostgresQueryRunner
 
                         upQueries.push(
                             new Query(
-                                `ALTER TYPE ${oldEnumName} ADD VALUE '${escapedValue}'`,
+                                `ALTER TYPE ${oldEnumName} ADD VALUE IF NOT EXISTS '${escapedValue}'`,
                             ),
                         )
                     }
@@ -1687,6 +1695,11 @@ export class PostgresQueryRunner
                         ),
                     )
                 } else {
+                    let { schema } = this.driver.parseTableName(table)
+                    if (!schema) {
+                        schema = await this.getCurrentSchema()
+                    }
+
                     // rename old ENUM
                     upQueries.push(
                         new Query(
@@ -1700,12 +1713,31 @@ export class PostgresQueryRunner
                     )
 
                     // create new ENUM
-                    upQueries.push(
-                        this.createEnumTypeSql(table, newColumn, newEnumName),
+                    const newEnumNameRaw = this.buildEnumName(
+                        table,
+                        newColumn,
+                        false,
+                        true,
                     )
-                    downQueries.push(
-                        this.dropEnumTypeSql(table, newColumn, newEnumName),
+                    const newEnumIsUsed = await this.isEnumUsed(
+                        table,
+                        newColumn,
+                        newEnumNameRaw,
+                        schema!,
                     )
+
+                    if (!newEnumIsUsed) {
+                        upQueries.push(
+                            this.createEnumTypeSql(
+                                table,
+                                newColumn,
+                                newEnumName,
+                            ),
+                        )
+                        downQueries.push(
+                            this.dropEnumTypeSql(table, newColumn, newEnumName),
+                        )
+                    }
 
                     // if column have default value, we must drop it to avoid issues with type casting
                     if (
@@ -1782,20 +1814,29 @@ export class PostgresQueryRunner
                     }
 
                     // remove old ENUM
-                    upQueries.push(
-                        this.dropEnumTypeSql(
-                            table,
-                            oldColumn,
-                            oldEnumNameWithSchema_old,
-                        ),
+                    const isEnumUsed = await this.isEnumUsed(
+                        table,
+                        oldColumn,
+                        oldEnumNameWithoutSchemaRaw,
+                        schema!,
                     )
-                    downQueries.push(
-                        this.createEnumTypeSql(
-                            table,
-                            oldColumn,
-                            oldEnumNameWithSchema_old,
-                        ),
-                    )
+
+                    if (!isEnumUsed) {
+                        upQueries.push(
+                            this.dropEnumTypeSql(
+                                table,
+                                oldColumn,
+                                oldEnumNameWithSchema_old,
+                            ),
+                        )
+                        downQueries.push(
+                            this.createEnumTypeSql(
+                                table,
+                                oldColumn,
+                                oldEnumNameWithSchema_old,
+                            ),
+                        )
+                    }
                 }
             }
 
@@ -2593,12 +2634,20 @@ export class PostgresQueryRunner
                     column,
                 )
                 const escapedEnumName = `"${enumType.schema}"."${enumType.name}"`
-                upQueries.push(
-                    this.dropEnumTypeSql(table, column, escapedEnumName),
+                const isEnumUsed = await this.isEnumUsed(
+                    table,
+                    column,
+                    enumType.name,
+                    enumType.schema,
                 )
-                downQueries.push(
-                    this.createEnumTypeSql(table, column, escapedEnumName),
-                )
+                if (!isEnumUsed) {
+                    upQueries.push(
+                        this.dropEnumTypeSql(table, column, escapedEnumName),
+                    )
+                    downQueries.push(
+                        this.createEnumTypeSql(table, column, escapedEnumName),
+                    )
+                }
             }
         }
 
@@ -4512,6 +4561,39 @@ export class PostgresQueryRunner
     }
 
     /**
+     * Checks if enum with the given name is used in more then one table.
+     * @param table
+     * @param column
+     * @param enumName
+     * @param schema
+     */
+    protected async isEnumUsed(
+        table: Table,
+        column: TableColumn,
+        enumName: string,
+        schema: string,
+    ): Promise<boolean> {
+        // check if enum is used in any other table/column...
+        const sql =
+            `SELECT "table_name", "column_name" FROM "information_schema"."columns" ` +
+            `WHERE "table_schema" = $1 AND "udt_name" = $2`
+        const results = await this.query(sql, [schema, enumName])
+
+        const { tableName } = this.driver.parseTableName(table)
+
+        // ...except for the table/column we are about to drop
+        const otherUsages = results.filter(
+            (row: any) =>
+                !(
+                    row.table_name === tableName &&
+                    row.column_name === column.name
+                ),
+        )
+
+        return otherUsages.length > 0
+    }
+
+    /**
      * Builds create ENUM type sql.
      * @param table
      * @param column
@@ -4530,7 +4612,7 @@ export class PostgresQueryRunner
     }
 
     /**
-     * Builds create ENUM type sql.
+     * Drops the enum type.
      * @param table
      * @param column
      * @param enumName
