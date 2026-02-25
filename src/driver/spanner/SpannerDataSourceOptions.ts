@@ -104,14 +104,26 @@ export interface SpannerDataSourceOptions
      */
     readonly replication?: {
         /**
-         * Master server used by orm to perform writes.
+         * Primary server used by orm to perform writes.
          */
-        readonly master: SpannerConnectionCredentialsOptions
+        readonly primary?: SpannerConnectionCredentialsOptions
+
+        /**
+         * List of read-from servers (replicas).
+         */
+        readonly replicas?: SpannerConnectionCredentialsOptions[]
+
+        /**
+         * Master server used by orm to perform writes.
+         * @deprecated Use `primary` instead. Will be removed in a future major version.
+         */
+        readonly master?: SpannerConnectionCredentialsOptions
 
         /**
          * List of read-from servers (slaves).
+         * @deprecated Use `replicas` instead. Will be removed in a future major version.
          */
-        readonly slaves: SpannerConnectionCredentialsOptions[]
+        readonly slaves?: SpannerConnectionCredentialsOptions[]
 
         /**
          * If true, PoolCluster will attempt to reconnect when connection fails. (Default: true)

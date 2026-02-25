@@ -23,6 +23,7 @@ import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
+import { warnReplicationConfigDeprecation } from "../../util/replication"
 import { UpsertType } from "../types/UpsertType"
 import { MssqlParameter } from "./MssqlParameter"
 import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
@@ -261,9 +262,17 @@ export class SqlServerDriver implements Driver {
         // load mssql package
         this.loadDependencies()
 
+        if (this.options.replication) {
+            const repl = this.options.replication
+            if (repl.master || repl.slaves) {
+                warnReplicationConfigDeprecation()
+            }
+        }
+
         this.database = DriverUtils.buildDriverOptions(
             this.options.replication
-                ? this.options.replication.master
+                ? (this.options.replication.primary ??
+                      this.options.replication.master)!
                 : this.options,
         ).database
         this.schema = DriverUtils.buildDriverOptions(this.options).schema
@@ -289,15 +298,18 @@ export class SqlServerDriver implements Driver {
      */
     async connect(): Promise<void> {
         if (this.options.replication) {
+            const replicaConfigs =
+                this.options.replication.replicas ??
+                this.options.replication.slaves ??
+                []
+            const primaryConfig = (this.options.replication.primary ??
+                this.options.replication.master)!
             this.slaves = await Promise.all(
-                this.options.replication.slaves.map((slave) => {
+                replicaConfigs.map((slave) => {
                     return this.createPool(this.options, slave)
                 }),
             )
-            this.master = await this.createPool(
-                this.options,
-                this.options.replication.master,
-            )
+            this.master = await this.createPool(this.options, primaryConfig)
         } else {
             this.master = await this.createPool(this.options, this.options)
         }
@@ -778,6 +790,7 @@ export class SqlServerDriver implements Driver {
      * Obtains a new database connection to a master server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
+     * @deprecated Use `obtainPrimaryConnection` instead.
      */
     obtainMasterConnection(): Promise<any> {
         if (!this.master) {
@@ -791,12 +804,31 @@ export class SqlServerDriver implements Driver {
      * Obtains a new database connection to a slave server.
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
+     * @deprecated Use `obtainReplicaConnection` instead.
      */
     obtainSlaveConnection(): Promise<any> {
         if (!this.slaves.length) return this.obtainMasterConnection()
 
         const random = Math.floor(Math.random() * this.slaves.length)
         return Promise.resolve(this.slaves[random])
+    }
+
+    /**
+     * Obtains a new database connection to a primary server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainPrimaryConnection(): Promise<any> {
+        return this.obtainMasterConnection()
+    }
+
+    /**
+     * Obtains a new database connection to a replica server.
+     * Used for replication.
+     * If replication is not setup then returns primary (default) connection's database connection.
+     */
+    obtainReplicaConnection(): Promise<any> {
+        return this.obtainSlaveConnection()
     }
 
     /**

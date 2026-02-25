@@ -37,6 +37,10 @@ import { RelationLoader } from "../query-builder/RelationLoader"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ReplicationMode } from "../driver/types/ReplicationMode"
+import {
+    normalizeReplicationMode,
+    warnReplicationModeDeprecation,
+} from "../util/replication"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
@@ -607,6 +611,10 @@ export class DataSource {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode = "master"): QueryRunner {
+        if (mode === "master" || mode === "slave") {
+            warnReplicationModeDeprecation()
+        }
+        mode = normalizeReplicationMode(mode)
         const queryRunner = this.driver.createQueryRunner(mode)
         const manager = this.createEntityManager(queryRunner)
         Object.assign(queryRunner, { manager: manager })

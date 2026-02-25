@@ -112,14 +112,26 @@ export interface MysqlDataSourceOptions
      */
     readonly replication?: {
         /**
-         * Master server used by orm to perform writes.
+         * Primary server used by orm to perform writes.
          */
-        readonly master: MysqlConnectionCredentialsOptions
+        readonly primary?: MysqlConnectionCredentialsOptions
+
+        /**
+         * List of read-from servers (replicas).
+         */
+        readonly replicas?: MysqlConnectionCredentialsOptions[]
+
+        /**
+         * Master server used by orm to perform writes.
+         * @deprecated Use `primary` instead. Will be removed in a future major version.
+         */
+        readonly master?: MysqlConnectionCredentialsOptions
 
         /**
          * List of read-from servers (slaves).
+         * @deprecated Use `replicas` instead. Will be removed in a future major version.
          */
-        readonly slaves: MysqlConnectionCredentialsOptions[]
+        readonly slaves?: MysqlConnectionCredentialsOptions[]
 
         /**
          * If true, PoolCluster will attempt to reconnect when connection fails. (Default: true)
