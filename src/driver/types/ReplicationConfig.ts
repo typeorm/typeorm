@@ -50,6 +50,10 @@ export function getReplicationReplicas<TCredentials extends object>(
         if (slaves.length > 0) {
             return slaves
         }
+
+        throw new TypeORMError(
+            `Replication options must define at least one "slave" or "replica".`,
+        )
     }
 
     if ("replicas" in replication && replication.replicas !== undefined) {
