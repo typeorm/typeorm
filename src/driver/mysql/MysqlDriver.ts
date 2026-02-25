@@ -381,6 +381,7 @@ export class MysqlDriver implements Driver {
                 slaves: _slaves,
                 primary: _primary,
                 replicas: _replicas,
+                defaultMode: _defaultMode,
                 ...poolClusterOptions
             } = this.options.replication
 
