@@ -819,9 +819,11 @@ export class InsertQueryBuilder<
 
                 // if user did not specified such list then return all columns except auto-increment one
                 // for Oracle we return auto-increment column as well because Oracle does not support DEFAULT VALUES expression
+                // For CTI children, never skip auto-increment PK — it must be explicitly provided from the parent table
                 if (
                     column.isGenerated &&
                     column.generationStrategy === "increment" &&
+                    !metadata.isCtiChild &&
                     !(this.connection.driver.options.type === "spanner") &&
                     !(this.connection.driver.options.type === "oracle") &&
                     !DriverUtils.isSQLiteFamily(this.connection.driver) &&

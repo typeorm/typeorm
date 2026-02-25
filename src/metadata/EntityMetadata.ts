@@ -607,6 +607,20 @@ export class EntityMetadata {
         )
     }
 
+    /**
+     * Returns columns that physically belong to this entity's database table.
+     * For CTI children this excludes inherited columns (which live on the parent table).
+     * For all other entities this is the same as `columns`.
+     */
+    get tableColumns(): ColumnMetadata[] {
+        if (this.isCtiChild && this.inheritedColumns.length > 0) {
+            return this.columns.filter(
+                (c) => !this.inheritedColumns.includes(c),
+            )
+        }
+        return this.columns
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------

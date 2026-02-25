@@ -899,33 +899,41 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             }
 
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
-                let column: string
+                // For CTI children, discriminator lives on the parent table.
+                // In SELECT queries, the parent is JOINed so we can reference it.
+                // In UPDATE/DELETE, there's no JOIN — skip the discriminator condition
+                // (the child table only contains rows of that type, PK is sufficient).
                 if (metadata.isCtiChild) {
-                    // CTI: discriminator lives on parent table, use parent alias directly (escaped)
-                    column = this.expressionMap.aliasNamePrefixingEnabled
-                        ? this.escape(
-                              this.expressionMap.mainAlias!.name +
-                                  "__cti_parent",
-                          ) +
-                          "." +
-                          this.escape(
-                              metadata.discriminatorColumn.databaseName,
-                          )
-                        : this.escape(
-                              metadata.discriminatorColumn.databaseName,
-                          )
+                    if (this.expressionMap.queryType === "select") {
+                        const column = this.expressionMap
+                            .aliasNamePrefixingEnabled
+                            ? this.escape(
+                                  this.expressionMap.mainAlias!.name +
+                                      "__cti_parent",
+                              ) +
+                              "." +
+                              this.escape(
+                                  metadata.discriminatorColumn.databaseName,
+                              )
+                            : this.escape(
+                                  metadata.discriminatorColumn.databaseName,
+                              )
+
+                        const condition = `${column} IN (:...discriminatorColumnValues)`
+                        conditionsArray.push(condition)
+                    }
                 } else {
                     // STI: discriminator on same table
-                    column = this.expressionMap.aliasNamePrefixingEnabled
+                    let column = this.expressionMap.aliasNamePrefixingEnabled
                         ? this.expressionMap.mainAlias!.name +
                           "." +
                           metadata.discriminatorColumn.databaseName
                         : metadata.discriminatorColumn.databaseName
                     column = this.replacePropertyNames(column)
-                }
 
-                const condition = `${column} IN (:...discriminatorColumnValues)`
-                conditionsArray.push(condition)
+                    const condition = `${column} IN (:...discriminatorColumnValues)`
+                    conditionsArray.push(condition)
+                }
             }
         }
 
