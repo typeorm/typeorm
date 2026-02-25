@@ -304,7 +304,36 @@ If you're adding replication options to an existing app for the first time, this
 
 Replication is supported by the MySQL, PostgreSQL, SQL Server, Cockroach, Oracle, and Spanner connection drivers.
 
-MySQL replication supports extra configuration options:
+MySQL and PostgreSQL replication connections support per-connection `poolSize`:
+
+```typescript
+{
+  replication: {
+    master: {
+      host: "server1",
+      port: 3306,
+      username: "test",
+      password: "test",
+      database: "test",
+      poolSize: 20,      // override global poolSize for master
+    },
+    slaves: [{
+      host: "server2",
+      port: 3306,
+      username: "test",
+      password: "test",
+      database: "test",
+      poolSize: 50,      // override global poolSize for this slave
+    }],
+  }
+}
+```
+
+If `poolSize` is not specified on an individual connection, the global `poolSize` option will be used as a fallback.
+
+> Note: if you set pool size via `extra` (e.g. `extra: { max: 100 }`), it will take precedence over both global and per-connection `poolSize`.
+
+MySQL replication also supports these extra configuration options:
 
 ```typescript
 {

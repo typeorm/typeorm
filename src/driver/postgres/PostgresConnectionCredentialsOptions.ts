@@ -44,4 +44,10 @@ export interface PostgresConnectionCredentialsOptions {
      * the service using this connection. Defaults to 'undefined'
      */
     readonly applicationName?: string
+
+    /**
+     * Maximum number of clients the pool should contain.
+     * for each connection
+     */
+    readonly poolSize?: number
 }
