@@ -182,7 +182,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         return this.dataSource.entityMetadatas.filter(
             (metadata) =>
                 metadata.synchronize &&
-                metadata.tableType !== "entity-child" &&
+                // Exclude STI children (they share the parent's table).
+                // CTI children have their own tables and must be synced.
+                !(
+                    metadata.tableType === "entity-child" &&
+                    metadata.isStiChild
+                ) &&
                 metadata.tableType !== "view",
         )
     }
