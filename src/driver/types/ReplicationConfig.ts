@@ -25,11 +25,29 @@ export type ReplicationConfig<TCredentials> =
 export function getReplicationPrimary<TCredentials extends object>(
     replication: ReplicationConfig<TCredentials>,
 ): TCredentials {
-    if ("master" in replication && replication.master) {
+    if ("master" in replication && replication.master !== undefined) {
+        if (
+            typeof replication.master !== "object" ||
+            replication.master === null
+        ) {
+            throw new TypeORMError(
+                `Replication options must define either "primary" or "master".`,
+            )
+        }
+
         return replication.master as TCredentials
     }
 
-    if ("primary" in replication && replication.primary) {
+    if ("primary" in replication && replication.primary !== undefined) {
+        if (
+            typeof replication.primary !== "object" ||
+            replication.primary === null
+        ) {
+            throw new TypeORMError(
+                `Replication options must define either "primary" or "master".`,
+            )
+        }
+
         return replication.primary as TCredentials
     }
 
@@ -46,7 +64,13 @@ export function getReplicationReplicas<TCredentials extends object>(
     replication: ReplicationConfig<TCredentials>,
 ): TCredentials[] {
     if ("slaves" in replication && replication.slaves !== undefined) {
-        const slaves = Array.from(replication.slaves) as TCredentials[]
+        if (!Array.isArray(replication.slaves)) {
+            throw new TypeORMError(
+                `Replication options must define at least one "slave" or "replica".`,
+            )
+        }
+
+        const slaves = replication.slaves as TCredentials[]
         if (slaves.length > 0) {
             return slaves
         }
@@ -57,7 +81,13 @@ export function getReplicationReplicas<TCredentials extends object>(
     }
 
     if ("replicas" in replication && replication.replicas !== undefined) {
-        const replicas = Array.from(replication.replicas) as TCredentials[]
+        if (!Array.isArray(replication.replicas)) {
+            throw new TypeORMError(
+                `Replication options must define at least one "slave" or "replica".`,
+            )
+        }
+
+        const replicas = replication.replicas as TCredentials[]
         if (replicas.length > 0) {
             return replicas
         }
