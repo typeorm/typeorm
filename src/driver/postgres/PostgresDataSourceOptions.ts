@@ -1,5 +1,6 @@
 import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { ReplicationConfig } from "../types/ReplicationConfig"
 import type { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 
 /**
@@ -36,18 +37,9 @@ export interface PostgresDataSourceOptions
 
     /**
      * Replication setup.
+     * Supports both `master`/`slaves` and `primary`/`replicas` keys.
      */
-    readonly replication?: {
-        /**
-         * Master server used by orm to perform writes.
-         */
-        readonly master: PostgresConnectionCredentialsOptions
-
-        /**
-         * List of read-from servers (slaves).
-         */
-        readonly slaves: PostgresConnectionCredentialsOptions[]
-
+    readonly replication?: ReplicationConfig<PostgresConnectionCredentialsOptions> & {
         /**
          * Default connection pool to use for SELECT queries
          * @default "slave"
