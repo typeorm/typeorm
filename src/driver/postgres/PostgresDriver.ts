@@ -1222,15 +1222,25 @@ export class PostgresDriver implements Driver {
             ["json", "jsonb"].includes(columnMetadata.type as string) &&
             !["function", "undefined"].includes(typeof columnMetadata.default)
         ) {
-            const tableColumnDefault =
-                typeof tableColumn.default === "string"
-                    ? JSON.parse(
-                          tableColumn.default.substring(
-                              1,
-                              tableColumn.default.length - 1,
-                          ),
-                      )
-                    : tableColumn.default
+            let tableColumnDefault = tableColumn.default
+            if (typeof tableColumnDefault === "string") {
+                tableColumnDefault =
+                    this.stripTypeCastsOutsideQuotes(tableColumnDefault)
+                if (
+                    tableColumnDefault.startsWith("'") &&
+                    tableColumnDefault.endsWith("'")
+                ) {
+                    tableColumnDefault = tableColumnDefault.substring(
+                        1,
+                        tableColumnDefault.length - 1,
+                    )
+                }
+                try {
+                    tableColumnDefault = JSON.parse(tableColumnDefault)
+                } catch (e) {
+                    // if it's not a valid JSON, we just leave it as it is
+                }
+            }
 
             return OrmUtils.deepCompare(
                 columnMetadata.default,
@@ -1241,7 +1251,19 @@ export class PostgresDriver implements Driver {
         const columnDefault = this.lowerDefaultValueIfNecessary(
             this.normalizeDefault(columnMetadata),
         )
-        return columnDefault === tableColumn.default
+
+        if (columnDefault === tableColumn.default) return true
+
+        if (
+            columnDefault &&
+            tableColumn.default &&
+            this.stripTypeCastsOutsideQuotes(columnDefault) ===
+                this.stripTypeCastsOutsideQuotes(tableColumn.default)
+        ) {
+            return true
+        }
+
+        return false
     }
 
     /**
@@ -1817,5 +1839,23 @@ export class PostgresDriver implements Driver {
         comment = comment.replace(/\u0000/g, "") // Null bytes aren't allowed in comments
 
         return comment
+    }
+
+    /**
+     * Strips type casts from a given expression, but only if they are outside of quotes.
+     * @param expr
+     */
+    stripTypeCastsOutsideQuotes(expr: string): string {
+        return expr
+            .split(`'`)
+            .map((v, i) => {
+                return i % 2 === 0
+                    ? v.replace(
+                          /::[\w\s.[\]\-"]+(?:\([^)]*\))?[\w\s.[\]\-"]*/g,
+                          "",
+                      )
+                    : v
+            })
+            .join(`'`)
     }
 }
