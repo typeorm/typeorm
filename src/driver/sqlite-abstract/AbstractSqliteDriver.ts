@@ -127,6 +127,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         "time",
         "datetime",
         "json",
+        "jsonb",
     ]
 
     /**
@@ -346,6 +347,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             return DateUtils.mixedDateToUtcDatetimeString(value)
         } else if (
             columnMetadata.type === "json" ||
+            columnMetadata.type === "jsonb" ||
             columnMetadata.type === "simple-json"
         ) {
             return DateUtils.simpleJsonToString(value)
@@ -418,6 +420,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             value = DateUtils.mixedTimeToString(value)
         } else if (
             columnMetadata.type === "json" ||
+            columnMetadata.type === "jsonb" ||
             columnMetadata.type === "simple-json"
         ) {
             value = DateUtils.stringToSimpleJson(value)
@@ -666,6 +669,10 @@ export abstract class AbstractSqliteDriver implements Driver {
     normalizeDefault(columnMetadata: ColumnMetadata): string | undefined {
         const defaultValue = columnMetadata.default
 
+        if (defaultValue === null || defaultValue === undefined) {
+            return undefined
+        }
+
         if (typeof defaultValue === "number") {
             return "" + defaultValue
         }
@@ -682,15 +689,19 @@ export abstract class AbstractSqliteDriver implements Driver {
             return `'${defaultValue}'`
         }
 
-        if (defaultValue === null || defaultValue === undefined) {
-            return undefined
-        }
-
         if (
             Array.isArray(defaultValue) &&
             columnMetadata.type === "simple-enum"
         ) {
             return `'${defaultValue.join(",")}'`
+        }
+
+        if (typeof defaultValue === "object") {
+            const jsonString = JSON.stringify(defaultValue).replace(/'/g, "''")
+            if (columnMetadata.type === "jsonb") {
+                return `jsonb('${jsonString}')`
+            }
+            return `'${jsonString}'`
         }
 
         return `${defaultValue}`
@@ -802,6 +813,76 @@ export abstract class AbstractSqliteDriver implements Driver {
     }
 
     /**
+     * Compares column default values, handling JSON/JSONB types semantically.
+     * @param columnMetadata
+     * @param tableColumn
+     */
+    private defaultEqual(
+        columnMetadata: ColumnMetadata,
+        tableColumn: TableColumn,
+    ): boolean {
+        // defaults are equal if both are undefined or null
+        if (
+            (columnMetadata.default === null ||
+                columnMetadata.default === undefined) &&
+            (tableColumn.default === null || tableColumn.default === undefined)
+        )
+            return true
+
+        if (
+            ["json", "jsonb"].includes(columnMetadata.type as string) &&
+            !["function", "undefined"].includes(typeof columnMetadata.default)
+        ) {
+            let tableDefault = tableColumn.default
+            if (typeof tableDefault === "string") {
+                tableDefault = tableDefault.trim()
+                if (
+                    tableDefault.startsWith("(") &&
+                    tableDefault.endsWith(")")
+                ) {
+                    tableDefault = tableDefault.slice(1, -1)
+                }
+
+                const fnWrapped = tableDefault.match(
+                    /^(jsonb|json)\s*\(\s*'((?:''|[^'])*)'\s*\)\s*$/i,
+                )
+                if (fnWrapped) tableDefault = fnWrapped[2]
+                else if (
+                    tableDefault.startsWith("'") &&
+                    tableDefault.endsWith("'")
+                ) {
+                    tableDefault = tableDefault.slice(1, -1)
+                }
+            }
+
+            if (typeof tableDefault === "string") {
+                try {
+                    const tableDefaultObj = JSON.parse(
+                        tableDefault.replace(/''/g, "'"),
+                    )
+                    return OrmUtils.deepCompare(
+                        columnMetadata.default,
+                        tableDefaultObj,
+                    )
+                } catch (err) {
+                    if (!(err instanceof SyntaxError)) {
+                        throw new TypeORMError(
+                            `Failed to compare default values of ${columnMetadata.propertyName} column`,
+                        )
+                    }
+                }
+            } else {
+                return OrmUtils.deepCompare(
+                    columnMetadata.default,
+                    tableDefault,
+                )
+            }
+        }
+
+        return this.normalizeDefault(columnMetadata) === tableColumn.default
+    }
+
+    /**
      * Differentiate columns of this table and columns from the given column metadatas columns
      * and returns only changed.
      * @param tableColumns
@@ -823,7 +904,7 @@ export abstract class AbstractSqliteDriver implements Driver {
                 tableColumn.length !== columnMetadata.length ||
                 tableColumn.precision !== columnMetadata.precision ||
                 tableColumn.scale !== columnMetadata.scale ||
-                this.normalizeDefault(columnMetadata) !== tableColumn.default ||
+                !this.defaultEqual(columnMetadata, tableColumn) ||
                 tableColumn.isPrimary !== columnMetadata.isPrimary ||
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
@@ -943,6 +1024,23 @@ export abstract class AbstractSqliteDriver implements Driver {
         // return "$" + (index + 1);
         return "?"
         // return "$" + parameterName;
+    }
+
+    /**
+     * Wraps key with json/jsonb function if required.
+     * @param value
+     * @param column
+     * @param jsonb
+     */
+    wrapWithJsonFunction(
+        value: string,
+        column: ColumnMetadata,
+        jsonb: boolean = false,
+    ): string {
+        if (column.type === "jsonb") {
+            return jsonb ? `jsonb(${value})` : `json(${value})`
+        }
+        return value
     }
 
     // -------------------------------------------------------------------------

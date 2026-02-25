@@ -1202,7 +1202,7 @@ export class PostgresDriver implements Driver {
         }
 
         if (typeof defaultValue === "object") {
-            return `'${JSON.stringify(defaultValue)}'`
+            return `'${JSON.stringify(defaultValue).replace(/'/g, "''")}'`
         }
 
         return `${defaultValue}`
@@ -1218,24 +1218,43 @@ export class PostgresDriver implements Driver {
         columnMetadata: ColumnMetadata,
         tableColumn: TableColumn,
     ): boolean {
+        // defaults are equal if both are undefined or null
+        if (
+            (columnMetadata.default === null ||
+                columnMetadata.default === undefined) &&
+            (tableColumn.default === null || tableColumn.default === undefined)
+        )
+            return true
+
         if (
             ["json", "jsonb"].includes(columnMetadata.type as string) &&
             !["function", "undefined"].includes(typeof columnMetadata.default)
         ) {
-            const tableColumnDefault =
-                typeof tableColumn.default === "string"
-                    ? JSON.parse(
-                          tableColumn.default.substring(
-                              1,
-                              tableColumn.default.length - 1,
-                          ),
-                      )
-                    : tableColumn.default
+            let jsonString = tableColumn.default
+            if (typeof jsonString === "string") {
+                jsonString = jsonString.trim()
+                if (jsonString.startsWith("'") && jsonString.endsWith("'")) {
+                    jsonString = jsonString.slice(1, -1).replace(/''/g, "'")
+                }
+            }
 
-            return OrmUtils.deepCompare(
-                columnMetadata.default,
-                tableColumnDefault,
-            )
+            if (typeof jsonString === "string") {
+                try {
+                    const tableColumnDefault = JSON.parse(jsonString)
+                    return OrmUtils.deepCompare(
+                        columnMetadata.default,
+                        tableColumnDefault,
+                    )
+                } catch (err) {
+                    if (!(err instanceof SyntaxError)) {
+                        throw new TypeORMError(
+                            `Failed to compare default values of ${columnMetadata.propertyName} column`,
+                        )
+                    }
+                }
+            } else {
+                return OrmUtils.deepCompare(columnMetadata.default, jsonString)
+            }
         }
 
         const columnDefault = this.lowerDefaultValueIfNecessary(

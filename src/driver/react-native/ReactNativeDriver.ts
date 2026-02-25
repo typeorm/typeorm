@@ -937,6 +937,23 @@ export class ReactNativeDriver implements Driver {
         // return "$" + parameterName;
     }
 
+    /**
+     * Wraps key with json/jsonb function if required.
+     * @param value
+     * @param column
+     * @param jsonb
+     */
+    wrapWithJsonFunction(
+        value: string,
+        column: ColumnMetadata,
+        jsonb: boolean = false,
+    ): string {
+        if (column.type === "jsonb") {
+            return jsonb ? `jsonb(${value})` : `json(${value})`
+        }
+        return value
+    }
+
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------

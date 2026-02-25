@@ -1,8 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../src"
+import { Column, Entity, PrimaryGeneratedColumn } from "../../../../../../src"
 
-/**
- * For testing Postgres jsonb
- */
 @Entity()
 export class Record {
     @PrimaryGeneratedColumn()
@@ -17,7 +14,7 @@ export class Record {
     @Column({
         type: "jsonb",
         nullable: true,
-        default: { hello: "world", foo: "bar" },
+        default: { hello: "world'O", foo: "bar" },
     })
     dataWithDefaultObject: any
 
