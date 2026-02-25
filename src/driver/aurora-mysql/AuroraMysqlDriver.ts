@@ -19,7 +19,10 @@ import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
+import {
+    normalizeReplicationMode,
+    ReplicationMode,
+} from "../types/ReplicationMode"
 import { UpsertType } from "../types/UpsertType"
 import { AuroraMysqlConnectionCredentialsOptions } from "./AuroraMysqlConnectionCredentialsOptions"
 import { AuroraMysqlDataSourceOptions } from "./AuroraMysqlDataSourceOptions"
@@ -371,6 +374,7 @@ export class AuroraMysqlDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
+        const normalizedMode = normalizeReplicationMode(mode)
         return new AuroraMysqlQueryRunner(
             this,
             new this.DataApiDriver(
@@ -383,6 +387,7 @@ export class AuroraMysqlDriver implements Driver {
                 this.options.serviceConfigOptions,
                 this.options.formatOptions,
             ),
+            normalizedMode,
         )
     }
 
