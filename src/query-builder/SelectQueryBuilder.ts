@@ -48,6 +48,18 @@ import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 
 /**
+ * Returns the alias name for a CTI ancestor at the given depth.
+ * Level 0 (immediate parent): "base__cti_parent"
+ * Level 1 (grandparent): "base__cti_parent2"
+ * Level N: "base__cti_parent{N+1}"
+ */
+function ctiAncestorAlias(baseAlias: string, level: number): string {
+    return level === 0
+        ? `${baseAlias}__cti_parent`
+        : `${baseAlias}__cti_parent${level + 1}`
+}
+
+/**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
 export class SelectQueryBuilder<Entity extends ObjectLiteral>
@@ -2416,7 +2428,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         //     .leftJoinAndSelect("category.post", "post");
 
         // For CTI, inject auto-JOINs to related tables in the inheritance hierarchy.
-        // CTI child → INNER JOIN parent table (inherited columns).
+        // CTI child → INNER JOIN each ancestor table (inherited columns) — supports multi-level.
         // CTI parent → LEFT JOIN each child table (child-specific columns for polymorphic queries).
         let ctiJoinSql = ""
         if (this.expressionMap.mainAlias?.hasMetadata) {
@@ -2424,41 +2436,57 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             const mainAlias = this.expressionMap.mainAlias.name
 
             if (metadata.isCtiChild) {
-                // CTI child: INNER JOIN parent table
-                const parentMetadata = metadata.parentEntityMetadata
-                const parentAlias = mainAlias + "__cti_parent"
-                const parentTable = this.getTableName(parentMetadata.tablePath)
+                // CTI child: chain INNER JOINs to each ancestor table.
+                // For User → Contributor → Actor:
+                //   INNER JOIN contributor __cti_parent ON contributor.id = user.id
+                //   INNER JOIN actor __cti_parent2 ON actor.id = contributor.id
+                const ancestorChain = metadata.ctiAncestorChain
+                let prevAlias = mainAlias
+                for (let i = 0; i < ancestorChain.length; i++) {
+                    const ancestorMetadata = ancestorChain[i]
+                    const ancestorAlias = ctiAncestorAlias(mainAlias, i)
+                    const ancestorTable = this.getTableName(
+                        ancestorMetadata.tablePath,
+                    )
 
-                const conditions = metadata.primaryColumns
-                    .map((pk) => {
-                        const parentPk = parentMetadata.primaryColumns.find(
-                            (ppk) =>
-                                ppk.propertyName === pk.propertyName,
-                        )
-                        if (!parentPk) return ""
-                        return (
-                            this.escape(parentAlias) +
-                            "." +
-                            this.escape(parentPk.databaseName) +
-                            " = " +
-                            this.escape(mainAlias) +
-                            "." +
-                            this.escape(pk.databaseName)
-                        )
-                    })
-                    .filter((c) => c)
-                    .join(" AND ")
+                    const prevMetadata =
+                        i === 0 ? metadata : ancestorChain[i - 1]
+                    const conditions = prevMetadata.primaryColumns
+                        .map((pk) => {
+                            const ancestorPk =
+                                ancestorMetadata.primaryColumns.find(
+                                    (apk) =>
+                                        apk.propertyName === pk.propertyName,
+                                )
+                            if (!ancestorPk) return ""
+                            return (
+                                this.escape(ancestorAlias) +
+                                "." +
+                                this.escape(ancestorPk.databaseName) +
+                                " = " +
+                                this.escape(prevAlias) +
+                                "." +
+                                this.escape(pk.databaseName)
+                            )
+                        })
+                        .filter((c) => c)
+                        .join(" AND ")
 
-                ctiJoinSql =
-                    " INNER JOIN " +
-                    parentTable +
-                    " " +
-                    this.escape(parentAlias) +
-                    this.createTableLockExpression() +
-                    " ON " +
-                    conditions
-            } else if (metadata.isCtiParent) {
-                // CTI parent: LEFT JOIN each child table for polymorphic column access
+                    ctiJoinSql +=
+                        " INNER JOIN " +
+                        ancestorTable +
+                        " " +
+                        this.escape(ancestorAlias) +
+                        this.createTableLockExpression() +
+                        " ON " +
+                        conditions
+                    prevAlias = ancestorAlias
+                }
+            }
+            // CTI parent (or mid-level entity that is both child and parent):
+            // LEFT JOIN each child table for polymorphic column access.
+            // This runs in addition to the INNER JOINs above for mid-level entities.
+            if (metadata.isCtiParent) {
                 for (const childMetadata of metadata.childEntityMetadatas) {
                     const childAlias =
                         mainAlias + "__cti_child_" + childMetadata.targetName
@@ -2708,46 +2736,58 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
         })
 
-        // For any joined entity that is a CTI child, also inject INNER JOIN to its parent table
-        // so that inherited columns can be accessed through the __cti_parent alias.
+        // For any joined entity that is a CTI child, also inject INNER JOINs to its ancestor tables
+        // so that inherited columns can be accessed through the ancestor aliases.
+        // Supports multi-level: joined CTI child chains up to its root.
         let joinedCtiParentSql = ""
         for (const joinAttr of this.expressionMap.joinAttributes) {
             if (!joinAttr.alias.hasMetadata) continue
             const joinedMetadata = joinAttr.alias.metadata
             if (!joinedMetadata.isCtiChild) continue
 
-            const parentMetadata = joinedMetadata.parentEntityMetadata
             const joinedAlias = joinAttr.alias.name
-            const parentAlias = joinedAlias + "__cti_parent"
-            const parentTable = this.getTableName(parentMetadata.tablePath)
+            const ancestorChain = joinedMetadata.ctiAncestorChain
+            let prevAlias = joinedAlias
+            for (let i = 0; i < ancestorChain.length; i++) {
+                const ancestorMetadata = ancestorChain[i]
+                const ancestorAlias = ctiAncestorAlias(joinedAlias, i)
+                const ancestorTable = this.getTableName(
+                    ancestorMetadata.tablePath,
+                )
 
-            const conditions = joinedMetadata.primaryColumns
-                .map((pk) => {
-                    const parentPk = parentMetadata.primaryColumns.find(
-                        (ppk) => ppk.propertyName === pk.propertyName,
-                    )
-                    if (!parentPk) return ""
-                    return (
-                        this.escape(parentAlias) +
-                        "." +
-                        this.escape(parentPk.databaseName) +
-                        " = " +
-                        this.escape(joinedAlias) +
-                        "." +
-                        this.escape(pk.databaseName)
-                    )
-                })
-                .filter((c) => c)
-                .join(" AND ")
+                const prevMetadata =
+                    i === 0 ? joinedMetadata : ancestorChain[i - 1]
+                const conditions = prevMetadata.primaryColumns
+                    .map((pk) => {
+                        const ancestorPk =
+                            ancestorMetadata.primaryColumns.find(
+                                (apk) =>
+                                    apk.propertyName === pk.propertyName,
+                            )
+                        if (!ancestorPk) return ""
+                        return (
+                            this.escape(ancestorAlias) +
+                            "." +
+                            this.escape(ancestorPk.databaseName) +
+                            " = " +
+                            this.escape(prevAlias) +
+                            "." +
+                            this.escape(pk.databaseName)
+                        )
+                    })
+                    .filter((c) => c)
+                    .join(" AND ")
 
-            joinedCtiParentSql +=
-                " INNER JOIN " +
-                parentTable +
-                " " +
-                this.escape(parentAlias) +
-                this.createTableLockExpression() +
-                " ON " +
-                conditions
+                joinedCtiParentSql +=
+                    " INNER JOIN " +
+                    ancestorTable +
+                    " " +
+                    this.escape(ancestorAlias) +
+                    this.createTableLockExpression() +
+                    " ON " +
+                    conditions
+                prevAlias = ancestorAlias
+            }
         }
 
         return ctiJoinSql + joins.join(" ") + joinedCtiParentSql
@@ -3133,21 +3173,36 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const finalSelects: SelectQuery[] = []
 
         const escapedAliasName = this.escape(aliasName)
-        // For CTI children, inherited columns reference the parent table
-        const ctiParentEscapedAlias =
-            metadata.isCtiChild
-                ? this.escape(aliasName + "__cti_parent")
-                : null
+        // For CTI children with multi-level inheritance, build a map from ancestor
+        // entityMetadata → escaped alias name so each inherited column routes to its
+        // owning ancestor's table alias.
+        let ctiAncestorAliasMap: Map<EntityMetadata, string> | null = null
+        if (metadata.isCtiChild && metadata.inheritedColumns.length > 0) {
+            const chain = metadata.ctiAncestorChain
+            ctiAncestorAliasMap = new Map()
+            for (let i = 0; i < chain.length; i++) {
+                ctiAncestorAliasMap.set(
+                    chain[i],
+                    this.escape(ctiAncestorAlias(aliasName, i)),
+                )
+            }
+        }
 
         allColumns.forEach((column) => {
             // Determine which table alias to use for the column source.
-            // CTI inherited columns come from the parent table.
-            const isInheritedColumn =
-                ctiParentEscapedAlias !== null &&
+            // CTI inherited columns route to the ancestor that owns them.
+            let columnTableAlias = escapedAliasName
+            if (
+                ctiAncestorAliasMap !== null &&
                 metadata.inheritedColumns.includes(column)
-            const columnTableAlias = isInheritedColumn
-                ? ctiParentEscapedAlias!
-                : escapedAliasName
+            ) {
+                const ownerAlias = ctiAncestorAliasMap.get(
+                    column.entityMetadata,
+                )
+                if (ownerAlias) {
+                    columnTableAlias = ownerAlias
+                }
+            }
 
             let selectionPath =
                 columnTableAlias + "." + this.escape(column.databaseName)

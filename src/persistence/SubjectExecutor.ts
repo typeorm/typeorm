@@ -16,6 +16,7 @@ import { OrmUtils } from "../util/OrmUtils"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { EntityMetadata } from "../metadata/EntityMetadata"
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -734,34 +735,38 @@ export class SubjectExecutor {
                     .callListeners(false)
                     .execute()
 
-                // For CTI children, also delete from parent table
+                // For CTI children, also delete from all ancestor tables (child → root order)
                 if (subjects[0].metadata.isCtiChild) {
-                    await this.queryRunner.manager
-                        .createQueryBuilder()
-                        .delete()
-                        .from(
-                            subjects[0].metadata.parentEntityMetadata.target,
-                        )
-                        .where(deleteMaps)
-                        .callListeners(false)
-                        .execute()
+                    for (const ancestor of subjects[0].metadata
+                        .ctiAncestorChain) {
+                        await this.queryRunner.manager
+                            .createQueryBuilder()
+                            .delete()
+                            .from(ancestor.target)
+                            .where(deleteMaps)
+                            .callListeners(false)
+                            .execute()
+                    }
                 }
             }
         }
     }
 
     /**
-     * Executes a two-step INSERT for CTI child entities:
-     * 1. Insert into parent table (shared columns + discriminator)
-     * 2. Insert into child table (child-specific columns + same PK)
+     * Executes an N-step INSERT for CTI child entities.
+     * Inserts from root ancestor down to the child table, propagating the generated PK.
+     * For User → Contributor → Actor: insert Actor → Contributor → User.
      */
     private async executeCtiInsert(subject: Subject): Promise<void> {
-        const parentMetadata = subject.metadata.parentEntityMetadata
         const valueSet = subject.insertedValueSet!
         const reload = !(this.options && this.options.reload === false)
 
-        // Add discriminator value to value set for parent insert
-        const discriminatorColumn = parentMetadata.discriminatorColumn
+        // Build insert order: root-first. ctiAncestorChain is [immediate parent, ..., root]
+        const ancestorChain = subject.metadata.ctiAncestorChain
+        const rootMetadata = ancestorChain[ancestorChain.length - 1]
+
+        // Add discriminator value to value set (lives on root table)
+        const discriminatorColumn = rootMetadata.discriminatorColumn
         if (discriminatorColumn) {
             discriminatorColumn.setEntityValue(
                 valueSet,
@@ -769,21 +774,31 @@ export class SubjectExecutor {
             )
         }
 
-        // Step 1: Insert into parent table
-        const parentInsertResult = await this.queryRunner.manager
-            .createQueryBuilder()
-            .insert()
-            .into(parentMetadata.target)
-            .values(valueSet)
-            .updateEntity(reload)
-            .callListeners(false)
-            .execute()
+        let firstIdentifier: ObjectLiteral | undefined
+        let mergedGeneratedMap: ObjectLiteral = {}
 
-        // Merge generated values (PK, defaults) into value set for child insert
-        const parentGeneratedMap = parentInsertResult.generatedMaps[0] || {}
-        OrmUtils.mergeDeep(valueSet, parentGeneratedMap)
+        // Insert into each ancestor table, root-first
+        for (let i = ancestorChain.length - 1; i >= 0; i--) {
+            const ancestorMetadata = ancestorChain[i]
+            const insertResult = await this.queryRunner.manager
+                .createQueryBuilder()
+                .insert()
+                .into(ancestorMetadata.target)
+                .values(valueSet)
+                .updateEntity(reload)
+                .callListeners(false)
+                .execute()
 
-        // Step 2: Insert into child table (PK from parent is now in valueSet)
+            const generatedMap = insertResult.generatedMaps[0] || {}
+            OrmUtils.mergeDeep(valueSet, generatedMap)
+            Object.assign(mergedGeneratedMap, generatedMap)
+
+            if (!firstIdentifier) {
+                firstIdentifier = insertResult.identifiers[0]
+            }
+        }
+
+        // Insert into the child's own table last
         const childInsertResult = await this.queryRunner.manager
             .createQueryBuilder()
             .insert()
@@ -793,16 +808,17 @@ export class SubjectExecutor {
             .callListeners(false)
             .execute()
 
-        subject.identifier = parentInsertResult.identifiers[0]
+        subject.identifier = firstIdentifier!
         subject.generatedMap = {
-            ...parentGeneratedMap,
+            ...mergedGeneratedMap,
             ...(childInsertResult.generatedMaps[0] || {}),
         }
     }
 
     /**
-     * Executes a split UPDATE for CTI child entities:
-     * parent columns → update parent table, child columns → update child table.
+     * Executes a split UPDATE for CTI child entities.
+     * Splits the update map across all ancestor tables and the child table,
+     * routing each column to the table that physically owns it.
      */
     private async executeCtiUpdate(
         subject: Subject,
@@ -811,46 +827,68 @@ export class SubjectExecutor {
         if (!subject.identifier)
             throw new SubjectWithoutIdentifierError(subject)
 
-        const parentMetadata = subject.metadata.parentEntityMetadata
-        const inheritedPropertyPaths = new Set(
-            subject.metadata.inheritedColumns.map((c) => c.propertyPath),
-        )
-        // Also include inherited relation join column property paths
+        // Build a map: entityMetadata → set of property paths that belong to it
+        const ancestorChain = subject.metadata.ctiAncestorChain
+        const metadataToPropertyPaths = new Map<EntityMetadata, Set<string>>()
+        for (const ancestor of ancestorChain) {
+            metadataToPropertyPaths.set(ancestor, new Set<string>())
+        }
+
+        for (const col of subject.metadata.inheritedColumns) {
+            const ownerPaths = metadataToPropertyPaths.get(col.entityMetadata)
+            if (ownerPaths) ownerPaths.add(col.propertyPath)
+        }
         for (const rel of subject.metadata.inheritedRelations) {
-            for (const jc of rel.joinColumns) {
-                inheritedPropertyPaths.add(jc.propertyPath)
+            const ownerPaths = metadataToPropertyPaths.get(
+                rel.entityMetadata,
+            )
+            if (ownerPaths) {
+                for (const jc of rel.joinColumns) {
+                    ownerPaths.add(jc.propertyPath)
+                }
             }
         }
 
-        // Split update map into parent and child portions
-        const parentUpdateMap: ObjectLiteral = {}
+        // Split update map across tables
+        const tableUpdateMaps = new Map<EntityMetadata, ObjectLiteral>()
         const childUpdateMap: ObjectLiteral = {}
+
         for (const key of Object.keys(updateMap)) {
-            if (inheritedPropertyPaths.has(key)) {
-                parentUpdateMap[key] = updateMap[key]
-            } else {
+            let routed = false
+            for (const [meta, paths] of metadataToPropertyPaths) {
+                if (paths.has(key)) {
+                    if (!tableUpdateMaps.has(meta))
+                        tableUpdateMaps.set(meta, {})
+                    tableUpdateMaps.get(meta)![key] = updateMap[key]
+                    routed = true
+                    break
+                }
+            }
+            if (!routed) {
                 childUpdateMap[key] = updateMap[key]
             }
         }
 
         const reload = !(this.options && this.options.reload === false)
 
-        // Update parent table if there are parent column changes
-        if (Object.keys(parentUpdateMap).length > 0) {
-            const parentUpdateQb = this.queryRunner.manager
+        // Update each ancestor table that has changed columns
+        for (const [meta, map] of tableUpdateMaps) {
+            if (Object.keys(map).length === 0) continue
+
+            const updateQb = this.queryRunner.manager
                 .createQueryBuilder()
-                .update(parentMetadata.target)
-                .set(parentUpdateMap)
+                .update(meta.target)
+                .set(map)
                 .updateEntity(reload)
                 .callListeners(false)
 
             if (subject.entity) {
-                parentUpdateQb.whereEntity(subject.identifier)
+                updateQb.whereEntity(subject.identifier)
             } else {
-                parentUpdateQb.where(subject.identifier)
+                updateQb.where(subject.identifier)
             }
 
-            const updateResult = await parentUpdateQb.execute()
+            const updateResult = await updateQb.execute()
             const updateGeneratedMap = updateResult.generatedMaps[0]
             if (updateGeneratedMap) {
                 if (!subject.generatedMap) subject.generatedMap = {}

@@ -579,32 +579,66 @@ export class EntityMetadata {
 
     /**
      * True if this is a CTI child entity (has its own table, joined to parent).
+     * For multi-level CTI (A → B → C), walks up the parent chain to find the root's pattern.
      */
     get isCtiChild(): boolean {
-        return (
-            this.tableType === "entity-child" &&
-            this.parentEntityMetadata?.inheritancePattern === "CTI"
-        )
+        if (this.tableType !== "entity-child") return false
+        let ancestor = this.parentEntityMetadata
+        while (ancestor) {
+            if (ancestor.inheritancePattern === "CTI") return true
+            if (ancestor.inheritancePattern === "STI") return false
+            // Mid-level entity-child without inheritancePattern — keep walking up
+            ancestor = ancestor.parentEntityMetadata
+        }
+        return false
     }
 
     /**
      * True if this is an STI child entity (shares parent's table).
      */
     get isStiChild(): boolean {
-        return (
-            this.tableType === "entity-child" &&
-            this.parentEntityMetadata?.inheritancePattern === "STI"
-        )
+        if (this.tableType !== "entity-child") return false
+        let ancestor = this.parentEntityMetadata
+        while (ancestor) {
+            if (ancestor.inheritancePattern === "STI") return true
+            if (ancestor.inheritancePattern === "CTI") return false
+            ancestor = ancestor.parentEntityMetadata
+        }
+        return false
     }
 
     /**
      * True if this is a CTI parent entity with child tables.
+     * Covers both the root (@TableInheritance pattern="CTI") and mid-level entities
+     * that are themselves CTI children with their own CTI children.
      */
     get isCtiParent(): boolean {
-        return (
-            this.inheritancePattern === "CTI" &&
-            this.childEntityMetadatas.length > 0
-        )
+        if (this.childEntityMetadatas.length === 0) return false
+        if (this.inheritancePattern === "CTI") return true
+        // Mid-level: is itself a CTI child and has children
+        if (this.isCtiChild) return true
+        return false
+    }
+
+    /**
+     * Returns the ordered CTI ancestor chain from immediate parent to root.
+     * For 2-level (User → Actor): [Actor]
+     * For 3-level (User → Contributor → Actor): [Contributor, Actor]
+     * Returns empty array for non-CTI children.
+     */
+    get ctiAncestorChain(): EntityMetadata[] {
+        if (!this.isCtiChild) return []
+        const chain: EntityMetadata[] = []
+        let ancestor = this.parentEntityMetadata
+        while (ancestor) {
+            chain.push(ancestor)
+            if (ancestor.isCtiChild) {
+                ancestor = ancestor.parentEntityMetadata
+            } else {
+                break // Reached the root
+            }
+        }
+        return chain
     }
 
     /**

@@ -518,22 +518,52 @@ export class EntityMetadataBuilder {
     ) {
         // after all metadatas created we set parent entity metadata for table inheritance
         if (entityMetadata.tableType === "entity-child") {
+            // Collect all registered entity ancestors in prototype chain order (nearest first).
+            const registeredAncestors: EntityMetadata[] = []
+            let proto = Object.getPrototypeOf(
+                (entityMetadata.target as Function).prototype,
+            )
+            while (
+                proto &&
+                proto.constructor &&
+                proto.constructor !== Object
+            ) {
+                const ancestor = allEntityMetadatas.find(
+                    (m) =>
+                        m !== entityMetadata &&
+                        m.target === proto.constructor,
+                )
+                if (ancestor) registeredAncestors.push(ancestor)
+                proto = Object.getPrototypeOf(proto)
+            }
+
+            if (registeredAncestors.length > 0) {
+                // Find the root ancestor (the one with @TableInheritance or @Entity without @ChildEntity)
+                const root = registeredAncestors.find(
+                    (a) => a.tableType !== "entity-child",
+                )
+
+                if (root && root.inheritancePattern === "CTI") {
+                    // CTI: use the nearest registered ancestor.
+                    // This correctly handles multi-level CTI (A → B → C)
+                    // where B is both parent and child, each with their own table.
+                    entityMetadata.parentEntityMetadata =
+                        registeredAncestors[0]
+                } else {
+                    // STI (explicit or default): all children point to the root (shared table).
+                    // Default @TableInheritance without pattern is STI.
+                    entityMetadata.parentEntityMetadata = root!
+                }
+                return
+            }
+
+            // Fallback: original STI logic for edge cases
             entityMetadata.parentEntityMetadata = allEntityMetadatas.find(
                 (allEntityMetadata) => {
                     if (allEntityMetadata.inheritancePattern === "STI") {
-                        // STI: parent's inheritanceTree includes child targets (merged in createEntityMetadata)
                         return (
                             allEntityMetadata.inheritanceTree.indexOf(
                                 entityMetadata.target as Function,
-                            ) !== -1
-                        )
-                    }
-                    if (allEntityMetadata.inheritancePattern === "CTI") {
-                        // CTI: child's inheritanceTree includes parent target (JS prototype chain)
-                        return (
-                            allEntityMetadata !== entityMetadata &&
-                            entityMetadata.inheritanceTree.indexOf(
-                                allEntityMetadata.target as Function,
                             ) !== -1
                         )
                     }
@@ -679,11 +709,18 @@ export class EntityMetadataBuilder {
 
         // add discriminator column to the child entity metadatas
         // discriminator column will not be there automatically since we are creating it in the code above
+        // For multi-level CTI, walk up to the root to find the discriminator
         if (entityMetadata.tableType === "entity-child") {
-            const discriminatorColumn =
-                entityMetadata.parentEntityMetadata.ownColumns.find(
+            let discriminatorColumn: ColumnMetadata | undefined
+            let ancestor: EntityMetadata | undefined =
+                entityMetadata.parentEntityMetadata
+            while (ancestor) {
+                discriminatorColumn = ancestor.ownColumns.find(
                     (column) => column.isDiscriminator,
                 )
+                if (discriminatorColumn) break
+                ancestor = ancestor.parentEntityMetadata
+            }
             if (discriminatorColumn) {
                 if (entityMetadata.isCtiChild) {
                     // CTI: discriminator lives on parent table, add to inheritedColumns
@@ -1078,21 +1115,34 @@ export class EntityMetadataBuilder {
      * @param entityMetadata
      */
     protected computeEntityMetadataStep2(entityMetadata: EntityMetadata) {
-        // For CTI children, populate inherited columns/relations from parent.
-        // These represent parent-table columns that the child accesses via JOIN.
+        // For CTI children, populate inherited columns/relations from ALL ancestors.
+        // Walk up the entire parent chain so multi-level CTI (A → B → C) collects
+        // columns from every ancestor table, not just the immediate parent.
         if (entityMetadata.isCtiChild) {
-            const parentNonPkColumns =
-                entityMetadata.parentEntityMetadata.ownColumns.filter(
+            let ancestor: EntityMetadata | undefined =
+                entityMetadata.parentEntityMetadata
+            while (ancestor) {
+                const ancestorNonPkColumns = ancestor.ownColumns.filter(
                     (col) => !col.isPrimary,
                 )
-            // Merge with any already-added inherited columns (e.g. discriminator from step1)
-            for (const col of parentNonPkColumns) {
-                if (!entityMetadata.inheritedColumns.includes(col)) {
-                    entityMetadata.inheritedColumns.push(col)
+                // Merge with any already-added inherited columns (e.g. discriminator from step1)
+                for (const col of ancestorNonPkColumns) {
+                    if (!entityMetadata.inheritedColumns.includes(col)) {
+                        entityMetadata.inheritedColumns.push(col)
+                    }
+                }
+                for (const rel of ancestor.ownRelations) {
+                    if (!entityMetadata.inheritedRelations.includes(rel)) {
+                        entityMetadata.inheritedRelations.push(rel)
+                    }
+                }
+                // Continue up if ancestor is also a CTI child
+                if (ancestor.isCtiChild) {
+                    ancestor = ancestor.parentEntityMetadata
+                } else {
+                    break // Reached the root
                 }
             }
-            entityMetadata.inheritedRelations =
-                entityMetadata.parentEntityMetadata.ownRelations.slice()
         }
 
         entityMetadata.embeddeds.forEach((embedded) =>
