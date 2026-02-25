@@ -70,4 +70,26 @@ describe("ReplicationConfig helpers", () => {
             `Replication options must define at least one "slave" or "replica".`,
         )
     })
+
+    it("should throw when primary endpoint is not an object", () => {
+        const invalidReplication = {
+            primary: "not-an-object",
+            replicas: [{ host: "alias-replica" }],
+        } as unknown as ReplicationConfig<Credentials>
+
+        expect(() => getReplicationPrimary(invalidReplication)).to.throw(
+            `Replication options must define either "primary" or "master".`,
+        )
+    })
+
+    it("should throw when replicas endpoint is not an array", () => {
+        const invalidReplication = {
+            primary: { host: "alias-primary" },
+            replicas: { host: "not-an-array" },
+        } as unknown as ReplicationConfig<Credentials>
+
+        expect(() => getReplicationReplicas(invalidReplication)).to.throw(
+            `Replication options must define at least one "slave" or "replica".`,
+        )
+    })
 })
