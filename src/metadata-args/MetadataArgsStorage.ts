@@ -152,12 +152,10 @@ export class MetadataArgsStorage {
     filterIndices(
         target: (Function | string) | (Function | string)[],
     ): IndexMetadataArgs[] {
-        // todo: implement parent-entity overrides?
-        return this.indices.filter((index) => {
-            return Array.isArray(target)
-                ? target.indexOf(index.target) !== -1
-                : index.target === target
-        })
+        return this.filterByTargetAndWithoutDuplicateIndices(
+            this.indices,
+            target,
+        )
     }
 
     filterForeignKeys(target: Function | string): ForeignKeyMetadataArgs[]
@@ -357,6 +355,9 @@ export class MetadataArgsStorage {
     protected filterByTargetAndWithoutDuplicateProperties<
         T extends { target: Function | string; propertyName: string },
     >(array: T[], target: (Function | string) | (Function | string)[]): T[] {
+        if (!array || !Array.isArray(array)) {
+            return []
+        }
         const newArray: T[] = []
         array.forEach((item) => {
             const sameTarget = Array.isArray(target)
@@ -416,6 +417,9 @@ export class MetadataArgsStorage {
     protected filterByTargetAndWithoutDuplicateEmbeddedProperties<
         T extends EmbeddedMetadataArgs,
     >(array: T[], target: (Function | string) | (Function | string)[]): T[] {
+        if (!array || !Array.isArray(array)) {
+            return []
+        }
         const newArray: T[] = []
         array.forEach((item) => {
             const sameTarget = Array.isArray(target)
@@ -431,5 +435,80 @@ export class MetadataArgsStorage {
             }
         })
         return newArray
+    }
+
+    /**
+     * Generates a unique key for an index based on its properties.
+     * Used for efficient duplicate detection in O(1) time.
+     */
+    private generateIndexKey(index: IndexMetadataArgs): string {
+        if (index.name) {
+            return index.name
+        }
+
+        let columnsKey: string
+
+        if (index.columns === undefined) {
+            columnsKey = "undefined"
+        } else if (typeof index.columns === "function") {
+            columnsKey = `function:${index.columns.toString()}`
+        } else if (Array.isArray(index.columns)) {
+            columnsKey = `array:${index.columns.join(",")}`
+        } else if (
+            typeof index.columns === "object" &&
+            index.columns !== null
+        ) {
+            const columnsObj = index.columns as { [key: string]: number }
+            const keys = Object.keys(columnsObj)
+            const orderedPairs = keys.map((key) => `${key}=${columnsObj[key]}`)
+            columnsKey = `object:${orderedPairs.join(",")}`
+        } else {
+            columnsKey = String(index.columns)
+        }
+
+        const propertiesKey = [
+            index.unique ?? false,
+            index.spatial ?? false,
+            index.fulltext ?? false,
+            index.nullFiltered ?? false,
+            index.parser ?? "",
+            index.where ?? "",
+            index.sparse ?? false,
+            index.background ?? false,
+            index.concurrent ?? false,
+            index.synchronize ?? true,
+            index.expireAfterSeconds ?? "",
+            index.type ?? "",
+        ].join("|")
+
+        return `${columnsKey}::${propertiesKey}`
+    }
+
+    /**
+     * Filters given array by a given target or targets and prevents duplicate indices.
+     */
+    protected filterByTargetAndWithoutDuplicateIndices(
+        array: IndexMetadataArgs[],
+        target: (Function | string) | (Function | string)[],
+    ): IndexMetadataArgs[] {
+        if (!array || !Array.isArray(array)) {
+            return []
+        }
+
+        const targetArray = Array.isArray(target) ? target : [target]
+        const seenIndices = new Set<string>()
+        const result: IndexMetadataArgs[] = []
+
+        for (const item of array) {
+            if (targetArray.includes(item.target)) {
+                const indexKey = this.generateIndexKey(item)
+                if (!seenIndices.has(indexKey)) {
+                    seenIndices.add(indexKey)
+                    result.push(item)
+                }
+            }
+        }
+
+        return result
     }
 }
