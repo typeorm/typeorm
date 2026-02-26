@@ -63,8 +63,22 @@ export class RawSqlResultsToEntityTransformer {
     transform(rawResults: any[], alias: Alias): any[] {
         const group = this.group(rawResults, alias)
         const entities: any[] = []
+
+        // Pre-build discriminator value → child metadata map for O(1) lookups
+        let discriminatorMap: Map<any, EntityMetadata> | undefined
+        if (alias.metadata.discriminatorColumn) {
+            discriminatorMap = new Map()
+            for (const child of alias.metadata.childEntityMetadatas) {
+                discriminatorMap.set(child.discriminatorValue, child)
+            }
+        }
+
         for (const results of group.values()) {
-            const entity = this.transformRawResultsGroup(results, alias)
+            const entity = this.transformRawResultsGroup(
+                results,
+                alias,
+                discriminatorMap,
+            )
             if (entity !== undefined) entities.push(entity)
         }
         return entities
@@ -170,6 +184,7 @@ export class RawSqlResultsToEntityTransformer {
     protected transformRawResultsGroup(
         rawResults: any[],
         alias: Alias,
+        discriminatorMap?: Map<any, EntityMetadata>,
     ): ObjectLiteral | undefined {
         // let hasColumns = false; // , hasEmbeddedColumns = false, hasParentColumns = false, hasParentEmbeddedColumns = false;
         let metadata = alias.metadata
@@ -184,17 +199,28 @@ export class RawSqlResultsToEntityTransformer {
                         )
                     ],
             )
-            const discriminatorMetadata = metadata.childEntityMetadatas.find(
-                (childEntityMetadata) => {
-                    return (
-                        typeof discriminatorValues.find(
-                            (value) =>
-                                value ===
-                                childEntityMetadata.discriminatorValue,
-                        ) !== "undefined"
+            let discriminatorMetadata: EntityMetadata | undefined
+            if (discriminatorMap) {
+                // O(1) lookup using pre-built map
+                for (const value of discriminatorValues) {
+                    discriminatorMetadata = discriminatorMap.get(value)
+                    if (discriminatorMetadata) break
+                }
+            } else {
+                // Fallback for direct calls without pre-built map
+                discriminatorMetadata =
+                    metadata.childEntityMetadatas.find(
+                        (childEntityMetadata) => {
+                            return (
+                                typeof discriminatorValues.find(
+                                    (value) =>
+                                        value ===
+                                        childEntityMetadata.discriminatorValue,
+                                ) !== "undefined"
+                            )
+                        },
                     )
-                },
-            )
+            }
             if (discriminatorMetadata) metadata = discriminatorMetadata
         }
         const entity: any = metadata.create(this.queryRunner, {
@@ -478,7 +504,11 @@ export class RawSqlResultsToEntityTransformer {
             columns = metadata.columns
                 .filter(
                     (column) =>
-                        (!column.isVirtual || column.isDiscriminator) &&
+                        (!column.isVirtual ||
+                            (column.isDiscriminator &&
+                                column.entityMetadata
+                                    .inheritancePattern ===
+                                    "CTI")) &&
                         // if user does not selected the whole entity or he used partial selection and does not select this particular column
                         // then we don't add this column and its value into the entity
                         (this.selections.has(aliasName) ||

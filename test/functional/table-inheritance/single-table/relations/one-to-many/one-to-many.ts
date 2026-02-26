@@ -88,7 +88,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                     .orderBy("student.id, faculty.id")
                     .getOne()
 
-                loadedStudent!.should.have.all.keys("id", "name", "faculties", "type")
+                loadedStudent!.should.have.all.keys("id", "name", "faculties")
                 loadedStudent!.id.should.equal(1)
                 loadedStudent!.name.should.equal("Alice")
                 loadedStudent!.faculties.length.should.equal(2)
@@ -110,7 +110,6 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                     "name",
                     "specializations",
                     "salary",
-                    "type",
                 )
                 loadedTeacher!.id.should.equal(2)
                 loadedTeacher!.name.should.equal("Mr. Garrison")
@@ -135,7 +134,6 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                     "name",
                     "departments",
                     "salary",
-                    "type",
                 )
                 loadedAccountant!.id.should.equal(3)
                 loadedAccountant!.name.should.equal("Mr. Burns")
@@ -161,7 +159,6 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                     "name",
                     "salary",
                     "specializations",
-                    "type",
                 )
                 loadedEmployees[0].should.be.instanceof(Teacher)
                 loadedEmployees[0].id.should.equal(2)
@@ -181,7 +178,6 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                     "name",
                     "salary",
                     "departments",
-                    "type",
                 )
                 loadedEmployees[1].should.be.instanceof(Accountant)
                 loadedEmployees[1].id.should.equal(3)
@@ -210,7 +206,7 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                     )
                     .getMany()
 
-                loadedPersons[0].should.have.all.keys("id", "name", "faculties", "type")
+                loadedPersons[0].should.have.all.keys("id", "name", "faculties")
                 loadedPersons[0].should.be.instanceof(Student)
                 loadedPersons[0].id.should.equal(1)
                 loadedPersons[0].name.should.equal("Alice")
@@ -226,7 +222,6 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                     "name",
                     "salary",
                     "specializations",
-                    "type",
                 )
                 loadedPersons[1].should.be.instanceof(Teacher)
                 loadedPersons[1].id.should.equal(2)
@@ -246,7 +241,6 @@ describe("table-inheritance > single-table > relations > one-to-many", () => {
                     "name",
                     "salary",
                     "departments",
-                    "type",
                 )
                 loadedPersons[2].should.be.instanceof(Accountant)
                 loadedPersons[2].id.should.equal(3)

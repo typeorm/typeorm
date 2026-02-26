@@ -3185,7 +3185,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             let columnTableAlias = escapedAliasName
             if (
                 ctiAncestorAliasMap !== null &&
-                metadata.inheritedColumns.includes(column)
+                metadata.inheritedColumnsSet.has(column)
             ) {
                 const ownerAlias = ctiAncestorAliasMap.get(
                     column.entityMetadata,

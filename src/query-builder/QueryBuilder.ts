@@ -815,7 +815,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     column.databaseName
                 if (
                     inheritedPropertyToAliasPrefix &&
-                    alias.metadata.inheritedColumns.includes(column)
+                    alias.metadata.inheritedColumnsSet.has(column)
                 ) {
                     const prefix = ctiAncestorAliasMap?.get(
                         column.entityMetadata,
@@ -833,7 +833,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     column.databaseName
                 if (
                     inheritedPropertyToAliasPrefix &&
-                    alias.metadata.inheritedColumns.includes(column)
+                    alias.metadata.inheritedColumnsSet.has(column)
                 ) {
                     const prefix = ctiAncestorAliasMap?.get(
                         column.entityMetadata,
@@ -851,7 +851,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     column.databaseName
                 if (
                     inheritedPropertyToAliasPrefix &&
-                    alias.metadata.inheritedColumns.includes(column)
+                    alias.metadata.inheritedColumnsSet.has(column)
                 ) {
                     const prefix = ctiAncestorAliasMap?.get(
                         column.entityMetadata,

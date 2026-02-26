@@ -787,7 +787,7 @@ export class InsertQueryBuilder<
                 // For CTI children, skip inherited columns (they belong to the parent table)
                 if (
                     metadata.isCtiChild &&
-                    metadata.inheritedColumns.includes(column)
+                    metadata.inheritedColumnsSet.has(column)
                 ) {
                     return false
                 }

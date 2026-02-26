@@ -85,6 +85,13 @@ export class EntityMetadata {
      */
     inheritedRelations: RelationMetadata[] = []
 
+    // CTI cache fields — populated by buildCtiCaches() after metadata is finalized
+    private _isCtiChild: boolean | undefined
+    private _isCtiParent: boolean | undefined
+    private _ctiAncestorChain: EntityMetadata[] | undefined
+    private _tableColumns: ColumnMetadata[] | undefined
+    private _inheritedColumnsSet: Set<ColumnMetadata> | undefined
+
     /**
      * Table type. Tables can be closure, junction, etc.
      */
@@ -582,12 +589,16 @@ export class EntityMetadata {
      * For multi-level CTI (A → B → C), walks up the parent chain to find the root's pattern.
      */
     get isCtiChild(): boolean {
+        if (this._isCtiChild !== undefined) return this._isCtiChild
+        return this._computeIsCtiChild()
+    }
+
+    private _computeIsCtiChild(): boolean {
         if (this.tableType !== "entity-child") return false
         let ancestor = this.parentEntityMetadata
         while (ancestor) {
             if (ancestor.inheritancePattern === "CTI") return true
             if (ancestor.inheritancePattern === "STI") return false
-            // Mid-level entity-child without inheritancePattern — keep walking up
             ancestor = ancestor.parentEntityMetadata
         }
         return false
@@ -613,9 +624,13 @@ export class EntityMetadata {
      * that are themselves CTI children with their own CTI children.
      */
     get isCtiParent(): boolean {
+        if (this._isCtiParent !== undefined) return this._isCtiParent
+        return this._computeIsCtiParent()
+    }
+
+    private _computeIsCtiParent(): boolean {
         if (this.childEntityMetadatas.length === 0) return false
         if (this.inheritancePattern === "CTI") return true
-        // Mid-level: is itself a CTI child and has children
         if (this.isCtiChild) return true
         return false
     }
@@ -627,6 +642,11 @@ export class EntityMetadata {
      * Returns empty array for non-CTI children.
      */
     get ctiAncestorChain(): EntityMetadata[] {
+        if (this._ctiAncestorChain !== undefined) return this._ctiAncestorChain
+        return this._computeCtiAncestorChain()
+    }
+
+    private _computeCtiAncestorChain(): EntityMetadata[] {
         if (!this.isCtiChild) return []
         const chain: EntityMetadata[] = []
         let ancestor = this.parentEntityMetadata
@@ -635,7 +655,7 @@ export class EntityMetadata {
             if (ancestor.isCtiChild) {
                 ancestor = ancestor.parentEntityMetadata
             } else {
-                break // Reached the root
+                break
             }
         }
         return chain
@@ -647,6 +667,11 @@ export class EntityMetadata {
      * For all other entities this is the same as `columns`.
      */
     get tableColumns(): ColumnMetadata[] {
+        if (this._tableColumns !== undefined) return this._tableColumns
+        return this._computeTableColumns()
+    }
+
+    private _computeTableColumns(): ColumnMetadata[] {
         if (this.isCtiChild && this.inheritedColumns.length > 0) {
             return this.columns.filter(
                 (c) => !this.inheritedColumns.includes(c),
@@ -655,9 +680,30 @@ export class EntityMetadata {
         return this.columns
     }
 
+    /**
+     * Returns the set of inherited columns for O(1) membership checks.
+     */
+    get inheritedColumnsSet(): Set<ColumnMetadata> {
+        if (this._inheritedColumnsSet !== undefined)
+            return this._inheritedColumnsSet
+        return new Set(this.inheritedColumns)
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Populates CTI caches. Must be called after all metadata is fully built
+     * (after all computeEntityMetadataStep2() calls).
+     */
+    buildCtiCaches(): void {
+        this._isCtiChild = this._computeIsCtiChild()
+        this._isCtiParent = this._computeIsCtiParent()
+        this._ctiAncestorChain = this._computeCtiAncestorChain()
+        this._tableColumns = this._computeTableColumns()
+        this._inheritedColumnsSet = new Set(this.inheritedColumns)
+    }
 
     /**
      * Creates a new entity.

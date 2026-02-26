@@ -655,7 +655,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                     updatedColumns.indexOf(metadata.versionColumn) === -1 &&
                     !(
                         metadata.isCtiChild &&
-                        metadata.inheritedColumns.includes(
+                        metadata.inheritedColumnsSet.has(
                             metadata.versionColumn,
                         )
                     )
@@ -671,7 +671,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                     updatedColumns.indexOf(metadata.updateDateColumn) === -1 &&
                     !(
                         metadata.isCtiChild &&
-                        metadata.inheritedColumns.includes(
+                        metadata.inheritedColumnsSet.has(
                             metadata.updateDateColumn,
                         )
                     )
