@@ -230,7 +230,7 @@ export class FindOptionsUtils {
         alias: string,
         metadata: EntityMetadata,
     ) {
-        metadata.eagerRelations.forEach((relation) => {
+        metadata.getScopedEagerRelations().forEach((relation) => {
             // generate a relation alias
             let relationAlias: string = DriverUtils.buildAlias(
                 qb.connection.driver,
