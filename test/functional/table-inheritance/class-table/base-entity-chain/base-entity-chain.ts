@@ -405,4 +405,93 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
                 expect(actor!.version).to.equal(1)
             }),
         ))
+
+    // ===================================================================
+    // (M) Root findOne with credentials relation + select + loadEagerRelations: false
+    // ===================================================================
+    it("(M) should load credentials with select + loadEagerRelations: false", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const saved = await insertUser(
+                    connection,
+                    "alice",
+                    "alice@test.com",
+                )
+
+                const actor = await connection.manager.findOne(Actor, {
+                    where: { id: saved.id },
+                    relations: { credentials: true },
+                    select: { id: true },
+                    loadEagerRelations: false,
+                })
+
+                expect(actor).to.not.be.null
+                expect(actor!.id).to.equal(saved.id)
+                expect(actor!.credentials).to.be.an("array")
+                expect(actor!.credentials).to.have.length(1)
+            }),
+        ))
+
+    // ===================================================================
+    // (N) loadEagerRelations: false suppresses eager loading
+    // ===================================================================
+    it("(N) should suppress eager authorization when loadEagerRelations: false", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await insertUser(connection, "alice", "alice@test.com")
+
+                const actors = await connection
+                    .getRepository(Actor)
+                    .find({ loadEagerRelations: false })
+
+                expect(actors).to.have.length(1)
+                // eager: true on authorization should be suppressed
+                expect(actors[0].authorization).to.be.undefined
+            }),
+        ))
+
+    // ===================================================================
+    // (O) Root find with nested credentials where clause
+    // ===================================================================
+    it("(O) should find actors filtered by nested credentials where", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await insertUser(connection, "alice", "alice@test.com")
+                await insertOrg(connection, "acme", "Tech")
+
+                const actors = await connection.manager.find(Actor, {
+                    where: {
+                        credentials: {
+                            type: "UserSelfManagement",
+                        },
+                    },
+                    relations: { credentials: true },
+                })
+
+                // Only the user has credentials with this type
+                expect(actors).to.have.length(1)
+                expect(actors[0]).to.be.instanceOf(User)
+            }),
+        ))
+
+    // ===================================================================
+    // (P) Root count with nested credentials where
+    // ===================================================================
+    it("(P) should count actors filtered by nested credentials where", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                await insertUser(connection, "alice", "alice@test.com")
+                await insertOrg(connection, "acme", "Tech")
+
+                const count = await connection.manager.count(Actor, {
+                    where: {
+                        credentials: {
+                            type: "UserSelfManagement",
+                        },
+                    },
+                })
+
+                expect(count).to.equal(1)
+            }),
+        ))
 })
