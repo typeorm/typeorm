@@ -255,10 +255,7 @@ export class RawSqlResultsToEntityTransformer {
     ): boolean {
         let hasData = false
         const result = rawResults[0]
-        for (const [key, column] of this.getColumnsToProcess(
-            alias.name,
-            metadata,
-        )) {
+        for (const [key, column] of this.getColumnsToProcess(alias, metadata)) {
             const value = result[key]
 
             if (value === undefined) continue
@@ -469,7 +466,8 @@ export class RawSqlResultsToEntityTransformer {
         return hasData
     }
 
-    private getColumnsToProcess(aliasName: string, metadata: EntityMetadata) {
+    private getColumnsToProcess(alias: Alias, metadata: EntityMetadata) {
+        const aliasName = alias.name
         let metadatas = this.columnsCache.get(aliasName)
         if (!metadatas) {
             metadatas = new Map()
@@ -493,10 +491,42 @@ export class RawSqlResultsToEntityTransformer {
                                 childMetadata.target === column.target,
                         ),
                 )
-                .map((column) => [
-                    this.buildAlias(aliasName, column.databaseName),
-                    column,
-                ])
+                .map((column) => {
+                    // For CTI parent queries where metadata resolved to a child type,
+                    // child-specific columns are aliased with the child table alias
+                    // (e.g., "Actor__cti_child_User") to avoid collisions between
+                    // same-named columns across different child tables.
+                    let columnAliasName = aliasName
+                    if (
+                        alias.hasMetadata &&
+                        alias.metadata.isCtiParent &&
+                        metadata.isCtiChild
+                    ) {
+                        const columnTarget = column.target as Function
+                        const isMainColumn =
+                            columnTarget === alias.metadata.target ||
+                            alias.metadata.ctiAncestorChain.some(
+                                (a) => a.target === columnTarget,
+                            )
+                        if (!isMainColumn) {
+                            const owningChild =
+                                alias.metadata.childEntityMetadatas.find(
+                                    (cm) => cm.target === columnTarget,
+                                )
+                            columnAliasName = owningChild
+                                ? aliasName +
+                                  "__cti_child_" +
+                                  owningChild.targetName
+                                : aliasName +
+                                  "__cti_child_" +
+                                  metadata.targetName
+                        }
+                    }
+                    return [
+                        this.buildAlias(columnAliasName, column.databaseName),
+                        column,
+                    ]
+                })
             metadatas.set(metadata, columns)
         }
         return columns

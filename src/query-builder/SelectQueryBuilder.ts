@@ -52,6 +52,8 @@ import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
  * Level 0 (immediate parent): "base__cti_parent"
  * Level 1 (grandparent): "base__cti_parent2"
  * Level N: "base__cti_parent{N+1}"
+ * @param baseAlias
+ * @param level
  */
 function ctiAncestorAlias(baseAlias: string, level: number): string {
     return level === 0
@@ -2496,12 +2498,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                     const conditions = metadata.primaryColumns
                         .map((pk) => {
-                            const childPk =
-                                childMetadata.primaryColumns.find(
-                                    (cpk) =>
-                                        cpk.propertyName ===
-                                        pk.propertyName,
-                                )
+                            const childPk = childMetadata.primaryColumns.find(
+                                (cpk) => cpk.propertyName === pk.propertyName,
+                            )
                             if (!childPk) return ""
                             return (
                                 this.escape(childAlias) +
@@ -2594,7 +2593,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         if (
                             relation.inverseEntityMetadata.tableType ===
                                 "entity-child" &&
-                            relation.inverseEntityMetadata.discriminatorColumn &&
+                            relation.inverseEntityMetadata
+                                .discriminatorColumn &&
                             !relation.inverseEntityMetadata.isCtiChild
                         ) {
                             appendedCondition +=
@@ -2750,7 +2750,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (!joinedMetadata.isCtiChild) continue
 
             const joinedAlias = joinAttr.alias.name
-            const joinDirection = joinAttr.direction === "LEFT" ? "LEFT" : "INNER"
+            const joinDirection =
+                joinAttr.direction === "LEFT" ? "LEFT" : "INNER"
             const ancestorChain = joinedMetadata.ctiAncestorChain
             let prevAlias = joinedAlias
             for (let i = 0; i < ancestorChain.length; i++) {
@@ -2764,11 +2765,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     i === 0 ? joinedMetadata : ancestorChain[i - 1]
                 const conditions = prevMetadata.primaryColumns
                     .map((pk) => {
-                        const ancestorPk =
-                            ancestorMetadata.primaryColumns.find(
-                                (apk) =>
-                                    apk.propertyName === pk.propertyName,
-                            )
+                        const ancestorPk = ancestorMetadata.primaryColumns.find(
+                            (apk) => apk.propertyName === pk.propertyName,
+                        )
                         if (!ancestorPk) return ""
                         return (
                             this.escape(ancestorAlias) +
@@ -3306,7 +3305,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         aliasName: DriverUtils.buildAlias(
                             this.connection.driver,
                             undefined,
-                            aliasName,
+                            childAlias,
                             column.databaseName,
                         ),
                         virtual: hasMainAlias,
@@ -4013,10 +4012,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.expressionMap.mainAlias.metadata.isCtiParent &&
                 this.findOptions.loadEagerRelations !== false
             ) {
-                await this.loadCtiChildEagerRelations(
-                    entities,
-                    queryRunner,
-                )
+                await this.loadCtiChildEagerRelations(entities, queryRunner)
             }
         }
 
@@ -4102,6 +4098,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * For CTI parent polymorphic queries, loads child-specific eager relations
      * via follow-up batched queries. Groups entities by child type, then for
      * each child type loads its eager relations that are not on the parent.
+     * @param entities
+     * @param queryRunner
      */
     protected async loadCtiChildEagerRelations(
         entities: any[],
@@ -4139,12 +4137,22 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             for (const relation of childEagerRelations) {
                 loadPromises.push(
                     (async () => {
+                        // Build a queryBuilder that carries the current queryRunner
+                        // so follow-up queries stay within the same transaction context.
+                        const relationAlias =
+                            relation.inverseEntityMetadata.targetName
+                        const childQb = this.createQueryBuilder()
+                            .select(relationAlias)
+                            .from(
+                                relation.inverseEntityMetadata.target,
+                                relationAlias,
+                            )
                         const relatedGroups =
                             await this.connection.relationIdLoader.loadManyToManyRelationIdsAndGroup(
                                 relation,
                                 childEntities,
                                 undefined,
-                                undefined,
+                                childQb,
                             )
                         for (const entity of childEntities) {
                             const group = relatedGroups.find(

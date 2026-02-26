@@ -756,6 +756,7 @@ export class SubjectExecutor {
      * Executes an N-step INSERT for CTI child entities.
      * Inserts from root ancestor down to the child table, propagating the generated PK.
      * For User → Contributor → Actor: insert Actor → Contributor → User.
+     * @param subject
      */
     private async executeCtiInsert(subject: Subject): Promise<void> {
         const valueSet = subject.insertedValueSet!
@@ -775,9 +776,12 @@ export class SubjectExecutor {
         }
 
         let firstIdentifier: ObjectLiteral | undefined
-        let mergedGeneratedMap: ObjectLiteral = {}
+        const mergedGeneratedMap: ObjectLiteral = {}
 
-        // Insert into each ancestor table, root-first
+        // Insert into each ancestor table, root-first.
+        // Always use updateEntity(true) for ancestor inserts so the generated PK
+        // is available in insertResult.identifiers/generatedMaps for propagation
+        // to subsequent child inserts, even when the caller sets reload=false.
         for (let i = ancestorChain.length - 1; i >= 0; i--) {
             const ancestorMetadata = ancestorChain[i]
             const insertResult = await this.queryRunner.manager
@@ -785,7 +789,7 @@ export class SubjectExecutor {
                 .insert()
                 .into(ancestorMetadata.target)
                 .values(valueSet)
-                .updateEntity(reload)
+                .updateEntity(true)
                 .callListeners(false)
                 .execute()
 
@@ -819,6 +823,8 @@ export class SubjectExecutor {
      * Executes a split UPDATE for CTI child entities.
      * Splits the update map across all ancestor tables and the child table,
      * routing each column to the table that physically owns it.
+     * @param subject
+     * @param updateMap
      */
     private async executeCtiUpdate(
         subject: Subject,
@@ -839,9 +845,7 @@ export class SubjectExecutor {
             if (ownerPaths) ownerPaths.add(col.propertyPath)
         }
         for (const rel of subject.metadata.inheritedRelations) {
-            const ownerPaths = metadataToPropertyPaths.get(
-                rel.entityMetadata,
-            )
+            const ownerPaths = metadataToPropertyPaths.get(rel.entityMetadata)
             if (ownerPaths) {
                 for (const jc of rel.joinColumns) {
                     ownerPaths.add(jc.propertyPath)

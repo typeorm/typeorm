@@ -37,16 +37,14 @@ describe("table-inheritance > class-table > discriminator-collision", () => {
         // This test documents the behavior when a CTI child defines a column
         // that collides with the parent's discriminator column name.
         // In CTI, discriminator is on the parent table and child columns are on
-        // the child table, so in theory they don't collide physically.
+        // the child table, so they don't collide physically.
+        // The collision happens at the property level during hydration:
+        // the discriminator value from the parent table takes precedence.
 
         if (connectionError) {
-            // If connection failed, document the error
-            console.log(
-                "Connection failed with column name collision:",
-                connectionError.message,
+            throw new Error(
+                `Connection setup failed due to column name collision: ${connectionError.message}`,
             )
-            // The collision may cause a metadata error at startup — that's acceptable
-            return
         }
 
         return Promise.all(
@@ -56,28 +54,18 @@ describe("table-inheritance > class-table > discriminator-collision", () => {
                 user.email = "alice@example.com"
                 user.type = "admin" // child's own type column
 
-                try {
-                    await connection.getRepository(User).save(user)
+                await connection.getRepository(User).save(user)
 
-                    const loaded = await connection
-                        .getRepository(User)
-                        .findOneBy({ id: user.id })
+                const loaded = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
 
-                    expect(loaded).to.not.be.null
-                    expect(loaded!.name).to.equal("Alice")
-                    expect(loaded!.email).to.equal("alice@example.com")
-                    // Document which value we get for `type` —
-                    // it might be the child's "admin" or the discriminator "User"
-                    console.log(
-                        `Loaded user.type = "${loaded!.type}" (child column value)`,
-                    )
-                } catch (error: any) {
-                    // Document any error that occurs during save/load
-                    console.log(
-                        "Column collision caused error:",
-                        error.message,
-                    )
-                }
+                expect(loaded).to.not.be.null
+                expect(loaded!.name).to.equal("Alice")
+                expect(loaded!.email).to.equal("alice@example.com")
+                // The discriminator value ("User") takes precedence over
+                // the child's own "type" column value during hydration
+                expect(loaded!.type).to.equal("User")
             }),
         )
     })
