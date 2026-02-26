@@ -267,7 +267,20 @@ export class ReturningResultsEntityUpdator {
                 // If a value is specified for the default column in the entity, remove that value from the returningResult
                 defaultColumns.forEach((column) => {
                     if (column.getEntityValue(entity) !== undefined) {
-                        delete returningResult[entityIndex][column.propertyPath]
+                        if (column.embeddedMetadata) {
+                            let target: any = returningResult[entityIndex]
+                            for (const embedded of column.embeddedMetadata
+                                .embeddedMetadataTree) {
+                                target = target?.[embedded.propertyName]
+                            }
+                            if (target != null) {
+                                delete target[column.propertyName]
+                            }
+                        } else {
+                            delete returningResult[entityIndex][
+                                column.propertyPath
+                            ]
+                        }
                     }
                 })
 
