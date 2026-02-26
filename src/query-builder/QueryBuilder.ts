@@ -24,6 +24,7 @@ import { NotBrackets } from "./NotBrackets"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { ReturningType } from "../driver/Driver"
 import { OracleDriver } from "../driver/oracle/OracleDriver"
+import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { escapeRegExp } from "../util/escapeRegExp"
 
@@ -767,10 +768,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 const chain = alias.metadata.ctiAncestorChain
                 ctiAncestorAliasMap = new Map()
                 for (let i = 0; i < chain.length; i++) {
-                    const ancestorAlias =
-                        i === 0
-                            ? `${alias.name}__cti_parent`
-                            : `${alias.name}__cti_parent${i + 1}`
+                    const ancestorAlias = DriverUtils.buildCtiAncestorAlias(
+                        this.connection.driver,
+                        alias.name,
+                        i,
+                    )
                     ctiAncestorAliasMap.set(
                         chain[i],
                         `${this.escape(ancestorAlias)}.`,
@@ -1003,10 +1005,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         // Find the root ancestor alias (last in the chain)
                         const ancestorChain = metadata.ctiAncestorChain
                         const rootIndex = ancestorChain.length - 1
-                        const rootAliasName =
-                            rootIndex === 0
-                                ? `${this.expressionMap.mainAlias!.name}__cti_parent`
-                                : `${this.expressionMap.mainAlias!.name}__cti_parent${rootIndex + 1}`
+                        const rootAliasName = DriverUtils.buildCtiAncestorAlias(
+                            this.connection.driver,
+                            this.expressionMap.mainAlias!.name,
+                            rootIndex,
+                        )
 
                         const column = this.expressionMap
                             .aliasNamePrefixingEnabled

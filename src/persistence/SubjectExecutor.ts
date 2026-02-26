@@ -16,7 +16,6 @@ import { OrmUtils } from "../util/OrmUtils"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { EntityMetadata } from "../metadata/EntityMetadata"
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -578,14 +577,14 @@ export class SubjectExecutor {
                     partialEntity,
                 )
             } else {
-                const updateMap: ObjectLiteral =
-                    subject.createValueSetAndPopChangeMap()
-
                 // CTI children need split update: parent columns → parent table, child columns → child table
                 if (subject.metadata.isCtiChild) {
-                    await this.executeCtiUpdate(subject, updateMap)
+                    await this.executeCtiUpdate(subject)
                     return
                 }
+
+                const updateMap: ObjectLiteral =
+                    subject.createValueSetAndPopChangeMap()
 
                 // for tree tables we execute additional queries
                 switch (subject.metadata.treeType) {
@@ -821,57 +820,16 @@ export class SubjectExecutor {
 
     /**
      * Executes a split UPDATE for CTI child entities.
-     * Splits the update map across all ancestor tables and the child table,
-     * routing each column to the table that physically owns it.
+     * Routes each column/relation to the table that physically owns it,
+     * using entityMetadata ownership from changeMaps (not string-key matching).
      * @param subject
-     * @param updateMap
      */
-    private async executeCtiUpdate(
-        subject: Subject,
-        updateMap: ObjectLiteral,
-    ): Promise<void> {
+    private async executeCtiUpdate(subject: Subject): Promise<void> {
         if (!subject.identifier)
             throw new SubjectWithoutIdentifierError(subject)
 
-        // Build a map: entityMetadata → set of property paths that belong to it
-        const ancestorChain = subject.metadata.ctiAncestorChain
-        const metadataToPropertyPaths = new Map<EntityMetadata, Set<string>>()
-        for (const ancestor of ancestorChain) {
-            metadataToPropertyPaths.set(ancestor, new Set<string>())
-        }
-
-        for (const col of subject.metadata.inheritedColumns) {
-            const ownerPaths = metadataToPropertyPaths.get(col.entityMetadata)
-            if (ownerPaths) ownerPaths.add(col.propertyPath)
-        }
-        for (const rel of subject.metadata.inheritedRelations) {
-            const ownerPaths = metadataToPropertyPaths.get(rel.entityMetadata)
-            if (ownerPaths) {
-                for (const jc of rel.joinColumns) {
-                    ownerPaths.add(jc.propertyPath)
-                }
-            }
-        }
-
-        // Split update map across tables
-        const tableUpdateMaps = new Map<EntityMetadata, ObjectLiteral>()
-        const childUpdateMap: ObjectLiteral = {}
-
-        for (const key of Object.keys(updateMap)) {
-            let routed = false
-            for (const [meta, paths] of metadataToPropertyPaths) {
-                if (paths.has(key)) {
-                    if (!tableUpdateMaps.has(meta))
-                        tableUpdateMaps.set(meta, {})
-                    tableUpdateMaps.get(meta)![key] = updateMap[key]
-                    routed = true
-                    break
-                }
-            }
-            if (!routed) {
-                childUpdateMap[key] = updateMap[key]
-            }
-        }
+        const { tableUpdateMaps, childUpdateMap } =
+            subject.createPerTableValueMaps()
 
         const reload = !(this.options && this.options.reload === false)
 

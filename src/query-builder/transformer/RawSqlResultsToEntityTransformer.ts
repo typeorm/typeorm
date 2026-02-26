@@ -514,12 +514,16 @@ export class RawSqlResultsToEntityTransformer {
                                     (cm) => cm.target === columnTarget,
                                 )
                             columnAliasName = owningChild
-                                ? aliasName +
-                                  "__cti_child_" +
-                                  owningChild.targetName
-                                : aliasName +
-                                  "__cti_child_" +
-                                  metadata.targetName
+                                ? DriverUtils.buildCtiChildAlias(
+                                      this.driver,
+                                      aliasName,
+                                      owningChild.targetName,
+                                  )
+                                : DriverUtils.buildCtiChildAlias(
+                                      this.driver,
+                                      aliasName,
+                                      metadata.targetName,
+                                  )
                         }
                     }
                     return [
