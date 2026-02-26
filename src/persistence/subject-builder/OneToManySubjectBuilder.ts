@@ -184,8 +184,12 @@ export class OneToManySubjectBuilder {
             relatedPersistedEntityRelationIds.push(relationIdMap)
         })
 
+        const orphanedRowAction = relation.isOrphanedRowActionSet
+            ? relation.orphanedRowAction
+            : relation.inverseRelation?.orphanedRowAction
+
         // find what related entities were added and what were removed based on difference between what we save and what database has
-        if (relation.inverseRelation?.orphanedRowAction !== "disable") {
+        if (orphanedRowAction !== "disable") {
             EntityMetadata.difference(
                 relatedEntityDatabaseRelationIds,
                 relatedPersistedEntityRelationIds,
@@ -203,7 +207,7 @@ export class OneToManySubjectBuilder {
 
                 if (
                     !relation.inverseRelation ||
-                    relation.inverseRelation.orphanedRowAction === "nullify"
+                    orphanedRowAction === "nullify"
                 ) {
                     removedRelatedEntitySubject.canBeUpdated = true
                     removedRelatedEntitySubject.changeMaps = [
@@ -212,13 +216,9 @@ export class OneToManySubjectBuilder {
                             value: null,
                         },
                     ]
-                } else if (
-                    relation.inverseRelation.orphanedRowAction === "delete"
-                ) {
+                } else if (orphanedRowAction === "delete") {
                     removedRelatedEntitySubject.mustBeRemoved = true
-                } else if (
-                    relation.inverseRelation.orphanedRowAction === "soft-delete"
-                ) {
+                } else if (orphanedRowAction === "soft-delete") {
                     removedRelatedEntitySubject.canBeSoftRemoved = true
                 }
 
