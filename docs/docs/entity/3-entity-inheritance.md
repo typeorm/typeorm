@@ -312,6 +312,69 @@ export class Actor {
 }
 ```
 
+### Custom child table names
+
+By default, CTI child table names are derived from the class name. You can specify a custom table name using the options form of `@ChildEntity`:
+
+```typescript
+@ChildEntity({ tableName: "app_users" })
+export class User extends Actor {
+    @Column()
+    email: string
+}
+
+@ChildEntity({ discriminatorValue: "Org", tableName: "app_organizations" })
+export class Organization extends Actor {
+    @Column()
+    industry: string
+}
+```
+
+This creates tables `app_users` and `app_organizations` instead of the default `user` and `organization`. The `discriminatorValue` option sets the value stored in the parent's discriminator column (defaults to the class name if omitted). The `tableName` option only applies to CTI — it is ignored for STI since all children share the parent table.
+
+### Cross-child references
+
+CTI children can reference each other via foreign keys. For example, an `Organization` can have a `User` as CEO, and a `User` can belong to an `Organization`:
+
+```typescript
+@ChildEntity()
+export class User extends Actor {
+    @Column()
+    email: string
+
+    @ManyToOne(() => Organization, (org) => org.members, { nullable: true })
+    employer: Organization
+}
+
+@ChildEntity()
+export class Organization extends Actor {
+    @Column()
+    industry: string
+
+    @OneToMany(() => User, (user) => user.employer)
+    members: User[]
+
+    @ManyToOne(() => User, { nullable: true })
+    ceo: User
+}
+```
+
+Self-referential relations are also supported (e.g., a manager hierarchy):
+
+```typescript
+@ChildEntity()
+export class User extends Actor {
+    @Column()
+    email: string
+
+    @ManyToOne(() => User, (user) => user.directReports, { nullable: true })
+    manager: User
+
+    @OneToMany(() => User, (user) => user.manager)
+    directReports: User[]
+}
+```
+
 ### CTI vs STI
 
 | Feature | STI (`pattern: "STI"`) | CTI (`pattern: "CTI"`) |
