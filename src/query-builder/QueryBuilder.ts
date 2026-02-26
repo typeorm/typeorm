@@ -861,7 +861,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         )
                 }
             }
-        }
 
             // For CTI children, store the inherited property-to-alias map for this alias prefix
             if (

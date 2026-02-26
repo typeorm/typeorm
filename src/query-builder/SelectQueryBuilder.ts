@@ -3300,6 +3300,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         selection: selectionPath,
                         aliasName: DriverUtils.buildAlias(
                             this.connection.driver,
+                            undefined,
                             aliasName,
                             column.databaseName,
                         ),
