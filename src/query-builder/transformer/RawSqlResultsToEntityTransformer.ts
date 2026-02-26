@@ -496,19 +496,30 @@ export class RawSqlResultsToEntityTransformer {
                     // child-specific columns are aliased with the child table alias
                     // (e.g., "Actor__cti_child_User") to avoid collisions between
                     // same-named columns across different child tables.
+                    // Columns defined on the queried entity or its ancestors use the
+                    // main alias; columns from child entities use the child alias.
+                    //
+                    // A column is a "main column" (lives on the parent table) if the
+                    // parent metadata has a column with the same databaseName and
+                    // propertyPath. We match by properties rather than reference
+                    // because CTI children may have their own column objects (e.g.,
+                    // PK columns) that differ from the parent's even though they
+                    // represent the same physical column. This also correctly handles
+                    // columns inherited from abstract base classes whose column.target
+                    // is the abstract class rather than the CTI root.
                     let columnAliasName = aliasName
                     if (
                         alias.hasMetadata &&
                         alias.metadata.isCtiParent &&
                         metadata.isCtiChild
                     ) {
-                        const columnTarget = column.target as Function
-                        const isMainColumn =
-                            columnTarget === alias.metadata.target ||
-                            alias.metadata.ctiAncestorChain.some(
-                                (a) => a.target === columnTarget,
-                            )
+                        const isMainColumn = alias.metadata.columns.some(
+                            (c) =>
+                                c.databaseName === column.databaseName &&
+                                c.propertyPath === column.propertyPath,
+                        )
                         if (!isMainColumn) {
+                            const columnTarget = column.target as Function
                             const owningChild =
                                 alias.metadata.childEntityMetadatas.find(
                                     (cm) => cm.target === columnTarget,
