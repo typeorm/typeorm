@@ -225,7 +225,7 @@ export class DbQueryResultCache implements QueryResultCache {
             queryRunner?.getReplicationMode() === "slave"
 
         if (queryRunner === undefined || shouldCreateQueryRunner) {
-            queryRunner = this.dataSource.createQueryRunner("master")
+            queryRunner = this.dataSource.createQueryRunner("primary")
         }
 
         let insertedValues: ObjectLiteral = options

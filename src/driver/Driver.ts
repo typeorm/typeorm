@@ -259,14 +259,14 @@ export interface Driver {
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    obtainPrimaryConnection(): Promise<any>
+    obtainPrimaryConnection?(): Promise<any>
 
     /**
      * Obtains a new database connection to a replica server.
      * Used for replication.
      * If replication is not setup then returns primary (default) connection's database connection.
      */
-    obtainReplicaConnection(): Promise<any>
+    obtainReplicaConnection?(): Promise<any>
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.
