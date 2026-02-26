@@ -1296,7 +1296,7 @@ export class EntityMetadata {
      * it means we cannot execute bulk inserts in some cases.
      */
     getInsertionReturningColumns(): ColumnMetadata[] {
-        return this.columns.filter((column) => {
+        return this.tableColumns.filter((column) => {
             return (
                 column.default !== undefined ||
                 column.asExpression !== undefined ||

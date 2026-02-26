@@ -833,9 +833,28 @@ export class SubjectExecutor {
 
         const reload = !(this.options && this.options.reload === false)
 
-        // Update each ancestor table that has changed columns
+        // Ensure the ancestor that owns version/updateDate is always updated,
+        // even when no ancestor columns changed (UpdateQueryBuilder auto-adds
+        // version+1 and CURRENT_TIMESTAMP even for empty value sets)
+        const ancestorChain = subject.metadata.ctiAncestorChain
+        const rootMeta = ancestorChain[ancestorChain.length - 1]
+        if (
+            rootMeta &&
+            (rootMeta.versionColumn || rootMeta.updateDateColumn)
+        ) {
+            if (!tableUpdateMaps.has(rootMeta)) {
+                tableUpdateMaps.set(rootMeta, {})
+            }
+        }
+
+        // Update each ancestor table that has changed columns or version/updateDate
         for (const [meta, map] of tableUpdateMaps) {
-            if (Object.keys(map).length === 0) continue
+            if (
+                Object.keys(map).length === 0 &&
+                !meta.versionColumn &&
+                !meta.updateDateColumn
+            )
+                continue
 
             const updateQb = this.queryRunner.manager
                 .createQueryBuilder()
