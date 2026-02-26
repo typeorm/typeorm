@@ -535,7 +535,9 @@ export class OracleDriver implements Driver {
             )
 
         if (value === null || value === undefined) return value
-
+        if (columnMetadata.type === "uuid" && typeof value === "string") {
+            return value.toLowerCase()
+        }
         if (columnMetadata.type === Boolean) {
             return value ? 1 : 0
         } else if (columnMetadata.type === "date") {

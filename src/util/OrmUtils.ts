@@ -6,9 +6,8 @@ import {
 } from "../common/PrimitiveCriteria"
 
 export class OrmUtils {
-    private static readonly UUID_REGEX =
-        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
-
+    static readonly UUID_REGEX =
+        /^(?:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[0-9a-fA-F]{32})$/
     // -------------------------------------------------------------------------
     // Public methods
     // -------------------------------------------------------------------------
@@ -222,30 +221,33 @@ export class OrmUtils {
 
         if (firstKeys.length !== secondKeys.length) return false
         for (const key of firstKeys) {
-            if (!(key in secondId)) return false
+            if (!Object.prototype.hasOwnProperty.call(secondId, key))
+                return false
         }
 
         for (const key of firstKeys) {
             const firstIdValue = firstId[key]
             const secondIdValue = secondId[key]
-
-            if (
+            const isFirstUuid =
                 typeof firstIdValue === "string" &&
+                OrmUtils.UUID_REGEX.test(firstIdValue)
+            const isSecondUuid =
                 typeof secondIdValue === "string" &&
-                OrmUtils.UUID_REGEX.test(firstIdValue) &&
                 OrmUtils.UUID_REGEX.test(secondIdValue)
-            ) {
+
+            if (isFirstUuid && isSecondUuid) {
                 if (firstIdValue.toLowerCase() !== secondIdValue.toLowerCase())
                     return false
-            } else if (
+                continue
+            }
+            if (
                 typeof firstIdValue === "number" &&
                 typeof secondIdValue === "number"
             ) {
                 if (firstIdValue !== secondIdValue) return false
-            } else {
-                if (!OrmUtils.deepCompare(firstIdValue, secondIdValue))
-                    return false
+                continue
             }
+            if (!OrmUtils.deepCompare(firstIdValue, secondIdValue)) return false
         }
 
         return true

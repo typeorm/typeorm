@@ -16,6 +16,8 @@ import { OrmUtils } from "../util/OrmUtils"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { SubjectDatabaseEntityLoader } from "./SubjectDatabaseEntityLoader"
+import { DriverUtils } from "../driver/DriverUtils"
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -529,6 +531,16 @@ export class SubjectExecutor {
             if (!subject.identifier)
                 throw new SubjectWithoutIdentifierError(subject)
 
+            const needsUuidLowercase = DriverUtils.isUuidCaseSensitiveDriver(
+                this.queryRunner.connection.driver,
+            )
+            const queryIdentifier = needsUuidLowercase
+                ? SubjectDatabaseEntityLoader.lowercaseUuid(
+                      subject.identifier,
+                      subject.metadata,
+                  )
+                : subject.identifier
+
             // for mongodb we have a bit different updation logic
             if (
                 InstanceChecker.isMongoEntityManager(this.queryRunner.manager)
@@ -609,10 +621,10 @@ export class SubjectExecutor {
                     .callListeners(false)
 
                 if (subject.entity) {
-                    updateQueryBuilder.whereEntity(subject.identifier)
+                    updateQueryBuilder.whereEntity(queryIdentifier)
                 } else {
                     // in this case identifier is just conditions object to update by
-                    updateQueryBuilder.where(subject.identifier)
+                    updateQueryBuilder.where(queryIdentifier)
                 }
 
                 const updateResult = await updateQueryBuilder.execute()
@@ -679,11 +691,19 @@ export class SubjectExecutor {
 
         for (const groupName of groupedRemoveSubjectKeys) {
             const subjects = groupedRemoveSubjects[groupName]
+            const needsUuidLowercase = DriverUtils.isUuidCaseSensitiveDriver(
+                this.queryRunner.connection.driver,
+            )
             const deleteMaps = subjects.map((subject) => {
                 if (!subject.identifier)
                     throw new SubjectWithoutIdentifierError(subject)
 
-                return subject.identifier
+                return needsUuidLowercase
+                    ? SubjectDatabaseEntityLoader.lowercaseUuid(
+                          subject.identifier,
+                          subject.metadata,
+                      )
+                    : subject.identifier
             })
 
             // for mongodb we have a bit different updation logic
@@ -746,6 +766,17 @@ export class SubjectExecutor {
             this.softRemoveSubjects.map(async (subject) => {
                 if (!subject.identifier)
                     throw new SubjectWithoutIdentifierError(subject)
+
+                const needsUuidLowercase =
+                    DriverUtils.isUuidCaseSensitiveDriver(
+                        this.queryRunner.connection.driver,
+                    )
+                const queryIdentifier = needsUuidLowercase
+                    ? SubjectDatabaseEntityLoader.lowercaseUuid(
+                          subject.identifier,
+                          subject.metadata,
+                      )
+                    : subject.identifier
 
                 let updateResult: UpdateResult
 
@@ -817,10 +848,10 @@ export class SubjectExecutor {
                         .callListeners(false)
 
                     if (subject.entity) {
-                        softDeleteQueryBuilder.whereEntity(subject.identifier)
+                        softDeleteQueryBuilder.whereEntity(queryIdentifier)
                     } else {
                         // in this case identifier is just conditions object to update by
-                        softDeleteQueryBuilder.where(subject.identifier)
+                        softDeleteQueryBuilder.where(queryIdentifier)
                     }
 
                     updateResult = await softDeleteQueryBuilder.execute()
@@ -869,6 +900,17 @@ export class SubjectExecutor {
             this.recoverSubjects.map(async (subject) => {
                 if (!subject.identifier)
                     throw new SubjectWithoutIdentifierError(subject)
+
+                const needsUuidLowercase =
+                    DriverUtils.isUuidCaseSensitiveDriver(
+                        this.queryRunner.connection.driver,
+                    )
+                const queryIdentifier = needsUuidLowercase
+                    ? SubjectDatabaseEntityLoader.lowercaseUuid(
+                          subject.identifier,
+                          subject.metadata,
+                      )
+                    : subject.identifier
 
                 let updateResult: UpdateResult
 
@@ -940,10 +982,10 @@ export class SubjectExecutor {
                         .callListeners(false)
 
                     if (subject.entity) {
-                        softDeleteQueryBuilder.whereEntity(subject.identifier)
+                        softDeleteQueryBuilder.whereEntity(queryIdentifier)
                     } else {
                         // in this case identifier is just conditions object to update by
-                        softDeleteQueryBuilder.where(subject.identifier)
+                        softDeleteQueryBuilder.where(queryIdentifier)
                     }
 
                     updateResult = await softDeleteQueryBuilder.execute()

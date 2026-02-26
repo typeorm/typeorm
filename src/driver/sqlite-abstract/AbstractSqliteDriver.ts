@@ -325,7 +325,9 @@ export abstract class AbstractSqliteDriver implements Driver {
             )
 
         if (value === null || value === undefined) return value
-
+        if (columnMetadata.type === "uuid" && typeof value === "string") {
+            return value.toLowerCase()
+        }
         if (
             columnMetadata.type === Boolean ||
             columnMetadata.type === "boolean"

@@ -539,7 +539,9 @@ export class SapDriver implements Driver {
             )
 
         if (value === null || value === undefined) return value
-
+        if (columnMetadata.type === "uuid" && typeof value === "string") {
+            return value.toLowerCase()
+        }
         if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value, {
                 utc: columnMetadata.utc,

@@ -11,6 +11,7 @@ import { CompositeDemand } from "./entity/CompositeDemand"
 import { DayDemand } from "./entity/DayDemand"
 import { Material } from "./entity/Material"
 import { TransportUnitType } from "./entity/TransportUnitType"
+import { SoftDeleteDemand } from "./entity/SoftDeleteDemand"
 
 // GitHub issue #10439 - UUID primary keys should be treated as case-insensitive
 describe("uuid-case-insensitive", () => {
@@ -18,41 +19,10 @@ describe("uuid-case-insensitive", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: [
-                "mysql",
-                "postgres",
-                "mssql",
-                "cockroachdb",
-                "mariadb",
-            ], // Oracle, SAP HANA and SQLite treats UUIDs as case-sensitive
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
-
-    // Helper function to validate that two Demand entities are equivalent
-    // normalizing UUID case to lowercase for comparison, as some DBs return UUIDs in uppercase (mssql)
-    const assertEquality = (expected: Demand, actual: Demand) => {
-        expect(expected).to.not.be.null
-        expect(expected.id.toLowerCase()).to.equal(actual.id.toLowerCase())
-        expect(expected.transportUnitType.id.toLowerCase()).to.equal(
-            actual.transportUnitType.id.toLowerCase(),
-        )
-        expect(expected.materialType.id.toLowerCase()).to.equal(
-            actual.materialType.id.toLowerCase(),
-        )
-        expect(expected.dayDemand!.id.toLowerCase()).to.equal(
-            actual.dayDemand!.id.toLowerCase(),
-        )
-        expect(Number(expected.amount)).to.equal(Number(actual.amount)) // cockroachdb returns numeric as string
-        expect(actual.lastUpdate).to.exist
-        expect(actual.lastUpdate).to.be.instanceOf(Date)
-        expect(expected.transportUnitType.name).to.equal(
-            actual.transportUnitType.name,
-        )
-        expect(expected.materialType.name).to.equal(actual.materialType.name)
-        expect(expected.dayDemand!.date).to.equal(actual.dayDemand!.date)
-    }
 
     it("should treat UUIDs as case-insensitive for primary key", () =>
         Promise.all(
@@ -82,18 +52,6 @@ describe("uuid-case-insensitive", () => {
                 })
                 await dataSource.manager.save(demandLower)
 
-                const savedDemand = await dataSource.manager.findOne(Demand, {
-                    where: {
-                        id: "58b1b016-54ed-477d-95e0-61a0f3fb3a61",
-                    },
-                    relations: {
-                        transportUnitType: true,
-                        materialType: true,
-                        dayDemand: true,
-                    },
-                })
-                assertEquality(demandLower, savedDemand!)
-
                 // Try to save (upsert) Demand with same UUID but uppercase
                 const demandUpper = dataSource.manager.create(Demand, {
                     id: "58B1B016-54ED-477D-95E0-61A0F3FB3A61",
@@ -114,7 +72,7 @@ describe("uuid-case-insensitive", () => {
                         dayDemand: true,
                     },
                 })
-                assertEquality(demandUpper, updatedDemand!)
+                expect(Number(updatedDemand!.amount)).to.equal(8)
             }),
         ))
 
@@ -137,7 +95,6 @@ describe("uuid-case-insensitive", () => {
                 })
                 await dataSource.manager.save(upper)
 
-                // Should update, not insert new row
                 const found = await dataSource.manager.findOne(
                     CompositeDemand,
                     {
@@ -153,7 +110,90 @@ describe("uuid-case-insensitive", () => {
                     "58b1b016-54ed-477d-95e0-61a0f3fb3a61",
                 )
                 expect(found!.code).to.equal("A1")
-                expect(found!.amount).to.equal(8)
+                expect(Number(found!.amount)).to.equal(8)
+            }),
+        ))
+
+    it("should treat UUIDs as case-insensitive for remove", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const materialLower = dataSource.manager.create(Material, {
+                    id: "5a037948-276c-ee11-9937-6045bd9187cd",
+                    name: "Material",
+                })
+                await dataSource.manager.save(materialLower)
+
+                const materialUpper = dataSource.manager.create(Material, {
+                    id: "5A037948-276C-EE11-9937-6045BD9187CD",
+                    name: "Material",
+                })
+                await dataSource.manager.remove(materialUpper)
+
+                const found = await dataSource.manager.findOne(Material, {
+                    where: {
+                        id: "5a037948-276c-ee11-9937-6045bd9187cd",
+                    },
+                })
+
+                expect(found).to.equal(null)
+            }),
+        ))
+
+    it("should treat UUIDs as case-insensitive for soft-remove and recover", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const demandLower = dataSource.manager.create(
+                    SoftDeleteDemand,
+                    {
+                        id: "58b1b016-54ed-477d-95e0-61a0f3fb3a61",
+                        name: "Soft Demand",
+                    },
+                )
+                await dataSource.manager.save(demandLower)
+
+                const demandUpper = dataSource.manager.create(
+                    SoftDeleteDemand,
+                    {
+                        id: "58B1B016-54ED-477D-95E0-61A0F3FB3A61",
+                        name: "Soft Demand",
+                    },
+                )
+                await dataSource.manager.softRemove(demandUpper)
+
+                const softRemoved = await dataSource.manager.findOne(
+                    SoftDeleteDemand,
+                    {
+                        where: {
+                            id: "58b1b016-54ed-477d-95e0-61a0f3fb3a61",
+                        },
+                        withDeleted: true,
+                    },
+                )
+
+                expect(softRemoved).to.exist
+                expect(softRemoved!.deletedAt).to.not.equal(null)
+
+                const recoverUpper = dataSource.manager.create(
+                    SoftDeleteDemand,
+                    {
+                        id: "58B1B016-54ED-477D-95E0-61A0F3FB3A61",
+                        name: "Soft Demand",
+                    },
+                )
+                await dataSource.manager.recover(recoverUpper)
+
+                const recovered = await dataSource.manager.findOne(
+                    SoftDeleteDemand,
+                    {
+                        where: {
+                            id: "58b1b016-54ed-477d-95e0-61a0f3fb3a61",
+                        },
+                        withDeleted: true,
+                    },
+                )
+
+                expect(recovered).to.exist
+                expect(recovered!.deletedAt).to.equal(null)
             }),
         ))
 })

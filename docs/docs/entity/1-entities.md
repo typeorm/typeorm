@@ -116,8 +116,6 @@ export class User {
 
 - `@PrimaryGeneratedColumn("uuid")` creates a primary column which value will be automatically generated with `uuid`. Uuid is a unique string id. You don't have to manually assign its value before save - value will be automatically generated.
 
-    When using `save()` with entities that have a UUID primary key, TypeORM treats UUIDs as case-insensitive for most databases. This means that UUIDs differing only by letter case (e.g., `A...` vs `a...`) are considered the same for insert/update detection. However, SQLite, Oracle, and SAP HANA treat UUIDs as case-sensitive, so `save()` will treat differently-cased UUIDs as distinct.
-
 ```typescript
 import { Entity, PrimaryGeneratedColumn } from "typeorm"
 
