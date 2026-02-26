@@ -24,7 +24,10 @@ import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
-import { warnReplicationConfigDeprecation } from "../../util/replication"
+import {
+    normalizeReplicationMode,
+    warnReplicationConfigDeprecation,
+} from "../../util/replication"
 import { UpsertType } from "../types/UpsertType"
 import { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 import { CockroachDataSourceOptions } from "./CockroachDataSourceOptions"
@@ -385,7 +388,7 @@ export class CockroachDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new CockroachQueryRunner(this, mode)
+        return new CockroachQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**

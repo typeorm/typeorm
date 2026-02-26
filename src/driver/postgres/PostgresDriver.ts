@@ -27,7 +27,10 @@ import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
-import { warnReplicationConfigDeprecation } from "../../util/replication"
+import {
+    normalizeReplicationMode,
+    warnReplicationConfigDeprecation,
+} from "../../util/replication"
 import { UpsertType } from "../types/UpsertType"
 import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 import { PostgresDataSourceOptions } from "./PostgresDataSourceOptions"
@@ -735,7 +738,7 @@ export class PostgresDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): PostgresQueryRunner {
-        return new PostgresQueryRunner(this, mode)
+        return new PostgresQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**
