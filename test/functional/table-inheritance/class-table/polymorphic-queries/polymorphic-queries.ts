@@ -202,11 +202,11 @@ describe("table-inheritance > class-table > polymorphic-queries", () => {
 
                 // User should have email, not industry
                 expect(loadedUser.email).to.equal("alice@example.com")
-                expect((loadedUser as any).industry).to.be.undefined
+                expect(loadedUser).to.not.have.property("industry")
 
                 // Organization should have industry, not email
                 expect(loadedOrg.industry).to.equal("Tech")
-                expect((loadedOrg as any).email).to.be.undefined
+                expect(loadedOrg).to.not.have.property("email")
             }),
         ))
 })

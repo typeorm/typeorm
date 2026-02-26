@@ -113,7 +113,7 @@ describe("table-inheritance > class-table > abstract-intermediate", () => {
                 expect(loadedOrg).to.be.instanceOf(Organization)
                 expect(loadedOrg.name).to.equal("Acme")
                 expect(loadedOrg.industry).to.equal("Tech")
-                expect((loadedOrg as any).reputation).to.be.undefined
+                expect(loadedOrg).to.not.have.property("reputation")
             }),
         ))
 })

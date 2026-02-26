@@ -117,7 +117,7 @@ describe("table-inheritance > class-table > eager-loading", () => {
                 const loadedOrg = await connection
                     .getRepository(Organization)
                     .findOneBy({ id: org.id })
-                expect((loadedOrg as any).profile).to.be.undefined
+                expect(loadedOrg).to.not.have.property("profile")
             }),
         ))
 
@@ -154,7 +154,7 @@ describe("table-inheritance > class-table > eager-loading", () => {
                 const loadedUser = await connection
                     .getRepository(User)
                     .findOneBy({ id: user.id })
-                expect((loadedUser as any).license).to.be.undefined
+                expect(loadedUser).to.not.have.property("license")
             }),
         ))
 
@@ -210,8 +210,8 @@ describe("table-inheritance > class-table > eager-loading", () => {
                 expect(loadedOrg.license.valid).to.equal(true)
 
                 // Cross-check: User should NOT have license, Org should NOT have profile
-                expect((loadedUser as any).license).to.be.undefined
-                expect((loadedOrg as any).profile).to.be.undefined
+                expect(loadedUser).to.not.have.property("license")
+                expect(loadedOrg).to.not.have.property("profile")
             }),
         ))
 
@@ -475,7 +475,7 @@ describe("table-inheritance > class-table > eager-loading", () => {
                 expect(loadedOrg.license).to.not.be.undefined
                 expect(loadedOrg.license).to.not.be.null
                 expect(loadedOrg.license.key).to.equal("ORG-001")
-                expect((loadedOrg as any).posts).to.be.undefined
+                expect(loadedOrg).to.not.have.property("posts")
             }),
         ))
 

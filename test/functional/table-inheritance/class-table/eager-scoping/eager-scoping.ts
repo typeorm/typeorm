@@ -77,13 +77,13 @@ describe("table-inheritance > class-table > eager-scoping", () => {
                 const loadedUser = await connection
                     .getRepository(User)
                     .findOneBy({ id: user.id })
-                expect((loadedUser as any).verification).to.be.undefined
+                expect(loadedUser).to.not.have.property("verification")
 
                 // Load Organization — should NOT have settings
                 const loadedOrg = await connection
                     .getRepository(Organization)
                     .findOneBy({ id: org.id })
-                expect((loadedOrg as any).settings).to.be.undefined
+                expect(loadedOrg).to.not.have.property("settings")
             }),
         ))
 

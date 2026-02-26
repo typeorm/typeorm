@@ -248,7 +248,7 @@ describe("table-inheritance > class-table > multi-level", () => {
                 expect(loaded!.name).to.equal("Bob")
                 expect(loaded!.reputation).to.equal(50)
                 // Contributor should NOT have email
-                expect((loaded as any).email).to.be.undefined
+                expect(loaded).to.not.have.property("email")
             }),
         ))
 

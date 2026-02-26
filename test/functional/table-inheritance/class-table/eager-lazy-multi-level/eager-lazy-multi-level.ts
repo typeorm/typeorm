@@ -139,7 +139,7 @@ describe("table-inheritance > class-table > eager-lazy-multi-level", () => {
                 expect(loaded!.badge.title).to.equal("Silver Contributor")
 
                 // Profile should NOT exist on Contributor
-                expect((loaded as any).profile).to.be.undefined
+                expect(loaded).to.not.have.property("profile")
             }),
         ))
 
@@ -264,7 +264,7 @@ describe("table-inheritance > class-table > eager-lazy-multi-level", () => {
                 )
 
                 // Profile should NOT exist on Contributor
-                expect((loadedContributor as any).profile).to.be.undefined
+                expect(loadedContributor).to.not.have.property("profile")
             }),
         ))
 
