@@ -199,6 +199,23 @@ export class SubjectDatabaseEntityLoader {
         const loweredIdentifier: ObjectLiteral = {}
         for (const key of Object.keys(identifier)) {
             const value = identifier[key]
+
+            const isPlainObject =
+                value !== null &&
+                value !== undefined &&
+                typeof value === "object" &&
+                Object.getPrototypeOf(value) === Object.prototype
+
+            if (isPlainObject) {
+                // recursively process nested identifier objects (embedded columns)
+                loweredIdentifier[key] = this.lowercaseUuidInObject(
+                    value,
+                    metadata,
+                    key,
+                )
+                continue
+            }
+
             const column =
                 metadata.findColumnWithPropertyPath(key) ||
                 metadata.findColumnWithDatabaseName(key)
@@ -209,5 +226,47 @@ export class SubjectDatabaseEntityLoader {
                     : value
         }
         return loweredIdentifier
+    }
+
+    /**
+     * Recursively lowercase UUID values in nested objects (embedded columns)
+     * @param obj
+     * @param metadata
+     * @param parentKey
+     */
+    private static lowercaseUuidInObject(
+        obj: ObjectLiteral,
+        metadata: EntityMetadata,
+        parentKey: string,
+    ): ObjectLiteral {
+        const lowered: ObjectLiteral = {}
+        for (const key of Object.keys(obj)) {
+            const value = obj[key]
+            const fullPath = `${parentKey}.${key}`
+
+            const isPlainObject =
+                value !== null &&
+                value !== undefined &&
+                typeof value === "object" &&
+                Object.getPrototypeOf(value) === Object.prototype
+
+            if (isPlainObject) {
+                lowered[key] = this.lowercaseUuidInObject(
+                    value,
+                    metadata,
+                    fullPath,
+                )
+                continue
+            }
+
+            const column = metadata.findColumnWithPropertyPath(fullPath)
+            const isUuidColumn = column?.type === "uuid"
+
+            lowered[key] =
+                isUuidColumn && typeof value === "string"
+                    ? value.toLowerCase()
+                    : value
+        }
+        return lowered
     }
 }

@@ -12,6 +12,7 @@ import { DayDemand } from "./entity/DayDemand"
 import { Material } from "./entity/Material"
 import { TransportUnitType } from "./entity/TransportUnitType"
 import { SoftDeleteDemand } from "./entity/SoftDeleteDemand"
+import { EmbeddedDemand } from "./entity/EmbeddedDemand"
 
 // GitHub issue #10439 - UUID primary keys should be treated as case-insensitive
 describe("uuid-case-insensitive", () => {
@@ -194,6 +195,44 @@ describe("uuid-case-insensitive", () => {
 
                 expect(recovered).to.exist
                 expect(recovered!.deletedAt).to.equal(null)
+            }),
+        ))
+
+    it("should treat UUIDs in embedded primary keys as case-insensitive", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const demandLower = dataSource.manager.create(EmbeddedDemand, {
+                    id: {
+                        tenantId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                        entityId: "f1e2d3c4-b5a6-9870-fedc-ba0987654321",
+                    },
+                    name: "Embedded Demand",
+                    amount: 10,
+                })
+                await dataSource.manager.save(demandLower)
+
+                const demandUpper = dataSource.manager.create(EmbeddedDemand, {
+                    id: {
+                        tenantId: "A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
+                        entityId: "F1E2D3C4-B5A6-9870-FEDC-BA0987654321",
+                    },
+                    name: "Embedded Demand Updated",
+                    amount: 20,
+                })
+                await dataSource.manager.save(demandUpper)
+
+                const found = await dataSource.manager.findOne(EmbeddedDemand, {
+                    where: {
+                        id: {
+                            tenantId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                            entityId: "f1e2d3c4-b5a6-9870-fedc-ba0987654321",
+                        },
+                    },
+                })
+
+                expect(found).to.exist
+                expect(found!.name).to.equal("Embedded Demand Updated")
+                expect(Number(found!.amount)).to.equal(20)
             }),
         ))
 })
