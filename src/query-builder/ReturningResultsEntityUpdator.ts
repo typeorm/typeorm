@@ -264,6 +264,8 @@ export class ReturningResultsEntityUpdator {
             )
 
             entities.forEach((entity, entityIndex) => {
+                if (returningResult[entityIndex] == null) return
+
                 // If a value is specified for the default column in the entity, remove that value from the returningResult
                 defaultColumns.forEach((column) => {
                     if (column.getEntityValue(entity) !== undefined) {
@@ -271,6 +273,12 @@ export class ReturningResultsEntityUpdator {
                             let target: any = returningResult[entityIndex]
                             for (const embedded of column.embeddedMetadata
                                 .embeddedMetadataTree) {
+                                if (Array.isArray(target)) {
+                                    target.forEach((element) => {
+                                        delete element?.[column.propertyName]
+                                    })
+                                    return
+                                }
                                 target = target?.[embedded.propertyName]
                             }
                             if (target != null) {

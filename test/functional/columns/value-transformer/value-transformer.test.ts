@@ -217,7 +217,7 @@ describe("columns > value-transformer > default value should not trigger double 
                 id: entity.id,
             })
 
-            // default: 101, after to(): 102 in DB, after from(): 101
+            // default: 101 in DB, after from(): 100
             expect(loadedEntity!.columnWithDefaultAndTransformer).to.equal(100)
             expect(loadedEntity!.columnWithTransformerOnly).to.equal(200)
         }
