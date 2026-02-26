@@ -12,6 +12,10 @@ import { Complex, Post } from "./entity/Post"
 import { User } from "./entity/User"
 import { Category } from "./entity/Category"
 import { View } from "./entity/View"
+import {
+    CountingTransformer,
+    DefaultWithTransformer,
+} from "./entity/DefaultWithTransformer"
 import { expect } from "chai"
 
 describe("columns > value-transformer functionality", () => {
@@ -176,4 +180,80 @@ describe("columns > value-transformer functionality", () => {
                 expect(loadedPost!.complex!.y).to.eq(2.3)
             }),
         ))
+})
+
+describe("columns > value-transformer > default value should not trigger double transformation", () => {
+    let connections: DataSource[]
+
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                entities: [DefaultWithTransformer],
+                schemaCreate: true,
+                dropSchema: true,
+                // The problem occurs in databases which do NOT support RETURNING statement
+                // and require a SELECT to reload entity after INSERT
+                enabledDrivers: ["mysql"],
+            })),
+    )
+
+    beforeEach(async () => {
+        CountingTransformer.reset()
+        await reloadTestingDatabases(connections)
+    })
+
+    after(() => closeTestingConnections(connections))
+
+    it("should use default value and apply transformer correctly when column is not set", async () => {
+        for (const connection of connections) {
+            const repository = connection.getRepository(DefaultWithTransformer)
+
+            const entity = new DefaultWithTransformer()
+            entity.columnWithTransformerOnly = 200
+
+            await repository.save(entity)
+
+            const loadedEntity = await repository.findOneBy({
+                id: entity.id,
+            })
+
+            // default: 101 in DB, after from(): 100
+            expect(loadedEntity!.columnWithDefaultAndTransformer).to.equal(100)
+            expect(loadedEntity!.columnWithTransformerOnly).to.equal(200)
+        }
+    })
+
+    it("should preserve values correctly after update", async () => {
+        for (const connection of connections) {
+            const repository = connection.getRepository(DefaultWithTransformer)
+
+            const entity = new DefaultWithTransformer()
+            entity.columnWithDefaultAndTransformer = 300
+            entity.columnWithTransformerOnly = 400
+            await repository.save(entity)
+
+            entity.columnWithDefaultAndTransformer = 500
+            entity.columnWithTransformerOnly = 600
+            await repository.save(entity)
+
+            expect(entity.columnWithDefaultAndTransformer).to.equal(500)
+            expect(entity.columnWithTransformerOnly).to.equal(600)
+        }
+    })
+
+    it("should call transformer's from() method only once for columns with default value", async () => {
+        for (const connection of connections) {
+            const repository = connection.getRepository(DefaultWithTransformer)
+
+            const entity = new DefaultWithTransformer()
+            entity.columnWithDefaultAndTransformer = 300
+            entity.columnWithTransformerOnly = 400
+
+            CountingTransformer.reset()
+            await repository.save(entity)
+
+            // from() should be called only once (not twice due to double transformation bug)
+            expect(CountingTransformer.fromCallCount).to.equal(1)
+        }
+    })
 })

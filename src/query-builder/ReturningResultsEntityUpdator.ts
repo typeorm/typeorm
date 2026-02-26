@@ -259,7 +259,48 @@ export class ReturningResultsEntityUpdator {
                 .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties might be overridden by merge process
                 .getMany()
 
+            const defaultColumns = metadata.columns.filter((column) => {
+                if (column.default === undefined) return false
+
+                // Only skip DB-returned values for columns that were actually inserted.
+                // If a column is not insertable, the DB value should always take precedence.
+                if (this.expressionMap.insertColumns.length) {
+                    return this.expressionMap.insertColumns.includes(
+                        column.propertyPath,
+                    )
+                }
+                return column.isInsert
+            })
+
             entities.forEach((entity, entityIndex) => {
+                if (returningResult[entityIndex] == null) return
+
+                // If a value is specified for the default column in the entity, remove that value from the returningResult
+                defaultColumns.forEach((column) => {
+                    if (column.getEntityValue(entity) !== undefined) {
+                        if (column.embeddedMetadata) {
+                            let target: any = returningResult[entityIndex]
+                            for (const embedded of column.embeddedMetadata
+                                .embeddedMetadataTree) {
+                                if (Array.isArray(target)) {
+                                    target.forEach((element) => {
+                                        delete element?.[column.propertyName]
+                                    })
+                                    return
+                                }
+                                target = target?.[embedded.propertyName]
+                            }
+                            if (target != null) {
+                                delete target[column.propertyName]
+                            }
+                        } else {
+                            delete returningResult[entityIndex][
+                                column.propertyPath
+                            ]
+                        }
+                    }
+                })
+
                 this.queryRunner.manager.merge(
                     metadata.target as any,
                     generatedMaps[entityIndex],
