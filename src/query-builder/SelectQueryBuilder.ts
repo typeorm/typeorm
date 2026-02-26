@@ -2540,6 +2540,68 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
         }
 
+        // Helper: build CTI ancestor JOINs for a joined entity that is a CTI child.
+        // Returns SQL fragment or empty string. Must be appended immediately after the
+        // child table's own JOIN to ensure correct ordering (other joins may reference
+        // the __cti_parent alias via inherited relation columns).
+        const buildCtiParentJoins = (joinAttr: JoinAttribute): string => {
+            if (!joinAttr.alias.hasMetadata) return ""
+            const joinedMetadata = joinAttr.alias.metadata
+            if (!joinedMetadata.isCtiChild) return ""
+
+            const joinedAlias = joinAttr.alias.name
+            const joinDirection =
+                joinAttr.direction === "LEFT" ? "LEFT" : "INNER"
+            const ancestorChain = joinedMetadata.ctiAncestorChain
+            let ctiSql = ""
+            let prevAlias = joinedAlias
+            for (let i = 0; i < ancestorChain.length; i++) {
+                const ancestorMetadata = ancestorChain[i]
+                const ancestorAlias = ctiAncestorAlias(
+                    this.connection.driver,
+                    joinedAlias,
+                    i,
+                )
+                const ancestorTable = this.getTableName(
+                    ancestorMetadata.tablePath,
+                )
+
+                const prevMetadata =
+                    i === 0 ? joinedMetadata : ancestorChain[i - 1]
+                const conditions = prevMetadata.primaryColumns
+                    .map((pk) => {
+                        const ancestorPk =
+                            ancestorMetadata.primaryColumns.find(
+                                (apk) =>
+                                    apk.propertyName === pk.propertyName,
+                            )
+                        if (!ancestorPk) return ""
+                        return (
+                            this.escape(ancestorAlias) +
+                            "." +
+                            this.escape(ancestorPk.databaseName) +
+                            " = " +
+                            this.escape(prevAlias) +
+                            "." +
+                            this.escape(pk.databaseName)
+                        )
+                    })
+                    .filter((c) => c)
+                    .join(" AND ")
+
+                ctiSql +=
+                    ` ${joinDirection} JOIN ` +
+                    ancestorTable +
+                    " " +
+                    this.escape(ancestorAlias) +
+                    this.createTableLockExpression() +
+                    " ON " +
+                    conditions
+                prevAlias = ancestorAlias
+            }
+            return ctiSql
+        }
+
         const joins = this.expressionMap.joinAttributes.map((joinAttr) => {
             const relation = joinAttr.relation
             const destinationTableName = joinAttr.tablePath
@@ -2565,7 +2627,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.createTableLockExpression() +
                     (joinAttr.condition
                         ? " ON " + this.replacePropertyNames(joinAttr.condition)
-                        : "")
+                        : "") +
+                    buildCtiParentJoins(joinAttr)
                 )
             }
 
@@ -2597,7 +2660,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
                     " ON " +
-                    this.replacePropertyNames(condition + appendedCondition)
+                    this.replacePropertyNames(condition + appendedCondition) +
+                    buildCtiParentJoins(joinAttr)
                 )
             } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
                 // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
@@ -2650,7 +2714,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
                     " ON " +
-                    this.replacePropertyNames(condition + appendedCondition)
+                    this.replacePropertyNames(condition + appendedCondition) +
+                    buildCtiParentJoins(joinAttr)
                 )
             } else {
                 // means many-to-many
@@ -2745,73 +2810,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     " ON " +
                     this.replacePropertyNames(
                         destinationCondition + appendedCondition,
-                    )
+                    ) +
+                    buildCtiParentJoins(joinAttr)
                 )
             }
         })
 
-        // For any joined entity that is a CTI child, also inject JOINs to its ancestor tables
-        // so that inherited columns can be accessed through the ancestor aliases.
-        // Supports multi-level: joined CTI child chains up to its root.
-        // The join type matches the relation join direction: LEFT JOINed relations get
-        // LEFT JOINs to ancestors (so nullable relations don't eliminate rows), while
-        // INNER JOINed relations get INNER JOINs.
-        let joinedCtiParentSql = ""
-        for (const joinAttr of this.expressionMap.joinAttributes) {
-            if (!joinAttr.alias.hasMetadata) continue
-            const joinedMetadata = joinAttr.alias.metadata
-            if (!joinedMetadata.isCtiChild) continue
-
-            const joinedAlias = joinAttr.alias.name
-            const joinDirection =
-                joinAttr.direction === "LEFT" ? "LEFT" : "INNER"
-            const ancestorChain = joinedMetadata.ctiAncestorChain
-            let prevAlias = joinedAlias
-            for (let i = 0; i < ancestorChain.length; i++) {
-                const ancestorMetadata = ancestorChain[i]
-                const ancestorAlias = ctiAncestorAlias(
-                    this.connection.driver,
-                    joinedAlias,
-                    i,
-                )
-                const ancestorTable = this.getTableName(
-                    ancestorMetadata.tablePath,
-                )
-
-                const prevMetadata =
-                    i === 0 ? joinedMetadata : ancestorChain[i - 1]
-                const conditions = prevMetadata.primaryColumns
-                    .map((pk) => {
-                        const ancestorPk = ancestorMetadata.primaryColumns.find(
-                            (apk) => apk.propertyName === pk.propertyName,
-                        )
-                        if (!ancestorPk) return ""
-                        return (
-                            this.escape(ancestorAlias) +
-                            "." +
-                            this.escape(ancestorPk.databaseName) +
-                            " = " +
-                            this.escape(prevAlias) +
-                            "." +
-                            this.escape(pk.databaseName)
-                        )
-                    })
-                    .filter((c) => c)
-                    .join(" AND ")
-
-                joinedCtiParentSql +=
-                    ` ${joinDirection} JOIN ` +
-                    ancestorTable +
-                    " " +
-                    this.escape(ancestorAlias) +
-                    this.createTableLockExpression() +
-                    " ON " +
-                    conditions
-                prevAlias = ancestorAlias
-            }
-        }
-
-        return ctiJoinSql + joins.join(" ") + joinedCtiParentSql
+        return ctiJoinSql + joins.join(" ")
     }
 
     /**
