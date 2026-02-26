@@ -24,7 +24,10 @@ import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
-import { warnReplicationConfigDeprecation } from "../../util/replication"
+import {
+    normalizeReplicationMode,
+    warnReplicationConfigDeprecation,
+} from "../../util/replication"
 import { UpsertType } from "../types/UpsertType"
 import { OracleConnectionCredentialsOptions } from "./OracleConnectionCredentialsOptions"
 import { OracleDataSourceOptions } from "./OracleDataSourceOptions"
@@ -382,7 +385,7 @@ export class OracleDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new OracleQueryRunner(this, mode)
+        return new OracleQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**

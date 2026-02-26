@@ -23,7 +23,10 @@ import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
-import { warnReplicationConfigDeprecation } from "../../util/replication"
+import {
+    normalizeReplicationMode,
+    warnReplicationConfigDeprecation,
+} from "../../util/replication"
 import { UpsertType } from "../types/UpsertType"
 import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
 import { MysqlDataSourceOptions } from "./MysqlDataSourceOptions"
@@ -478,7 +481,7 @@ export class MysqlDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new MysqlQueryRunner(this, mode)
+        return new MysqlQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**
