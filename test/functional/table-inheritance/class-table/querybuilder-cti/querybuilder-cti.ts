@@ -132,7 +132,16 @@ describe("table-inheritance > class-table > querybuilder-cti", () => {
                 expect(actor).to.not.be.null
                 expect(actor!.id).to.equal(saved.id)
                 expect(actor).to.be.instanceOf(User)
-                expect((actor as User).email).to.equal("alice@example.com")
+                // Root-table columns are populated; child-specific columns are undefined
+                expect(actor!.nameID).to.equal("alice")
+                expect((actor as User).email).to.be.undefined
+
+                // Verify child data by querying child entity directly
+                const user = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: saved.id })
+                expect(user).to.not.be.null
+                expect(user!.email).to.equal("alice@example.com")
             }),
         ))
 

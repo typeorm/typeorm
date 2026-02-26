@@ -2495,49 +2495,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     prevAlias = ancestorAlias
                 }
             }
-            // CTI parent (or mid-level entity that is both child and parent):
-            // LEFT JOIN each child table for polymorphic column access.
-            // This runs in addition to the INNER JOINs above for mid-level entities.
-            if (metadata.isCtiParent) {
-                for (const childMetadata of metadata.childEntityMetadatas) {
-                    const childAlias = DriverUtils.buildCtiChildAlias(
-                        this.connection.driver,
-                        mainAlias,
-                        childMetadata.targetName,
-                    )
-                    const childTable = this.getTableName(
-                        childMetadata.tablePath,
-                    )
-
-                    const conditions = metadata.primaryColumns
-                        .map((pk) => {
-                            const childPk = childMetadata.primaryColumns.find(
-                                (cpk) => cpk.propertyName === pk.propertyName,
-                            )
-                            if (!childPk) return ""
-                            return (
-                                this.escape(childAlias) +
-                                "." +
-                                this.escape(childPk.databaseName) +
-                                " = " +
-                                this.escape(mainAlias) +
-                                "." +
-                                this.escape(pk.databaseName)
-                            )
-                        })
-                        .filter((c) => c)
-                        .join(" AND ")
-
-                    ctiJoinSql +=
-                        " LEFT JOIN " +
-                        childTable +
-                        " " +
-                        this.escape(childAlias) +
-                        this.createTableLockExpression() +
-                        " ON " +
-                        conditions
-                }
-            }
+            // CTI parent: do NOT LEFT JOIN child tables.
+            // Root entity queries return only root-table data (id, type,
+            // shared columns). Child-specific columns are accessed by
+            // querying the child entity directly (findOne(User, ...)).
+            // This follows SQLAlchemy's approach: parent table is not an
+            // umbrella — it's a standalone entity.
         }
 
         // Helper: build CTI ancestor JOINs for a joined entity that is a CTI child.
@@ -3301,45 +3264,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
         })
 
-        // For CTI parents, also select child-specific columns from LEFT JOINed child tables.
-        // These are aliased with the main entity alias name so the transformer can hydrate
-        // them transparently when it instantiates child classes based on discriminator.
-        if (metadata.isCtiParent) {
-            for (const childMetadata of metadata.childEntityMetadatas) {
-                const childAlias = DriverUtils.buildCtiChildAlias(
-                    this.connection.driver,
-                    aliasName,
-                    childMetadata.targetName,
-                )
-                const escapedChildAlias = this.escape(childAlias)
-
-                // Get child-specific columns (exclude inherited ones which are on the parent table)
-                const childOwnColumns = childMetadata.columns.filter(
-                    (c) =>
-                        !childMetadata.inheritedColumns.includes(c) &&
-                        !c.isPrimary &&
-                        !c.isVirtualProperty,
-                )
-
-                for (const column of childOwnColumns) {
-                    const selectionPath =
-                        escapedChildAlias +
-                        "." +
-                        this.escape(column.databaseName)
-
-                    finalSelects.push({
-                        selection: selectionPath,
-                        aliasName: DriverUtils.buildAlias(
-                            this.connection.driver,
-                            undefined,
-                            childAlias,
-                            column.databaseName,
-                        ),
-                        virtual: hasMainAlias,
-                    })
-                }
-            }
-        }
+        // CTI parent: do NOT select child-specific columns.
+        // Root entity queries return only root-table data.
+        // Child-specific columns are accessed by querying the child
+        // entity directly (e.g., findOne(User, ...)).
 
         return finalSelects
     }
@@ -4030,17 +3958,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 )
             }
 
-            // For CTI parent queries, load child-specific eager relations
-            // via follow-up batched queries (the main query only JOINs parent's
-            // own eager relations; child-specific ones are unknown until the
-            // discriminator identifies child types in the result set).
-            if (
-                this.expressionMap.mainAlias.hasMetadata &&
-                this.expressionMap.mainAlias.metadata.isCtiParent &&
-                this.findOptions.loadEagerRelations !== false
-            ) {
-                await this.loadCtiChildEagerRelations(entities, queryRunner)
-            }
+            // CTI parent: do NOT load child-specific eager relations.
+            // Root entity queries return only root-table data and
+            // root-level relations. Child-specific eager relations are
+            // loaded when querying the child entity directly.
         }
 
         if (this.expressionMap.relationLoadStrategy === "query") {

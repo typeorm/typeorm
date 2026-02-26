@@ -153,16 +153,26 @@ describe("table-inheritance > class-table > cti-relation-to-cti", () => {
                     .getRepository(Actor)
                     .find({ order: { id: "ASC" } })
 
-                // Should have one Account
+                // Should have one Account (Space is a Resource, not an Actor)
                 expect(actors).to.have.length(1)
                 expect(actors[0]).to.be.instanceOf(Account)
 
                 const loadedAccount = actors[0] as Account
-                expect(loadedAccount.plan).to.equal("basic")
-                expect(loadedAccount.spaces).to.not.be.undefined
-                expect(loadedAccount.spaces).to.be.an("array")
-                expect(loadedAccount.spaces).to.have.length(1)
-                expect(loadedAccount.spaces[0].title).to.equal("Poly Space")
+                // Child-specific columns are undefined from parent repo query
+                expect(loadedAccount.plan).to.be.undefined
+                // Child-specific eager relations are not loaded from parent repo query
+                expect(loadedAccount.spaces).to.be.undefined
+
+                // Query child entity directly to verify full data
+                const fullAccount = await connection
+                    .getRepository(Account)
+                    .findOneBy({ id: account.id })
+                expect(fullAccount).to.not.be.null
+                expect(fullAccount!.plan).to.equal("basic")
+                expect(fullAccount!.spaces).to.not.be.undefined
+                expect(fullAccount!.spaces).to.be.an("array")
+                expect(fullAccount!.spaces).to.have.length(1)
+                expect(fullAccount!.spaces[0].title).to.equal("Poly Space")
             }),
         ))
 
@@ -223,7 +233,8 @@ describe("table-inheritance > class-table > cti-relation-to-cti", () => {
                 doc.content = "Hello World"
                 await connection.getRepository(Document).save(doc)
 
-                // Query Resource hierarchy
+                // Query Resource hierarchy — parent repo returns correct child types
+                // but only root-table columns are populated
                 const resources = await connection
                     .getRepository(Resource)
                     .find({ order: { id: "ASC" } })
@@ -231,10 +242,23 @@ describe("table-inheritance > class-table > cti-relation-to-cti", () => {
                 expect(resources).to.have.length(2)
                 expect(resources[0]).to.be.instanceOf(Space)
                 expect(resources[1]).to.be.instanceOf(Document)
-                expect((resources[0] as Space).visibility).to.equal("public")
-                expect((resources[1] as Document).content).to.equal(
-                    "Hello World",
-                )
+                // Root-table column (title) is populated
+                expect(resources[0].title).to.equal("Test Space")
+                expect(resources[1].title).to.equal("Test Document")
+                // Child-specific columns are undefined from parent repo query
+                expect((resources[0] as Space).visibility).to.be.undefined
+                expect((resources[1] as Document).content).to.be.undefined
+
+                // Verify child data by querying child entities directly
+                const fullSpace = await connection
+                    .getRepository(Space)
+                    .findOneBy({ id: space.id })
+                expect(fullSpace!.visibility).to.equal("public")
+
+                const fullDoc = await connection
+                    .getRepository(Document)
+                    .findOneBy({ id: doc.id })
+                expect(fullDoc!.content).to.equal("Hello World")
 
                 // Query Actor hierarchy
                 const actors = await connection

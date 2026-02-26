@@ -105,11 +105,20 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
                 expect(actor).to.not.be.null
                 expect(actor!.id).to.equal(saved.id)
                 expect(actor).to.be.instanceOf(User)
-                expect((actor as User).email).to.equal("alice@test.com")
+                // Root-table columns are populated
                 expect(actor!.nameID).to.equal("alice")
                 expect(actor!.version).to.equal(1)
                 expect(actor!.createdDate).to.be.instanceOf(Date)
                 expect(actor!.updatedDate).to.be.instanceOf(Date)
+                // Child-specific columns are undefined from parent repo query
+                expect((actor as User).email).to.be.undefined
+
+                // Verify child data by querying child entity directly
+                const user = await connection
+                    .getRepository(User)
+                    .findOne({ where: { id: saved.id } })
+                expect(user).to.not.be.null
+                expect(user!.email).to.equal("alice@test.com")
             }),
         ))
 
@@ -128,11 +137,13 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
                     "alice@test.com",
                 )
 
-                const actor = await connection.getRepository(Actor).findOne({
-                    where: { id: saved.id },
-                    select: { id: true },
-                    loadEagerRelations: false,
-                })
+                const actor = await connection
+                    .getRepository(Actor)
+                    .findOne({
+                        where: { id: saved.id },
+                        select: { id: true },
+                        loadEagerRelations: false,
+                    })
 
                 expect(actor).to.not.be.null
                 expect(actor!.id).to.equal(saved.id)
@@ -151,10 +162,12 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
                     "alice@test.com",
                 )
 
-                const actor = await connection.getRepository(Actor).findOne({
-                    where: { id: saved.id },
-                    relations: { authorization: true },
-                })
+                const actor = await connection
+                    .getRepository(Actor)
+                    .findOne({
+                        where: { id: saved.id },
+                        relations: { authorization: true },
+                    })
 
                 expect(actor).to.not.be.null
                 expect(actor!.id).to.equal(saved.id)
@@ -200,11 +213,13 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
                 )
                 const org = await insertOrg(connection, "acme", "Tech")
 
-                const actors = await connection.getRepository(Actor).find({
-                    where: { id: In([user.id, org.id]) },
-                    select: { id: true },
-                    loadEagerRelations: false,
-                })
+                const actors = await connection
+                    .getRepository(Actor)
+                    .find({
+                        where: { id: In([user.id, org.id]) },
+                        select: { id: true },
+                        loadEagerRelations: false,
+                    })
 
                 expect(actors).to.have.length(2)
                 const ids = actors.map((a) => a.id).sort()
@@ -271,7 +286,9 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
                 )
                 expect(viaRepo).to.be.instanceOf(User)
                 expect(viaEm).to.be.instanceOf(User)
-                expect((viaRepo as User).email).to.equal((viaEm as User).email)
+                expect((viaRepo as User).email).to.equal(
+                    (viaEm as User).email,
+                )
             }),
         ))
 
@@ -350,9 +367,13 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
     it("(K) should return correct child types when querying parent repository with find()", () =>
         Promise.all(
             connections.map(async (connection) => {
-                await insertUser(connection, "alice", "alice@test.com")
+                const savedAlice = await insertUser(
+                    connection,
+                    "alice",
+                    "alice@test.com",
+                )
                 await insertUser(connection, "bob", "bob@test.com")
-                await insertOrg(connection, "acme", "Tech")
+                const savedAcme = await insertOrg(connection, "acme", "Tech")
 
                 const actors = await connection
                     .getRepository(Actor)
@@ -363,22 +384,35 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
                 // "acme" < "alice" < "bob"
                 expect(actors[0]).to.be.instanceOf(Organization)
                 expect(actors[0].nameID).to.equal("acme")
-                expect((actors[0] as Organization).industry).to.equal("Tech")
+                // Child-specific columns are undefined from parent repo query
+                expect((actors[0] as Organization).industry).to.be.undefined
 
                 expect(actors[1]).to.be.instanceOf(User)
                 expect(actors[1].nameID).to.equal("alice")
-                expect((actors[1] as User).email).to.equal("alice@test.com")
+                // Child-specific columns are undefined from parent repo query
+                expect((actors[1] as User).email).to.be.undefined
 
                 expect(actors[2]).to.be.instanceOf(User)
                 expect(actors[2].nameID).to.equal("bob")
 
-                // All should have id, version, timestamps hydrated
+                // All should have id, version, timestamps hydrated (root-table columns)
                 for (const actor of actors) {
                     expect(actor.id).to.be.a("string")
                     expect(actor.version).to.equal(1)
                     expect(actor.createdDate).to.be.instanceOf(Date)
                     expect(actor.updatedDate).to.be.instanceOf(Date)
                 }
+
+                // Verify child-specific data by querying child entities directly
+                const fullOrg = await connection
+                    .getRepository(Organization)
+                    .findOne({ where: { id: savedAcme.id } })
+                expect(fullOrg!.industry).to.equal("Tech")
+
+                const fullAlice = await connection
+                    .getRepository(User)
+                    .findOne({ where: { id: savedAlice.id } })
+                expect(fullAlice!.email).to.equal("alice@test.com")
             }),
         ))
 
@@ -401,8 +435,17 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
                 expect(actor).to.not.be.null
                 expect(actor!.id).to.equal(saved.id)
                 expect(actor).to.be.instanceOf(User)
-                expect((actor as User).email).to.equal("alice@test.com")
+                // Root-table columns are populated
                 expect(actor!.version).to.equal(1)
+                // Child-specific columns are undefined from parent repo query
+                expect((actor as User).email).to.be.undefined
+
+                // Verify child data by querying child entity directly
+                const user = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: saved.id })
+                expect(user).to.not.be.null
+                expect(user!.email).to.equal("alice@test.com")
             }),
         ))
 

@@ -127,10 +127,26 @@ describe("table-inheritance > class-table > explicit-table-name", () => {
                     .find({ order: { id: "ASC" } })
 
                 expect(actors).to.have.length(2)
+                // Correct child class instances are returned
                 expect(actors[0]).to.be.instanceOf(User)
                 expect(actors[1]).to.be.instanceOf(Organization)
-                expect((actors[0] as User).email).to.equal("alice@example.com")
-                expect((actors[1] as Organization).industry).to.equal("Tech")
+                // Root-table columns are populated
+                expect(actors[0].name).to.equal("Alice")
+                expect(actors[1].name).to.equal("Acme")
+                // Child-specific columns are undefined from parent repo query
+                expect((actors[0] as User).email).to.be.undefined
+                expect((actors[1] as Organization).industry).to.be.undefined
+
+                // Verify child data by querying child entities directly
+                const fullUser = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
+                expect(fullUser!.email).to.equal("alice@example.com")
+
+                const fullOrg = await connection
+                    .getRepository(Organization)
+                    .findOneBy({ id: org.id })
+                expect(fullOrg!.industry).to.equal("Tech")
             }),
         ))
 })

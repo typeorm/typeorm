@@ -478,7 +478,7 @@ export class RawSqlResultsToEntityTransformer {
             columns = metadata.columns
                 .filter(
                     (column) =>
-                        !column.isVirtual &&
+                        (!column.isVirtual || column.isDiscriminator) &&
                         // if user does not selected the whole entity or he used partial selection and does not select this particular column
                         // then we don't add this column and its value into the entity
                         (this.selections.has(aliasName) ||

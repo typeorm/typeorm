@@ -112,7 +112,8 @@ describe("table-inheritance > class-table > eager-scoping", () => {
                 org.verification = verification
                 await connection.getRepository(Organization).save(org)
 
-                // Load all actors — each child should have its own eager relation
+                // Load all actors from parent repo — child-specific eager relations
+                // are NOT loaded; only root-table columns are populated
                 const actors = await connection
                     .getRepository(Actor)
                     .find({ order: { id: "ASC" } })
@@ -121,13 +122,29 @@ describe("table-inheritance > class-table > eager-scoping", () => {
 
                 const loadedUser = actors[0] as User
                 expect(loadedUser).to.be.instanceOf(User)
-                expect(loadedUser.settings).to.not.be.undefined
-                expect(loadedUser.settings.theme).to.equal("dark")
+                // Child-specific eager relations are not loaded from parent repo query
+                expect(loadedUser.settings).to.be.undefined
+                // Root-table column is available
+                expect(loadedUser.name).to.equal("Alice")
 
                 const loadedOrg = actors[1] as Organization
                 expect(loadedOrg).to.be.instanceOf(Organization)
-                expect(loadedOrg.verification).to.not.be.undefined
-                expect(loadedOrg.verification.verified).to.equal(true)
+                // Child-specific eager relations are not loaded from parent repo query
+                expect(loadedOrg.verification).to.be.undefined
+                expect(loadedOrg.name).to.equal("Acme")
+
+                // Verify child data by querying child entities directly
+                const fullUser = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
+                expect(fullUser!.settings).to.not.be.undefined
+                expect(fullUser!.settings.theme).to.equal("dark")
+
+                const fullOrg = await connection
+                    .getRepository(Organization)
+                    .findOneBy({ id: org.id })
+                expect(fullOrg!.verification).to.not.be.undefined
+                expect(fullOrg!.verification.verified).to.equal(true)
             }),
         ))
 })

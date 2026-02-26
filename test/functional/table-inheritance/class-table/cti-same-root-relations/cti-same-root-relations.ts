@@ -217,16 +217,26 @@ describe("table-inheritance > class-table > cti-same-root-relations", () => {
                     .getRepository(Actor)
                     .find({ order: { id: "ASC" } })
 
-                // Space + Account = 2 actors
-                // But Space is eagerly loaded as a relation, not as a standalone actor
-                // Actually both Space and Account are saved as actors in the actor table
+                // Space + Account = 2 actors (both are saved in actor table)
                 expect(actors.length).to.be.greaterThanOrEqual(2)
 
                 const loadedAccount = actors.find(
                     (a) => a instanceof Account,
                 ) as Account
                 expect(loadedAccount).to.not.be.undefined
-                expect(loadedAccount.spaces).to.not.be.undefined
+                // Child-specific columns and relations are not loaded from parent repo query
+                expect(loadedAccount.plan).to.be.undefined
+                expect(loadedAccount.spaces).to.be.undefined
+
+                // Query child entity directly to verify full data
+                const fullAccount = await connection
+                    .getRepository(Account)
+                    .findOneBy({ id: account.id })
+                expect(fullAccount).to.not.be.null
+                expect(fullAccount!.plan).to.equal("basic")
+                expect(fullAccount!.spaces).to.not.be.undefined
+                expect(fullAccount!.spaces).to.have.length(1)
+                expect(fullAccount!.spaces[0].name).to.equal("Poly Space")
             }),
         ))
 

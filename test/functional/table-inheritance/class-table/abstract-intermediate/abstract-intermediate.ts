@@ -103,17 +103,35 @@ describe("table-inheritance > class-table > abstract-intermediate", () => {
 
                 expect(actors).to.have.length(2)
 
+                // Parent repo query returns correct child class instances
+                // but only root-table columns are populated
                 const loadedUser = actors[0] as User
                 expect(loadedUser).to.be.instanceOf(User)
                 expect(loadedUser.name).to.equal("Alice")
-                expect(loadedUser.email).to.equal("alice@example.com")
-                expect(loadedUser.reputation).to.equal(50)
+                // Child-specific columns are undefined from parent repo query
+                expect(loadedUser.email).to.be.undefined
+                expect(loadedUser.reputation).to.be.undefined
 
                 const loadedOrg = actors[1] as Organization
                 expect(loadedOrg).to.be.instanceOf(Organization)
                 expect(loadedOrg.name).to.equal("Acme")
-                expect(loadedOrg.industry).to.equal("Tech")
-                expect(loadedOrg).to.not.have.property("reputation")
+                // Child-specific columns are undefined from parent repo query
+                expect(loadedOrg.industry).to.be.undefined
+
+                // Query child entities directly to verify child-specific columns
+                const fullUser = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
+                expect(fullUser).to.not.be.null
+                expect(fullUser!.email).to.equal("alice@example.com")
+                expect(fullUser!.reputation).to.equal(50)
+
+                const fullOrg = await connection
+                    .getRepository(Organization)
+                    .findOneBy({ id: org.id })
+                expect(fullOrg).to.not.be.null
+                expect(fullOrg!.industry).to.equal("Tech")
+                expect(fullOrg).to.not.have.property("reputation")
             }),
         ))
 })

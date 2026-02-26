@@ -116,15 +116,29 @@ describe("table-inheritance > class-table > uuid-primary-keys", () => {
 
                 expect(actors).to.have.length(2)
 
+                // Correct child class instances are returned; UUIDs are populated
                 const loadedOrg = actors[0] as Organization
                 expect(loadedOrg).to.be.instanceOf(Organization)
                 expect(loadedOrg.id).to.equal(org.id)
-                expect(loadedOrg.industry).to.equal("Tech")
+                // Child-specific columns are undefined from parent repo query
+                expect(loadedOrg.industry).to.be.undefined
 
                 const loadedUser = actors[1] as User
                 expect(loadedUser).to.be.instanceOf(User)
                 expect(loadedUser.id).to.equal(user.id)
-                expect(loadedUser.email).to.equal("alice@example.com")
+                // Child-specific columns are undefined from parent repo query
+                expect(loadedUser.email).to.be.undefined
+
+                // Verify child data by querying child entities directly
+                const fullOrg = await connection
+                    .getRepository(Organization)
+                    .findOneBy({ id: org.id })
+                expect(fullOrg!.industry).to.equal("Tech")
+
+                const fullUser = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
+                expect(fullUser!.email).to.equal("alice@example.com")
             }),
         ))
 

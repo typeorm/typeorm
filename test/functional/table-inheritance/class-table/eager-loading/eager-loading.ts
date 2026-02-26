@@ -193,25 +193,38 @@ describe("table-inheritance > class-table > eager-loading", () => {
 
                 expect(actors).to.have.length(2)
 
-                // First actor should be User with eagerly loaded Profile
+                // Parent repo returns correct child class instances
                 const loadedUser = actors[0] as User
                 expect(loadedUser).to.be.instanceOf(User)
-                expect(loadedUser.profile).to.not.be.undefined
-                expect(loadedUser.profile).to.not.be.null
-                expect(loadedUser.profile.name).to.equal("Alice Profile")
-                expect(loadedUser.profile.avatar).to.equal("alice.png")
+                // Child-specific eager relations are not loaded from parent repo query
+                expect(loadedUser.profile).to.be.undefined
+                // Child-specific columns are also not available
+                expect(loadedUser.email).to.be.undefined
 
-                // Second actor should be Organization with eagerly loaded License
                 const loadedOrg = actors[1] as Organization
                 expect(loadedOrg).to.be.instanceOf(Organization)
-                expect(loadedOrg.license).to.not.be.undefined
-                expect(loadedOrg.license).to.not.be.null
-                expect(loadedOrg.license.key).to.equal("ORG-2024-001")
-                expect(loadedOrg.license.valid).to.equal(true)
+                // Child-specific eager relations are not loaded from parent repo query
+                expect(loadedOrg.license).to.be.undefined
+                expect(loadedOrg.industry).to.be.undefined
 
                 // Cross-check: User should NOT have license, Org should NOT have profile
                 expect(loadedUser).to.not.have.property("license")
                 expect(loadedOrg).to.not.have.property("profile")
+
+                // Verify child data by querying child entities directly
+                const fullUser = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
+                expect(fullUser!.profile).to.not.be.undefined
+                expect(fullUser!.profile.name).to.equal("Alice Profile")
+                expect(fullUser!.email).to.equal("alice@example.com")
+
+                const fullOrg = await connection
+                    .getRepository(Organization)
+                    .findOneBy({ id: org.id })
+                expect(fullOrg!.license).to.not.be.undefined
+                expect(fullOrg!.license.key).to.equal("ORG-2024-001")
+                expect(fullOrg!.industry).to.equal("Tech")
             }),
         ))
 
@@ -450,32 +463,42 @@ describe("table-inheritance > class-table > eager-loading", () => {
                 org.license = license
                 await connection.getRepository(Organization).save(org)
 
-                // Query parent repo — polymorphic results
+                // Query parent repo — polymorphic results; child-specific eager
+                // relations are not loaded from parent repo
                 const actors = await connection
                     .getRepository(Actor)
                     .find({ order: { id: "ASC" } })
 
                 expect(actors).to.have.length(2)
 
-                // User should have both OneToOne (profile) and OneToMany (posts)
+                // User: correct class instance, but child-specific eager relations not loaded
                 const loadedUser = actors[0] as User
                 expect(loadedUser).to.be.instanceOf(User)
-                expect(loadedUser.profile).to.not.be.undefined
-                expect(loadedUser.profile).to.not.be.null
-                expect(loadedUser.profile.name).to.equal("Alice Profile")
-                expect(loadedUser.posts).to.not.be.undefined
-                expect(loadedUser.posts).to.be.an("array")
-                expect(loadedUser.posts).to.have.length(2)
-                const titles = loadedUser.posts.map((p) => p.title).sort()
-                expect(titles).to.deep.equal(["First Post", "Second Post"])
+                expect(loadedUser.profile).to.be.undefined
+                expect(loadedUser.posts).to.be.undefined
 
-                // Organization should have OneToOne (license) but NOT posts
+                // Organization: correct class instance, but child-specific eager relation not loaded
                 const loadedOrg = actors[1] as Organization
                 expect(loadedOrg).to.be.instanceOf(Organization)
-                expect(loadedOrg.license).to.not.be.undefined
-                expect(loadedOrg.license).to.not.be.null
-                expect(loadedOrg.license.key).to.equal("ORG-001")
+                expect(loadedOrg.license).to.be.undefined
                 expect(loadedOrg).to.not.have.property("posts")
+
+                // Verify child data by querying child entities directly
+                const fullUser = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
+                expect(fullUser!.profile).to.not.be.undefined
+                expect(fullUser!.profile.name).to.equal("Alice Profile")
+                expect(fullUser!.posts).to.not.be.undefined
+                expect(fullUser!.posts).to.have.length(2)
+                const titles = fullUser!.posts.map((p) => p.title).sort()
+                expect(titles).to.deep.equal(["First Post", "Second Post"])
+
+                const fullOrg = await connection
+                    .getRepository(Organization)
+                    .findOneBy({ id: org.id })
+                expect(fullOrg!.license).to.not.be.undefined
+                expect(fullOrg!.license.key).to.equal("ORG-001")
             }),
         ))
 
@@ -523,27 +546,39 @@ describe("table-inheritance > class-table > eager-loading", () => {
                 post3.author = user2
                 await connection.getRepository(Post).save(post3)
 
-                // Query parent repo
+                // Query parent repo — child-specific eager relations not loaded
                 const actors = await connection
                     .getRepository(Actor)
                     .find({ order: { id: "ASC" } })
 
                 expect(actors).to.have.length(2)
 
-                // Alice: 1 post
+                // From parent repo, only root columns available; no child-specific data
                 const alice = actors[0] as User
                 expect(alice.name).to.equal("Alice")
-                expect(alice.posts).to.have.length(1)
-                expect(alice.posts[0].title).to.equal("Alice Post")
-                expect(alice.profile.name).to.equal("Alice Profile")
+                expect(alice.posts).to.be.undefined
+                expect(alice.profile).to.be.undefined
 
-                // Bob: 2 posts
                 const bob = actors[1] as User
                 expect(bob.name).to.equal("Bob")
-                expect(bob.posts).to.have.length(2)
-                const bobTitles = bob.posts.map((p) => p.title).sort()
+                expect(bob.posts).to.be.undefined
+                expect(bob.profile).to.be.undefined
+
+                // Verify child data by querying child entities directly
+                const fullAlice = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user1.id })
+                expect(fullAlice!.posts).to.have.length(1)
+                expect(fullAlice!.posts[0].title).to.equal("Alice Post")
+                expect(fullAlice!.profile.name).to.equal("Alice Profile")
+
+                const fullBob = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user2.id })
+                expect(fullBob!.posts).to.have.length(2)
+                const bobTitles = fullBob!.posts.map((p) => p.title).sort()
                 expect(bobTitles).to.deep.equal(["Bob Post 1", "Bob Post 2"])
-                expect(bob.profile.name).to.equal("Bob Profile")
+                expect(fullBob!.profile.name).to.equal("Bob Profile")
             }),
         ))
 
@@ -575,11 +610,20 @@ describe("table-inheritance > class-table > eager-loading", () => {
 
                 const loaded = actors[0] as User
                 expect(loaded).to.be.instanceOf(User)
-                expect(loaded.profile).to.not.be.null
-                expect(loaded.profile.name).to.equal("Charlie Profile")
-                expect(loaded.posts).to.not.be.undefined
-                expect(loaded.posts).to.be.an("array")
-                expect(loaded.posts).to.have.length(0)
+                // Child-specific eager relations are not loaded from parent repo query
+                expect(loaded.profile).to.be.undefined
+                expect(loaded.posts).to.be.undefined
+
+                // Verify via child repo: User with no posts has empty posts array
+                const fullUser = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
+                expect(fullUser).to.not.be.null
+                expect(fullUser!.profile).to.not.be.null
+                expect(fullUser!.profile.name).to.equal("Charlie Profile")
+                expect(fullUser!.posts).to.not.be.undefined
+                expect(fullUser!.posts).to.be.an("array")
+                expect(fullUser!.posts).to.have.length(0)
             }),
         ))
 
@@ -612,8 +656,7 @@ describe("table-inheritance > class-table > eager-loading", () => {
                 org.license = license
                 await connection.getRepository(Organization).save(org)
 
-                // Query parent — should work even though both children have
-                // different sets of eager relations
+                // Query parent — child-specific eager relations not loaded
                 const actors = await connection
                     .getRepository(Actor)
                     .find({ order: { id: "ASC" } })
@@ -624,9 +667,13 @@ describe("table-inheritance > class-table > eager-loading", () => {
                 expect(actors[0]).to.be.instanceOf(User)
                 expect(actors[1]).to.be.instanceOf(Organization)
 
-                // Verify child-specific properties exist on correct types
-                expect((actors[0] as User).email).to.equal("alice@example.com")
-                expect((actors[1] as Organization).industry).to.equal("Tech")
+                // Root-table columns are available; child-specific columns are not
+                expect(actors[0].name).to.equal("Alice")
+                expect(actors[1].name).to.equal("Acme")
+
+                // Child-specific properties are undefined from parent repo query
+                expect((actors[0] as User).email).to.be.undefined
+                expect((actors[1] as Organization).industry).to.be.undefined
             }),
         ))
 })

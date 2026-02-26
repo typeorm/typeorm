@@ -228,7 +228,7 @@ This creates **three tables**:
 - `user` — columns: `id` (FK to `actor.id`), `email`
 - `organization` — columns: `id` (FK to `actor.id`), `industry`
 
-When querying a child entity (e.g., `User`), TypeORM automatically generates an `INNER JOIN` to the parent table so all inherited columns are available. When querying the parent entity (`Actor`), TypeORM generates `LEFT JOIN`s to each child table and instantiates the correct child type based on the discriminator.
+When querying a child entity (e.g., `User`), TypeORM automatically generates an `INNER JOIN` to the parent table so all inherited columns are available. When querying the parent entity (`Actor`), only the parent table is queried — child-specific columns are **not** loaded. The correct child class is instantiated based on the discriminator column, but only parent-table columns are populated. To access child-specific data, query the child entity directly.
 
 ### Multi-level CTI
 
@@ -385,30 +385,33 @@ export class User extends Actor {
 | Schema clarity | All columns in one table | Clean separation of concerns |
 | Best for | Few child-specific columns | Many child-specific columns or relations |
 
-### Polymorphic parent queries and eager relations
+### Polymorphic parent queries
 
-When querying a parent or mid-level entity (e.g., `actorRepository.find()`), the query returns polymorphic results with the correct child type instantiated. Child-specific eager relations are loaded automatically via follow-up batched queries — each child type's eager relations are loaded separately, avoiding cartesian products:
+When querying a parent or mid-level entity (e.g., `actorRepository.find()`), the query returns polymorphic results with the correct child type instantiated based on the discriminator value. However, **only parent-table columns and parent-level relations are loaded** — child-specific columns and relations are not included:
 
 ```typescript
-// Parent query:
-//   SELECT actor.*, user.email, org.industry FROM actor
-//     LEFT JOIN user ON user.id = actor.id
-//     LEFT JOIN organization ON organization.id = actor.id
-//
-// Follow-up queries (one per child type per eager relation):
-//   SELECT profile.* FROM profile WHERE profile.id IN (...)  -- for User.profile
-//   SELECT license.* FROM license WHERE license.id IN (...)  -- for Org.license
+// Parent query — only the parent table is queried:
+//   SELECT actor.* FROM actor
 
 const actors = await actorRepository.find()
 const user = actors[0] as User
-user.profile  // ← eagerly loaded via batched follow-up query
+user.name       // ← populated (parent-table column)
+user.email      // ← undefined (child-specific column, not loaded)
+user.profile    // ← undefined (child-specific relation, not loaded)
 ```
 
-For snapshot consistency across the main query and follow-up queries, use `transaction: true` in FindOptions:
+To access child-specific data, query the child entity directly:
 
 ```typescript
-const actors = await actorRepository.find({ transaction: true })
+const user = await userRepository.findOne({
+    where: { id: actors[0].id },
+    relations: { profile: true },
+})
+user.email      // ← populated (child query INNER JOINs parent table)
+user.profile    // ← populated (explicitly requested relation)
 ```
+
+This follows the principle that the parent entity is a standalone entity, not an umbrella that aggregates all child data. Parent queries are lightweight (no child table JOINs), and child data is accessed through child-specific queries.
 
 ## Using embeddeds
 

@@ -200,7 +200,7 @@ describe("table-inheritance > class-table > eager-lazy-multi-level", () => {
     it("should eagerly load Tag, Badge, and Profile when User is loaded via Contributor repository", () =>
         Promise.all(
             connections.map(async (connection) => {
-                await createFullUser(connection)
+                const { user } = await createFullUser(connection)
 
                 // Load via Contributor repo — User extends Contributor
                 const contributors = await connection
@@ -212,20 +212,27 @@ describe("table-inheritance > class-table > eager-lazy-multi-level", () => {
                 ) as User
                 expect(loadedUser).to.not.be.undefined
 
-                // Grandparent: Tag
+                // Grandparent (Actor): Tag — loaded because FK is on root actor table
                 expect(loadedUser.tag).to.not.be.undefined
                 expect(loadedUser.tag).to.not.be.null
                 expect(loadedUser.tag.label).to.equal("user-tag")
 
-                // Parent: Badge
+                // Parent (Contributor): Badge — loaded because FK is on contributor table
                 expect(loadedUser.badge).to.not.be.undefined
                 expect(loadedUser.badge).to.not.be.null
                 expect(loadedUser.badge.title).to.equal("Gold Contributor")
 
-                // Own: Profile
-                expect(loadedUser.profile).to.not.be.undefined
-                expect(loadedUser.profile).to.not.be.null
-                expect(loadedUser.profile.name).to.equal("Alice Profile")
+                // Own (User): Profile — child-specific, not loaded from Contributor repo
+                expect(loadedUser.profile).to.be.undefined
+
+                // Verify profile by querying User directly
+                const fullUser = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
+                expect(fullUser).to.not.be.null
+                expect(fullUser!.profile).to.not.be.undefined
+                expect(fullUser!.profile).to.not.be.null
+                expect(fullUser!.profile.name).to.equal("Alice Profile")
             }),
         ))
 
@@ -237,7 +244,7 @@ describe("table-inheritance > class-table > eager-lazy-multi-level", () => {
     it("should eagerly load Tag and Badge (but not Profile) for Contributor loaded via Actor repo", () =>
         Promise.all(
             connections.map(async (connection) => {
-                await createContributor(connection)
+                const { contributor } = await createContributor(connection)
 
                 const actors = await connection
                     .getRepository(Actor)
@@ -249,22 +256,29 @@ describe("table-inheritance > class-table > eager-lazy-multi-level", () => {
                 ) as Contributor
                 expect(loadedContributor).to.not.be.undefined
 
-                // Tag (from Actor, root eager relation — already loaded by parent query)
+                // Tag (from Actor, root eager relation — loaded by parent query)
                 expect(loadedContributor.tag).to.not.be.undefined
                 expect(loadedContributor.tag).to.not.be.null
                 expect(loadedContributor.tag.label).to.equal(
                     "contributor-tag",
                 )
 
-                // Badge (from Contributor, child-specific eager relation)
-                expect(loadedContributor.badge).to.not.be.undefined
-                expect(loadedContributor.badge).to.not.be.null
-                expect(loadedContributor.badge.title).to.equal(
-                    "Silver Contributor",
-                )
+                // Badge is child-specific (Contributor-level) — not loaded from parent Actor repo
+                expect(loadedContributor.badge).to.be.undefined
 
                 // Profile should NOT exist on Contributor
                 expect(loadedContributor).to.not.have.property("profile")
+
+                // Verify child data by querying Contributor directly
+                const fullContributor = await connection
+                    .getRepository(Contributor)
+                    .findOneBy({ id: contributor.id })
+                expect(fullContributor).to.not.be.null
+                expect(fullContributor!.badge).to.not.be.undefined
+                expect(fullContributor!.badge).to.not.be.null
+                expect(fullContributor!.badge.title).to.equal(
+                    "Silver Contributor",
+                )
             }),
         ))
 

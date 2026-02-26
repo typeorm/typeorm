@@ -39,31 +39,39 @@ describe("table-inheritance > class-table > polymorphic-queries", () => {
                 org1.industry = "Technology"
                 await connection.getRepository(Organization).save(org1)
 
-                // Query parent repository — should return mixed child types
+                // Query parent repository — returns mixed child types
                 const allActors = await connection
                     .getRepository(Actor)
                     .find({ order: { id: "ASC" } })
 
                 expect(allActors).to.have.length(3)
 
-                // First two should be Users
+                // First two should be Users; root-table column (name) is populated
                 expect(allActors[0]).to.be.instanceOf(User)
-                expect((allActors[0] as User).email).to.equal(
-                    "alice@example.com",
-                )
                 expect(allActors[0].name).to.equal("Alice")
+                // Child-specific columns are undefined from parent repo query
+                expect((allActors[0] as User).email).to.be.undefined
 
                 expect(allActors[1]).to.be.instanceOf(User)
-                expect((allActors[1] as User).email).to.equal(
-                    "bob@example.com",
-                )
+                expect(allActors[1].name).to.equal("Bob")
+                expect((allActors[1] as User).email).to.be.undefined
 
-                // Third should be Organization
+                // Third should be Organization; root-table column (name) is populated
                 expect(allActors[2]).to.be.instanceOf(Organization)
-                expect((allActors[2] as Organization).industry).to.equal(
-                    "Technology",
-                )
                 expect(allActors[2].name).to.equal("Acme Corp")
+                // Child-specific columns are undefined from parent repo query
+                expect((allActors[2] as Organization).industry).to.be.undefined
+
+                // Verify child data by querying child entities directly
+                const fullUser1 = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user1.id })
+                expect(fullUser1!.email).to.equal("alice@example.com")
+
+                const fullOrg = await connection
+                    .getRepository(Organization)
+                    .findOneBy({ id: org1.id })
+                expect(fullOrg!.industry).to.equal("Technology")
             }),
         ))
 
@@ -106,8 +114,16 @@ describe("table-inheritance > class-table > polymorphic-queries", () => {
 
                 expect(loaded).to.not.be.null
                 expect(loaded).to.be.instanceOf(User)
-                expect((loaded as User).email).to.equal("alice@example.com")
+                // Root-table column is populated
                 expect(loaded!.name).to.equal("Alice")
+                // Child-specific column is undefined from parent repo query
+                expect((loaded as User).email).to.be.undefined
+
+                // Verify child data by querying child entity directly
+                const fullUser = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
+                expect(fullUser!.email).to.equal("alice@example.com")
             }),
         ))
 
@@ -200,13 +216,23 @@ describe("table-inheritance > class-table > polymorphic-queries", () => {
                 const loadedUser = actors[0] as User
                 const loadedOrg = actors[1] as Organization
 
-                // User should have email, not industry
-                expect(loadedUser.email).to.equal("alice@example.com")
+                // From parent repo query, child-specific columns are undefined;
+                // siblings should not have each other's properties
                 expect(loadedUser).to.not.have.property("industry")
-
-                // Organization should have industry, not email
-                expect(loadedOrg.industry).to.equal("Tech")
                 expect(loadedOrg).to.not.have.property("email")
+
+                // Verify child data by querying child entities directly
+                const fullUser = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
+                expect(fullUser!.email).to.equal("alice@example.com")
+                expect(fullUser).to.not.have.property("industry")
+
+                const fullOrg = await connection
+                    .getRepository(Organization)
+                    .findOneBy({ id: org.id })
+                expect(fullOrg!.industry).to.equal("Tech")
+                expect(fullOrg).to.not.have.property("email")
             }),
         ))
 })

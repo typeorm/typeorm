@@ -92,7 +92,16 @@ describe("table-inheritance > class-table > cti-root-findone", () => {
                 expect(loaded).to.not.be.null
                 expect(loaded!.id).to.equal(saved.id)
                 expect(loaded).to.be.instanceOf(User)
-                expect((loaded as User).email).to.equal("alice@test.com")
+                // Root-table columns are populated; child-specific columns are undefined
+                expect(loaded!.nameID).to.equal("alice")
+                expect((loaded as User).email).to.be.undefined
+
+                // Verify child data by querying child entity directly
+                const user = await connection
+                    .getRepository(User)
+                    .findOne({ where: { id: saved.id } })
+                expect(user).to.not.be.null
+                expect(user!.email).to.equal("alice@test.com")
             }),
         ))
 

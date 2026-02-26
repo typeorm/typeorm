@@ -36,7 +36,8 @@ describe("class-table-inheritance > column-name-collision", () => {
                 org.status = "verified"
                 await connection.getRepository(Organization).save(org)
 
-                // Query parent repository (polymorphic) - this is where alias collision occurs
+                // Query parent repository — returns root-table columns only.
+                // Child-specific columns (email, industry, status) are undefined.
                 const actors = await connection
                     .getRepository(Actor)
                     .find({ order: { id: "ASC" } })
@@ -46,14 +47,27 @@ describe("class-table-inheritance > column-name-collision", () => {
                 const loadedUser = actors[0] as User
                 expect(loadedUser).to.be.instanceOf(User)
                 expect(loadedUser.name).to.equal("Alice")
-                expect(loadedUser.email).to.equal("alice@test.com")
-                expect(loadedUser.status).to.equal("active")
+                expect(loadedUser.email).to.be.undefined
+                expect(loadedUser.status).to.be.undefined
 
                 const loadedOrg = actors[1] as Organization
                 expect(loadedOrg).to.be.instanceOf(Organization)
                 expect(loadedOrg.name).to.equal("Acme")
-                expect(loadedOrg.industry).to.equal("Tech")
-                expect(loadedOrg.status).to.equal("verified")
+                expect(loadedOrg.industry).to.be.undefined
+                expect(loadedOrg.status).to.be.undefined
+
+                // Verify child data via child repos — status is distinct per child
+                const fullUser = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
+                expect(fullUser!.email).to.equal("alice@test.com")
+                expect(fullUser!.status).to.equal("active")
+
+                const fullOrg = await connection
+                    .getRepository(Organization)
+                    .findOneBy({ id: org.id })
+                expect(fullOrg!.industry).to.equal("Tech")
+                expect(fullOrg!.status).to.equal("verified")
             }),
         ))
 
@@ -72,18 +86,29 @@ describe("class-table-inheritance > column-name-collision", () => {
                 org.status = "active"
                 await connection.getRepository(Organization).save(org)
 
-                // findOne on parent - should hydrate correct child status
+                // findOne on parent — returns root columns only, child status is undefined
                 const loadedUser = await connection
                     .getRepository(Actor)
                     .findOne({ where: { id: user.id } })
                 expect(loadedUser).to.be.instanceOf(User)
-                expect((loadedUser as User).status).to.equal("suspended")
+                expect((loadedUser as User).status).to.be.undefined
 
                 const loadedOrg = await connection
                     .getRepository(Actor)
                     .findOne({ where: { id: org.id } })
                 expect(loadedOrg).to.be.instanceOf(Organization)
-                expect((loadedOrg as Organization).status).to.equal("active")
+                expect((loadedOrg as Organization).status).to.be.undefined
+
+                // Verify via child repos
+                const fullUser = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
+                expect(fullUser!.status).to.equal("suspended")
+
+                const fullOrg = await connection
+                    .getRepository(Organization)
+                    .findOneBy({ id: org.id })
+                expect(fullOrg!.status).to.equal("active")
             }),
         ))
 
@@ -109,8 +134,20 @@ describe("class-table-inheritance > column-name-collision", () => {
                     .getMany()
 
                 expect(actors).to.have.length(2)
-                expect((actors[0] as User).status).to.equal("active")
-                expect((actors[1] as Organization).status).to.equal("pending")
+                // Parent query: child-specific columns are undefined
+                expect((actors[0] as User).status).to.be.undefined
+                expect((actors[1] as Organization).status).to.be.undefined
+
+                // Verify via child repos
+                const fullUser = await connection
+                    .getRepository(User)
+                    .findOneBy({ id: user.id })
+                expect(fullUser!.status).to.equal("active")
+
+                const fullOrg = await connection
+                    .getRepository(Organization)
+                    .findOneBy({ id: org.id })
+                expect(fullOrg!.status).to.equal("pending")
             }),
         ))
 })
