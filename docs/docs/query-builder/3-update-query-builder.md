@@ -32,3 +32,65 @@ await dataSource
 ```
 
 > Warning: When using raw SQL, ensure that values are properly sanitized to prevent SQL injection.
+
+## UPDATE FROM syntax
+
+Some databases support `UPDATE ... FROM` syntax which allows you to update a table based on data from other tables. TypeORM provides the `from()` and `addFrom()` methods for this purpose.
+
+### Supported databases
+
+The following database drivers support `UPDATE ... FROM` syntax:
+
+- **PostgreSQL** and **Aurora PostgreSQL**
+- **SQL Server**
+- **SQLite>=3.33.0**
+- **CockroachDB**
+
+### Using from() and addFrom()
+
+The `from()` method specifies additional tables to include in the `UPDATE ... FROM` clause. The `addFrom()` method is an alias for `from()`.
+
+```typescript
+// Update users based on their profile data
+await dataSource
+    .createQueryBuilder()
+    .update(User)
+    .set({ status: "active" })
+    .from(Profile, "profile")
+    .where("user.profileId = profile.id")
+    .andWhere("profile.verified = :verified", { verified: true })
+    .execute()
+```
+
+### Error handling
+
+If you attempt to use `from()` or `addFrom()` on a database that doesn't support `UPDATE ... FROM` syntax, TypeORM will throw a `FromOnUpdateNotSupportedError`.
+
+```typescript
+try {
+    await dataSource
+        .createQueryBuilder()
+        .update(User)
+        .set({ status: "active" })
+        .from(Profile, "profile")
+        .where("user.profileId = profile.id")
+        .execute()
+} catch (error) {
+    if (error instanceof FromOnUpdateNotSupportedError) {
+        console.log("This database doesn't support UPDATE ... FROM syntax")
+    }
+}
+```
+
+### Driver capability check
+
+You can check if a driver supports `UPDATE ... FROM` syntax using the `isUpdateFromSqlSupported()` method:
+
+```typescript
+const driver = dataSource.driver
+if (driver.isUpdateFromSqlSupported()) {
+    // Safe to use from() and addFrom()
+} else {
+    // Use alternative update approach
+}
+```
