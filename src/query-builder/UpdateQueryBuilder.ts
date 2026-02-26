@@ -210,6 +210,8 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Specifies additional FROMs for update query.
+     * @param entityTarget
+     * @param aliasName
      */
     from<T extends ObjectLiteral>(
         entityTarget:
@@ -220,7 +222,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         if (this.connection.driver.isUpdateFromSqlSupported()) {
             this.createFromAlias(entityTarget, aliasName)
 
-            return this as any as UpdateQueryBuilder<T>
+            return this as unknown as UpdateQueryBuilder<T>
         } else {
             throw new FromOnUpdateNotSupportedError()
         }
@@ -228,6 +230,8 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Specifies additional FROMs for update query.
+     * @param entityTarget
+     * @param aliasName
      */
     addFrom<T extends ObjectLiteral>(
         entityTarget:
@@ -770,7 +774,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 this.getMainTableName(),
             )} SET ${updateColumnAndValues.join(
                 ", ",
-            )} OUTPUT ${returningExpression}${whereExpression}`
+            )} OUTPUT ${returningExpression}${fromExpression}${whereExpression}`
         }
         if (this.connection.driver.options.type === "spanner") {
             return `UPDATE ${this.getTableName(
@@ -784,7 +788,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             this.getMainTableName(),
         )} SET ${updateColumnAndValues.join(
             ", ",
-        )}${whereExpression} RETURNING ${returningExpression}`
+        )}${fromExpression}${whereExpression} RETURNING ${returningExpression}`
     }
 
     /**
