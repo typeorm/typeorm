@@ -1,4 +1,6 @@
-const isBuffer = (value: unknown): value is Buffer =>
+const isBuffer = (
+    value: unknown,
+): value is Uint8Array & { equals(other: Uint8Array): boolean } =>
     typeof Buffer !== "undefined" && Buffer.isBuffer(value)
 
 export const isUint8Array = (value: unknown): value is Uint8Array => {
