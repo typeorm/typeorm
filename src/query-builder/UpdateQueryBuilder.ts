@@ -214,16 +214,15 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * @param entityTarget
      * @param aliasName
      */
-    from<T extends ObjectLiteral>(
+    from(
         entityTarget:
-            | EntityTarget<T>
+            | EntityTarget<any>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         aliasName: string,
-    ): UpdateQueryBuilder<T> {
+    ): this {
         if (this.connection.driver.isUpdateFromSqlSupported()) {
             this.createFromAlias(entityTarget, aliasName)
-
-            return this as unknown as UpdateQueryBuilder<T>
+            return this
         } else {
             throw new FromOnUpdateNotSupportedError()
         }
@@ -234,12 +233,12 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * @param entityTarget
      * @param aliasName
      */
-    addFrom<T extends ObjectLiteral>(
+    addFrom(
         entityTarget:
-            | EntityTarget<T>
+            | EntityTarget<any>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         aliasName: string,
-    ): UpdateQueryBuilder<T> {
+    ): this {
         return this.from(entityTarget, aliasName)
     }
 
