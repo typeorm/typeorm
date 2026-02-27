@@ -302,4 +302,57 @@ describe("table-inheritance > class-table > cti-root-findone", () => {
                 )
             }),
         ))
+
+    // ===================================================================
+    // (k) findOne(User) with inherited relation from parent Actor
+    //     Inherited relation join columns must be correctly aliased
+    //     to the ancestor table that owns them (profileId on actor).
+    // ===================================================================
+    it("should load inherited profile relation when querying child User entity", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const saved = await insertUser(
+                    connection,
+                    "alice",
+                    "alice@test.com",
+                )
+
+                // Query the CHILD entity with a relation defined on the PARENT.
+                // The join column (profileId) lives on the actor table,
+                // so the JOIN must reference the actor alias, not the user alias.
+                const loaded = await connection.manager.findOne(User, {
+                    where: { id: saved.id },
+                    relations: { profile: true },
+                })
+
+                expect(loaded).to.not.be.null
+                expect(loaded!.profile).to.not.be.undefined
+                expect(loaded!.profile.displayName).to.equal("alice")
+                expect(loaded!.email).to.equal("alice@test.com")
+            }),
+        ))
+
+    // ===================================================================
+    // (l) findOne(User) with inherited eager relation (authorization)
+    // ===================================================================
+    it("should load inherited eager authorization when querying child User entity", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const saved = await insertUser(
+                    connection,
+                    "alice",
+                    "alice@test.com",
+                )
+
+                const loaded = await connection.manager.findOne(User, {
+                    where: { id: saved.id },
+                })
+
+                expect(loaded).to.not.be.null
+                expect(loaded!.authorization).to.not.be.undefined
+                expect(loaded!.authorization.credentialRules).to.equal(
+                    "user-rules",
+                )
+            }),
+        ))
 })
