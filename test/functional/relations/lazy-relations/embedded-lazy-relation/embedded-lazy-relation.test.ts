@@ -51,8 +51,8 @@ describe("lazy relations in embedded entity", () => {
                         loadedPost!,
                     )
 
-                    // Wait for next tick to ensure no lazy relation queries were fired
-                    await new Promise((resolve) => process.nextTick(resolve))
+                    // Wait for macrotask boundary to ensure no lazy relation queries were fired
+                    await new Promise<void>((resolve) => setImmediate(resolve))
 
                     queryCount.should.be.equal(0)
                     createdPost.author.name.should.be.equal("John Doe")

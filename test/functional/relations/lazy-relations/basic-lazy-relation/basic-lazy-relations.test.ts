@@ -460,11 +460,54 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                         loadedPost!,
                     )
 
-                    // wait till next tick to ensure that if there were any lazy relation loads
-                    await new Promise((resolve) => process.nextTick(resolve))
+                    // wait for macrotask boundary to ensure lazy relation loads are executed
+                    await new Promise<void>((resolve) => setImmediate(resolve))
 
                     queryCount.should.be.equal(0)
                     createdPost.title.should.be.equal("About ActiveRecord")
+                } finally {
+                    loggerStub.restore()
+                }
+            }),
+        ))
+
+    it("should not invoke instance-defined lazy getters when calling create with an EntitySchema object", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const userRepository = connection.getRepository("User")
+                const profileRepository = connection.getRepository("Profile")
+
+                const profile = profileRepository.create({ country: "Japan" })
+                await profileRepository.save(profile)
+
+                const user = userRepository.create({
+                    firstName: "Umed",
+                    secondName: "San",
+                })
+                user.profile = Promise.resolve(profile)
+                await userRepository.save(user)
+
+                const loadedUser = await userRepository.findOneBy({ id: 1 })
+
+                const profileDescriptor = Object.getOwnPropertyDescriptor(
+                    loadedUser!,
+                    "profile",
+                )
+                profileDescriptor!.get!.should.be.a("function")
+
+                let queryCount = 0
+                const loggerStub = sinon
+                    .stub(connection.logger, "logQuery")
+                    .callsFake(() => queryCount++)
+
+                try {
+                    const createdUser = userRepository.create(loadedUser!)
+
+                    await new Promise<void>((resolve) => setImmediate(resolve))
+
+                    queryCount.should.be.equal(0)
+                    createdUser.firstName.should.be.equal("Umed")
+                    createdUser.secondName.should.be.equal("San")
                 } finally {
                     loggerStub.restore()
                 }

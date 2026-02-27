@@ -464,12 +464,21 @@ export class RelationMetadata {
 
                 if (getLazyRelationsPromiseValue === true) {
                     if (!embeddedObject) return undefined
-                    return this.hasGetterDescriptor(
-                        embeddedObject,
-                        this.propertyName,
-                    )
-                        ? undefined
-                        : embeddedObject[this.propertyName]
+                    if (
+                        this.hasGetterDescriptor(
+                            embeddedObject,
+                            this.propertyName,
+                        )
+                    ) {
+                        const promiseKey =
+                            "__promise_" + this.propertyName + "__"
+                        return promiseKey in embeddedObject
+                            ? embeddedObject[
+                                  "__promise_" + this.propertyName + "__"
+                              ]
+                            : undefined
+                    }
+                    return embeddedObject[this.propertyName]
                 }
 
                 return undefined
@@ -488,9 +497,14 @@ export class RelationMetadata {
                     return entity["__" + this.propertyName + "__"]
 
                 if (getLazyRelationsPromiseValue === true) {
-                    return this.hasGetterDescriptor(entity, this.propertyName)
-                        ? undefined
-                        : entity[this.propertyName]
+                    if (this.hasGetterDescriptor(entity, this.propertyName)) {
+                        const promiseKey =
+                            "__promise_" + this.propertyName + "__"
+                        return promiseKey in entity
+                            ? entity[promiseKey]
+                            : undefined
+                    }
+                    return entity[this.propertyName]
                 }
 
                 return undefined
@@ -706,11 +720,18 @@ export class RelationMetadata {
      */
     private hasGetterDescriptor(obj: any, propertyName: string): boolean {
         if (!obj) return false
-        const prototype = Object.getPrototypeOf(obj)
-        const descriptor =
-            Object.getOwnPropertyDescriptor(obj, propertyName) ||
-            (prototype &&
-                Object.getOwnPropertyDescriptor(prototype, propertyName))
-        return !!(descriptor && descriptor.get)
+
+        let currentObj = obj
+        while (currentObj && currentObj !== Object.prototype) {
+            const descriptor = Object.getOwnPropertyDescriptor(
+                currentObj,
+                propertyName,
+            )
+            if (descriptor && typeof descriptor.get === "function") {
+                return true
+            }
+            currentObj = Object.getPrototypeOf(currentObj)
+        }
+        return false
     }
 }
