@@ -1,3 +1,5 @@
+import { TypeORMError } from "../../error/TypeORMError"
+
 export type LegacyReplicationMode = "master" | "slave"
 
 export type ReplicationMode = LegacyReplicationMode | "primary" | "replica"
@@ -11,6 +13,9 @@ export function normalizeReplicationMode(
 ): LegacyReplicationMode {
     if (mode === "primary") return "master"
     if (mode === "replica") return "slave"
+    if (mode === "master" || mode === "slave") return mode
 
-    return mode
+    throw new TypeORMError(
+        `Invalid replication mode "${String(mode)}". Expected "master", "slave", "primary", or "replica".`,
+    )
 }

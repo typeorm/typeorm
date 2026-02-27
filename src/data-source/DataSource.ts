@@ -45,6 +45,7 @@ import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { buildSqlTag } from "../util/SqlTagUtils"
+import { OrmUtils } from "../util/OrmUtils"
 
 registerQueryBuilders()
 
@@ -268,6 +269,26 @@ export class DataSource {
 
         if (!hasAliasEndpoints && !hasAliasMode) {
             return options
+        }
+
+        if (
+            replication.master !== undefined &&
+            replication.primary !== undefined &&
+            !OrmUtils.deepCompare(replication.master, replication.primary)
+        ) {
+            throw new TypeORMError(
+                `Replication options cannot define both "master" and "primary" with different values.`,
+            )
+        }
+
+        if (
+            replication.slaves !== undefined &&
+            replication.replicas !== undefined &&
+            !OrmUtils.deepCompare(replication.slaves, replication.replicas)
+        ) {
+            throw new TypeORMError(
+                `Replication options cannot define both "slaves" and "replicas" with different values.`,
+            )
         }
 
         return {
