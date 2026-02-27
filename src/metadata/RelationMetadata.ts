@@ -368,7 +368,8 @@ export class RelationMetadata {
 
     /**
      * Creates join column ids map from the given related entity ids array.
-     * @param entity
+     * @param entity Entity from which to extract the relation id map.
+     * @returns Relation id map or undefined if relation id map cannot be extracted.
      */
     getRelationIdMap(entity: ObjectLiteral): ObjectLiteral | undefined {
         const joinColumns = this.isOwning
@@ -387,7 +388,8 @@ export class RelationMetadata {
      * If given id is an object then it means its already id map.
      * If given id isn't an object then it means its a value of the id column
      * and it creates a new id map with this value and name of the primary column.
-     * @param id
+     * @param id Entity id or entity id map.
+     * @returns Entity id map.
      */
     ensureRelationIdMap(id: any): ObjectLiteral {
         if (ObjectUtils.isObject(id)) return id
@@ -410,8 +412,9 @@ export class RelationMetadata {
     /**
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
-     * @param entity
-     * @param getLazyRelationsPromiseValue
+     * @param entity Entity from which to extract the column value.
+     * @param getLazyRelationsPromiseValue Whether to get the value of lazy relations promises.
+     * @returns Extracted column value or undefined if it cannot be extracted.
      */
     getEntityValue(
         entity: ObjectLiteral,
@@ -453,13 +456,30 @@ export class RelationMetadata {
 
             if (this.isLazy) {
                 if (
+                    embeddedObject &&
                     embeddedObject["__" + this.propertyName + "__"] !==
-                    undefined
+                        undefined
                 )
                     return embeddedObject["__" + this.propertyName + "__"]
 
-                if (getLazyRelationsPromiseValue === true)
+                if (getLazyRelationsPromiseValue === true) {
+                    if (!embeddedObject) return undefined
+                    if (
+                        this.hasGetterDescriptor(
+                            embeddedObject,
+                            this.propertyName,
+                        )
+                    ) {
+                        const promiseKey =
+                            "__promise_" + this.propertyName + "__"
+                        return promiseKey in embeddedObject
+                            ? embeddedObject[
+                                  "__promise_" + this.propertyName + "__"
+                              ]
+                            : undefined
+                    }
                     return embeddedObject[this.propertyName]
+                }
 
                 return undefined
             }
@@ -476,8 +496,16 @@ export class RelationMetadata {
                 if (entity["__" + this.propertyName + "__"] !== undefined)
                     return entity["__" + this.propertyName + "__"]
 
-                if (getLazyRelationsPromiseValue === true)
+                if (getLazyRelationsPromiseValue === true) {
+                    if (this.hasGetterDescriptor(entity, this.propertyName)) {
+                        const promiseKey =
+                            "__promise_" + this.propertyName + "__"
+                        return promiseKey in entity
+                            ? entity[promiseKey]
+                            : undefined
+                    }
                     return entity[this.propertyName]
+                }
 
                 return undefined
             }
@@ -490,8 +518,9 @@ export class RelationMetadata {
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
      *
      * If merge is set to true, it merges given value into currently
-     * @param entity
-     * @param value
+     * @param entity Entity in which to set the value.
+     * @param value Value to be set.
+     * @returns
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
         const propertyName = this.isLazy
@@ -537,7 +566,8 @@ export class RelationMetadata {
 
     /**
      * Creates entity id map from the given entity ids array.
-     * @param value
+     * @param value Value to be set.
+     * @returns Entity id map.
      */
     createValueMap(value: any) {
         // extract column value from embeds of entity if column is in embedded
@@ -589,7 +619,7 @@ export class RelationMetadata {
     /**
      * Registers given foreign keys in the relation.
      * This builder method should be used to register foreign key in the relation.
-     * @param foreignKeys
+     * @param foreignKeys Foreign keys to be registered.
      */
     registerForeignKeys(...foreignKeys: ForeignKeyMetadata[]) {
         this.foreignKeys.push(...foreignKeys)
@@ -598,8 +628,8 @@ export class RelationMetadata {
     /**
      * Registers given join columns in the relation.
      * This builder method should be used to register join column in the relation.
-     * @param joinColumns
-     * @param inverseJoinColumns
+     * @param joinColumns Join columns to be registered.
+     * @param inverseJoinColumns Inverse join columns to be registered.
      */
     registerJoinColumns(
         joinColumns: ColumnMetadata[] = [],
@@ -621,7 +651,7 @@ export class RelationMetadata {
     /**
      * Registers a given junction entity metadata.
      * This builder method can be called after junction entity metadata for the many-to-many relation was created.
-     * @param junctionEntityMetadata
+     * @param junctionEntityMetadata Junction entity metadata.
      */
     registerJunctionEntityMetadata(junctionEntityMetadata: EntityMetadata) {
         this.junctionEntityMetadata = junctionEntityMetadata
@@ -635,6 +665,7 @@ export class RelationMetadata {
     /**
      * Builds inverse side property path based on given inverse side property factory.
      * This builder method should be used only after properties map of the inverse entity metadata was build.
+     * @returns Inverse side property path.
      */
     buildInverseSidePropertyPath(): string {
         if (this.givenInverseSidePropertyFactory) {
@@ -664,6 +695,7 @@ export class RelationMetadata {
 
     /**
      * Builds relation's property path based on its embedded tree.
+     * @returns Relation's property path.
      */
     buildPropertyPath(): string {
         if (
@@ -677,5 +709,29 @@ export class RelationMetadata {
             "." +
             this.propertyName
         )
+    }
+
+    /**
+     * Checks if the given object has a getter descriptor for the relation property.
+     * This is used to determine if the lazy relation has been accessed.
+     * @param obj The object to check.
+     * @param propertyName The property name of the relation.
+     * @returns true if the getter descriptor exists, false otherwise.
+     */
+    private hasGetterDescriptor(obj: any, propertyName: string): boolean {
+        if (!obj) return false
+
+        let currentObj = obj
+        while (currentObj && currentObj !== Object.prototype) {
+            const descriptor = Object.getOwnPropertyDescriptor(
+                currentObj,
+                propertyName,
+            )
+            if (descriptor && typeof descriptor.get === "function") {
+                return true
+            }
+            currentObj = Object.getPrototypeOf(currentObj)
+        }
+        return false
     }
 }
