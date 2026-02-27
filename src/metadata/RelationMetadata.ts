@@ -66,6 +66,16 @@ export class RelationMetadata {
     target: Function | string
 
     /**
+     * In Single Table Inheritance, tracks which class in the hierarchy originally
+     * declared this relation. Used to scope eager-loading so that relations
+     * defined on one child entity are not eagerly loaded for sibling children.
+     *
+     * For non-STI entities or relations declared on the parent itself,
+     * this equals `target`.
+     */
+    declaringTarget?: Function | string
+
+    /**
      * Target's property name to which relation decorator is applied.
      */
     propertyName: string
@@ -291,6 +301,7 @@ export class RelationMetadata {
         this.embeddedMetadata = options.embeddedMetadata!
         const args = options.args
         this.target = args.target
+        this.declaringTarget = args.target
         this.propertyName = args.propertyName
         this.relationType = args.relationType
 

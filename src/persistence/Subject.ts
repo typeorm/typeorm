@@ -304,6 +304,76 @@ export class Subject {
     }
 
     /**
+     * Creates value sets for CTI split updates, routing each column/relation
+     * to the table that physically owns it based on entityMetadata ownership.
+     * This avoids string-key matching which fails for embedded columns and
+     * relations whose property names differ from their join column paths.
+     * Important note: this method pops data from this subject's change maps.
+     */
+    createPerTableValueMaps(): {
+        tableUpdateMaps: Map<EntityMetadata, ObjectLiteral>
+        childUpdateMap: ObjectLiteral
+    } {
+        const ancestorSet = new Set(this.metadata.ctiAncestorChain)
+        const tableUpdateMaps = new Map<EntityMetadata, ObjectLiteral>()
+        const childUpdateMap: ObjectLiteral = {}
+        const changeMapsWithoutValues: SubjectChangeMap[] = []
+
+        for (const changeMap of this.changeMaps) {
+            let value = changeMap.value
+            if (InstanceChecker.isSubject(value)) {
+                value = value.insertedValueSet
+                    ? value.insertedValueSet
+                    : value.entity
+            }
+
+            let valueMap: ObjectLiteral | undefined
+            if (this.metadata.isJunction && changeMap.column) {
+                valueMap = changeMap.column.createValueMap(
+                    changeMap.column.referencedColumn!.getEntityValue(value),
+                )
+            } else if (changeMap.column) {
+                valueMap = changeMap.column.createValueMap(value)
+            } else if (changeMap.relation) {
+                if (ObjectUtils.isObject(value) && !Buffer.isBuffer(value)) {
+                    const relationId =
+                        changeMap.relation!.getRelationIdMap(value)
+                    if (relationId === undefined) {
+                        changeMapsWithoutValues.push(changeMap)
+                        this.canBeUpdated = true
+                        continue
+                    }
+                    valueMap = changeMap.relation!.createValueMap(relationId)
+                    this.updatedRelationMaps.push({
+                        relation: changeMap.relation,
+                        value: relationId,
+                    })
+                } else {
+                    valueMap = changeMap.relation!.createValueMap(value)
+                    this.updatedRelationMaps.push({
+                        relation: changeMap.relation,
+                        value: value,
+                    })
+                }
+            }
+
+            // Route to the correct table based on column/relation ownership
+            const owner =
+                changeMap.column?.entityMetadata ??
+                changeMap.relation?.entityMetadata
+            if (owner && ancestorSet.has(owner)) {
+                if (!tableUpdateMaps.has(owner)) tableUpdateMaps.set(owner, {})
+                OrmUtils.mergeDeep(tableUpdateMaps.get(owner)!, valueMap)
+            } else {
+                OrmUtils.mergeDeep(childUpdateMap, valueMap)
+            }
+        }
+
+        this.changeMaps = changeMapsWithoutValues
+        return { tableUpdateMaps, childUpdateMap }
+    }
+
+    /**
      * Recomputes entityWithFulfilledIds and identifier when entity changes.
      */
     recompute(): void {

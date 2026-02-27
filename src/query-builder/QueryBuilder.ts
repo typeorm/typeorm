@@ -24,6 +24,7 @@ import { NotBrackets } from "./NotBrackets"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { ReturningType } from "../driver/Driver"
 import { OracleDriver } from "../driver/oracle/OracleDriver"
+import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { escapeRegExp } from "../util/escapeRegExp"
 
@@ -732,6 +733,10 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     protected replacePropertyNamesForTheWholeQuery(statement: string) {
         const replacements: { [key: string]: { [key: string]: string } } = {}
+        // For CTI children, track inherited property-to-ancestor-alias mappings per alias prefix
+        const ctiInheritedAliasMap: {
+            [aliasPrefix: string]: Map<string, string>
+        } = {}
 
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
@@ -742,6 +747,37 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
             if (!replacements[replaceAliasNamePrefix]) {
                 replacements[replaceAliasNamePrefix] = {}
+            }
+
+            // For CTI children with multi-level inheritance, map each inherited property
+            // name to the escaped alias prefix of the ancestor that owns it.
+            // This is needed so that e.g. u.name routes to the Actor table alias
+            // while u.reputation routes to the Contributor table alias.
+            const inheritedPropertyToAliasPrefix:
+                | Map<string, string>
+                | undefined =
+                alias.metadata.isCtiChild &&
+                alias.metadata.inheritedColumns.length > 0 &&
+                this.expressionMap.aliasNamePrefixingEnabled
+                    ? new Map<string, string>()
+                    : undefined
+
+            // Build ancestor alias map for CTI children
+            let ctiAncestorAliasMap: Map<EntityMetadata, string> | undefined
+            if (inheritedPropertyToAliasPrefix) {
+                const chain = alias.metadata.ctiAncestorChain
+                ctiAncestorAliasMap = new Map()
+                for (let i = 0; i < chain.length; i++) {
+                    const ancestorAlias = DriverUtils.buildCtiAncestorAlias(
+                        this.connection.driver,
+                        alias.name,
+                        i,
+                    )
+                    ctiAncestorAliasMap.set(
+                        chain[i],
+                        `${this.escape(ancestorAlias)}.`,
+                    )
+                }
             }
 
             // Insert & overwrite the replacements from least to most relevant in our replacements object.
@@ -777,16 +813,64 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.databaseName] =
                     column.databaseName
+                if (
+                    inheritedPropertyToAliasPrefix &&
+                    alias.metadata.inheritedColumnsSet.has(column)
+                ) {
+                    const prefix = ctiAncestorAliasMap?.get(
+                        column.entityMetadata,
+                    )
+                    if (prefix)
+                        inheritedPropertyToAliasPrefix.set(
+                            column.databaseName,
+                            prefix,
+                        )
+                }
             }
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.propertyName] =
                     column.databaseName
+                if (
+                    inheritedPropertyToAliasPrefix &&
+                    alias.metadata.inheritedColumnsSet.has(column)
+                ) {
+                    const prefix = ctiAncestorAliasMap?.get(
+                        column.entityMetadata,
+                    )
+                    if (prefix)
+                        inheritedPropertyToAliasPrefix.set(
+                            column.propertyName,
+                            prefix,
+                        )
+                }
             }
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.propertyPath] =
                     column.databaseName
+                if (
+                    inheritedPropertyToAliasPrefix &&
+                    alias.metadata.inheritedColumnsSet.has(column)
+                ) {
+                    const prefix = ctiAncestorAliasMap?.get(
+                        column.entityMetadata,
+                    )
+                    if (prefix)
+                        inheritedPropertyToAliasPrefix.set(
+                            column.propertyPath,
+                            prefix,
+                        )
+                }
+            }
+
+            // For CTI children, store the inherited property-to-alias map for this alias prefix
+            if (
+                inheritedPropertyToAliasPrefix &&
+                inheritedPropertyToAliasPrefix.size > 0
+            ) {
+                ctiInheritedAliasMap[replaceAliasNamePrefix] =
+                    inheritedPropertyToAliasPrefix
             }
         }
 
@@ -816,11 +900,24 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         match = matches[0]
                         pre = matches[1]
                         p = matches[3]
+                        const aliasPrefix = matches[2]
 
-                        if (replacements[matches[2]][p]) {
+                        if (replacements[aliasPrefix][p]) {
+                            // For CTI children, route inherited columns to the correct ancestor alias
+                            const inheritedMap =
+                                ctiInheritedAliasMap[aliasPrefix]
+                            const ancestorPrefix = inheritedMap?.get(p)
+                            if (ancestorPrefix) {
+                                return `${pre}${ancestorPrefix}${this.escape(
+                                    replacements[aliasPrefix][p],
+                                )}`
+                            }
                             return `${pre}${this.escape(
-                                matches[2].substring(0, matches[2].length - 1),
-                            )}.${this.escape(replacements[matches[2]][p])}`
+                                aliasPrefix.substring(
+                                    0,
+                                    aliasPrefix.length - 1,
+                                ),
+                            )}.${this.escape(replacements[aliasPrefix][p])}`
                         }
                     } else {
                         match = matches[0]
@@ -899,16 +996,47 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             }
 
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
-                const column = this.expressionMap.aliasNamePrefixingEnabled
-                    ? this.expressionMap.mainAlias!.name +
-                      "." +
-                      metadata.discriminatorColumn.databaseName
-                    : metadata.discriminatorColumn.databaseName
+                // For CTI children, discriminator lives on the root ancestor table.
+                // In SELECT queries, the ancestor is JOINed so we can reference it.
+                // In UPDATE/DELETE, there's no JOIN — skip the discriminator condition
+                // (the child table only contains rows of that type, PK is sufficient).
+                if (metadata.isCtiChild) {
+                    if (this.expressionMap.queryType === "select") {
+                        // Find the root ancestor alias (last in the chain)
+                        const ancestorChain = metadata.ctiAncestorChain
+                        const rootIndex = ancestorChain.length - 1
+                        const rootAliasName = DriverUtils.buildCtiAncestorAlias(
+                            this.connection.driver,
+                            this.expressionMap.mainAlias!.name,
+                            rootIndex,
+                        )
 
-                const condition = `${this.replacePropertyNames(
-                    column,
-                )} IN (:...discriminatorColumnValues)`
-                conditionsArray.push(condition)
+                        const column = this.expressionMap
+                            .aliasNamePrefixingEnabled
+                            ? this.escape(rootAliasName) +
+                              "." +
+                              this.escape(
+                                  metadata.discriminatorColumn.databaseName,
+                              )
+                            : this.escape(
+                                  metadata.discriminatorColumn.databaseName,
+                              )
+
+                        const condition = `${column} IN (:...discriminatorColumnValues)`
+                        conditionsArray.push(condition)
+                    }
+                } else {
+                    // STI: discriminator on same table
+                    let column = this.expressionMap.aliasNamePrefixingEnabled
+                        ? this.expressionMap.mainAlias!.name +
+                          "." +
+                          metadata.discriminatorColumn.databaseName
+                        : metadata.discriminatorColumn.databaseName
+                    column = this.replacePropertyNames(column)
+
+                    const condition = `${column} IN (:...discriminatorColumnValues)`
+                    conditionsArray.push(condition)
+                }
             }
         }
 

@@ -170,3 +170,49 @@ const profiles = await dataSource
     .leftJoinAndSelect("profile.user", "user")
     .getMany()
 ```
+
+## Shared primary key (one-to-one with same ID)
+
+In some designs, two entities share the same primary key — the child entity's PK is also a foreign key to the parent entity. This is sometimes called "identifying relationship" or "derived primary key".
+
+For example, a `User` whose `id` is also the FK to an `Actor`:
+
+```typescript
+@Entity()
+export class Actor {
+    @PrimaryGeneratedColumn("uuid")
+    id: string
+
+    @Column()
+    type: string
+}
+```
+
+```typescript
+@Entity()
+export class User {
+    @PrimaryGeneratedColumn("uuid")
+    id: string
+
+    @OneToOne(() => Actor, { eager: true, cascade: true })
+    @JoinColumn({ name: "id", referencedColumnName: "id" })
+    actor: Actor
+
+    @Column()
+    email: string
+}
+```
+
+Here `@JoinColumn({ name: "id" })` tells TypeORM that the `user.id` column is both the primary key and the foreign key to `actor.id`. TypeORM automatically detects this overlap and treats the relation as non-nullable, ensuring correct cascade insert ordering — `Actor` is always inserted before `User`.
+
+```typescript
+const actor = new Actor()
+actor.type = "user"
+
+const user = new User()
+user.email = "alice@example.com"
+user.actor = actor
+
+// Cascade inserts Actor first, then User (both share the same ID)
+await dataSource.manager.save(user)
+```

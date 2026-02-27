@@ -73,6 +73,26 @@ export class EntityMetadata {
     inheritanceTree: Function[] = []
 
     /**
+     * Columns inherited from the parent entity in CTI (Class Table Inheritance).
+     * These columns physically live in the parent table but are referenced by
+     * the child for query building purposes.
+     */
+    inheritedColumns: ColumnMetadata[] = []
+
+    /**
+     * Relations inherited from the parent entity in CTI.
+     * These relations have join columns in the parent table.
+     */
+    inheritedRelations: RelationMetadata[] = []
+
+    // CTI cache fields — populated by buildCtiCaches() after metadata is finalized
+    private _isCtiChild: boolean | undefined
+    private _isCtiParent: boolean | undefined
+    private _ctiAncestorChain: EntityMetadata[] | undefined
+    private _tableColumns: ColumnMetadata[] | undefined
+    private _inheritedColumnsSet: Set<ColumnMetadata> | undefined
+
+    /**
      * Table type. Tables can be closure, junction, etc.
      */
     tableType: TableType = "regular"
@@ -170,7 +190,7 @@ export class EntityMetadata {
      * If this entity metadata's table using one of the inheritance patterns,
      * then this will contain what pattern it uses.
      */
-    inheritancePattern?: "STI" /*|"CTI"*/
+    inheritancePattern?: "STI" | "CTI"
 
     /**
      * Checks if there any non-nullable column exist in this entity.
@@ -335,8 +355,18 @@ export class EntityMetadata {
 
     /**
      * List of eager relations this metadata has.
+     * For STI parent entities this contains eager relations from ALL children.
+     * Use `scopedEagerRelations` to get only relations relevant to a specific child type.
      */
     eagerRelations: RelationMetadata[] = []
+
+    /**
+     * For STI parent entities, maps each child target to its scoped eager relations.
+     * This allows eager-loading only the relations that belong to a specific child type
+     * (plus those inherited from the parent), avoiding cross-child relation leakage.
+     */
+    childEagerRelationsMap: Map<Function | string, RelationMetadata[]> =
+        new Map()
 
     /**
      * List of eager relations this metadata has.
@@ -529,7 +559,7 @@ export class EntityMetadata {
     constructor(options: {
         connection: DataSource
         inheritanceTree?: Function[]
-        inheritancePattern?: "STI" /*|"CTI"*/
+        inheritancePattern?: "STI" | "CTI"
         tableTree?: TreeMetadataArgs
         parentClosureEntityMetadata?: EntityMetadata
         args: TableMetadataArgs
@@ -551,8 +581,129 @@ export class EntityMetadata {
     }
 
     // -------------------------------------------------------------------------
+    // Computed Inheritance Helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * True if this is a CTI child entity (has its own table, joined to parent).
+     * For multi-level CTI (A → B → C), walks up the parent chain to find the root's pattern.
+     */
+    get isCtiChild(): boolean {
+        if (this._isCtiChild !== undefined) return this._isCtiChild
+        return this._computeIsCtiChild()
+    }
+
+    private _computeIsCtiChild(): boolean {
+        if (this.tableType !== "entity-child") return false
+        let ancestor = this.parentEntityMetadata
+        while (ancestor) {
+            if (ancestor.inheritancePattern === "CTI") return true
+            if (ancestor.inheritancePattern === "STI") return false
+            ancestor = ancestor.parentEntityMetadata
+        }
+        return false
+    }
+
+    /**
+     * True if this is an STI child entity (shares parent's table).
+     */
+    get isStiChild(): boolean {
+        if (this.tableType !== "entity-child") return false
+        let ancestor = this.parentEntityMetadata
+        while (ancestor) {
+            if (ancestor.inheritancePattern === "STI") return true
+            if (ancestor.inheritancePattern === "CTI") return false
+            ancestor = ancestor.parentEntityMetadata
+        }
+        return false
+    }
+
+    /**
+     * True if this is a CTI parent entity with child tables.
+     * Covers both the root (@TableInheritance pattern="CTI") and mid-level entities
+     * that are themselves CTI children with their own CTI children.
+     */
+    get isCtiParent(): boolean {
+        if (this._isCtiParent !== undefined) return this._isCtiParent
+        return this._computeIsCtiParent()
+    }
+
+    private _computeIsCtiParent(): boolean {
+        if (this.childEntityMetadatas.length === 0) return false
+        if (this.inheritancePattern === "CTI") return true
+        if (this.isCtiChild) return true
+        return false
+    }
+
+    /**
+     * Returns the ordered CTI ancestor chain from immediate parent to root.
+     * For 2-level (User → Actor): [Actor]
+     * For 3-level (User → Contributor → Actor): [Contributor, Actor]
+     * Returns empty array for non-CTI children.
+     */
+    get ctiAncestorChain(): EntityMetadata[] {
+        if (this._ctiAncestorChain !== undefined) return this._ctiAncestorChain
+        return this._computeCtiAncestorChain()
+    }
+
+    private _computeCtiAncestorChain(): EntityMetadata[] {
+        if (!this.isCtiChild) return []
+        const chain: EntityMetadata[] = []
+        let ancestor = this.parentEntityMetadata
+        while (ancestor) {
+            chain.push(ancestor)
+            if (ancestor.isCtiChild) {
+                ancestor = ancestor.parentEntityMetadata
+            } else {
+                break
+            }
+        }
+        return chain
+    }
+
+    /**
+     * Returns columns that physically belong to this entity's database table.
+     * For CTI children this excludes inherited columns (which live on the parent table).
+     * For all other entities this is the same as `columns`.
+     */
+    get tableColumns(): ColumnMetadata[] {
+        if (this._tableColumns !== undefined) return this._tableColumns
+        return this._computeTableColumns()
+    }
+
+    private _computeTableColumns(): ColumnMetadata[] {
+        if (this.isCtiChild && this.inheritedColumns.length > 0) {
+            return this.columns.filter(
+                (c) => !this.inheritedColumns.includes(c),
+            )
+        }
+        return this.columns
+    }
+
+    /**
+     * Returns the set of inherited columns for O(1) membership checks.
+     */
+    get inheritedColumnsSet(): Set<ColumnMetadata> {
+        if (this._inheritedColumnsSet !== undefined)
+            return this._inheritedColumnsSet
+        return new Set(this.inheritedColumns)
+    }
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Populates CTI caches. Must be called after all metadata is fully built
+     * (after all computeEntityMetadataStep2() calls).
+     */
+    buildCtiCaches(): void {
+        this._isCtiChild = this._computeIsCtiChild()
+        this._isCtiParent = this._computeIsCtiParent()
+        this._ctiAncestorChain = this._computeCtiAncestorChain()
+        this._tableColumns = this._computeTableColumns()
+        this._inheritedColumnsSet = new Set(this.inheritedColumns)
+    }
 
     /**
      * Creates a new entity.
@@ -877,6 +1028,34 @@ export class EntityMetadata {
     }
 
     /**
+     * Returns eager relations scoped to the current entity type.
+     * For STI child entities, this filters out eager relations declared on
+     * sibling child entities, returning only relations from the parent plus
+     * those declared on this specific child.
+     * For non-STI entities, returns all eager relations unchanged.
+     */
+    getScopedEagerRelations(): RelationMetadata[] {
+        // For STI child entities, check if the parent has a scoped map
+        if (
+            this.tableType === "entity-child" &&
+            this.parentEntityMetadata?.childEagerRelationsMap.size > 0
+        ) {
+            return (
+                this.parentEntityMetadata.childEagerRelationsMap.get(
+                    this.target,
+                ) ?? this.eagerRelations
+            )
+        }
+
+        // For STI parent entities queried directly, return ALL eager relations
+        // because the result set may contain any child type. The per-row
+        // discriminator-based metadata switching in the transformer will
+        // correctly assign relations to the right entity instances.
+        // Non-STI entities also just return all eager relations.
+        return this.eagerRelations
+    }
+
+    /**
      * In the case of SingleTableInheritance, find the correct metadata
      * for a given value.
      * @param value The value to find the metadata for.
@@ -884,12 +1063,13 @@ export class EntityMetadata {
      *          was found in the whole inheritance tree.
      */
     findInheritanceMetadata(value: any): EntityMetadata {
-        // Check for single table inheritance and find the correct metadata in that case.
+        // Check for table inheritance and find the correct metadata in that case.
         // Goal is to use the correct discriminator as we could have a repository
         // for an (abstract) base class and thus the target would not match.
 
         if (
-            this.inheritancePattern === "STI" &&
+            (this.inheritancePattern === "STI" ||
+                this.inheritancePattern === "CTI") &&
             this.childEntityMetadatas.length > 0
         ) {
             // There could be a column on the base class that can manually be set to override the type.
@@ -1029,7 +1209,8 @@ export class EntityMetadata {
         }
         this.givenTableName =
             this.tableMetadataArgs.type === "entity-child" &&
-            this.parentEntityMetadata
+            this.parentEntityMetadata &&
+            this.isStiChild
                 ? this.parentEntityMetadata.givenTableName
                 : this.tableMetadataArgs.name
         this.synchronize =
@@ -1043,7 +1224,8 @@ export class EntityMetadata {
                 namingStrategy.closureJunctionTableName(this.givenTableName!)
         } else if (
             this.tableMetadataArgs.type === "entity-child" &&
-            this.parentEntityMetadata
+            this.parentEntityMetadata &&
+            this.isStiChild
         ) {
             this.tableNameWithoutPrefix = namingStrategy.tableName(
                 this.parentEntityMetadata.targetName,
@@ -1160,7 +1342,7 @@ export class EntityMetadata {
      * it means we cannot execute bulk inserts in some cases.
      */
     getInsertionReturningColumns(): ColumnMetadata[] {
-        return this.columns.filter((column) => {
+        return this.tableColumns.filter((column) => {
             return (
                 column.default !== undefined ||
                 column.asExpression !== undefined ||
