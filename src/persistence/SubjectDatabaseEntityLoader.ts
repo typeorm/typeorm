@@ -4,6 +4,8 @@ import { QueryRunner } from "../query-runner/QueryRunner"
 import { FindManyOptions } from "../find-options/FindManyOptions"
 import { MongoRepository } from "../repository/MongoRepository"
 import { OrmUtils } from "../util/OrmUtils"
+import { EntityMetadata } from "../metadata/EntityMetadata"
+import { DriverUtils } from "../driver/DriverUtils"
 
 /**
  * Loads database entities for all operate subjects which do not have database entity set.
@@ -42,11 +44,22 @@ export class SubjectDatabaseEntityLoader {
                 // prepare entity ids of the subjects we need to load
                 const allIds: ObjectLiteral[] = []
                 const allSubjects: Subject[] = []
+                const needsUuidLowercase =
+                    DriverUtils.isUuidCaseSensitiveDriver(
+                        this.queryRunner.connection.driver,
+                    )
+
                 subjectGroup.subjects.forEach((subject) => {
                     // we don't load if subject already has a database entity loaded
                     if (subject.databaseEntity || !subject.identifier) return
 
-                    allIds.push(subject.identifier)
+                    const identifier = needsUuidLowercase
+                        ? SubjectDatabaseEntityLoader.lowercaseUuid(
+                              subject.identifier,
+                              subject.metadata,
+                          )
+                        : subject.identifier
+                    allIds.push(identifier)
                     allSubjects.push(subject)
                 })
 
@@ -177,5 +190,83 @@ export class SubjectDatabaseEntityLoader {
             },
             [] as { target: Function | string; subjects: Subject[] }[],
         )
+    }
+
+    static lowercaseUuid(
+        identifier: ObjectLiteral,
+        metadata: EntityMetadata,
+    ): ObjectLiteral {
+        const loweredIdentifier: ObjectLiteral = {}
+        for (const key of Object.keys(identifier)) {
+            const value = identifier[key]
+
+            const isPlainObject =
+                value !== null &&
+                value !== undefined &&
+                typeof value === "object" &&
+                Object.getPrototypeOf(value) === Object.prototype
+
+            if (isPlainObject) {
+                // recursively process nested identifier objects (embedded columns)
+                loweredIdentifier[key] = this.lowercaseUuidInObject(
+                    value,
+                    metadata,
+                    key,
+                )
+                continue
+            }
+
+            const column =
+                metadata.findColumnWithPropertyPath(key) ||
+                metadata.findColumnWithDatabaseName(key)
+            const isUuidColumn = column?.type === "uuid"
+            loweredIdentifier[key] =
+                isUuidColumn && typeof value === "string"
+                    ? value.toLowerCase()
+                    : value
+        }
+        return loweredIdentifier
+    }
+
+    /**
+     * Recursively lowercase UUID values in nested objects (embedded columns)
+     * @param obj
+     * @param metadata
+     * @param parentKey
+     */
+    private static lowercaseUuidInObject(
+        obj: ObjectLiteral,
+        metadata: EntityMetadata,
+        parentKey: string,
+    ): ObjectLiteral {
+        const lowered: ObjectLiteral = {}
+        for (const key of Object.keys(obj)) {
+            const value = obj[key]
+            const fullPath = `${parentKey}.${key}`
+
+            const isPlainObject =
+                value !== null &&
+                value !== undefined &&
+                typeof value === "object" &&
+                Object.getPrototypeOf(value) === Object.prototype
+
+            if (isPlainObject) {
+                lowered[key] = this.lowercaseUuidInObject(
+                    value,
+                    metadata,
+                    fullPath,
+                )
+                continue
+            }
+
+            const column = metadata.findColumnWithPropertyPath(fullPath)
+            const isUuidColumn = column?.type === "uuid"
+
+            lowered[key] =
+                isUuidColumn && typeof value === "string"
+                    ? value.toLowerCase()
+                    : value
+        }
+        return lowered
     }
 }

@@ -6,6 +6,8 @@ import {
 } from "../common/PrimitiveCriteria"
 
 export class OrmUtils {
+    static readonly UUID_REGEX =
+        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
     // -------------------------------------------------------------------------
     // Public methods
     // -------------------------------------------------------------------------
@@ -212,27 +214,100 @@ export class OrmUtils {
         firstId: ObjectLiteral | undefined,
         secondId: ObjectLiteral | undefined,
     ): boolean {
-        if (
-            firstId === undefined ||
-            firstId === null ||
-            secondId === undefined ||
-            secondId === null
-        )
-            return false
+        if (!firstId || !secondId) return false
 
-        // Optimized version for the common case
-        if (
-            ((typeof firstId.id === "string" &&
-                typeof secondId.id === "string") ||
-                (typeof firstId.id === "number" &&
-                    typeof secondId.id === "number")) &&
-            Object.keys(firstId).length === 1 &&
-            Object.keys(secondId).length === 1
-        ) {
-            return firstId.id === secondId.id
+        const firstKeys = Object.keys(firstId)
+        const secondKeys = Object.keys(secondId)
+
+        if (firstKeys.length !== secondKeys.length) return false
+        for (const key of firstKeys) {
+            if (!Object.prototype.hasOwnProperty.call(secondId, key))
+                return false
         }
 
-        return OrmUtils.deepCompare(firstId, secondId)
+        for (const key of firstKeys) {
+            const firstIdValue = firstId[key]
+            const secondIdValue = secondId[key]
+
+            if (!OrmUtils.compareIdValues(firstIdValue, secondIdValue))
+                return false
+        }
+
+        return true
+    }
+
+    /**
+     * Recursively compares two id values.
+     * @param firstValue
+     * @param secondValue
+     */
+    private static compareIdValues(firstValue: any, secondValue: any): boolean {
+        if (firstValue === null && secondValue === null) return true
+        if (firstValue === undefined && secondValue === undefined) return true
+        if (firstValue === null || secondValue === null) return false
+
+        const isFirstUuid =
+            typeof firstValue === "string" &&
+            OrmUtils.UUID_REGEX.test(firstValue)
+        const isSecondUuid =
+            typeof secondValue === "string" &&
+            OrmUtils.UUID_REGEX.test(secondValue)
+
+        if (isFirstUuid && isSecondUuid) {
+            return firstValue.toLowerCase() === secondValue.toLowerCase()
+        }
+
+        if (typeof firstValue !== "object" && typeof secondValue !== "object")
+            return firstValue === secondValue
+        if (typeof firstValue === "object" && typeof secondValue === "object") {
+            if (Array.isArray(firstValue) || Array.isArray(secondValue)) {
+                if (!Array.isArray(firstValue) || !Array.isArray(secondValue))
+                    return false
+                if (firstValue.length !== secondValue.length) return false
+                for (let i = 0; i < firstValue.length; i++) {
+                    if (
+                        !OrmUtils.compareIdValues(firstValue[i], secondValue[i])
+                    )
+                        return false
+                }
+                return true
+            }
+
+            const isNonPlainObject =
+                firstValue instanceof Date ||
+                firstValue instanceof RegExp ||
+                firstValue instanceof Map ||
+                firstValue instanceof Set ||
+                typeof firstValue.equals === "function" ||
+                secondValue instanceof Date ||
+                secondValue instanceof RegExp ||
+                secondValue instanceof Map ||
+                secondValue instanceof Set ||
+                typeof secondValue.equals === "function"
+
+            if (isNonPlainObject) {
+                return OrmUtils.deepCompare(firstValue, secondValue)
+            }
+
+            const firstKeys = Object.keys(firstValue)
+            const secondKeys = Object.keys(secondValue)
+
+            if (firstKeys.length !== secondKeys.length) return false
+
+            for (const key of firstKeys) {
+                if (!Object.prototype.hasOwnProperty.call(secondValue, key))
+                    return false
+            }
+
+            for (const key of firstKeys) {
+                if (
+                    !OrmUtils.compareIdValues(firstValue[key], secondValue[key])
+                )
+                    return false
+            }
+            return true
+        }
+        return false
     }
 
     /**
