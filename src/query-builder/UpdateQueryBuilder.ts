@@ -20,6 +20,7 @@ import { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { DriverUtils } from "../driver/DriverUtils"
 import { EntityTarget } from "../common/EntityTarget"
 import { FromOnUpdateNotSupportedError } from "../error/FromOnUpdateNotSupportedError"
+import { SelectQueryBuilder } from "./SelectQueryBuilder"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -216,7 +217,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     from<T extends ObjectLiteral>(
         entityTarget:
             | EntityTarget<T>
-            | ((qb: UpdateQueryBuilder<any>) => UpdateQueryBuilder<any>),
+            | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         aliasName: string,
     ): UpdateQueryBuilder<T> {
         if (this.connection.driver.isUpdateFromSqlSupported()) {
@@ -236,7 +237,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     addFrom<T extends ObjectLiteral>(
         entityTarget:
             | EntityTarget<T>
-            | ((qb: UpdateQueryBuilder<any>) => UpdateQueryBuilder<any>),
+            | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         aliasName: string,
     ): UpdateQueryBuilder<T> {
         return this.from(entityTarget, aliasName)

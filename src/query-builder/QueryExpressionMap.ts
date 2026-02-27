@@ -450,10 +450,14 @@ export class QueryExpressionMap {
 
     /**
      * Removes alias from expression map.
+     * @param alias
      */
     removeAlias(alias?: Alias) {
         if (alias) {
             this.aliases = this.aliases.filter((alias0) => alias0 !== alias)
+            if (this.mainAlias === alias) {
+                this.mainAlias = undefined
+            }
         }
     }
 
@@ -520,8 +524,8 @@ export class QueryExpressionMap {
             return newAlias
         })
         map.relationLoadStrategy = this.relationLoadStrategy
-        if (!map.mainAlias) {
-            map.mainAlias = this.mainAlias
+        if (!map.mainAlias && this.mainAlias) {
+            map.mainAlias = new Alias(this.mainAlias)
         }
         map.valuesSet = this.valuesSet
         map.returning = this.returning
