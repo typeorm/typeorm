@@ -39,6 +39,7 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
+          fail-on-error: false
           flag-name: crdb-node:${{ inputs.node-version }}
           parallel: true
 
@@ -70,6 +71,7 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
+          fail-on-error: false
           flag-name: mongodb-node:${{ inputs.node-version }}
           parallel: true
 
@@ -105,6 +107,7 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
+          fail-on-error: false
           flag-name: mssql-node:${{ inputs.node-version }}
           parallel: true
 
@@ -150,6 +153,7 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
+          fail-on-error: false
           flag-name: mysql_mariadb-node:${{ inputs.node-version }}
           parallel: true
 
@@ -195,6 +199,7 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
+          fail-on-error: false
           flag-name: mysql_mariadb_latest-node:${{ inputs.node-version }}
           parallel: true
 
@@ -220,6 +225,7 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
+          fail-on-error: false
           flag-name: better-sqlite3-node:${{ inputs.node-version }}
           parallel: true
 
@@ -245,6 +251,7 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
+          fail-on-error: false
           flag-name: sqljs-node:${{ inputs.node-version }}
           parallel: true
 
@@ -289,6 +296,7 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
+          fail-on-error: false
           flag-name: postgres:${{ matrix.postgres-version }}-node:${{ inputs.node-version }}
           parallel: true
 
@@ -319,6 +327,7 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
+          fail-on-error: false
           flag-name: oracle-node:${{ inputs.node-version }}
           parallel: true
 
@@ -348,5 +357,6 @@ jobs:
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         with:
+          fail-on-error: false
           flag-name: sap-node:${{ inputs.node-version }}
           parallel: true
