@@ -50,11 +50,22 @@ describe("ReplicationConfig helpers", () => {
         )
     })
 
-    it("should throw when slaves is present but empty even if replicas has entries", () => {
+    it("should fall back to replicas when slaves is present but empty", () => {
         const replication: ReplicationConfig<Credentials> = {
             master: { host: "legacy-master" },
             slaves: [],
             replicas: [{ host: "alias-replica" }],
+        }
+
+        expect(getReplicationReplicas(replication)).to.eql([
+            { host: "alias-replica" },
+        ])
+    })
+
+    it("should throw when slaves is present and empty without replicas", () => {
+        const replication: ReplicationConfig<Credentials> = {
+            master: { host: "legacy-master" },
+            slaves: [],
         }
 
         expect(() => getReplicationReplicas(replication)).to.throw(
