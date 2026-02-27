@@ -88,7 +88,11 @@ export function getReplicationReplicas<TCredentials extends object>(
             )
         }
 
-        return validateEndpoints(replication.slaves)
+        // Prefer legacy key when it has explicit endpoints. If it's empty,
+        // allow fallback to alias key so mixed migration configs still work.
+        if (replication.slaves.length > 0) {
+            return validateEndpoints(replication.slaves)
+        }
     }
 
     if ("replicas" in replication && replication.replicas !== undefined) {
