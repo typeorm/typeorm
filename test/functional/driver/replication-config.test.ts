@@ -4,6 +4,7 @@ import {
     getReplicationReplicas,
     ReplicationConfig,
 } from "../../../src/driver/types/ReplicationConfig"
+import { normalizeReplicationMode } from "../../../src/driver/types/ReplicationMode"
 
 type Credentials = { host: string }
 
@@ -90,6 +91,25 @@ describe("ReplicationConfig helpers", () => {
 
         expect(() => getReplicationReplicas(invalidReplication)).to.throw(
             `Replication options must define at least one "slave" or "replica".`,
+        )
+    })
+
+    it("should throw when replicas contains an invalid endpoint", () => {
+        const invalidReplication = {
+            primary: { host: "alias-primary" },
+            replicas: [{ host: "alias-replica" }, "bad-endpoint"],
+        } as unknown as ReplicationConfig<Credentials>
+
+        expect(() => getReplicationReplicas(invalidReplication)).to.throw(
+            `Replication options must define at least one "slave" or "replica".`,
+        )
+    })
+
+    it("should throw when replication mode is invalid at runtime", () => {
+        expect(() =>
+            normalizeReplicationMode("invalid" as unknown as "master"),
+        ).to.throw(
+            `Invalid replication mode "invalid". Expected "master", "slave", "primary", or "replica".`,
         )
     })
 })

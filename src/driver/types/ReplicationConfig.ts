@@ -63,6 +63,24 @@ export function getReplicationPrimary<TCredentials extends object>(
 export function getReplicationReplicas<TCredentials extends object>(
     replication: ReplicationConfig<TCredentials>,
 ): TCredentials[] {
+    const validateEndpoints = (endpoints: unknown[]): TCredentials[] => {
+        if (endpoints.length === 0) {
+            throw new TypeORMError(
+                `Replication options must define at least one "slave" or "replica".`,
+            )
+        }
+
+        for (const endpoint of endpoints) {
+            if (typeof endpoint !== "object" || endpoint === null) {
+                throw new TypeORMError(
+                    `Replication options must define at least one "slave" or "replica".`,
+                )
+            }
+        }
+
+        return endpoints as TCredentials[]
+    }
+
     if ("slaves" in replication && replication.slaves !== undefined) {
         if (!Array.isArray(replication.slaves)) {
             throw new TypeORMError(
@@ -70,14 +88,7 @@ export function getReplicationReplicas<TCredentials extends object>(
             )
         }
 
-        const slaves = replication.slaves as TCredentials[]
-        if (slaves.length > 0) {
-            return slaves
-        }
-
-        throw new TypeORMError(
-            `Replication options must define at least one "slave" or "replica".`,
-        )
+        return validateEndpoints(replication.slaves)
     }
 
     if ("replicas" in replication && replication.replicas !== undefined) {
@@ -87,10 +98,7 @@ export function getReplicationReplicas<TCredentials extends object>(
             )
         }
 
-        const replicas = replication.replicas as TCredentials[]
-        if (replicas.length > 0) {
-            return replicas
-        }
+        return validateEndpoints(replication.replicas)
     }
 
     throw new TypeORMError(
