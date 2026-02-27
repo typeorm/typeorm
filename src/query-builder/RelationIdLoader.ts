@@ -15,7 +15,7 @@ export class RelationIdLoader {
     // -------------------------------------------------------------------------
 
     constructor(
-        private connection: DataSource,
+        private dataSource: DataSource,
         protected queryRunner?: QueryRunner | undefined,
     ) {}
 
@@ -88,7 +88,7 @@ export class RelationIdLoader {
             : [entitiesOrEntities]
 
         if (!relatedEntityOrEntities) {
-            relatedEntityOrEntities = await this.connection.relationLoader.load(
+            relatedEntityOrEntities = await this.dataSource.relationLoader.load(
                 relation,
                 entitiesOrEntities,
                 this.queryRunner,
@@ -156,7 +156,7 @@ export class RelationIdLoader {
                         entity,
                         relationId[
                             DriverUtils.buildAlias(
-                                this.connection.driver,
+                                this.dataSource.driver,
                                 undefined,
                                 column.entityMetadata.name +
                                     "_" +
@@ -175,7 +175,7 @@ export class RelationIdLoader {
                             relatedEntity,
                             relationId[
                                 DriverUtils.buildAlias(
-                                    this.connection.driver,
+                                    this.dataSource.driver,
                                     undefined,
                                     column.entityMetadata.name +
                                         "_" +
@@ -261,12 +261,12 @@ export class RelationIdLoader {
         const inverseColumns = relation.isOwning
             ? junctionMetadata.inverseColumns
             : junctionMetadata.ownerColumns
-        const qb = this.connection.createQueryBuilder(this.queryRunner)
+        const qb = this.dataSource.createQueryBuilder(this.queryRunner)
 
         // select all columns from junction table
         columns.forEach((column) => {
             const columnName = DriverUtils.buildAlias(
-                this.connection.driver,
+                this.dataSource.driver,
                 undefined,
                 column.referencedColumn!.entityMetadata.name +
                     "_" +
@@ -276,7 +276,7 @@ export class RelationIdLoader {
         })
         inverseColumns.forEach((column) => {
             const columnName = DriverUtils.buildAlias(
-                this.connection.driver,
+                this.dataSource.driver,
                 undefined,
                 column.referencedColumn!.entityMetadata.name +
                     "_" +
@@ -399,24 +399,6 @@ export class RelationIdLoader {
             }
         }
 
-        // qb.from(junctionMetadata.target, mainAlias)
-        //     .where(condition1 + (condition2 ? " AND " + condition2 : ""));
-        //
-        // // execute query
-        // const { values1, values2 } = qb.getParameters();
-        // console.log(`I can do it`, { values1, values2 });
-        // if (inverseColumns.length === 1 &&
-        //     columns.length === 1 &&
-        //     this.connection.driver instanceof SqliteDriver &&
-        //     (values1.length + values2.length) > 500 &&
-        //     values1.length === values2.length) {
-        //     console.log(`I can do it`);
-        //     return qb.getRawMany();
-        //
-        // } else {
-        //     return qb.getRawMany();
-        // }
-
         // execute query
         const condition = [condition1, condition2]
             .filter((v) => v.length > 0)
@@ -456,7 +438,7 @@ export class RelationIdLoader {
                 relation.entityMetadata.primaryColumns.forEach(
                     (primaryColumn) => {
                         const key = DriverUtils.buildAlias(
-                            this.connection.driver,
+                            this.dataSource.driver,
                             undefined,
                             primaryColumn.entityMetadata.name +
                                 "_" +
@@ -483,7 +465,7 @@ export class RelationIdLoader {
 
                         if (entityColumnValue === relatedEntityColumnValue) {
                             const key = DriverUtils.buildAlias(
-                                this.connection.driver,
+                                this.dataSource.driver,
                                 undefined,
                                 joinColumn.referencedColumn!.entityMetadata
                                     .name +
@@ -514,10 +496,10 @@ export class RelationIdLoader {
         }
 
         // select all columns we need
-        const qb = this.connection.createQueryBuilder(this.queryRunner)
+        const qb = this.dataSource.createQueryBuilder(this.queryRunner)
         relation.entityMetadata.primaryColumns.forEach((primaryColumn) => {
             const columnName = DriverUtils.buildAlias(
-                this.connection.driver,
+                this.dataSource.driver,
                 undefined,
                 primaryColumn.entityMetadata.name +
                     "_" +
@@ -530,7 +512,7 @@ export class RelationIdLoader {
         })
         relation.joinColumns.forEach((column) => {
             const columnName = DriverUtils.buildAlias(
-                this.connection.driver,
+                this.dataSource.driver,
                 undefined,
                 column.referencedColumn!.entityMetadata.name +
                     "_" +
@@ -629,7 +611,7 @@ export class RelationIdLoader {
                                     entity,
                                 )
                             const joinColumnName = DriverUtils.buildAlias(
-                                this.connection.driver,
+                                this.dataSource.driver,
                                 undefined,
                                 joinColumn.referencedColumn!.entityMetadata
                                     .name +
@@ -640,7 +622,7 @@ export class RelationIdLoader {
                                     ),
                             )
                             const primaryColumnName = DriverUtils.buildAlias(
-                                this.connection.driver,
+                                this.dataSource.driver,
                                 undefined,
                                 joinColumn.entityMetadata.name +
                                     "_" +
@@ -663,10 +645,10 @@ export class RelationIdLoader {
         const mainAlias = relation.entityMetadata.targetName
 
         // select all columns we need
-        const qb = this.connection.createQueryBuilder(this.queryRunner)
+        const qb = this.dataSource.createQueryBuilder(this.queryRunner)
         relation.entityMetadata.primaryColumns.forEach((primaryColumn) => {
             const columnName = DriverUtils.buildAlias(
-                this.connection.driver,
+                this.dataSource.driver,
                 undefined,
                 primaryColumn.entityMetadata.name +
                     "_" +
@@ -681,7 +663,7 @@ export class RelationIdLoader {
         })
         relation.joinColumns.forEach((column) => {
             const columnName = DriverUtils.buildAlias(
-                this.connection.driver,
+                this.dataSource.driver,
                 undefined,
                 column.referencedColumn!.entityMetadata.name +
                     "_" +

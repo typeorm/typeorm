@@ -27,7 +27,7 @@ describe("github issues > #6958 Promises never get resolved in specific cases", 
                 const runner2 = connection.createQueryRunner()
                 await runner2.query("SELECT 2 as foo;")
 
-                await connection.close()
+                await connection.destroy()
 
                 expect(runner1.isReleased).to.be.true
                 expect(runner2.isReleased).to.be.true

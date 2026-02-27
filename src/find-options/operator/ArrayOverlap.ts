@@ -3,6 +3,7 @@ import { FindOperator } from "../FindOperator"
 /**
  * FindOptions Operator.
  * Example: { someField: ArrayOverlap([...]) }
+ * @param value
  */
 export function ArrayOverlap<T>(
     value: readonly T[] | FindOperator<T>,

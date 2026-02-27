@@ -9,6 +9,9 @@ import { QueryRunner } from "../query-runner/QueryRunner"
 export class SimpleConsoleLogger extends AbstractLogger {
     /**
      * Write log to specific output.
+     * @param level
+     * @param logMessage
+     * @param queryRunner
      */
     protected writeLog(
         level: LogLevel,
