@@ -271,10 +271,32 @@ export class DataSource {
             return options
         }
 
+        const isPlainObject = (value: unknown): value is object => {
+            return (
+                typeof value === "object" &&
+                value !== null &&
+                (value.constructor === Object ||
+                    Object.getPrototypeOf(value) === null)
+            )
+        }
+
+        const canDeepCompare = (left: unknown, right: unknown): boolean => {
+            return (
+                (Array.isArray(left) && Array.isArray(right)) ||
+                (isPlainObject(left) && isPlainObject(right))
+            )
+        }
+
+        const hasConflictingValues = (left: unknown, right: unknown) => {
+            if (left === right) return false
+            if (!canDeepCompare(left, right)) return true
+            return !OrmUtils.deepCompare(left, right)
+        }
+
         if (
             replication.master !== undefined &&
             replication.primary !== undefined &&
-            !OrmUtils.deepCompare(replication.master, replication.primary)
+            hasConflictingValues(replication.master, replication.primary)
         ) {
             throw new TypeORMError(
                 `Replication options cannot define both "master" and "primary" with different values.`,
@@ -284,7 +306,7 @@ export class DataSource {
         if (
             replication.slaves !== undefined &&
             replication.replicas !== undefined &&
-            !OrmUtils.deepCompare(replication.slaves, replication.replicas)
+            hasConflictingValues(replication.slaves, replication.replicas)
         ) {
             throw new TypeORMError(
                 `Replication options cannot define both "slaves" and "replicas" with different values.`,
