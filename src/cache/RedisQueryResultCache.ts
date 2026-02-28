@@ -87,9 +87,6 @@ export class RedisQueryResultCache implements QueryResultCache {
             if (typeof this.client.connect === "function") {
                 await this.client.connect()
             }
-
-            // Detect API style by checking if methods return Promises
-            this.detectPromiseBasedApi()
         } else if (this.clientType === "ioredis") {
             if (cacheOptions && cacheOptions.port) {
                 if (cacheOptions.options) {
@@ -127,6 +124,9 @@ export class RedisQueryResultCache implements QueryResultCache {
                 )
             }
         }
+
+        // Detect API style by checking if methods return Promises
+        this.detectPromiseBasedApi()
     }
 
     /**
@@ -295,14 +295,12 @@ export class RedisQueryResultCache implements QueryResultCache {
      * by checking the return type of a method call at runtime.
      */
     private detectPromiseBasedApi(): void {
-        if (this.clientType !== "redis") {
-            this.isPromiseBasedApi = false
-            return
-        }
-
         // Call ping() and check if it returns a Promise
         // This works because v5+ returns Promises directly, while v4 with legacyMode uses callbacks
         const result = this.client.ping()
-        this.isPromiseBasedApi = result && typeof result.then === "function"
+        this.isPromiseBasedApi = !!result?.then
+        if (this.isPromiseBasedApi) {
+            result.catch(() => {})
+        }
     }
 }
