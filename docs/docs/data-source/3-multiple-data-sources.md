@@ -231,7 +231,7 @@ With replication replicas defined, TypeORM will start sending all possible queri
 - all schema update operations are performed using the `primary` instance
 
 TypeORM also supports legacy `master`/`slaves` keys and `"master"`/`"slave"` replication modes for backward compatibility.
-If both naming styles are provided in the same config, legacy `master`/`slaves` values are used.
+If both naming styles are provided in the same config, legacy `master`/`slaves` values are used when they are equivalent; conflicting values throw at startup to avoid ambiguous routing.
 
 ### Explicitly selecting query destinations
 
