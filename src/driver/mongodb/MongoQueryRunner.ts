@@ -56,7 +56,7 @@ import {
     IndexInformationOptions,
 } from "../../driver/mongodb/typings"
 import { DataSource } from "../../data-source/DataSource"
-import { ReplicationMode } from "../types/ReplicationMode"
+import { LegacyReplicationMode } from "../types/ReplicationMode"
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -793,7 +793,7 @@ export class MongoQueryRunner implements QueryRunner {
         )
     }
 
-    getReplicationMode(): ReplicationMode {
+    getReplicationMode(): LegacyReplicationMode {
         return "master"
     }
 

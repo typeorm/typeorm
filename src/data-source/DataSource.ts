@@ -36,12 +36,16 @@ import { SqljsEntityManager } from "../entity-manager/SqljsEntityManager"
 import { RelationLoader } from "../query-builder/RelationLoader"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { IsolationLevel } from "../driver/types/IsolationLevel"
-import { ReplicationMode } from "../driver/types/ReplicationMode"
+import {
+    normalizeReplicationMode,
+    ReplicationMode,
+} from "../driver/types/ReplicationMode"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { buildSqlTag } from "../util/SqlTagUtils"
+import { OrmUtils } from "../util/OrmUtils"
 
 registerQueryBuilders()
 
@@ -140,8 +144,10 @@ export class DataSource {
 
     constructor(options: DataSourceOptions) {
         registerQueryBuilders()
-        this.name = options.name || "default"
-        this.options = options
+        const normalizedOptions =
+            DataSource.normalizeReplicationOptions(options)
+        this.name = normalizedOptions.name || "default"
+        this.options = normalizedOptions
         this.logger = new LoggerFactory().create(
             this.options.logger,
             this.options.logging,
@@ -149,9 +155,10 @@ export class DataSource {
         this.driver = new DriverFactory().create(this)
         this.manager = this.createEntityManager()
         this.namingStrategy =
-            options.namingStrategy || new DefaultNamingStrategy()
-        this.metadataTableName = options.metadataTableName || "typeorm_metadata"
-        this.queryResultCache = options.cache
+            normalizedOptions.namingStrategy || new DefaultNamingStrategy()
+        this.metadataTableName =
+            normalizedOptions.metadataTableName || "typeorm_metadata"
+        this.queryResultCache = normalizedOptions.cache
             ? new QueryResultCacheFactory(this).create()
             : undefined
         this.relationLoader = new RelationLoader(this)
@@ -202,27 +209,29 @@ export class DataSource {
      * @param options
      */
     setOptions(options: Partial<DataSourceOptions>): this {
-        Object.assign(this.options, options)
+        const normalizedOptions =
+            DataSource.normalizeReplicationOptions(options)
+        Object.assign(this.options, normalizedOptions)
 
-        if (options.logger || options.logging) {
+        if (normalizedOptions.logger || normalizedOptions.logging) {
             this.logger = new LoggerFactory().create(
-                options.logger || this.options.logger,
-                options.logging || this.options.logging,
+                normalizedOptions.logger || this.options.logger,
+                normalizedOptions.logging || this.options.logging,
             )
         }
 
-        if (options.namingStrategy) {
-            this.namingStrategy = options.namingStrategy
+        if (normalizedOptions.namingStrategy) {
+            this.namingStrategy = normalizedOptions.namingStrategy
         }
 
-        if (options.cache) {
+        if (normalizedOptions.cache) {
             this.queryResultCache = new QueryResultCacheFactory(this).create()
         }
 
         // todo: we must update the database in the driver as well, if it was set by setOptions method
         //  in the future we need to refactor the code and remove "database" from the driver, and instead
         //  use database (and options) from a single place - data source.
-        if (options.database) {
+        if (normalizedOptions.database) {
             this.driver.database = DriverUtils.buildDriverOptions(
                 this.options,
             ).database
@@ -231,6 +240,100 @@ export class DataSource {
         // todo: need to take a look if we need to update schema and other "poor" properties
 
         return this
+    }
+
+    private static normalizeReplicationOptions<T extends object>(
+        options: T,
+    ): T {
+        if (!("replication" in options)) return options
+
+        const replication = (
+            options as {
+                replication?: {
+                    primary?: unknown
+                    replicas?: readonly unknown[]
+                    master?: unknown
+                    slaves?: readonly unknown[]
+                    defaultMode?: ReplicationMode
+                }
+            }
+        ).replication
+        if (!replication) return options
+
+        const hasAliasEndpoints =
+            replication.primary !== undefined ||
+            replication.replicas !== undefined
+        const hasAliasMode =
+            replication.defaultMode === "primary" ||
+            replication.defaultMode === "replica"
+
+        if (!hasAliasEndpoints && !hasAliasMode) {
+            return options
+        }
+
+        const isPlainObject = (value: unknown): value is object => {
+            return (
+                typeof value === "object" &&
+                value !== null &&
+                (value.constructor === Object ||
+                    Object.getPrototypeOf(value) === null)
+            )
+        }
+
+        const canDeepCompare = (left: unknown, right: unknown): boolean => {
+            return (
+                (Array.isArray(left) && Array.isArray(right)) ||
+                (isPlainObject(left) && isPlainObject(right))
+            )
+        }
+
+        const hasConflictingValues = (left: unknown, right: unknown) => {
+            if (left === right) return false
+            if (!canDeepCompare(left, right)) return true
+            return !OrmUtils.deepCompare(left, right)
+        }
+
+        if (
+            replication.master !== undefined &&
+            replication.primary !== undefined &&
+            hasConflictingValues(replication.master, replication.primary)
+        ) {
+            throw new TypeORMError(
+                `Replication options cannot define both "master" and "primary" with different values.`,
+            )
+        }
+
+        if (
+            replication.slaves !== undefined &&
+            replication.replicas !== undefined &&
+            hasConflictingValues(replication.slaves, replication.replicas)
+        ) {
+            throw new TypeORMError(
+                `Replication options cannot define both "slaves" and "replicas" with different values.`,
+            )
+        }
+
+        return {
+            ...options,
+            replication: {
+                ...replication,
+                ...(replication.primary !== undefined &&
+                replication.master === undefined
+                    ? { master: replication.primary }
+                    : {}),
+                ...(replication.replicas !== undefined &&
+                replication.slaves === undefined
+                    ? { slaves: replication.replicas }
+                    : {}),
+                ...(replication.defaultMode !== undefined
+                    ? {
+                          defaultMode: normalizeReplicationMode(
+                              replication.defaultMode,
+                          ),
+                      }
+                    : {}),
+            },
+        } as T
     }
 
     /**
@@ -601,13 +704,16 @@ export class DataSource {
      * manually control your database transaction.
      *
      * Mode is used in replication mode and indicates whatever you want to connect
-     * to master database or any of slave databases.
-     * If you perform writes you must use master database,
-     * if you perform reads you can use slave databases.
+     * to primary database or any of replica databases.
+     * If you perform writes you must use the primary database,
+     * if you perform reads you can use replica databases.
+     * `primary`/`replica` aliases are accepted and normalized for backward compatibility.
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode = "master"): QueryRunner {
-        const queryRunner = this.driver.createQueryRunner(mode)
+        const queryRunner = this.driver.createQueryRunner(
+            normalizeReplicationMode(mode),
+        )
         const manager = this.createEntityManager(queryRunner)
         Object.assign(queryRunner, { manager: manager })
         return queryRunner
@@ -776,7 +882,7 @@ export class DataSource {
                 }
             ).defaultMode
             if (value) {
-                return value
+                return normalizeReplicationMode(value)
             }
         }
         return "slave"

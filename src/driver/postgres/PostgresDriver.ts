@@ -26,7 +26,14 @@ import { ColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
+import {
+    getReplicationPrimary,
+    getReplicationReplicas,
+} from "../types/ReplicationConfig"
+import {
+    normalizeReplicationMode,
+    ReplicationMode,
+} from "../types/ReplicationMode"
 import { UpsertType } from "../types/UpsertType"
 import { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 import { PostgresDataSourceOptions } from "./PostgresDataSourceOptions"
@@ -337,7 +344,7 @@ export class PostgresDriver implements Driver {
 
         this.database = DriverUtils.buildDriverOptions(
             this.options.replication
-                ? this.options.replication.master
+                ? getReplicationPrimary(this.options.replication)
                 : this.options,
         ).database
         this.schema = DriverUtils.buildDriverOptions(this.options).schema
@@ -364,14 +371,21 @@ export class PostgresDriver implements Driver {
      */
     async connect(): Promise<void> {
         if (this.options.replication) {
+            const replicationPrimary = getReplicationPrimary(
+                this.options.replication,
+            )
+            const replicationReplicas = getReplicationReplicas(
+                this.options.replication,
+            )
+
             this.slaves = await Promise.all(
-                this.options.replication.slaves.map((slave) => {
-                    return this.createPool(this.options, slave)
+                replicationReplicas.map((replica) => {
+                    return this.createPool(this.options, replica)
                 }),
             )
             this.master = await this.createPool(
                 this.options,
-                this.options.replication.master,
+                replicationPrimary,
             )
         } else {
             this.master = await this.createPool(this.options, this.options)
@@ -717,7 +731,7 @@ export class PostgresDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): PostgresQueryRunner {
-        return new PostgresQueryRunner(this, mode)
+        return new PostgresQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**

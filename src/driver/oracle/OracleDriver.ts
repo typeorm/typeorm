@@ -23,7 +23,14 @@ import { ColumnType } from "../types/ColumnTypes"
 import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
+import {
+    getReplicationPrimary,
+    getReplicationReplicas,
+} from "../types/ReplicationConfig"
+import {
+    normalizeReplicationMode,
+    ReplicationMode,
+} from "../types/ReplicationMode"
 import { UpsertType } from "../types/UpsertType"
 import { OracleConnectionCredentialsOptions } from "./OracleConnectionCredentialsOptions"
 import { OracleDataSourceOptions } from "./OracleDataSourceOptions"
@@ -274,7 +281,7 @@ export class OracleDriver implements Driver {
 
         this.database = DriverUtils.buildDriverOptions(
             this.options.replication
-                ? this.options.replication.master
+                ? getReplicationPrimary(this.options.replication)
                 : this.options,
         ).database
         this.schema = DriverUtils.buildDriverOptions(this.options).schema
@@ -303,14 +310,21 @@ export class OracleDriver implements Driver {
         this.oracle.fetchAsString = [this.oracle.DB_TYPE_CLOB]
         this.oracle.fetchAsBuffer = [this.oracle.DB_TYPE_BLOB]
         if (this.options.replication) {
+            const replicationPrimary = getReplicationPrimary(
+                this.options.replication,
+            )
+            const replicationReplicas = getReplicationReplicas(
+                this.options.replication,
+            )
+
             this.slaves = await Promise.all(
-                this.options.replication.slaves.map((slave) => {
-                    return this.createPool(this.options, slave)
+                replicationReplicas.map((replica) => {
+                    return this.createPool(this.options, replica)
                 }),
             )
             this.master = await this.createPool(
                 this.options,
-                this.options.replication.master,
+                replicationPrimary,
             )
         } else {
             this.master = await this.createPool(this.options, this.options)
@@ -364,7 +378,7 @@ export class OracleDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new OracleQueryRunner(this, mode)
+        return new OracleQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**

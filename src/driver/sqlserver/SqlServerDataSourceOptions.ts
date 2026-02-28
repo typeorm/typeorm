@@ -1,5 +1,6 @@
 import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 import { ReplicationMode } from "../types/ReplicationMode"
+import { ReplicationConfig } from "../types/ReplicationConfig"
 import { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
 
 /**
@@ -299,18 +300,9 @@ export interface SqlServerDataSourceOptions
 
     /**
      * Replication setup.
+     * Supports both `master`/`slaves` and `primary`/`replicas` keys.
      */
-    readonly replication?: {
-        /**
-         * Master server used by orm to perform writes.
-         */
-        readonly master: SqlServerConnectionCredentialsOptions
-
-        /**
-         * List of read-from servers (slaves).
-         */
-        readonly slaves: SqlServerConnectionCredentialsOptions[]
-
+    readonly replication?: ReplicationConfig<SqlServerConnectionCredentialsOptions> & {
         /**
          * Default connection pool to use for SELECT queries
          * @default "slave"

@@ -22,6 +22,10 @@ import { Query } from "../Query"
 import { ColumnType, UnsignedColumnType } from "../types/ColumnTypes"
 import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
+import {
+    normalizeReplicationMode,
+    ReplicationMode,
+} from "../types/ReplicationMode"
 import { AuroraMysqlDriver } from "./AuroraMysqlDriver"
 
 /**
@@ -56,11 +60,16 @@ export class AuroraMysqlQueryRunner
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(driver: AuroraMysqlDriver, client: any) {
+    constructor(
+        driver: AuroraMysqlDriver,
+        client: any,
+        mode: ReplicationMode = "master",
+    ) {
         super()
         this.driver = driver
         this.connection = driver.connection
         this.client = client
+        this.mode = normalizeReplicationMode(mode)
         this.broadcaster = new Broadcaster(this)
     }
 
