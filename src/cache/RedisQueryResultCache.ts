@@ -87,6 +87,9 @@ export class RedisQueryResultCache implements QueryResultCache {
             if (typeof this.client.connect === "function") {
                 await this.client.connect()
             }
+
+            // Detect API style by checking if methods return Promises
+            this.detectPromiseBasedApi()
         } else if (this.clientType === "ioredis") {
             if (cacheOptions && cacheOptions.port) {
                 if (cacheOptions.options) {
@@ -124,9 +127,6 @@ export class RedisQueryResultCache implements QueryResultCache {
                 )
             }
         }
-
-        // Detect API style by checking if methods return Promises
-        this.detectPromiseBasedApi()
     }
 
     /**
