@@ -134,9 +134,8 @@ export class RedisQueryResultCache implements QueryResultCache {
         const key = options.identifier || options.query
         if (!key) return Promise.resolve(undefined)
 
-        return this.client.get(key).then((result: any) => {
-            return result ? JSON.parse(result) : undefined
-        })
+        const result = await this.client.get(key)
+        return result ? JSON.parse(result) : undefined
     }
 
     /**
@@ -164,7 +163,16 @@ export class RedisQueryResultCache implements QueryResultCache {
         const value = JSON.stringify(options)
         const duration = options.duration
 
-        await this.client.set(key, value, "PX", duration)
+        if (this.isNodeRedisClient(this.client)) {
+            await this.client.set(key, value, {
+                expiration: {
+                    type: "PX",
+                    value: duration,
+                },
+            })
+        } else {
+            await this.client.set(key, value, "PX", duration)
+        }
     }
 
     /**
@@ -172,12 +180,10 @@ export class RedisQueryResultCache implements QueryResultCache {
      * @param queryRunner
      */
     async clear(queryRunner?: QueryRunner): Promise<void> {
-        if (this.clientType === "redis") {
-            const client = this.client as RedisClientType
-            await client.flushDb()
+        if (this.isNodeRedisClient(this.client)) {
+            await this.client.flushDb()
         } else {
-            const client = this.client as Redis | Cluster
-            await client.flushdb()
+            await this.client.flushdb()
         }
     }
 
@@ -190,11 +196,7 @@ export class RedisQueryResultCache implements QueryResultCache {
         identifiers: string[],
         queryRunner?: QueryRunner,
     ): Promise<void> {
-        await Promise.all(
-            identifiers.map((identifier) => {
-                return this.deleteKey(identifier)
-            }),
-        )
+        await this.client.del(identifiers)
     }
 
     // -------------------------------------------------------------------------
@@ -224,5 +226,11 @@ export class RedisQueryResultCache implements QueryResultCache {
                 `Cannot use cache because ${this.clientType} is not installed. Please run "npm i ${this.clientType}".`,
             )
         }
+    }
+
+    private isNodeRedisClient(
+        client: Redis | Cluster | RedisClientType,
+    ): client is RedisClientType {
+        return this.clientType === "redis"
     }
 }
