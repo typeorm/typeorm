@@ -82,4 +82,35 @@ export class ObjectUtils {
             return list
         }
     }
+
+    static promisifyMethod<T = any>(
+        obj: any,
+        method: string,
+        ...args: any[]
+    ): Promise<T> {
+        return new Promise<T>((resolve, reject) => {
+            const fn = obj?.[method]
+            if (typeof fn !== "function") {
+                return reject(
+                    new Error(`Object does not have method ${method}`),
+                )
+            }
+
+            try {
+                fn.call(
+                    obj,
+                    ...args,
+                    (err: Error | null | undefined, result?: T) => {
+                        if (err) {
+                            reject(err)
+                        } else {
+                            resolve(result as T)
+                        }
+                    },
+                )
+            } catch (err) {
+                reject(err)
+            }
+        })
+    }
 }

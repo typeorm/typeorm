@@ -17,7 +17,7 @@ describe("github issues > #11271 Stack trace is truncated in MySQL query runner"
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: false,
             dropSchema: true,
-            enabledDrivers: ["mysql"],
+            enabledDrivers: ["mysql", "mssql"],
             logging: true,
         })
     })
@@ -30,7 +30,7 @@ describe("github issues > #11271 Stack trace is truncated in MySQL query runner"
 
         Promise.all(
             dataSources.map(async (dataSource) => {
-                async function my_named_function_123() {
+                async function myNamedFunction123() {
                     const queryRunner = dataSource.createQueryRunner()
                     try {
                         await queryRunner.query(
@@ -42,9 +42,9 @@ describe("github issues > #11271 Stack trace is truncated in MySQL query runner"
                 }
 
                 // Confirm that the error contains the named function (in the stack trace).
-                await expect(my_named_function_123())
+                await expect(myNamedFunction123())
                     .to.be.rejected.and.eventually.have.property("stack")
-                    .that.include("my_named_function_123")
+                    .that.include("myNamedFunction123")
             }),
         ))
 
@@ -54,7 +54,7 @@ describe("github issues > #11271 Stack trace is truncated in MySQL query runner"
 
         Promise.all(
             dataSources.map(async (dataSource) => {
-                async function my_named_function_1234() {
+                async function myNamedFunction1234() {
                     const repository: Repository<Hygge> =
                         dataSource.getRepository(Hygge)
 
@@ -69,9 +69,9 @@ describe("github issues > #11271 Stack trace is truncated in MySQL query runner"
                     await repository.insert(hygge2)
                 }
 
-                await expect(my_named_function_1234())
+                await expect(myNamedFunction1234())
                     .to.be.rejected.and.eventually.have.property("stack")
-                    .that.include("my_named_function_1234")
+                    .that.include("myNamedFunction1234")
             }),
         ))
 })

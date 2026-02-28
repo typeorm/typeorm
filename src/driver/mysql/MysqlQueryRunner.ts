@@ -19,6 +19,7 @@ import { View } from "../../schema-builder/view/View"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { ObjectUtils } from "../../util/ObjectUtils"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
 import { DriverUtils } from "../DriverUtils"
@@ -198,98 +199,93 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
+        const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime
+        const enableQueryTimeout = this.driver.options.enableQueryTimeout
+        const queryPayload =
+            enableQueryTimeout && maxQueryExecutionTime
+                ? { sql: query, timeout: maxQueryExecutionTime }
+                : query
         const queryStartTime = Date.now()
 
-        return new Promise(async (ok, fail) => {
-            try {
-                const enableQueryTimeout =
-                    this.driver.options.enableQueryTimeout
-                const maxQueryExecutionTime =
-                    this.driver.options.maxQueryExecutionTime
-                const queryPayload =
-                    enableQueryTimeout && maxQueryExecutionTime
-                        ? { sql: query, timeout: maxQueryExecutionTime }
-                        : query
-                databaseConnection.query(
-                    queryPayload,
+        try {
+            const raw = await ObjectUtils.promisifyMethod(
+                databaseConnection,
+                "query",
+                queryPayload,
+                parameters,
+            )
+
+            const queryExecutionTime = Date.now() - queryStartTime
+
+            if (
+                maxQueryExecutionTime &&
+                queryExecutionTime > maxQueryExecutionTime
+            )
+                this.driver.connection.logger.logQuerySlow(
+                    queryExecutionTime,
+                    query,
                     parameters,
-                    (err: any, raw: any) => {
-                        // log slow queries if maxQueryExecution time is set
-                        const maxQueryExecutionTime =
-                            this.driver.options.maxQueryExecutionTime
-                        const queryEndTime = Date.now()
-                        const queryExecutionTime = queryEndTime - queryStartTime
-
-                        if (
-                            maxQueryExecutionTime &&
-                            queryExecutionTime > maxQueryExecutionTime
-                        )
-                            this.driver.connection.logger.logQuerySlow(
-                                queryExecutionTime,
-                                query,
-                                parameters,
-                                this,
-                            )
-
-                        if (err) {
-                            this.driver.connection.logger.logQueryError(
-                                err,
-                                query,
-                                parameters,
-                                this,
-                            )
-                            this.broadcaster.broadcastAfterQueryEvent(
-                                broadcasterResult,
-                                query,
-                                parameters,
-                                false,
-                                undefined,
-                                undefined,
-                                err,
-                            )
-
-                            return fail(
-                                new QueryFailedError(query, parameters, err),
-                            )
-                        }
-
-                        this.broadcaster.broadcastAfterQueryEvent(
-                            broadcasterResult,
-                            query,
-                            parameters,
-                            true,
-                            queryExecutionTime,
-                            raw,
-                            undefined,
-                        )
-
-                        const result = new QueryResult()
-
-                        result.raw = raw
-
-                        try {
-                            result.records = Array.from(raw)
-                        } catch {
-                            // Do nothing.
-                        }
-
-                        if (raw?.hasOwnProperty("affectedRows")) {
-                            result.affected = raw.affectedRows
-                        }
-
-                        if (useStructuredResult) {
-                            ok(result)
-                        } else {
-                            ok(result.raw)
-                        }
-                    },
+                    this,
                 )
-            } catch (err) {
-                fail(err)
-            } finally {
-                await broadcasterResult.wait()
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
+
+            const result = new QueryResult()
+
+            result.raw = raw
+
+            try {
+                result.records = Array.from(raw)
+            } catch {
+                // Do nothing.
             }
-        })
+
+            if (raw?.hasOwnProperty("affectedRows")) {
+                result.affected = raw.affectedRows
+            }
+
+            return useStructuredResult ? result : result.raw
+        } catch (err) {
+            const queryExecutionTime = Date.now() - queryStartTime
+
+            if (
+                maxQueryExecutionTime &&
+                queryExecutionTime > maxQueryExecutionTime
+            )
+                this.driver.connection.logger.logQuerySlow(
+                    queryExecutionTime,
+                    query,
+                    parameters,
+                    this,
+                )
+
+            this.driver.connection.logger.logQueryError(
+                err,
+                query,
+                parameters,
+                this,
+            )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+            throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
+        }
     }
 
     /**
