@@ -10,6 +10,9 @@ import { Category } from "./entity/Category"
 import { EntitySchema, EntitySchemaOptions } from "../../../../../src"
 import UserSchema from "./schema/user.json"
 import ProfileSchema from "./schema/profile.json"
+import { Parent } from "./entity/Parent"
+import { Child } from "./entity/Child"
+import sinon from "sinon"
 
 describe("relations > lazy relations > basic-lazy-relations", () => {
     let dataSources: DataSource[]
@@ -18,10 +21,11 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
             entities: [
                 Post,
                 Category,
+                Parent,
+                Child,
                 new EntitySchema(UserSchema as EntitySchemaOptions<unknown>),
                 new EntitySchema(ProfileSchema as EntitySchemaOptions<unknown>),
             ],
-            enabledDrivers: ["mysql", "postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -426,5 +430,46 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     const loadedPost = await loadedCategory!.onePost
                     loadedPost.title.should.be.equal("post with great category")
                 }),
+        ))
+    it("should not fetch again if relation already selected in the find options - #2428", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const child1 = new Child()
+                const child2 = new Child()
+                await connection.manager.save([child1, child2])
+
+                const parent = new Parent()
+                parent.children = Promise.resolve([child1, child2])
+                await connection.manager.save(parent)
+
+                const loadedParentWithChildren = await connection
+                    .getRepository(Parent)
+                    .findOne({
+                        where: { id: parent.id },
+                        relations: ["children"],
+                    })
+                const loadedParent = await connection
+                    .getRepository(Parent)
+                    .findOneBy({ id: parent.id })
+
+                let queryCount = 0
+                const loggerStub = sinon
+                    .stub(connection.logger, "logQuery")
+                    .callsFake(() => queryCount++)
+
+                try {
+                    const loadedChildren =
+                        await loadedParentWithChildren!.children
+
+                    queryCount.should.be.equal(0)
+                    loadedChildren!.length.should.be.equal(2)
+
+                    const loadedChildren1 = await loadedParent!.children
+                    queryCount.should.be.not.equal(0)
+                    loadedChildren1!.length.should.be.equal(2)
+                } finally {
+                    loggerStub.restore()
+                }
+            }),
         ))
 })
