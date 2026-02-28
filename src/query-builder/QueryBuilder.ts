@@ -1516,12 +1516,21 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         true,
                     )
 
+                    if (this.shouldSkipWhereValue(parameterValue)) {
+                        continue
+                    }
+
                     yield [aliasPath, parameterValue]
                 }
             }
         } else {
             for (const key of Object.keys(where)) {
                 const parameterValue = where[key]
+
+                if (this.shouldSkipWhereValue(parameterValue)) {
+                    continue
+                }
+
                 const aliasPath = this.expressionMap.aliasNamePrefixingEnabled
                     ? `${this.alias}.${key}`
                     : key
@@ -1529,6 +1538,27 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 yield [aliasPath, parameterValue]
             }
         }
+    }
+
+    /**
+     * Checks if a where value should be skipped based on the
+     * invalidWhereValuesBehavior configuration.
+     * @param value
+     */
+    private shouldSkipWhereValue(value: any): boolean {
+        if (value === undefined) {
+            const behavior =
+                this.connection.options.invalidWhereValuesBehavior?.undefined ||
+                "throw"
+            return behavior === "ignore"
+        }
+        if (value === null) {
+            const behavior =
+                this.connection.options.invalidWhereValuesBehavior?.null ||
+                "throw"
+            return behavior === "ignore"
+        }
+        return false
     }
 
     protected getWherePredicateCondition(
