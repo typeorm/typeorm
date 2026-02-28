@@ -4,6 +4,8 @@ import { PlatformTools } from "../platform/PlatformTools"
 import { DataSource } from "../data-source/DataSource"
 import { QueryRunner } from "../query-runner/QueryRunner"
 import { TypeORMError } from "../error/TypeORMError"
+import Redis, { Cluster } from "ioredis"
+import { RedisClientType } from "redis"
 
 /**
  * Caches query result into Redis database.
@@ -21,17 +23,12 @@ export class RedisQueryResultCache implements QueryResultCache {
     /**
      * Connected redis client.
      */
-    protected client: any
+    protected client: RedisClientType | Redis | Cluster
 
     /**
      * Type of the Redis Client (redis or ioredis).
      */
     protected clientType: "redis" | "ioredis" | "ioredis/cluster"
-
-    /**
-     * Redis major version number
-     */
-    protected redisMajorVersion: number | undefined
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -59,19 +56,7 @@ export class RedisQueryResultCache implements QueryResultCache {
                 ...cacheOptions?.options,
             }
 
-            // Create initial client to test Redis version
-            let tempClient = this.redis.createClient(clientOptions)
-            const isRedis4Plus = typeof tempClient.connect === "function"
-
-            if (isRedis4Plus) {
-                // Redis 4+ detected, recreate with legacyMode for Redis 4.x
-                // (Redis 5 will ignore legacyMode if not needed)
-                clientOptions.legacyMode = true
-                tempClient = this.redis.createClient(clientOptions)
-            }
-
-            // Set as the main client
-            this.client = tempClient
+            this.client = this.redis.createClient(clientOptions)
 
             if (
                 typeof this.dataSource.options.cache === "object" &&
@@ -82,13 +67,7 @@ export class RedisQueryResultCache implements QueryResultCache {
                 })
             }
 
-            // Connect if Redis 4+
-            if (typeof this.client.connect === "function") {
-                await this.client.connect()
-            }
-
-            // Detect precise version after connection is established
-            this.detectRedisVersion()
+            await this.client.connect()
         } else if (this.clientType === "ioredis") {
             if (cacheOptions && cacheOptions.port) {
                 if (cacheOptions.options) {
@@ -132,21 +111,7 @@ export class RedisQueryResultCache implements QueryResultCache {
      * Disconnects the connection
      */
     async disconnect(): Promise<void> {
-        if (this.isRedis5OrHigher()) {
-            // Redis 5+ uses quit() that returns a Promise
-            await this.client.quit()
-            this.client = undefined
-            return
-        }
-
-        // Redis 3/4 callback style
-        return new Promise<void>((ok, fail) => {
-            this.client.quit((err: any, result: any) => {
-                if (err) return fail(err)
-                ok()
-                this.client = undefined
-            })
-        })
+        await this.client.quit()
     }
 
     /**
@@ -162,26 +127,15 @@ export class RedisQueryResultCache implements QueryResultCache {
      * @param options
      * @param queryRunner
      */
-    getFromCache(
+    async getFromCache(
         options: QueryResultCacheOptions,
         queryRunner?: QueryRunner,
     ): Promise<QueryResultCacheOptions | undefined> {
         const key = options.identifier || options.query
         if (!key) return Promise.resolve(undefined)
 
-        if (this.isRedis5OrHigher()) {
-            // Redis 5+ Promise-based API
-            return this.client.get(key).then((result: any) => {
-                return result ? JSON.parse(result) : undefined
-            })
-        }
-
-        // Redis 3/4 callback-based API
-        return new Promise<QueryResultCacheOptions | undefined>((ok, fail) => {
-            this.client.get(key, (err: any, result: any) => {
-                if (err) return fail(err)
-                ok(result ? JSON.parse(result) : undefined)
-            })
+        return this.client.get(key).then((result: any) => {
+            return result ? JSON.parse(result) : undefined
         })
     }
 
@@ -210,27 +164,7 @@ export class RedisQueryResultCache implements QueryResultCache {
         const value = JSON.stringify(options)
         const duration = options.duration
 
-        if (this.isRedis5OrHigher()) {
-            // Redis 5+ Promise-based API with PX option
-            await this.client.set(key, value, {
-                PX: duration,
-            })
-            return
-        }
-
-        // Redis 3/4 callback-based API
-        return new Promise<void>((ok, fail) => {
-            this.client.set(
-                key,
-                value,
-                "PX",
-                duration,
-                (err: any, result: any) => {
-                    if (err) return fail(err)
-                    ok()
-                },
-            )
-        })
+        await this.client.set(key, value, "PX", duration)
     }
 
     /**
@@ -238,19 +172,13 @@ export class RedisQueryResultCache implements QueryResultCache {
      * @param queryRunner
      */
     async clear(queryRunner?: QueryRunner): Promise<void> {
-        if (this.isRedis5OrHigher()) {
-            // Redis 5+ Promise-based API
-            await this.client.flushDb()
-            return
+        if (this.clientType === "redis") {
+            const client = this.client as RedisClientType
+            await client.flushDb()
+        } else {
+            const client = this.client as Redis | Cluster
+            await client.flushdb()
         }
-
-        // Redis 3/4 callback-based API
-        return new Promise<void>((ok, fail) => {
-            this.client.flushdb((err: any, result: any) => {
-                if (err) return fail(err)
-                ok()
-            })
-        })
     }
 
     /**
@@ -278,19 +206,7 @@ export class RedisQueryResultCache implements QueryResultCache {
      * @param key
      */
     protected async deleteKey(key: string): Promise<void> {
-        if (this.isRedis5OrHigher()) {
-            // Redis 5+ Promise-based API
-            await this.client.del(key)
-            return
-        }
-
-        // Redis 3/4 callback-based API
-        return new Promise<void>((ok, fail) => {
-            this.client.del(key, (err: any, result: any) => {
-                if (err) return fail(err)
-                ok()
-            })
-        })
+        await this.client.del([key])
     }
 
     /**
@@ -308,35 +224,5 @@ export class RedisQueryResultCache implements QueryResultCache {
                 `Cannot use cache because ${this.clientType} is not installed. Please run "npm i ${this.clientType}".`,
             )
         }
-    }
-
-    /**
-     * Detects the Redis package version by reading the installed package.json
-     * and sets the appropriate API version (3 for callback-based, 5 for Promise-based).
-     */
-    private detectRedisVersion(): void {
-        if (this.clientType !== "redis") return
-        const version = PlatformTools.readPackageVersion("redis")
-        const major = parseInt(version.split(".")[0], 10)
-        if (isNaN(major)) {
-            throw new TypeORMError(`Invalid Redis version format: ${version}`)
-        }
-        if (major <= 4) {
-            // Redis 3/4 uses callback-based API
-            this.redisMajorVersion = 3
-        } else {
-            // Redis 5+ uses Promise-based API
-            this.redisMajorVersion = 5
-        }
-    }
-
-    /**
-     * Checks if Redis version is 5.x or higher
-     */
-    private isRedis5OrHigher(): boolean {
-        if (this.clientType !== "redis") return false
-        return (
-            this.redisMajorVersion !== undefined && this.redisMajorVersion >= 5
-        )
     }
 }
