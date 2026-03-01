@@ -1277,8 +1277,6 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1569,23 +1567,64 @@ export class PostgresQueryRunner
             }
 
             if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
+                const isNewEnum =
+                    newColumn.type === "enum" ||
+                    newColumn.type === "simple-enum"
+                const isOldEnum =
+                    oldColumn.type === "enum" ||
+                    oldColumn.type === "simple-enum"
+
+                // 1. Pre-Alter: Create schemas (Up: New, Down: Old)
+                if (isNewEnum && !isOldEnum) {
+                    upQueries.push(this.createEnumTypeSql(table, newColumn))
+                }
+                if (isOldEnum && !isNewEnum) {
+                    downQueries.push(this.createEnumTypeSql(table, oldColumn))
+                }
+
+                const newType = isNewEnum
+                    ? this.buildEnumName(table, newColumn)
+                    : this.driver.createFullType(newColumn)
+                const oldType = isOldEnum
+                    ? this.buildEnumName(table, oldColumn)
+                    : this.driver.createFullType(oldColumn)
+
+                // 2. Alter Column
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        }" TYPE ${newType}${
+                            oldColumn.type !== newColumn.type
+                                ? ` USING "${newColumn.name}"::${newType}`
+                                : ""
+                        }`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        }" TYPE ${oldType}${
+                            oldColumn.type !== newColumn.type
+                                ? ` USING "${newColumn.name}"::${oldType}`
+                                : ""
+                        }`,
                     ),
                 )
+
+                // 3. Post-Alter: Drop schemas (Up: Old, Down: New)
+                if (isNewEnum && !isOldEnum) {
+                    downQueries.push(this.dropEnumTypeSql(table, newColumn))
+                }
+                if (isOldEnum && !isNewEnum) {
+                    upQueries.push(this.dropEnumTypeSql(table, oldColumn))
+                }
             }
 
             if (
