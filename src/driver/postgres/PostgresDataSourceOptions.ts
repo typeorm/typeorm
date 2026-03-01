@@ -39,14 +39,26 @@ export interface PostgresDataSourceOptions
      */
     readonly replication?: {
         /**
-         * Master server used by orm to perform writes.
+         * Primary server used by orm to perform writes.
          */
-        readonly master: PostgresConnectionCredentialsOptions
+        readonly primary?: PostgresConnectionCredentialsOptions
+
+        /**
+         * List of read-from servers (replicas).
+         */
+        readonly replicas?: PostgresConnectionCredentialsOptions[]
+
+        /**
+         * Master server used by orm to perform writes.
+         * @deprecated Use `primary` instead. Will be removed in a future major version.
+         */
+        readonly master?: PostgresConnectionCredentialsOptions
 
         /**
          * List of read-from servers (slaves).
+         * @deprecated Use `replicas` instead. Will be removed in a future major version.
          */
-        readonly slaves: PostgresConnectionCredentialsOptions[]
+        readonly slaves?: PostgresConnectionCredentialsOptions[]
 
         /**
          * Default connection pool to use for SELECT queries

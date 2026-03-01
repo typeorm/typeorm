@@ -2,6 +2,7 @@ import { DataSource } from "../../data-source/DataSource"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
+import { normalizeReplicationMode } from "../../util/replication"
 import { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
 import { PostgresDriver } from "../postgres/PostgresDriver"
@@ -111,7 +112,7 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
                 this.options.serviceConfigOptions,
                 this.options.formatOptions,
             ),
-            mode,
+            normalizeReplicationMode(mode),
         )
     }
 

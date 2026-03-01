@@ -37,6 +37,10 @@ import { RelationLoader } from "../query-builder/RelationLoader"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ReplicationMode } from "../driver/types/ReplicationMode"
+import {
+    normalizeReplicationMode,
+    warnReplicationModeDeprecation,
+} from "../util/replication"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
@@ -600,13 +604,17 @@ export class DataSource {
      * Using query runners you can control your queries to execute using single database connection and
      * manually control your database transaction.
      *
-     * Mode is used in replication mode and indicates whatever you want to connect
-     * to master database or any of slave databases.
-     * If you perform writes you must use master database,
-     * if you perform reads you can use slave databases.
+     * Mode is used in replication mode and indicates whether you want to connect
+     * to the primary (write) database or a replica (read) database.
+     * If you perform writes you must use the primary database,
+     * if you perform reads you can use replica databases.
      * @param mode
      */
-    createQueryRunner(mode: ReplicationMode = "master"): QueryRunner {
+    createQueryRunner(mode: ReplicationMode = "primary"): QueryRunner {
+        if (mode === "master" || mode === "slave") {
+            warnReplicationModeDeprecation()
+        }
+        mode = normalizeReplicationMode(mode)
         const queryRunner = this.driver.createQueryRunner(mode)
         const manager = this.createEntityManager(queryRunner)
         Object.assign(queryRunner, { manager: manager })
@@ -779,6 +787,6 @@ export class DataSource {
                 return value
             }
         }
-        return "slave"
+        return "replica"
     }
 }
