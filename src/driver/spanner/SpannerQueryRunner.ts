@@ -867,18 +867,35 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (
             oldColumn.name !== newColumn.name ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.isArray !== newColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
-            // To avoid data conversion, we just recreate column
+            // For rename, array, or generated column changes, recreate column
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            oldColumn.type !== newColumn.type ||
+            oldColumn.length !== newColumn.length
+        ) {
+            // Use ALTER COLUMN TYPE to preserve existing data (#3357)
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${this.driver.createFullType(newColumn)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        oldColumn.name
+                    }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                ),
+            )
         } else {
             if (
                 newColumn.precision !== oldColumn.precision ||

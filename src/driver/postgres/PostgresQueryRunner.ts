@@ -1283,12 +1283,31 @@ export class PostgresQueryRunner
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
+            // For array or generated column changes, recreate column
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            oldColumn.type !== newColumn.type ||
+            oldColumn.length !== newColumn.length
+        ) {
+            // Use ALTER COLUMN TYPE to preserve existing data (#3357)
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${this.driver.createFullType(newColumn)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        oldColumn.name
+                    }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                ),
+            )
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
@@ -1567,64 +1586,23 @@ export class PostgresQueryRunner
             }
 
             if (
-                oldColumn.type !== newColumn.type ||
-                oldColumn.length !== newColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
-                const isNewEnum =
-                    newColumn.type === "enum" ||
-                    newColumn.type === "simple-enum"
-                const isOldEnum =
-                    oldColumn.type === "enum" ||
-                    oldColumn.type === "simple-enum"
-
-                // 1. Pre-Alter: Create schemas (Up: New, Down: Old)
-                if (isNewEnum && !isOldEnum) {
-                    upQueries.push(this.createEnumTypeSql(table, newColumn))
-                }
-                if (isOldEnum && !isNewEnum) {
-                    downQueries.push(this.createEnumTypeSql(table, oldColumn))
-                }
-
-                const newType = isNewEnum
-                    ? this.buildEnumName(table, newColumn)
-                    : this.driver.createFullType(newColumn)
-                const oldType = isOldEnum
-                    ? this.buildEnumName(table, oldColumn)
-                    : this.driver.createFullType(oldColumn)
-
-                // 2. Alter Column
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newType}${
-                            oldColumn.type !== newColumn.type
-                                ? ` USING "${newColumn.name}"::${newType}`
-                                : ""
-                        }`,
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${oldType}${
-                            oldColumn.type !== newColumn.type
-                                ? ` USING "${newColumn.name}"::${oldType}`
-                                : ""
-                        }`,
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
-
-                // 3. Post-Alter: Drop schemas (Up: Old, Down: New)
-                if (isNewEnum && !isOldEnum) {
-                    downQueries.push(this.dropEnumTypeSql(table, newColumn))
-                }
-                if (isOldEnum && !isNewEnum) {
-                    upQueries.push(this.dropEnumTypeSql(table, oldColumn))
-                }
             }
 
             if (

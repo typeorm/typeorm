@@ -1218,18 +1218,48 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
 
         if (
-            (newColumn.isGenerated !== oldColumn.isGenerated &&
-                newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length
+            newColumn.isGenerated !== oldColumn.isGenerated &&
+            newColumn.generationStrategy !== "uuid"
         ) {
-            // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            // Also, we recreate column if column type changed
+            // SAP HANA does not support changing of IDENTITY column, so we must drop column and recreate it again.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            newColumn.type !== oldColumn.type ||
+            newColumn.length !== oldColumn.length
+        ) {
+            // Use ALTER to change type/length in-place, preserving data (#3357)
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER (${this.buildCreateColumnSql(
+                        newColumn,
+                        !(
+                            oldColumn.default === null ||
+                            oldColumn.default === undefined
+                        ),
+                        !oldColumn.isNullable,
+                    )})`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER (${this.buildCreateColumnSql(
+                        oldColumn,
+                        !(
+                            newColumn.default === null ||
+                            newColumn.default === undefined
+                        ),
+                        !newColumn.isNullable,
+                    )})`,
+                ),
+            )
         } else {
             if (newColumn.name !== oldColumn.name) {
                 // rename column
