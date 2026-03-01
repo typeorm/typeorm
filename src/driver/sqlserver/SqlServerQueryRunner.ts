@@ -2792,15 +2792,14 @@ export class SqlServerQueryRunner
                             })
                             .join(" OR ")
 
-                        return `
-                        SELECT DISTINCT '${TABLE_CATALOG}' AS                                              "TABLE_CATALOG",
-                                        OBJECT_SCHEMA_NAME("fk"."parent_object_id",
-                                                           DB_ID('${TABLE_CATALOG}')) AS                   "TABLE_SCHEMA",
-                                        OBJECT_NAME("fk"."parent_object_id", DB_ID('${TABLE_CATALOG}')) AS "TABLE_NAME",
-                                        "fk"."name" AS                                                     "CONSTRAINT_NAME"
-                        FROM "${TABLE_CATALOG}"."sys"."foreign_keys" AS "fk"
-                        WHERE (${conditions})
-                    `
+                        return (
+                            `SELECT DISTINCT '${TABLE_CATALOG}' AS "TABLE_CATALOG", ` +
+                            `OBJECT_SCHEMA_NAME("fk"."parent_object_id", DB_ID('${TABLE_CATALOG}')) AS "TABLE_SCHEMA", ` +
+                            `OBJECT_NAME("fk"."parent_object_id", DB_ID('${TABLE_CATALOG}')) AS "TABLE_NAME", ` +
+                            `"fk"."name" AS "CONSTRAINT_NAME" ` +
+                            `FROM "${TABLE_CATALOG}"."sys"."foreign_keys" AS "fk" ` +
+                            `WHERE (${conditions})`
+                        )
                     })
                     .join(" UNION ALL ")
 
@@ -2958,17 +2957,13 @@ export class SqlServerQueryRunner
 
             const tablesSql = dbDatabases
                 .map(({ name }) => {
-                    return `
-                    SELECT DISTINCT
-                        "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME"
-                    FROM "${name}"."INFORMATION_SCHEMA"."TABLES"
-                    WHERE
-                      "TABLE_TYPE" = 'BASE TABLE'
-                      AND
-                      "TABLE_CATALOG" = '${name}'
-                      AND
-                      ISNULL(Objectproperty(Object_id("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME"), 'IsMSShipped'), 0) = 0
-                `
+                    return (
+                        `SELECT DISTINCT "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME" ` +
+                        `FROM "${name}"."INFORMATION_SCHEMA"."TABLES" ` +
+                        `WHERE "TABLE_TYPE" = 'BASE TABLE' AND ` +
+                        `"TABLE_CATALOG" = '${name}' AND ` +
+                        `ISNULL(Objectproperty(Object_id("TABLE_CATALOG" + '.' + "TABLE_SCHEMA" + '.' + "TABLE_NAME"), 'IsMSShipped'), 0) = 0`
+                    )
                 })
                 .join(" UNION ALL ")
 
@@ -2999,15 +2994,14 @@ export class SqlServerQueryRunner
                         })
                         .join(" OR ")
 
-                    return `
-                    SELECT DISTINCT
-                        "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME"
-                    FROM "${database}"."INFORMATION_SCHEMA"."TABLES"
-                    WHERE
-                          "TABLE_TYPE" = 'BASE TABLE' AND
-                          "TABLE_CATALOG" = '${database}' AND
-                          ${tablesCondition}
-                `
+                    return (
+                        `SELECT DISTINCT "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME" ` +
+                        `FROM "${database}"."INFORMATION_SCHEMA"."TABLES" ` +
+                        `WHERE ` +
+                        `"TABLE_TYPE" = 'BASE TABLE' AND ` +
+                        `"TABLE_CATALOG" = '${database}' AND ` +
+                        `${tablesCondition}`
+                    )
                 })
                 .join(" UNION ALL ")
 
