@@ -852,18 +852,40 @@ export class AuroraMysqlQueryRunner
                 oldColumn.length !== newColumn.length
             ) {
                 // Use CHANGE to alter type/length in-place, preserving data (#3357)
+                // MySQL doesn't allow DEFAULT on TEXT/BLOB/JSON/GEOMETRY columns,
+                // so strip it when changing to those types
+                const noDefaultTypes = [
+                    "blob",
+                    "tinyblob",
+                    "mediumblob",
+                    "longblob",
+                    "text",
+                    "tinytext",
+                    "mediumtext",
+                    "longtext",
+                    "geometry",
+                    "json",
+                ]
+                const upCol = newColumn.clone()
+                if (noDefaultTypes.includes(upCol.type)) {
+                    upCol.default = undefined
+                }
+                const downCol = oldColumn.clone()
+                if (noDefaultTypes.includes(downCol.type)) {
+                    downCol.default = undefined
+                }
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
                             oldColumn.name
-                        }\` ${this.buildCreateColumnSql(newColumn, true)}`,
+                        }\` ${this.buildCreateColumnSql(upCol, true)}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
                             newColumn.name
-                        }\` ${this.buildCreateColumnSql(oldColumn, true)}`,
+                        }\` ${this.buildCreateColumnSql(downCol, true)}`,
                     ),
                 )
             }

@@ -1294,25 +1294,14 @@ export class PostgresQueryRunner
                 oldColumn.type !== newColumn.type ||
                 oldColumn.length !== newColumn.length
             ) {
+                // downQueries are executed in REVERSE order, so push
+                // order for down is: DROP, ALTER, CREATE (reversed: CREATE, ALTER, DROP)
                 const isNewEnum =
                     newColumn.type === "enum" ||
                     newColumn.type === "simple-enum"
                 const isOldEnum =
                     oldColumn.type === "enum" ||
                     oldColumn.type === "simple-enum"
-
-                // CREATE enum type must come BEFORE ALTER COLUMN
-                if (isNewEnum && !isOldEnum) {
-                    const newEnumName = this.buildEnumName(table, newColumn)
-                    upQueries.push(
-                        this.createEnumTypeSql(table, newColumn, newEnumName),
-                    )
-                } else if (isOldEnum && !isNewEnum) {
-                    const oldEnumName = this.buildEnumName(table, oldColumn)
-                    downQueries.push(
-                        this.createEnumTypeSql(table, oldColumn, oldEnumName),
-                    )
-                }
 
                 let upType = this.driver.createFullType(newColumn)
                 let downType = this.driver.createFullType(oldColumn)
@@ -1321,38 +1310,69 @@ export class PostgresQueryRunner
                     const newEnumName = this.buildEnumName(table, newColumn)
                     const arraySuffix = newColumn.isArray ? "[]" : ""
                     upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`
+                    // up: CREATE enum, ALTER to enum, (no drop)
+                    upQueries.push(
+                        this.createEnumTypeSql(table, newColumn, newEnumName),
+                    )
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${upType}`,
+                        ),
+                    )
+                    // down (reversed): DROP enum, ALTER back, CREATE — but reversed executes as CREATE, ALTER, DROP
+                    downQueries.push(
+                        this.dropEnumTypeSql(table, newColumn, newEnumName),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                oldColumn.name
+                            }" TYPE ${downType}`,
+                        ),
+                    )
                 } else if (isOldEnum && !isNewEnum) {
                     const oldEnumName = this.buildEnumName(table, oldColumn)
                     const arraySuffix = oldColumn.isArray ? "[]" : ""
                     downType = `${oldEnumName}${arraySuffix} USING "${oldColumn.name}"::"text"::${oldEnumName}${arraySuffix}`
-                }
-
-                // Use ALTER COLUMN TYPE to preserve existing data (#3357)
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${upType}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            oldColumn.name
-                        }" TYPE ${downType}`,
-                    ),
-                )
-
-                // DROP enum type must come AFTER ALTER COLUMN
-                if (isOldEnum && !isNewEnum) {
-                    const oldEnumName = this.buildEnumName(table, oldColumn)
+                    // up: ALTER away from enum, DROP enum
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${upType}`,
+                        ),
+                    )
                     upQueries.push(
                         this.dropEnumTypeSql(table, oldColumn, oldEnumName),
                     )
-                } else if (isNewEnum && !isOldEnum) {
-                    const newEnumName = this.buildEnumName(table, newColumn)
+                    // down (reversed): ALTER back to enum, CREATE enum — reversed executes as CREATE, ALTER
                     downQueries.push(
-                        this.dropEnumTypeSql(table, newColumn, newEnumName),
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                oldColumn.name
+                            }" TYPE ${downType}`,
+                        ),
+                    )
+                    downQueries.push(
+                        this.createEnumTypeSql(table, oldColumn, oldEnumName),
+                    )
+                } else {
+                    // No enum transition, just type/length change
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${upType}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                oldColumn.name
+                            }" TYPE ${downType}`,
+                        ),
                     )
                 }
             }
