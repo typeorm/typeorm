@@ -1293,19 +1293,70 @@ export class PostgresQueryRunner
             oldColumn.type !== newColumn.type ||
             oldColumn.length !== newColumn.length
         ) {
+            if (
+                (newColumn.type === "enum" ||
+                    newColumn.type === "simple-enum") &&
+                oldColumn.type !== "enum" &&
+                oldColumn.type !== "simple-enum"
+            ) {
+                const newEnumName = this.buildEnumName(table, newColumn)
+                upQueries.push(
+                    this.createEnumTypeSql(table, newColumn, newEnumName),
+                )
+                downQueries.push(
+                    this.dropEnumTypeSql(table, newColumn, newEnumName),
+                )
+            } else if (
+                (oldColumn.type === "enum" ||
+                    oldColumn.type === "simple-enum") &&
+                newColumn.type !== "enum" &&
+                newColumn.type !== "simple-enum"
+            ) {
+                const oldEnumName = this.buildEnumName(table, oldColumn)
+                downQueries.push(
+                    this.createEnumTypeSql(table, oldColumn, oldEnumName),
+                )
+                upQueries.push(
+                    this.dropEnumTypeSql(table, oldColumn, oldEnumName),
+                )
+            }
+
+            let upType = this.driver.createFullType(newColumn)
+            let downType = this.driver.createFullType(oldColumn)
+
+            if (
+                (newColumn.type === "enum" ||
+                    newColumn.type === "simple-enum") &&
+                oldColumn.type !== "enum" &&
+                oldColumn.type !== "simple-enum"
+            ) {
+                const newEnumName = this.buildEnumName(table, newColumn)
+                const arraySuffix = newColumn.isArray ? "[]" : ""
+                upType = `${newEnumName}${arraySuffix} USING "${newColumn.name}"::"text"::${newEnumName}${arraySuffix}`
+            } else if (
+                (oldColumn.type === "enum" ||
+                    oldColumn.type === "simple-enum") &&
+                newColumn.type !== "enum" &&
+                newColumn.type !== "simple-enum"
+            ) {
+                const oldEnumName = this.buildEnumName(table, oldColumn)
+                const arraySuffix = oldColumn.isArray ? "[]" : ""
+                downType = `${oldEnumName}${arraySuffix} USING "${oldColumn.name}"::"text"::${oldEnumName}${arraySuffix}`
+            }
+
             // Use ALTER COLUMN TYPE to preserve existing data (#3357)
             upQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                         newColumn.name
-                    }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    }" TYPE ${upType}`,
                 ),
             )
             downQueries.push(
                 new Query(
                     `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                         oldColumn.name
-                    }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    }" TYPE ${downType}`,
                 ),
             )
         } else {
