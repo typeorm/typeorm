@@ -1133,26 +1133,28 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // update cloned table
             clonedTable = table.clone()
-        } else if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length
-        ) {
-            // Use MODIFY to change type/length in-place, preserving data (#3357)
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} MODIFY "${
-                        oldColumn.name
-                    }" ${this.connection.driver.createFullType(newColumn)}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} MODIFY "${
-                        oldColumn.name
-                    }" ${this.connection.driver.createFullType(oldColumn)}`,
-                ),
-            )
         } else {
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length
+            ) {
+                // Use MODIFY to change type/length in-place, preserving data (#3357)
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY "${
+                            oldColumn.name
+                        }" ${this.connection.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY "${
+                            oldColumn.name
+                        }" ${this.connection.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+            }
+
             if (newColumn.name !== oldColumn.name) {
                 // rename column
                 upQueries.push(
@@ -1596,10 +1598,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     )
                 }
             }
-
-            await this.executeQueries(upQueries, downQueries)
-            this.replaceCachedTable(table, clonedTable)
         }
+
+        await this.executeQueries(upQueries, downQueries)
+        this.replaceCachedTable(table, clonedTable)
     }
 
     /**

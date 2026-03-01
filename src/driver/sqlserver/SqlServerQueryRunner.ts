@@ -1313,38 +1313,40 @@ export class SqlServerQueryRunner
 
             // update cloned table
             clonedTable = table.clone()
-        } else if (
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length
-        ) {
-            // Use ALTER COLUMN to change type/length in-place, preserving data (#3357)
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        table,
-                    )} ALTER COLUMN ${this.buildCreateColumnSql(
-                        table,
-                        newColumn,
-                        true,
-                        false,
-                        true,
-                    )}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        table,
-                    )} ALTER COLUMN ${this.buildCreateColumnSql(
-                        table,
-                        oldColumn,
-                        true,
-                        false,
-                        true,
-                    )}`,
-                ),
-            )
         } else {
+            if (
+                newColumn.type !== oldColumn.type ||
+                newColumn.length !== oldColumn.length
+            ) {
+                // Use ALTER COLUMN to change type/length in-place, preserving data (#3357)
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN ${this.buildCreateColumnSql(
+                            table,
+                            newColumn,
+                            true,
+                            false,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN ${this.buildCreateColumnSql(
+                            table,
+                            oldColumn,
+                            true,
+                            false,
+                            true,
+                        )}`,
+                    ),
+                )
+            }
+
             if (newColumn.name !== oldColumn.name) {
                 // we need database name and schema name to rename FK constraints
                 let dbName: string | undefined = undefined
@@ -1952,10 +1954,10 @@ export class SqlServerQueryRunner
                     )
                 }
             }
-
-            await this.executeQueries(upQueries, downQueries)
-            this.replaceCachedTable(table, clonedTable)
         }
+
+        await this.executeQueries(upQueries, downQueries)
+        this.replaceCachedTable(table, clonedTable)
     }
 
     /**
