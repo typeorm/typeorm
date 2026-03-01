@@ -477,8 +477,13 @@ describe("schema builder > change column", () => {
     it("should preserve data when changing column type or length", () =>
         Promise.all(
             dataSources.map(async (connection) => {
-                // Only Postgres family drivers support in-place ALTER COLUMN TYPE
-                if (!DriverUtils.isPostgresFamily(connection.driver)) return
+                // Only Postgres and Aurora Postgres drivers support in-place ALTER COLUMN TYPE
+                if (
+                    !["postgres", "aurora-postgres"].includes(
+                        connection.driver.options.type,
+                    )
+                )
+                    return
 
                 const queryRunner = connection.createQueryRunner()
                 const postRepository = connection.getRepository(Post)
