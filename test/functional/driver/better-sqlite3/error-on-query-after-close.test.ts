@@ -1,11 +1,11 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../utils/test-utils"
 
 describe("sqlite driver > throws an error when queried after closing connection", () => {
     let connections: DataSource[]
@@ -13,7 +13,7 @@ describe("sqlite driver > throws an error when queried after closing connection"
         async () =>
             (connections = await createTestingConnections({
                 entities: [],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -25,9 +25,7 @@ describe("sqlite driver > throws an error when queried after closing connection"
                 await connection.destroy()
                 await expect(
                     connection.query("select * from sqlite_master;"),
-                ).to.rejectedWith(
-                    "Connection with sqlite database is not established. Check connection configuration.",
-                )
+                ).to.rejectedWith("The database connection is not open")
             }),
         ))
 })

@@ -16,14 +16,13 @@ export class DriverUtils {
      */
     static isSQLiteFamily(driver: Driver): boolean {
         return [
-            "sqlite",
-            "cordova",
-            "react-native",
-            "nativescript",
-            "sqljs",
-            "expo",
             "better-sqlite3",
             "capacitor",
+            "cordova",
+            "expo",
+            "nativescript",
+            "react-native",
+            "sqljs",
         ].includes(driver.options.type)
     }
 
