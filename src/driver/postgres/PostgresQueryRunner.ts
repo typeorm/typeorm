@@ -1279,6 +1279,8 @@ export class PostgresQueryRunner
         if (
             newColumn.isArray !== oldColumn.isArray ||
             oldColumn.generationStrategy !== newColumn.generationStrategy ||
+            (oldColumn.type !== newColumn.type &&
+                (oldColumn.type === "uuid" || newColumn.type === "uuid")) ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
