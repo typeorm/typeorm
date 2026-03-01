@@ -10,19 +10,19 @@ import { expect } from "chai"
 import { DataSource } from "../../../../../src/data-source/DataSource"
 
 describe("query builder > relational query builder > load operation > many-to-one and one-to-one relations", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load relation entity of a given entity object", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "category #1"
                 await connection.manager.save(category1)
@@ -99,7 +99,7 @@ describe("query builder > relational query builder > load operation > many-to-on
 
     it("should load relation entity of a given entity id", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "category #1"
                 await connection.manager.save(category1)
@@ -176,7 +176,7 @@ describe("query builder > relational query builder > load operation > many-to-on
 
     it("should load relation entity of a given id", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "category #1"
                 await connection.manager.save(category1)

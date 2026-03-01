@@ -10,16 +10,16 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 import { Category, Product } from "./entity"
 
 describe("github issues > #10431 When requesting nested relations on foreign key primary entities, relation becomes empty entity rather than null", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Category, Product],
             schemaCreate: true,
             dropSchema: true,
         })
 
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             // By default, MySQL uses backticks instead of quotes for identifiers
             if (DriverUtils.isMySQLFamily(connection.driver)) {
                 const randomVirtualColumnMetadata = connection
@@ -35,11 +35,11 @@ describe("github issues > #10431 When requesting nested relations on foreign key
             }
         }
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return [] when requested nested relations are empty on ManyToMany relation with @VirtualColumn definitions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const productRepo = connection.getRepository(Product)
                 const testProduct = new Product()
                 testProduct.name = "foo"

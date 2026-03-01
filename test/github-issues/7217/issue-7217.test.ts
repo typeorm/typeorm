@@ -7,10 +7,10 @@ import {
 import { User } from "./entity/UserEntity"
 
 describe("github issues > #7217 Modifying enum fails migration if the enum is used in an array column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 migrations: [],
                 enabledDrivers: ["postgres"],
                 schemaCreate: false,
@@ -18,11 +18,11 @@ describe("github issues > #7217 Modifying enum fails migration if the enum is us
                 entities: [User],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const sqlInMemory = await connection.driver
@@ -35,7 +35,7 @@ describe("github issues > #7217 Modifying enum fails migration if the enum is us
 
     it("should correctly change enum", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const metadata = connection.getMetadata(User)
                 const columnMetadata = metadata.columns.find(
                     (column) => column.databaseName === "roles",

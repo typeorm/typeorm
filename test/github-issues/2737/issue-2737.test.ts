@@ -8,11 +8,11 @@ import {
 } from "../../utils/test-utils"
 
 describe("github issues > #2737 MySQLDriver findChangedColumns (fields: width, precision)", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 dropSchema: false,
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql", "mariadb", "aurora-mysql"],
@@ -24,13 +24,13 @@ describe("github issues > #2737 MySQLDriver findChangedColumns (fields: width, p
             })),
     )
 
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not create migrations for an existing unique index when bigNumberStrings is false", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const entityMetadata = connection.entityMetadatas.find(
                     (x) => x.name === "TestEntity",
                 )

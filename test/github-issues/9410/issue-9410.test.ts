@@ -8,10 +8,10 @@ import {
 } from "../../utils/test-utils"
 
 describe("better-sqlite3 driver > enable wal", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [],
                 enabledDrivers: ["better-sqlite3"],
                 driverSpecific: {
@@ -19,12 +19,12 @@ describe("better-sqlite3 driver > enable wal", () => {
                 },
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("github issues > #9410 The better-sqlite3 driver should support the enableWal flag", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const result = await connection.query("PRAGMA journal_mode")
 
                 expect(result).to.eql([{ journal_mode: "wal" }])

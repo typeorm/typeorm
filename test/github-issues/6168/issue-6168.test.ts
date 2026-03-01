@@ -66,18 +66,18 @@ const createTables = async (queryRunner: QueryRunner, dbName: string) => {
 }
 
 describe("github issues > #6168 fix multiple foreign keys with the same name in a mysql multi-tenanted DB", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
             schemaCreate: false,
             dropSchema: false,
         })
 
-        await reloadTestingDatabases(connections)
+        await reloadTestingDatabases(dataSources)
 
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const queryRunner = connection.createQueryRunner()
             await createTables(queryRunner, String(connection.driver.database))
             await queryRunner.createDatabase("test2", true)
@@ -87,18 +87,18 @@ describe("github issues > #6168 fix multiple foreign keys with the same name in 
     })
 
     after(async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const queryRunner = connection.createQueryRunner()
             await queryRunner.dropDatabase("test2")
             await queryRunner.release()
         }
 
-        await closeTestingConnections(connections)
+        await closeTestingConnections(dataSources)
     })
 
     it("should only have one foreign key column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const tables = await queryRunner.getTables([
                     questionName,

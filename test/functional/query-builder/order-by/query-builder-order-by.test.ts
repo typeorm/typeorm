@@ -11,19 +11,19 @@ import { Comment } from "./entity/Comment"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > order-by", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should be always in right order(default order)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post1 = new Post()
                 post1.myOrder = 1
 
@@ -41,7 +41,7 @@ describe("query builder > order-by", () => {
 
     it("should be always in right order(custom order)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post1 = new Post()
                 post1.myOrder = 1
 
@@ -60,7 +60,7 @@ describe("query builder > order-by", () => {
 
     it("should be always in right order(custom order)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!(connection.driver.options.type === "postgres"))
                     // NULLS FIRST / LAST only supported by postgres
                     return
@@ -90,7 +90,7 @@ describe("query builder > order-by", () => {
 
     it("should be always in right order(custom order)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!DriverUtils.isMySQLFamily(connection.driver))
                     // IS NULL / IS NOT NULL only supported by mysql
                     return
@@ -120,7 +120,7 @@ describe("query builder > order-by", () => {
 
     it("should be able to order by sql statement", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!DriverUtils.isMySQLFamily(connection.driver)) return // DIV statement does not supported by all drivers
 
                 const post1 = new Post()
@@ -154,7 +154,7 @@ describe("query builder > order-by", () => {
 
     it("should order by joined entity column using database column name without pagination", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const commentRepository = connection.getRepository(Comment)
 
@@ -183,7 +183,7 @@ describe("query builder > order-by", () => {
 
     it("should order by joined entity column using database column name with pagination", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const commentRepository = connection.getRepository(Comment)
 
@@ -214,7 +214,7 @@ describe("query builder > order-by", () => {
 
     it("should order by joined entity column using property name without pagination", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const commentRepository = connection.getRepository(Comment)
 
@@ -243,7 +243,7 @@ describe("query builder > order-by", () => {
 
     it("should order by joined entity column using property name with pagination", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const commentRepository = connection.getRepository(Comment)
 
@@ -273,7 +273,7 @@ describe("query builder > order-by", () => {
         ))
     it("should properly escape column names or aliases in order by", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 for (let i = 0; i < 5; i++) {
                     const post = new Post()
                     post.myOrder = i

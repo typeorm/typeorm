@@ -10,9 +10,9 @@ import { expect } from "chai"
 
 describe("github issues > #7867 Column not renamed when schema/database is set", () => {
     describe("schema is set", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Example],
                 schemaCreate: true,
                 dropSchema: true,
@@ -22,12 +22,12 @@ describe("github issues > #7867 Column not renamed when schema/database is set",
                 enabledDrivers: ["postgres"],
             })
         })
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should correctly change column name", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postMetadata = connection.getMetadata(Example)
                     const nameColumn =
                         postMetadata.findColumnWithPropertyName("name")!
@@ -51,9 +51,9 @@ describe("github issues > #7867 Column not renamed when schema/database is set",
     })
 
     describe("database is set", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Example],
                 schemaCreate: true,
                 dropSchema: true,
@@ -63,12 +63,12 @@ describe("github issues > #7867 Column not renamed when schema/database is set",
                 enabledDrivers: ["mysql"],
             })
         })
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should correctly change column name", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postMetadata = connection.getMetadata(Example)
                     const nameColumn =
                         postMetadata.findColumnWithPropertyName("name")!

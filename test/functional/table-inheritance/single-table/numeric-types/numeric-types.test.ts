@@ -11,19 +11,19 @@ import { Teacher } from "./entity/Teacher"
 import { Person } from "./entity/Person"
 
 describe("table-inheritance > single-table > numeric types", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Person, Student, Teacher],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should allow numeric types for the discriminator, including 0", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "cockroachdb") {
                     return
                 }

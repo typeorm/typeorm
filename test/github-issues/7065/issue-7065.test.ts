@@ -16,22 +16,22 @@ import { Contact, Email, Phone, User } from "./entity"
 //  to fix this bug we need to re-write current implementation which is hard to do at this moment.
 
 describe("github issues > #7065 ChildEntity type relationship produces unexpected results", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Contact, Email, Phone, User],
                 schemaCreate: true,
                 dropSchema: true,
                 relationLoadStrategy: "join", // TODO: fix it later
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should join child entity with discriminator value condition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userRepo = connection.getRepository(User)
 
                 const email = new Email()

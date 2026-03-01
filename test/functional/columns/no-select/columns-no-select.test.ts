@@ -9,19 +9,19 @@ import { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("columns > no-selection functionality", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not select columns marked with select: false option", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // create and save a post first
@@ -43,7 +43,7 @@ describe("columns > no-selection functionality", () => {
 
     it("should not select columns with QueryBuilder marked with select: false option", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // create and save a post first
@@ -66,7 +66,7 @@ describe("columns > no-selection functionality", () => {
 
     it("should select columns with select: false even columns were implicitly selected", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // create and save a post first
@@ -90,7 +90,7 @@ describe("columns > no-selection functionality", () => {
 
     it("should not return columns marked with select: false", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = new Post()
                 post.title = "Hello Post"
@@ -107,7 +107,7 @@ describe("columns > no-selection functionality", () => {
 
     it("should not return columns marked with select: false in embedded entities", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = new Post()
                 post.title = "Hello Post"

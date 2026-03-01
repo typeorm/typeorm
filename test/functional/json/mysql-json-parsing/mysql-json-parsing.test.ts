@@ -9,20 +9,20 @@ import {
 import { JsonEntity } from "./entity/JsonEntity"
 
 describe("mysql json parsing", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [JsonEntity],
                 enabledDrivers: ["mysql", "mariadb"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly parse JSON objects", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonObject = { foo: "bar", nested: { value: 123 } }
@@ -40,7 +40,7 @@ describe("mysql json parsing", () => {
 
     it("should correctly parse JSON arrays", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonArray = [1, "two", { three: 3 }, null, true]
@@ -61,7 +61,7 @@ describe("mysql json parsing", () => {
 
     it("should correctly handle JSON string primitives", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonString = "hello world"
@@ -77,7 +77,7 @@ describe("mysql json parsing", () => {
 
     it("should correctly handle JSON number primitives", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonNumber = 42.5
@@ -93,7 +93,7 @@ describe("mysql json parsing", () => {
 
     it("should correctly handle JSON boolean primitives", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonBoolean = true
@@ -109,7 +109,7 @@ describe("mysql json parsing", () => {
 
     it("should correctly handle JSON null", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonNull = null
@@ -124,7 +124,7 @@ describe("mysql json parsing", () => {
 
     it("should handle complex nested JSON structures", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.complexJson = {
@@ -153,7 +153,7 @@ describe("mysql json parsing", () => {
 
     it("should handle edge case of JSON strings containing quotes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonString = 'string with "quotes" inside'
@@ -171,7 +171,7 @@ describe("mysql json parsing", () => {
 
     it("should handle edge case of empty strings", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(JsonEntity)
                 const entity = new JsonEntity()
                 entity.jsonString = ""

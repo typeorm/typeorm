@@ -10,20 +10,20 @@ import { Category } from "./entity/Category"
 import { Question } from "./entity/Question"
 
 describe("github issues > #778 TypeORM is ignoring the `type` field when set on a PrimaryGeneratedColumn", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly parse type from PrimaryGeneratedColumn options", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const postTable = await queryRunner.getTable("post")
                 const categoryTable = await queryRunner.getTable("category")

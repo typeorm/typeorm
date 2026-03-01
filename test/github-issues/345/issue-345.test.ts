@@ -10,19 +10,19 @@ import { Category } from "./entity/Category"
 import { expect } from "chai"
 
 describe("github issues > #345 Join query on ManyToMany relations not working", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("embedded with custom column name should persist and load without errors", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 for (let i = 0; i < 20; i++) {
                     const category = new Category()
                     category.name = "Category #" + i

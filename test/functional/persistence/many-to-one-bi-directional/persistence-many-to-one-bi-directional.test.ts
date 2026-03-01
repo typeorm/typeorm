@@ -10,18 +10,18 @@ import { Category } from "./entity/Category"
 import { expect } from "chai"
 
 describe("persistence > many-to-one bi-directional relation", function () {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should save a category with a post attached", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post(1, "Hello Post")
                 await connection.manager.save(post)
 
@@ -51,7 +51,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
     it("should save a category and a new post by cascades", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post(1, "Hello Post")
                 const category = new Category(1, "Hello Category")
                 category.post = post
@@ -79,7 +79,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
     it("should update exist post by cascades when category is saved", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post(1, "Hello Post")
                 await connection.manager.save(post)
 
@@ -136,7 +136,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
     it("should NOT remove exist post by cascades when category is saved without a post (post is set to undefined)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post(1, "Hello Post")
                 await connection.manager.save(post)
 
@@ -198,7 +198,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
     it("should unset exist post when its set to null", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post(1, "Hello Post")
                 await connection.manager.save(post)
 
@@ -251,7 +251,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
     it("should set category's post to NULL when post is removed from the database (database ON DELETE)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Spanner does not support ON DELETE clause
                 if (connection.driver.options.type === "spanner") return
 
@@ -307,7 +307,7 @@ describe("persistence > many-to-one bi-directional relation", function () {
 
     it("should work when relation id is directly set into relation (without related object)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post1 = new Post(1, "Hello Post #1")
                 await connection.manager.save(post1)
 

@@ -9,20 +9,20 @@ import { expect } from "chai"
 import { DataSource } from "../../../src"
 
 describe("sql tag parameters (sqlite)", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Example],
                 enabledDrivers: ["better-sqlite3"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should handle basic SQL tag parameters", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Example)
 
                 await repo.save({ id: "basic" })
@@ -36,7 +36,7 @@ describe("sql tag parameters (sqlite)", () => {
 
     it("should handle multiple parameters in a single query", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Example)
 
                 await repo.save([
@@ -59,7 +59,7 @@ describe("sql tag parameters (sqlite)", () => {
 
     it("should handle complex SQL with nested queries and parameters", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Example)
 
                 await repo.save([
@@ -89,7 +89,7 @@ describe("sql tag parameters (sqlite)", () => {
 
     it("should handle SQL tag parameters with complex conditions and ordering", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Example)
 
                 await repo.save([
@@ -114,7 +114,7 @@ describe("sql tag parameters (sqlite)", () => {
 
     it("should handle SQL tag parameters with NULL values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Example)
 
                 await repo.save([
@@ -135,7 +135,7 @@ describe("sql tag parameters (sqlite)", () => {
 
     it("should handle SQL tag parameters with boolean values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Example)
 
                 await repo.save([
@@ -158,7 +158,7 @@ describe("sql tag parameters (sqlite)", () => {
 
     it("should handle SQL tag parameters with array values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Example)
 
                 await repo.save([

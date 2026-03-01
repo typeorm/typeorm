@@ -9,22 +9,22 @@ import { Migration } from "../../../src/migration/Migration"
 import { QueryFailedError } from "../../../src/error/QueryFailedError"
 
 describe("github issues > #2875 Option to run migrations in 1-transaction-per-migration mode", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 __dirname,
                 schemaCreate: false,
                 dropSchema: true,
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should fail to run all necessary migrations when transaction is all", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 return connection
                     .runMigrations({ transaction: "all" })
                     .should.be.rejectedWith(
@@ -36,7 +36,7 @@ describe("github issues > #2875 Option to run migrations in 1-transaction-per-mi
 
     it("should be able to run all necessary migrations when transaction is each", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const mymigr: Migration[] = await connection.runMigrations({
                     transaction: "each",
                 })

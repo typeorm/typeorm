@@ -14,15 +14,15 @@ import { Role } from "./entity/Role"
 import { User } from "./entity/User"
 
 describe("github issues > #8522 Single table inheritance returns the same discriminator value error for unrelated tables where their parents extend from the same entity", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    after(() => closeTestingConnections(connections))
-    afterEach(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
+    afterEach(() => closeTestingConnections(dataSources))
 
     describe("Unrelated tables", () => {
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     entities: [
                         BaseEntity,
                         InternalUser,
@@ -34,11 +34,11 @@ describe("github issues > #8522 Single table inheritance returns the same discri
                     dropSchema: true,
                 })),
         )
-        beforeEach(() => reloadTestingDatabases(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
 
         it("should loads internal user and internal role", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const id = 1
                     const date = new Date()
 

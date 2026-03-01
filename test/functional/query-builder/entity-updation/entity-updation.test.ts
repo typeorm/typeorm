@@ -9,17 +9,17 @@ import { Post } from "./entity/Post"
 import { expect } from "chai"
 
 describe("query builder > entity updation", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({ __dirname })),
+            (dataSources = await createTestingConnections({ __dirname })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should update entity model after insertion if updateEntity is set to true", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "about entity updation in query builder"
 
@@ -42,7 +42,7 @@ describe("query builder > entity updation", () => {
 
     it("should not update entity model after insertion if updateEntity is set to false", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // for spanner we skip this test, because it's not possible to do it right considering we faked primary generated column
                 // for the spanner and we have updateEntity(false) in this test, but we cannot disable subscriber defined in the tests setup
                 // for the spanner and it updates the entity with it's id anyway
@@ -71,7 +71,7 @@ describe("query builder > entity updation", () => {
 
     it("should not override already set properties", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "about entity updation in query builder"
                 post.order = 101
@@ -95,7 +95,7 @@ describe("query builder > entity updation", () => {
 
     it("should update entity model after save", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "about entity updation in query builder"
                 await connection.manager.save(post)
@@ -112,7 +112,7 @@ describe("query builder > entity updation", () => {
 
     it("should update special entity properties after entity updation if updateEntity is set to true", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "about entity updation in query builder"
                 await connection.manager.save(post)
@@ -132,7 +132,7 @@ describe("query builder > entity updation", () => {
 
     it("should not update special entity properties after entity updation if updateEntity is set to false", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "about entity updation in query builder"
                 await connection.manager.save(post)

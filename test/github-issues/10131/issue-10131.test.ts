@@ -10,16 +10,16 @@ import { SqlServerDriver } from "../../../src/driver/sqlserver/SqlServerDriver"
 import sinon from "sinon"
 
 describe("github issues > #10131 optional to disable ascii to unicode parameter conversion", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
     afterEach(() => sinon.restore())
 
     describe("when disableAsciiToUnicodeParamConversion is true", () => {
         let driver: SqlServerDriver
 
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Example],
                 enabledDrivers: ["mssql"],
                 schemaCreate: false,
@@ -31,11 +31,11 @@ describe("github issues > #10131 optional to disable ascii to unicode parameter 
                 },
             })
         })
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should disable ascii to unicode parameter conversion", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     driver = new SqlServerDriver(connection)
 
                     const driverNCharSpy = sinon.spy(driver.mssql, "NChar")
@@ -65,7 +65,7 @@ describe("github issues > #10131 optional to disable ascii to unicode parameter 
         let driver: SqlServerDriver
 
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Example],
                 enabledDrivers: ["mssql"],
                 schemaCreate: false,
@@ -77,11 +77,11 @@ describe("github issues > #10131 optional to disable ascii to unicode parameter 
                 },
             })
         })
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should not disable ascii to unicode parameter conversion", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     driver = new SqlServerDriver(connection)
 
                     const driverNCharSpy = sinon.spy(driver.mssql, "NChar")
