@@ -654,7 +654,10 @@ export class SqlServerDriver implements Driver {
             return "datetime"
         } else if (column.type === Boolean) {
             return "bit"
-        } else if ((column.type as any) === Buffer) {
+        } else if (
+            (column.type as any) === Uint8Array ||
+            (typeof Buffer !== "undefined" && (column.type as any) === Buffer)
+        ) {
             return "binary"
         } else if (column.type === "uuid") {
             return "uniqueidentifier"

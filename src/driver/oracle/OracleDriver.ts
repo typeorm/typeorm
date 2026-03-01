@@ -645,7 +645,10 @@ export class OracleDriver implements Driver {
             return "varchar2"
         } else if (column.type === Date) {
             return "timestamp"
-        } else if ((column.type as any) === Buffer) {
+        } else if (
+            (column.type as any) === Uint8Array ||
+            (typeof Buffer !== "undefined" && (column.type as any) === Buffer)
+        ) {
             return "blob"
         } else if (column.type === "uuid") {
             return "varchar2"

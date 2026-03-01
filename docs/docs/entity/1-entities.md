@@ -357,15 +357,15 @@ export class Post {
 
     // Vector without specified dimensions
     @Column("vector")
-    embedding: number[] | Buffer
+    embedding: number[] | Uint8Array
 
     // Vector with 3 dimensions: vector(3)
     @Column("vector", { length: 3 })
-    embedding_3d: number[] | Buffer
+    embedding_3d: number[] | Uint8Array
 
     // Half-precision vector with 4 dimensions: halfvec(4) (works on PostgreSQL and SAP HANA only)
     @Column("halfvec", { length: 4 })
-    halfvec_embedding: number[] | Buffer
+    halfvec_embedding: number[] | Uint8Array
 }
 ```
 
