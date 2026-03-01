@@ -23,6 +23,10 @@ import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
+import {
+    normalizeReplicationMode,
+    warnReplicationConfigDeprecation,
+} from "../../util/replication"
 import { UpsertType } from "../types/UpsertType"
 import { MysqlConnectionCredentialsOptions } from "./MysqlConnectionCredentialsOptions"
 import { MysqlDataSourceOptions } from "./MysqlDataSourceOptions"
@@ -335,9 +339,17 @@ export class MysqlDriver implements Driver {
         // load mysql package
         this.loadDependencies()
 
+        if (this.options.replication) {
+            const repl = this.options.replication
+            if (repl.master || repl.slaves) {
+                warnReplicationConfigDeprecation()
+            }
+        }
+
         this.database = DriverUtils.buildDriverOptions(
             this.options.replication
-                ? this.options.replication.master
+                ? (this.options.replication.primary ??
+                      this.options.replication.master)!
                 : this.options,
         ).database
 
@@ -362,10 +374,22 @@ export class MysqlDriver implements Driver {
      */
     async connect(): Promise<void> {
         if (this.options.replication) {
+            const replicaConfigs =
+                this.options.replication.replicas ??
+                this.options.replication.slaves ??
+                []
+            const primaryConfig =
+                this.options.replication.primary ??
+                this.options.replication.master
+            if (!primaryConfig) {
+                throw new TypeORMError(
+                    'Replication configuration requires either "primary" or "master" connection options.',
+                )
+            }
             this.poolCluster = this.mysql.createPoolCluster(
                 this.options.replication,
             )
-            this.options.replication.slaves.forEach((slave, index) => {
+            replicaConfigs.forEach((slave, index) => {
                 this.poolCluster.add(
                     "SLAVE" + index,
                     this.createConnectionOptions(this.options, slave),
@@ -373,10 +397,7 @@ export class MysqlDriver implements Driver {
             })
             this.poolCluster.add(
                 "MASTER",
-                this.createConnectionOptions(
-                    this.options,
-                    this.options.replication.master,
-                ),
+                this.createConnectionOptions(this.options, primaryConfig),
             )
         } else {
             this.pool = await this.createPool(
@@ -460,7 +481,7 @@ export class MysqlDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new MysqlQueryRunner(this, mode)
+        return new MysqlQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**
@@ -913,6 +934,7 @@ export class MysqlDriver implements Driver {
      * Obtains a new database connection to a master server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
+     * @deprecated Use `obtainPrimaryConnection` instead.
      */
     obtainMasterConnection(): Promise<any> {
         return new Promise<any>((ok, fail) => {
@@ -949,6 +971,7 @@ export class MysqlDriver implements Driver {
      * Obtains a new database connection to a slave server.
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
+     * @deprecated Use `obtainReplicaConnection` instead.
      */
     obtainSlaveConnection(): Promise<any> {
         if (!this.poolCluster) return this.obtainMasterConnection()
@@ -965,6 +988,24 @@ export class MysqlDriver implements Driver {
                 },
             )
         })
+    }
+
+    /**
+     * Obtains a new database connection to a primary server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainPrimaryConnection(): Promise<any> {
+        return this.obtainMasterConnection()
+    }
+
+    /**
+     * Obtains a new database connection to a replica server.
+     * Used for replication.
+     * If replication is not setup then returns primary (default) connection's database connection.
+     */
+    obtainReplicaConnection(): Promise<any> {
+        return this.obtainSlaveConnection()
     }
 
     /**

@@ -24,6 +24,10 @@ import { CteCapabilities } from "../types/CteCapabilities"
 import { DataTypeDefaults } from "../types/DataTypeDefaults"
 import { MappedColumnTypes } from "../types/MappedColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
+import {
+    normalizeReplicationMode,
+    warnReplicationConfigDeprecation,
+} from "../../util/replication"
 import { UpsertType } from "../types/UpsertType"
 import { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 import { CockroachDataSourceOptions } from "./CockroachDataSourceOptions"
@@ -261,9 +265,17 @@ export class CockroachDriver implements Driver {
         // load postgres package
         this.loadDependencies()
 
+        if (this.options.replication) {
+            const repl = this.options.replication
+            if (repl.master || repl.slaves) {
+                warnReplicationConfigDeprecation()
+            }
+        }
+
         this.database = DriverUtils.buildDriverOptions(
             this.options.replication
-                ? this.options.replication.master
+                ? (this.options.replication.primary ??
+                      this.options.replication.master)!
                 : this.options,
         ).database
         this.schema = DriverUtils.buildDriverOptions(this.options).schema
@@ -290,15 +302,24 @@ export class CockroachDriver implements Driver {
      */
     async connect(): Promise<void> {
         if (this.options.replication) {
+            const replicaConfigs =
+                this.options.replication.replicas ??
+                this.options.replication.slaves ??
+                []
+            const primaryConfig =
+                this.options.replication.primary ??
+                this.options.replication.master
+            if (!primaryConfig) {
+                throw new TypeORMError(
+                    'Replication configuration requires either "primary" or "master" connection options.',
+                )
+            }
             this.slaves = await Promise.all(
-                this.options.replication.slaves.map((slave) => {
+                replicaConfigs.map((slave) => {
                     return this.createPool(this.options, slave)
                 }),
             )
-            this.master = await this.createPool(
-                this.options,
-                this.options.replication.master,
-            )
+            this.master = await this.createPool(this.options, primaryConfig)
         } else {
             this.master = await this.createPool(this.options, this.options)
         }
@@ -367,7 +388,7 @@ export class CockroachDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new CockroachQueryRunner(this, mode)
+        return new CockroachQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**
@@ -841,6 +862,7 @@ export class CockroachDriver implements Driver {
      * Obtains a new database connection to a master server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
+     * @deprecated Use `obtainPrimaryConnection` instead.
      */
     async obtainMasterConnection(): Promise<any> {
         if (!this.master) {
@@ -862,6 +884,7 @@ export class CockroachDriver implements Driver {
      * Obtains a new database connection to a slave server.
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
+     * @deprecated Use `obtainReplicaConnection` instead.
      */
     async obtainSlaveConnection(): Promise<any> {
         if (!this.slaves.length) return this.obtainMasterConnection()
@@ -879,6 +902,24 @@ export class CockroachDriver implements Driver {
                 },
             )
         })
+    }
+
+    /**
+     * Obtains a new database connection to a primary server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    async obtainPrimaryConnection(): Promise<any> {
+        return this.obtainMasterConnection()
+    }
+
+    /**
+     * Obtains a new database connection to a replica server.
+     * Used for replication.
+     * If replication is not setup then returns primary (default) connection's database connection.
+     */
+    async obtainReplicaConnection(): Promise<any> {
+        return this.obtainSlaveConnection()
     }
 
     /**

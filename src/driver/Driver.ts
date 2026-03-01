@@ -242,6 +242,7 @@ export interface Driver {
      * Obtains a new database connection to a master server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
+     * @deprecated Use `obtainPrimaryConnection` instead. Will be removed in a future major version.
      */
     obtainMasterConnection(): Promise<any>
 
@@ -249,8 +250,23 @@ export interface Driver {
      * Obtains a new database connection to a slave server.
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
+     * @deprecated Use `obtainReplicaConnection` instead. Will be removed in a future major version.
      */
     obtainSlaveConnection(): Promise<any>
+
+    /**
+     * Obtains a new database connection to a primary server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainPrimaryConnection?(): Promise<any>
+
+    /**
+     * Obtains a new database connection to a replica server.
+     * Used for replication.
+     * If replication is not setup then returns primary (default) connection's database connection.
+     */
+    obtainReplicaConnection?(): Promise<any>
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.

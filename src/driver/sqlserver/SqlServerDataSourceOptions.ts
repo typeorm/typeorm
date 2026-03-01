@@ -302,14 +302,26 @@ export interface SqlServerDataSourceOptions
      */
     readonly replication?: {
         /**
-         * Master server used by orm to perform writes.
+         * Primary server used by orm to perform writes.
          */
-        readonly master: SqlServerConnectionCredentialsOptions
+        readonly primary?: SqlServerConnectionCredentialsOptions
+
+        /**
+         * List of read-from servers (replicas).
+         */
+        readonly replicas?: SqlServerConnectionCredentialsOptions[]
+
+        /**
+         * Master server used by orm to perform writes.
+         * @deprecated Use `primary` instead. Will be removed in a future major version.
+         */
+        readonly master?: SqlServerConnectionCredentialsOptions
 
         /**
          * List of read-from servers (slaves).
+         * @deprecated Use `replicas` instead. Will be removed in a future major version.
          */
-        readonly slaves: SqlServerConnectionCredentialsOptions[]
+        readonly slaves?: SqlServerConnectionCredentialsOptions[]
 
         /**
          * Default connection pool to use for SELECT queries

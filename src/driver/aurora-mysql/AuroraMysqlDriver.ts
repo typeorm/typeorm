@@ -820,6 +820,7 @@ export class AuroraMysqlDriver implements Driver {
      * Obtains a new database connection to a master server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
+     * @deprecated Use `obtainPrimaryConnection` instead.
      */
     obtainMasterConnection(): Promise<any> {
         return new Promise<any>((ok, fail) => {
@@ -856,6 +857,7 @@ export class AuroraMysqlDriver implements Driver {
      * Obtains a new database connection to a slave server.
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
+     * @deprecated Use `obtainReplicaConnection` instead.
      */
     obtainSlaveConnection(): Promise<any> {
         if (!this.poolCluster) return this.obtainMasterConnection()
@@ -872,6 +874,24 @@ export class AuroraMysqlDriver implements Driver {
                 },
             )
         })
+    }
+
+    /**
+     * Obtains a new database connection to a primary server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    obtainPrimaryConnection(): Promise<any> {
+        return this.obtainMasterConnection()
+    }
+
+    /**
+     * Obtains a new database connection to a replica server.
+     * Used for replication.
+     * If replication is not setup then returns primary (default) connection's database connection.
+     */
+    obtainReplicaConnection(): Promise<any> {
+        return this.obtainSlaveConnection()
     }
 
     /**

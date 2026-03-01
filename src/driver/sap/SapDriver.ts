@@ -359,6 +359,7 @@ export class SapDriver implements Driver {
      * Obtains a new database connection to a master server.
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
+     * @deprecated Use `obtainPrimaryConnection` instead.
      */
     async obtainMasterConnection(): Promise<any> {
         const pool = this.master
@@ -378,9 +379,28 @@ export class SapDriver implements Driver {
      * Obtains a new database connection to a slave server.
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
+     * @deprecated Use `obtainReplicaConnection` instead.
      */
     async obtainSlaveConnection(): Promise<any> {
         return this.obtainMasterConnection()
+    }
+
+    /**
+     * Obtains a new database connection to a primary server.
+     * Used for replication.
+     * If replication is not setup then returns default connection's database connection.
+     */
+    async obtainPrimaryConnection(): Promise<any> {
+        return this.obtainMasterConnection()
+    }
+
+    /**
+     * Obtains a new database connection to a replica server.
+     * Used for replication.
+     * If replication is not setup then returns primary (default) connection's database connection.
+     */
+    async obtainReplicaConnection(): Promise<any> {
+        return this.obtainSlaveConnection()
     }
 
     /**
