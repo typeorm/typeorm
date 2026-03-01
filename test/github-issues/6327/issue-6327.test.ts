@@ -8,22 +8,22 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("github issues > #6327 softRemove DeleteDateColumn is null at Susbscriber's AfterUpdate method", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should send correct update and delete date columns to after update subscriber", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const manager = connection.manager
 
                 const entity = new Post()

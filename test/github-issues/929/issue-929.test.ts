@@ -9,19 +9,19 @@ import { expect } from "chai"
 import { TestEntity } from "./entity/TestEntity"
 
 describe("github issues > #929 sub-queries should set their own parameters on execution", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should persist successfully and return persisted entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create objects to save
                 const testEntity1 = new TestEntity()
                 testEntity1.name = "Entity #1"

@@ -10,9 +10,9 @@ import { DocumentChunk } from "./entity/DocumentChunk"
 import { Point } from "./entity/Point"
 
 describe("columns > vector type > sqlserver", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [DocumentChunk, Point],
             enabledDrivers: ["mssql"],
             schemaCreate: true,
@@ -20,12 +20,12 @@ describe("columns > vector type > sqlserver", () => {
         })
     })
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create vector column with specified dimensions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("document_chunk")
                 await queryRunner.release()
@@ -40,7 +40,7 @@ describe("columns > vector type > sqlserver", () => {
 
     it("should persist and hydrate vector values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(DocumentChunk)
 
                 const embedding = Array.from({ length: 1998 }, () =>
@@ -70,7 +70,7 @@ describe("columns > vector type > sqlserver", () => {
 
     it("should update vector values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(Point)
 
                 const point = new Point()
@@ -93,7 +93,7 @@ describe("columns > vector type > sqlserver", () => {
 
     it("should perform cosine similarity search using VECTOR_DISTANCE", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(DocumentChunk)
                 const baseEmbedding = Array.from({ length: 1998 }, () =>
                     Math.random(),
@@ -152,7 +152,7 @@ describe("columns > vector type > sqlserver", () => {
 
     it("should perform euclidean distance search using VECTOR_DISTANCE", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(Point)
 
                 // Create test data with known vectors
@@ -201,7 +201,7 @@ describe("columns > vector type > sqlserver", () => {
 
     it("should handle null vector values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(DocumentChunk)
 
                 const chunk = new DocumentChunk()

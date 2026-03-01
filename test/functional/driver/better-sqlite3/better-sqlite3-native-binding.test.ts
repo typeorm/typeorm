@@ -7,7 +7,7 @@ import {
 import { expect } from "chai"
 import { join } from "path"
 import { DataSource } from "../../../../src"
-import { BetterSqlite3ConnectionOptions } from "../../../../src/driver/better-sqlite3/BetterSqlite3ConnectionOptions"
+import { BetterSqlite3DataSourceOptions } from "../../../../src/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
 
 const pathToBetterSqliteNode = join(
     __dirname,
@@ -15,10 +15,10 @@ const pathToBetterSqliteNode = join(
 )
 
 describe("option nativeBinding for better-sqlite3", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [],
                 enabledDrivers: ["better-sqlite3"],
                 driverSpecific: {
@@ -26,16 +26,16 @@ describe("option nativeBinding for better-sqlite3", () => {
                 },
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should use a the path set in nativeBindings to the node file", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 expect(
                     (
                         connection.driver
-                            .options as BetterSqlite3ConnectionOptions
+                            .options as BetterSqlite3DataSourceOptions
                     ).nativeBinding,
                 ).to.be.eql(pathToBetterSqliteNode)
             }),

@@ -7,22 +7,23 @@ import {
 import { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
+import { Comment } from "./entity/Comment"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > order-by", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should be always in right order(default order)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post1 = new Post()
                 post1.myOrder = 1
 
@@ -40,7 +41,7 @@ describe("query builder > order-by", () => {
 
     it("should be always in right order(custom order)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post1 = new Post()
                 post1.myOrder = 1
 
@@ -59,7 +60,7 @@ describe("query builder > order-by", () => {
 
     it("should be always in right order(custom order)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!(connection.driver.options.type === "postgres"))
                     // NULLS FIRST / LAST only supported by postgres
                     return
@@ -89,7 +90,7 @@ describe("query builder > order-by", () => {
 
     it("should be always in right order(custom order)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!DriverUtils.isMySQLFamily(connection.driver))
                     // IS NULL / IS NOT NULL only supported by mysql
                     return
@@ -119,7 +120,7 @@ describe("query builder > order-by", () => {
 
     it("should be able to order by sql statement", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!DriverUtils.isMySQLFamily(connection.driver)) return // DIV statement does not supported by all drivers
 
                 const post1 = new Post()
@@ -148,6 +149,149 @@ describe("query builder > order-by", () => {
 
                 expect(loadedPost2!.num1).to.be.equal(10)
                 expect(loadedPost2!.num2).to.be.equal(2)
+            }),
+        ))
+
+    it("should order by joined entity column using database column name without pagination", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const commentRepository = connection.getRepository(Comment)
+
+                for (let i = 0; i < 5; i++) {
+                    const post = new Post()
+                    post.myOrder = i
+                    await postRepository.save(post)
+
+                    const comment = new Comment()
+                    comment.text = `comment-${i}`
+                    comment.postId = post.id
+                    await commentRepository.save(comment)
+                }
+
+                const query = commentRepository
+                    .createQueryBuilder("comment")
+                    .leftJoinAndSelect("comment.post", "post")
+                    .addOrderBy("post.created_at", "ASC")
+
+                const result = await query.getMany()
+
+                expect(result).to.have.lengthOf(5)
+                expect(result[0].post).to.not.be.undefined
+            }),
+        ))
+
+    it("should order by joined entity column using database column name with pagination", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const commentRepository = connection.getRepository(Comment)
+
+                for (let i = 0; i < 20; i++) {
+                    const post = new Post()
+                    post.myOrder = i
+                    await postRepository.save(post)
+
+                    const comment = new Comment()
+                    comment.text = `comment-${i}`
+                    comment.postId = post.id
+                    await commentRepository.save(comment)
+                }
+
+                const query = commentRepository
+                    .createQueryBuilder("comment")
+                    .leftJoinAndSelect("comment.post", "post")
+                    .addOrderBy("post.created_at", "ASC")
+                    .skip(0)
+                    .take(10)
+
+                const result = await query.getMany()
+
+                expect(result).to.have.lengthOf(10)
+                expect(result[0].post).to.not.be.undefined
+            }),
+        ))
+
+    it("should order by joined entity column using property name without pagination", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const commentRepository = connection.getRepository(Comment)
+
+                for (let i = 0; i < 5; i++) {
+                    const post = new Post()
+                    post.myOrder = i
+                    await postRepository.save(post)
+
+                    const comment = new Comment()
+                    comment.text = `comment-${i}`
+                    comment.postId = post.id
+                    await commentRepository.save(comment)
+                }
+
+                const query = commentRepository
+                    .createQueryBuilder("comment")
+                    .leftJoinAndSelect("comment.post", "post")
+                    .addOrderBy("post.createdAt", "ASC")
+
+                const result = await query.getMany()
+
+                expect(result).to.have.lengthOf(5)
+                expect(result[0].post).to.not.be.undefined
+            }),
+        ))
+
+    it("should order by joined entity column using property name with pagination", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const commentRepository = connection.getRepository(Comment)
+
+                for (let i = 0; i < 20; i++) {
+                    const post = new Post()
+                    post.myOrder = i
+                    await postRepository.save(post)
+
+                    const comment = new Comment()
+                    comment.text = `comment-${i}`
+                    comment.postId = post.id
+                    await commentRepository.save(comment)
+                }
+
+                const query = commentRepository
+                    .createQueryBuilder("comment")
+                    .leftJoinAndSelect("comment.post", "post")
+                    .addOrderBy("post.createdAt", "ASC")
+                    .skip(0)
+                    .take(10)
+
+                const result = await query.getMany()
+
+                expect(result).to.have.lengthOf(10)
+                expect(result[0].post).to.not.be.undefined
+            }),
+        ))
+    it("should properly escape column names or aliases in order by", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                for (let i = 0; i < 5; i++) {
+                    const post = new Post()
+                    post.myOrder = i
+                    await connection.manager.save(post)
+                }
+
+                const query = connection.manager
+                    .createQueryBuilder(Post, "post")
+                    .select("post.id", "postId")
+                    .addSelect("COUNT(*)", "count")
+                    .groupBy("post.id")
+                    .orderBy("count", "DESC")
+
+                expect(query.getSql()).to.contain(
+                    "ORDER BY " + connection.driver.escape("count") + " DESC",
+                )
+                const result = await query.getRawMany()
+                expect(result.length).to.be.equal(5)
             }),
         ))
 })

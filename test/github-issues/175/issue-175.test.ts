@@ -10,19 +10,19 @@ import { Category } from "./entity/Category"
 import { expect } from "chai"
 
 describe("github issues > #175 ManyToMany relation doesn't put an empty array when the relation is empty", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return post with categories if they are attached to the post", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "category #1"
                 await connection.manager.save(category1)
@@ -65,7 +65,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
 
     it("should return post with categories even if post with empty categories was saved", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "category #1"
                 await connection.manager.save(category1)
@@ -101,7 +101,7 @@ describe("github issues > #175 ManyToMany relation doesn't put an empty array wh
 
     it("should return post with categories even if post was saved without categories set", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "category #1"
                 await connection.manager.save(category1)

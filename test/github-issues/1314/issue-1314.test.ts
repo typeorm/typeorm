@@ -9,20 +9,20 @@ import { expect } from "chai"
 import { Record } from "./entity/Record"
 
 describe("github issues > #1314 UPDATE on json column stores string type", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"], // because only postgres supports jsonb type
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not store json type as string on update", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const recordRepo = connection.getRepository(Record)
 
                 const record = new Record()

@@ -10,19 +10,19 @@ import {
 import { Post } from "./entity/Post"
 
 describe("database schema > column length > sap", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["sap"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("all types should create with correct size", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
@@ -47,7 +47,7 @@ describe("database schema > column length > sap", () => {
 
     it("all types should update their size", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const metadata = connection.getMetadata(Post)
                 metadata.findColumnWithPropertyName("varchar")!.length = "100"
                 metadata.findColumnWithPropertyName("nvarchar")!.length = "100"

@@ -23,21 +23,22 @@ import { Post } from "./entity/Post"
 import { Raw } from "../../../../src/find-options/operator/Raw"
 import { PersonAR } from "./entity/PersonAR"
 import { expect } from "chai"
+import { Comment } from "./entity/Comment"
 
 describe("repository > find options > operators", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
+            (dataSources = await createTestingConnections({
+                entities: [PersonAR, Post],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("not", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -62,7 +63,7 @@ describe("repository > find options > operators", () => {
 
     it("lessThan", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -87,7 +88,7 @@ describe("repository > find options > operators", () => {
 
     it("lessThanOrEqual", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -117,7 +118,7 @@ describe("repository > find options > operators", () => {
 
     it("not(lessThan)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -142,7 +143,7 @@ describe("repository > find options > operators", () => {
 
     it("not(lessThanOrEqual)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -171,7 +172,7 @@ describe("repository > find options > operators", () => {
 
     it("moreThan", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -196,7 +197,7 @@ describe("repository > find options > operators", () => {
 
     it("moreThanOrEqual", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -228,7 +229,7 @@ describe("repository > find options > operators", () => {
 
     it("not(moreThan)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -253,7 +254,7 @@ describe("repository > find options > operators", () => {
 
     it("not(moreThanOrEqual)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -282,7 +283,7 @@ describe("repository > find options > operators", () => {
 
     it("equal", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -307,7 +308,7 @@ describe("repository > find options > operators", () => {
 
     it("not(equal)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -332,7 +333,7 @@ describe("repository > find options > operators", () => {
 
     it("ilike", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "about #1"
@@ -358,7 +359,7 @@ describe("repository > find options > operators", () => {
 
     it("not(ilike)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "about #1"
@@ -383,7 +384,7 @@ describe("repository > find options > operators", () => {
 
     it("like", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -409,7 +410,7 @@ describe("repository > find options > operators", () => {
 
     it("not(like)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -434,7 +435,7 @@ describe("repository > find options > operators", () => {
 
     it("between", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -478,7 +479,7 @@ describe("repository > find options > operators", () => {
 
     it("not(between)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -519,7 +520,7 @@ describe("repository > find options > operators", () => {
 
     it("in", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -549,7 +550,7 @@ describe("repository > find options > operators", () => {
 
     it("not(in)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -579,7 +580,7 @@ describe("repository > find options > operators", () => {
 
     it("any", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!(connection.driver.options.type === "postgres")) return
 
                 // insert some fake data
@@ -606,7 +607,7 @@ describe("repository > find options > operators", () => {
 
     it("not(any)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!(connection.driver.options.type === "postgres")) return
 
                 // insert some fake data
@@ -633,7 +634,7 @@ describe("repository > find options > operators", () => {
 
     it("isNull", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -656,7 +657,7 @@ describe("repository > find options > operators", () => {
 
     it("not(isNull)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -681,7 +682,7 @@ describe("repository > find options > operators", () => {
 
     it("raw", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -706,7 +707,7 @@ describe("repository > find options > operators", () => {
 
     it("raw (function)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -733,7 +734,7 @@ describe("repository > find options > operators", () => {
 
     it("raw (function with object literal parameters)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const createPost = (index: number): Post => {
                     const post = new Post()
                     post.title = `About #${index}`
@@ -844,7 +845,7 @@ describe("repository > find options > operators", () => {
 
     it("should work with ActiveRecord model", async () => {
         // These must run sequentially as we have the global context of the `PersonAR` ActiveRecord class
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             PersonAR.useDataSource(connection)
 
             const person = new PersonAR()
@@ -860,7 +861,7 @@ describe("repository > find options > operators", () => {
 
     it("or (array syntax)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -893,4 +894,413 @@ describe("repository > find options > operators", () => {
                 ])
             }),
         ))
+
+    describe("raw with jsonb columns", () => {
+        let dataSources: DataSource[]
+        before(
+            async () =>
+                (dataSources = await createTestingConnections({
+                    entities: [Comment],
+                    enabledDrivers: ["postgres", "cockroachdb"],
+                })),
+        )
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
+
+        it("should work with @> (contains) operator", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = {
+                        approved: true,
+                        tags: ["news", "tech"],
+                    }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = { approved: false, tags: ["news"] }
+                    await connection.manager.save(comment2)
+
+                    // Test @> operator - does left contain right
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw((alias) => `${alias} @> :value`, {
+                                value: JSON.stringify({ approved: true }),
+                            }),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: {
+                                approved: true,
+                                tags: ["news", "tech"],
+                            },
+                        },
+                    ])
+
+                    const loadedComments2 = await connection
+                        .getRepository(Comment)
+                        .find({
+                            where: {
+                                metadata: Raw((alias) => `${alias} @> :value`, {
+                                    value: JSON.stringify({ tags: ["news"] }),
+                                }),
+                            },
+                            order: {
+                                id: "ASC",
+                            },
+                        })
+                    loadedComments2.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: {
+                                approved: true,
+                                tags: ["news", "tech"],
+                            },
+                        },
+                        {
+                            id: 2,
+                            text: "Comment #2",
+                            metadata: { approved: false, tags: ["news"] },
+                        },
+                    ])
+                }),
+            ))
+
+        it("should work with <@ (contained by) operator", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = {
+                        approved: true,
+                        tags: ["news", "tech"],
+                    }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = { approved: false }
+                    await connection.manager.save(comment2)
+
+                    // Test <@ operator - is left contained by right
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw((alias) => `${alias} <@ :value`, {
+                                value: JSON.stringify({
+                                    approved: false,
+                                    extra: "field",
+                                }),
+                            }),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 2,
+                            text: "Comment #2",
+                            metadata: { approved: false },
+                        },
+                    ])
+
+                    const loadedComments2 = await connection
+                        .getRepository(Comment)
+                        .find({
+                            where: {
+                                metadata: Raw((alias) => `${alias} <@ :value`, {
+                                    value: JSON.stringify({
+                                        approved: true,
+                                        tags: ["news", "tech", "extra"],
+                                    }),
+                                }),
+                            },
+
+                            order: {
+                                id: "ASC",
+                            },
+                        })
+                    loadedComments2.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: {
+                                approved: true,
+                                tags: ["news", "tech"],
+                            },
+                        },
+                    ])
+                }),
+            ))
+
+        it("should work with ?| (any keys exist) operator", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = {
+                        approved: true,
+                        tags: ["news", "tech"],
+                    }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = { rejected: true, tags: ["news"] }
+                    await connection.manager.save(comment2)
+
+                    // Test ?| operator - do any of these keys exist
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw(
+                                (alias) => `${alias} ?| array[:key1, :key2]`,
+                                {
+                                    key1: "approved",
+                                    key2: "rejected",
+                                },
+                            ),
+                        })
+                    loadedComments.length.should.be.equal(2)
+                }),
+            ))
+
+        it("should work with ?& (all keys exist) operator", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = {
+                        approved: true,
+                        tags: ["news", "tech"],
+                    }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = { approved: false }
+                    await connection.manager.save(comment2)
+
+                    // Test ?& operator - do all of these keys exist
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw(
+                                (alias) => `${alias} ?& array[:key1, :key2]`,
+                                {
+                                    key1: "approved",
+                                    key2: "tags",
+                                },
+                            ),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: {
+                                approved: true,
+                                tags: ["news", "tech"],
+                            },
+                        },
+                    ])
+                }),
+            ))
+
+        it("should work with -> (get object field) operator", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = { author: { name: "Alice" } }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = { author: { name: "Bob" } }
+                    await connection.manager.save(comment2)
+
+                    // Test -> operator - get nested object and compare
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw(
+                                (alias) => `${alias} -> 'author' = :detail`,
+                                {
+                                    detail: JSON.stringify({ name: "Alice" }),
+                                },
+                            ),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: { author: { name: "Alice" } },
+                        },
+                    ])
+
+                    const loadedComments2 = await connection
+                        .getRepository(Comment)
+                        .find({
+                            where: {
+                                metadata: Raw(
+                                    (alias) =>
+                                        `${alias} -> 'author' = '{"name":"Bob"}'`,
+                                ),
+                            },
+                        })
+
+                    loadedComments2.should.be.eql([
+                        {
+                            id: 2,
+                            text: "Comment #2",
+                            metadata: { author: { name: "Bob" } },
+                        },
+                    ])
+                }),
+            ))
+
+        it("should work with ->> (get object field) operator", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = {
+                        author: "Alice",
+                    }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = {
+                        author: "Bob",
+                    }
+                    await connection.manager.save(comment2)
+
+                    // Test ->> operator - get nested object and compare
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw(
+                                (alias) => `${alias} ->> 'author' = :name`,
+                                {
+                                    name: "Alice",
+                                },
+                            ),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: {
+                                author: "Alice",
+                            },
+                        },
+                    ])
+
+                    const loadedComments2 = await connection
+                        .getRepository(Comment)
+                        .find({
+                            where: {
+                                metadata: Raw(
+                                    (alias) => `${alias} ->> 'author' = 'Bob'`,
+                                ),
+                            },
+                        })
+
+                    loadedComments2.should.be.eql([
+                        {
+                            id: 2,
+                            text: "Comment #2",
+                            metadata: { author: "Bob" },
+                        },
+                    ])
+                }),
+            ))
+        it("should work with #> (get object field as JSON) operator", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = {
+                        details: { stats: { views: 100, likes: 10 } },
+                    }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = {
+                        details: { stats: { views: 200, likes: 20 } },
+                    }
+                    await connection.manager.save(comment2)
+
+                    // Test #> operator - get nested object as JSON and compare
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw(
+                                (alias) =>
+                                    `${alias} #> '{details, stats}' = :stats`,
+                                {
+                                    stats: JSON.stringify({
+                                        views: 100,
+                                        likes: 10,
+                                    }),
+                                },
+                            ),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: {
+                                details: { stats: { views: 100, likes: 10 } },
+                            },
+                        },
+                    ])
+                }),
+            ))
+
+        it("should work with #>> (get object field as text) operator", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const comment1 = new Comment()
+                    comment1.text = "Comment #1"
+                    comment1.metadata = { likesDislikes: [300, 20] }
+                    await connection.manager.save(comment1)
+
+                    const comment2 = new Comment()
+                    comment2.text = "Comment #2"
+                    comment2.metadata = { likesDislikes: [300, 20] }
+                    await connection.manager.save(comment2)
+
+                    // Test #>> operator - get nested object as text and compare
+                    const loadedComments = await connection
+                        .getRepository(Comment)
+                        .findBy({
+                            metadata: Raw(
+                                (alias) =>
+                                    `${alias} #>> '{likesDislikes, 0}' = :likes`,
+                                {
+                                    likes: "300",
+                                },
+                            ),
+                        })
+                    loadedComments.should.be.eql([
+                        {
+                            id: 1,
+                            text: "Comment #1",
+                            metadata: { likesDislikes: [300, 20] },
+                        },
+                        {
+                            id: 2,
+                            text: "Comment #2",
+                            metadata: { likesDislikes: [300, 20] },
+                        },
+                    ])
+                }),
+            ))
+    })
 })

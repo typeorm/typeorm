@@ -11,19 +11,19 @@ import { Post } from "./entity/Post"
 import { PostCategory } from "./entity/PostCategory"
 
 describe("other issues > getId should not return undefined for composite primary keys with lazy relations", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("getId should not return undefined", () =>
         Promise.all(
-            connections.map(async ({ manager }) => {
+            dataSources.map(async ({ manager }) => {
                 const post = manager.create(Post, {
                     content: "Sample Post",
                 })

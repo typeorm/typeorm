@@ -9,19 +9,19 @@ import { expect } from "chai"
 import { User, UserInfo } from "./entity/user"
 
 describe("github issues > #966 Inheritance in embeddables", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should save and load Superclass fields in embeddable", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(User)
 
                 const info = new UserInfo()

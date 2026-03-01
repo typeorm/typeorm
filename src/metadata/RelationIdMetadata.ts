@@ -74,6 +74,7 @@ export class RelationIdMetadata {
      * Sets relation id value from the given entity.
      *
      * todo: make it to work in embeds as well.
+     * @param entity
      */
     setValue(entity: ObjectLiteral) {
         const inverseEntity = this.relation.getEntityValue(entity)

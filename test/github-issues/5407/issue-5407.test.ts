@@ -7,10 +7,10 @@ import {
 import { User } from "./entity/User"
 
 describe("github issues > #5407 Wrong migration created because of default column value format", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 migrations: [],
                 enabledDrivers: [
                     "mysql",
@@ -18,18 +18,17 @@ describe("github issues > #5407 Wrong migration created because of default colum
                     "postgres",
                     "better-sqlite3",
                     "cockroachdb",
-                    "sqlite",
                 ],
                 schemaCreate: false,
                 dropSchema: true,
                 entities: [User],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("can recognize model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
@@ -40,7 +39,7 @@ describe("github issues > #5407 Wrong migration created because of default colum
 
     it("does not generate when no model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const sqlInMemory = await connection.driver

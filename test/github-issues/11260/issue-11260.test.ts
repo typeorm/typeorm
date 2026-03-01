@@ -14,20 +14,20 @@ import { Company } from "./entity/Company"
 import { User } from "./entity/User"
 
 describe("github issues > #10626 Regression in transactionDepth handling", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["better-sqlite3", "postgres", "sqlite"],
+                enabledDrivers: ["better-sqlite3", "postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("transactionDepth should be updated correctly when commit fails", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const transactionDepths: Record<string, number> = {}
                 const recordDepth = (mark: string) => {

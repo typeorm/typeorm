@@ -14,26 +14,25 @@ import {
 } from "./entity/SimpleEnumEntity"
 
 describe("database schema > simple-enums", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: [
                 "mysql",
                 "mariadb",
                 "postgres",
-                "sqlite",
                 "better-sqlite3",
                 "mssql",
             ],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly use default values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const enumEntityRepository =
                     connection.getRepository(SimpleEnumEntity)
 
@@ -62,7 +61,7 @@ describe("database schema > simple-enums", () => {
 
     it("should correctly save and retrieve", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const enumEntityRepository =
                     connection.getRepository(SimpleEnumEntity)
 

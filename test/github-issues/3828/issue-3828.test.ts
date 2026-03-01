@@ -8,10 +8,10 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { MyEntity } from "./entity/Entity"
 
 describe("github issues > #3828 Conflicting PR to fix postgres schema:log with uppercase table names and enums", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [MyEntity],
             enabledDrivers: ["postgres"],
             schemaCreate: true,
@@ -19,12 +19,12 @@ describe("github issues > #3828 Conflicting PR to fix postgres schema:log with u
         })
     })
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("schema sync should work when enum type name was changed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Rename type to what typeorm 0.2.14 created
                 // @see https://github.com/typeorm/typeorm/commit/0338d5eedcaedfd9571a90ebe1975b9b07c8e07a
                 await connection.query(

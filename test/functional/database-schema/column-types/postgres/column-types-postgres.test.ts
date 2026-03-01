@@ -10,26 +10,26 @@ import { PostWithoutTypes } from "./entity/PostWithoutTypes"
 import { Post } from "./entity/Post"
 
 describe("database schema > column types > postgres", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
 
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             if (connection.driver.options.type === "postgres") {
                 // We want to have UTC as timezone
                 await connection.query("SET TIME ZONE 'UTC';")
             }
         }
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("all types should work correctly - persist and hydrate", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post")
@@ -383,7 +383,7 @@ describe("database schema > column types > postgres", () => {
 
     it("all types should work correctly - persist and hydrate when options are specified on columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(PostWithOptions)
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post_with_options")
@@ -399,13 +399,22 @@ describe("database schema > column types > postgres", () => {
                 post.characterVarying = "This is character varying"
                 post.timestamp = new Date()
                 post.timestampWithTimeZone = new Date()
+                post.timestampTz = new Date()
                 post.time = "15:30:13.278"
                 post.timeWithTimeZone = "15:30:13.27801+05"
                 post.int4range = "[2,4)"
                 await postRepository.save(post)
-
-                const loadedPost = (await postRepository.findOneBy({
-                    id: 1,
+                await postRepository.findOne({
+                    where: {
+                        id: 1,
+                    },
+                    cache: true,
+                })
+                const loadedPost = (await postRepository.findOne({
+                    where: {
+                        id: 1,
+                    },
+                    cache: true,
                 }))!
                 loadedPost.id.should.be.equal(post.id)
                 loadedPost.numeric.should.be.equal(post.numeric)
@@ -419,7 +428,15 @@ describe("database schema > column types > postgres", () => {
                 loadedPost.timestamp
                     .valueOf()
                     .should.be.equal(post.timestamp.valueOf())
-                // loadedPost.timestampWithTimeZone.valueOf().should.be.equal(post.timestampWithTimeZone.valueOf());
+                loadedPost.timestamp.should.be.instanceof(Date)
+                loadedPost.timestampWithTimeZone
+                    .valueOf()
+                    .should.be.equal(post.timestampWithTimeZone.valueOf())
+                loadedPost.timestampWithTimeZone.should.be.instanceof(Date)
+                loadedPost.timestampTz
+                    .valueOf()
+                    .should.be.equal(post.timestampTz.valueOf())
+                loadedPost.timestampTz.should.be.instanceof(Date)
                 loadedPost.time.valueOf().should.be.equal(post.time.valueOf())
                 loadedPost.timeWithTimeZone
                     .valueOf()
@@ -498,7 +515,7 @@ describe("database schema > column types > postgres", () => {
 
     it("all types should work correctly - persist and hydrate when types are not specified on columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository =
                     connection.getRepository(PostWithoutTypes)
                 const queryRunner = connection.createQueryRunner()

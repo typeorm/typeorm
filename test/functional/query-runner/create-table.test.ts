@@ -13,18 +13,18 @@ import { Book2, Book } from "./entity/Book"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > create table", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create table from simple object and revert creation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
                 let numericType = "int"
@@ -101,7 +101,7 @@ describe("query runner > create table", () => {
 
     it("should correctly create table from Entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const metadata = connection.getMetadata(Post)
                 const newTable = Table.create(metadata, connection.driver)
@@ -139,7 +139,7 @@ describe("query runner > create table", () => {
 
     it("should correctly create table with all dependencies and revert creation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
                 let numericType = "int"
@@ -432,7 +432,7 @@ describe("query runner > create table", () => {
 
     it("should correctly create table with different `Unique` definitions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const metadata = connection.getMetadata(Photo)
                 const newTable = Table.create(metadata, connection.driver)
@@ -482,7 +482,7 @@ describe("query runner > create table", () => {
 
     it("should correctly create table with different `withoutRowid` definitions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!DriverUtils.isSQLiteFamily(connection.driver)) return
 
                 const queryRunner = connection.createQueryRunner()

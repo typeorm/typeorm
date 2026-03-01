@@ -8,19 +8,19 @@ import { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe(`query builder > find with the global condition of "non-deleted"`, () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it(`The global condition of "non-deleted" should be set for the entity with delete date columns`, () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post1 = new Post()
                 post1.title = "title#1"
                 const post2 = new Post()
@@ -57,7 +57,7 @@ describe(`query builder > find with the global condition of "non-deleted"`, () =
 
     it(`The global condition of "non-deleted" should not be set when "withDeleted" is called`, () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post1 = new Post()
                 post1.title = "title#1"
                 const post2 = new Post()

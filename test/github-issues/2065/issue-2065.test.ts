@@ -8,21 +8,21 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("github issues > #2065 TypeError: Cannot convert object to primitive value", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should save an entity created with Object.create(null)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = Object.create(null) as Post
                 post.id = 1
                 post.title = "Hello Post"

@@ -13,15 +13,15 @@ describe("persistence > bulk-insert-remove-optimization", function () {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 __dirname,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -29,7 +29,7 @@ describe("persistence > bulk-insert-remove-optimization", function () {
 
     it("should group multiple insert and remove queries", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.id = 1
                 category1.name = "cat#1"

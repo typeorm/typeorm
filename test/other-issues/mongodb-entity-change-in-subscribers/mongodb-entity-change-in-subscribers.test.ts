@@ -9,21 +9,21 @@ import { Post } from "./entity/Post"
 import { expect } from "chai"
 
 describe("other issues > mongodb entity change in subscribers should affect persistence", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
                 enabledDrivers: ["mongodb"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("if entity was changed, subscriber should be take updated columns", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const post = new Post()
                 post.title = "hello world"
                 await connection.manager.save(post)
@@ -56,7 +56,7 @@ describe("other issues > mongodb entity change in subscribers should affect pers
 
     it("if entity was loaded, loaded property should be changed", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const post = new Post()
                 post.title = "hello world"
                 await connection.manager.save(post)

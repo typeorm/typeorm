@@ -10,25 +10,20 @@ import { Category } from "./entity/Category"
 import { expect } from "chai"
 
 describe("transaction > transaction with entity manager", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: [
-                    "mysql",
-                    "sqlite",
-                    "better-sqlite3",
-                    "postgres",
-                ], // todo: for some reasons mariadb tests are not passing here
+                enabledDrivers: ["mysql", "better-sqlite3", "postgres"], // todo: for some reasons mariadb tests are not passing here
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should execute all operations in a single transaction", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 
@@ -67,7 +62,7 @@ describe("transaction > transaction with entity manager", () => {
 
     it("should not save anything if any of operation in transaction fail", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 

@@ -11,19 +11,19 @@ import { User } from "./entity/User"
 import { Chat } from "./entity/Chat"
 
 describe("github issues > #1551 complex example of cascades + multiple primary keys = persistence order", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 __dirname,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("throws an error because there is no object id defined", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User({
                     username: "ethan",
                     password:
@@ -89,7 +89,7 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
     // cascade remove are not supported
     it.skip("throws a \"update or delete on table 'message' violates foreign key constraint on table 'recipient'\" error on delete", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User({
                     username: "ethan",
                     password:
@@ -164,7 +164,7 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
     // cascade remove are not supported
     it.skip("throws a \"null value in column 'userId' violates not-null constraint\" error on delete", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User({
                     username: "ethan",
                     password:
@@ -233,7 +233,7 @@ describe("github issues > #1551 complex example of cascades + multiple primary k
     // cascade remove are not supported
     it.skip('throws a "Subject Recipient must have an identifier to perform operation" internal error on delete', () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User({
                     username: "ethan",
                     password:

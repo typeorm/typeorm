@@ -65,7 +65,7 @@ describe("multi-database > basic-functionality", () => {
     })
 
     describe("multiple databases", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         const tempPath = path.resolve(appRoot.path, "temp")
         const attachAnswerPath = path.join(
             tempPath,
@@ -81,28 +81,24 @@ describe("multi-database > basic-functionality", () => {
         )
 
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Answer, Category, Post, User],
-                // enabledDrivers: ["sqlite", "better-sqlite3"],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
             })
-            connections = connections.filter(
-                (connection) => connection.name === "sqlite",
-            )
         })
-        beforeEach(() => reloadTestingDatabases(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
         after(async () => {
-            await closeTestingConnections(connections)
+            await closeTestingConnections(dataSources)
             const files = await glob(`${tempPath}/**/*.attach.db`)
             await Promise.all(files.map((file) => fs.rm(file, { force: true })))
         })
 
         it("should correctly attach and create database files", () =>
             Promise.all(
-                connections.map(async () => {
+                dataSources.map(async () => {
                     const expectedMainPath = path.join(
                         tempPath,
-                        (connections[0].options.database as string).match(
+                        (dataSources[0].options.database as string).match(
                             /^.*[\\|/](?<filename>[^\\|/]+)$/,
                         )!.groups!["filename"],
                     )
@@ -119,7 +115,7 @@ describe("multi-database > basic-functionality", () => {
 
         it("should prefix tableName when custom database used in Entity decorator", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
 
                     const tablePathAnswer = `${attachAnswerHandle}.answer`
@@ -145,7 +141,7 @@ describe("multi-database > basic-functionality", () => {
 
         it("should not affect tableName when using default main database", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
 
                     const tablePathUser = `user`
@@ -171,7 +167,7 @@ describe("multi-database > basic-functionality", () => {
 
         it("should create foreign keys for relations within the same database", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const tablePathCategory = `${attachCategoryHandle}.category`
                     const tablePathPost = `${attachCategoryHandle}.post`

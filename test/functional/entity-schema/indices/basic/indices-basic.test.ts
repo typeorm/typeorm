@@ -11,19 +11,19 @@ import { expect } from "chai"
 import { PersonSchema } from "./entity/Person"
 
 describe("entity-schema > indices > basic", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [<any>PersonSchema],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create a non unique index with 2 columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("person")
                 await queryRunner.release()
@@ -41,7 +41,7 @@ describe("entity-schema > indices > basic", () => {
 
     it("should update the index to be unique", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const entityMetadata = connection.entityMetadatas.find(
                     (x) => x.name === "Person",
                 )
@@ -78,7 +78,7 @@ describe("entity-schema > indices > basic", () => {
 
     it("should update the index swaping the 2 columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const entityMetadata = connection.entityMetadatas.find(
                     (x) => x.name === "Person",
                 )

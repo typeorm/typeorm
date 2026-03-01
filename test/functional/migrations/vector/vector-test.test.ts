@@ -8,10 +8,10 @@ import {
 import { CreatePost0000000000001 } from "./0000000000001-CreatePost"
 
 describe("migrations > vector type", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             schemaCreate: false,
             dropSchema: true,
@@ -19,12 +19,12 @@ describe("migrations > vector type", () => {
         })
     })
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should run vector migration and create table with vector columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.runMigrations()
 
                 const queryRunner = connection.createQueryRunner()
@@ -54,7 +54,7 @@ describe("migrations > vector type", () => {
 
     it("should handle vector data after migration", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.runMigrations()
 
                 const queryRunner = connection.createQueryRunner()

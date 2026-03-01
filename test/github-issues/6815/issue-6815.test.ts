@@ -10,11 +10,11 @@ import { ChildEntity } from "./entity/ChildEntity"
 import { ParentEntity } from "./entity/ParentEntity"
 
 describe("github issues > #6815 RelationId() on nullable relation returns 'null' string", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
@@ -28,12 +28,12 @@ describe("github issues > #6815 RelationId() on nullable relation returns 'null'
             })),
     )
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return null as childId if child doesn't exist", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const em = new EntityManager(connection)
                 const parent = em.create(ParentEntity)
                 await em.save(parent)
@@ -49,7 +49,7 @@ describe("github issues > #6815 RelationId() on nullable relation returns 'null'
 
     it("should return string as childId if child exists", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const em = new EntityManager(connection)
                 const child = em.create(ChildEntity)
                 await em.save(child)

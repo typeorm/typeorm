@@ -9,14 +9,13 @@ import {
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > drop unique constraint", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: [
                 "mssql",
                 "postgres",
-                "sqlite",
                 "better-sqlite3",
                 "oracle",
                 "cockroachdb",
@@ -25,12 +24,12 @@ describe("query runner > drop unique constraint", () => {
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly drop unique constraint and revert drop", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
@@ -56,7 +55,7 @@ describe("query runner > drop unique constraint", () => {
 
     it("should drop all unique constraints without skipping any when iterating over array", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 await queryRunner.connect()
 

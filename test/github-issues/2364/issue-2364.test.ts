@@ -10,17 +10,17 @@ import { Dummy } from "./entity/dummy"
 import { Dummy2 } from "./entity/dummy2"
 
 describe("github issues > #2364 should generate id value if @Column generated:true is set", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     it("should generate id value", async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
-        await reloadTestingDatabases(connections)
+        await reloadTestingDatabases(dataSources)
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Spanner does not support auto-increment columns
                 if (connection.driver.options.type === "spanner") return
 
@@ -35,6 +35,6 @@ describe("github issues > #2364 should generate id value if @Column generated:tr
                 expect(dummyObj2.id).to.not.be.eq(0)
             }),
         )
-        await closeTestingConnections(connections)
+        await closeTestingConnections(dataSources)
     })
 })

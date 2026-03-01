@@ -11,21 +11,21 @@ import { Employee } from "./entity/Employee"
 import { Photo } from "./entity/Photo"
 
 describe("github issues > #9241 Incorrect insert order when cascade inserting parent inherited relations", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["sqlite", "better-sqlite3"],
+                enabledDrivers: ["better-sqlite3"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should save entities properly", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const photos: DeepPartial<Photo>[] = [
                 { name: "Photo 1" },
                 { name: "Photo 2" },

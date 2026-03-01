@@ -11,20 +11,20 @@ import { PhotoMetadata } from "./entity/PhotoMetadata"
 import { expect } from "chai"
 
 describe("github issue > #1416 Wrong behavior when fetching an entity that has a relation with its own eager relations", () => {
-    let connections: DataSource[] = []
+    let dataSources: DataSource[] = []
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load eager relations of an entity's relations recursively", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const metadata = new PhotoMetadata()
                 metadata.height = 640
                 metadata.width = 480

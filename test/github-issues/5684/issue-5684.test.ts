@@ -10,21 +10,21 @@ import { Company } from "./entity/Company"
 import { User } from "./entity/User"
 
 describe("github issues > #5684 eager relation skips children relations", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [User, Company],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should select children of an eager relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const company = new Company()
                 company.name = "company"
                 await connection.getRepository(Company).save(company)

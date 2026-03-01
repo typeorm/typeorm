@@ -9,19 +9,19 @@ import { Cat } from "./entity/Cat"
 import { Dog } from "./entity/Dog"
 
 describe("github issues > #620 Feature Request: Flexibility in Foreign Key names", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work as expected", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const dog = new Dog()
                 dog.DogID = "Simba"
                 await connection.manager.save(dog)

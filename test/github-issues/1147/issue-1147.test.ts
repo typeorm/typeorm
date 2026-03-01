@@ -8,21 +8,21 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe.skip("github issues > #1147 FindOptions should be able to accept custom where condition", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should properly query using custom sql", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 for (let i = 1; i <= 5; i++) {
                     const post1 = new Post()
                     post1.title = `post ${i}`

@@ -8,20 +8,20 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 
 describe("github issues > #1600 Postgres: QueryBuilder insert with Postgres array type bug", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert successfully using save method", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const users: User[] = []
                 for (let i = 0; i < 10; i++) {
                     const user = new User()
@@ -54,7 +54,7 @@ describe("github issues > #1600 Postgres: QueryBuilder insert with Postgres arra
 
     it("should insert successfully using insert method", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const users: User[] = []
                 for (let i = 0; i < 10; i++) {
                     const user = new User()

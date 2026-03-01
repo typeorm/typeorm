@@ -7,20 +7,20 @@ import {
 import { Account } from "./entity/Account"
 
 describe("github issues > #1805 bigint PK incorrectly returning as a number (expecting a string)", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return `bigint` column as string", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const bigIntId = "76561198016705746"
                 const account = new Account()
                 account.id = bigIntId

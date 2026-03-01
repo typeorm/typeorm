@@ -12,20 +12,20 @@ import { expect } from "chai"
 import { Tags } from "./entity/Tags"
 
 describe("mongodb > embedded columns listeners", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post, Counters, Information],
                 enabledDrivers: ["mongodb"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work listeners in entity embeddeds correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save posts with embeddeds
@@ -72,7 +72,7 @@ describe("mongodb > embedded columns listeners", () => {
 
     it("should not work listeners in entity embeddeds if property is optional", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
 
                 // save posts without embeddeds
@@ -91,7 +91,7 @@ describe("mongodb > embedded columns listeners", () => {
 
     it("should work listeners in entity array embeddeds correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
 
                 // save posts without embeddeds

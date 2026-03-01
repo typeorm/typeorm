@@ -8,21 +8,21 @@ import { UserEntitySchema } from "./entity/User"
 import { expect } from "chai"
 
 describe("entity-schema > embedded - plain-object", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [UserEntitySchema],
             })),
     )
 
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should save entity with embedded", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userRepository =
                     connection.getRepository(UserEntitySchema)
                 const newUser = userRepository.create({
@@ -43,7 +43,7 @@ describe("entity-schema > embedded - plain-object", () => {
 
     it("should contains instance of plain object for embedded entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userRepository =
                     connection.getRepository(UserEntitySchema)
                 const newUser = userRepository.create({

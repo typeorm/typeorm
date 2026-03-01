@@ -13,21 +13,21 @@ import { Post as SqlitePost } from "./entity/sqlite/Post"
 
 describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@UpdateDateColumn timestamp column to same definition", () => {
     describe("postgres", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     enabledDrivers: ["postgres"],
                     schemaCreate: false,
                     dropSchema: true,
                     entities: [PostgresPost],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
                         .log()
@@ -38,7 +38,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
         it("should not generate queries when no model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await connection.driver.createSchemaBuilder().build()
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
@@ -50,21 +50,21 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
     })
 
     describe("cockroachdb", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     enabledDrivers: ["cockroachdb"],
                     schemaCreate: false,
                     dropSchema: true,
                     entities: [CockroachPost],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
                         .log()
@@ -75,7 +75,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
         it("should not generate queries when no model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await connection.driver.createSchemaBuilder().build()
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
@@ -87,21 +87,21 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
     })
 
     describe("oracle", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     enabledDrivers: ["oracle"],
                     schemaCreate: false,
                     dropSchema: true,
                     entities: [OraclePost],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
                         .log()
@@ -112,7 +112,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
         it("should not generate queries when no model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await connection.driver.createSchemaBuilder().build()
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
@@ -123,22 +123,22 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
             ))
     })
 
-    describe("sqlite", () => {
-        let connections: DataSource[]
+    describe("better-sqlite3", () => {
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
-                    enabledDrivers: ["sqlite"],
+                (dataSources = await createTestingConnections({
+                    enabledDrivers: ["better-sqlite3"],
                     schemaCreate: false,
                     dropSchema: true,
                     entities: [SqlitePost],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
                         .log()
@@ -149,7 +149,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
         it("should not generate queries when no model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await connection.driver.createSchemaBuilder().build()
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
@@ -161,21 +161,21 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
     })
 
     describe("mysql, mariadb", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     enabledDrivers: ["mysql", "mariadb"],
                     schemaCreate: false,
                     dropSchema: true,
                     entities: [MysqlPost],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
                         .log()
@@ -186,7 +186,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
         it("should not generate queries when no model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await connection.driver.createSchemaBuilder().build()
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
@@ -198,21 +198,21 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
     })
 
     describe("mssql", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     enabledDrivers: ["mssql"],
                     schemaCreate: false,
                     dropSchema: true,
                     entities: [MssqlPost],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should recognize model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
                         .log()
@@ -223,7 +223,7 @@ describe("github issues > #3991 Migration keeps changing @CreateDateColumn/@Upda
 
         it("should not generate queries when no model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await connection.driver.createSchemaBuilder().build()
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()

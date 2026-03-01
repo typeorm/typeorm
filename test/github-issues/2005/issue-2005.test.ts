@@ -7,20 +7,20 @@ import {
 import { User } from "./entity/User"
 
 describe("github issues > #2005", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["sqlite", "better-sqlite3"],
+                enabledDrivers: ["better-sqlite3"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should be able to find by boolean find", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.activated = true
                 await connection.manager.save(user)

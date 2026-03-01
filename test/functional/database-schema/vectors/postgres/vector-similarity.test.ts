@@ -9,9 +9,9 @@ import {
 import { Post } from "./entity/Post"
 
 describe("columns > vector type > similarity operations", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["postgres"],
             schemaCreate: true,
@@ -19,8 +19,8 @@ describe("columns > vector type > similarity operations", () => {
         })
     })
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function setupTestData(connection: DataSource) {
         const postRepository = connection.getRepository(Post)
@@ -40,7 +40,7 @@ describe("columns > vector type > similarity operations", () => {
 
     it("should perform similarity search using L2 distance", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await setupTestData(connection)
                 const queryVector = "[1,1,1.6]" // Search vector
 
@@ -58,7 +58,7 @@ describe("columns > vector type > similarity operations", () => {
 
     it("should perform similarity search using cosine distance", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await setupTestData(connection)
                 const queryVector = "[1,1,1]" // Search vector
 
@@ -83,7 +83,7 @@ describe("columns > vector type > similarity operations", () => {
 
     it("should perform similarity search using inner product", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 await postRepository.clear()
 
@@ -110,7 +110,7 @@ describe("columns > vector type > similarity operations", () => {
 
     it("should prevent persistence of Post with incorrect vector dimensions due to DB constraints", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = new Post()
                 post.embedding_three_dimensions = [1, 1] // Wrong dimensions (2 instead of 3)
@@ -142,7 +142,7 @@ describe("columns > vector type > similarity operations", () => {
 
     it("should perform halfvec similarity search using L2 distance", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 await postRepository.clear()
 
@@ -174,7 +174,7 @@ describe("columns > vector type > similarity operations", () => {
 
     it("should prevent persistence of Post with incorrect halfvec dimensions due to DB constraints", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = new Post()
                 post.halfvec_four_dimensions = [1, 1, 1] // Wrong dimensions (3 instead of 4)

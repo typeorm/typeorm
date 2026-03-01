@@ -10,26 +10,20 @@ import { Account } from "./entity/Account"
 import { AccountActivationToken } from "./entity/AccountActivationToken"
 
 describe("github issues > #1465 save child and parent entity", () => {
-    let connections: DataSource[] = []
+    let dataSources: DataSource[] = []
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: [
-                    "mysql",
-                    "mariadb",
-                    "sqlite",
-                    "better-sqlite3",
-                    "sqljs",
-                ],
+                enabledDrivers: ["mysql", "mariadb", "better-sqlite3", "sqljs"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("account property in accountActivationToken should not be null", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const account = new Account()
                 account.username = "test"
                 account.password = "123456"

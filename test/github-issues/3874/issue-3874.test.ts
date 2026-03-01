@@ -9,22 +9,22 @@ import { Settings } from "./entity/Settings"
 import { expect } from "chai"
 
 describe("github issues > #3874 Using an (empty string) enum as the type of a primary key column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Settings],
                 enabledDrivers: ["mysql", "mariadb"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should reload entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Create initial settings row
                 const newSettings = new Settings()
                 newSettings.value = "string"

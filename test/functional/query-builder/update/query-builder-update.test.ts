@@ -14,19 +14,19 @@ import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropert
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > update", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should perform updation correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Alex Messer"
 
@@ -63,7 +63,7 @@ describe("query builder > update", () => {
 
     it("should be able to use sql functions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Alex Messer"
 
@@ -93,7 +93,7 @@ describe("query builder > update", () => {
 
     it("should update and escape properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Dima"
                 user.likesCount = 1
@@ -118,7 +118,7 @@ describe("query builder > update", () => {
 
     it("should update properties inside embeds as well", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // save few photos
                 await connection.manager.save(Photo, {
                     url: "1.jpg",
@@ -186,7 +186,7 @@ describe("query builder > update", () => {
 
     it("should perform update with limit correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User()
                 user1.name = "Alex Messer"
                 const user2 = new User()
@@ -226,7 +226,7 @@ describe("query builder > update", () => {
 
     it("should throw error when update value is missing", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Alex Messer"
 
@@ -248,7 +248,7 @@ describe("query builder > update", () => {
 
     it("should throw error when update value is missing 2", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Alex Messer"
 
@@ -270,7 +270,7 @@ describe("query builder > update", () => {
 
     it("should throw error when update property in set method is unknown", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Alex Messer"
 
@@ -293,7 +293,7 @@ describe("query builder > update", () => {
 
     it("should throw error when unknown property in where criteria", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Alex Messer"
 
