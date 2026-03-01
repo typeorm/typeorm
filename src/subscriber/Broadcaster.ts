@@ -121,6 +121,9 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     * @param result
+     * @param metadata
+     * @param entity
      */
     broadcastBeforeInsertEvent(
         result: BroadcasterResult,
@@ -166,6 +169,12 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     * @param result
+     * @param metadata
+     * @param entity
+     * @param databaseEntity
+     * @param updatedColumns
+     * @param updatedRelations
      */
     broadcastBeforeUpdateEvent(
         result: BroadcasterResult,
@@ -218,6 +227,11 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     * @param result
+     * @param metadata
+     * @param entity
+     * @param databaseEntity
+     * @param identifier
      */
     broadcastBeforeRemoveEvent(
         result: BroadcasterResult,
@@ -269,6 +283,11 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     * @param result
+     * @param metadata
+     * @param entity
+     * @param databaseEntity
+     * @param identifier
      */
     broadcastBeforeSoftRemoveEvent(
         result: BroadcasterResult,
@@ -320,6 +339,11 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     * @param result
+     * @param metadata
+     * @param entity
+     * @param databaseEntity
+     * @param identifier
      */
     broadcastBeforeRecoverEvent(
         result: BroadcasterResult,
@@ -371,6 +395,10 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     * @param result
+     * @param metadata
+     * @param entity
+     * @param identifier
      */
     broadcastAfterInsertEvent(
         result: BroadcasterResult,
@@ -413,6 +441,9 @@ export class Broadcaster {
 
     /**
      * Broadcasts "BEFORE_QUERY" event.
+     * @param result
+     * @param query
+     * @param parameters
      */
     broadcastBeforeQueryEvent(
         result: BroadcasterResult,
@@ -439,6 +470,13 @@ export class Broadcaster {
 
     /**
      * Broadcasts "AFTER_QUERY" event.
+     * @param result
+     * @param query
+     * @param parameters
+     * @param success
+     * @param executionTime
+     * @param rawResults
+     * @param error
      */
     broadcastAfterQueryEvent(
         result: BroadcasterResult,
@@ -473,6 +511,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "BEFORE_TRANSACTION_START" event.
+     * @param result
      */
     broadcastBeforeTransactionStartEvent(result: BroadcasterResult): void {
         if (this.queryRunner.connection.subscribers.length) {
@@ -493,6 +532,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "AFTER_TRANSACTION_START" event.
+     * @param result
      */
     broadcastAfterTransactionStartEvent(result: BroadcasterResult): void {
         if (this.queryRunner.connection.subscribers.length) {
@@ -513,6 +553,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "BEFORE_TRANSACTION_COMMIT" event.
+     * @param result
      */
     broadcastBeforeTransactionCommitEvent(result: BroadcasterResult): void {
         if (this.queryRunner.connection.subscribers.length) {
@@ -533,6 +574,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "AFTER_TRANSACTION_COMMIT" event.
+     * @param result
      */
     broadcastAfterTransactionCommitEvent(result: BroadcasterResult): void {
         if (this.queryRunner.connection.subscribers.length) {
@@ -553,6 +595,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "BEFORE_TRANSACTION_ROLLBACK" event.
+     * @param result
      */
     broadcastBeforeTransactionRollbackEvent(result: BroadcasterResult): void {
         if (this.queryRunner.connection.subscribers.length) {
@@ -574,6 +617,7 @@ export class Broadcaster {
 
     /**
      * Broadcasts "AFTER_TRANSACTION_ROLLBACK" event.
+     * @param result
      */
     broadcastAfterTransactionRollbackEvent(result: BroadcasterResult): void {
         if (this.queryRunner.connection.subscribers.length) {
@@ -601,6 +645,12 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     * @param result
+     * @param metadata
+     * @param entity
+     * @param databaseEntity
+     * @param updatedColumns
+     * @param updatedRelations
      */
     broadcastAfterUpdateEvent(
         result: BroadcasterResult,
@@ -652,6 +702,11 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     * @param result
+     * @param metadata
+     * @param entity
+     * @param databaseEntity
+     * @param identifier
      */
     broadcastAfterRemoveEvent(
         result: BroadcasterResult,
@@ -703,6 +758,11 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     * @param result
+     * @param metadata
+     * @param entity
+     * @param databaseEntity
+     * @param identifier
      */
     broadcastAfterSoftRemoveEvent(
         result: BroadcasterResult,
@@ -754,6 +814,11 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     * @param result
+     * @param metadata
+     * @param entity
+     * @param databaseEntity
+     * @param identifier
      */
     broadcastAfterRecoverEvent(
         result: BroadcasterResult,
@@ -799,6 +864,9 @@ export class Broadcaster {
     }
 
     /**
+     * @param result
+     * @param metadata
+     * @param entities
      * @deprecated Use `broadcastLoadForAllEvent`
      */
     broadcastLoadEventsForAll(
@@ -816,6 +884,9 @@ export class Broadcaster {
      * Subscribers and entity listeners can return promises, it will wait until they are resolved.
      *
      * Note: this method has a performance-optimized code organization, do not change code structure.
+     * @param result
+     * @param metadata
+     * @param entities
      */
     broadcastLoadEvent(
         result: BroadcasterResult,
@@ -899,6 +970,8 @@ export class Broadcaster {
     /**
      * Checks if subscriber's methods can be executed by checking if its don't listen to the particular entity,
      * or listens our entity.
+     * @param subscriber
+     * @param target
      */
     protected isAllowedSubscriber(
         subscriber: EntitySubscriberInterface<any>,

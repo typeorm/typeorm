@@ -43,7 +43,7 @@ describe("ConnectionManager", () => {
         })
 
         /* it("should create a postgres connection when postgres driver is specified", () => {
-            const options: ConnectionOptions = {
+            const options = {
                 name: "myPostgresConnection",
                 driver: createTestingConnectionOptions("postgres")
             };
@@ -51,14 +51,14 @@ describe("ConnectionManager", () => {
             const connection = connectionManager.create(options);
             connection.name.should.be.equal("myPostgresConnection");
             connection.driver.should.be.instanceOf(PostgresDriver);
-            connection.isConnected.should.be.false;
+            connection.isInitialized.should.be.false;
         });*/
     })
 
     /*describe("createAndConnect", function() {
 
         it("should create a mysql connection when mysql driver is specified AND connect to it", async () => {
-            const options: ConnectionOptions = setupSingleTestingConnection("mysql", {
+            const options = setupSingleTestingConnection("mysql", {
                 name: "default",
                 entities: []
             });
@@ -66,8 +66,8 @@ describe("ConnectionManager", () => {
             const connection = await connectionManager.createAndConnect(options);
             connection.name.should.be.equal("default");
             connection.driver.should.be.instanceOf(MysqlDriver);
-            connection.isConnected.should.be.true;
-            await connection.close();
+            connection.isInitialized.should.be.true;
+            await connection.destroy();
 
         it("should create a aurora connection when aurora-data-api driver is specified", async () => {
             const options = setupSingleTestingConnection("aurora-mysql", {
@@ -81,10 +81,10 @@ describe("ConnectionManager", () => {
             await connection.connect();
             connection.name.should.contain("aurora-mysql");
             connection.driver.should.be.instanceOf(AuroraMysqlDriver);
-            connection.isConnected.should.be.true;
+            connection.isInitialized.should.be.true;
             const serviceConfigOptions = (connection.options as AuroraDataApiConnectionOptions).serviceConfigOptions;
             expect(serviceConfigOptions).to.include({ maxRetries: 3, region: "us-east-1" });
-            await connection.close();
+            await connection.destroy();
         });
 
         it("should create a aurora connection when aurora-postgres driver is specified", async () => {
@@ -99,14 +99,14 @@ describe("ConnectionManager", () => {
             await connection.connect();
             connection.name.should.contain("aurora-postgres");
             connection.driver.should.be.instanceOf(AuroraPostgresDriver);
-            connection.isConnected.should.be.true;
+            connection.isInitialized.should.be.true;
             const serviceConfigOptions = (connection.options as AuroraPostgresConnectionOptions).serviceConfigOptions;
             expect(serviceConfigOptions).to.include({ maxRetries: 3, region: "us-east-1" });
-            await connection.close();
+            await connection.destroy();
         });
 
     /!*    it("should create a postgres connection when postgres driver is specified AND connect to it", async () => {
-            const options: ConnectionOptions = {
+            const options = {
                 name: "myPostgresConnection",
                 driver: createTestingConnectionOptions("postgres")
             };
@@ -114,8 +114,8 @@ describe("ConnectionManager", () => {
             const connection = await connectionManager.createAndConnect(options);
             connection.name.should.be.equal("myPostgresConnection");
             connection.driver.should.be.instanceOf(PostgresDriver);
-            connection.isConnected.should.be.true;
-            await connection.close();
+            connection.isInitialized.should.be.true;
+            await connection.destroy();
         });*!/
 
     });*/
@@ -162,13 +162,15 @@ describe("ConnectionManager", () => {
             const connectionManager = new ConnectionManager()
 
             // create connection, save post and close connection
-            let connection = await connectionManager.create(options).connect()
+            let connection = await connectionManager
+                .create(options)
+                .initialize()
             const post = new Post(1, "Hello post")
             await connection.manager.save(post)
-            await connection.close()
+            await connection.destroy()
 
             // recreate connection and find previously saved post
-            connection = await connectionManager.create(options).connect()
+            connection = await connectionManager.create(options).initialize()
             const loadedPost = (await connection.manager.findOne(Post, {
                 where: {
                     id: 1,
@@ -176,7 +178,7 @@ describe("ConnectionManager", () => {
             }))!
             loadedPost.should.be.instanceof(Post)
             loadedPost.should.be.eql({ id: 1, title: "Hello post" })
-            await connection.close()
+            await connection.destroy()
         })
 
         it("should drop the database if dropSchema was set to true (mysql)", async () => {
@@ -191,24 +193,26 @@ describe("ConnectionManager", () => {
             const connectionManager = new ConnectionManager()
 
             // create connection, save post and close connection
-            let connection = await connectionManager.create(options).connect()
+            let connection = await connectionManager
+                .create(options)
+                .initialize()
             const post = new Post(1, "Hello post")
             await connection.manager.save(post)
-            await connection.close()
+            await connection.destroy()
 
             // recreate connection and find previously saved post
-            connection = await connectionManager.create(options).connect()
+            connection = await connectionManager.create(options).initialize()
             const loadedPost = await connection.manager.findOne(Post, {
                 where: {
                     id: 1,
                 },
             })
             expect(loadedPost).to.be.null
-            await connection.close()
+            await connection.destroy()
         })
 
         /*   it("should drop the database if dropSchema was set to true (postgres)", async () => {
-            const options: ConnectionOptions = {
+            const options = {
                 dropSchema: true,
                 synchronize: true,
                 driver: createTestingConnectionOptions("postgres"),
@@ -220,18 +224,18 @@ describe("ConnectionManager", () => {
             let connection = await connectionManager.createAndConnect(options);
             const post = new Post(1, "Hello post");
             await connection.manager.save(post);
-            await connection.close();
+            await connection.destroy();
 
             // recreate connection and find previously saved post
             connection = await connectionManager.createAndConnect(options);
             const loadedPost = await connection.manager.findOne(Post, 1);
             expect(loadedPost).to.be.undefined;
 
-            await connection.close();
+            await connection.destroy();
          });*/
 
         /*    it("should drop the database if dropSchema was set to true (postgres)", async () => {
-            const options: ConnectionOptions = {
+            const options = {
                 dropSchema: true,
                 synchronize: true,
                 driver: createTestingConnectionOptions("postgres"),
@@ -243,13 +247,13 @@ describe("ConnectionManager", () => {
             let connection = await connectionManager.createAndConnect(options);
             const post = new Post(1, "Hello post");
             await connection.manager.save(post);
-            await connection.close();
+            await connection.destroy();
 
             // recreate connection and find previously saved post
             connection = await connectionManager.createAndConnect(options);
             const loadedPost = await connection.manager.findOne(Post, 1);
             expect(loadedPost).to.be.undefined;
-            await connection.close();
+            await connection.destroy();
          });*/
     })
 })

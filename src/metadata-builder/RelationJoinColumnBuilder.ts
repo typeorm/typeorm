@@ -14,25 +14,30 @@ import { OrmUtils } from "../util/OrmUtils"
  * Cases it should cover:
  * 1. when join column is set with custom name and without referenced column name
  * we need automatically set referenced column name - primary ids by default
- * @JoinColumn({ name: "custom_name" })
+ *
+ * `@JoinColumn({ name: "custom_name" })`
  *
  * 2. when join column is set with only referenced column name
  * we need automatically set join column name - relation name + referenced column name
- * @JoinColumn({ referencedColumnName: "title" })
+ *
+ * `@JoinColumn({ referencedColumnName: "title" })`
  *
  * 3. when join column is set without both referenced column name and join column name
  * we need to automatically set both of them
- * @JoinColumn()
  *
- * 4. when join column is not set at all (as in case of @ManyToOne relation)
+ * `@JoinColumn()`
+ *
+ * 4. when join column is not set at all (as in case of `@ManyToOne` relation)
  * we need to create join column for it with proper referenced column name and join column name
  *
  * 5. when multiple join columns set none of referencedColumnName and name can be optional
  * both options are required
- * @JoinColumn([
- *      { name: "category_title", referencedColumnName: "type" },
- *      { name: "category_title", referencedColumnName: "name" },
+ * ```
+ * \@JoinColumn([
+ *    { name: "category_title", referencedColumnName: "type" },
+ *    { name: "category_title", referencedColumnName: "name" },
  * ])
+ * ```
  *
  * Since for many-to-one relations having JoinColumn decorator is not required,
  * we need to go through each many-to-one relation without join column decorator set
@@ -43,7 +48,7 @@ export class RelationJoinColumnBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(private connection: DataSource) {}
+    constructor(private dataSource: DataSource) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -51,6 +56,8 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Builds a foreign key of the many-to-one or one-to-one owner relations.
+     * @param joinColumns
+     * @param relation
      */
     build(
         joinColumns: JoinColumnMetadataArgs[],
@@ -80,7 +87,7 @@ export class RelationJoinColumnBuilder {
             name: joinColumns[0]?.foreignKeyConstraintName,
             entityMetadata: relation.entityMetadata,
             referencedEntityMetadata: relation.inverseEntityMetadata,
-            namingStrategy: this.connection.namingStrategy,
+            namingStrategy: this.dataSource.namingStrategy,
             columns,
             referencedColumns,
             onDelete: relation.onDelete,
@@ -102,14 +109,14 @@ export class RelationJoinColumnBuilder {
             entityMetadata: relation.entityMetadata,
             columns: foreignKey.columns,
             args: {
-                name: this.connection.namingStrategy.relationConstraintName(
+                name: this.dataSource.namingStrategy.relationConstraintName(
                     relation.entityMetadata.tableName,
                     foreignKey.columns.map((column) => column.databaseName),
                 ),
                 target: relation.entityMetadata.target,
             },
         })
-        uniqueConstraint.build(this.connection.namingStrategy)
+        uniqueConstraint.build(this.dataSource.namingStrategy)
 
         return { foreignKey, columns, uniqueConstraint }
     }
@@ -120,6 +127,8 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Collects referenced columns from the given join column args.
+     * @param joinColumns
+     * @param relation
      */
     protected collectReferencedColumns(
         joinColumns: JoinColumnMetadataArgs[],
@@ -160,6 +169,9 @@ export class RelationJoinColumnBuilder {
 
     /**
      * Collects columns from the given join column args.
+     * @param joinColumns
+     * @param relation
+     * @param referencedColumns
      */
     private collectColumns(
         joinColumns: JoinColumnMetadataArgs[],
@@ -178,7 +190,7 @@ export class RelationJoinColumnBuilder {
             })
             const joinColumnName = joinColumnMetadataArg
                 ? joinColumnMetadataArg.name
-                : this.connection.namingStrategy.joinColumnName(
+                : this.dataSource.namingStrategy.joinColumnName(
                       relation.propertyName,
                       referencedColumn.propertyName,
                   )
@@ -192,7 +204,7 @@ export class RelationJoinColumnBuilder {
             )
             if (!relationalColumn) {
                 relationalColumn = new ColumnMetadata({
-                    connection: this.connection,
+                    connection: this.dataSource,
                     entityMetadata: relation.entityMetadata,
                     embeddedMetadata: relation.embeddedMetadata,
                     args: {
@@ -205,12 +217,12 @@ export class RelationJoinColumnBuilder {
                             length:
                                 !referencedColumn.length &&
                                 (DriverUtils.isMySQLFamily(
-                                    this.connection.driver,
+                                    this.dataSource.driver,
                                 ) ||
-                                    this.connection.driver.options.type ===
+                                    this.dataSource.driver.options.type ===
                                         "aurora-mysql") &&
                                 // some versions of mariadb support the column type and should not try to provide the length property
-                                this.connection.driver.normalizeType(
+                                this.dataSource.driver.normalizeType(
                                     referencedColumn,
                                 ) !== "uuid" &&
                                 (referencedColumn.generationStrategy ===
@@ -243,7 +255,7 @@ export class RelationJoinColumnBuilder {
             relationalColumn.referencedColumn = referencedColumn // its important to set it here because we need to set referenced column for user defined join column
             relationalColumn.type = referencedColumn.type // also since types of relational column and join column must be equal we override user defined column type
             relationalColumn.relationMetadata = relation
-            relationalColumn.build(this.connection)
+            relationalColumn.build(this.dataSource)
             return relationalColumn
         })
     }

@@ -30,7 +30,6 @@ describe("commands - migration generate", () => {
         "mssql",
         "mysql",
         "mariadb",
-        "sqlite",
         "better-sqlite3",
         "oracle",
         "cockroachdb",
