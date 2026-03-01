@@ -9,19 +9,19 @@ import { TestEntity } from "./entity/TestEntity"
 import { expect } from "chai"
 
 describe("github issues > #1014 Transaction doesn't rollback", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should rollback transaction if some operation failed in it", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const testEntity = new TestEntity()
                 testEntity.name = "Hello Test"
                 await connection.manager.save(testEntity, { reload: true })

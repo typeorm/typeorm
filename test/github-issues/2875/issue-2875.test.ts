@@ -8,10 +8,10 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { Migration } from "../../../src/migration/Migration"
 
 describe("github issues > #2875 runMigrations() function is not returning a list of migrated files", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 migrations: [__dirname + "/migration/*.js"],
                 enabledDrivers: ["postgres"],
@@ -19,12 +19,12 @@ describe("github issues > #2875 runMigrations() function is not returning a list
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should be able to run all necessary migrations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const mymigr: Migration[] = await connection.runMigrations()
 
                 mymigr.length.should.be.equal(1)

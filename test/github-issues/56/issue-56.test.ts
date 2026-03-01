@@ -12,19 +12,19 @@ import { AccessToken } from "./entity/AccessToken"
 describe.skip("github issues > #56 relationships only work when both primary keys have the same name", () => {
     // skipped because of CI error. todo: needs investigation
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should persist successfully and return persisted entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const token = new AccessToken()
                 token.access_token = "12345"
 

@@ -6,20 +6,20 @@ import {
 import { Post } from "./entity/Post"
 
 describe("entity-listeners", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 dropSchema: true,
                 schemaCreate: true,
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("beforeUpdate", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "post title"
                 post.text = "post text"

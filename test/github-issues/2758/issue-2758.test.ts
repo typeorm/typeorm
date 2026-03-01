@@ -8,20 +8,20 @@ import { Person } from "./entity/Person"
 import { User } from "./entity/User"
 
 describe.skip("github issues > #2758 Insert fails when related OneToOne entity's primary key is also a foreign key", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert person with nested new party", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(Person)
                 await connection.manager.save(
                     repository.create({
@@ -33,7 +33,7 @@ describe.skip("github issues > #2758 Insert fails when related OneToOne entity's
 
     it("should insert user with nested new person", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(User)
                 await connection.manager.save(
                     repository.create({
@@ -45,7 +45,7 @@ describe.skip("github issues > #2758 Insert fails when related OneToOne entity's
 
     it("should insert a new user with existing person", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const personRepository = connection.getRepository(Person)
                 const person = await connection.manager.save(
                     personRepository.create({
@@ -64,7 +64,7 @@ describe.skip("github issues > #2758 Insert fails when related OneToOne entity's
 
     it("should insert user with existing personId", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const personRepository = connection.getRepository(Person)
                 const person = await connection.manager.save(
                     personRepository.create({

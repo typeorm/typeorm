@@ -9,20 +9,20 @@ import {
 } from "../../../../utils/test-utils"
 
 describe("entity-schema > tree tables > nested-set", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Category],
                 enabledDrivers: ["better-sqlite3"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("attach should work properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 

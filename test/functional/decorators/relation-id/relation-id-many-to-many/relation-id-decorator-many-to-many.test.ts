@@ -11,19 +11,19 @@ import { Category } from "./entity/Category"
 import { Image } from "./entity/Image"
 
 describe("decorators > relation-id-decorator > many-to-many", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load ids when RelationId decorator used on owner side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.id = 1
                 category1.name = "kids"
@@ -75,7 +75,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     it("should load ids when RelationId decorator used on owner side with additional condition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.id = 1
                 category1.name = "kids"
@@ -129,7 +129,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     it("should load ids when RelationId decorator used on owner side without inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.id = 1
                 category1.name = "kids"
@@ -159,7 +159,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     it("should load ids when RelationId decorator used on owner side without inverse side and with additional condition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.id = 1
                 category1.name = "kids"
@@ -190,7 +190,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     it("should load ids when RelationId decorator used on inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category = new Category()
                 category.id = 1
                 category.name = "cars"
@@ -221,7 +221,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     it("should load ids when RelationId decorator used on inverse side with additional condition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category = new Category()
                 category.id = 1
                 category.name = "cars"
@@ -253,7 +253,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     it("should load ids when RelationId decorator used on nested relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.id = 1
                 image1.name = "photo1"
@@ -346,7 +346,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     it("should not load ids of nested relations when RelationId decorator used on inherit relation and parent relation was not found", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.id = 1
                 image1.name = "photo1"
@@ -387,7 +387,7 @@ describe("decorators > relation-id-decorator > many-to-many", () => {
 
     it("should load ids when RelationId decorator used on nested relation with additional conditions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.id = 1
                 image1.name = "photo1"

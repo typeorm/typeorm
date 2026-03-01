@@ -9,22 +9,22 @@ import { expect } from "chai"
 import { Configuration } from "./entity/Configuration"
 
 describe("github issues > #7113 Soft deleted docs still being pulled in Mongodb", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["mongodb"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not pull soft deleted docs with find", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getMongoRepository(Configuration)
                 const configuration = new Configuration()
 
@@ -47,7 +47,7 @@ describe("github issues > #7113 Soft deleted docs still being pulled in Mongodb"
 
     it("should not pull soft deleted docs with findAndCount", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getMongoRepository(Configuration)
                 const configuration = new Configuration()
 
@@ -72,7 +72,7 @@ describe("github issues > #7113 Soft deleted docs still being pulled in Mongodb"
 
     it("should not pull soft deleted docs with findOne", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getMongoRepository(Configuration)
                 const configuration = new Configuration()
 

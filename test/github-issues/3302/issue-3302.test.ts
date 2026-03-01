@@ -10,30 +10,30 @@ import {
 import { PlatformTools } from "../../../src/platform/PlatformTools"
 
 describe("github issues > #3302 Tracking query time for slow queries and statsd timers", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     let stub: sinon.SinonStub
     let sandbox: sinon.SinonSandbox
     const beforeQueryLogPath = appRootPath + "/before-query.log"
     const afterQueryLogPath = appRootPath + "/after-query.log"
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
         })
         sandbox = sinon.createSandbox()
         stub = sandbox.stub(PlatformTools, "appendFileSync")
     })
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
     afterEach(async () => {
         stub.resetHistory()
         sandbox.restore()
-        await closeTestingConnections(connections)
+        await closeTestingConnections(dataSources)
     })
 
     it("if query executed, should write query to file", async () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape(
                     "post",
                 )}`

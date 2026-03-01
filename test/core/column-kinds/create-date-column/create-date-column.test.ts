@@ -10,19 +10,19 @@ import {
 import { Post } from "./entity/Post"
 
 describe("column kinds > create date column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("create date column should automatically be set by a database", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new post
@@ -42,7 +42,7 @@ describe("column kinds > create date column", () => {
 
     it("create date column can also be manually set by user", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 const createdAt = new Date(
@@ -67,7 +67,7 @@ describe("column kinds > create date column", () => {
 
     it("create date column should not be updated automatically on every change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new post
@@ -99,7 +99,7 @@ describe("column kinds > create date column", () => {
 
     it("create date column should set a custom date when specified", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new post

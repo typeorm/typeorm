@@ -9,20 +9,20 @@ import { User } from "./entity/UserEntity"
 import { expect } from "chai"
 
 describe("github issues > #5365 Generated Identity for Postgres 10+", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [User],
                 schemaCreate: false,
                 dropSchema: true,
                 enabledDrivers: ["postgres"],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
     it("should produce proper SQL for creating a table with identity column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()

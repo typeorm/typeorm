@@ -21,17 +21,17 @@ const convertPropsToISOStrings = (obj: any, props: string[]) => {
 
 describe("github issues > #1716 send timestamp to database without converting it into UTC", () => {
     describe("postgres", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
 
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [PgEntity],
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["postgres"],
             })
 
-            for (const connection of connections) {
+            for (const connection of dataSources) {
                 if (connection.driver.options.type === "postgres") {
                     // We want to have UTC as timezone
                     await connection.query("SET TIME ZONE 'UTC';")
@@ -39,12 +39,12 @@ describe("github issues > #1716 send timestamp to database without converting it
             }
         })
 
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should persist dates and times correctly", async () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const manager = connection.manager
 
                     await manager.save(PgEntity, {
@@ -117,10 +117,10 @@ describe("github issues > #1716 send timestamp to database without converting it
     })
 
     describe("mysql/mariadb", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
 
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [MysqlEntity],
                 schemaCreate: true,
                 dropSchema: true,
@@ -128,12 +128,12 @@ describe("github issues > #1716 send timestamp to database without converting it
             })
         })
 
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should persist dates and times correctly", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const manager = connection.manager
 
                     await manager.save(MysqlEntity, {
@@ -184,10 +184,10 @@ describe("github issues > #1716 send timestamp to database without converting it
     })
 
     describe("mssql", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
 
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [MssqlEntity],
                 schemaCreate: true,
                 dropSchema: true,
@@ -195,12 +195,12 @@ describe("github issues > #1716 send timestamp to database without converting it
             })
         })
 
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should persist dates and times correctly", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const manager = connection.manager
 
                     await manager.save(MssqlEntity, {

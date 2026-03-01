@@ -8,18 +8,18 @@ import {
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("schema builder > create table", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create tables with all dependencies", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 let postTable = await queryRunner.getTable("post")
                 let teacherTable = await queryRunner.getTable("teacher")

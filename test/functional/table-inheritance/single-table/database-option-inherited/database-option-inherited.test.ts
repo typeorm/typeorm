@@ -7,10 +7,10 @@ import {
 import { DataSource } from "../../../../../src"
 
 describe("table-inheritance > single-table > database-option-inherited", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 // creating more databases isn't always possible(e.g oracle official docker images)
                 enabledDrivers: [
@@ -24,11 +24,11 @@ describe("table-inheritance > single-table > database-option-inherited", () => {
                 ],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly inherit database option", () => {
-        connections.forEach((connection) => {
+        dataSources.forEach((connection) => {
             connection.entityMetadatas.forEach((metadata) =>
                 metadata.database!.should.equal("test"),
             )

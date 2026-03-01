@@ -10,20 +10,20 @@ import { Personalization } from "./entity/Personalization"
 import { expect } from "chai"
 
 describe("github issues > #1788 One to One does not load relationships.", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work as expected when using find* methods with relations explicitly provided", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const personalizationRepository =
                     connection.getRepository(Personalization)
                 const providerRepository = connection.getRepository(Provider)

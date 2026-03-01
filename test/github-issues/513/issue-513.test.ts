@@ -11,20 +11,20 @@ import { Post } from "./entity/Post"
 import { DateUtils } from "../../../src/util/DateUtils"
 
 describe("github issues > #513 Incorrect time/datetime types for SQLite", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["better-sqlite3"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create datetime column type for datetime in sqlite", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const dbColumns: ObjectLiteral[] =
                     await connection.manager.query("PRAGMA table_info(Post)")
                 expect(dbColumns).not.to.be.null
@@ -44,7 +44,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
 
     it("should persist correct type in datetime column in sqlite", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const now: Date = new Date()
 
                 const post: Post = new Post()
@@ -67,7 +67,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
 
     it("should create datetime column type for time in sqlite", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const dbColumns: ObjectLiteral[] =
                     await connection.manager.query("PRAGMA table_info(Post)")
                 expect(dbColumns).not.to.be.null
@@ -87,7 +87,7 @@ describe("github issues > #513 Incorrect time/datetime types for SQLite", () => 
 
     it("should persist correct type in datetime column in sqlite", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const now: Date = new Date()
 
                 const post: Post = new Post()

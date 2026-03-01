@@ -16,26 +16,26 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
     // -------------------------------------------------------------------------
 
     // connect to db
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 enabledDrivers: ["mssql"],
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
     // -------------------------------------------------------------------------
     it("should not have Lock clause", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const lock = " WITH (NOLOCK)"
                 const selectQuery = connection
                     .createQueryBuilder()
@@ -53,7 +53,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
 
     it("should have WITH (NOLOCK) clause", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const lock = " WITH (NOLOCK)"
                 const selectQuery = connection
                     .createQueryBuilder()
@@ -72,7 +72,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
 
     it("should have two WITH (NOLOCK) clause", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const lock = " WITH (NOLOCK)"
                 const selectQuery = connection
                     .createQueryBuilder()
@@ -92,7 +92,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
 
     it("should have three WITH (NOLOCK) clause", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const lock = " WITH (NOLOCK)"
                 const selectQuery = connection
                     .createQueryBuilder()
@@ -113,7 +113,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
 
     it("should have three WITH (NOLOCK) clause (without relation)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const lock = " WITH (NOLOCK)"
                 const selectQuery = connection
                     .createQueryBuilder()
@@ -138,7 +138,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
 
     it("should have WITH (HOLDLOCK, ROWLOCK) clause", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const lock = " WITH (HOLDLOCK, ROWLOCK)"
                 const selectQuery = connection
                     .createQueryBuilder()
@@ -157,7 +157,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
 
     it("should have WITH (UPLOCK, ROWLOCK) clause", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const lock = " WITH (UPDLOCK, ROWLOCK)"
                 const selectQuery = connection
                     .createQueryBuilder()
@@ -176,7 +176,7 @@ describe("mssql > add lock clause for MSSQL select with join clause", () => {
 
     it("should have two WITH (UPDLOCK, ROWLOCK) clause", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const lock = " WITH (UPDLOCK, ROWLOCK)"
                 const selectQuery = connection
                     .createQueryBuilder()

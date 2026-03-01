@@ -10,20 +10,20 @@ import { DataSource } from "../../../../../src"
 import { expect } from "chai"
 
 describe("entity-schema > columns > virtual column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [<any>Activity],
                 enabledDrivers: ["better-sqlite3"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should query virtual columns", () => {
         return Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Activity)
                 await repo.save({ id: 0, k1: 1 })
                 const result = (await repo.findOne({ where: { id: 0 } }))!

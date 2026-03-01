@@ -9,19 +9,19 @@ import { Book } from "./entity/Book"
 import { expect } from "chai"
 
 describe("github issues > #4980 (Postgres) onUpdate: 'CASCADE' doesn't work on many-to-many relation", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres"],
                 entities: [Author, Book],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should generate onDelete: CASCADE and onUpdate: CASCADE for 'books' side of many-to-many relation", () => {
-        connections.forEach((connection) => {
+        dataSources.forEach((connection) => {
             const booksRelation = connection
                 .getMetadata(Author)
                 .manyToManyRelations.find((mtm) => mtm.propertyName === "books")
@@ -32,7 +32,7 @@ describe("github issues > #4980 (Postgres) onUpdate: 'CASCADE' doesn't work on m
     })
 
     it("should generate onDelete: NO ACTION and onUpdate: CASCADE for 'authors' side of many-to-many relation", () => {
-        connections.forEach((connection) => {
+        dataSources.forEach((connection) => {
             const authorsRelation = connection
                 .getMetadata(Book)
                 .manyToManyRelations.find(
@@ -45,7 +45,7 @@ describe("github issues > #4980 (Postgres) onUpdate: 'CASCADE' doesn't work on m
     })
 
     it("should generate onDelete: NO ACTION and onUpdate: CASCADE for foreign key pointing to Book", () => {
-        connections.forEach((connection) => {
+        dataSources.forEach((connection) => {
             const booksRelation = connection
                 .getMetadata(Author)
                 .manyToManyRelations.find(
@@ -67,7 +67,7 @@ describe("github issues > #4980 (Postgres) onUpdate: 'CASCADE' doesn't work on m
     })
 
     it("should generate onDelete: CASCADE and onUpdate: CASCADE for foreign key pointing to Author", () => {
-        connections.forEach((connection) => {
+        dataSources.forEach((connection) => {
             // take books relation bc foreign keys are on owning side
             const booksRelation = connection
                 .getMetadata(Author)

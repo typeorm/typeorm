@@ -12,22 +12,22 @@ import { Post } from "./entity/Post"
 
 describe("sqljs driver > save", () => {
     const pathToSqlite = path.resolve(__dirname, "export.sqlite")
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post],
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["sqljs"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should save to file", () =>
         Promise.all(
-            connections.map(async (dataSource) => {
+            dataSources.map(async (dataSource) => {
                 try {
                     await fs.unlink(pathToSqlite)
                 } catch {}
@@ -46,7 +46,7 @@ describe("sqljs driver > save", () => {
 
     it("should load a file that was saved", () =>
         Promise.all(
-            connections.map(async (dataSource) => {
+            dataSources.map(async (dataSource) => {
                 await dataSource.sqljsManager.loadDatabase(pathToSqlite)
 
                 const repository = dataSource.getRepository(Post)

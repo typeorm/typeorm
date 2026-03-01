@@ -10,19 +10,19 @@ import { expect } from "chai"
 import { PostRepository } from "./repository/PostRepository"
 
 describe("transaction > single query runner", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should execute all operations in the method in a transaction", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 return connection.transaction(
                     async (transactionalEntityManager) => {
                         const originalQueryRunner =
@@ -51,7 +51,7 @@ describe("transaction > single query runner", () => {
 
     it("should execute all operations in the method in a transaction (#804)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const entityManager = connection.createQueryRunner().manager
                 entityManager.should.not.be.equal(connection.manager)
                 entityManager.queryRunner!.should.be.equal(

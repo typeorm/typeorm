@@ -10,19 +10,19 @@ import { expect } from "chai"
 import { DataSource } from "../../../../../src/data-source/DataSource"
 
 describe("query builder > relational query builder > set operation > one-to-one non owner side", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should set entity relation of a given entity by entity objects", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.url = "image #1"
                 await connection.manager.save(image1)
@@ -123,7 +123,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
 
     it("should set entity relation of a given entity by entity id", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.url = "image #1"
                 await connection.manager.save(image1)
@@ -224,7 +224,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
 
     it("should set entity relation of a given entity by entity id map", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.url = "image #1"
                 await connection.manager.save(image1)
@@ -325,7 +325,7 @@ describe("query builder > relational query builder > set operation > one-to-one 
 
     it("should raise error when setting entity relation of a multiple entities", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.url = "image #1"
                 await connection.manager.save(image1)

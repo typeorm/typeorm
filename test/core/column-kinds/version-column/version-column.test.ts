@@ -9,19 +9,19 @@ import {
 import { Post } from "./entity/Post"
 
 describe("column kinds > version column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("version column should automatically be set by a database", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new post
@@ -41,7 +41,7 @@ describe("column kinds > version column", () => {
 
     it("version column should not update version if no changes were detected", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new post
@@ -68,7 +68,7 @@ describe("column kinds > version column", () => {
 
     it("version column can also be manually set by user", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new post
@@ -89,7 +89,7 @@ describe("column kinds > version column", () => {
 
     it("version column should be updated automatically on every change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new post
@@ -111,7 +111,7 @@ describe("column kinds > version column", () => {
 
     it("version column should set a custom value when specified", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new post

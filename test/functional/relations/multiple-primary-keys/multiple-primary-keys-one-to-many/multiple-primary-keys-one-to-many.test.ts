@@ -12,18 +12,18 @@ import { Setting } from "./entity/Setting"
  *  Using OneToMany relation with composed primary key should not error and work correctly
  */
 describe("relations > multiple-primary-keys > one-to-many", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [User, Setting],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     function insertSimpleTestData(connection: DataSource) {
         const userRepo = connection.getRepository(User)
@@ -39,7 +39,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
 
     it("should correctly insert relation items", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userEntity = await insertSimpleTestData(connection)
                 const persistedSettings = await connection
                     .getRepository(Setting)
@@ -54,7 +54,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
 
     it("should correctly load relation items", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await insertSimpleTestData(connection)
 
                 const [user] = await connection.getRepository(User).find({
@@ -70,7 +70,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
 
     it("should correctly update relation items", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await insertSimpleTestData(connection)
                 const userRepo = connection.getRepository(User)
 
@@ -107,7 +107,7 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
 
     it("should correctly delete relation items", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await insertSimpleTestData(connection)
                 const userRepo = connection.getRepository(User)
 

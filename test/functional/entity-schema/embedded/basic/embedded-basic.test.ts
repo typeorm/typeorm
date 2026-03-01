@@ -8,21 +8,21 @@ import { UserEntitySchema } from "./entity/User"
 import { expect } from "chai"
 
 describe("entity-schema > embedded - class-instance", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [UserEntitySchema],
             })),
     )
 
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create an table", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("user")
                 await queryRunner.release()
@@ -33,7 +33,7 @@ describe("entity-schema > embedded - class-instance", () => {
 
     it("should not create table with embedded", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("name")
                 await queryRunner.release()
@@ -44,7 +44,7 @@ describe("entity-schema > embedded - class-instance", () => {
 
     it("should create embedded column name with prefix", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("user")
                 await queryRunner.release()
@@ -56,7 +56,7 @@ describe("entity-schema > embedded - class-instance", () => {
 
     it("should create index for embedded", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("user")
                 await queryRunner.release()

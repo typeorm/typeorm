@@ -10,20 +10,20 @@ import {
 import { RecordData } from "./entity/RecordData"
 
 describe("github issues > #204 jsonb array is not persisted correctly", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Record],
                 enabledDrivers: ["postgres"], // because only postgres supports jsonb type
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should persist json and jsonb arrays correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const record = new Record()
                 record.datas = [
                     new RecordData(

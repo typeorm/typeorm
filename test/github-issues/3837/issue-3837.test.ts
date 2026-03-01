@@ -10,22 +10,22 @@ import { Table } from "../../../src"
 import { xfail } from "../../utils/xfail"
 
 describe("github issues > #3837 named columns", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     xfail
-        .unless(() => connections.length > 0)
+        .unless(() => dataSources.length > 0)
         .it("should allow inserting named columns", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // Create the categories table.
                     const qr = connection.createQueryRunner()
                     await qr.createTable(

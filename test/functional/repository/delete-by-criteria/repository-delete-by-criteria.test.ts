@@ -13,15 +13,15 @@ describe("repository > delete methods", function () {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -29,7 +29,7 @@ describe("repository > delete methods", function () {
 
     it("remove using delete method should delete successfully", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save some new posts
@@ -64,7 +64,7 @@ describe("repository > delete methods", function () {
 
     it("remove multiple rows using delete method should delete successfully", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save some new posts
@@ -99,7 +99,7 @@ describe("repository > delete methods", function () {
 
     it("remove row using delete method with partial criteria should delete successfully", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save some new posts
@@ -138,7 +138,7 @@ describe("repository > delete methods", function () {
 
     it("removes all rows using deleteAll method", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save some new posts

@@ -9,21 +9,21 @@ import { User } from "./entity/user"
 import { UsersObject } from "./entity/usersObject"
 
 describe("github issues > #7852 saving a ManyToMany relation tries to insert (DEFAULT, entity2.id) instead of (entity1.id, entity2.id), when id is Buffer", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             enabledDrivers: ["mysql"],
             entities: [User, UsersObject],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert (entity1.id, entity2.id)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userRepository = connection.getRepository(User)
                 const usersObjectRepository =
                     connection.getRepository(UsersObject)

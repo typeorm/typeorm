@@ -12,19 +12,19 @@ import { Post } from "./entity/Post"
 import { PostReview } from "./entity/PostReview"
 
 describe("github issues > #2588 - createQueryBuilder always does left joins on relations", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("Should allow joins with conditions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepo = connection.getRepository(Post)
                 const postReviewRepo = connection.getRepository(PostReview)
 

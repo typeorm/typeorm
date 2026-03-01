@@ -9,21 +9,21 @@ import { User } from "./entity/user"
 import { Message } from "./entity/message"
 
 describe("github issues > #7851 Updating (using save method) a ManyToOne relation sets the object.relation_id to null", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             enabledDrivers: ["mysql"],
             entities: [User, Message],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should update the message.user_id to the new value", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userRepository = connection.getRepository(User)
                 const messageRepository = connection.getRepository(Message)
 

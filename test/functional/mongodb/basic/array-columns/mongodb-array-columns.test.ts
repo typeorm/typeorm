@@ -11,20 +11,20 @@ import { expect } from "chai"
 import { Color } from "./entity/Color"
 
 describe("mongodb > array columns", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post, Counters],
                 enabledDrivers: ["mongodb"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert / update array columns correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a post
@@ -155,7 +155,7 @@ describe("mongodb > array columns", () => {
 
     it("should retrieve arrays from the column metadata", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "Post"
                 post.names = ["umed", "dima", "bakhrom"]

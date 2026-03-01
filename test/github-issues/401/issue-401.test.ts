@@ -10,19 +10,19 @@ import { Player } from "./entity/Player"
 import { Group } from "./entity/Group"
 
 describe("github issues > #401 special keywords should be escaped in join queries", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should escape 'group' keyword properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const group = new Group()
                 group.name = "about players"
                 await connection.manager.save(group)

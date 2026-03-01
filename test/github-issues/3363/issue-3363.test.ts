@@ -10,20 +10,20 @@ import { expect } from "chai"
 import { Category } from "./entity/Category"
 
 describe("github issues > #3363 Isolation Level in transaction() from Connection", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should execute operations in READ UNCOMMITED isolation level", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 // SAP, Oracle does not support READ UNCOMMITTED isolation level
                 if (
                     connection.driver.options.type === "sap" ||
@@ -72,7 +72,7 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
 
     it("should execute operations in SERIALIZABLE isolation level", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let postId: number | undefined = undefined,
                     categoryId: number | undefined = undefined
 

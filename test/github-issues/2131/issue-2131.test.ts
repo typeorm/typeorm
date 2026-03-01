@@ -9,7 +9,7 @@ import { expect } from "chai"
 import { Post } from "./entity/Post"
 
 describe("github issues > #2131 InsertResult return the same primary key", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     const posts: Post[] = [
         {
             id: null,
@@ -31,17 +31,17 @@ describe("github issues > #2131 InsertResult return the same primary key", () =>
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["better-sqlite3", "mysql", "aurora-mysql"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should get correct insert ids for multiple entities inserted", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection
                     .createQueryBuilder()
                     .insert()

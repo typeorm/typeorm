@@ -15,19 +15,19 @@ import { PostCategory } from "./entity/PostCategory"
 import { PhotoAlbum } from "./entity/PhotoAlbum"
 
 describe("view entity > general", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create entity view from query builder definition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
                 const postCategory = await queryRunner.getView("post_category")
@@ -44,7 +44,7 @@ describe("view entity > general", () => {
 
     it("should correctly return data from View", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "Cars"
                 await connection.manager.save(category1)

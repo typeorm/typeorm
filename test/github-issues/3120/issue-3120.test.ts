@@ -12,21 +12,21 @@ import { ActionLog } from "./entity/ActionLog"
 import { Person } from "./entity/Person"
 
 describe('github issues > #3120 Add relation option "createForeignKeyConstraints"', () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create foreign key for relation without createForeignKeyConstraints option", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const queryRunner = connection.createQueryRunner()
                 const mainTable = await queryRunner.getTable("person")
                 const joinTable = await queryRunner.getTable(
@@ -41,7 +41,7 @@ describe('github issues > #3120 Add relation option "createForeignKeyConstraints
 
     it("should not create foreign key for relation with createForeignKeyConstraints equal false", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const queryRunner = connection.createQueryRunner()
                 const mainTable = await queryRunner.getTable("action_log")
                 const joinTable = await queryRunner.getTable(
@@ -57,7 +57,7 @@ describe('github issues > #3120 Add relation option "createForeignKeyConstraints
     describe("relation with createForeignKeyConstraints equal false", () => {
         it("should work perfectly", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const fakeAddresses: Address[] = []
                     for (let i = 0; i < 8; i++) {
                         const fakeRecord = new Address()

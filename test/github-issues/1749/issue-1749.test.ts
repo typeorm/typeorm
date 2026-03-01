@@ -8,21 +8,21 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { Bar } from "./entity/Bar"
 
 describe("github issues > #1749 Can't delete tables in non-default schema", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should delete entites from tables in different schemas", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const bar = new Bar()
                 const persistedBar = await connection.manager.save(bar)
 

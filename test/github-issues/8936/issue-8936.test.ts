@@ -14,7 +14,7 @@ import {
 import { User } from "./entity/User"
 
 describe("github issues > #8936 DropIndex with a TableIndex without name is not working", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     const tableIndex: TableIndex = new TableIndex({
         columnNames: ["firstName", "lastName"],
@@ -23,21 +23,21 @@ describe("github issues > #8936 DropIndex with a TableIndex without name is not 
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should drop the index as expected", () => {
         // Create a clone because the createIndex will set the name
         const dropTableIndex: TableIndex = tableIndex.clone()
 
         return Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner: QueryRunner = connection.createQueryRunner()
                 const userRepository: Repository<User> =
                     connection.getRepository(User)

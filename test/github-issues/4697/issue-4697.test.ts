@@ -7,10 +7,10 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 
 describe("github issues > #4697 Revert migrations running in reverse order.", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 migrations: [__dirname + "/migration/*.js"],
                 enabledDrivers: ["mongodb"],
@@ -18,12 +18,12 @@ describe("github issues > #4697 Revert migrations running in reverse order.", ()
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should revert migrations in the right order", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.runMigrations()
 
                 await connection.undoLastMigration()

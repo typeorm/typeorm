@@ -9,20 +9,20 @@ import { EntityMetadata } from "../../../src"
 import { Person } from "./entity/person"
 
 describe("github issues > #197 Fails to drop indexes when removing fields", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: false,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("it should drop the column and the referenced index", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const entityMetadata: EntityMetadata =
                     connection.getMetadata(Person)
                 const idx: number = entityMetadata.columns.findIndex(

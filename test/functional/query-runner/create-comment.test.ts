@@ -10,18 +10,18 @@ import { Company } from "./entity/Company"
 describe("create comment", () => {
     // GitHub issue #10621 - Table comments not supported by typeorm for SAP HANA
     describe("table comment", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     entities: [Company],
                     enabledDrivers: ["sap", "postgres", "mysql", "mariadb"],
                     dropSchema: true,
                     schemaCreate: true,
                 })),
         )
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         async function loadCommentFromDB(
             dataSource: DataSource,
@@ -52,7 +52,7 @@ describe("create comment", () => {
 
         it("should create table with comment", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const tableMetadata = connection.getMetadata(Company)
                     expect(tableMetadata!.comment).to.be.equal(
                         "This is a company entity",
@@ -68,7 +68,7 @@ describe("create comment", () => {
 
         it("should update table and remove comment", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
 
                     const tableMetadata = connection.getMetadata(Company)
@@ -109,7 +109,7 @@ describe("create comment", () => {
             ))
         it("should correctly synchronize when table comment changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const companyMetadata = connection.getMetadata(Company)
                     expect(companyMetadata!.comment).to.be.equal(
                         "This is a company entity",

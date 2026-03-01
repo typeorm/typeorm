@@ -8,20 +8,20 @@ import {
 import { Document } from "./entity/Document"
 
 describe("benchmark > bulk-save > case2", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 __dirname,
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("testing bulk save of 10000 objects", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const documents: Document[] = []
                 for (let i = 0; i < 10000; i++) {
                     const document = new Document()

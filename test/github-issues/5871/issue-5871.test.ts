@@ -7,10 +7,10 @@ import {
 import { SomeEntity } from "./entity/SomeEntity"
 
 describe("github issues > #5871 Migration generate does not play well with mysql enum with parentheses in the enum value", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 migrations: [],
                 enabledDrivers: ["mysql"],
                 schemaCreate: false,
@@ -18,11 +18,11 @@ describe("github issues > #5871 Migration generate does not play well with mysql
                 entities: [SomeEntity],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
@@ -33,7 +33,7 @@ describe("github issues > #5871 Migration generate does not play well with mysql
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const sqlInMemory = await connection.driver

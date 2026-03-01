@@ -11,19 +11,19 @@ import { PostDetails } from "./entity/PostDetails"
 describe.skip("relations > relation mapped to relation with different name (#56)", () => {
     // skipped because of CI error. todo: needs investigation
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work perfectly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // first create and save details
                 const details = new PostDetails()
                 details.keyword = "post-1"

@@ -10,26 +10,26 @@ import { PostWithoutTypes } from "./entity/PostWithoutTypes"
 import { Post } from "./entity/Post"
 
 describe("database schema > column types > postgres", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
 
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             if (connection.driver.options.type === "postgres") {
                 // We want to have UTC as timezone
                 await connection.query("SET TIME ZONE 'UTC';")
             }
         }
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("all types should work correctly - persist and hydrate", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post")
@@ -383,7 +383,7 @@ describe("database schema > column types > postgres", () => {
 
     it("all types should work correctly - persist and hydrate when options are specified on columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(PostWithOptions)
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post_with_options")
@@ -515,7 +515,7 @@ describe("database schema > column types > postgres", () => {
 
     it("all types should work correctly - persist and hydrate when types are not specified on columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository =
                     connection.getRepository(PostWithoutTypes)
                 const queryRunner = connection.createQueryRunner()

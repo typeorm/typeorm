@@ -7,19 +7,19 @@ import {
 } from "../../../utils/test-utils"
 
 describe("escape sqlite query parameters", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["better-sqlite3"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should transform boolean parameters with value `true` into `1`", () =>
-        connections.map((connection) => {
+        dataSources.map((connection) => {
             const [_, parameters] = connection.driver.escapeQueryWithParameters(
                 "SELECT nothing FROM irrelevant WHERE a = :param1",
                 { param1: true },
@@ -30,7 +30,7 @@ describe("escape sqlite query parameters", () => {
         }))
 
     it("should transform boolean parameters with value `false` into `0`", () =>
-        connections.map((connection) => {
+        dataSources.map((connection) => {
             const [_, parameters] = connection.driver.escapeQueryWithParameters(
                 "SELECT nothing FROM irrelevant WHERE a = :param1",
                 { param1: false },
@@ -41,7 +41,7 @@ describe("escape sqlite query parameters", () => {
         }))
 
     it("should transform boolean nativeParameters with value `true` into `1`", () =>
-        connections.map((connection) => {
+        dataSources.map((connection) => {
             const [_, parameters] = connection.driver.escapeQueryWithParameters(
                 "SELECT nothing FROM irrelevant",
                 {},
@@ -52,7 +52,7 @@ describe("escape sqlite query parameters", () => {
         }))
 
     it("should transform boolean nativeParameters with value `false` into 0", () =>
-        connections.map((connection) => {
+        dataSources.map((connection) => {
             const [_, parameters] = connection.driver.escapeQueryWithParameters(
                 "SELECT nothing FROM irrelevant",
                 {},

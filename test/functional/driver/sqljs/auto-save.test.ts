@@ -5,7 +5,7 @@ import { DataSource } from "../../../../src/data-source/DataSource"
 import { createTestingConnections } from "../../../utils/test-utils"
 
 describe("sqljs driver > autosave", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     let saves = 0
     const callback = () => {
         saves++
@@ -13,7 +13,7 @@ describe("sqljs driver > autosave", () => {
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post],
                 schemaCreate: true,
                 enabledDrivers: ["sqljs"],
@@ -26,7 +26,7 @@ describe("sqljs driver > autosave", () => {
 
     it("should call autoSaveCallback on insert, update and delete", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const posts = [
                     {
                         title: "second post",
@@ -79,7 +79,7 @@ describe("sqljs driver > autosave", () => {
 })
 
 describe("sqljs driver > autosave off", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     let saves = 0
     const callback = () => {
         saves++
@@ -87,7 +87,7 @@ describe("sqljs driver > autosave off", () => {
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post],
                 schemaCreate: true,
                 enabledDrivers: ["sqljs"],
@@ -100,7 +100,7 @@ describe("sqljs driver > autosave off", () => {
 
     it("should not call autoSaveCallback when autoSave is disabled", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(Post)
                 const post = new Post()
                 post.title = "A post"

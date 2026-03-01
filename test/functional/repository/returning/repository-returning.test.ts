@@ -10,21 +10,21 @@ import {
 import { User } from "./entity/User"
 
 describe("repository > returning", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres", "mysql", "mssql", "spanner"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("allows specifying RETURNING via repository.update options", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!connection.driver.isReturningSqlSupported("update")) {
                     return
                 }
@@ -48,7 +48,7 @@ describe("repository > returning", () => {
 
     it("allows specifying RETURNING via repository.upsert options", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!connection.driver.isReturningSqlSupported("insert")) {
                     return
                 }
@@ -74,7 +74,7 @@ describe("repository > returning", () => {
 
     it("allows specifying RETURNING via repository.updateAll options", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!connection.driver.isReturningSqlSupported("update")) {
                     return
                 }

@@ -10,19 +10,19 @@ import { PostWithoutTypes } from "./entity/PostWithoutTypes"
 import { PostWithOptions } from "./entity/PostWithOptions"
 
 describe("database schema > column types > spanner", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["spanner"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("all types should work correctly - persist and hydrate", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post")
@@ -90,7 +90,7 @@ describe("database schema > column types > spanner", () => {
 
     it("all types should work correctly - persist and hydrate when options are specified on columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(PostWithOptions)
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post_with_options")
@@ -121,7 +121,7 @@ describe("database schema > column types > spanner", () => {
 
     it("all types should work correctly - persist and hydrate when types are not specified on columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository =
                     connection.getRepository(PostWithoutTypes)
                 const queryRunner = connection.createQueryRunner()

@@ -12,20 +12,20 @@ import { Teacher } from "./entity/Teacher"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("schema builder > change unique constraint", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly add new unique constraint", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const teacherMetadata = connection.getMetadata(Teacher)
                 const nameColumn =
                     teacherMetadata.findColumnWithPropertyName("name")!
@@ -94,7 +94,7 @@ describe("schema builder > change unique constraint", () => {
 
     it("should correctly change unique constraint", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Sqlite does not store unique constraint name
                 if (DriverUtils.isSQLiteFamily(connection.driver)) return
 
@@ -167,7 +167,7 @@ describe("schema builder > change unique constraint", () => {
 
     it("should correctly drop removed unique constraint", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postMetadata = connection.getMetadata(Post)
 
                 // Mysql and SAP stores unique constraints as unique indices.

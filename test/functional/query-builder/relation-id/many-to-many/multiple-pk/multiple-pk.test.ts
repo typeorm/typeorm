@@ -11,20 +11,20 @@ import { Category } from "./entity/Category"
 import { Image } from "./entity/Image"
 
 describe("query builder > relation-id > many-to-many > multiple-pk", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("owner side", () => {
         it("should load ids when both entities have multiple primary keys", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.id = 1
                     category1.code = 1
@@ -115,7 +115,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
 
         it("should load ids when only one entity have multiple primary key", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const image1 = new Image()
                     image1.name = "Image #1"
                     await connection.manager.save(image1)
@@ -180,7 +180,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
 
         it("should load ids when both entities have multiple primary keys and additional condition used", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.id = 1
                     category1.code = 1
@@ -322,7 +322,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
 
         it("should load ids when both entities have multiple primary keys and related entity does not have inverse side", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.id = 1
                     category1.code = 1
@@ -413,7 +413,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
 
         it("should load ids when loadRelationIdAndMap used on nested relation", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const image1 = new Image()
                     image1.name = "Image #1"
                     await connection.manager.save(image1)
@@ -574,7 +574,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
     describe("inverse side", () => {
         it("should load ids when both entities have multiple primary keys", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post1 = new Post()
                     post1.id = 1
                     post1.authorId = 1
@@ -665,7 +665,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
 
         it("should load ids when only one entity have multiple primary key", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.id = 1
                     category1.code = 1
@@ -751,7 +751,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
 
         it("should load ids when both entities have multiple primary keys and additional condition used", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post1 = new Post()
                     post1.id = 1
                     post1.authorId = 1
@@ -893,7 +893,7 @@ describe("query builder > relation-id > many-to-many > multiple-pk", () => {
 
         it("should load ids when loadRelationIdAndMap used on nested relation", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post1 = new Post()
                     post1.id = 1
                     post1.authorId = 1

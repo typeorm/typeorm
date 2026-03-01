@@ -16,19 +16,19 @@ import { Post } from "./entity/Post"
 import { User } from "./entity/User"
 
 describe("repository > find options", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Alex Messer"
                 await connection.manager.save(user)
@@ -65,7 +65,7 @@ describe("repository > find options", () => {
 
     it("should execute select query inside transaction", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Alex Messer"
                 await connection.manager.save(user)
@@ -103,7 +103,7 @@ describe("repository > find options", () => {
 
     it("should select specific columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category = new Category()
                 category.name = "Bears"
                 await connection.manager.save(category)
@@ -182,7 +182,7 @@ describe("repository > find options", () => {
 
     it("should select by given conditions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "Bears"
                 await connection.manager.save(category1)
@@ -239,21 +239,21 @@ describe("repository > find options", () => {
 })
 
 describe("repository > find options > comment", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     const logPath = "find_comment_test.log"
 
     before(async () => {
         // TODO: would be nice to be able to do this in memory with some kind of
         // test logger that buffers messages.
         const logger = new FileLogger(["query"], { logPath })
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             createLogger: () => logger,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
     after(async () => {
-        await closeTestingConnections(connections)
+        await closeTestingConnections(dataSources)
         try {
             await fs.unlink(logPath)
         } catch {}
@@ -261,7 +261,7 @@ describe("repository > find options > comment", () => {
 
     it("repository should insert comment", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection
                     .getRepository(User)
                     .find({ comment: "This is a query comment." })
@@ -277,20 +277,20 @@ describe("repository > find options > comment", () => {
 })
 
 describe("repository > find options > cache", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 cache: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("repository should cache results properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // first prepare data - insert users
                 const user1 = new User()
                 user1.name = "Harry"
