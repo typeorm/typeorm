@@ -13,6 +13,7 @@ export default defineConfig([
         "sample/playground/**",
         "temp/**",
         "src/driver/mongodb/{typings.ts,bson.typings.ts}",
+        "gulpfile.ts",
     ]),
 
     {

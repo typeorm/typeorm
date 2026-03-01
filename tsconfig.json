@@ -21,7 +21,14 @@
     "useDefineForClassFields": false,
     "useUnknownInCatchVariables": false
   },
-  "exclude": ["build", "node_modules", "temp", "tmp", "sample/playground"],
+  "exclude": [
+    "build",
+    "node_modules",
+    "temp",
+    "tmp",
+    "sample/playground",
+    "gulpfile.ts"
+  ],
   "extends": "@tsconfig/node20/tsconfig.json",
   "include": ["sample", "src", "test", "*.ts"]
 }
