@@ -9,21 +9,21 @@ import { Simple } from "./entity/Simple"
 import { Complex } from "./entity/Complex"
 
 describe("github issues > #2103 query builder regression", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("whereInIds should respect logical operator precedence > single simple primary key (in is used)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(Simple)
 
                 const savedEntities = await repository.save([
@@ -56,7 +56,7 @@ describe("github issues > #2103 query builder regression", () => {
 
     it("whereInIds should respect logical operator precedence > multiple primary keys", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(Complex)
 
                 // sqlite does not support autoincrement for composite primary key, so we pass ids by ourselves here

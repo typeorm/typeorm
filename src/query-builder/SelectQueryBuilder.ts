@@ -1533,9 +1533,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Sets LIMIT - maximum number of rows to be selected.
-     * NOTE that it may not work as you expect if you are using joins.
-     * If you want to implement pagination, and you are having join in your query,
-     * then use the take method instead.
+     * When joins are present, a two-query distinct-id strategy is used
+     * so that LIMIT applies to root entities rather than raw joined rows.
      * @param limit
      */
     limit(limit?: number): this {
@@ -1553,9 +1552,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Sets OFFSET - selection offset.
-     * NOTE that it may not work as you expect if you are using joins.
-     * If you want to implement pagination, and you are having join in your query,
-     * then use the skip method instead.
+     * When joins are present, a two-query distinct-id strategy is used
+     * so that OFFSET applies to root entities rather than raw joined rows.
      * @param offset
      */
     offset(offset?: number): this {
@@ -2657,6 +2655,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             : (orderBys[columnName] as any).order +
                               " " +
                               (orderBys[columnName] as any).nulls
+                    const selectionByAlias = this.expressionMap.selects.find(
+                        (s) => s.aliasName === columnName,
+                    )
+                    if (selectionByAlias) {
+                        return this.escape(columnName) + " " + orderValue
+                    }
                     const selection = this.expressionMap.selects.find(
                         (s) => s.selection === columnName,
                     )
@@ -2689,7 +2693,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             }
                         }
                     }
-
                     return (
                         this.replacePropertyNames(columnName) + " " + orderValue
                     )
@@ -2807,7 +2810,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
-     * Creates "LOCK" part of SQL query.
+     * @returns "LOCK" part of SQL query
      */
     protected createLockExpression(): string {
         const driver = this.connection.driver
@@ -2815,12 +2818,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         let lockTablesClause = ""
 
         if (this.expressionMap.lockTables) {
-            if (
-                !(
-                    DriverUtils.isPostgresFamily(driver) ||
-                    driver.options.type === "cockroachdb"
-                )
-            ) {
+            if (!DriverUtils.isPostgresFamily(driver)) {
                 throw new TypeORMError(
                     "Lock tables not supported in selected driver",
                 )
@@ -2835,7 +2833,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (this.expressionMap.onLocked === "nowait") {
             onLockExpression = " NOWAIT"
         } else if (this.expressionMap.onLocked === "skip_locked") {
-            onLockExpression = " SKIP LOCKED"
+            if (driver.options.type === "sap") {
+                onLockExpression = " IGNORE LOCKED"
+            } else {
+                onLockExpression = " SKIP LOCKED"
+            }
         }
         switch (this.expressionMap.lockMode) {
             case "pessimistic_read":
@@ -2856,6 +2858,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     return " LOCK IN SHARE MODE"
                 } else if (DriverUtils.isPostgresFamily(driver)) {
                     return " FOR SHARE" + lockTablesClause + onLockExpression
+                } else if (driver.options.type === "sap") {
+                    return (
+                        " FOR SHARE LOCK" + lockTablesClause + onLockExpression
+                    )
                 } else if (driver.options.type === "oracle") {
                     return " FOR UPDATE"
                 } else if (driver.options.type === "mssql") {
@@ -2872,7 +2878,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     return " FOR UPDATE" + onLockExpression
                 } else if (
                     DriverUtils.isPostgresFamily(driver) ||
-                    driver.options.type === "cockroachdb"
+                    driver.options.type === "sap"
                 ) {
                     return " FOR UPDATE" + lockTablesClause + onLockExpression
                 } else if (driver.options.type === "mssql") {
@@ -2880,18 +2886,22 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
+            // deprecated, use pessimistic_write with onLocked = "skip_locked" instead
             case "pessimistic_partial_write":
                 if (DriverUtils.isPostgresFamily(driver)) {
                     return " FOR UPDATE" + lockTablesClause + " SKIP LOCKED"
+                } else if (driver.options.type === "sap") {
+                    return " FOR UPDATE" + lockTablesClause + " IGNORE LOCKED"
                 } else if (DriverUtils.isMySQLFamily(driver)) {
                     return " FOR UPDATE SKIP LOCKED"
                 } else {
                     throw new LockNotSupportedOnGivenDriverError()
                 }
+            // deprecated, use pessimistic_write with onLocked = "nowait" instead
             case "pessimistic_write_or_fail":
                 if (
                     DriverUtils.isPostgresFamily(driver) ||
-                    driver.options.type === "cockroachdb"
+                    driver.options.type === "sap"
                 ) {
                     return " FOR UPDATE" + lockTablesClause + " NOWAIT"
                 } else if (DriverUtils.isMySQLFamily(driver)) {
@@ -2900,10 +2910,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     throw new LockNotSupportedOnGivenDriverError()
                 }
             case "for_no_key_update":
-                if (
-                    DriverUtils.isPostgresFamily(driver) ||
-                    driver.options.type === "cockroachdb"
-                ) {
+                if (DriverUtils.isPostgresFamily(driver)) {
                     return (
                         " FOR NO KEY UPDATE" +
                         lockTablesClause +
@@ -3588,7 +3595,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // first query find ids in skip and take range
         // and second query loads the actual data in given ids range
         if (
-            (this.expressionMap.skip || this.expressionMap.take) &&
+            (this.expressionMap.skip ||
+                this.expressionMap.take ||
+                this.expressionMap.offset ||
+                this.expressionMap.limit) &&
             this.expressionMap.joinAttributes.length > 0
         ) {
             // we are skipping order by here because its not working in subqueries anyway
@@ -3628,6 +3638,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             const originalQuery = this.clone()
 
+            // clear limit/offset from the inner query since pagination is handled by the outer distinct query
+            originalQuery.expressionMap.limit = undefined
+            originalQuery.expressionMap.offset = undefined
+
             // preserve original timeTravel value since we set it to "false" in subquery
             const originalQueryTimeTravel =
                 originalQuery.expressionMap.timeTravel
@@ -3646,8 +3660,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     "distinctAlias",
                 )
                 .timeTravelQuery(originalQueryTimeTravel)
-                .offset(this.expressionMap.skip)
-                .limit(this.expressionMap.take)
+                .offset(this.expressionMap.skip ?? this.expressionMap.offset)
+                .limit(this.expressionMap.take ?? this.expressionMap.limit)
                 .orderBy(orderBys)
                 .cache(
                     this.expressionMap.cache && this.expressionMap.cacheId
@@ -3708,12 +3722,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             " IN (:...orm_distinct_ids)"
                     }
                 }
-                rawResults = await this.clone()
+                const secondQuery = this.clone()
                     .mergeExpressionMap({
                         extraAppendedAndWhereCondition: condition,
                     })
                     .setParameters(parameters)
-                    .loadRawResults(queryRunner)
+                secondQuery.expressionMap.limit = undefined
+                secondQuery.expressionMap.offset = undefined
+                rawResults = await secondQuery.loadRawResults(queryRunner)
             }
         } else {
             rawResults = await this.loadRawResults(queryRunner)

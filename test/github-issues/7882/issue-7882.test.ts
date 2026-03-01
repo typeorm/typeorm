@@ -10,21 +10,21 @@ import { Example } from "./entity/Example"
 import { ExampleText } from "./entity/ExampleText"
 
 describe("github issues > #7882  .findOne reduces relations to an empty array", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
-            enabledDrivers: ["sqlite"],
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["better-sqlite3"],
             entities: [Example, ExampleText],
             schemaCreate: false,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should delete all documents related to search pattern", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const relations = { exampleText: true }
 
                 const repo = connection.getRepository(Example)

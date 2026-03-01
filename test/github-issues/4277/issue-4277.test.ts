@@ -9,9 +9,9 @@ import { expect } from "chai"
 import { User } from "./entity/User"
 
 describe("github issues > #4277 Using cache in findAndCount and getManyAndCount returns 0 as count", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
@@ -21,9 +21,9 @@ describe("github issues > #4277 Using cache in findAndCount and getManyAndCount 
         })
     })
     beforeEach(async () => {
-        await reloadTestingDatabases(connections)
+        await reloadTestingDatabases(dataSources)
         await Promise.all(
-            connections.map((conn) => {
+            dataSources.map((conn) => {
                 const repo = conn.getRepository(User)
 
                 const usersToInsert = [...Array(10)].map(() => {
@@ -36,11 +36,11 @@ describe("github issues > #4277 Using cache in findAndCount and getManyAndCount 
             }),
         )
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("getManyAndCount and findAndCount should count correctly when using cacheId", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(User)
 
                 const getManyAndCount = () =>
@@ -80,7 +80,7 @@ describe("github issues > #4277 Using cache in findAndCount and getManyAndCount 
 
     it("getManyAndCount and findAndCount should count correctly when NOT using cacheId", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(User)
 
                 const getManyAndCount = () =>
@@ -114,7 +114,7 @@ describe("github issues > #4277 Using cache in findAndCount and getManyAndCount 
 
     it("getManyAndCount and findAndCount should count correctly when NOT using cache", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(User)
 
                 const getManyAndCount = () =>

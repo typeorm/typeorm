@@ -25,14 +25,14 @@ export class RelationMetadata {
     /**
      * Entity metadata of the entity where this relation is placed.
      *
-     * For example for @ManyToMany(type => Category) in Post, entityMetadata will be metadata of Post entity.
+     * For example for `@ManyToMany(type => Category)` in `Post`, `entityMetadata` will be metadata of `Post` entity.
      */
     entityMetadata: EntityMetadata
 
     /**
      * Entity metadata of the entity that is targeted by this relation.
      *
-     * For example for @ManyToMany(type => Category) in Post, inverseEntityMetadata will be metadata of Category entity.
+     * For example for `@ManyToMany(type => Category)` in `Post`, `inverseEntityMetadata` will be metadata of `Category` entity.
      */
     inverseEntityMetadata: EntityMetadata
 
@@ -58,9 +58,9 @@ export class RelationMetadata {
      * Target entity to which this relation is applied.
      * Target IS NOT equal to entityMetadata.target, because relation
      *
-     * For example for @ManyToMany(type => Category) in Post, target will be Post.
-     * If @ManyToMany(type => Category) is in Counters which is embedded into Post, target will be Counters.
-     * If @ManyToMany(type => Category) is in abstract class BaseUser which Post extends, target will be BaseUser.
+     * For example for `@ManyToMany(type => Category)` in `Post`, `target` will be `Post`.
+     * If `@ManyToMany(type => Category)` is in `Counters` which is embedded into `Post`, `target` will be `Counters`.
+     * If `@ManyToMany(type => Category)` is in abstract class `BaseUser` which `Post` extends, `target` will be `BaseUser`.
      * Target can be string if its defined in entity schema instead of class.
      */
     target: Function | string
@@ -174,7 +174,7 @@ export class RelationMetadata {
     /**
      * Gets the property's type to which this relation is applied.
      *
-     * For example for @ManyToMany(type => Category) in Post, target will be Category.
+     * For example for `@ManyToMany(type => Category)` in `Post`, `type` will be `Category`.
      */
     type: Function | string
 
@@ -368,6 +368,7 @@ export class RelationMetadata {
 
     /**
      * Creates join column ids map from the given related entity ids array.
+     * @param entity
      */
     getRelationIdMap(entity: ObjectLiteral): ObjectLiteral | undefined {
         const joinColumns = this.isOwning
@@ -386,6 +387,7 @@ export class RelationMetadata {
      * If given id is an object then it means its already id map.
      * If given id isn't an object then it means its a value of the id column
      * and it creates a new id map with this value and name of the primary column.
+     * @param id
      */
     ensureRelationIdMap(id: any): ObjectLiteral {
         if (ObjectUtils.isObject(id)) return id
@@ -408,6 +410,8 @@ export class RelationMetadata {
     /**
      * Extracts column value from the given entity.
      * If column is in embedded (or recursive embedded) it extracts its value from there.
+     * @param entity
+     * @param getLazyRelationsPromiseValue
      */
     getEntityValue(
         entity: ObjectLiteral,
@@ -486,6 +490,8 @@ export class RelationMetadata {
      * Using of this method helps to set entity relation's value of the lazy and non-lazy relations.
      *
      * If merge is set to true, it merges given value into currently
+     * @param entity
+     * @param value
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
         const propertyName = this.isLazy
@@ -531,6 +537,7 @@ export class RelationMetadata {
 
     /**
      * Creates entity id map from the given entity ids array.
+     * @param value
      */
     createValueMap(value: any) {
         // extract column value from embeds of entity if column is in embedded
@@ -582,6 +589,7 @@ export class RelationMetadata {
     /**
      * Registers given foreign keys in the relation.
      * This builder method should be used to register foreign key in the relation.
+     * @param foreignKeys
      */
     registerForeignKeys(...foreignKeys: ForeignKeyMetadata[]) {
         this.foreignKeys.push(...foreignKeys)
@@ -590,6 +598,8 @@ export class RelationMetadata {
     /**
      * Registers given join columns in the relation.
      * This builder method should be used to register join column in the relation.
+     * @param joinColumns
+     * @param inverseJoinColumns
      */
     registerJoinColumns(
         joinColumns: ColumnMetadata[] = [],
@@ -611,6 +621,7 @@ export class RelationMetadata {
     /**
      * Registers a given junction entity metadata.
      * This builder method can be called after junction entity metadata for the many-to-many relation was created.
+     * @param junctionEntityMetadata
      */
     registerJunctionEntityMetadata(junctionEntityMetadata: EntityMetadata) {
         this.junctionEntityMetadata = junctionEntityMetadata

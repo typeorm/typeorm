@@ -10,7 +10,7 @@ describe("github issues > #7662 postgres extensions installation should be optio
     it("should NOT install extensions if option is disabled", async function () {
         let connection: DataSource | null = null
         try {
-            const connections = await createTestingConnections({
+            const dataSources = await createTestingConnections({
                 entities: [`${__dirname}/entity/*{.js,.ts}`],
                 enabledDrivers: ["postgres"],
                 schemaCreate: false,
@@ -21,12 +21,12 @@ describe("github issues > #7662 postgres extensions installation should be optio
                 },
             })
 
-            if (connections.length < 1) {
+            if (dataSources.length < 1) {
                 this.skip()
                 return
             }
 
-            connection = connections[0]
+            connection = dataSources[0]
 
             const logger = connection.logger as MemoryLogger
             const createExtensionQueries = logger.queries.filter((q) =>
@@ -44,9 +44,9 @@ describe("github issues > #7662 postgres extensions installation should be optio
     })
 
     it("should install extensions if option is undefined", async function () {
-        let connections: DataSource[] = []
+        let dataSources: DataSource[] = []
         try {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [`${__dirname}/entity/*{.js,.ts}`],
                 enabledDrivers: ["postgres"],
                 schemaCreate: false,
@@ -54,12 +54,12 @@ describe("github issues > #7662 postgres extensions installation should be optio
                 createLogger: () => new MemoryLogger(true),
             })
 
-            if (connections.length < 1) {
+            if (dataSources.length < 1) {
                 this.skip()
                 return
             }
 
-            const connection = connections[0]
+            const connection = dataSources[0]
 
             const logger = connection.logger as MemoryLogger
             const createExtensionQueries = logger.queries.filter((q) =>
@@ -68,14 +68,14 @@ describe("github issues > #7662 postgres extensions installation should be optio
 
             expect(createExtensionQueries).to.have.length(1)
         } finally {
-            await closeTestingConnections(connections)
+            await closeTestingConnections(dataSources)
         }
     })
 
     it("should install extensions if option is enabled", async function () {
-        let connections: DataSource[] = []
+        let dataSources: DataSource[] = []
         try {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [`${__dirname}/entity/*{.js,.ts}`],
                 enabledDrivers: ["postgres"],
                 schemaCreate: false,
@@ -86,11 +86,11 @@ describe("github issues > #7662 postgres extensions installation should be optio
                 },
             })
 
-            if (connections.length < 1) {
+            if (dataSources.length < 1) {
                 this.skip()
             }
 
-            const connection = connections[0]
+            const connection = dataSources[0]
 
             const logger = connection.logger as MemoryLogger
             const createExtensionQueries = logger.queries.filter((q) =>
@@ -99,7 +99,7 @@ describe("github issues > #7662 postgres extensions installation should be optio
 
             expect(createExtensionQueries).to.have.length(1)
         } finally {
-            await closeTestingConnections(connections)
+            await closeTestingConnections(dataSources)
         }
     })
 })

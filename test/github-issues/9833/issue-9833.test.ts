@@ -31,7 +31,6 @@ describe("github issues > #9833 Add support for Single Table Inheritance when us
                     "oracle",
                     "postgres",
                     "spanner",
-                    "sqlite",
                 ],
             })),
     )

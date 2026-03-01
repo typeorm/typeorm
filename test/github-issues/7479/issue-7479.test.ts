@@ -7,21 +7,21 @@ import {
 import { Post } from "./entity/Post"
 
 describe("github issues > #7479 Only first single quote in comments is escaped", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres", "cockroachdb", "mysql"],
                 schemaCreate: true,
                 dropSchema: true,
                 entities: [Post],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should properly escape quotes in comments", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
                 const table = await queryRunner.getTable("post")

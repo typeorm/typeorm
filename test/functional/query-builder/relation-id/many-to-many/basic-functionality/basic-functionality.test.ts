@@ -12,19 +12,19 @@ import { Category } from "./entity/Category"
 import { Image } from "./entity/Image"
 
 describe("query builder > relation-id > many-to-many > basic-functionality", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not load ids when RelationId decorator is not specified", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const tag = new Tag()
                 tag.name = "kids"
                 await connection.manager.save(tag)
@@ -86,7 +86,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
 
     it("should load ids when loadRelationIdAndMap used on ManyToMany owner side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "kids"
                 await connection.manager.save(category1)
@@ -131,7 +131,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
 
     it("should load ids when loadRelationIdAndMap used on ManyToMany owner side without inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "kids"
 
@@ -163,7 +163,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
 
     it("should load ids when loadRelationIdAndMap used on ManyToMany inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category = new Category()
                 category.name = "cars"
                 await connection.manager.save(category)
@@ -193,7 +193,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
 
     it("should load ids when loadRelationIdAndMap used on ManyToMany owning side with additional condition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "kids"
 
@@ -229,7 +229,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
 
     it("should load ids when loadRelationIdAndMap used on ManyToMany owning side without inverse side and with additional condition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "kids"
 
@@ -265,7 +265,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
 
     it("should load ids when loadRelationIdAndMap used on ManyToMany inverse side with additional condition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category = new Category()
                 category.name = "cars"
                 await connection.manager.save(category)
@@ -301,7 +301,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
 
     it("should load ids when loadRelationIdAndMap used on nested relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.name = "photo1"
 
@@ -351,7 +351,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
 
     it("should load ids when loadRelationIdAndMap used on nested relation with additional conditions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.name = "photo1"
 
@@ -410,7 +410,7 @@ describe("query builder > relation-id > many-to-many > basic-functionality", () 
 
     it("should not load ids of nested relations when loadRelationIdAndMap used on inherit relation and parent relation was not found", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.name = "photo1"
 

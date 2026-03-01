@@ -10,20 +10,20 @@ import {
 import { expect } from "chai"
 
 describe("github issues > #2434 QueryBuilder insert for Oracle failed", () => {
-    let connections: DataSource[] = []
+    let dataSources: DataSource[] = []
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["oracle"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert multiple rows with QueryBuilder", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const result = await connection
                     .createQueryBuilder()
                     .insert()
@@ -37,7 +37,7 @@ describe("github issues > #2434 QueryBuilder insert for Oracle failed", () => {
 
     it("should throw ORA-00001 error if constraint violated when inserting multiple rows", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 try {
                     await connection
                         .createQueryBuilder()
@@ -53,7 +53,7 @@ describe("github issues > #2434 QueryBuilder insert for Oracle failed", () => {
 
     it("should insert multiple rows of entity with generated columns with QueryBuilder", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const result = await connection
                     .createQueryBuilder()
                     .insert()
@@ -71,7 +71,7 @@ describe("github issues > #2434 QueryBuilder insert for Oracle failed", () => {
 
     it("should still insert one row with QueryBuilder", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const result = await connection
                     .createQueryBuilder()
                     .insert()
@@ -86,7 +86,7 @@ describe("github issues > #2434 QueryBuilder insert for Oracle failed", () => {
 
     it("should still insert multiple rows with save", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const result = await connection.getRepository(Post).save([
                     { id: 8, namedColumn: "test col 1" },
                     { id: 9, title: "title id 9" },
@@ -100,7 +100,7 @@ describe("github issues > #2434 QueryBuilder insert for Oracle failed", () => {
 
     it("should still insert one row with save", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const result = await connection
                     .getRepository(Post)
                     .save({ id: 10 })

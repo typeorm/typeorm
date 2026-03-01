@@ -10,20 +10,20 @@ import { User } from "../../functional/query-builder/update/entity/User"
 import { EntityPropertyNotFoundError } from "../../../src/error/EntityPropertyNotFoundError"
 
 describe("github issues > #3416 Unknown fields are stripped from WHERE clause", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [User],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("should throw FindCriteriaNotFoundError when supplying unknown property in where criteria", () => {
         it("find", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     let error: Error | undefined
                     try {
                         await connection.manager.findOneBy(User, {
@@ -40,7 +40,7 @@ describe("github issues > #3416 Unknown fields are stripped from WHERE clause", 
             ))
         it("update", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     let error: Error | undefined
                     try {
                         await connection.manager.update(
@@ -58,7 +58,7 @@ describe("github issues > #3416 Unknown fields are stripped from WHERE clause", 
             ))
         it("delete", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     let error: Error | undefined
                     try {
                         await connection.manager.delete(User, {

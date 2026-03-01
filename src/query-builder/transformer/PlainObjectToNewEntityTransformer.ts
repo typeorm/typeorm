@@ -36,6 +36,10 @@ export class PlainObjectToNewEntityTransformer {
     /**
      * Since db returns a duplicated rows of the data where accuracies of the same object can be duplicated
      * we need to group our result and we must have some unique id (primary key in our case)
+     * @param entity
+     * @param object
+     * @param metadata
+     * @param getLazyRelationsPromiseValue
      */
     private groupAndTransform(
         entity: ObjectLiteral,

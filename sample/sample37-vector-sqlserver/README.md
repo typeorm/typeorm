@@ -51,10 +51,10 @@ const queryEmbedding = [
 ]
 const documentIds = ["doc-id-1", "doc-id-2"]
 
-const results = await connection.query(
+const results = await dataSource.query(
     `
     DECLARE @question AS VECTOR (1998) = @0;
-    SELECT TOP (10) dc.*, 
+    SELECT TOP (10) dc.*,
            VECTOR_DISTANCE('cosine', @question, embedding) AS distance,
            d.fileName as "documentName"
     FROM document_chunks dc
@@ -82,7 +82,7 @@ The `VECTOR_DISTANCE` function supports different distance metrics:
 ## Running the Sample
 
 1. Make sure you have SQL Server running with vector support
-2. Update the connection settings in `app.ts` if needed
+2. Update the data source settings in `app.ts` if needed
 3. Run:
     ```bash
     npm install

@@ -9,19 +9,19 @@ import { Question } from "./entity/Question"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("schema builder > update primary keys", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly update composite primary keys", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // CockroachDB and Spanner does not support changing primary key constraint
                 if (
                     connection.driver.options.type === "cockroachdb" ||
@@ -46,7 +46,7 @@ describe("schema builder > update primary keys", () => {
 
     it("should correctly update composite primary keys when table already have primary generated column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Sqlite does not support AUTOINCREMENT on composite primary key
                 if (DriverUtils.isSQLiteFamily(connection.driver)) return
 

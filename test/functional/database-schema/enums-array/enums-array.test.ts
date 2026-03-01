@@ -16,19 +16,19 @@ import {
 } from "./entity/EnumArrayEntity"
 
 describe("database schema > enum arrays", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres", "cockroachdb"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create default values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const enumEntityRepository =
                     connection.getRepository(EnumArrayEntity)
 
@@ -63,7 +63,7 @@ describe("database schema > enum arrays", () => {
 
     it("should correctly save and retrieve", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const enumEntityRepository =
                     connection.getRepository(EnumArrayEntity)
 

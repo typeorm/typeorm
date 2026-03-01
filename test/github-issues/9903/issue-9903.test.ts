@@ -9,9 +9,9 @@ import { expect } from "chai"
 import { User } from "./entity/User"
 
 describe("github issues > #9903 json data type", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
-    afterEach(() => closeTestingConnections(connections))
+    afterEach(() => closeTestingConnections(dataSources))
 
     describe("json supported type for mariadb", () => {
         const expectedJsonString = JSON.stringify({
@@ -28,18 +28,18 @@ describe("github issues > #9903 json data type", () => {
 
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     entities: [__dirname + "/entity/*{.js,.ts}"],
                     schemaCreate: true,
                     dropSchema: true,
                     enabledDrivers: ["mariadb"],
                 })),
         )
-        beforeEach(() => reloadTestingDatabases(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
 
         it("should create table with json constraint", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const userRepository = connection.getRepository(User)
 
                     await userRepository.save(newUser)

@@ -25,6 +25,7 @@ export class RelationUpdater {
 
     /**
      * Performs set or add operation on a relation.
+     * @param value
      */
     async update(value: any | any[]): Promise<void> {
         const relation = this.expressionMap.relationMetadata

@@ -9,22 +9,22 @@ import {
 import { Example } from "./entity/Example"
 
 describe("github issues > #8011 Enum values with multiple apostrophes not properly escaped in MySQL", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             enabledDrivers: ["mysql"],
             entities: [Example],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should properly escape all apostrophes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()

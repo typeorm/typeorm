@@ -3,6 +3,10 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
@@ -24,42 +28,29 @@ jobs:
               - docs/**/*
 
             src: &src
+              - *package-json
               - extra/**/*.js
               - src/**/*.ts
               - gulpfile.js
               - tsconfig.json
-              - *package-json
 
             src-or-tests: &src-or-tests
               - *src
-              - test/**/*
-              - .c8rc.json
               - .github/workflows/test/**/*
               - .github/workflows/test*.yml
+              - test/**/*
+              - .c8rc.json
               - .mocharc.json
-              - .nvmrc
 
-            lint: &lint
+            format:
               - *src-or-tests
+              - .editorconfig
               - .prettierignore
               - .prettierrc.js
+
+            lint:
+              - *src-or-tests
               - eslint.config.mjs
-
-  formatting:
-    if: contains(needs.detect-changes.outputs.changes, 'lint')
-    needs: detect-changes
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install
-      - run: pnpm run lint
-      - run: pnpm run format:ci
 
   docs:
     if: contains(needs.detect-changes.outputs.changes, 'docs')
@@ -100,6 +91,36 @@ jobs:
           path: build/
           retention-days: 1
 
+  format:
+    if: contains(needs.detect-changes.outputs.changes, 'format')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install
+      - run: pnpm run format:ci
+
+  lint:
+    if: contains(needs.detect-changes.outputs.changes, 'lint')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - run: pnpm install
+      - run: pnpm run lint
+
   tests-linux:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
     needs: [detect-changes, build]
@@ -134,7 +155,8 @@ jobs:
       - build
       - coverage
       - docs
-      - formatting
+      - format
+      - lint
       - tests-linux
       - tests-windows
     steps:

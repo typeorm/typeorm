@@ -7,20 +7,20 @@ import {
 import { Post } from "./entity/Post"
 
 describe("github issues > #1377 Add support for `GENERATED ALWAYS AS` in MySQL", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create table with generated columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 let table = await queryRunner.getTable("post")
                 table!

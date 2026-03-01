@@ -12,20 +12,20 @@ import { Translation } from "./entity/Translation"
 import { Locale } from "./entity/Locale"
 
 describe("github issues > #720 `.save()` not updating composite key with Postgres", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not insert new entity when entity already exist with same primary keys", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const participants = []
 
                 participants[0] = new Participant()
@@ -84,7 +84,7 @@ describe("github issues > #720 `.save()` not updating composite key with Postgre
 
     it("reproducing second comment issue", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const message = new Message()
                 await connection.manager.save(message)
 

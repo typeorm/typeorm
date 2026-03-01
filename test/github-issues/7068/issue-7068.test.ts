@@ -8,19 +8,19 @@ import {
 } from "../../utils/test-utils"
 
 describe("github issues > #7068", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Category],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("categories should be attached via parent and saved properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -63,7 +63,7 @@ describe("github issues > #7068", () => {
 
     it("categories should be attached via children and saved properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -105,7 +105,7 @@ describe("github issues > #7068", () => {
 
     it("categories should be attached via children and saved properly and everything must be saved in cascades", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -156,7 +156,7 @@ describe("github issues > #7068", () => {
     // todo: finish implementation and implement on other trees
     it.skip("categories should remove removed children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -191,7 +191,7 @@ describe("github issues > #7068", () => {
     // todo: finish implementation and implement on other trees
     it.skip("sub-category should be removed with all its children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 

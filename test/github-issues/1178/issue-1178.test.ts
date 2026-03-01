@@ -9,20 +9,20 @@ import { Post } from "./entity/Post"
 import { User } from "./entity/User"
 
 describe("github issues > #1178 subqueries must work in insert statements", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work fine", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Timber Saw"
                 await connection.manager.save(user)

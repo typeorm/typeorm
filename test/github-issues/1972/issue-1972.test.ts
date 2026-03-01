@@ -10,23 +10,23 @@ import { TournamentUserParticipant } from "./entity/TournamentUserParticipant"
 import { TournamentSquadParticipant } from "./entity/TournamentSquadParticipant"
 
 describe("github issues > #1972 STI problem - empty columns", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql"],
             })),
     )
 
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert with userId", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create user
                 const user = new User({
                     name: "test",
@@ -54,7 +54,7 @@ describe("github issues > #1972 STI problem - empty columns", () => {
 
     it("should insert with ownerId", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create user
                 const user = new User({
                     name: "test",

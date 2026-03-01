@@ -16,16 +16,16 @@ describe("persistence > orphanage > delete", () => {
     // -------------------------------------------------------------------------
 
     // connect to db
-    let connections: DataSource[] = []
+    let dataSources: DataSource[] = []
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -37,12 +37,12 @@ describe("persistence > orphanage > delete", () => {
         let categoryId: number
 
         beforeEach(async function () {
-            if (connections.length === 0) {
+            if (dataSources.length === 0) {
                 this.skip()
             }
 
             await Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     categoryRepository = connection.getRepository(Category)
                     postRepository = connection.getRepository(Post)
                 }),

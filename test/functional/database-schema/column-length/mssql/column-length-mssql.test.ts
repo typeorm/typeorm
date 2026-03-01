@@ -9,19 +9,19 @@ import {
 } from "../../../../utils/test-utils"
 
 describe("database schema > column length > mssql", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["mssql"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("all types should create with correct size", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
@@ -49,7 +49,7 @@ describe("database schema > column length > mssql", () => {
 
     it("all types should update their size", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const metadata = connection.getMetadata(Post)
                 metadata.findColumnWithPropertyName("char")!.length = "100"
                 metadata.findColumnWithPropertyName("varchar")!.length = "100"
@@ -87,7 +87,7 @@ describe("database schema > column length > mssql", () => {
 
     it("all relevant types should update their size to max", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const metadata = connection.getMetadata(Post)
                 metadata.findColumnWithPropertyName("varchar")!.length = "MAX"
                 metadata.findColumnWithPropertyName("nvarchar")!.length = "MAX"

@@ -10,19 +10,19 @@ import { Race } from "./entity/Race"
 import { Duration } from "./entity/Duration"
 
 describe("github issues > #306 embeddeds with custom column name don't work", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("embedded with custom column name should persist and load without errors", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const race = new Race()
                 race.name = "National Race"
                 race.duration = new Duration()

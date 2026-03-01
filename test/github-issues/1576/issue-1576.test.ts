@@ -10,19 +10,19 @@ import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 
 describe("github issues > #1576 Entities with null as `id` are merged [@next]", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should successfully create object", () => {
-        connections.forEach((connection) => {
+        dataSources.forEach((connection) => {
             const newpost = new Post()
             const cat1 = new Category()
             cat1.name2 = "1"

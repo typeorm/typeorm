@@ -12,21 +12,21 @@ import { Booking } from "./entity/Booking"
 import { Schedule } from "./entity/Schedule"
 
 describe("deferrable exclusion constraints", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("initially deferred exclusion should be validated at the end of transaction", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.manager.transaction(async (manager) => {
                     // first save booking
                     const booking1 = new Booking()
@@ -72,7 +72,7 @@ describe("deferrable exclusion constraints", () => {
 
     it("initially immediate exclusion should be validated at the end at transaction with deferred check time", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.manager.transaction(async (manager) => {
                     // first set constraints deferred manually
                     await manager.query("SET CONSTRAINTS ALL DEFERRED")

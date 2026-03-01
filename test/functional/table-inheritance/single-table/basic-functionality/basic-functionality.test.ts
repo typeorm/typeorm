@@ -15,19 +15,19 @@ import { Male } from "./entity/Male"
 import { Human } from "./entity/Human"
 
 describe("table-inheritance > single-table > basic-functionality", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly insert, update and delete data with single-table-inheritance pattern", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // -------------------------------------------------------------------------
                 // Create
                 // -------------------------------------------------------------------------
@@ -334,7 +334,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
     it("should be able to save different child entities in bulk", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const student = new Student()
                 student.name = "Alice"
                 student.faculty = "Economics"
@@ -361,7 +361,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
     it("should be able to find correct child entities when base class is used as entity metadata", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const student = new Student()
                 student.name = "Alice"
                 student.faculty = "Economics"
@@ -455,7 +455,7 @@ describe("table-inheritance > single-table > basic-functionality", () => {
 
     it("should correctly upsert data with single-table-inheritance pattern", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // --------------------------------------------------------------------------
                 // Upsert - Initial insert
                 // --------------------------------------------------------------------------
@@ -507,21 +507,21 @@ describe("table-inheritance > single-table > basic-functionality", () => {
         ))
 
     describe("table-inheritance > single-table > basic-functionality with custom database schema", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     entities: [Human, Male],
                     enabledDrivers: ["postgres", "cockroachdb", "mssql"],
                     schema: "my_schema",
                 })),
         )
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should correctly upsert data with single-table-inheritance pattern", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // --------------------------------------------------------------------------
                     // Upsert - Initial insert
                     // --------------------------------------------------------------------------

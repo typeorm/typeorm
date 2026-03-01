@@ -11,20 +11,20 @@ import { Child } from "./entity/Child"
 import { expect } from "chai"
 
 describe("github issues > #1055 ind with relations not working, correct syntax causes type error", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql"], // only one driver is enabled because this example uses lazy relations
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should be able to find by object reference", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const manager = connection.manager
 
                 const parent = new Parent()
@@ -63,7 +63,7 @@ describe("github issues > #1055 ind with relations not working, correct syntax c
 
     it("should not have type errors with the primary key type", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const manager = connection.manager
 
                 const parent = new Parent()

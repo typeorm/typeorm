@@ -9,20 +9,20 @@ import { Employee } from "./entity/Employee"
 import { Person } from "./entity/Person"
 
 describe("github issues > #184 [Postgres] Single-Inheritance not working with integer type field", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("single table inheritance should accept a Integer Type", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Saving via subtype repository works
                 const employeeRepository = connection.getRepository(Employee)
                 const employee = new Employee()

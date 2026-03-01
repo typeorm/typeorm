@@ -18,15 +18,15 @@ describe("repository > find options > relations", () => {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Setup
@@ -34,7 +34,7 @@ describe("repository > find options > relations", () => {
 
     beforeEach(() =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postUser = new User()
                 postUser.name = "Timber"
                 await connection.manager.save(postUser)
@@ -98,7 +98,7 @@ describe("repository > find options > relations", () => {
 
     it("should not any relations if they are not specified", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const loadedPost = await connection
                     .getRepository(Post)
                     .findOne({
@@ -119,7 +119,7 @@ describe("repository > find options > relations", () => {
 
     it("should load specified relations case 1", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const loadedPost = await connection
                     .getRepository(Post)
                     .findOne({
@@ -163,7 +163,7 @@ describe("repository > find options > relations", () => {
 
     it("should load specified relations case 2", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const loadedPost = await connection
                     .getRepository(Post)
                     .findOne({
@@ -221,7 +221,7 @@ describe("repository > find options > relations", () => {
 
     it("should load specified relations and their sub-relations case 1", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const loadedPost = await connection
                     .getRepository(Post)
                     .findOne({
@@ -287,7 +287,7 @@ describe("repository > find options > relations", () => {
 
     it("should load specified relations and their sub-relations case 2", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const loadedPost = await connection
                     .getRepository(Post)
                     .findOne({
@@ -351,7 +351,7 @@ describe("repository > find options > relations", () => {
 
     it("should load specified relations and their sub-relations case 3", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const loadedPost = await connection
                     .getRepository(Post)
                     .findOne({
@@ -424,7 +424,7 @@ describe("repository > find options > relations", () => {
 
     it("should throw error if specified relations were not found case 1", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection
                     .getRepository(Post)
                     .findOne({
@@ -444,7 +444,7 @@ describe("repository > find options > relations", () => {
 
     it("should throw error if specified relations were not found case 2", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection
                     .getRepository(Post)
                     .findOne({
@@ -467,7 +467,7 @@ describe("repository > find options > relations", () => {
 
     it("should throw error if specified relations were not found case 3", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection
                     .getRepository(Post)
                     .findOne({
@@ -490,7 +490,7 @@ describe("repository > find options > relations", () => {
 
     it("should throw error if specified relations were not found case 4", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection
                     .getRepository(Post)
                     .findOne({
@@ -514,7 +514,7 @@ describe("repository > find options > relations", () => {
 
     it("should throw error if specified relations were not found case 5", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection
                     .getRepository(Post)
                     .findOne({
@@ -534,7 +534,7 @@ describe("repository > find options > relations", () => {
 
     it("should throw error if specified relations were not found case 6", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection
                     .getRepository(Post)
                     .findOne({

@@ -7,20 +7,20 @@ import {
 import { DataSource } from "../../../src/data-source/DataSource"
 
 describe("github issues > #587 Ordering of fields in composite indexes defined using Index decorator", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // this test only works for fields specified as string[]
     it("should preserve field ordering when fields are specified as string[]", () => {
-        connections.forEach((connection) => {
+        dataSources.forEach((connection) => {
             connection.entityMetadatas.forEach((entityMetadata) => {
                 entityMetadata.indices.forEach((index) => {
                     if (

@@ -9,22 +9,22 @@ import {
 } from "../../utils/test-utils"
 
 describe("github issues > #7100 MSSQL error when user requests additional columns to be returned", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
             dropSchema: true,
             enabledDrivers: ["mssql"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return user requested columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "title"
                 post.text = "text"

@@ -10,20 +10,20 @@ import { Post, PostWithDeleted } from "./entity/Post"
 import { MongoRepository } from "../../../../../src/repository/MongoRepository"
 
 describe("mongodb > MongoRepository", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post, PostWithDeleted],
                 enabledDrivers: ["mongodb"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("connection should return mongo repository when requested", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
                 expect(postRepository).to.be.instanceOf(MongoRepository)
             }),
@@ -31,7 +31,7 @@ describe("mongodb > MongoRepository", () => {
 
     it("entity manager should return mongo repository when requested", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository =
                     connection.manager.getMongoRepository(Post)
                 expect(postRepository).to.be.instanceOf(MongoRepository)
@@ -40,7 +40,7 @@ describe("mongodb > MongoRepository", () => {
 
     it("should be able to use entity cursor which will return instances of entity classes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
 
                 // save few posts
@@ -69,7 +69,7 @@ describe("mongodb > MongoRepository", () => {
 
     it("should be able to use entity cursor which will return instances of entity classes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
 
                 // save few posts
@@ -106,7 +106,7 @@ describe("mongodb > MongoRepository", () => {
 
     it("should be able to use findByIds with both ObjectId and strings", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
 
                 // save few posts
@@ -140,7 +140,7 @@ describe("mongodb > MongoRepository", () => {
     // todo: cover other methods as well
     it("should be able to save and update mongo entities", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
 
                 // save few posts
@@ -170,7 +170,7 @@ describe("mongodb > MongoRepository", () => {
 
     it("should ignore non-column properties", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Github issue #5321
                 const postRepository = connection.getMongoRepository(Post)
 
@@ -191,7 +191,7 @@ describe("mongodb > MongoRepository", () => {
     describe("with DeletedDataColumn", () => {
         it("with $or query", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository =
                         connection.getMongoRepository(PostWithDeleted)
                     await seedPosts(postRepository)
@@ -206,7 +206,7 @@ describe("mongodb > MongoRepository", () => {
 
         it("filter delete data", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository =
                         connection.getMongoRepository(PostWithDeleted)
                     await seedPosts(postRepository)
@@ -224,7 +224,7 @@ describe("mongodb > MongoRepository", () => {
         describe("findOne filtered data properly", () => {
             it("findOne()", () =>
                 Promise.all(
-                    connections.map(async (connection) => {
+                    dataSources.map(async (connection) => {
                         const postRepository =
                             connection.getMongoRepository(PostWithDeleted)
                         await seedPosts(postRepository)
@@ -245,7 +245,7 @@ describe("mongodb > MongoRepository", () => {
 
             it("findOneBy()", () =>
                 Promise.all(
-                    connections.map(async (connection) => {
+                    dataSources.map(async (connection) => {
                         const postRepository =
                             connection.getMongoRepository(PostWithDeleted)
                         await seedPosts(postRepository)
@@ -268,7 +268,7 @@ describe("mongodb > MongoRepository", () => {
 
     it("should be able to use findBy method", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
 
                 // save few posts

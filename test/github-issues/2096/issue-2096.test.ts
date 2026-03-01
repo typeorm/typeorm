@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { DataSource } from "../../../src"
-import { MysqlConnectionOptions } from "../../../src/driver/mysql/MysqlConnectionOptions"
+import { MysqlDataSourceOptions } from "../../../src/driver/mysql/MysqlDataSourceOptions"
 import { getTypeOrmConfig } from "../../utils/test-utils"
 
 describe("github issues > #2096 [mysql] Database name isn't read from url", () => {
@@ -11,7 +11,7 @@ describe("github issues > #2096 [mysql] Database name isn't read from url", () =
         // that previously threw the error where the database on the driver object was undefined
         const mysqlConfig = config.find(
             (c) => c.name === "mysql" && !c.skip,
-        ) as MysqlConnectionOptions
+        ) as MysqlDataSourceOptions
 
         if (!mysqlConfig) {
             return

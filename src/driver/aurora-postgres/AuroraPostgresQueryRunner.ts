@@ -92,6 +92,7 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Starts transaction on the current connection.
+     * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
         this.isTransactionActive = true
@@ -158,6 +159,9 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -191,6 +195,8 @@ export class AuroraPostgresQueryRunner
 
     /**
      * Change table comment.
+     * @param tableOrName
+     * @param comment
      */
     changeTableComment(
         tableOrName: Table | string,

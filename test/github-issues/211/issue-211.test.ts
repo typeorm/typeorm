@@ -8,19 +8,19 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("github issues > #211 where in query issue", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not fail if WHERE IN expression is used", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 for (let i = 0; i < 10; i++) {
                     const post1 = new Post()
                     post1.title = "post #" + i

@@ -8,10 +8,10 @@ import {
 import { Role, User } from "./entity/UserEntity"
 
 describe("github issues > #5275 Enums with spaces are not converted properly.", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [User],
                 schemaCreate: true,
                 dropSchema: true,
@@ -19,12 +19,12 @@ describe("github issues > #5275 Enums with spaces are not converted properly.", 
             })),
     )
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly parse enums of strings with spaces", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userRepository = connection.getRepository(User)
                 await userRepository.save({
                     id: 1,
@@ -51,7 +51,7 @@ describe("github issues > #5275 Enums with spaces are not converted properly.", 
 
     it("should correctly parse non-array enums with spaces", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userRepository = connection.getRepository(User)
                 await userRepository.save([
                     { id: 1 },

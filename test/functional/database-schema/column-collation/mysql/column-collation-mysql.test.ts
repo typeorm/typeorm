@@ -9,19 +9,19 @@ import { Post } from "./entity/Post"
 import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 
 describe("database schema > column collation > mysql", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create column with collation option", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post")

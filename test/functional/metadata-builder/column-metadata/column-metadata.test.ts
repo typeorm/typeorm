@@ -11,19 +11,19 @@ import { Counters } from "./entity/Counters"
 import { Subcounters } from "./entity/Subcounters"
 
 describe("metadata-builder > ColumnMetadata", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("getValue", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Post #1"
@@ -64,7 +64,7 @@ describe("metadata-builder > ColumnMetadata", () => {
 
     it("getValueMap", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Post #1"

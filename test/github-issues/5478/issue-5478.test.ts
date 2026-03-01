@@ -8,10 +8,10 @@ import { expect } from "chai"
 import { UserEntity } from "./entity/UserEntity"
 
 describe("github issues > #5478 Setting enumName doesn't change how migrations get generated", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 migrations: [],
                 enabledDrivers: ["postgres"],
                 schemaCreate: true,
@@ -19,11 +19,11 @@ describe("github issues > #5478 Setting enumName doesn't change how migrations g
                 entities: [UserEntity],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly rename enum", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
                 // add `enumName`

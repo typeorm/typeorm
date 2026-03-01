@@ -9,20 +9,20 @@ import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 
 describe("persistence > multi primary keys on both sides", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("insert", function () {
         it("should insert entity when there are multi column primary keys", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post1 = new Post()
                     post1.title = "Hello Post #1"
                     post1.firstId = 1

@@ -9,6 +9,7 @@ import { GeneratedMetadataArgs } from "../metadata-args/GeneratedMetadataArgs"
  * Rowid supports only in CockroachDB and uses `unique_rowid()` function
  *
  * Note, some databases do not support non-primary generation columns.
+ * @param strategy
  */
 export function Generated(
     strategy: "increment" | "uuid" | "rowid" = "increment",

@@ -11,20 +11,20 @@ import { Value } from "./entity/value"
 import { expect } from "chai"
 
 describe("github issues > #9049 mongodb entities with 2 level-nested arrays throws an 'document[embedded.prefix].map is not a function' error", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mongodb"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should save entities properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 const comment = new Comment()
                 const value = new Value()

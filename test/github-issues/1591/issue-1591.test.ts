@@ -9,20 +9,20 @@ import { User } from "./entity/User"
 import { Photo } from "./entity/Photo"
 
 describe.skip("github issues > #1591 Define order of relation data when querying on the main entity", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should query correct number of users with joined data ordering applied", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 for (let i = 0; i < 30; i++) {
                     const photo1 = new Photo()
                     photo1.name = "Photo #" + i + "_1"

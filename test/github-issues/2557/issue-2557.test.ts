@@ -10,21 +10,21 @@ import { Dummy } from "./entity/dummy"
 import { transformer, WrappedNumber } from "./transformer"
 
 describe("github issues > #2557 object looses its prototype before transformer.to()", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should give correct object in transformer.to", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const dummy = new Dummy()
                 dummy.id = 1
                 dummy.num = new WrappedNumber(3)

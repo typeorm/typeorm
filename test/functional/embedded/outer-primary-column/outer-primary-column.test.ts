@@ -10,19 +10,19 @@ import {
 } from "../../../utils/test-utils"
 
 describe("embedded > outer-primary-column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert, load, update and remove entities with embeddeds when primary column defined only in embedded entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 const post1 = new Post()

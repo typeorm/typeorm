@@ -11,19 +11,19 @@ import { Post } from "./entity/Post"
 import { Image } from "./entity/Image"
 
 describe("query builder > load-relation-count-and-map > one-to-many", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load relation count", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "cars"
                 await connection.manager.save(category1)
@@ -73,7 +73,7 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
 
     it("should load relation count on nested relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.name = "image #1"
                 await connection.manager.save(image1)
@@ -153,7 +153,7 @@ describe("query builder > load-relation-count-and-map > one-to-many", () => {
 
     it("should load relation count with additional conditions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "cars"
                 category1.isRemoved = true

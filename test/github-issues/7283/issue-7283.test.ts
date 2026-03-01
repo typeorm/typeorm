@@ -9,10 +9,10 @@ import { Employee } from "./entity/Employee"
 import { expect } from "chai"
 
 describe("github issues > #7283 Generating Migration on ManyToOne/OneToMany + Primary enum column results in missing enum type in migration output", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 migrations: [],
                 enabledDrivers: ["mysql", "mariadb", "postgres"],
                 schemaCreate: false,
@@ -20,11 +20,11 @@ describe("github issues > #7283 Generating Migration on ManyToOne/OneToMany + Pr
                 entities: [AccessEvent, Employee],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create tables with enum primary column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
                 const queryRunner = connection.createQueryRunner()
 

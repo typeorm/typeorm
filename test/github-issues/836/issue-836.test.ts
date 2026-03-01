@@ -10,19 +10,19 @@ import { User } from "./entity/User"
 import { UserCredential } from "./entity/UserCredential"
 
 describe("github issues > #836 .save won't update entity when it contains OneToOne relationship", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work perfectly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // just insert another dummy user
                 const user1 = new User()
                 user1.email = "user1@user.com"

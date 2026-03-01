@@ -5,6 +5,7 @@ export class ObjectUtils {
      * Checks if given value is an object.
      * We cannot use instanceof because it has problems when running on different contexts.
      * And we don't simply use typeof because typeof null === "object".
+     * @param val
      */
     static isObject(val: any): val is object {
         return val !== null && typeof val === "object"
@@ -14,6 +15,7 @@ export class ObjectUtils {
      * Checks if given value is an object.
      * We cannot use instanceof because it has problems when running on different contexts.
      * And we don't simply use typeof because typeof null === "object".
+     * @param val
      */
     static isObjectWithName(val: any): val is object & { name: string } {
         return (
@@ -69,6 +71,7 @@ export class ObjectUtils {
 
     /**
      * Converts MixedList<T> to strictly an array of its T items.
+     * @param list
      */
     static mixedListToArray<T>(list: MixedList<T>): T[] {
         if (list !== null && typeof list === "object") {

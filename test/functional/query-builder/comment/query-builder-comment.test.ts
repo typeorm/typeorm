@@ -9,19 +9,19 @@ import { Test } from "./entity/Test"
 import { expect } from "chai"
 
 describe("query builder > comment", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Test],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should scrub end comment pattern from string", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sql = connection.manager
                     .createQueryBuilder(Test, "test")
                     .comment("Hello World */ */")
@@ -33,7 +33,7 @@ describe("query builder > comment", () => {
 
     it("should not allow an empty comment", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sql = connection.manager
                     .createQueryBuilder(Test, "test")
                     .comment("")
@@ -45,7 +45,7 @@ describe("query builder > comment", () => {
 
     it("should allow a comment with just whitespaces", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sql = connection.manager
                     .createQueryBuilder(Test, "test")
                     .comment(" ")
@@ -57,7 +57,7 @@ describe("query builder > comment", () => {
 
     it("should allow a multi-line comment", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sql = connection.manager
                     .createQueryBuilder(Test, "test")
                     .comment("Hello World\nIt's a beautiful day!")
@@ -71,7 +71,7 @@ describe("query builder > comment", () => {
 
     it("should include comment in select", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sql = connection.manager
                     .createQueryBuilder(Test, "test")
                     .comment("Hello World")
@@ -83,7 +83,7 @@ describe("query builder > comment", () => {
 
     it("should include comment in update", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sql = connection.manager
                     .createQueryBuilder(Test, "test")
                     .update()
@@ -97,7 +97,7 @@ describe("query builder > comment", () => {
 
     it("should include comment in insert", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sql = connection.manager
                     .createQueryBuilder(Test, "test")
                     .insert()
@@ -111,7 +111,7 @@ describe("query builder > comment", () => {
 
     it("should include comment in delete", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sql = connection.manager
                     .createQueryBuilder(Test, "test")
                     .delete()

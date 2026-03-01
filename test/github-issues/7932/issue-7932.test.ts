@@ -9,21 +9,21 @@ import {
 import { Example } from "./entity/Example"
 
 describe("github issues > #7932  non-ascii characters assigned to var/char columns in SQL are truncated to one byte", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Example],
             enabledDrivers: ["mssql"],
             schemaCreate: false,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should store non-ascii characters in var/char without data loss", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Example)
 
                 const entity = new Example()
@@ -45,7 +45,7 @@ describe("github issues > #7932  non-ascii characters assigned to var/char colum
     // TODO: we need to fix this test, it was incorrectly awaited from the beginning
     it.skip("should throw an error if characters in a string are too long to store", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Example)
 
                 const entity = new Example()
@@ -59,7 +59,7 @@ describe("github issues > #7932  non-ascii characters assigned to var/char colum
         ))
 
     it("should not change char or varchar column types to nchar or nvarchar", () => {
-        connections.forEach((connection) => {
+        dataSources.forEach((connection) => {
             const repo = connection.getRepository(Example)
 
             const columnMetadata = repo.metadata.ownColumns

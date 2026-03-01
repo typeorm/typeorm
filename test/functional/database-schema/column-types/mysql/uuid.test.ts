@@ -9,22 +9,22 @@ import { UuidEntity } from "./entity/UuidEntity"
 import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 
 describe("database schema > column types > mysql > uuid", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [UuidEntity],
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["mysql", "mariadb"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create table with appropriate UUID column type based on database version", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const uuidRepository = connection.getRepository(UuidEntity)
 
                 // seems there is an issue with the persisting id that crosses over from mysql to mariadb

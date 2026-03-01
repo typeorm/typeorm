@@ -15,19 +15,19 @@ import { Account } from "./entity/Account"
 import { Department } from "./entity/Department"
 
 describe("columns > embedded columns", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert / update / remove entity with embedded correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(SimplePost)
 
                 // save few posts
@@ -104,7 +104,7 @@ describe("columns > embedded columns", () => {
 
     it("should properly generate column names", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const columns = postRepository.metadata.columns
                 const databaseColumns = columns.map((c) => c.databaseName)
@@ -166,7 +166,7 @@ describe("columns > embedded columns", () => {
     // GitHub issue #10578 - updating embedded columns with relations doesn't work
     it("should update embedded columns when saving entity with relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const parentRepository = connection.getRepository("Parent")
                 const accountRepository = connection.getRepository("Account")
 

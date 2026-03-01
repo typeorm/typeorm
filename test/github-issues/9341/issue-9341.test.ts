@@ -9,10 +9,10 @@ import {
 import { TestEntity } from "./entity/TestEntity"
 
 describe('github issues > #9341 "bigNumberStrings:false" is not working for postgres', () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
                 driverSpecific: {
@@ -20,11 +20,11 @@ describe('github issues > #9341 "bigNumberStrings:false" is not working for post
                 },
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should fetch big int as number not string when using parseInt8=true", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const origin = await connection.getRepository(TestEntity).save({
                 big_int: Number.MAX_SAFE_INTEGER,
                 big_decimal: 1.23456789,

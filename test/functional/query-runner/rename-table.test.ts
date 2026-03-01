@@ -11,20 +11,20 @@ import {
 } from "../../utils/test-utils"
 
 describe("query runner > rename table", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly rename table and revert rename", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // CockroachDB and Spanner does not support renaming constraints and removing PK.
                 if (
                     connection.driver.options.type === "cockroachdb" ||
@@ -104,7 +104,7 @@ describe("query runner > rename table", () => {
 
     it("should correctly rename table with all constraints depend to that table and revert rename", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // CockroachDB and Spanner does not support renaming constraints and removing PK.
                 if (
                     connection.driver.options.type === "cockroachdb" ||
@@ -153,7 +153,7 @@ describe("query runner > rename table", () => {
 
     it("should correctly rename table with custom schema and database and all its dependencies and revert rename", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // CockroachDB and Spanner does not support renaming constraints and removing PK.
                 if (
                     connection.driver.options.type === "cockroachdb" ||

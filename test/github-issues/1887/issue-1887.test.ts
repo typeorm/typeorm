@@ -7,20 +7,20 @@ import {
 import { Error } from "./entity/Error"
 
 describe("github issues > #1887 Having problems with UNIQUEIDENTIFIERS", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly insert data", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const errorRepository = connection.getRepository(Error)
                 const err = new Error()
                 err.errorDate = new Date()

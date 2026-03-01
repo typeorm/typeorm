@@ -9,22 +9,22 @@ import { Migration } from "../../../src/migration/Migration"
 import { ForbiddenTransactionModeOverrideError } from "../../../src/error/ForbiddenTransactionModeOverrideError"
 
 describe("github issues > #7087 Allow to specify transaction property for individual migrations", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 __dirname,
                 schemaCreate: false,
                 dropSchema: true,
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should fail to run all necessary migrations when transaction is all and there are transaction overrides", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 return connection
                     .runMigrations({ transaction: "all" })
                     .should.be.rejectedWith(
@@ -36,7 +36,7 @@ describe("github issues > #7087 Allow to specify transaction property for indivi
 
     it("should set correct transaction mode when transaction is each", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const migrations: Migration[] = await connection.runMigrations({
                     transaction: "each",
                 })
@@ -53,7 +53,7 @@ describe("github issues > #7087 Allow to specify transaction property for indivi
 
     it("should set correct transaction mode when transaction is none", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const migrations: Migration[] = await connection.runMigrations({
                     transaction: "none",
                 })

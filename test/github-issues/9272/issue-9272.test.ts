@@ -26,7 +26,6 @@ describe("github issues > #9272 Fix select on deeply nested embedded entities, u
                     "oracle",
                     "postgres",
                     "spanner",
-                    "sqlite",
                 ],
             })),
     )

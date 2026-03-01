@@ -56,7 +56,7 @@ export class JoinAttribute {
     // -------------------------------------------------------------------------
 
     constructor(
-        private connection: DataSource,
+        private dataSource: DataSource,
         private queryExpressionMap: QueryExpressionMap,
         joinAttribute?: JoinAttribute,
     ) {
@@ -203,12 +203,12 @@ export class JoinAttribute {
         if (this.relation) return this.relation.inverseEntityMetadata
 
         // entityOrProperty is Entity class
-        if (this.connection.hasMetadata(this.entityOrProperty))
-            return this.connection.getMetadata(this.entityOrProperty)
+        if (this.dataSource.hasMetadata(this.entityOrProperty))
+            return this.dataSource.getMetadata(this.entityOrProperty)
 
         // Overriden mapping entity provided for leftJoinAndMapOne with custom query builder
-        if (this.mapAsEntity && this.connection.hasMetadata(this.mapAsEntity)) {
-            return this.connection.getMetadata(this.mapAsEntity)
+        if (this.mapAsEntity && this.dataSource.hasMetadata(this.mapAsEntity)) {
+            return this.dataSource.getMetadata(this.mapAsEntity)
         }
 
         return undefined
@@ -246,14 +246,14 @@ export class JoinAttribute {
 
         if (this.relation.isOwning) {
             return DriverUtils.buildAlias(
-                this.connection.driver,
+                this.dataSource.driver,
                 undefined,
                 aliasProperty,
                 this.alias.name,
             )
         } else {
             return DriverUtils.buildAlias(
-                this.connection.driver,
+                this.dataSource.driver,
                 undefined,
                 this.alias.name,
                 aliasProperty,

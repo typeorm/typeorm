@@ -13,21 +13,21 @@ import { Category } from "./entity/Category"
 import { Question } from "./entity/Question"
 
 describe("other issues > Relation decorators: allow to pass given table name string instead of typeFunction or entity name", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work with one-to-one relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const profile = new Profile()
                 profile.gender = "male"
                 profile.photo = "me.jpg"
@@ -58,7 +58,7 @@ describe("other issues > Relation decorators: allow to pass given table name str
 
     it("should work with many-to-one/one-to-many relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const photo1 = new Photo()
                 photo1.url = "me.jpg"
                 await connection.manager.save(photo1)
@@ -119,7 +119,7 @@ describe("other issues > Relation decorators: allow to pass given table name str
 
     it("should work with many-to-many relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "animals"
                 await connection.manager.save(category1)

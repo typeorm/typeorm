@@ -9,20 +9,20 @@ import { Thing, EmbeddedInThing } from "./entity/thing"
 import { expect } from "chai"
 
 describe("github issues > #1825 Invalid field values being loaded with long camelCased embedded field names.", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql", "postgres", "mariadb"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load valid values in embedded with long field names", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const thingRepository = connection.getRepository(Thing)
 
                 const thing = new Thing()
