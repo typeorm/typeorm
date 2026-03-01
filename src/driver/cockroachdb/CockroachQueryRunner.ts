@@ -1362,6 +1362,7 @@ export class CockroachQueryRunner
 
         if (
             newColumn.isArray !== oldColumn.isArray ||
+            oldColumn.generationStrategy !== newColumn.generationStrategy ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -1442,18 +1443,19 @@ export class CockroachQueryRunner
                     )
                 } else {
                     // No enum transition, just type/length change
+                    // Add USING clause to handle casts that can't be done automatically (e.g. varchar → int)
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                                 newColumn.name
-                            }" TYPE ${upType}`,
+                            }" TYPE ${upType} USING "${newColumn.name}"::${upType}`,
                         ),
                     )
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                                 oldColumn.name
-                            }" TYPE ${downType}`,
+                            }" TYPE ${downType} USING "${oldColumn.name}"::${downType}`,
                         ),
                     )
                 }

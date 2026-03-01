@@ -839,6 +839,7 @@ export class AuroraMysqlQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
+            oldColumn.generationStrategy !== newColumn.generationStrategy ||
             oldColumn.generatedType !== newColumn.generatedType
         ) {
             await this.dropColumn(table, oldColumn)

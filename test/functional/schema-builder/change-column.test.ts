@@ -480,12 +480,13 @@ describe("schema builder > change column", () => {
                 // SQLite does not impose length restrictions and handles types differently
                 if (DriverUtils.isSQLiteFamily(connection.driver)) return
 
-                // CockroachDB, Spanner, Oracle, and SAP have restrictions on ALTER COLUMN TYPE
+                // CockroachDB, Spanner, Oracle, SAP, and SQL Server have restrictions on ALTER COLUMN TYPE
                 if (
                     connection.driver.options.type === "cockroachdb" ||
                     connection.driver.options.type === "spanner" ||
                     connection.driver.options.type === "oracle" ||
-                    connection.driver.options.type === "sap"
+                    connection.driver.options.type === "sap" ||
+                    connection.driver.options.type === "mssql"
                 )
                     return
 

@@ -868,6 +868,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             oldColumn.name !== newColumn.name ||
             oldColumn.isArray !== newColumn.isArray ||
+            oldColumn.generationStrategy !== newColumn.generationStrategy ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
