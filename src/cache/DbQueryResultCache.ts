@@ -25,18 +25,18 @@ export class DbQueryResultCache implements QueryResultCache {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: DataSource) {
-        const { schema } = this.connection.driver.options as any
-        const database = this.connection.driver.database
+    constructor(protected dataSource: DataSource) {
+        const { schema } = this.dataSource.driver.options as any
+        const database = this.dataSource.driver.database
         const cacheOptions =
-            typeof this.connection.options.cache === "object"
-                ? this.connection.options.cache
+            typeof this.dataSource.options.cache === "object"
+                ? this.dataSource.options.cache
                 : {}
         const cacheTableName = cacheOptions.tableName || "query-result-cache"
 
         this.queryResultCacheDatabase = database
         this.queryResultCacheSchema = schema
-        this.queryResultCacheTable = this.connection.driver.buildTableName(
+        this.queryResultCacheTable = this.dataSource.driver.buildTableName(
             cacheTableName,
             schema,
             database,
@@ -59,10 +59,11 @@ export class DbQueryResultCache implements QueryResultCache {
 
     /**
      * Creates table for storing cache if it does not exist yet.
+     * @param queryRunner
      */
     async synchronize(queryRunner?: QueryRunner): Promise<void> {
         queryRunner = this.getQueryRunner(queryRunner)
-        const driver = this.connection.driver
+        const driver = this.dataSource.driver
         const tableExist = await queryRunner.hasTable(
             this.queryResultCacheTable,
         ) // todo: table name should be configurable
@@ -134,13 +135,15 @@ export class DbQueryResultCache implements QueryResultCache {
      * Get data from cache.
      * Returns cache result if found.
      * Returns undefined if result is not cached.
+     * @param options
+     * @param queryRunner
      */
     getFromCache(
         options: QueryResultCacheOptions,
         queryRunner?: QueryRunner,
     ): Promise<QueryResultCacheOptions | undefined> {
         queryRunner = this.getQueryRunner(queryRunner)
-        const qb = this.connection
+        const qb = this.dataSource
             .createQueryBuilder(queryRunner)
             .select()
             .from(this.queryResultCacheTable, "cache")
@@ -154,14 +157,14 @@ export class DbQueryResultCache implements QueryResultCache {
                 )
                 .setParameters({
                     identifier:
-                        this.connection.driver.options.type === "mssql"
+                        this.dataSource.driver.options.type === "mssql"
                             ? new MssqlParameter(options.identifier, "nvarchar")
                             : options.identifier,
                 })
                 .cache(false) // disable cache to avoid infinite loops when cache is alwaysEnable
                 .getRawOne()
         } else if (options.query) {
-            if (this.connection.driver.options.type === "oracle") {
+            if (this.dataSource.driver.options.type === "oracle") {
                 return qb
                     .where(
                         `dbms_lob.compare(${qb.escape("cache")}.${qb.escape(
@@ -177,7 +180,7 @@ export class DbQueryResultCache implements QueryResultCache {
                 .where(`${qb.escape("cache")}.${qb.escape("query")} = :query`)
                 .setParameters({
                     query:
-                        this.connection.driver.options.type === "mssql"
+                        this.dataSource.driver.options.type === "mssql"
                             ? new MssqlParameter(options.query, "nvarchar")
                             : options.query,
                 })
@@ -190,6 +193,7 @@ export class DbQueryResultCache implements QueryResultCache {
 
     /**
      * Checks if cache is expired or not.
+     * @param savedCache
      */
     isExpired(savedCache: QueryResultCacheOptions): boolean {
         const duration =
@@ -207,6 +211,9 @@ export class DbQueryResultCache implements QueryResultCache {
 
     /**
      * Stores given query result in the cache.
+     * @param options
+     * @param savedCache
+     * @param queryRunner
      */
     async storeInCache(
         options: QueryResultCacheOptions,
@@ -218,11 +225,11 @@ export class DbQueryResultCache implements QueryResultCache {
             queryRunner?.getReplicationMode() === "slave"
 
         if (queryRunner === undefined || shouldCreateQueryRunner) {
-            queryRunner = this.connection.createQueryRunner("master")
+            queryRunner = this.dataSource.createQueryRunner("master")
         }
 
         let insertedValues: ObjectLiteral = options
-        if (this.connection.driver.options.type === "mssql") {
+        if (this.dataSource.driver.options.type === "mssql") {
             // todo: bad abstraction, re-implement this part, probably better if we create an entity metadata for cache table
             insertedValues = {
                 identifier: new MssqlParameter(options.identifier, "nvarchar"),
@@ -251,7 +258,7 @@ export class DbQueryResultCache implements QueryResultCache {
                 .update(this.queryResultCacheTable)
                 .set(insertedValues)
 
-            if (this.connection.driver.options.type === "oracle") {
+            if (this.dataSource.driver.options.type === "oracle") {
                 qb.where(`dbms_lob.compare("query", :condition) = 0`, {
                     condition: insertedValues.query,
                 })
@@ -265,7 +272,7 @@ export class DbQueryResultCache implements QueryResultCache {
         } else {
             // Spanner does not support auto-generated columns
             if (
-                this.connection.driver.options.type === "spanner" &&
+                this.dataSource.driver.options.type === "spanner" &&
                 !insertedValues.id
             ) {
                 insertedValues.id = RandomGenerator.uuidv4()
@@ -287,6 +294,7 @@ export class DbQueryResultCache implements QueryResultCache {
 
     /**
      * Clears everything stored in the cache.
+     * @param queryRunner
      */
     async clear(queryRunner: QueryRunner): Promise<void> {
         return this.getQueryRunner(queryRunner).clearTable(
@@ -296,6 +304,8 @@ export class DbQueryResultCache implements QueryResultCache {
 
     /**
      * Removes all cached results by given identifiers from cache.
+     * @param identifiers
+     * @param queryRunner
      */
     async remove(
         identifiers: string[],
@@ -326,10 +336,11 @@ export class DbQueryResultCache implements QueryResultCache {
 
     /**
      * Gets a query runner to work with.
+     * @param queryRunner
      */
     protected getQueryRunner(queryRunner?: QueryRunner): QueryRunner {
         if (queryRunner) return queryRunner
 
-        return this.connection.createQueryRunner()
+        return this.dataSource.createQueryRunner()
     }
 }

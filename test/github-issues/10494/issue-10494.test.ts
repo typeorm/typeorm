@@ -31,7 +31,6 @@ describe("github issues > #10494 Custom discriminator values when using Single T
                     "oracle",
                     "postgres",
                     "spanner",
-                    "sqlite",
                 ],
             })),
     )

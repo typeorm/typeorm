@@ -628,16 +628,13 @@ export class PostgresQueryRunner
         if (table.comment) {
             upQueries.push(
                 new Query(
-                    "COMMENT ON TABLE " +
-                        this.escapePath(table) +
-                        " IS '" +
-                        table.comment +
-                        "'",
+                    `COMMENT ON TABLE ${this.escapePath(table)}` +
+                        ` IS ${this.escapeComment(table.comment)}`,
                 ),
             )
             downQueries.push(
                 new Query(
-                    "COMMENT ON TABLE " + this.escapePath(table) + " IS NULL",
+                    `COMMENT ON TABLE ${this.escapePath(table)}` + ` IS NULL`,
                 ),
             )
         }
@@ -3305,9 +3302,17 @@ export class PostgresQueryRunner
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      * @param tableName
+     * @param options
+     * @param options.cascade
      */
-    async clearTable(tableName: string): Promise<void> {
-        await this.query(`TRUNCATE TABLE ${this.escapePath(tableName)}`)
+    async clearTable(
+        tableName: string,
+        options?: { cascade?: boolean },
+    ): Promise<void> {
+        const cascade = options?.cascade ? " CASCADE" : ""
+        await this.query(
+            `TRUNCATE TABLE ${this.escapePath(tableName)}${cascade}`,
+        )
     }
 
     /**
@@ -5081,26 +5086,27 @@ export class PostgresQueryRunner
             ? tableOrName
             : await this.getCachedTable(tableOrName)
 
-        newComment = this.escapeComment(newComment)
-        const comment = this.escapeComment(table.comment)
+        const escapedNewComment = this.escapeComment(newComment)
+        const escapedComment = this.escapeComment(table.comment)
 
-        if (newComment === comment) {
+        if (escapedNewComment === escapedComment) {
             return
         }
 
         const newTable = table.clone()
+        newTable.comment = newComment
 
         upQueries.push(
             new Query(
                 `COMMENT ON TABLE ${this.escapePath(
                     newTable,
-                )} IS ${newComment}`,
+                )} IS ${escapedNewComment}`,
             ),
         )
 
         downQueries.push(
             new Query(
-                `COMMENT ON TABLE ${this.escapePath(table)} IS ${comment}`,
+                `COMMENT ON TABLE ${this.escapePath(table)} IS ${escapedComment}`,
             ),
         )
 
