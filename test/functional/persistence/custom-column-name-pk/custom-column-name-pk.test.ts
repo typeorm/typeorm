@@ -9,20 +9,20 @@ import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 
 describe("persistence > cascade operations with custom name", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("cascade update", function () {
         it("should remove relation", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // create first post and category and save them
                     const post1 = new Post()
                     post1.title = "Hello Post #1"

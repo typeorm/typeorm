@@ -9,19 +9,19 @@ import {
 import { Post } from "./entity/Post"
 
 describe("ltree-postgres", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create correct schema with Postgres' ltree type", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const schema = await queryRunner.getTable("post")
                 await queryRunner.release()
@@ -38,7 +38,7 @@ describe("ltree-postgres", () => {
 
     it("should persist ltree correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const path = "News.Featured.Opinion"
                 const postRepo = connection.getRepository(Post)
                 const post = new Post()
@@ -54,7 +54,7 @@ describe("ltree-postgres", () => {
 
     it("should update ltree correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const path = "News.Featured.Opinion"
                 const path2 = "News.Featured.Gossip"
                 const postRepo = connection.getRepository(Post)
@@ -74,7 +74,7 @@ describe("ltree-postgres", () => {
 
     it("should re-save ltree correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const path = "News.Featured.Opinion"
                 const path2 = "News.Featured.Gossip"
                 const postRepo = connection.getRepository(Post)
@@ -95,7 +95,7 @@ describe("ltree-postgres", () => {
 
     it("should persist ltree correctly with trailing '.'", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const path = "News.Featured.Opinion."
                 const postRepo = connection.getRepository(Post)
                 const post = new Post()
@@ -111,7 +111,7 @@ describe("ltree-postgres", () => {
 
     it("should persist ltree correctly when containing spaces", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const path = "News.Featured Story.Opinion"
                 const postRepo = connection.getRepository(Post)
                 const post = new Post()
@@ -129,7 +129,7 @@ describe("ltree-postgres", () => {
 
     it("should be able to query ltree correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const path = "News.Featured.Opinion"
                 const postRepo = connection.getRepository(Post)
                 const post = new Post()

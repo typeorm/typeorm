@@ -9,21 +9,21 @@ import { Post } from "./entity/Post"
 import { expect } from "chai"
 
 describe("github issues > #5501 Incorrect data loading from JSON string for column type 'simple-json'", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             enabledDrivers: ["mysql", "mariadb"],
             entities: [Post],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly store simple-json field", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let id = 0
                 const runTestCase = async (
                     input: any,
@@ -84,7 +84,7 @@ describe("github issues > #5501 Incorrect data loading from JSON string for colu
 
     it("should correctly retrieve simple-json field", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let id = 0
                 const runTestCase = async (
                     input: string | null,
@@ -145,7 +145,7 @@ describe("github issues > #5501 Incorrect data loading from JSON string for colu
 
     it("should throw an error when the data in the database is invalid", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const insert = (id: number, value: string | null) =>
                     connection
                         .createQueryBuilder()

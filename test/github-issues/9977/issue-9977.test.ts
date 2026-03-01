@@ -12,19 +12,19 @@ import { Tag } from "./entity/Tag"
 import { prepareData } from "./find-options-test-utils"
 
 describe("github issues > #9977", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 __dirname,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("where relations with (More|Less)ThanOrEqual operators", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts1 = await connection

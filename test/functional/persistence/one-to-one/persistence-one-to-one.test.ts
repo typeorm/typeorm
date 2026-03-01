@@ -14,14 +14,14 @@ describe("persistence > one-to-one", function () {
     // Setup
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(() => {
         return createTestingConnections({
             entities: [User, AccessToken],
-        }).then((all) => (connections = all))
+        }).then((all) => (dataSources = all))
     })
-    after(() => closeTestingConnections(connections))
-    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(dataSources))
+    beforeEach(() => reloadTestingDatabases(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -30,7 +30,7 @@ describe("persistence > one-to-one", function () {
     describe("set the relation with proper item", function () {
         it("should have an access token", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const userRepository = connection.getRepository(User)
                     const accessTokenRepository =
                         connection.getRepository(AccessToken)
@@ -57,7 +57,7 @@ describe("persistence > one-to-one", function () {
     describe("doesn't allow the same relation to be used twice", function () {
         it("should reject the saving attempt", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const userRepository = connection.getRepository(User)
                     const accessTokenRepository =
                         connection.getRepository(AccessToken)

@@ -10,22 +10,22 @@ import { OrderTestEntity } from "./entity/order-test.entity"
 
 describe("github issues > #7651 Enum that contains functions is not accordingly translated to SQL", () => {
     describe("entity", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     entities: [__dirname + "/entity/*{.js,.ts}"],
                     schemaCreate: true,
                     dropSchema: true,
                     enabledDrivers: ["postgres"],
                 })),
         )
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should correctly save and retrieve enum fields when declaration merging technique is used and enum contains functions", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // GIVEN
                     const orderEntity = new OrderTestEntity()
                     orderEntity.id = 1
@@ -46,7 +46,7 @@ describe("github issues > #7651 Enum that contains functions is not accordingly 
 
         it("should correctly save and retrieve enum array", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // GIVEN
                     const orderEntity = new OrderTestEntity()
                     orderEntity.id = 1
@@ -70,10 +70,10 @@ describe("github issues > #7651 Enum that contains functions is not accordingly 
     })
 
     describe("schema", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     entities: [__dirname + "/entity/*{.js,.ts}"],
                     schemaCreate: false,
                     dropSchema: true,
@@ -81,11 +81,11 @@ describe("github issues > #7651 Enum that contains functions is not accordingly 
                     migrations: [],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should contain SQL for enum type without function", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
                         .log()

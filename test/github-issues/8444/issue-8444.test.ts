@@ -38,11 +38,11 @@ describe("github issues > #8444 entitySkipConstructor not working", () => {
     })
 
     describe("with entitySkipConstructor", () => {
-        let connections: DataSource[] = []
-        afterEach(() => closeTestingConnections(connections))
+        let dataSources: DataSource[] = []
+        afterEach(() => closeTestingConnections(dataSources))
 
         it("createTestingConnections should succeed", async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 driverSpecific: {
                     entitySkipConstructor: true,
                 },

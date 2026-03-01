@@ -10,24 +10,24 @@ import { Animal } from "./entity/Animal"
 import { NamingStrategyUnderTest } from "./naming/NamingStrategyUnderTest"
 
 describe("github issues > #3847 FEATURE REQUEST - Naming strategy foreign key override name", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     const namingStrategy = new NamingStrategyUnderTest()
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 namingStrategy,
             })),
     )
     beforeEach(() => {
-        return reloadTestingDatabases(connections)
+        return reloadTestingDatabases(dataSources)
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("NamingStrategyUnderTest#", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.getRepository(Animal).find()
 
                 const metadata = connection.getMetadata(Animal)

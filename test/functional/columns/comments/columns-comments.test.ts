@@ -9,21 +9,21 @@ import {
 import { Test } from "./entity/Test"
 
 describe("columns > comments", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Test],
                 // Only supported on cockroachdb, mysql, postgres, and sap
                 enabledDrivers: ["cockroachdb", "mysql", "postgres", "sap"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should persist comments of different types to the database", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const table = (await connection
                     .createQueryRunner()
                     .getTable("test"))!

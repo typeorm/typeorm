@@ -9,21 +9,21 @@ import { Sailing } from "./entity/Sailing"
 import { ScheduledSailing } from "./entity/ScheduledSailing"
 
 describe("github issues > #8026 Inserting a value for a column that has a relation, and is also a date, results in the value being inserted as DEFAULT", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Sailing, ScheduledSailing],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
 
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("it should include a related date column in the constructed query", () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const queryBuilder = connection.createQueryBuilder()
 
             const insertValue = {

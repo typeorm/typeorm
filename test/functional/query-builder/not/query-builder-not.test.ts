@@ -10,20 +10,20 @@ import { User } from "./entity/User"
 import { NotBrackets } from "../../../../src/query-builder/NotBrackets"
 
 describe("query builder > not", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["better-sqlite3"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should put negation in the SQL with one condition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sql = connection
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
@@ -49,7 +49,7 @@ describe("query builder > not", () => {
 
     it("should put negation in the SQL with two condition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sql = connection
                     .createQueryBuilder(User, "user")
                     .where("user.isAdmin = :isAdmin", { isAdmin: true })
@@ -77,7 +77,7 @@ describe("query builder > not", () => {
 
     it("should put negation correctly into WHERE expression with one condition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User()
                 user1.firstName = "Timber"
                 user1.lastName = "Saw"
@@ -114,7 +114,7 @@ describe("query builder > not", () => {
 
     it("should put negation correctly into WHERE expression with two conditions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User()
                 user1.firstName = "Timber"
                 user1.lastName = "Saw"

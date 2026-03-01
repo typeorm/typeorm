@@ -9,10 +9,10 @@ import { Foo } from "./entity/Foo"
 import { expect } from "chai"
 
 describe("github issues > #2499 Postgres DELETE query result is useless", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
@@ -29,12 +29,12 @@ describe("github issues > #2499 Postgres DELETE query result is useless", () => 
                 ],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return correct number of affected rows for mysql, mariadb, postgres", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Foo)
 
                 await repo.save({ id: 1, description: "test1" })

@@ -10,18 +10,18 @@ import { Embedded } from "./entity/Embedded"
 import { User } from "./entity/User"
 
 describe("github issues > #6977 Relation columns in embedded entities are not prefixed", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [User, Embedded],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly assign foreign key columns in embedded entity", () => {
-        connections.forEach((connection) => {
+        dataSources.forEach((connection) => {
             const columnNames = connection.entityMetadatas
                 .find((entity) => entity.name === "User")!
                 .columns.map((column) => column.databaseName)

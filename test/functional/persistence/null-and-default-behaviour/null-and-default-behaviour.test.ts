@@ -9,19 +9,19 @@ import { Post } from "./entity/Post"
 import { expect } from "chai"
 
 describe("persistence > null and default behaviour", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert value if it is set", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create category
                 const post = new Post()
                 post.id = 1
@@ -41,7 +41,7 @@ describe("persistence > null and default behaviour", () => {
 
     it("should insert default when post.title is undefined", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create category
                 const post = new Post()
                 post.id = 1
@@ -60,7 +60,7 @@ describe("persistence > null and default behaviour", () => {
 
     it("should insert NULL when post.title is null", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create category
                 const post = new Post()
                 post.id = 1
@@ -80,7 +80,7 @@ describe("persistence > null and default behaviour", () => {
 
     it("should update nothing when post.title is undefined", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create category
                 const post = new Post()
                 post.id = 1
@@ -103,7 +103,7 @@ describe("persistence > null and default behaviour", () => {
 
     it("should update to null when post.title is null", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Category saved!"

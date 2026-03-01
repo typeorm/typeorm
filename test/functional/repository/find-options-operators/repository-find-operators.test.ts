@@ -26,19 +26,19 @@ import { expect } from "chai"
 import { Comment } from "./entity/Comment"
 
 describe("repository > find options > operators", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [PersonAR, Post],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("not", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -63,7 +63,7 @@ describe("repository > find options > operators", () => {
 
     it("lessThan", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -88,7 +88,7 @@ describe("repository > find options > operators", () => {
 
     it("lessThanOrEqual", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -118,7 +118,7 @@ describe("repository > find options > operators", () => {
 
     it("not(lessThan)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -143,7 +143,7 @@ describe("repository > find options > operators", () => {
 
     it("not(lessThanOrEqual)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -172,7 +172,7 @@ describe("repository > find options > operators", () => {
 
     it("moreThan", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -197,7 +197,7 @@ describe("repository > find options > operators", () => {
 
     it("moreThanOrEqual", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -229,7 +229,7 @@ describe("repository > find options > operators", () => {
 
     it("not(moreThan)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -254,7 +254,7 @@ describe("repository > find options > operators", () => {
 
     it("not(moreThanOrEqual)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -283,7 +283,7 @@ describe("repository > find options > operators", () => {
 
     it("equal", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -308,7 +308,7 @@ describe("repository > find options > operators", () => {
 
     it("not(equal)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -333,7 +333,7 @@ describe("repository > find options > operators", () => {
 
     it("ilike", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "about #1"
@@ -359,7 +359,7 @@ describe("repository > find options > operators", () => {
 
     it("not(ilike)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "about #1"
@@ -384,7 +384,7 @@ describe("repository > find options > operators", () => {
 
     it("like", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -410,7 +410,7 @@ describe("repository > find options > operators", () => {
 
     it("not(like)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -435,7 +435,7 @@ describe("repository > find options > operators", () => {
 
     it("between", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -479,7 +479,7 @@ describe("repository > find options > operators", () => {
 
     it("not(between)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -520,7 +520,7 @@ describe("repository > find options > operators", () => {
 
     it("in", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -550,7 +550,7 @@ describe("repository > find options > operators", () => {
 
     it("not(in)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -580,7 +580,7 @@ describe("repository > find options > operators", () => {
 
     it("any", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!(connection.driver.options.type === "postgres")) return
 
                 // insert some fake data
@@ -607,7 +607,7 @@ describe("repository > find options > operators", () => {
 
     it("not(any)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (!(connection.driver.options.type === "postgres")) return
 
                 // insert some fake data
@@ -634,7 +634,7 @@ describe("repository > find options > operators", () => {
 
     it("isNull", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -657,7 +657,7 @@ describe("repository > find options > operators", () => {
 
     it("not(isNull)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -682,7 +682,7 @@ describe("repository > find options > operators", () => {
 
     it("raw", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -707,7 +707,7 @@ describe("repository > find options > operators", () => {
 
     it("raw (function)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -734,7 +734,7 @@ describe("repository > find options > operators", () => {
 
     it("raw (function with object literal parameters)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const createPost = (index: number): Post => {
                     const post = new Post()
                     post.title = `About #${index}`
@@ -845,7 +845,7 @@ describe("repository > find options > operators", () => {
 
     it("should work with ActiveRecord model", async () => {
         // These must run sequentially as we have the global context of the `PersonAR` ActiveRecord class
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             PersonAR.useDataSource(connection)
 
             const person = new PersonAR()
@@ -861,7 +861,7 @@ describe("repository > find options > operators", () => {
 
     it("or (array syntax)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // insert some fake data
                 const post1 = new Post()
                 post1.title = "About #1"
@@ -896,20 +896,20 @@ describe("repository > find options > operators", () => {
         ))
 
     describe("raw with jsonb columns", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     entities: [Comment],
                     enabledDrivers: ["postgres", "cockroachdb"],
                 })),
         )
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should work with @> (contains) operator", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
@@ -974,7 +974,7 @@ describe("repository > find options > operators", () => {
 
         it("should work with <@ (contained by) operator", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
@@ -1038,7 +1038,7 @@ describe("repository > find options > operators", () => {
 
         it("should work with ?| (any keys exist) operator", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
@@ -1070,7 +1070,7 @@ describe("repository > find options > operators", () => {
 
         it("should work with ?& (all keys exist) operator", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
@@ -1111,7 +1111,7 @@ describe("repository > find options > operators", () => {
 
         it("should work with -> (get object field) operator", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = { author: { name: "Alice" } }
@@ -1164,7 +1164,7 @@ describe("repository > find options > operators", () => {
 
         it("should work with ->> (get object field) operator", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
@@ -1221,7 +1221,7 @@ describe("repository > find options > operators", () => {
             ))
         it("should work with #> (get object field as JSON) operator", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = {
@@ -1265,7 +1265,7 @@ describe("repository > find options > operators", () => {
 
         it("should work with #>> (get object field as text) operator", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const comment1 = new Comment()
                     comment1.text = "Comment #1"
                     comment1.metadata = { likesDislikes: [300, 20] }

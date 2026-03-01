@@ -11,20 +11,20 @@ import { Photo } from "./entity/Photo"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > insert", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should perform insertion correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user = new User()
                 user.name = "Alex Messer"
 
@@ -66,7 +66,7 @@ describe("query builder > insert", () => {
 
     it("should perform bulk insertion correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // it is skipped for SAP because it does not support bulk insertion
                 if (connection.driver.options.type === "sap") {
                     return
@@ -107,7 +107,7 @@ describe("query builder > insert", () => {
 
     it("should be able to use sql functions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection
                     .createQueryBuilder()
                     .insert()
@@ -130,7 +130,7 @@ describe("query builder > insert", () => {
 
     it("should be able to insert entities with different properties set even inside embeds", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // this test is skipped for sqlite based drivers because it does not support DEFAULT values in insertions,
                 // also it is skipped for SAP because it does not support bulk insertion
                 if (

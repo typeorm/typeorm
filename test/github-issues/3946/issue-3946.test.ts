@@ -11,19 +11,19 @@ import { Post } from "./entity/Post"
 import { Image } from "./entity/Image"
 
 describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong IN calculation, when primary key is string", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load relation count on owner side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "cars"
                 await connection.manager.save(category1)
@@ -83,7 +83,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
 
     it("should load relation count on owner side with limitation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.id = "126f5a9a-4017-4365-be65-4665081d3f39"
                 category1.name = "cars"
@@ -149,7 +149,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
 
     it("should load relation count on owner side with additional conditions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const image1 = new Image()
                 image1.id = "11d58da3-913d-4696-afb5-a0d2aae41dc9"
                 image1.isRemoved = true
@@ -297,7 +297,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
 
     it("should load relation count on both sides of relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.id = "41d58da3-913d-4696-afb5-a0d2aae41dc9"
                 category1.name = "cars"
@@ -371,7 +371,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
 
     it("should load relation count on inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.id = "41d58da3-913d-4696-afb5-a0d2aae41dc9"
                 category1.name = "cars"
@@ -439,7 +439,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
 
     it("should load relation count on inverse side with limitation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.id = "11d58da3-913d-4696-afb5-a0d2aae41dc9"
                 category1.name = "cars"
@@ -508,7 +508,7 @@ describe("github issues > #3946 loadRelationCountAndMap fails cause made a wrong
 
     it("should load relation count on inverse side with additional conditions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.id = "11d58da3-913d-4696-afb5-a0d2aae41dc9"
                 category1.name = "cars"

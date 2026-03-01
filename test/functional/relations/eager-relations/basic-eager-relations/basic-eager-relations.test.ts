@@ -13,15 +13,15 @@ import { Profile } from "./entity/Profile"
 import { User } from "./entity/User"
 
 describe("relations > eager relations > basic", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const profile = new Profile()
@@ -65,7 +65,7 @@ describe("relations > eager relations > basic", () => {
 
     it("should load all eager relations when object is loaded", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const loadedPost = await connection.manager.findOne(Post, {
@@ -133,7 +133,7 @@ describe("relations > eager relations > basic", () => {
 
     it("should not load eager relations when query builder is used", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const loadedPost = await connection.manager
@@ -150,7 +150,7 @@ describe("relations > eager relations > basic", () => {
 
     it("should preserve manually requested nested relations with DeleteDateColumn", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 // Prepare test data - reusing existing entities
@@ -201,7 +201,7 @@ describe("relations > eager relations > basic", () => {
 
     it("should not join eager relations twice when explicitly specified with DeleteDateColumn entity (issue #11823)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const nestedProfile = new Profile()

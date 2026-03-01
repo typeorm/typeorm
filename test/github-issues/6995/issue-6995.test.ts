@@ -7,10 +7,10 @@ import {
 import { DefaultUpdateDate } from "./entity/default-update-date"
 
 describe("github issues > #6995 Generating migrations for UpdateDateColumn should generate on update clause", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 migrations: [],
                 enabledDrivers: ["mysql", "mariadb"],
                 schemaCreate: false,
@@ -18,11 +18,11 @@ describe("github issues > #6995 Generating migrations for UpdateDateColumn shoul
                 entities: [DefaultUpdateDate],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create migration with default ON UPDATE clause", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()

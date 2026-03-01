@@ -9,21 +9,21 @@ import { fail } from "assert"
 import { expect } from "chai"
 
 describe("github issues > #6115 Down migration for enums with defaults are wrong", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres"],
                 entities: [__dirname + "/entity/v1/*{.js,.ts}"],
                 dropSchema: true,
                 schemaCreate: true,
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should change schema when enum definition changes", () =>
         Promise.all(
-            connections.map(async (_connection) => {
+            dataSources.map(async (_connection) => {
                 const options = setupSingleTestingConnection(
                     _connection.options.type,
                     {

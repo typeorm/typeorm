@@ -8,17 +8,17 @@ import {
 } from "../../../../utils/test-utils"
 
 describe("database schema > column types > postgres > jsonpath", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
         })
     })
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // Based on:
     // * https://www.postgresql.org/docs/current/datatype-json.html#DATATYPE-JSONPATH
@@ -46,7 +46,7 @@ describe("database schema > column types > postgres > jsonpath", () => {
     ].forEach(([path, canonical]) => {
         it(`should insert and retrieve jsonpath values as strings for: ${path}`, () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repository = connection.getRepository(JsonPathExample)
                     const example = new JsonPathExample()
 

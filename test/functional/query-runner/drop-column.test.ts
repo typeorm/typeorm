@@ -8,20 +8,20 @@ import { DataSource, Table } from "../../../src"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > drop column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     describe("when columns are instances of TableColumn", () => {
         it("should correctly drop column and revert drop", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
 
                     let table = await queryRunner.getTable("post")
@@ -86,7 +86,7 @@ describe("query runner > drop column", () => {
     describe("when columns are strings", () => {
         it("should correctly drop column and revert drop", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
 
                     let table = await queryRunner.getTable("post")
@@ -151,7 +151,7 @@ describe("query runner > drop column", () => {
     describe("array modification during iteration", () => {
         it("should drop all columns without skipping any when iterating over array", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     // Skip drivers that don't support dropping multiple columns
                     if (
                         connection.driver.options.type === "mongodb" ||

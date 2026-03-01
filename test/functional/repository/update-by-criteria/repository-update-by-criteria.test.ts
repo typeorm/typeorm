@@ -15,15 +15,15 @@ describe("repository > update methods", function () {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -31,7 +31,7 @@ describe("repository > update methods", function () {
 
     it("mutate using update method should update successfully", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save some new posts
@@ -66,7 +66,7 @@ describe("repository > update methods", function () {
 
     it("mutate multiple rows using update method should update successfully", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save some new posts
@@ -103,7 +103,7 @@ describe("repository > update methods", function () {
 
     it("mutate multiple rows using update method with partial criteria should update successfully", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save some new posts
@@ -141,7 +141,7 @@ describe("repository > update methods", function () {
 
     it("mutates all rows using updateAll method", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save some new posts
@@ -176,7 +176,7 @@ describe("repository > update methods", function () {
 
     it("should use = operator instead of IN when updating by a single uuid primary key", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(UuidPost)
 
                 const post1 = postRepository.create()

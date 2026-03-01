@@ -10,21 +10,21 @@ import { WrappedString } from "./wrapped-string"
 import { MemoryLogger } from "./memory-logger"
 
 describe("github issues > #2703 Column with transformer is not normalized for update", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [`${__dirname}/entity/*{.js,.ts}`],
                 schemaCreate: true,
                 dropSchema: true,
                 createLogger: () => new MemoryLogger(false),
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
     afterEach(() =>
-        connections.forEach((connection) => {
+        dataSources.forEach((connection) => {
             const logger = connection.logger as MemoryLogger
             logger.enabled = false
             logger.clear()
@@ -33,7 +33,7 @@ describe("github issues > #2703 Column with transformer is not normalized for up
 
     it("should transform values when computing changed columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(Dummy)
 
                 const dummy = repository.create({

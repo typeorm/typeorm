@@ -9,20 +9,20 @@ import { User } from "./entity/User"
 import { expect } from "chai"
 
 describe("github issues > #4452 InsertQueryBuilder fails on some SQL Expressions values", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 // enabledDrivers: ["postgres"],
                 entities: [User],
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
     it("should be able to use sql functions", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection
                     .createQueryBuilder()
                     .insert()

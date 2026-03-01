@@ -12,20 +12,20 @@ import { EntityNotFoundError } from "../../../../src/error/EntityNotFoundError"
 import { UserEntity } from "./schema/UserEntity"
 
 describe("repository > find methods", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post, UserEntity],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("count", function () {
         it("should return a full count when no criteria given", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
 
                     for (let i = 0; i < 100; i++) {
@@ -46,7 +46,7 @@ describe("repository > find methods", () => {
 
         it("should return a count of posts that match given criteria", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
@@ -67,7 +67,7 @@ describe("repository > find methods", () => {
 
         it("should return a count of posts that match given multiple criteria", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
@@ -89,7 +89,7 @@ describe("repository > find methods", () => {
 
         it("should return a count of posts that match given find options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
@@ -110,7 +110,7 @@ describe("repository > find methods", () => {
 
         it("should return a count of posts that match both criteria and find options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
@@ -138,7 +138,7 @@ describe("repository > find methods", () => {
     describe("exists", function () {
         it("should return a True when no criteria given", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
 
                     for (let i = 0; i < 100; i++) {
@@ -159,7 +159,7 @@ describe("repository > find methods", () => {
 
         it("should return True when matches the given criteria", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
@@ -180,7 +180,7 @@ describe("repository > find methods", () => {
 
         it("should return True when matches the given multiple criteria", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
@@ -202,7 +202,7 @@ describe("repository > find methods", () => {
 
         it("should return True when matches the given find options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
@@ -223,7 +223,7 @@ describe("repository > find methods", () => {
 
         it("should return True when matches both criteria and find options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
                     for (let i = 1; i <= 100; i++) {
                         const post = new Post()
@@ -251,7 +251,7 @@ describe("repository > find methods", () => {
     describe("find and findAndCount", function () {
         it("should return everything when no criteria given", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
 
                     for (let i = 0; i < 100; i++) {
@@ -290,7 +290,7 @@ describe("repository > find methods", () => {
 
         it("should return posts that match given criteria", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
 
                     for (let i = 1; i <= 100; i++) {
@@ -331,7 +331,7 @@ describe("repository > find methods", () => {
 
         it("should return posts that match given multiple criteria", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
 
                     for (let i = 1; i <= 100; i++) {
@@ -373,7 +373,7 @@ describe("repository > find methods", () => {
 
         it("should return posts that match given find options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
 
                     for (let i = 1; i <= 100; i++) {
@@ -430,7 +430,7 @@ describe("repository > find methods", () => {
 
         it("should return posts that match both criteria and find options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const postRepository = connection.getRepository(Post)
 
                     for (let i = 1; i <= 100; i++) {
@@ -490,7 +490,7 @@ describe("repository > find methods", () => {
     describe("findOne", function () {
         it("should throw an error when no criteria given", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const userRepository =
                         connection.getRepository<User>("User")
 
@@ -515,7 +515,7 @@ describe("repository > find methods", () => {
 
         it("should return when criteria given", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const userRepository =
                         connection.getRepository<User>("User")
 
@@ -540,7 +540,7 @@ describe("repository > find methods", () => {
 
         it("should return when find options given", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const userRepository =
                         connection.getRepository<User>("User")
 
@@ -572,7 +572,7 @@ describe("repository > find methods", () => {
     describe("findOne", function () {
         it("should return entity by a given id", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const userRepository =
                         connection.getRepository<User>("User")
 
@@ -616,7 +616,7 @@ describe("repository > find methods", () => {
 
         it("should return entity by a given id and find options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const userRepository =
                         connection.getRepository<User>("User")
 
@@ -653,7 +653,7 @@ describe("repository > find methods", () => {
     describe("findByIds", function () {
         it("should return entities by given ids", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const userRepository =
                         connection.getRepository<User>("User")
 
@@ -683,7 +683,7 @@ describe("repository > find methods", () => {
     describe("findOneOrFail", function () {
         it("should return entity by a given id", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const userRepository =
                         connection.getRepository<User>("User")
 
@@ -727,7 +727,7 @@ describe("repository > find methods", () => {
 
         it("should return entity by a given id and find options", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const userRepository =
                         connection.getRepository<User>("User")
 
@@ -769,7 +769,7 @@ describe("repository > find methods", () => {
 
         it("should throw an error if nothing was found", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const userRepository =
                         connection.getRepository<User>("User")
 

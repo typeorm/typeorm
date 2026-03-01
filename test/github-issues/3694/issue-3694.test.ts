@@ -10,20 +10,20 @@ import { Post } from "./entity/Post"
 import { FruitEnum } from "./enum/FruitEnum"
 
 describe("github issues > #3694 Sync enums on schema sync", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql", "postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should change schema when enum definition changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const fruitEnum = FruitEnum
                 ;(fruitEnum as any).Banana = "BANANA"
                 Object.assign(fruitEnum, { Cherry: "cherry" })

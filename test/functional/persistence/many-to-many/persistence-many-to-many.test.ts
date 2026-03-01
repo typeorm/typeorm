@@ -15,13 +15,13 @@ describe("persistence > many-to-many", function () {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({ __dirname })),
+            (dataSources = await createTestingConnections({ __dirname })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -29,7 +29,7 @@ describe("persistence > many-to-many", function () {
 
     it("add exist element to exist object with empty many-to-many relation and save it and it should contain a new category", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const categoryRepository = connection.getRepository(Category)
                 const userRepository = connection.getRepository(User)
@@ -76,7 +76,7 @@ describe("persistence > many-to-many", function () {
 
     it("remove one element from many-to-many relation should remove from the database as well", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const categoryRepository = connection.getRepository(Category)
                 const userRepository = connection.getRepository(User)
@@ -153,7 +153,7 @@ describe("persistence > many-to-many", function () {
 
     it("remove all elements from many-to-many relation should remove from the database as well", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const categoryRepository = connection.getRepository(Category)
                 const userRepository = connection.getRepository(User)
@@ -229,7 +229,7 @@ describe("persistence > many-to-many", function () {
 
     it("remove all elements (set to null) from many-to-many relation should remove from the database as well", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const categoryRepository = connection.getRepository(Category)
                 const userRepository = connection.getRepository(User)
@@ -305,7 +305,7 @@ describe("persistence > many-to-many", function () {
 
     it("remove all elements from many-to-many relation if parent entity is removed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // save a new category
                 const category1 = new Category()
                 category1.name = "Animals"
