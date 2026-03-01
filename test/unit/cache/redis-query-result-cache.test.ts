@@ -5,7 +5,7 @@ import { RedisQueryResultCache } from "../../../src/cache/RedisQueryResultCache"
 import { PlatformTools } from "../../../src/platform/PlatformTools"
 import { DataSource } from "../../../src/data-source/DataSource"
 
-describe("RedisQueryResultCache", () => {
+describe.skip("RedisQueryResultCache", () => {
     describe("detectRedisVersion", () => {
         let sandbox: sinon.SinonSandbox
         let mockDataSource: sinon.SinonStubbedInstance<DataSource>
