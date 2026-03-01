@@ -14,13 +14,13 @@ describe("persistence > persistence options > transaction", () => {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({ __dirname })),
+            (dataSources = await createTestingConnections({ __dirname })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -28,7 +28,7 @@ describe("persistence > persistence options > transaction", () => {
 
     it("should disable transaction when option is specified", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "Bakhrom"
                 post.description = "Hello"
@@ -60,7 +60,7 @@ describe("persistence > persistence options > transaction", () => {
 
     it("should disable transaction when the drivers transactionSupport setting equals `none`", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.title = "Bakhrom"
                 post.description = "Hello"

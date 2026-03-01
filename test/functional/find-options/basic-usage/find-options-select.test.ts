@@ -10,17 +10,17 @@ import { Post } from "./entity/Post"
 import { prepareData } from "./find-options-test-utils"
 
 describe("find options > select", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({ __dirname })),
+            (dataSources = await createTestingConnections({ __dirname })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("select id", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts1 = await connection
@@ -61,7 +61,7 @@ describe("find options > select", () => {
 
     it("select title", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts1 = await connection
@@ -102,7 +102,7 @@ describe("find options > select", () => {
 
     it("select title and text", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts1 = await connection
@@ -144,7 +144,7 @@ describe("find options > select", () => {
 
     it("select column in embed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection

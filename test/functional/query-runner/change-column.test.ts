@@ -11,19 +11,19 @@ import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > change column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly change column and revert change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // CockroachDB and Spanner does not allow changing primary columns and renaming constraints
                 if (
                     connection.driver.options.type === "cockroachdb" ||
@@ -106,7 +106,7 @@ describe("query runner > change column", () => {
 
     it("should correctly change column 'isGenerated' property and revert change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // CockroachDB and Spanner does not allow changing generated columns in existent tables
                 if (
                     connection.driver.options.type === "cockroachdb" ||
@@ -184,7 +184,7 @@ describe("query runner > change column", () => {
 
     it("should correctly change generated as expression", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const isPostgres = connection.driver.options.type === "postgres"
                 const isSpanner = connection.driver.options.type === "spanner"
                 const shouldRun =

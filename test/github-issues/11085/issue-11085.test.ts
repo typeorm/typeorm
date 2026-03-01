@@ -9,23 +9,23 @@ import { expect } from "chai"
 import { User } from "./entity/User"
 
 describe("github issues > #11085 BeforeQuery promises are not awaited before query execution", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             enabledDrivers: ["postgres"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
     afterEach(async () => {
-        await closeTestingConnections(connections)
+        await closeTestingConnections(dataSources)
     })
 
     it("should find user since beforeQuery promise must be awaited before query execution", async () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userRepository = connection.getRepository(User)
 
                 const user = await userRepository.findBy({

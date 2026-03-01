@@ -8,19 +8,19 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { Category } from "./entity/Category"
 
 describe("github issues > #904 Using closure tables without @TreeLevelColumn will always fail on insert", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work correctly when saving using parent category", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -87,7 +87,7 @@ describe("github issues > #904 Using closure tables without @TreeLevelColumn wil
 
     it("should work correctly when saving using children categories", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -156,7 +156,7 @@ describe("github issues > #904 Using closure tables without @TreeLevelColumn wil
 
     it("should be able to retrieve the whole tree", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 

@@ -10,15 +10,15 @@ import {
 import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 
 describe("database schema > column width", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["mariadb", "mysql"],
         })
 
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // column width no longer supported on Mysql 8.0+
                 if (
                     connection.driver.options.type === "mysql" &&
@@ -32,16 +32,16 @@ describe("database schema > column width", () => {
             }),
         )
 
-        connections = connections.filter(
+        dataSources = dataSources.filter(
             (connection) => connection.isInitialized,
         )
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("all types should be created with correct width", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
@@ -60,7 +60,7 @@ describe("database schema > column width", () => {
 
     it("should update data type display width", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const metadata = connection.getMetadata(Post)
                 metadata.findColumnWithPropertyName("int")!.width = 5
                 metadata.findColumnWithPropertyName("tinyint")!.width = 3

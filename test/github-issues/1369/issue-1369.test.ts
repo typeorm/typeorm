@@ -9,22 +9,22 @@ import { expect } from "chai"
 import { ConcreteEntity } from "./entity/ConcreteEntity"
 
 describe("github issues > #1369 EntitySubscriber not firing events on abstract class entity", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should fire the given event for an abstract entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const entity = new ConcreteEntity()
                 entity.firstname = "Michael"
                 entity.lastname = "Scott"

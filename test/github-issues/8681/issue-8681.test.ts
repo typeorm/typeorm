@@ -10,22 +10,22 @@ import { Item } from "./entity/item.entity"
 import { Thing } from "./entity/thing.entity"
 
 describe("github issues > #8681 DeepPartial simplification breaks the .create() and .save() method in certain cases.", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should .save() and .create() complex deep partial entities", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const myThing: DeepPartial<Thing> = {
                     name: "myThing",
                     items: [{ id: 1 }, { id: 2 }],
@@ -47,7 +47,7 @@ describe("github issues > #8681 DeepPartial simplification breaks the .create() 
 
     it("should .save() and .create() complex deep partial entities using a generic repository", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 class AbstractService<T extends object> {
                     private repository: Repository<T>
                     constructor(target: any) {

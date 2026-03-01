@@ -9,13 +9,13 @@ import {
 import { Post } from "./entity/Post"
 
 describe("find options > where", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({ __dirname })),
+            (dataSources = await createTestingConnections({ __dirname })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const post1 = new Post()
@@ -31,7 +31,7 @@ describe("find options > where", () => {
 
     it("should skip undefined properties", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const posts = await connection
@@ -55,7 +55,7 @@ describe("find options > where", () => {
 
     it("should skip null properties", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const posts1 = await connection

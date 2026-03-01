@@ -9,17 +9,17 @@ import { expect } from "chai"
 import { Post } from "./entity/Post"
 
 describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of 'null'", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const savedPost = new Post()
@@ -32,7 +32,7 @@ describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of
     describe("lazy-loaded relations", () => {
         it("should return null if ManyToOne relation has NULL in database", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
                     const post = await connection.manager.findOneByOrFail(
                         Post,
@@ -44,7 +44,7 @@ describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of
 
         it("should return null if OneToOne+JoinColumn relation has NULL in database", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
                     const post = await connection.manager.findOneByOrFail(
                         Post,
@@ -56,7 +56,7 @@ describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of
 
         it("should return null if OneToOne relation has NULL in database", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
                     const post = await connection.manager.findOneByOrFail(
                         Post,
@@ -70,7 +70,7 @@ describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of
     describe("lazy-loaded relations included in 'relations' find option", () => {
         it("should return null if ManyToOne relation has NULL in database", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
                     const post = await connection.manager.findOneOrFail(Post, {
                         where: {
@@ -86,7 +86,7 @@ describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of
 
         it("should return null if OneToOne+JoinColumn relation has NULL in database", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
                     const post = await connection.manager.findOneOrFail(Post, {
                         where: {
@@ -102,7 +102,7 @@ describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of
 
         it("should return null if OneToOne relation has NULL in database", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
                     const post = await connection.manager.findOneOrFail(Post, {
                         where: {
@@ -120,7 +120,7 @@ describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of
     describe("eager-loaded relations", () => {
         it("should return null if ManyToOne relation has NULL in database", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
                     const post = await connection.manager.findOneByOrFail(
                         Post,
@@ -132,7 +132,7 @@ describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of
 
         it("should return null if OneToOne+JoinColumn relation has NULL in database", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
                     const post = await connection.manager.findOneByOrFail(
                         Post,
@@ -144,7 +144,7 @@ describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of
 
         it("should return null if OneToOne relation has NULL in database", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await prepareData(connection)
                     const post = await connection.manager.findOneByOrFail(
                         Post,

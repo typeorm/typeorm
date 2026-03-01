@@ -9,19 +9,19 @@ import { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("query builder > convert raw results to entity", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return null value in entity property when record column is null", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = new Post()
                 post.id = 1
@@ -37,7 +37,7 @@ describe("query builder > convert raw results to entity", () => {
 
     it("should return true in entity property when record column is true", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = new Post()
                 post.id = 1
@@ -54,7 +54,7 @@ describe("query builder > convert raw results to entity", () => {
 
     it("should return false in entity property when record column is false", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = new Post()
                 post.id = 1

@@ -13,15 +13,15 @@ import { Category } from "./entity/Category"
 import { expect } from "chai"
 
 describe("relations > eager relations > lazy nested eager relations", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const profile = new Profile()
@@ -65,7 +65,7 @@ describe("relations > eager relations > lazy nested eager relations", () => {
 
     it("should load all eager relations nested inside a lazy relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const loadedEditor = await connection.manager.findOne(Editor, {

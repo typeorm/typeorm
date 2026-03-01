@@ -12,22 +12,22 @@ import { Bar } from "./entity/Bar"
 import { Foo } from "./entity/Foo"
 
 describe("github issues > #2251 - Unexpected behavior when passing duplicate entities to repository.save()", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should update all entities", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Bar)
 
                 await repo.save([
@@ -51,7 +51,7 @@ describe("github issues > #2251 - Unexpected behavior when passing duplicate ent
 
     it("should handle cascade updates", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const barRepo = connection.getRepository(Bar)
                 const fooRepo = connection.getRepository(Foo)
 

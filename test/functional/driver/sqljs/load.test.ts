@@ -10,22 +10,22 @@ import { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("sqljs driver > load", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post],
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["sqljs"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load from a file", () =>
         Promise.all(
-            connections.map(async (dataSource) => {
+            dataSources.map(async (dataSource) => {
                 await dataSource.sqljsManager.loadDatabase(
                     "test/functional/driver/sqljs/db/test.sqlite",
                 )
@@ -52,7 +52,7 @@ describe("sqljs driver > load", () => {
 
     it("should throw an error if the file doesn't exist", () =>
         Promise.all(
-            connections.map(async (dataSource) => {
+            dataSources.map(async (dataSource) => {
                 try {
                     await dataSource.sqljsManager.loadDatabase(
                         "test/functional/driver/sqljs/sqlite/test2.sqlite",

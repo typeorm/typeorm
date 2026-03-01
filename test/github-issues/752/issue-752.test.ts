@@ -8,19 +8,19 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { Product } from "./entity/Product"
 
 describe("github issues > #752 postgres - count query fails for empty table", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return user by a given email and proper escape 'user' keyword", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const product = new Product()
                 product.name = "Apple"
                 product.productVersionId = 1

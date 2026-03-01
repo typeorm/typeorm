@@ -11,21 +11,21 @@ import { Grandchild } from "./entity/Grandchild"
 import { Parent } from "./entity/Parent"
 
 describe("github issues > #8018 Non-unique relation property names causes entity mixup in query results", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Parent, Child, Grandchild],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(async () => await reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(async () => await reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create child entities of the correct type", async () =>
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const parent = new Parent()
                 parent.name = "parent"
 

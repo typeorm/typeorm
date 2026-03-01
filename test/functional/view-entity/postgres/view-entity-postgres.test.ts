@@ -12,20 +12,20 @@ import { PostCategory } from "./entity/PostCategory"
 import { PostByCategory } from "./entity/PostByCategory"
 
 describe("view entity > postgres", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create entity view from string definition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const postCategory = await queryRunner.getView("post_category")
                 expect(postCategory).to.be.exist
@@ -35,7 +35,7 @@ describe("view entity > postgres", () => {
 
     it("should not return data without refreshing the materialized view", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
                 const category1 = new Category()
@@ -67,7 +67,7 @@ describe("view entity > postgres", () => {
 
     it("should correctly return data from View", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "Cars"
                 await connection.manager.save(category1)

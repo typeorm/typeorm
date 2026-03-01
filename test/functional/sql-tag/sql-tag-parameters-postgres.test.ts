@@ -9,20 +9,20 @@ import { DataSource } from "../../../src"
 import { PostgresExample } from "./entity/PostgresExample"
 
 describe("sql tag parameters (postgres)", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [PostgresExample],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should handle basic SQL tag parameters", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(PostgresExample)
 
                 await repo.save({ id: "basic" })
@@ -36,7 +36,7 @@ describe("sql tag parameters (postgres)", () => {
 
     it("should handle multiple parameters in a single query", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(PostgresExample)
 
                 await repo.save([
@@ -59,7 +59,7 @@ describe("sql tag parameters (postgres)", () => {
 
     it("should handle complex SQL with nested queries and parameters", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(PostgresExample)
 
                 await repo.save([
@@ -89,7 +89,7 @@ describe("sql tag parameters (postgres)", () => {
 
     it("should handle SQL tag parameters with complex conditions and ordering", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(PostgresExample)
 
                 await repo.save([
@@ -114,7 +114,7 @@ describe("sql tag parameters (postgres)", () => {
 
     it("should handle SQL tag parameters with NULL values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(PostgresExample)
 
                 await repo.save([
@@ -135,7 +135,7 @@ describe("sql tag parameters (postgres)", () => {
 
     it("should handle SQL tag parameters with boolean values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(PostgresExample)
 
                 await repo.save([
@@ -156,7 +156,7 @@ describe("sql tag parameters (postgres)", () => {
 
     it("should handle SQL tag parameters with complex array operations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(PostgresExample)
 
                 await repo.save([

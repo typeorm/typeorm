@@ -9,10 +9,10 @@ import {
 import { Bar } from "./entity/Bar"
 
 describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() for mysql, sqlite and mssql", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql", "mariadb", "better-sqlite3", "mssql"],
                 schemaCreate: true,
@@ -20,12 +20,12 @@ describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() 
             })),
     )
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should allow to explicitly insert primary key value", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const firstBarQuery = connection.manager.create(Bar, {
                     id: 10,
                     description: "forced id value",
@@ -55,7 +55,7 @@ describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() 
 
     it("should reset mssql's INSERT_IDENTITY flag correctly after failed queries", () =>
         Promise.all(
-            connections
+            dataSources
                 .filter(
                     (connection) => connection.driver.options.type === "mssql",
                 )

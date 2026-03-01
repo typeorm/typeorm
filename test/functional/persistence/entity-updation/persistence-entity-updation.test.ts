@@ -15,17 +15,17 @@ import { PostComplex } from "./entity/PostComplex"
 import { PostEmbedded } from "./entity/PostEmbedded"
 
 describe("persistence > entity updation", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({ __dirname })),
+            (dataSources = await createTestingConnections({ __dirname })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should update generated auto-increment id after saving", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new PostIncrement()
                 post.text = "Hello Post"
                 await connection.manager.save(post)
@@ -37,7 +37,7 @@ describe("persistence > entity updation", () => {
 
     it("should update generated uuid after saving", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new PostUuid()
                 post.text = "Hello Post"
                 await connection.manager.save(post)
@@ -53,7 +53,7 @@ describe("persistence > entity updation", () => {
 
     it("should update default values after saving", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Spanner does not support DEFAULT values
                 if (connection.driver.options.type === "spanner") return
 
@@ -71,7 +71,7 @@ describe("persistence > entity updation", () => {
 
     it("should update special columns after saving", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Spanner does not support DEFAULT values
                 if (connection.driver.options.type === "spanner") return
 
@@ -87,7 +87,7 @@ describe("persistence > entity updation", () => {
 
     it("should update even when multiple primary keys are used", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new PostMultiplePrimaryKeys()
                 post.firstId = 1
                 post.secondId = 3
@@ -100,7 +100,7 @@ describe("persistence > entity updation", () => {
 
     it("should update even with embeddeds", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Spanner does not support DEFAULT values
                 if (connection.driver.options.type === "spanner") return
 

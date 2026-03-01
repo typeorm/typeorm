@@ -12,20 +12,20 @@ import { TableIndex } from "../../../src/schema-builder/table/TableIndex"
 import { expect } from "chai"
 
 describe("schema builder > change index", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly add new index", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const teacherMetadata = connection.getMetadata(Teacher)
                 const nameColumn =
                     teacherMetadata.findColumnWithPropertyName("name")!
@@ -58,7 +58,7 @@ describe("schema builder > change index", () => {
 
     it("should correctly change index", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const studentMetadata = connection.getMetadata(Student)
                 studentMetadata.indices[0].name = "changed_index"
 
@@ -77,7 +77,7 @@ describe("schema builder > change index", () => {
 
     it("should correctly drop removed index", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const studentMetadata = connection.getMetadata(Student)
                 studentMetadata.indices.splice(0, 1)
 
@@ -97,7 +97,7 @@ describe("schema builder > change index", () => {
 
     it("should ignore index synchronization when `synchronize` set to false", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // You can not disable synchronization for unique index in CockroachDB, because unique indices are stored as UNIQUE constraints
 
                 const queryRunner = connection.createQueryRunner()

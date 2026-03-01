@@ -8,21 +8,21 @@ import {
 import { User } from "./entity/user"
 
 describe("github issues > #3685 Brackets syntax failed when use where with object literal", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 dropSchema: true,
                 schemaCreate: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => connections && closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => dataSources && closeTestingConnections(dataSources))
 
     it("should accept objects in .where method (github issue #3685)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.manager.save(
                     Object.assign(new User(), {
                         firstName: "Jean",

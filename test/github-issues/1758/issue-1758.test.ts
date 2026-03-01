@@ -7,9 +7,9 @@ import {
 
 describe("github issues > #1758 Synchronization bug in PostgreSQL bug occurs when we explicitly state the default schema as 'public'", () => {
     describe("postgres, cockroachdb", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres", "cockroachdb"],
                 schema: "public",
@@ -17,20 +17,20 @@ describe("github issues > #1758 Synchronization bug in PostgreSQL bug occurs whe
                 dropSchema: true,
             })
         })
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should correctly synchronize schema when we explicitly state the default schema as 'public'", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await connection.synchronize()
                 }),
             ))
     })
 
     describe("mssql", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mssql"],
                 schema: "dbo",
@@ -38,11 +38,11 @@ describe("github issues > #1758 Synchronization bug in PostgreSQL bug occurs whe
                 dropSchema: true,
             })
         })
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should correctly synchronize schema when we explicitly state the default schema as 'public'", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await connection.synchronize()
                 }),
             ))

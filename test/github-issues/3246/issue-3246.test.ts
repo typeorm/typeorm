@@ -13,10 +13,10 @@ import { Broker } from "./entity/Broker"
 import { BrokerRepository } from "./repository/BrokerRepository"
 
 describe("github issues > #3246 Saving an entity with a 1:1 cascading insert does not return id if entity has nullable many:one relationship", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Order, OrderCustomer, Broker],
                 enabledDrivers: ["postgres"],
                 schemaCreate: true,
@@ -24,12 +24,12 @@ describe("github issues > #3246 Saving an entity with a 1:1 cascading insert doe
             })),
     )
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert and return the order with id", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const company = new Broker()
                 company.name = "Acme Inc."
 

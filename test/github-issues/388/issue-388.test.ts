@@ -9,19 +9,19 @@ import { expect } from "chai"
 import { Post } from "./entity/Post"
 
 describe("github issues > #388 skip and take with string ID don't work", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load posts with string id successfully", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const posts: Post[] = []
                 for (let i = 1; i <= 25; i++) {
                     const post = new Post()

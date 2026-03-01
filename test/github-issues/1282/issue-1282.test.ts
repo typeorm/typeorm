@@ -11,24 +11,24 @@ import { NamingStrategyUnderTest } from "./naming/NamingStrategyUnderTest"
 import { ColumnMetadata } from "../../../src/metadata/ColumnMetadata"
 
 describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumnName if it is called from the owning or owned (inverse) context ", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     const namingStrategy = new NamingStrategyUnderTest()
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 namingStrategy,
             })),
     )
     beforeEach(() => {
-        return reloadTestingDatabases(connections)
+        return reloadTestingDatabases(dataSources)
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("NamingStrategyUnderTest#", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.getRepository(Animal).find()
 
                 const metadata = connection.getManyToManyMetadata(

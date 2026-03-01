@@ -11,22 +11,22 @@ import { QueryBuilderCteOptions } from "../../../../src/query-builder/QueryBuild
 import { DataSource } from "../../../../src"
 
 describe("query builder > cte > materialized", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
                 // enabledDrivers: [']
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should allow MATERIALIZED hint", () =>
         Promise.all(
-            connections
+            dataSources
                 .filter(filterByCteCapabilities("enabled"))
                 .filter(filterByCteCapabilities("materializedHint"))
                 .map(async (connection) => {
@@ -65,7 +65,7 @@ describe("query builder > cte > materialized", () => {
 
     it("should allow NOT MATERIALIZED hint", () =>
         Promise.all(
-            connections
+            dataSources
                 .filter(filterByCteCapabilities("enabled"))
                 .filter(filterByCteCapabilities("materializedHint"))
                 .map(async (connection) => {
@@ -104,7 +104,7 @@ describe("query builder > cte > materialized", () => {
 
     it("should omit hint if materialized option is not set", () =>
         Promise.all(
-            connections
+            dataSources
                 .filter(filterByCteCapabilities("enabled"))
                 .filter(filterByCteCapabilities("materializedHint"))
                 .map(async (connection) => {

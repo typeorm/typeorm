@@ -12,20 +12,20 @@ import { Company } from "./entity/Company"
 import { Office } from "./entity/Office"
 
 describe("deferrable unique constraint", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("initially deferred unique should be validated at the end of transaction", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.manager.transaction(async (entityManager) => {
                     // first save company
                     const company1 = new Company()
@@ -67,7 +67,7 @@ describe("deferrable unique constraint", () => {
 
     it("initially immediate unique should be validated at the end at transaction with deferred check time", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.manager.transaction(async (entityManager) => {
                     // first set constraints deferred manually
                     await entityManager.query("SET CONSTRAINTS ALL DEFERRED")

@@ -16,20 +16,20 @@ import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("multi-schema-and-database > basic-functionality", () => {
     describe("custom-table-schema", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Post, User, Category],
                 enabledDrivers: ["mssql", "postgres"],
                 schema: "custom",
             })
         })
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should set the table database / schema", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const table = (await queryRunner.getTable("post"))!
                     await queryRunner.release()
@@ -41,7 +41,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly get the table primary keys when custom table schema used", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const table = (await queryRunner.getTable("post"))!
                     await queryRunner.release()
@@ -53,7 +53,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly create tables when custom table schema used", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const table = await queryRunner.getTable("post")
                     await queryRunner.release()
@@ -83,7 +83,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly create tables when custom table schema used in Entity decorator", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const table = await queryRunner.getTable("userSchema.user")
                     await queryRunner.release()
@@ -113,7 +113,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly work with cross-schema queries", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const table = await queryRunner.getTable("guest.category")
                     await queryRunner.release()
@@ -163,7 +163,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly work with QueryBuilder", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post = new Post()
                     post.name = "Post #1"
                     await connection.getRepository(Post).save(post)
@@ -208,19 +208,19 @@ describe("multi-schema-and-database > basic-functionality", () => {
     })
 
     describe("custom-table-schema-and-database", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Question, Answer],
                 enabledDrivers: ["mssql"],
             })
         })
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should set the table database / schema", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const table = (await queryRunner.getTable(
                         "testDB.questions.question",
@@ -235,7 +235,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly get the table primary keys when custom table schema used", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const table = (await queryRunner.getTable(
                         "testDB.questions.question",
@@ -249,7 +249,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly create tables when custom database and custom schema used in Entity decorator", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const table = await queryRunner.getTable(
                         "testDB.questions.question",
@@ -274,7 +274,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
 
         it("should correctly work with cross-schema and cross-database queries in QueryBuilder", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const questionTable = await queryRunner.getTable(
                         "testDB.questions.question",
@@ -324,19 +324,19 @@ describe("multi-schema-and-database > basic-functionality", () => {
     })
 
     describe("custom-database", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [Person],
                 enabledDrivers: ["mssql", "mysql"],
             })
         })
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should correctly create tables when custom database used in Entity decorator", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const tablePath =
                         connection.driver.options.type === "mssql"

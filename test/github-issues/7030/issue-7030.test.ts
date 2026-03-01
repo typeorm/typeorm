@@ -8,11 +8,11 @@ import {
 import { Post } from "./entity/Post"
 
 describe("github issues > #7030", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post],
                 schemaCreate: true,
                 dropSchema: true,
@@ -20,12 +20,12 @@ describe("github issues > #7030", () => {
             })),
     )
 
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should insert and fetch from the expected column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const id = "123e4567-e89b-12d3-a456-426614174000"
 
                 const post = new Post()

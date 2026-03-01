@@ -10,14 +10,14 @@ import { afterEach } from "mocha"
 import { expect } from "chai"
 
 describe("github issues > #4956 create typeorm_metatable when running migrations.", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     afterEach(async () => {
-        await closeTestingConnections(connections)
+        await closeTestingConnections(dataSources)
     })
 
     it("should create typeorm_metadata table when running migrations with views", async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             migrations: [__dirname + "/migration/WithView{.js,.ts}"],
             enabledDrivers: ["mysql", "mariadb"],
@@ -26,7 +26,7 @@ describe("github issues > #4956 create typeorm_metatable when running migrations
         })
 
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const typeormMetadataTableName = "typeorm_metadata"
 
@@ -47,7 +47,7 @@ describe("github issues > #4956 create typeorm_metatable when running migrations
     })
 
     it("should not create typeorm_metadata table when running migrations if there are no views", async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/Foo{.js,.ts}"],
             migrations: [__dirname + "/migration/WithoutView{.js,.ts}"],
             enabledDrivers: ["mysql", "mariadb"],
@@ -56,7 +56,7 @@ describe("github issues > #4956 create typeorm_metatable when running migrations
         })
 
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const typeormMetadataTableName = "typeorm_metadata"
 

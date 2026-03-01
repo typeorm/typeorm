@@ -10,20 +10,20 @@ import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 
 describe("github issue > #1326 Wrong behavior w/ the same table names in different databases", () => {
-    let connections: DataSource[] = []
+    let dataSources: DataSource[] = []
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not confuse equivalent table names in different databases", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 for (let i = 1; i <= 10; i++) {
                     const user = new User()
                     user.name = "user #" + i

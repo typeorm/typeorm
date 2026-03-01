@@ -11,20 +11,20 @@ import { Counters } from "./entity/Counters"
 import { User } from "./entity/User"
 
 describe("mongodb > basic repository actions", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post],
                 enabledDrivers: ["mongodb"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("create should create instance of same entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 postRepository.create().should.be.instanceOf(Post)
             }),
@@ -32,7 +32,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("create should be able to fill data from the given object", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = postRepository.create({
                     title: "This is created post",
@@ -46,7 +46,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("merge should merge all given partial objects into given source entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = postRepository.create({
                     title: "This is created post",
@@ -68,7 +68,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("merge should merge all given recursive partial objects into given source entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const counter1 = new Counters()
                 counter1.likes = 5
@@ -100,7 +100,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("target should be valid", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 expect(postRepository.target).not.to.be.undefined
                 postRepository.target.should.be.eql(Post)
@@ -109,7 +109,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("should persist entity successfully and after persistence have generated object id", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = new Post()
                 post.title = "Post #1"
@@ -122,7 +122,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("hasId should return true if id really has an id", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = new Post()
                 post.title = "Post #1"
@@ -136,7 +136,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("unsupported methods should throw exception", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 expect(() =>
                     postRepository.createQueryBuilder("post"),
@@ -149,7 +149,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("should return persisted objects using find* methods", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
 
                 const post1 = new Post()
@@ -240,7 +240,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("should sort entities in a query", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save few posts
@@ -278,7 +278,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("clear should remove all persisted entities", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save few posts
@@ -307,7 +307,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("remove should remove given entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getMongoRepository(Post)
 
                 const post1 = new Post()
@@ -335,7 +335,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("clear should remove all persisted entities", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save few posts
@@ -364,7 +364,7 @@ describe("mongodb > basic repository actions", () => {
 
     it("preload should pre-load given object", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a post first

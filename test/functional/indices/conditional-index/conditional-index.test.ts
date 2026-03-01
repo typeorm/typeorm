@@ -7,20 +7,20 @@ import {
 import { expect } from "chai"
 
 describe("indices > conditional index", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql", "postgres", "better-sqlite3"], // only these drivers supports conditional indices
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create conditional indices with WHERE condition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post")
 
@@ -34,7 +34,7 @@ describe("indices > conditional index", () => {
 
     it("should correctly drop conditional indices and revert drop", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 let table = await queryRunner.getTable("post")
                 table!.indices.length.should.be.equal(2)
