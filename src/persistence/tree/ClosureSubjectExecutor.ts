@@ -1,10 +1,10 @@
-import { Subject } from "../Subject"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { Subject } from "../Subject"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { CannotAttachTreeChildrenEntityError } from "../../error/CannotAttachTreeChildrenEntityError"
-import { DeleteQueryBuilder } from "../../query-builder/DeleteQueryBuilder"
+import type { DeleteQueryBuilder } from "../../query-builder/DeleteQueryBuilder"
 import { OrmUtils } from "../../util/OrmUtils"
-import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
 
 /**
  * Executes subject operations for closure entities.

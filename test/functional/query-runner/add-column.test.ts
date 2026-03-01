@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { TableColumn } from "../../../src/schema-builder/table/TableColumn"
 import {
     closeTestingConnections,
@@ -8,7 +8,7 @@ import {
     createTypeormMetadataTable,
 } from "../../utils/test-utils"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
-import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
+import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 
 describe("query runner > add column", () => {
     let dataSources: DataSource[]

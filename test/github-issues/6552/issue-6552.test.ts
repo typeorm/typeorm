@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import "../../utils/test-setup"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { PlatformTools } from "../../../src/platform/PlatformTools"
 import {
     closeTestingConnections,

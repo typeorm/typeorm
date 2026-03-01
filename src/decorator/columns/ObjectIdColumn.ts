@@ -1,6 +1,6 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
-import { ColumnOptions } from "../options/ColumnOptions"
+import type { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
+import type { ColumnOptions } from "../options/ColumnOptions"
 
 /**
  * Special type of column that is available only for MongoDB database.

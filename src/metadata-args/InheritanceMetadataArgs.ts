@@ -1,4 +1,4 @@
-import { ColumnOptions } from "../decorator/options/ColumnOptions"
+import type { ColumnOptions } from "../decorator/options/ColumnOptions"
 
 /**
  * Arguments for InheritanceMetadata class.

@@ -1,5 +1,5 @@
 import { FindOperator } from "../FindOperator"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 
 /**
  * Find Options Operator.

@@ -1,6 +1,6 @@
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { SpannerConnectionCredentialsOptions } from "./SpannerConnectionCredentialsOptions"
+import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { SpannerConnectionCredentialsOptions } from "./SpannerConnectionCredentialsOptions"
 
 /**
  * Spanner specific connection options.

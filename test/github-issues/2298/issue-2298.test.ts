@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, In } from "../../../src"
+import type { DataSource } from "../../../src"
+import { In } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

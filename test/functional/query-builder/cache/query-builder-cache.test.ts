@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 import { scheduler } from "timers/promises"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,

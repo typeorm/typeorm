@@ -1,6 +1,6 @@
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { RelationMetadata } from "../metadata/RelationMetadata"
-import { Subject } from "./Subject"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
+import type { Subject } from "./Subject"
 
 /**
  * Change for insertion or updation of the column of the subject.

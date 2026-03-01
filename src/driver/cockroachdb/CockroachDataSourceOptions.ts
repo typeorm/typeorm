@@ -1,6 +1,6 @@
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
+import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 
 /**
  * Cockroachdb-specific connection options.

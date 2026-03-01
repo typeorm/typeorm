@@ -1,4 +1,4 @@
-import { TableColumnOptions } from "../options/TableColumnOptions"
+import type { TableColumnOptions } from "../options/TableColumnOptions"
 
 /**
  * Table's columns in the database represented in this class.

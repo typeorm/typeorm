@@ -1,10 +1,10 @@
 import ansi from "ansis"
 import path from "path"
 import process from "process"
-import yargs from "yargs"
-import { DataSource } from "../data-source/DataSource"
+import type yargs from "yargs"
+import type { DataSource } from "../data-source/DataSource"
 import { PlatformTools } from "../platform/PlatformTools"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 import { CommandUtils } from "./CommandUtils"
 
 /**

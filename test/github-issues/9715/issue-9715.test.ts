@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 
 describe("github issues > #9715 Database schema is not updated by sync/migration when 'simple-enum' is changed.", () => {
     let dataSources: DataSource[]

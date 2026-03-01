@@ -6,7 +6,7 @@ import {
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source"
+import type { DataSource } from "../../../src/data-source"
 
 describe("github issues > #1200 Update multiple nested embeddeds", () => {
     let dataSources: DataSource[]

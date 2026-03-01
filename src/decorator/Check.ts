@@ -1,5 +1,5 @@
 import { getMetadataArgsStorage } from "../globals"
-import { CheckMetadataArgs } from "../metadata-args/CheckMetadataArgs"
+import type { CheckMetadataArgs } from "../metadata-args/CheckMetadataArgs"
 import { TypeORMError } from "../error"
 
 /**

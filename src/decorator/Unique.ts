@@ -1,6 +1,6 @@
 import { getMetadataArgsStorage } from "../globals"
-import { UniqueMetadataArgs } from "../metadata-args/UniqueMetadataArgs"
-import { UniqueOptions } from "./options/UniqueOptions"
+import type { UniqueMetadataArgs } from "../metadata-args/UniqueMetadataArgs"
+import type { UniqueOptions } from "./options/UniqueOptions"
 import { ObjectUtils } from "../util/ObjectUtils"
 
 /**

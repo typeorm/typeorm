@@ -1,4 +1,4 @@
-import { ValueTransformer } from "./ValueTransformer"
+import type { ValueTransformer } from "./ValueTransformer"
 
 /**
  * Describes all view column's options.

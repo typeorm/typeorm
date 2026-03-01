@@ -1,7 +1,7 @@
-import { RelationCountMetadataArgs } from "../metadata-args/RelationCountMetadataArgs"
-import { EntityMetadata } from "./EntityMetadata"
-import { RelationMetadata } from "./RelationMetadata"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { RelationCountMetadataArgs } from "../metadata-args/RelationCountMetadataArgs"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { RelationMetadata } from "./RelationMetadata"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 import { TypeORMError } from "../error"
 
 /**

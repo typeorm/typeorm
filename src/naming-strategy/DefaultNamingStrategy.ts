@@ -1,7 +1,7 @@
-import { NamingStrategyInterface } from "./NamingStrategyInterface"
+import type { NamingStrategyInterface } from "./NamingStrategyInterface"
 import { RandomGenerator } from "../util/RandomGenerator"
 import { camelCase, snakeCase, titleCase } from "../util/StringUtils"
-import { Table } from "../schema-builder/table/Table"
+import type { Table } from "../schema-builder/table/Table"
 
 /**
  * Naming strategy that is used by default.

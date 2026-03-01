@@ -1,4 +1,4 @@
-import { DataSource, EntityManager } from "../../../../src"
+import type { DataSource, EntityManager } from "../../../../src"
 import { ArrayOverlap } from "../../../../src/find-options/operator/ArrayOverlap"
 import "../../../utils/test-setup"
 import {

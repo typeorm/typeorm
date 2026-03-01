@@ -4,9 +4,9 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Dummy } from "./entity/Dummy"
-import { ReadStream } from "fs"
+import type { ReadStream } from "fs"
 import { expect } from "chai"
 
 function ingestStream(stream: ReadStream): Promise<any[]> {

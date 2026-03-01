@@ -1,5 +1,6 @@
 import { expect } from "chai"
-import { DataSource, DeepPartial, Repository } from "../../../src"
+import type { DataSource, DeepPartial } from "../../../src"
+import { Repository } from "../../../src"
 import "../../utils/test-setup"
 import {
     closeTestingConnections,

@@ -5,7 +5,7 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { afterEach } from "mocha"
 import { expect } from "chai"
 

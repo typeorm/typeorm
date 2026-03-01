@@ -1,10 +1,10 @@
-import { DataSource } from "../../data-source/DataSource"
+import type { DataSource } from "../../data-source/DataSource"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { ColumnType } from "../types/ColumnTypes"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { NativescriptDataSourceOptions } from "./NativescriptDataSourceOptions"
+import type { ColumnType } from "../types/ColumnTypes"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { NativescriptDataSourceOptions } from "./NativescriptDataSourceOptions"
 import { NativescriptQueryRunner } from "./NativescriptQueryRunner"
 
 /**

@@ -1,8 +1,8 @@
-import { Subject } from "./Subject"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { FindManyOptions } from "../find-options/FindManyOptions"
-import { MongoRepository } from "../repository/MongoRepository"
+import type { Subject } from "./Subject"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { MongoRepository } from "../repository/MongoRepository"
 import { OrmUtils } from "../util/OrmUtils"
 
 /**

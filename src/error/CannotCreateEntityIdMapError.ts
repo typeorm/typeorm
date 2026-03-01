@@ -1,5 +1,5 @@
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { TypeORMError } from "./TypeORMError"
 
 /**

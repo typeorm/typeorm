@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 describe("entity-model", () => {
     let dataSources: DataSource[]

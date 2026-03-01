@@ -11,8 +11,8 @@ export default defineConfig([
         "docs/**",
         "node_modules/**",
         "sample/playground/**",
-        "temp/**",
         "src/driver/mongodb/{typings.ts,bson.typings.ts}",
+        "temp/**",
     ]),
 
     {
@@ -33,6 +33,10 @@ export default defineConfig([
         },
         extends: [js.configs.recommended, ...ts.configs.recommendedTypeChecked],
         rules: {
+            // custom rules
+            "@typescript-eslint/consistent-type-exports": "error",
+            "@typescript-eslint/consistent-type-imports": "error",
+
             // exceptions from typescript-eslint/recommended
             "@typescript-eslint/ban-ts-comment": "warn",
             "@typescript-eslint/no-empty-object-type": "warn",

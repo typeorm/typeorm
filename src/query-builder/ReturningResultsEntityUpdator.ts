@@ -1,9 +1,9 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { QueryExpressionMap } from "./QueryExpressionMap"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { UpdateResult } from "./result/UpdateResult"
-import { InsertResult } from "./result/InsertResult"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryExpressionMap } from "./QueryExpressionMap"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { UpdateResult } from "./result/UpdateResult"
+import type { InsertResult } from "./result/InsertResult"
 import { TypeORMError } from "../error"
 
 /**

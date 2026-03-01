@@ -4,9 +4,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
-import { EntitySchema, InsertResult } from "../../../src"
+import type { InsertResult } from "../../../src"
+import { EntitySchema } from "../../../src"
 
 describe("github issues > #1510 entity schema does not support mode=objectId", () => {
     const UserEntity = new EntitySchema<{

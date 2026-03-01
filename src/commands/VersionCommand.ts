@@ -1,4 +1,4 @@
-import * as yargs from "yargs"
+import type * as yargs from "yargs"
 import { exec } from "child_process"
 
 /**

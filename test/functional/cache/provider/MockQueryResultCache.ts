@@ -1,12 +1,12 @@
-import { ObjectLiteral } from "../../../../src/common/ObjectLiteral"
-import { DataSource } from "../../../../src/data-source/DataSource"
-import { PostgresDataSourceOptions } from "../../../../src/driver/postgres/PostgresDataSourceOptions"
+import type { ObjectLiteral } from "../../../../src/common/ObjectLiteral"
+import type { DataSource } from "../../../../src/data-source/DataSource"
+import type { PostgresDataSourceOptions } from "../../../../src/driver/postgres/PostgresDataSourceOptions"
 import { MssqlParameter } from "../../../../src/driver/sqlserver/MssqlParameter"
-import { SqlServerDataSourceOptions } from "../../../../src/driver/sqlserver/SqlServerDataSourceOptions"
-import { QueryRunner } from "../../../../src/query-runner/QueryRunner"
+import type { SqlServerDataSourceOptions } from "../../../../src/driver/sqlserver/SqlServerDataSourceOptions"
+import type { QueryRunner } from "../../../../src/query-runner/QueryRunner"
 import { Table } from "../../../../src/schema-builder/table/Table"
-import { QueryResultCache } from "../../../../src/cache/QueryResultCache"
-import { QueryResultCacheOptions } from "../../../../src/cache/QueryResultCacheOptions"
+import type { QueryResultCache } from "../../../../src/cache/QueryResultCache"
+import type { QueryResultCacheOptions } from "../../../../src/cache/QueryResultCacheOptions"
 
 /**
  * Caches query result into current database, into separate table called "mock-query-result-cache".

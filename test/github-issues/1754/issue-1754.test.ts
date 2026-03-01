@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { TipoCliente } from "./entity/tipo-cliente"
 
 describe("github issue #1754 Repository.save() always updating ManyToOne relation", () => {

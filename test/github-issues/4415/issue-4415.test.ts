@@ -1,9 +1,6 @@
 import sinon from "sinon"
-import {
-    DataSourceOptions,
-    ConnectionOptionsReader,
-    DatabaseType,
-} from "../../../src"
+import type { DataSourceOptions, DatabaseType } from "../../../src"
+import { ConnectionOptionsReader } from "../../../src"
 import {
     setupTestingConnections,
     createTestingConnections,

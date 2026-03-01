@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, EntityManager } from "../../../src"
+import type { DataSource, EntityManager } from "../../../src"
 import { Parent } from "./entity/Parent"
 import { Child } from "./entity/Child"
 import { xfail } from "../../utils/xfail"

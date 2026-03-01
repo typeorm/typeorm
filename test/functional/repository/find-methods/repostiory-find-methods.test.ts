@@ -5,9 +5,9 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
-import { User } from "./model/User"
+import type { User } from "./model/User"
 import { EntityNotFoundError } from "../../../../src/error/EntityNotFoundError"
 import { UserEntity } from "./schema/UserEntity"
 

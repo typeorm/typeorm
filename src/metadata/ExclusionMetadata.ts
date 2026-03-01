@@ -1,7 +1,7 @@
-import { EntityMetadata } from "./EntityMetadata"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { ExclusionMetadataArgs } from "../metadata-args/ExclusionMetadataArgs"
-import { DeferrableType } from "./types/DeferrableType"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { ExclusionMetadataArgs } from "../metadata-args/ExclusionMetadataArgs"
+import type { DeferrableType } from "./types/DeferrableType"
 
 /**
  * Exclusion metadata contains all information about table's exclusion constraints.

@@ -1,6 +1,6 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
-import { RelationOptions } from "../options/RelationOptions"
+import type { RelationMetadataArgs } from "../../metadata-args/RelationMetadataArgs"
+import type { RelationOptions } from "../options/RelationOptions"
 
 /**
  * Marks an entity property as a children of the tree.

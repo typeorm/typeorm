@@ -1,5 +1,6 @@
 import { expect } from "chai"
-import { Brackets, DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Brackets } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

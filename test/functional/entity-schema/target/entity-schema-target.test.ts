@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import { PostEntity } from "./entity/PostEntity"
 import { Post } from "./model/Post"
 

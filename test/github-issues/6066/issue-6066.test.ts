@@ -3,7 +3,8 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { QueryFailedError, DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
+import { QueryFailedError } from "../../../src"
 import { Session } from "./entity/Session"
 import { expect } from "chai"
 

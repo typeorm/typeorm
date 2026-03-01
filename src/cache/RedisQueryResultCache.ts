@@ -1,8 +1,8 @@
-import { QueryResultCache } from "./QueryResultCache"
-import { QueryResultCacheOptions } from "./QueryResultCacheOptions"
+import type { QueryResultCache } from "./QueryResultCache"
+import type { QueryResultCacheOptions } from "./QueryResultCacheOptions"
 import { PlatformTools } from "../platform/PlatformTools"
-import { DataSource } from "../data-source/DataSource"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { DataSource } from "../data-source/DataSource"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 import { TypeORMError } from "../error/TypeORMError"
 
 /**

@@ -1,4 +1,4 @@
-import { Query } from "./Query"
+import type { Query } from "./Query"
 
 /**
  * This class stores up and down queries needed for migrations functionality.

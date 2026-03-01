@@ -1,7 +1,8 @@
 import { AbstractLogger } from "./AbstractLogger"
-import { debug, Debugger } from "debug"
-import { LogLevel, LogMessage, LogMessageType } from "./Logger"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { Debugger } from "debug"
+import { debug } from "debug"
+import type { LogLevel, LogMessage, LogMessageType } from "./Logger"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Performs logging of the events in TypeORM via debug library.

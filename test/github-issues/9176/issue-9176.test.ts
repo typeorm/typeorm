@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Author } from "./entity/Author"
 import { Post } from "./entity/Post"
 import { CheckedUser, User } from "./entity/User"

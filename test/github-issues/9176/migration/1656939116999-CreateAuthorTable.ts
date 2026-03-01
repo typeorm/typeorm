@@ -1,4 +1,5 @@
-import { MigrationInterface, QueryRunner, Table } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
+import { Table } from "../../../../src"
 
 export class CreateAuthorTable1656939116999 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {

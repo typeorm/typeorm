@@ -1,4 +1,5 @@
-import { DataSource, DataSourceOptions } from "../../src"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { City } from "./entity/city"
 import { Country } from "./entity/country"
 import { Order } from "./entity/order"

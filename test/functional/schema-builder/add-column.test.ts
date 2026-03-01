@@ -1,6 +1,6 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
-import { ColumnMetadataArgs } from "../../../src/metadata-args/ColumnMetadataArgs"
+import type { DataSource } from "../../../src"
+import type { ColumnMetadataArgs } from "../../../src/metadata-args/ColumnMetadataArgs"
 import { ColumnMetadata } from "../../../src/metadata/ColumnMetadata"
 import {
     closeTestingConnections,

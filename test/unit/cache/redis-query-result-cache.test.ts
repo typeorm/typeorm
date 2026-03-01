@@ -3,7 +3,7 @@ import { expect } from "chai"
 import * as sinon from "sinon"
 import { RedisQueryResultCache } from "../../../src/cache/RedisQueryResultCache"
 import { PlatformTools } from "../../../src/platform/PlatformTools"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 
 describe("RedisQueryResultCache", () => {
     describe("detectRedisVersion", () => {

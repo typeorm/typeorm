@@ -1,5 +1,5 @@
-import { Subject } from "./Subject"
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import type { Subject } from "./Subject"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import { TypeORMError } from "../error"
 
 /**

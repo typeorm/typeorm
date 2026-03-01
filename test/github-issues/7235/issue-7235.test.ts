@@ -5,7 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { Animal } from "./entity/Animal"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { VersionUtils } from "../../../src/util/VersionUtils"
 

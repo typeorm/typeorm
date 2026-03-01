@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { Post } from "./entity/Post"
 import { Question } from "./entity/Question"
 import { Counters } from "./entity/Counters"

@@ -1,7 +1,7 @@
 import fs from "fs/promises"
 import path from "path"
 import { TypeORMError } from "../error"
-import { DataSource } from "../data-source"
+import type { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { importOrRequireFile } from "../util/ImportUtils"
 

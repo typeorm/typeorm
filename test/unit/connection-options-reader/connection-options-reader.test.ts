@@ -2,7 +2,7 @@ import { expect } from "chai"
 import fs from "fs/promises"
 
 import { ConnectionOptionsReader } from "../../../src/connection/ConnectionOptionsReader"
-import { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
+import type { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
 import { PlatformTools } from "../../../src/platform/PlatformTools"
 
 describe("ConnectionOptionsReader", () => {

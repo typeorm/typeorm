@@ -1,13 +1,13 @@
-import { TransactionCommitEvent } from "./event/TransactionCommitEvent"
-import { TransactionRollbackEvent } from "./event/TransactionRollbackEvent"
-import { TransactionStartEvent } from "./event/TransactionStartEvent"
-import { UpdateEvent } from "./event/UpdateEvent"
-import { RemoveEvent } from "./event/RemoveEvent"
-import { InsertEvent } from "./event/InsertEvent"
-import { LoadEvent } from "./event/LoadEvent"
-import { SoftRemoveEvent } from "./event/SoftRemoveEvent"
-import { RecoverEvent } from "./event/RecoverEvent"
-import { AfterQueryEvent, BeforeQueryEvent } from "./event/QueryEvent"
+import type { TransactionCommitEvent } from "./event/TransactionCommitEvent"
+import type { TransactionRollbackEvent } from "./event/TransactionRollbackEvent"
+import type { TransactionStartEvent } from "./event/TransactionStartEvent"
+import type { UpdateEvent } from "./event/UpdateEvent"
+import type { RemoveEvent } from "./event/RemoveEvent"
+import type { InsertEvent } from "./event/InsertEvent"
+import type { LoadEvent } from "./event/LoadEvent"
+import type { SoftRemoveEvent } from "./event/SoftRemoveEvent"
+import type { RecoverEvent } from "./event/RecoverEvent"
+import type { AfterQueryEvent, BeforeQueryEvent } from "./event/QueryEvent"
 
 /**
  * Classes that implement this interface are subscribers that subscribe for the specific events in the ORM.

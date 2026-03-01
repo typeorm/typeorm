@@ -1,6 +1,7 @@
 import { expect } from "chai"
-import { DataSource, Repository } from "../../../src"
-import { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
+import type { Repository } from "../../../src"
+import { DataSource } from "../../../src"
+import type { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
 import {
     closeTestingConnections,
     reloadTestingDatabases,

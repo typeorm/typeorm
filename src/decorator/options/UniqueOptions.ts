@@ -1,4 +1,4 @@
-import { DeferrableType } from "../../metadata/types/DeferrableType"
+import type { DeferrableType } from "../../metadata/types/DeferrableType"
 
 /**
  * Describes all unique options.

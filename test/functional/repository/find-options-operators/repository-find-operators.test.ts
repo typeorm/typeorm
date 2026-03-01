@@ -4,10 +4,10 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src"
 import {
     Any,
     Between,
-    DataSource,
     Equal,
     ILike,
     In,

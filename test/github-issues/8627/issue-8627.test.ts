@@ -5,7 +5,7 @@ import {
     reloadTestingDatabases,
     generateRandomText,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { ThisIsARealLongNameForAnEntityBecauseThisIsNecessary } from "./entity/long-name.entity"
 

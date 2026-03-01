@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { PersonSchema } from "./entity/Person"
 import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 

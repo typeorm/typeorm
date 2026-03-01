@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { ConnectionMetadataBuilder } from "../../../src/connection/ConnectionMetadataBuilder"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 import { EntityMetadataValidator } from "../../../src/metadata-builder/EntityMetadataValidator"

@@ -1,15 +1,15 @@
 import "reflect-metadata"
 import { expect } from "chai"
 
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 
-import { EntityManager } from "../../../src"
-import { BaseQueryRunner } from "../../../src/query-runner/BaseQueryRunner"
+import type { EntityManager } from "../../../src"
+import type { BaseQueryRunner } from "../../../src/query-runner/BaseQueryRunner"
 import { Company } from "./entity/Company"
 import { User } from "./entity/User"
 

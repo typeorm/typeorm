@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 
 describe("github issues > #948 EntityManager#save always considers a Postgres array-type field to have changed", () => {

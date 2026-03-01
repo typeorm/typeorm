@@ -1,5 +1,5 @@
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { RelationMetadata } from "../metadata/RelationMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
 import { TypeORMError } from "./TypeORMError"
 
 export class MissingJoinTableError extends TypeORMError {

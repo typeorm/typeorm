@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { Post } from "./entity/Post"
 import { Author } from "./entity/Author"

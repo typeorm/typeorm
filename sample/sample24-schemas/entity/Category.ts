@@ -1,4 +1,4 @@
-import { Post } from "./Post"
+import type { Post } from "./Post"
 
 export interface Category {
     id?: number

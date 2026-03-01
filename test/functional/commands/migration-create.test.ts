@@ -1,10 +1,7 @@
 import "../../utils/test-setup"
 import sinon from "sinon"
-import {
-    ConnectionOptionsReader,
-    DatabaseType,
-    DataSourceOptions,
-} from "../../../src"
+import type { DatabaseType, DataSourceOptions } from "../../../src"
+import { ConnectionOptionsReader } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
