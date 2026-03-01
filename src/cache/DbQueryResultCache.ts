@@ -222,7 +222,8 @@ export class DbQueryResultCache implements QueryResultCache {
     ): Promise<void> {
         const shouldCreateQueryRunner =
             queryRunner === undefined ||
-            queryRunner?.getReplicationMode() === "slave"
+            queryRunner?.getReplicationMode() === "slave" ||
+            queryRunner?.getReplicationMode() === "replica"
 
         if (queryRunner === undefined || shouldCreateQueryRunner) {
             queryRunner = this.dataSource.createQueryRunner("primary")
