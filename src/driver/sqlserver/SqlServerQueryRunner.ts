@@ -1303,16 +1303,13 @@ export class SqlServerQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.generationStrategy !== newColumn.generationStrategy ||
-            newColumn.asExpression !== oldColumn.asExpression ||
-            newColumn.generatedType !== oldColumn.generatedType ||
             newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length
+            newColumn.length !== oldColumn.length ||
+            newColumn.asExpression !== oldColumn.asExpression ||
+            newColumn.generatedType !== oldColumn.generatedType
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            // Also, we recreate column if generated expression changed.
-            // SQL Server also cannot ALTER COLUMN when constraints (FK, unique, default, index) reference the column,
-            // so we use drop+recreate for type/length changes as well.
+            // Also, we recreate column if column type changed
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1926,10 +1923,10 @@ export class SqlServerQueryRunner
                     )
                 }
             }
-        }
 
-        await this.executeQueries(upQueries, downQueries)
-        this.replaceCachedTable(table, clonedTable)
+            await this.executeQueries(upQueries, downQueries)
+            this.replaceCachedTable(table, clonedTable)
+        }
     }
 
     /**

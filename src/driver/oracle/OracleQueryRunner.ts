@@ -1129,7 +1129,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             oldColumn.asExpression !== newColumn.asExpression
         ) {
             // Oracle does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            // Also, we recreate column if type/length or generated expression changed
+            // Also, we recreate column if column type changed
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1579,10 +1579,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     )
                 }
             }
-        }
 
-        await this.executeQueries(upQueries, downQueries)
-        this.replaceCachedTable(table, clonedTable)
+            await this.executeQueries(upQueries, downQueries)
+            this.replaceCachedTable(table, clonedTable)
+        }
     }
 
     /**

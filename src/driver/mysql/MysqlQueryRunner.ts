@@ -1096,7 +1096,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.generationStrategy !== newColumn.generationStrategy ||
+            oldColumn.type !== newColumn.type ||
+            oldColumn.length !== newColumn.length ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
@@ -1110,49 +1111,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (
-                oldColumn.type !== newColumn.type ||
-                oldColumn.length !== newColumn.length
-            ) {
-                // Use CHANGE to alter type/length in-place, preserving data (#3357)
-                // MySQL doesn't allow DEFAULT on TEXT/BLOB/JSON/GEOMETRY columns,
-                // so strip it when changing to those types
-                const noDefaultTypes = [
-                    "blob",
-                    "tinyblob",
-                    "mediumblob",
-                    "longblob",
-                    "text",
-                    "tinytext",
-                    "mediumtext",
-                    "longtext",
-                    "geometry",
-                    "json",
-                ]
-                const upCol = newColumn.clone()
-                if (noDefaultTypes.includes(upCol.type)) {
-                    upCol.default = undefined
-                }
-                const downCol = oldColumn.clone()
-                if (noDefaultTypes.includes(downCol.type)) {
-                    downCol.default = undefined
-                }
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                            oldColumn.name
-                        }\` ${this.buildCreateColumnSql(upCol, true)}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                            newColumn.name
-                        }\` ${this.buildCreateColumnSql(downCol, true)}`,
-                    ),
-                )
-            }
-
             if (newColumn.name !== oldColumn.name) {
                 // We don't change any column properties, just rename it.
                 upQueries.push(

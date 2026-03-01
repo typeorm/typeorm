@@ -477,18 +477,8 @@ describe("schema builder > change column", () => {
     it("should preserve data when changing column type or length", () =>
         Promise.all(
             dataSources.map(async (connection) => {
-                // SQLite does not impose length restrictions and handles types differently
-                if (DriverUtils.isSQLiteFamily(connection.driver)) return
-
-                // CockroachDB, Spanner, Oracle, SAP, and SQL Server have restrictions on ALTER COLUMN TYPE
-                if (
-                    connection.driver.options.type === "cockroachdb" ||
-                    connection.driver.options.type === "spanner" ||
-                    connection.driver.options.type === "oracle" ||
-                    connection.driver.options.type === "sap" ||
-                    connection.driver.options.type === "mssql"
-                )
-                    return
+                // Only Postgres family drivers support in-place ALTER COLUMN TYPE
+                if (!DriverUtils.isPostgresFamily(connection.driver)) return
 
                 const queryRunner = connection.createQueryRunner()
                 const postRepository = connection.getRepository(Post)

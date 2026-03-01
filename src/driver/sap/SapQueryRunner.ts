@@ -1223,8 +1223,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             newColumn.type !== oldColumn.type ||
             newColumn.length !== oldColumn.length
         ) {
-            // SAP HANA does not support changing of IDENTITY column or shortening field length,
-            // so we must drop column and recreate it again.
+            // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
+            // Also, we recreate column if column type changed
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1606,10 +1606,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     downQueries.push(this.createIndexSql(table, uniqueIndex!))
                 }
             }
-        }
 
-        await this.executeQueries(upQueries, downQueries)
-        this.replaceCachedTable(table, clonedTable)
+            await this.executeQueries(upQueries, downQueries)
+            this.replaceCachedTable(table, clonedTable)
+        }
     }
 
     /**
