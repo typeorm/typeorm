@@ -870,7 +870,7 @@ describe("repository > basic methods", () => {
             ))
         it("should only update specified fields when updateOnly option is provided", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     if (!connection.driver.supportedUpsertTypes.length) return
 
                     const postRepository = connection.getRepository(Post)
@@ -917,7 +917,7 @@ describe("repository > basic methods", () => {
             ))
         it("should work with object form of updateOnly option", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     if (!connection.driver.supportedUpsertTypes.length) return
 
                     const postRepository = connection.getRepository(Post)
@@ -965,7 +965,7 @@ describe("repository > basic methods", () => {
             ))
         it("should NOT update whitelisted columns if their values are not provided", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     if (!connection.driver.supportedUpsertTypes.length) return
 
                     const postRepository = connection.getRepository(Post)
@@ -1011,7 +1011,7 @@ describe("repository > basic methods", () => {
             ))
         it("should throw error when updateOnly contains unknown columns", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     if (!connection.driver.supportedUpsertTypes.length) return
 
                     const postRepository = connection.getRepository(Post)
@@ -1037,7 +1037,7 @@ describe("repository > basic methods", () => {
             ))
         it("should throw error when updateOnly contains conflict columns", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     if (!connection.driver.supportedUpsertTypes.length) return
 
                     const postRepository = connection.getRepository(Post)
