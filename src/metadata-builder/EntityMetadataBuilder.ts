@@ -438,6 +438,24 @@ export class EntityMetadataBuilder {
             })
         })
 
+        // Generate CTI child → parent FK constraints (child PK references parent PK).
+        // Done after all computeEntityMetadataStep2 calls so primaryColumns are populated.
+        entityMetadatas
+            .filter((em) => em.isCtiChild && em.parentEntityMetadata)
+            .forEach((entityMetadata) => {
+                const parent = entityMetadata.parentEntityMetadata!
+                const fk = new ForeignKeyMetadata({
+                    entityMetadata,
+                    referencedEntityMetadata: parent,
+                    namingStrategy: this.dataSource.namingStrategy,
+                    columns: entityMetadata.primaryColumns,
+                    referencedColumns: parent.primaryColumns,
+                    onDelete: "CASCADE",
+                })
+                fk.build(this.dataSource.namingStrategy)
+                entityMetadata.foreignKeys.push(fk)
+            })
+
         // Build CTI caches as the very last step, after all
         // computeEntityMetadataStep2() calls are complete.
         entityMetadatas.forEach((entityMetadata) => {
@@ -475,32 +493,27 @@ export class EntityMetadataBuilder {
         // if single table inheritance used, we need to copy all children columns in to parent table
         // For CTI (class table inheritance), each entity keeps only its own columns
         let singleTableChildrenTargets: any[]
-        if (
-            tableInheritance &&
-            tableInheritance.pattern === "STI"
-        ) {
+        if (tableInheritance && tableInheritance.pattern === "STI") {
             singleTableChildrenTargets = this.metadataArgsStorage
                 .filterSingleTableChildren(tableArgs.target)
                 .map((args) => args.target)
                 .filter((target) => typeof target === "function")
 
             inheritanceTree.push(...singleTableChildrenTargets)
-        } else if (
-            tableArgs.type === "entity-child" &&
-            !tableInheritance
-        ) {
+        } else if (tableArgs.type === "entity-child" && !tableInheritance) {
             // entity-child without its own @TableInheritance — check if parent is STI
             // For STI children, merge parent's children into the tree
             // For CTI children, do NOT merge — each entity keeps its own columns
-            const parentInheritance = this.metadataArgsStorage.inheritances.find(
-                (inh) =>
-                    typeof inh.target === "function" &&
-                    typeof tableArgs.target === "function" &&
-                    MetadataUtils.isInherited(
-                        tableArgs.target as Function,
-                        inh.target as Function,
-                    ),
-            )
+            const parentInheritance =
+                this.metadataArgsStorage.inheritances.find(
+                    (inh) =>
+                        typeof inh.target === "function" &&
+                        typeof tableArgs.target === "function" &&
+                        MetadataUtils.isInherited(
+                            tableArgs.target as Function,
+                            inh.target as Function,
+                        ),
+                )
             if (!parentInheritance || parentInheritance.pattern === "STI") {
                 singleTableChildrenTargets = this.metadataArgsStorage
                     .filterSingleTableChildren(tableArgs.target)
@@ -533,15 +546,10 @@ export class EntityMetadataBuilder {
             let proto = Object.getPrototypeOf(
                 (entityMetadata.target as Function).prototype,
             )
-            while (
-                proto &&
-                proto.constructor &&
-                proto.constructor !== Object
-            ) {
+            while (proto && proto.constructor && proto.constructor !== Object) {
                 const ancestor = allEntityMetadatas.find(
                     (m) =>
-                        m !== entityMetadata &&
-                        m.target === proto.constructor,
+                        m !== entityMetadata && m.target === proto.constructor,
                 )
                 if (ancestor) registeredAncestors.push(ancestor)
                 proto = Object.getPrototypeOf(proto)
@@ -557,8 +565,7 @@ export class EntityMetadataBuilder {
                     // CTI: use the nearest registered ancestor.
                     // This correctly handles multi-level CTI (A → B → C)
                     // where B is both parent and child, each with their own table.
-                    entityMetadata.parentEntityMetadata =
-                        registeredAncestors[0]
+                    entityMetadata.parentEntityMetadata = registeredAncestors[0]
                 } else {
                     // STI (explicit or default): all children point to the root (shared table).
                     // Default @TableInheritance without pattern is STI.
@@ -680,9 +687,7 @@ export class EntityMetadataBuilder {
                 if (columnInSingleTableInheritedChild) column.isNullable = true
                 return column
             })
-            .filter(
-                (col): col is ColumnMetadata => col !== null,
-            )
+            .filter((col): col is ColumnMetadata => col !== null)
 
         // for table inheritance we need to add a discriminator column
         //
@@ -879,9 +884,7 @@ export class EntityMetadataBuilder {
 
                 return new RelationMetadata({ entityMetadata, args })
             })
-            .filter(
-                (rel): rel is RelationMetadata => rel !== null,
-            )
+            .filter((rel): rel is RelationMetadata => rel !== null)
         entityMetadata.relationIds = this.metadataArgsStorage
             .filterRelationIds(entityMetadata.inheritanceTree)
             .map((args) => {
