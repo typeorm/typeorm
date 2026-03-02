@@ -6,7 +6,7 @@ import { Profile } from "./Profile"
 
 export abstract class NameableEntity extends AuthorizableEntity {
     @Column("varchar", { length: 36 })
-    nameID: string
+    nameId: string
 
     @OneToOne(() => Profile, {
         eager: false,

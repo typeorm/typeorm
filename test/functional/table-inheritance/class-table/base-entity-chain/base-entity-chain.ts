@@ -22,7 +22,7 @@ import { In } from "../../../../../src"
  *   BaseEntity (TypeORM Active Record) →
  *     BaseAlkemioEntity (uuid PK, @CreateDateColumn, @UpdateDateColumn, @VersionColumn) →
  *       AuthorizableEntity (@OneToOne Authorization, eager: true) →
- *         NameableEntity (@Column nameID, @OneToOne Profile, eager: false) →
+ *         NameableEntity (@Column nameId, @OneToOne Profile, eager: false) →
  *           Actor (@Entity CTI root, @OneToMany Credential) →
  *             User / Organization (@ChildEntity)
  *
@@ -45,20 +45,20 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
     // Helper: insert a User with authorization, profile, and credentials
     async function insertUser(
         connection: DataSource,
-        nameID: string,
+        nameId: string,
         email: string,
     ): Promise<User> {
         const auth = new AuthorizationPolicy()
         auth.credentialRules = "user-rules"
         const profile = new Profile()
-        profile.displayName = nameID
+        profile.displayName = nameId
 
         const cred = new Credential()
         cred.type = "UserSelfManagement"
-        cred.resourceID = ""
+        cred.resourceId = ""
 
         const user = new User()
-        user.nameID = nameID
+        user.nameId = nameId
         user.email = email
         user.authorization = auth
         user.profile = profile
@@ -69,16 +69,16 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
     // Helper: insert an Organization
     async function insertOrg(
         connection: DataSource,
-        nameID: string,
+        nameId: string,
         industry: string,
     ): Promise<Organization> {
         const auth = new AuthorizationPolicy()
         auth.credentialRules = "org-rules"
         const profile = new Profile()
-        profile.displayName = nameID
+        profile.displayName = nameId
 
         const org = new Organization()
-        org.nameID = nameID
+        org.nameId = nameId
         org.industry = industry
         org.authorization = auth
         org.profile = profile
@@ -106,7 +106,7 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
                 expect(actor!.id).to.equal(saved.id)
                 expect(actor).to.be.instanceOf(User)
                 // Root-table columns are populated
-                expect(actor!.nameID).to.equal("alice")
+                expect(actor!.nameId).to.equal("alice")
                 expect(actor!.version).to.equal(1)
                 expect(actor!.createdDate).to.be.instanceOf(Date)
                 expect(actor!.updatedDate).to.be.instanceOf(Date)
@@ -137,13 +137,11 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
                     "alice@test.com",
                 )
 
-                const actor = await connection
-                    .getRepository(Actor)
-                    .findOne({
-                        where: { id: saved.id },
-                        select: { id: true },
-                        loadEagerRelations: false,
-                    })
+                const actor = await connection.getRepository(Actor).findOne({
+                    where: { id: saved.id },
+                    select: { id: true },
+                    loadEagerRelations: false,
+                })
 
                 expect(actor).to.not.be.null
                 expect(actor!.id).to.equal(saved.id)
@@ -162,12 +160,10 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
                     "alice@test.com",
                 )
 
-                const actor = await connection
-                    .getRepository(Actor)
-                    .findOne({
-                        where: { id: saved.id },
-                        relations: { authorization: true },
-                    })
+                const actor = await connection.getRepository(Actor).findOne({
+                    where: { id: saved.id },
+                    relations: { authorization: true },
+                })
 
                 expect(actor).to.not.be.null
                 expect(actor!.id).to.equal(saved.id)
@@ -213,13 +209,11 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
                 )
                 const org = await insertOrg(connection, "acme", "Tech")
 
-                const actors = await connection
-                    .getRepository(Actor)
-                    .find({
-                        where: { id: In([user.id, org.id]) },
-                        select: { id: true },
-                        loadEagerRelations: false,
-                    })
+                const actors = await connection.getRepository(Actor).find({
+                    where: { id: In([user.id, org.id]) },
+                    select: { id: true },
+                    loadEagerRelations: false,
+                })
 
                 expect(actors).to.have.length(2)
                 const ids = actors.map((a) => a.id).sort()
@@ -279,16 +273,14 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
                 // Both should return the same data
                 expect(viaRepo!.id).to.equal(viaEm!.id)
                 expect(viaRepo!.id).to.equal(saved.id)
-                expect(viaRepo!.nameID).to.equal(viaEm!.nameID)
+                expect(viaRepo!.nameId).to.equal(viaEm!.nameId)
                 expect(viaRepo!.version).to.equal(viaEm!.version)
                 expect(viaRepo!.constructor.name).to.equal(
                     viaEm!.constructor.name,
                 )
                 expect(viaRepo).to.be.instanceOf(User)
                 expect(viaEm).to.be.instanceOf(User)
-                expect((viaRepo as User).email).to.equal(
-                    (viaEm as User).email,
-                )
+                expect((viaRepo as User).email).to.equal((viaEm as User).email)
             }),
         ))
 
@@ -377,23 +369,23 @@ describe("table-inheritance > class-table > base-entity-chain", () => {
 
                 const actors = await connection
                     .getRepository(Actor)
-                    .find({ order: { nameID: "ASC" } })
+                    .find({ order: { nameId: "ASC" } })
 
                 expect(actors).to.have.length(3)
 
                 // "acme" < "alice" < "bob"
                 expect(actors[0]).to.be.instanceOf(Organization)
-                expect(actors[0].nameID).to.equal("acme")
+                expect(actors[0].nameId).to.equal("acme")
                 // Child-specific columns are undefined from parent repo query
                 expect((actors[0] as Organization).industry).to.be.undefined
 
                 expect(actors[1]).to.be.instanceOf(User)
-                expect(actors[1].nameID).to.equal("alice")
+                expect(actors[1].nameId).to.equal("alice")
                 // Child-specific columns are undefined from parent repo query
                 expect((actors[1] as User).email).to.be.undefined
 
                 expect(actors[2]).to.be.instanceOf(User)
-                expect(actors[2].nameID).to.equal("bob")
+                expect(actors[2].nameId).to.equal("bob")
 
                 // All should have id, version, timestamps hydrated (root-table columns)
                 for (const actor of actors) {

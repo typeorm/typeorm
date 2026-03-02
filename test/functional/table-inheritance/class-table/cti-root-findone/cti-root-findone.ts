@@ -19,7 +19,7 @@ import { expect } from "chai"
  * This reproduces the pattern from the Alkemio app:
  *   BaseAlkemioEntity (uuid PK, dates, version) →
  *     AuthorizableEntity (eager authorization OneToOne) →
- *       NameableEntity (nameID, profile OneToOne) →
+ *       NameableEntity (nameId, profile OneToOne) →
  *         Actor (CTI root) → User / Organization
  *
  * Bug #4: findOne(Actor, ...) on CTI root entity was generating zero SQL.
@@ -38,16 +38,16 @@ describe("table-inheritance > class-table > cti-root-findone", () => {
     // Helper: insert a User via child repo
     async function insertUser(
         connection: DataSource,
-        nameID: string,
+        nameId: string,
         email: string,
     ): Promise<User> {
         const auth = new Authorization()
         auth.credentialRules = "user-rules"
         const profile = new Profile()
-        profile.displayName = nameID
+        profile.displayName = nameId
 
         const user = new User()
-        user.nameID = nameID
+        user.nameId = nameId
         user.email = email
         user.authorization = auth
         user.profile = profile
@@ -57,16 +57,16 @@ describe("table-inheritance > class-table > cti-root-findone", () => {
     // Helper: insert an Organization via child repo
     async function insertOrg(
         connection: DataSource,
-        nameID: string,
+        nameId: string,
         industry: string,
     ): Promise<Organization> {
         const auth = new Authorization()
         auth.credentialRules = "org-rules"
         const profile = new Profile()
-        profile.displayName = nameID
+        profile.displayName = nameId
 
         const org = new Organization()
-        org.nameID = nameID
+        org.nameId = nameId
         org.industry = industry
         org.authorization = auth
         org.profile = profile
@@ -93,7 +93,7 @@ describe("table-inheritance > class-table > cti-root-findone", () => {
                 expect(loaded!.id).to.equal(saved.id)
                 expect(loaded).to.be.instanceOf(User)
                 // Root-table columns are populated; child-specific columns are undefined
-                expect(loaded!.nameID).to.equal("alice")
+                expect(loaded!.nameId).to.equal("alice")
                 expect((loaded as User).email).to.be.undefined
 
                 // Verify child data by querying child entity directly
@@ -120,7 +120,7 @@ describe("table-inheritance > class-table > cti-root-findone", () => {
 
                 const actors = await connection.manager.find(Actor, {
                     where: [{ id: user.id }, { id: org.id }],
-                    order: { nameID: "ASC" },
+                    order: { nameId: "ASC" },
                 })
 
                 expect(actors).to.have.length(2)

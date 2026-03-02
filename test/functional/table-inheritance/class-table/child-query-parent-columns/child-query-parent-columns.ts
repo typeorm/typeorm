@@ -28,22 +28,22 @@ describe("table-inheritance > class-table > child-query-parent-columns", () => {
 
     async function insertUser(
         connection: DataSource,
-        nameID: string,
+        nameId: string,
         email: string,
     ): Promise<User> {
         const auth = new AuthPolicy()
         auth.rules = "user-rules"
         const profile = new Profile()
-        profile.displayName = nameID.charAt(0).toUpperCase() + nameID.slice(1)
+        profile.displayName = nameId.charAt(0).toUpperCase() + nameId.slice(1)
 
         const cred = new Credential()
         cred.type = "UserSelfManagement"
-        cred.resourceID = ""
+        cred.resourceId = ""
 
         const user = new User()
-        user.nameID = nameID
+        user.nameId = nameId
         user.email = email
-        user.accountID = ACCOUNT_UUID
+        user.accountId = ACCOUNT_UUID
         user.authorization = auth
         user.profile = profile
         user.credentials = [cred]
@@ -52,35 +52,35 @@ describe("table-inheritance > class-table > child-query-parent-columns", () => {
 
     async function insertOrg(
         connection: DataSource,
-        nameID: string,
+        nameId: string,
         industry: string,
     ): Promise<Organization> {
         const auth = new AuthPolicy()
         auth.rules = "org-rules"
         const profile = new Profile()
-        profile.displayName = nameID.charAt(0).toUpperCase() + nameID.slice(1)
+        profile.displayName = nameId.charAt(0).toUpperCase() + nameId.slice(1)
 
         const org = new Organization()
-        org.nameID = nameID
+        org.nameId = nameId
         org.industry = industry
-        org.accountID = ACCOUNT_UUID
+        org.accountId = ACCOUNT_UUID
         org.authorization = auth
         org.profile = profile
         org.credentials = []
         return connection.getRepository(Organization).save(org)
     }
 
-    it("(2a) should findOne child by parent-table column (nameID)", () =>
+    it("(2a) should findOne child by parent-table column (nameId)", () =>
         Promise.all(
             connections.map(async (connection) => {
                 await insertUser(connection, "alice", "alice@example.com")
 
                 const user = await connection.manager.findOne(User, {
-                    where: { nameID: "alice" },
+                    where: { nameId: "alice" },
                 })
                 expect(user).to.not.be.null
                 expect(user!.email).to.equal("alice@example.com")
-                expect(user!.nameID).to.equal("alice")
+                expect(user!.nameId).to.equal("alice")
             }),
         ))
 
@@ -93,7 +93,7 @@ describe("table-inheritance > class-table > child-query-parent-columns", () => {
                     where: { email: "alice@example.com" },
                 })
                 expect(user).to.not.be.null
-                expect(user!.nameID).to.equal("alice")
+                expect(user!.nameId).to.equal("alice")
             }),
         ))
 
@@ -104,7 +104,7 @@ describe("table-inheritance > class-table > child-query-parent-columns", () => {
 
                 const user = await connection.manager.findOne(User, {
                     where: {
-                        nameID: "alice",
+                        nameId: "alice",
                         email: "alice@example.com",
                     },
                 })
@@ -116,18 +116,14 @@ describe("table-inheritance > class-table > child-query-parent-columns", () => {
     it("(2d) should find with select on child-specific columns only", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const saved = await insertOrg(
-                    connection,
-                    "acme",
-                    "Tech",
-                )
+                const saved = await insertOrg(connection, "acme", "Tech")
 
                 const org = await connection.manager.findOne(Organization, {
                     where: { id: saved.id },
-                    select: { id: true, accountID: true },
+                    select: { id: true, accountId: true },
                 })
                 expect(org).to.not.be.null
-                expect(org!.accountID).to.equal(ACCOUNT_UUID)
+                expect(org!.accountId).to.equal(ACCOUNT_UUID)
             }),
         ))
 
@@ -179,24 +175,20 @@ describe("table-inheritance > class-table > child-query-parent-columns", () => {
     it("(2g) should find child with nested credentials where (OR logic via array)", () =>
         Promise.all(
             connections.map(async (connection) => {
-                await insertUser(
-                    connection,
-                    "alice",
-                    "alice@example.com",
-                )
+                await insertUser(connection, "alice", "alice@example.com")
 
                 const users = await connection.manager.find(User, {
                     where: [
                         {
                             credentials: {
                                 type: "UserSelfManagement",
-                                resourceID: "",
+                                resourceId: "",
                             },
                         },
                         {
                             credentials: {
                                 type: "nonexistent",
-                                resourceID: "res-2",
+                                resourceId: "res-2",
                             },
                         },
                     ],
@@ -215,17 +207,10 @@ describe("table-inheritance > class-table > child-query-parent-columns", () => {
                     "alice",
                     "alice@example.com",
                 )
-                await insertUser(
-                    connection,
-                    "bob",
-                    "bob@example.com",
-                )
+                await insertUser(connection, "bob", "bob@example.com")
 
                 const users = await connection.getRepository(User).find({
-                    where: [
-                        { id: In([user1.id]) },
-                        { nameID: In(["bob"]) },
-                    ],
+                    where: [{ id: In([user1.id]) }, { nameId: In(["bob"]) }],
                 })
                 expect(users).to.have.length(2)
             }),

@@ -27,22 +27,22 @@ describe("table-inheritance > class-table > delete-cti-entities", () => {
 
     async function insertUser(
         connection: DataSource,
-        nameID: string,
+        nameId: string,
         email: string,
     ): Promise<User> {
         const auth = new AuthPolicy()
         auth.rules = "user-rules"
         const profile = new Profile()
-        profile.displayName = nameID
+        profile.displayName = nameId
 
         const cred = new Credential()
         cred.type = "admin"
-        cred.resourceID = "res-1"
+        cred.resourceId = "res-1"
 
         const user = new User()
-        user.nameID = nameID
+        user.nameId = nameId
         user.email = email
-        user.accountID = ACCOUNT_UUID
+        user.accountId = ACCOUNT_UUID
         user.authorization = auth
         user.profile = profile
         user.credentials = [cred]
@@ -51,18 +51,18 @@ describe("table-inheritance > class-table > delete-cti-entities", () => {
 
     async function insertOrg(
         connection: DataSource,
-        nameID: string,
+        nameId: string,
         industry: string,
     ): Promise<Organization> {
         const auth = new AuthPolicy()
         auth.rules = "org-rules"
         const profile = new Profile()
-        profile.displayName = nameID
+        profile.displayName = nameId
 
         const org = new Organization()
-        org.nameID = nameID
+        org.nameId = nameId
         org.industry = industry
-        org.accountID = ACCOUNT_UUID
+        org.accountId = ACCOUNT_UUID
         org.authorization = auth
         org.profile = profile
         org.credentials = []
@@ -122,11 +122,7 @@ describe("table-inheritance > class-table > delete-cti-entities", () => {
     it("(9c) should delete within transaction", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const saved = await insertOrg(
-                    connection,
-                    "acme",
-                    "Tech",
-                )
+                const saved = await insertOrg(connection, "acme", "Tech")
 
                 await connection.manager.transaction(async (mgr) => {
                     const org = await mgr.findOneOrFail(Organization, {

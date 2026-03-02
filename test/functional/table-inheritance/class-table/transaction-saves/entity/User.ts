@@ -9,7 +9,7 @@ export class User extends Actor {
     email: string
 
     @Column("uuid")
-    accountID: string
+    accountId: string
 
     @Column({ unique: true })
     @Generated("increment")

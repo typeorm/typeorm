@@ -9,7 +9,7 @@ export class Organization extends Actor {
     industry: string
 
     @Column("uuid")
-    accountID: string
+    accountId: string
 
     @Column({ unique: true })
     @Generated("increment")

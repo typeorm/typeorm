@@ -13,7 +13,7 @@ export class Credential {
     type: string
 
     @Column({ default: "" })
-    resourceID: string
+    resourceId: string
 
     @ManyToOne(() => Actor, (actor) => actor.credentials)
     actor: Actor

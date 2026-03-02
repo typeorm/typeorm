@@ -36,9 +36,9 @@ describe("table-inheritance > class-table > transaction-saves", () => {
                     profile.displayName = "tx-user"
 
                     const user = new User()
-                    user.nameID = "tx-user"
+                    user.nameId = "tx-user"
                     user.email = "tx@example.com"
-                    user.accountID = ACCOUNT_UUID
+                    user.accountId = ACCOUNT_UUID
                     user.authorization = auth
                     user.profile = profile
                     user.credentials = []
@@ -50,7 +50,7 @@ describe("table-inheritance > class-table > transaction-saves", () => {
                     })
                     expect(loaded).to.not.be.null
                     expect(loaded!.email).to.equal("tx@example.com")
-                    expect(loaded!.nameID).to.equal("tx-user")
+                    expect(loaded!.nameId).to.equal("tx-user")
                 })
             }),
         ))
@@ -65,9 +65,9 @@ describe("table-inheritance > class-table > transaction-saves", () => {
                     profile1.displayName = "u1"
 
                     const user = new User()
-                    user.nameID = "u1"
+                    user.nameId = "u1"
                     user.email = "u1@ex.com"
-                    user.accountID = ACCOUNT_UUID
+                    user.accountId = ACCOUNT_UUID
                     user.authorization = auth1
                     user.profile = profile1
                     user.credentials = []
@@ -79,9 +79,9 @@ describe("table-inheritance > class-table > transaction-saves", () => {
                     profile2.displayName = "o1"
 
                     const org = new Organization()
-                    org.nameID = "o1"
+                    org.nameId = "o1"
                     org.industry = "Tech"
-                    org.accountID = ACCOUNT_UUID
+                    org.accountId = ACCOUNT_UUID
                     org.authorization = auth2
                     org.profile = profile2
                     org.credentials = []
@@ -106,12 +106,12 @@ describe("table-inheritance > class-table > transaction-saves", () => {
 
                     const cred = new Credential()
                     cred.type = "admin"
-                    cred.resourceID = "res-1"
+                    cred.resourceId = "res-1"
 
                     const user = new User()
-                    user.nameID = "cascade-user"
+                    user.nameId = "cascade-user"
                     user.email = "cascade@example.com"
-                    user.accountID = ACCOUNT_UUID
+                    user.accountId = ACCOUNT_UUID
                     user.authorization = auth
                     user.profile = profile
                     user.credentials = [cred]
@@ -139,9 +139,9 @@ describe("table-inheritance > class-table > transaction-saves", () => {
                         profile.displayName = "rollback"
 
                         const user = new User()
-                        user.nameID = "rollback-user"
+                        user.nameId = "rollback-user"
                         user.email = "rb@example.com"
-                        user.accountID = ACCOUNT_UUID
+                        user.accountId = ACCOUNT_UUID
                         user.authorization = auth
                         user.profile = profile
                         user.credentials = []

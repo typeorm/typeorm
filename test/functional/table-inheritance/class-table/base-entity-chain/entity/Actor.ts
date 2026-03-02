@@ -12,7 +12,7 @@ import { Credential } from "./Credential"
  *   BaseEntity (TypeORM Active Record) →
  *     BaseAlkemioEntity (uuid PK, dates, version) →
  *       AuthorizableEntity (eager authorization OneToOne) →
- *         NameableEntity (nameID, profile OneToOne) →
+ *         NameableEntity (nameId, profile OneToOne) →
  *           Actor (CTI root)
  *
  * The `type` property is the discriminator column, auto-managed by

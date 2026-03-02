@@ -25,18 +25,18 @@ describe("table-inheritance > class-table > update-parent-columns-via-child", ()
 
     async function insertUser(
         connection: DataSource,
-        nameID: string,
+        nameId: string,
         email: string,
     ): Promise<User> {
         const auth = new AuthPolicy()
         auth.rules = "user-rules"
         const profile = new Profile()
-        profile.displayName = nameID
+        profile.displayName = nameId
 
         const user = new User()
-        user.nameID = nameID
+        user.nameId = nameId
         user.email = email
-        user.accountID = ACCOUNT_UUID
+        user.accountId = ACCOUNT_UUID
         user.authorization = auth
         user.profile = profile
         user.credentials = []
@@ -54,11 +54,11 @@ describe("table-inheritance > class-table > update-parent-columns-via-child", ()
                 )
 
                 const user = await repo.findOneBy({ id: saved.id })
-                user!.nameID = "updated-name"
+                user!.nameId = "updated-name"
                 await repo.save(user!)
 
                 const reloaded = await repo.findOneBy({ id: saved.id })
-                expect(reloaded!.nameID).to.equal("updated-name")
+                expect(reloaded!.nameId).to.equal("updated-name")
                 expect(reloaded!.email).to.equal("alice@example.com")
             }),
         ))
@@ -79,7 +79,7 @@ describe("table-inheritance > class-table > update-parent-columns-via-child", ()
 
                 const reloaded = await repo.findOneBy({ id: saved.id })
                 expect(reloaded!.email).to.equal("newalice@example.com")
-                expect(reloaded!.nameID).to.equal("alice")
+                expect(reloaded!.nameId).to.equal("alice")
             }),
         ))
 
@@ -94,12 +94,12 @@ describe("table-inheritance > class-table > update-parent-columns-via-child", ()
                 )
 
                 const user = await repo.findOneBy({ id: saved.id })
-                user!.nameID = "final-name"
+                user!.nameId = "final-name"
                 user!.email = "final@example.com"
                 await repo.save(user!)
 
                 const reloaded = await repo.findOneBy({ id: saved.id })
-                expect(reloaded!.nameID).to.equal("final-name")
+                expect(reloaded!.nameId).to.equal("final-name")
                 expect(reloaded!.email).to.equal("final@example.com")
             }),
         ))
@@ -116,7 +116,7 @@ describe("table-inheritance > class-table > update-parent-columns-via-child", ()
                 expect(saved.version).to.equal(1)
 
                 const user = await repo.findOneBy({ id: saved.id })
-                user!.nameID = "updated"
+                user!.nameId = "updated"
                 await repo.save(user!)
 
                 const reloaded = await repo.findOneBy({ id: saved.id })

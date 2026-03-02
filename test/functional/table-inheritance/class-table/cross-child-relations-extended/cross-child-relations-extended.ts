@@ -38,14 +38,14 @@ describe("table-inheritance > class-table > cross-child-relations-extended", () 
 
     async function insertAccount(
         ds: DataSource,
-        nameID: string,
+        nameId: string,
         plan: string,
     ): Promise<Account> {
         const acc = new Account()
-        acc.nameID = nameID
+        acc.nameId = nameId
         acc.plan = plan
         acc.authorization = makeAuth("acc-rules")
-        acc.profile = makeProfile(nameID)
+        acc.profile = makeProfile(nameId)
         acc.credentials = []
         acc.spaces = []
         acc.virtualContributors = []
@@ -54,16 +54,16 @@ describe("table-inheritance > class-table > cross-child-relations-extended", () 
 
     async function insertSpace(
         ds: DataSource,
-        nameID: string,
+        nameId: string,
         account: Account,
         parent?: Space,
     ): Promise<Space> {
         const space = new Space()
-        space.nameID = nameID
+        space.nameId = nameId
         space.level = parent ? parent.level + 1 : 0
         space.account = account
         space.authorization = makeAuth("space-rules")
-        space.profile = makeProfile(nameID)
+        space.profile = makeProfile(nameId)
         space.credentials = []
         if (parent) space.parentSpace = parent
         return ds.getRepository(Space).save(space)
@@ -71,16 +71,16 @@ describe("table-inheritance > class-table > cross-child-relations-extended", () 
 
     async function insertVC(
         ds: DataSource,
-        nameID: string,
+        nameId: string,
         aiModel: string,
         account: Account,
     ): Promise<VirtualContributor> {
         const vc = new VirtualContributor()
-        vc.nameID = nameID
+        vc.nameId = nameId
         vc.aiModel = aiModel
         vc.account = account
         vc.authorization = makeAuth("vc-rules")
-        vc.profile = makeProfile(nameID)
+        vc.profile = makeProfile(nameId)
         vc.credentials = []
         return ds.getRepository(VirtualContributor).save(vc)
     }

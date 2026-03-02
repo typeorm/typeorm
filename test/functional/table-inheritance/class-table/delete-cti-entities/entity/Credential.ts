@@ -14,7 +14,7 @@ export class Credential {
     type: string
 
     @Column()
-    resourceID: string
+    resourceId: string
 
     @ManyToOne(() => Actor, (a) => a.credentials, { onDelete: "CASCADE" })
     @JoinColumn({ name: "actorId" })

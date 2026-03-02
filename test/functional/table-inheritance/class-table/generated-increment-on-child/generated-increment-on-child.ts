@@ -26,18 +26,18 @@ describe("table-inheritance > class-table > generated-increment-on-child", () =>
 
     async function insertUser(
         connection: DataSource,
-        nameID: string,
+        nameId: string,
         email: string,
     ): Promise<User> {
         const auth = new AuthPolicy()
         auth.rules = "rules"
         const profile = new Profile()
-        profile.displayName = nameID
+        profile.displayName = nameId
 
         const user = new User()
-        user.nameID = nameID
+        user.nameId = nameId
         user.email = email
-        user.accountID = ACCOUNT_UUID
+        user.accountId = ACCOUNT_UUID
         user.authorization = auth
         user.profile = profile
         user.credentials = []
@@ -48,16 +48,8 @@ describe("table-inheritance > class-table > generated-increment-on-child", () =>
         Promise.all(
             connections.map(async (connection) => {
                 const repo = connection.getRepository(User)
-                const user1 = await insertUser(
-                    connection,
-                    "u1",
-                    "u1@ex.com",
-                )
-                const user2 = await insertUser(
-                    connection,
-                    "u2",
-                    "u2@ex.com",
-                )
+                const user1 = await insertUser(connection, "u1", "u1@ex.com")
+                const user2 = await insertUser(connection, "u2", "u2@ex.com")
 
                 const loaded1 = await repo.findOneBy({ id: user1.id })
                 const loaded2 = await repo.findOneBy({ id: user2.id })
@@ -86,20 +78,16 @@ describe("table-inheritance > class-table > generated-increment-on-child", () =>
     it("(7c) should have separate sequences for each child entity type", () =>
         Promise.all(
             connections.map(async (connection) => {
-                const user = await insertUser(
-                    connection,
-                    "u1",
-                    "u1@ex.com",
-                )
+                const user = await insertUser(connection, "u1", "u1@ex.com")
 
                 const auth = new AuthPolicy()
                 auth.rules = "org-rules"
                 const profile = new Profile()
                 profile.displayName = "o1"
                 const org = new Organization()
-                org.nameID = "o1"
+                org.nameId = "o1"
                 org.industry = "Tech"
-                org.accountID = ACCOUNT_UUID
+                org.accountId = ACCOUNT_UUID
                 org.authorization = auth
                 org.profile = profile
                 org.credentials = []

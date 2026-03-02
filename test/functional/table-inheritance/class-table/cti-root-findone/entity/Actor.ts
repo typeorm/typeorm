@@ -15,7 +15,7 @@ import { Profile } from "./Profile"
 @TableInheritance({ pattern: "CTI", column: { name: "type", type: String } })
 export class Actor extends BaseEntity {
     @Column({ length: 128 })
-    nameID: string
+    nameId: string
 
     @OneToOne(() => Authorization, {
         eager: true,

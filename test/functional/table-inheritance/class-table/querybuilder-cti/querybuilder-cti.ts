@@ -28,22 +28,22 @@ describe("table-inheritance > class-table > querybuilder-cti", () => {
 
     async function insertUser(
         connection: DataSource,
-        nameID: string,
+        nameId: string,
         email: string,
     ): Promise<User> {
         const auth = new AuthPolicy()
         auth.rules = "user-rules"
         const profile = new Profile()
-        profile.displayName = nameID
+        profile.displayName = nameId
 
         const cred = new Credential()
         cred.type = "admin"
-        cred.resourceID = "res-1"
+        cred.resourceId = "res-1"
 
         const user = new User()
-        user.nameID = nameID
+        user.nameId = nameId
         user.email = email
-        user.accountID = ACCOUNT_UUID
+        user.accountId = ACCOUNT_UUID
         user.authorization = auth
         user.profile = profile
         user.credentials = [cred]
@@ -52,18 +52,18 @@ describe("table-inheritance > class-table > querybuilder-cti", () => {
 
     async function insertOrg(
         connection: DataSource,
-        nameID: string,
+        nameId: string,
         industry: string,
     ): Promise<Organization> {
         const auth = new AuthPolicy()
         auth.rules = "org-rules"
         const profile = new Profile()
-        profile.displayName = nameID
+        profile.displayName = nameId
 
         const org = new Organization()
-        org.nameID = nameID
+        org.nameId = nameId
         org.industry = industry
-        org.accountID = ACCOUNT_UUID
+        org.accountId = ACCOUNT_UUID
         org.authorization = auth
         org.profile = profile
         org.credentials = []
@@ -102,7 +102,7 @@ describe("table-inheritance > class-table > querybuilder-cti", () => {
                     .getRepository(User)
                     .createQueryBuilder("user")
                     .leftJoin("user.credentials", "cred")
-                    .addSelect(["cred.type", "cred.resourceID"])
+                    .addSelect(["cred.type", "cred.resourceId"])
                     .where("cred.type = :type", { type: "admin" })
                     .getMany()
 
@@ -133,7 +133,7 @@ describe("table-inheritance > class-table > querybuilder-cti", () => {
                 expect(actor!.id).to.equal(saved.id)
                 expect(actor).to.be.instanceOf(User)
                 // Root-table columns are populated; child-specific columns are undefined
-                expect(actor!.nameID).to.equal("alice")
+                expect(actor!.nameId).to.equal("alice")
                 expect((actor as User).email).to.be.undefined
 
                 // Verify child data by querying child entity directly
@@ -196,12 +196,12 @@ describe("table-inheritance > class-table > querybuilder-cti", () => {
                 const users = await connection
                     .getRepository(User)
                     .createQueryBuilder("user")
-                    .orderBy("user.nameID", "ASC")
+                    .orderBy("user.nameId", "ASC")
                     .getMany()
 
                 expect(users).to.have.length(2)
-                expect(users[0].nameID).to.equal("alice")
-                expect(users[1].nameID).to.equal("bob")
+                expect(users[0].nameId).to.equal("alice")
+                expect(users[1].nameId).to.equal("bob")
             }),
         ))
 })

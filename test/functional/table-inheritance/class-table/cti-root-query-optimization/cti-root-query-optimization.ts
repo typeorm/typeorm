@@ -20,7 +20,7 @@ import { Profile } from "../cti-root-findone/entity/Profile"
  *           root-table data (+ root-level relations) should be returned.
  *
  * Design principle (SQLAlchemy approach): Actor is Actor. It has id, type,
- * nameID, authorization, profile. If you need email, query User directly.
+ * nameId, authorization, profile. If you need email, query User directly.
  * The parent table is not an umbrella — it's a standalone entity.
  */
 describe("class-table-inheritance > cti-root-query-optimization", () => {
@@ -28,13 +28,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
     before(
         async () =>
             (connections = await createTestingConnections({
-                entities: [
-                    Actor,
-                    User,
-                    Organization,
-                    Authorization,
-                    Profile,
-                ],
+                entities: [Actor, User, Organization, Authorization, Profile],
             })),
     )
     beforeEach(() => reloadTestingDatabases(connections))
@@ -52,25 +46,25 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
                 await connection.getRepository(Authorization).save(auth)
 
                 const user = new User()
-                user.nameID = "alice"
+                user.nameId = "alice"
                 user.email = "alice@example.com"
                 user.authorization = auth
                 await connection.getRepository(User).save(user)
 
                 const org = new Organization()
-                org.nameID = "acme"
+                org.nameId = "acme"
                 org.industry = "Tech"
                 await connection.getRepository(Organization).save(org)
 
                 // Load via root Actor repository
                 const actors = await connection
                     .getRepository(Actor)
-                    .find({ order: { nameID: "ASC" } })
+                    .find({ order: { nameId: "ASC" } })
 
                 expect(actors).to.have.length(2)
 
                 // Each actor should have the discriminator value hydrated
-                // nameID ASC: "acme" < "alice", so org is first
+                // nameId ASC: "acme" < "alice", so org is first
                 const loadedOrg = actors[0]
                 expect(loadedOrg).to.be.instanceOf(Organization)
                 expect((loadedOrg as any).type).to.equal("organization")
@@ -85,7 +79,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const user = new User()
-                user.nameID = "bob"
+                user.nameId = "bob"
                 user.email = "bob@example.com"
                 await connection.getRepository(User).save(user)
 
@@ -103,7 +97,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const user = new User()
-                user.nameID = "charlie"
+                user.nameId = "charlie"
                 user.email = "charlie@example.com"
                 await connection.getRepository(User).save(user)
 
@@ -124,31 +118,31 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const user = new User()
-                user.nameID = "alice"
+                user.nameId = "alice"
                 user.email = "alice@example.com"
                 await connection.getRepository(User).save(user)
 
                 const org = new Organization()
-                org.nameID = "acme"
+                org.nameId = "acme"
                 org.industry = "Tech"
                 await connection.getRepository(Organization).save(org)
 
                 const actors = await connection
                     .getRepository(Actor)
-                    .find({ order: { nameID: "ASC" } })
+                    .find({ order: { nameId: "ASC" } })
 
                 expect(actors).to.have.length(2)
 
                 // Root-table columns should be populated
-                // nameID ASC: "acme" < "alice", so org is first
+                // nameId ASC: "acme" < "alice", so org is first
                 const loadedOrg = actors[0] as Organization
-                expect(loadedOrg.nameID).to.equal("acme")
+                expect(loadedOrg.nameId).to.equal("acme")
                 expect(loadedOrg.id).to.not.be.undefined
                 // Child-specific columns should NOT be populated
                 expect(loadedOrg.industry).to.be.undefined
 
                 const loadedUser = actors[1] as User
-                expect(loadedUser.nameID).to.equal("alice")
+                expect(loadedUser.nameId).to.equal("alice")
                 expect(loadedUser.email).to.be.undefined
             }),
         ))
@@ -157,7 +151,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const user = new User()
-                user.nameID = "alice"
+                user.nameId = "alice"
                 user.email = "alice@example.com"
                 await connection.getRepository(User).save(user)
 
@@ -167,7 +161,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
 
                 expect(loaded).to.not.be.null
                 expect(loaded).to.be.instanceOf(User)
-                expect(loaded!.nameID).to.equal("alice")
+                expect(loaded!.nameId).to.equal("alice")
                 // Child-specific column not populated
                 expect((loaded as User).email).to.be.undefined
             }),
@@ -185,7 +179,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
                 await connection.getRepository(Profile).save(profile)
 
                 const user = new User()
-                user.nameID = "alice"
+                user.nameId = "alice"
                 user.email = "alice@example.com"
                 user.authorization = auth
                 user.profile = profile
@@ -213,30 +207,30 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const user = new User()
-                user.nameID = "alice"
+                user.nameId = "alice"
                 user.email = "alice@example.com"
                 await connection.getRepository(User).save(user)
 
                 const org = new Organization()
-                org.nameID = "acme"
+                org.nameId = "acme"
                 org.industry = "Tech"
                 await connection.getRepository(Organization).save(org)
 
                 const actors = await connection
                     .getRepository(Actor)
                     .createQueryBuilder("actor")
-                    .orderBy("actor.nameID", "ASC")
+                    .orderBy("actor.nameId", "ASC")
                     .getMany()
 
                 expect(actors).to.have.length(2)
 
-                // nameID ASC: "acme" < "alice", so org is first
+                // nameId ASC: "acme" < "alice", so org is first
                 expect(actors[0]).to.be.instanceOf(Organization)
-                expect(actors[0].nameID).to.equal("acme")
+                expect(actors[0].nameId).to.equal("acme")
                 expect((actors[0] as Organization).industry).to.be.undefined
 
                 expect(actors[1]).to.be.instanceOf(User)
-                expect(actors[1].nameID).to.equal("alice")
+                expect(actors[1].nameId).to.equal("alice")
                 expect((actors[1] as User).email).to.be.undefined
             }),
         ))
@@ -257,7 +251,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
                 await connection.getRepository(Profile).save(profile)
 
                 const user = new User()
-                user.nameID = "alice"
+                user.nameId = "alice"
                 user.email = "alice@example.com"
                 user.authorization = auth
                 user.profile = profile
@@ -269,7 +263,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
                     .findOneBy({ id: user.id })
 
                 expect(loaded).to.not.be.null
-                expect(loaded!.nameID).to.equal("alice")
+                expect(loaded!.nameId).to.equal("alice")
                 expect(loaded!.email).to.equal("alice@example.com")
                 expect((loaded as any).type).to.equal("user")
             }),
@@ -279,7 +273,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const org = new Organization()
-                org.nameID = "acme"
+                org.nameId = "acme"
                 org.industry = "Tech"
                 await connection.getRepository(Organization).save(org)
 
@@ -288,7 +282,7 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
                     .findOneBy({ id: org.id })
 
                 expect(loaded).to.not.be.null
-                expect(loaded!.nameID).to.equal("acme")
+                expect(loaded!.nameId).to.equal("acme")
                 expect(loaded!.industry).to.equal("Tech")
                 expect((loaded as any).type).to.equal("organization")
             }),
@@ -298,12 +292,12 @@ describe("class-table-inheritance > cti-root-query-optimization", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const user = new User()
-                user.nameID = "alice"
+                user.nameId = "alice"
                 user.email = "alice@example.com"
                 await connection.getRepository(User).save(user)
 
                 const org = new Organization()
-                org.nameID = "acme"
+                org.nameId = "acme"
                 org.industry = "Tech"
                 await connection.getRepository(Organization).save(org)
 
