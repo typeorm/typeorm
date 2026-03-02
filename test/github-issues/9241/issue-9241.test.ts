@@ -5,7 +5,7 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, DeepPartial } from "../../../src"
+import type { DataSource, DeepPartial } from "../../../src"
 
 import { Employee } from "./entity/Employee"
 import { Photo } from "./entity/Photo"

@@ -6,7 +6,7 @@ import { QueryResult } from "../../query-runner/QueryResult"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
-import { CordovaDriver } from "./CordovaDriver"
+import type { CordovaDriver } from "./CordovaDriver"
 
 /**
  * Runs queries on a single sqlite database connection.

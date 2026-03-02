@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source"
+import type { DataSource } from "../../../../../src/data-source"
 import { LegacyOracleNamingStrategy } from "../../../../../src/naming-strategy/LegacyOracleNamingStrategy"
 
 describe("LegacyOracleNamingStrategy > create table using this naming strategy", () => {

@@ -1,15 +1,7 @@
 import "reflect-metadata"
 import "../../../utils/test-setup"
-import {
-    And,
-    DataSource,
-    In,
-    IsNull,
-    LessThan,
-    MoreThan,
-    Not,
-    Or,
-} from "../../../../src"
+import type { DataSource } from "../../../../src"
+import { And, In, IsNull, LessThan, MoreThan, Not, Or } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

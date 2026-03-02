@@ -1,5 +1,5 @@
 import { ObjectLiteral } from "../common/ObjectLiteral"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Performs logging of the events in TypeORM.

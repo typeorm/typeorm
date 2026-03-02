@@ -4,10 +4,10 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { File } from "./entity/file.entity"
-import { TreeRepository } from "../../../src"
+import type { TreeRepository } from "../../../src"
 
 describe("github issues > #2518 TreeRepository.findDescendantsTree does not load descendants when relationship id property exist", () => {
     let dataSources: DataSource[]

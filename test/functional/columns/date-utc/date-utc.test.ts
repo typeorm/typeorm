@@ -6,7 +6,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Event } from "./entity/Event"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 
 describe("columns > date utc flag", () => {
     let originalTZ: string | undefined

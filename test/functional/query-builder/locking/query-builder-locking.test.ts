@@ -1,6 +1,6 @@
 import { expect } from "chai"
+import type { DataSource } from "../../../../src/"
 import {
-    DataSource,
     LockNotSupportedOnGivenDriverError,
     NoVersionOrUpdateDateColumnError,
     OptimisticLockCanNotBeUsedError,

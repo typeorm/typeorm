@@ -6,7 +6,7 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { expect } from "chai"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 describe("sql tag parameters (sqlite)", () => {
     let dataSources: DataSource[]

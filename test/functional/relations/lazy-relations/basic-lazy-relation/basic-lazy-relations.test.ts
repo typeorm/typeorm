@@ -4,10 +4,11 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { EntitySchema, EntitySchemaOptions } from "../../../../../src"
+import type { EntitySchemaOptions } from "../../../../../src"
+import { EntitySchema } from "../../../../../src"
 import UserSchema from "./schema/user.json"
 import ProfileSchema from "./schema/profile.json"
 

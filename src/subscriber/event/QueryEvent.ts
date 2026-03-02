@@ -1,7 +1,7 @@
-import { EntityManager } from "../../entity-manager/EntityManager"
-import { DataSource } from "../../data-source/DataSource"
-import { QueryRunner } from "../../query-runner/QueryRunner"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { EntityManager } from "../../entity-manager/EntityManager"
+import type { DataSource } from "../../data-source/DataSource"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 
 /**
  * BeforeQueryEvent is an object that broadcaster sends to the entity subscriber before query is ran against the database.

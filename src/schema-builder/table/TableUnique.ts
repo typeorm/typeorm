@@ -1,5 +1,5 @@
-import { TableUniqueOptions } from "../options/TableUniqueOptions"
-import { UniqueMetadata } from "../../metadata/UniqueMetadata"
+import type { TableUniqueOptions } from "../options/TableUniqueOptions"
+import type { UniqueMetadata } from "../../metadata/UniqueMetadata"
 
 /**
  * Database's table unique constraint stored in this class.

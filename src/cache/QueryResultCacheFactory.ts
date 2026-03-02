@@ -1,7 +1,7 @@
 import { RedisQueryResultCache } from "./RedisQueryResultCache"
 import { DbQueryResultCache } from "./DbQueryResultCache"
-import { QueryResultCache } from "./QueryResultCache"
-import { DataSource } from "../data-source/DataSource"
+import type { QueryResultCache } from "./QueryResultCache"
+import type { DataSource } from "../data-source/DataSource"
 import { TypeORMError } from "../error/TypeORMError"
 
 /**

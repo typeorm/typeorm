@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { expect } from "chai"
 
 describe("github issues > #9399 mssql: Column is dropped and recreated in every migration", () => {

@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import "../../utils/test-setup"
-import { DataSource, In, IsNull } from "../../../src"
+import type { DataSource } from "../../../src"
+import { In, IsNull } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

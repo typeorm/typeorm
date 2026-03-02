@@ -1,2 +1,2 @@
 export * from "./DataSource"
-export * from "./DataSourceOptions"
+export type * from "./DataSourceOptions"

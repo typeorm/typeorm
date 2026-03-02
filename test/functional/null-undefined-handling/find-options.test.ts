@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import "../../utils/test-setup"
-import { DataSource, TypeORMError } from "../../../src"
+import type { DataSource } from "../../../src"
+import { TypeORMError } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

@@ -1,12 +1,12 @@
-import {
+import type {
     Logger,
     LogLevel,
     LogMessage,
     LogMessageType,
     PrepareLogMessagesOptions,
 } from "./Logger"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { LoggerOptions } from "./LoggerOptions"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { LoggerOptions } from "./LoggerOptions"
 import { PlatformTools } from "../platform/PlatformTools"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 

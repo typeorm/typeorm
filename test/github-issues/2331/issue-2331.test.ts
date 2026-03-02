@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, Repository } from "../../../src"
+import type { Repository } from "../../../src"
+import { DataSource } from "../../../src"
 import { Post } from "./entity/Post"
 import {
     reloadTestingDatabases,

@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { scheduler } from "timers/promises"
-import { DataSource } from "../../../../src/index"
+import type { DataSource } from "../../../../src/index"
 import {
     closeTestingConnections,
     createTestingConnections,

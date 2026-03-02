@@ -1,13 +1,13 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { EntityManager } from "../entity-manager/EntityManager"
-import { Repository } from "./Repository"
-import { TreeRepository } from "./TreeRepository"
-import { EntityTarget } from "../common/EntityTarget"
-import { ObjectType } from "../common/ObjectType"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { EntityManager } from "../entity-manager/EntityManager"
+import type { Repository } from "./Repository"
+import type { TreeRepository } from "./TreeRepository"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { ObjectType } from "../common/ObjectType"
 import { CustomRepositoryDoesNotHaveEntityError } from "../error/CustomRepositoryDoesNotHaveEntityError"
 import { getMetadataArgsStorage } from "../globals"
 import { CustomRepositoryNotFoundError } from "../error/CustomRepositoryNotFoundError"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
 
 /**
  * Provides abstract class for custom repositories that do not inherit from original orm Repository.
