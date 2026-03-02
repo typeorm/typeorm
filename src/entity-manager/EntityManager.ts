@@ -36,6 +36,7 @@ import { ObjectUtils } from "../util/ObjectUtils"
 import { getMetadataArgsStorage } from "../globals"
 import { UpsertOptions } from "../repository/UpsertOptions"
 import { UpdateOptions } from "../repository/UpdateOptions"
+import { DeleteOptions } from "../repository/DeleteOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { PickKeysByType } from "../common/PickKeysByType"
@@ -892,6 +893,7 @@ export class EntityManager {
      * Condition(s) cannot be empty.
      * @param targetOrEntity
      * @param criteria
+     * @param options
      */
     delete<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
@@ -905,6 +907,7 @@ export class EntityManager {
             | ObjectId
             | ObjectId[]
             | any,
+        options?: DeleteOptions,
     ): Promise<DeleteResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
@@ -915,19 +918,19 @@ export class EntityManager {
             )
         }
 
+        const qb = this.createQueryBuilder().delete().from(targetOrEntity)
+
         if (OrmUtils.isPrimitiveCriteria(criteria)) {
-            return this.createQueryBuilder()
-                .delete()
-                .from(targetOrEntity)
-                .whereInIds(criteria)
-                .execute()
+            qb.whereInIds(criteria)
         } else {
-            return this.createQueryBuilder()
-                .delete()
-                .from(targetOrEntity)
-                .where(criteria)
-                .execute()
+            qb.where(criteria)
         }
+
+        if (options?.returning !== undefined) {
+            qb.returning(options.returning)
+        }
+
+        return qb.execute()
     }
 
     /**
@@ -937,11 +940,19 @@ export class EntityManager {
      *
      * WARNING! This method deletes ALL rows in the target table.
      * @param targetOrEntity
+     * @param options
      */
     deleteAll<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
+        options?: DeleteOptions,
     ): Promise<DeleteResult> {
-        return this.createQueryBuilder().delete().from(targetOrEntity).execute()
+        const qb = this.createQueryBuilder().delete().from(targetOrEntity)
+
+        if (options?.returning !== undefined) {
+            qb.returning(options.returning)
+        }
+
+        return qb.execute()
     }
 
     /**
