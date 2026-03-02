@@ -5,7 +5,7 @@ import { CapacitorDriver } from "./CapacitorDriver"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { QueryResult } from "../../query-runner/QueryResult"
-import { NamedPlaceholdersNotSupportedError } from "../../error/DriverNotSupportNamedPlaceholdersError"
+import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 
 /**
  * Runs queries on a single sqlite database connection.

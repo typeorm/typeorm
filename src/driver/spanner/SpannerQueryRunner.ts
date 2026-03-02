@@ -1,6 +1,6 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
-import { NamedPlaceholdersNotSupportedError } from "../../error/DriverNotSupportNamedPlaceholdersError"
+import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"

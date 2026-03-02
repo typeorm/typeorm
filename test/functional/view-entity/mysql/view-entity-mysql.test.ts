@@ -74,7 +74,7 @@ describe("view entity > mysql with named placeholders", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Post],
+            entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql"],
             driverSpecific: {
                 extra: {

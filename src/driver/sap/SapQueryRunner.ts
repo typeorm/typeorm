@@ -28,7 +28,7 @@ import { IsolationLevel } from "../types/IsolationLevel"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { ReplicationMode } from "../types/ReplicationMode"
 import { SapDriver } from "./SapDriver"
-import { NamedPlaceholdersNotSupportedError } from "../../error/DriverNotSupportNamedPlaceholdersError"
+import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 
 /**
  * Runs queries on a single SQL Server database connection.

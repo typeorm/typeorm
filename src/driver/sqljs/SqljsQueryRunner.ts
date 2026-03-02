@@ -1,5 +1,5 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { NamedPlaceholdersNotSupportedError } from "../../error/DriverNotSupportNamedPlaceholdersError"
+import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"

@@ -9,7 +9,7 @@ import { QueryResult } from "../../query-runner/QueryResult"
 import { Table } from "../../schema-builder/table/Table"
 import { TypeORMError } from "../../error"
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
-import { NamedPlaceholdersNotSupportedError } from "../../error/DriverNotSupportNamedPlaceholdersError"
+import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
     declare driver: any

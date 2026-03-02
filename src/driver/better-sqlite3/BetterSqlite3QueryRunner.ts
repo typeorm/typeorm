@@ -5,7 +5,7 @@ import { Broadcaster } from "../../subscriber/Broadcaster"
 import { BetterSqlite3Driver } from "./BetterSqlite3Driver"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
-import { NamedPlaceholdersNotSupportedError } from "../../error/DriverNotSupportNamedPlaceholdersError"
+import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 
 /**
