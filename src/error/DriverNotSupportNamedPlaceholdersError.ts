@@ -5,8 +5,6 @@ import { TypeORMError } from "./TypeORMError"
  */
 export class DriverNotSupportNamedPlaceholdersError extends TypeORMError {
     constructor() {
-        super(
-            `Driver does not support named placeholders. Please update your query or switch to mysql2.`,
-        )
+        super(`Your driver does not support named placeholders.`)
     }
 }
