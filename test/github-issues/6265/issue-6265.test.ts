@@ -10,21 +10,21 @@ import {
 } from "../../utils/test-utils"
 
 describe("github issues > #6265 `fix: resolve issue with find with relations returns soft-deleted entities", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [User, Role],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should soft delete one record in relation table", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const role = new Role()
                 role.title = "Manager"
                 await connection.manager.save(role)

@@ -8,19 +8,19 @@ import {
 } from "../../../utils/test-utils"
 
 describe("github issues > #8443 QueryFailedError when tree entity with JoinColumn > materialized-path", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Category],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("attach should work properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -67,7 +67,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
 
     it("categories should be attached via children and saved properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -107,7 +107,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
 
     it("categories should be attached via children and saved properly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -147,7 +147,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
 
     it("categories should be attached via children and saved properly and everything must be saved in cascades", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -196,7 +196,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
 
     it("findTrees() tests > findTrees should load all category roots and attached children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -261,7 +261,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
 
     it("findTrees() testsfindTrees should load multiple category roots if they exist", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -358,7 +358,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
 
     it("findTrees() testsfindTrees should filter by depth if optionally provided", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -501,7 +501,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
 
     it("findDescendantsTree() tests > findDescendantsTree should load all category descendents and nested children", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 
@@ -565,7 +565,7 @@ describe("github issues > #8443 QueryFailedError when tree entity with JoinColum
 
     it("findDescendantsTree should filter by depth if optionally provided", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository =
                     connection.getTreeRepository(Category)
 

@@ -9,10 +9,10 @@ import { Author, AuthorSchema } from "./entity/Author"
 import { Post, PostSchema } from "./entity/Post"
 
 describe("github issues > #4156 QueryExpressionMap doesn't clone all values correctly", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [
                     new EntitySchema<Author>(AuthorSchema),
                     new EntitySchema<Post>(PostSchema),
@@ -21,8 +21,8 @@ describe("github issues > #4156 QueryExpressionMap doesn't clone all values corr
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const author = new Author()
@@ -39,7 +39,7 @@ describe("github issues > #4156 QueryExpressionMap doesn't clone all values corr
 
     it("should not error when the query builder has been cloned", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const qb = connection.manager.createQueryBuilder("Post", "post")
@@ -66,7 +66,7 @@ describe("github issues > #4156 QueryExpressionMap doesn't clone all values corr
 
     it("should not error when the query builder with where statement has been cloned", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const qb = connection.manager

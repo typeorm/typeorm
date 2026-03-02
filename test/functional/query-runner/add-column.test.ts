@@ -11,19 +11,19 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 
 describe("query runner > add column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly add column and revert add", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let numericType = "int"
                 if (DriverUtils.isSQLiteFamily(connection.driver)) {
                     numericType = "integer"

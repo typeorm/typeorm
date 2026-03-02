@@ -6,7 +6,6 @@ import { AlreadyHasActiveConnectionError } from "../error/AlreadyHasActiveConnec
 /**
  * ConnectionManager is used to store and manage multiple orm connections.
  * It also provides useful factory methods to simplify connection creation.
- *
  * @deprecated
  */
 export class ConnectionManager {
@@ -28,6 +27,7 @@ export class ConnectionManager {
 
     /**
      * Checks if connection with the given name exist in the manager.
+     * @param name
      */
     has(name: string): boolean {
         return this.connectionMap.has(name)
@@ -37,6 +37,7 @@ export class ConnectionManager {
      * Gets registered connection with the given name.
      * If connection name is not given then it will get a default connection.
      * Throws error if connection with the given name was not found.
+     * @param name
      */
     get(name: string = "default"): DataSource {
         const connection = this.connectionMap.get(name)
@@ -47,7 +48,8 @@ export class ConnectionManager {
 
     /**
      * Creates a new connection based on the given connection options and registers it in the manager.
-     * Connection won't be established, you'll need to manually call connect method to establish connection.
+     * Connection won't be established, you'll need to manually call the `DataSource.initialize()` method to establish connection.
+     * @param options
      */
     create(options: DataSourceOptions): DataSource {
         // check if such connection is already registered

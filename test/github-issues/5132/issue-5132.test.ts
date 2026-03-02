@@ -10,21 +10,21 @@ import { Foo } from "./entity/foo.entity"
 
 describe("github issues > #5132: Default of -1 (minus 1) generates useless migrations`", () => {
     describe("-1 (minus 1) in default value", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     schemaCreate: false,
                     dropSchema: true,
                     entities: [Foo],
                     enabledDrivers: ["postgres", "cockroachdb"],
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("can recognize model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const sqlInMemory = await connection.driver
                         .createSchemaBuilder()
                         .log()
@@ -36,7 +36,7 @@ describe("github issues > #5132: Default of -1 (minus 1) generates useless migra
 
         it("does not generate when no model changes", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     await connection.driver.createSchemaBuilder().build()
 
                     const sqlInMemory = await connection.driver

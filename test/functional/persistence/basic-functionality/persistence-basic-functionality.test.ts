@@ -10,25 +10,25 @@ import { Category } from "./entity/Category"
 import { User } from "./entity/User"
 
 describe("persistence > basic functionality", function () {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should save an entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.manager.save(new Post(1, "Hello Post"))
             }),
         ))
 
     it("should remove an entity", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post(1, "Hello Post")
                 await connection.manager.save(post)
                 await connection.manager.remove(post)
@@ -37,7 +37,7 @@ describe("persistence > basic functionality", function () {
 
     it("should throw an error when not an object is passed to a save method", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.manager
                     .save(undefined)
                     .should.be.rejectedWith(
@@ -58,7 +58,7 @@ describe("persistence > basic functionality", function () {
 
     it("should throw an error when not an object is passed to a remove method", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.manager
                     .remove(undefined)
                     .should.be.rejectedWith(
@@ -79,7 +79,7 @@ describe("persistence > basic functionality", function () {
 
     it("should throw an exception if object literal is given instead of constructed entity because it cannot determine what to save", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.manager
                     .save({})
                     .should.be.rejectedWith(
@@ -115,7 +115,7 @@ describe("persistence > basic functionality", function () {
 
     it("should be able to save and remove entities of different types", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post(1, "Hello Post")
                 const category = new Category(1, "Hello Category")
                 const user = new User(1, "Hello User")

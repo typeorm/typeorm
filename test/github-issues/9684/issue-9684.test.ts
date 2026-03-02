@@ -7,20 +7,20 @@ import {
 import { Foo } from "./entity/Foo"
 
 describe("github issues > #9684 Incorrect enum default value when table name contains dash character", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Foo],
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["postgres"],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
     it("should get default enum value", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("module-foo_table_x")
 

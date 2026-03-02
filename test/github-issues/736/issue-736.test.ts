@@ -6,19 +6,19 @@ import {
 } from "../../utils/test-utils"
 
 describe("github issues > #736 ClosureEntity should set (composite) primary/unique key in the closure table", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create composite primary key on closure ancestor and descendant", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("category_closure")
                 table!.findColumnByName("id_ancestor")!.isPrimary.should.be.true

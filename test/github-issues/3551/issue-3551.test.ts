@@ -7,19 +7,19 @@ import {
 import { Book } from "./entity/Book"
 
 describe("github issues > #3551 array of embedded documents through multiple levels are not handled", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mongodb"],
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return entity with all these embedded documents", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const bookInput = {
                     title: "Book 1",
                     chapters: [

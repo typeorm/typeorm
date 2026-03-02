@@ -7,21 +7,21 @@ import {
 import { Post } from "./entity/Post"
 
 describe("github issues > #7521 Only first \0 is removed in comments, only first \\ is escaped etc.", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres", "cockroachdb", "mysql"],
                 schemaCreate: false,
                 dropSchema: true,
                 entities: [Post],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
@@ -32,7 +32,7 @@ describe("github issues > #7521 Only first \0 is removed in comments, only first
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
@@ -44,7 +44,7 @@ describe("github issues > #7521 Only first \0 is removed in comments, only first
 
     it("should properly escape quotes in comments", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
                 const table = await queryRunner.getTable("post")

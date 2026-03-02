@@ -10,20 +10,20 @@ import { TableForeignKey } from "../../../src/schema-builder/table/TableForeignK
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > create foreign key", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create foreign key and revert creation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let numericType = "int"
                 if (DriverUtils.isSQLiteFamily(connection.driver)) {
                     numericType = "integer"

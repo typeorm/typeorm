@@ -11,22 +11,22 @@ import { User } from "./entity/user"
 import { UserMonth } from "./entity/user-month"
 
 describe.skip("github issues > #1685 JoinColumn from JoinColum is not considered when inserting new value", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["mysql"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not fail when inserting a new UserMonth with good PKs from JoinColumn", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const year = new Year()
                 year.yearNo = 2018
                 await connection.manager.save(year)

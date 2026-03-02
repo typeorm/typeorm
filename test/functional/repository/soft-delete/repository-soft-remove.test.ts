@@ -11,19 +11,19 @@ import { PostWithoutDeleteDate } from "./entity/PostWithoutDeleteDate"
 import { MissingDeleteDateColumnError } from "../../../../src/error/MissingDeleteDateColumnError"
 
 describe("repository > soft-remove", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should perform soft removal and recovery correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // save a new posts
@@ -82,7 +82,7 @@ describe("repository > soft-remove", () => {
 
     it("should throw error when delete date column is missing", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(
                     PostWithoutDeleteDate,
                 )

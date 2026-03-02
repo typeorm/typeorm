@@ -1,13 +1,13 @@
-import { Driver } from "../Driver"
-import { PostgresDriver } from "../postgres/PostgresDriver"
-import { PlatformTools } from "../../platform/PlatformTools"
 import { DataSource } from "../../data-source/DataSource"
-import { AuroraPostgresConnectionOptions } from "./AuroraPostgresConnectionOptions"
-import { AuroraPostgresQueryRunner } from "./AuroraPostgresQueryRunner"
-import { ReplicationMode } from "../types/ReplicationMode"
 import { ColumnMetadata } from "../../metadata/ColumnMetadata"
+import { PlatformTools } from "../../platform/PlatformTools"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
+import { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
+import { PostgresDriver } from "../postgres/PostgresDriver"
+import { ReplicationMode } from "../types/ReplicationMode"
+import { AuroraPostgresDataSourceOptions } from "./AuroraPostgresDataSourceOptions"
+import { AuroraPostgresQueryRunner } from "./AuroraPostgresQueryRunner"
 
 abstract class PostgresWrapper extends PostgresDriver {
     declare options: any
@@ -44,7 +44,7 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
     /**
      * Connection options.
      */
-    options: AuroraPostgresConnectionOptions
+    options: AuroraPostgresDataSourceOptions
 
     /**
      * Master database used to perform all write queries.
@@ -58,7 +58,7 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
     constructor(connection: DataSource) {
         super()
         this.connection = connection
-        this.options = connection.options as AuroraPostgresConnectionOptions
+        this.options = connection.options as AuroraPostgresDataSourceOptions
         this.isReplicated = false
 
         // load data-api package
@@ -96,6 +96,7 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
         return new AuroraPostgresQueryRunner(
@@ -116,6 +117,8 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
         if (
@@ -136,6 +139,8 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Prepares given value to a value to be persisted, based on its column type and metadata.
+     * @param value
+     * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (
@@ -172,6 +177,8 @@ export class AuroraPostgresDriver extends PostgresWrapper implements Driver {
 
     /**
      * Executes given query.
+     * @param connection
+     * @param query
      */
     protected executeQuery(connection: any, query: string) {
         return this.connection.query(query)

@@ -1,11 +1,11 @@
-import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { NativescriptConnectionOptions } from "./NativescriptConnectionOptions"
-import { NativescriptQueryRunner } from "./NativescriptQueryRunner"
-import { QueryRunner } from "../../query-runner/QueryRunner"
 import { DataSource } from "../../data-source/DataSource"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
+import { QueryRunner } from "../../query-runner/QueryRunner"
+import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
 import { ColumnType } from "../types/ColumnTypes"
 import { ReplicationMode } from "../types/ReplicationMode"
+import { NativescriptDataSourceOptions } from "./NativescriptDataSourceOptions"
+import { NativescriptQueryRunner } from "./NativescriptQueryRunner"
 
 /**
  * Organizes communication with sqlite DBMS within Nativescript.
@@ -18,7 +18,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
     /**
      * Connection options.
      */
-    options: NativescriptConnectionOptions
+    options: NativescriptDataSourceOptions
 
     /**
      * Nativescript driver module
@@ -35,7 +35,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
         super(connection)
 
         this.connection = connection
-        this.options = connection.options as NativescriptConnectionOptions
+        this.options = connection.options as NativescriptDataSourceOptions
         this.database = this.options.database
         this.driver = this.options.driver
 
@@ -59,6 +59,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
 
     /**
      * Creates a query runner used to execute database queries.
+     * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
         if (!this.queryRunner) {

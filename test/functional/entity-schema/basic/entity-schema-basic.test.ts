@@ -10,19 +10,19 @@ import { PostEntity } from "./entity/PostEntity"
 import { CategoryEntity } from "./entity/CategoryEntity"
 
 describe("entity schemas > basic functionality", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [PostEntity, CategoryEntity],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should perform basic operations with entity using repository", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(PostEntity)
                 const post = postRepository.create({
                     id: 1,
@@ -49,7 +49,7 @@ describe("entity schemas > basic functionality", () => {
 
     it("should perform basic operations with entity using manager", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = connection.manager.create(PostEntity, {
                     id: 1,
                     title: "First Post",

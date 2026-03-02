@@ -9,21 +9,21 @@ import { expect } from "chai"
 import { Post, User } from "./entities"
 
 describe("github issues > #7079 Error when sorting by an embedded entity while using join and skip/take", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post, User],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should be able to getMany with join and sorting by an embedded entity column while user take and skip", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepo = connection.getRepository(Post)
                 const userRepo = connection.getRepository(User)
 

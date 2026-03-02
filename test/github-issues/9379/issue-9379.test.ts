@@ -10,19 +10,19 @@ import { SuperLongTableName } from "./entity/SuperLongTableName"
 import { SuperLongTableNameWhichIsRelatedToOriginalTable } from "./entity/SuperLongTableNameIsRelatedToOriginal"
 
 describe("github issues > #9379 RelationIdLoader is not respecting maxAliasLength", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should fetch related entities properly", async () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const origin = await connection
                 .getRepository(SuperLongTableName)
                 .save({ name: "test" })

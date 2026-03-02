@@ -19,7 +19,7 @@ export class ConnectionMetadataBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: DataSource) {}
+    constructor(protected dataSource: DataSource) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -27,6 +27,7 @@ export class ConnectionMetadataBuilder {
 
     /**
      * Builds migration instances for the given classes or directories.
+     * @param migrations
      */
     async buildMigrations(
         migrations: (Function | string)[],
@@ -36,7 +37,7 @@ export class ConnectionMetadataBuilder {
         const allMigrationClasses = [
             ...migrationClasses,
             ...(await importClassesFromDirectories(
-                this.connection.logger,
+                this.dataSource.logger,
                 migrationDirectories,
             )),
         ]
@@ -47,6 +48,7 @@ export class ConnectionMetadataBuilder {
 
     /**
      * Builds subscriber instances for the given classes or directories.
+     * @param subscribers
      */
     async buildSubscribers(
         subscribers: (Function | string)[],
@@ -56,7 +58,7 @@ export class ConnectionMetadataBuilder {
         const allSubscriberClasses = [
             ...subscriberClasses,
             ...(await importClassesFromDirectories(
-                this.connection.logger,
+                this.dataSource.logger,
                 subscriberDirectories,
             )),
         ]
@@ -71,6 +73,7 @@ export class ConnectionMetadataBuilder {
 
     /**
      * Builds entity metadatas for the given classes or directories.
+     * @param entities
      */
     async buildEntityMetadatas(
         entities: (Function | EntitySchema<any> | string)[],
@@ -90,7 +93,7 @@ export class ConnectionMetadataBuilder {
         const allEntityClasses = [
             ...entityClasses,
             ...(await importClassesFromDirectories(
-                this.connection.logger,
+                this.dataSource.logger,
                 entityDirectories,
             )),
         ]
@@ -101,14 +104,14 @@ export class ConnectionMetadataBuilder {
             }
         })
         const decoratorEntityMetadatas = new EntityMetadataBuilder(
-            this.connection,
+            this.dataSource,
             getMetadataArgsStorage(),
         ).build(allEntityClasses)
 
         const metadataArgsStorageFromSchema =
             new EntitySchemaTransformer().transform(entitySchemas)
         const schemaEntityMetadatas = new EntityMetadataBuilder(
-            this.connection,
+            this.dataSource,
             metadataArgsStorageFromSchema,
         ).build()
 

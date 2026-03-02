@@ -9,19 +9,19 @@ import { ColumnMetadataArgs } from "../../../src/metadata-args/ColumnMetadataArg
 import { User } from "./entity/User"
 
 describe("github issues > #1623 NOT NULL constraint failed after a new column is added (SQLite)", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly add new column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Spanner does not support adding new NOT NULL column to existing table
                 if (connection.driver.options.type === "spanner") return
 

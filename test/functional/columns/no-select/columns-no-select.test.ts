@@ -9,19 +9,19 @@ import { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 
 describe("columns > no-selection functionality", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not select columns marked with select: false option", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // create and save a post first
@@ -43,7 +43,7 @@ describe("columns > no-selection functionality", () => {
 
     it("should not select columns with QueryBuilder marked with select: false option", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // create and save a post first
@@ -66,7 +66,7 @@ describe("columns > no-selection functionality", () => {
 
     it("should select columns with select: false even columns were implicitly selected", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // create and save a post first
@@ -85,6 +85,41 @@ describe("columns > no-selection functionality", () => {
                 expect(loadedPost!.title).to.be.equal("About columns")
                 expect(loadedPost!.text).to.be.equal("Some text about columns")
                 expect(loadedPost!.authorName).to.be.equal("Umed")
+            }),
+        ))
+
+    it("should not return columns marked with select: false", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const post = new Post()
+                post.title = "Hello Post"
+                post.text = "Some text"
+                post.authorName = "Umed"
+                const savedPost = await postRepository.save(post)
+
+                expect(savedPost).to.have.property("id")
+                expect(savedPost).to.have.property("title")
+                expect(savedPost).to.not.have.property("authorName")
+                expect(savedPost.counters).to.not.have.property("secretCode")
+            }),
+        ))
+
+    it("should not return columns marked with select: false in embedded entities", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const postRepository = connection.getRepository(Post)
+                const post = new Post()
+                post.title = "Hello Post"
+                post.text = "Some text"
+                post.authorName = "Umed"
+                post.counters = { secretCode: "789" }
+                const savedPost = await postRepository.save(post)
+
+                expect(savedPost).to.have.property("id")
+                expect(savedPost).to.have.property("title")
+                expect(savedPost).to.not.have.property("authorName")
+                expect(savedPost.counters).to.not.have.property("secretCode")
             }),
         ))
 })

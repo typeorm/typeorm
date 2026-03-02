@@ -9,19 +9,19 @@ import { User } from "./entity/User"
 import { expect } from "chai"
 
 describe("github issues > #867 result of `findAndCount` is wrong when apply `skip` and `take` option", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work perfectly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userRepository = connection.getRepository(User)
                 const users = new Array(5).fill(0).map((n, i) => {
                     const user = new User()

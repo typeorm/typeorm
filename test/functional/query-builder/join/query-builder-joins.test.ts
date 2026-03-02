@@ -12,22 +12,23 @@ import { Category } from "./entity/Category"
 import { CategoryWithCompositePK } from "./entity/CategoryWithCompositePK"
 import { Image } from "./entity/Image"
 import { User } from "./entity/User"
+import { Photo } from "./entity/Photo"
 
 describe("query builder > joins", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     describe("leftJoinAndSelect", () => {
         it("should load data for all relation types", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user = new User()
                     user.name = "Alex Messer"
                     await connection.manager.save(user)
@@ -150,7 +151,7 @@ describe("query builder > joins", () => {
 
         it("should load data when additional condition used", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const image1 = new Image()
                     image1.name = "image1"
                     await connection.manager.save(image1)
@@ -204,7 +205,7 @@ describe("query builder > joins", () => {
 
         it("should load data when join tables does not have direct relation", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category = new Category()
                     category.name = "cars"
                     await connection.manager.save(category)
@@ -241,7 +242,7 @@ describe("query builder > joins", () => {
     describe("innerJoinAndSelect", () => {
         it("should load only exist data for all relation types", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user = new User()
                     user.name = "Alex Messer"
                     await connection.manager.save(user)
@@ -298,7 +299,7 @@ describe("query builder > joins", () => {
 
         it("should load data when additional condition used", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const image1 = new Image()
                     image1.name = "image1"
                     await connection.manager.save(image1)
@@ -352,7 +353,7 @@ describe("query builder > joins", () => {
 
         it("should not return any result when related data does not exist", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post = new Post()
                     post.title = "about BMW"
                     await connection.manager.save(post)
@@ -371,7 +372,7 @@ describe("query builder > joins", () => {
     describe("leftJoinAndMap", () => {
         it("should load and map selected data when entity used as join argument", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user = new User()
                     user.name = "Alex Messer"
                     await connection.manager.save(user)
@@ -457,7 +458,7 @@ describe("query builder > joins", () => {
 
         it("should load and map selected data when table name used as join argument", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user = new User()
                     user.name = "Alex Messer"
                     await connection.manager.save(user)
@@ -543,7 +544,7 @@ describe("query builder > joins", () => {
 
         it("should load and map selected data when query builder used as join argument", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const tag = new Tag()
                     tag.name = "audi"
                     await connection.manager.save(tag)
@@ -571,9 +572,44 @@ describe("query builder > joins", () => {
                 }),
             ))
 
+        it("should not load join data when join subquery does not find results", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const tag = new Tag()
+                    tag.name = "audi"
+                    await connection.manager.save(tag)
+
+                    const post = new Post()
+                    post.title = "about China"
+                    post.tag = tag
+                    await connection.manager.save(post)
+
+                    const loadedPost = await connection.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndMapOne(
+                            "post.tag",
+                            (qb) =>
+                                qb
+                                    .subQuery()
+                                    .from(Tag, "tag")
+                                    .where("tag.name != :name", {
+                                        name: "audi",
+                                    }),
+                            "tag",
+                            "tag.id = post.tagId",
+                            undefined,
+                            Tag,
+                        )
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost!.tag).to.be.null
+                }),
+            ))
+
         it("should load and map selected data when data will given from same entity but with different conditions", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     await connection.manager.save(category1)
@@ -620,7 +656,7 @@ describe("query builder > joins", () => {
 
         it("should load and map selected data when data will given from same property but with different conditions", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const image1 = new Image()
                     image1.name = "image1"
                     await connection.manager.save(image1)
@@ -822,7 +858,7 @@ describe("query builder > joins", () => {
     describe("innerJoinAndMap", () => {
         it("should load and map selected data when entity used as join argument", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user = new User()
                     user.name = "Alex Messer"
                     await connection.manager.save(user)
@@ -908,7 +944,7 @@ describe("query builder > joins", () => {
 
         it("should load and map selected data when table name used as join argument", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user = new User()
                     user.name = "Alex Messer"
                     await connection.manager.save(user)
@@ -994,7 +1030,7 @@ describe("query builder > joins", () => {
 
         it("should load and map selected data when query builder used as join argument", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const tag = new Tag()
                     tag.name = "audi"
                     await connection.manager.save(tag)
@@ -1022,9 +1058,44 @@ describe("query builder > joins", () => {
                 }),
             ))
 
+        it("should not find results when join subquery with conditions does not find join data", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const tag = new Tag()
+                    tag.name = "audi"
+                    await connection.manager.save(tag)
+
+                    const post = new Post()
+                    post.title = "about China"
+                    post.tag = tag
+                    await connection.manager.save(post)
+
+                    const loadedPost = await connection.manager
+                        .createQueryBuilder(Post, "post")
+                        .innerJoinAndMapOne(
+                            "post.tag",
+                            (qb) =>
+                                qb
+                                    .subQuery()
+                                    .from(Tag, "tag")
+                                    .where("tag.name != :name", {
+                                        name: "audi",
+                                    }),
+                            "tag",
+                            "tag.id = post.tagId",
+                            undefined,
+                            Tag,
+                        )
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost).to.be.null
+                }),
+            ))
+
         it("should load and map selected data when data will given from same entity but with different conditions", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const category1 = new Category()
                     category1.name = "cars"
                     await connection.manager.save(category1)
@@ -1071,7 +1142,7 @@ describe("query builder > joins", () => {
 
         it("should load and map selected data when data will given from same property but with different conditions", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const image1 = new Image()
                     image1.name = "image1"
                     await connection.manager.save(image1)
@@ -1271,7 +1342,7 @@ describe("query builder > joins", () => {
 
         it("should not return any result when related data does not exist", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const post = new Post()
                     post.title = "about BMW"
                     await connection.manager.save(post)
@@ -1310,7 +1381,7 @@ describe("query builder > joins", () => {
     describe("leftJoin with skip/take pagination", () => {
         it("should work correctly when leftJoin used with addSelect and pagination without primary key", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user1 = new User()
                     user1.name = "Test User 1"
                     await connection.manager.save(user1)
@@ -1375,7 +1446,7 @@ describe("query builder > joins", () => {
 
         it("should work correctly with leftJoinAndSelect as comparison", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user = new User()
                     user.name = "Test User"
                     await connection.manager.save(user)
@@ -1414,7 +1485,7 @@ describe("query builder > joins", () => {
 
         it("should work correctly with explicit primary key selection", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user = new User()
                     user.name = "Test User"
                     await connection.manager.save(user)
@@ -1461,7 +1532,7 @@ describe("query builder > joins", () => {
     describe("leftJoin with composite primary keys", () => {
         it("should work correctly when all composite primary key columns are selected", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user = new User()
                     user.name = "Test User"
                     await connection.manager.save(user)
@@ -1515,7 +1586,7 @@ describe("query builder > joins", () => {
 
         it("should work correctly when only part of composite primary key is selected", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user = new User()
                     user.name = "Test User"
                     await connection.manager.save(user)
@@ -1567,7 +1638,7 @@ describe("query builder > joins", () => {
 
         it("should work correctly when no composite primary key columns are selected", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const user = new User()
                     user.name = "Test User"
                     await connection.manager.save(user)
@@ -1615,4 +1686,42 @@ describe("query builder > joins", () => {
                 }),
             ))
     })
+
+    it("should return correct number of results when limit is used with left joins", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const manager = connection.manager
+
+                for (let i = 1; i <= 7; i++) {
+                    const user = new User()
+                    user.name = `User ${i}`
+                    await manager.save(user)
+
+                    for (let j = 1; j <= 2; j++) {
+                        const photo = new Photo()
+                        photo.name = `Photo ${i}-${j}`
+                        photo.user = user
+                        await manager.save(photo)
+                    }
+                }
+
+                const qb = manager
+                    .createQueryBuilder(User, "user")
+                    .leftJoinAndSelect("user.photos", "photo")
+                    .orderBy("user.id")
+                    .limit(5)
+
+                const users = await qb.getMany()
+                expect(users).to.have.lengthOf(5)
+                users.forEach((user) => {
+                    expect(user.photos).to.have.lengthOf(2)
+                })
+
+                const rows = await qb.execute()
+                const uniqueIds = new Set(
+                    rows.map((row: { user_id: string }) => row.user_id),
+                )
+                expect(uniqueIds.size).to.equal(3)
+            }),
+        ))
 })

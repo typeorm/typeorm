@@ -243,7 +243,9 @@ userRepository.findOne({
 })
 ```
 
-See [lock modes](../query-builder/1-select-query-builder.md#lock-modes) for more information
+See [lock modes](../query-builder/1-select-query-builder.md#lock-modes) for more information.
+
+## Example
 
 Complete example of find options:
 
@@ -268,6 +270,10 @@ userRepository.find({
     order: {
         name: "ASC",
         id: "DESC",
+    },
+    lock: {
+        mode: "pessimistic_write",
+        onLocked: "nowait",
     },
     skip: 5,
     take: 10,
@@ -529,6 +535,22 @@ will execute following query:
 
 ```sql
 SELECT * FROM "post" WHERE "categories" && '{TypeScript}'
+```
+
+- `JsonContains` (PostgreSQL/CockroachDB only)
+
+```ts
+import { JsonContains } from "typeorm"
+
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+    metadata: JsonContains({ author: { name: "John" } }),
+})
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "metadata" ::jsonb @> '{"author":{"name":"John"}}'
 ```
 
 - `Raw`

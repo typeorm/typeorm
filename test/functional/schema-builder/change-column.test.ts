@@ -11,20 +11,20 @@ import { PostVersion } from "./entity/PostVersion"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("schema builder > change column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly change column name", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postMetadata = connection.getMetadata(Post)
                 const nameColumn =
                     postMetadata.findColumnWithPropertyName("name")!
@@ -48,7 +48,7 @@ describe("schema builder > change column", () => {
 
     it("should correctly change column length", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postMetadata = connection.getMetadata(Post)
                 const nameColumn =
                     postMetadata.findColumnWithPropertyName("name")!
@@ -89,7 +89,7 @@ describe("schema builder > change column", () => {
 
     it("should correctly change column type", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postMetadata = connection.getMetadata(Post)
                 const versionColumn =
                     postMetadata.findColumnWithPropertyName("version")!
@@ -132,7 +132,7 @@ describe("schema builder > change column", () => {
 
     it("should correctly change column default value", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Spanner does not support DEFAULT
                 if (connection.driver.options.type === "spanner") return
 
@@ -157,7 +157,7 @@ describe("schema builder > change column", () => {
 
     it("should correctly make column primary and generated", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // CockroachDB does not allow changing PK
                 if (
                     connection.driver.options.type === "cockroachdb" ||
@@ -208,7 +208,7 @@ describe("schema builder > change column", () => {
 
     it("should correctly change column `isGenerated` property when column is on foreign key", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const teacherMetadata = connection.getMetadata("teacher")
                 const idColumn =
                     teacherMetadata.findColumnWithPropertyName("id")!
@@ -234,7 +234,7 @@ describe("schema builder > change column", () => {
 
     it("should correctly change non-generated column on to uuid-generated column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // CockroachDB and Spanner does not allow changing PK
                 if (
                     connection.driver.options.type === "cockroachdb" ||
@@ -302,7 +302,7 @@ describe("schema builder > change column", () => {
 
     it("should correctly change generated column generation strategy", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // CockroachDB and Spanner does not allow changing PK
                 if (
                     connection.driver.options.type === "cockroachdb" ||
@@ -368,7 +368,7 @@ describe("schema builder > change column", () => {
 
     it("should correctly change column comment", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Skip the contents of this test if not one of the drivers that support comments
                 if (
                     !(
@@ -434,7 +434,7 @@ describe("schema builder > change column", () => {
 
     it("should correctly change column type when FK relationships impact it", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.getRepository(Post).insert({
                     id: 1234,
                     version: "5",

@@ -6,21 +6,21 @@ import {
 import { PushLog } from "./entity/PushLog"
 
 describe("github issues > #7381 Infinite same ALTERs upon startup (mysql, ver 0.2.30)", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 enabledDrivers: ["mysql", "mariadb"],
                 schemaCreate: false,
                 dropSchema: true,
                 entities: [PushLog],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
@@ -31,7 +31,7 @@ describe("github issues > #7381 Infinite same ALTERs upon startup (mysql, ver 0.
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()

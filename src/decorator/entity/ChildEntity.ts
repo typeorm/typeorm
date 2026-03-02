@@ -4,6 +4,7 @@ import { DiscriminatorValueMetadataArgs } from "../../metadata-args/Discriminato
 
 /**
  * Special type of the table used in the single-table inherited tables.
+ * @param discriminatorValue
  */
 export function ChildEntity(discriminatorValue?: any): ClassDecorator {
     return function (target: Function) {

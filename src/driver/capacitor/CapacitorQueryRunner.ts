@@ -50,6 +50,9 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -122,6 +125,7 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Parametrizes given object of values. Used to create column=value queries.
+     * @param objectLiteral
      */
     protected parametrize(objectLiteral: ObjectLiteral): string[] {
         return Object.keys(objectLiteral).map((key) => `"${key}"` + "=?")

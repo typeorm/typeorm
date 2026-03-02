@@ -14,19 +14,19 @@ import { FruitEnum } from "./enum/FruitEnum"
 describe("database schema > column types > mssql", () => {
     // https://github.com/tediousjs/tedious/issues/722
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("all types should work correctly - persist and hydrate", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post")
@@ -249,7 +249,7 @@ describe("database schema > column types > mssql", () => {
 
     it("all types should work correctly - persist and hydrate when options are specified on columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(PostWithOptions)
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("post_with_options")
@@ -361,7 +361,7 @@ describe("database schema > column types > mssql", () => {
 
     it("all types should work correctly - persist and hydrate when types are not specified on columns", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository =
                     connection.getRepository(PostWithoutTypes)
                 const queryRunner = connection.createQueryRunner()

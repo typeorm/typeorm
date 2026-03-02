@@ -8,10 +8,10 @@ import { MockSubscriber } from "./subscribers/MockSubscriber"
 import { Example } from "./entity/Example"
 
 describe("entity subscriber > query data", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Example],
                 subscribers: [MockSubscriber],
                 dropSchema: true,
@@ -19,14 +19,14 @@ describe("entity subscriber > query data", () => {
             })),
     )
     beforeEach(() => {
-        if (!connections.length) return
-        ;(connections[0].subscribers[0] as MockSubscriber).calledData.length = 0
+        if (!dataSources.length) return
+        ;(dataSources[0].subscribers[0] as MockSubscriber).calledData.length = 0
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("passes query data to subscriber", async () => {
-        if (!connections.length) return
-        const connection = connections[0]
+        if (!dataSources.length) return
+        const connection = dataSources[0]
         const subscriber = connection.subscribers[0] as MockSubscriber
 
         const example = new Example()
@@ -41,8 +41,8 @@ describe("entity subscriber > query data", () => {
     })
 
     it("cleans up the data after the save completes", async () => {
-        if (!connections.length) return
-        const connection = connections[0]
+        if (!dataSources.length) return
+        const connection = dataSources[0]
         const subscriber = connection.subscribers[0] as MockSubscriber
 
         const example = new Example()

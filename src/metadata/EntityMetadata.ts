@@ -1,4 +1,3 @@
-import { QueryRunner, SelectQueryBuilder } from ".."
 import { ObjectLiteral } from "../common/ObjectLiteral"
 import { DataSource } from "../data-source/DataSource"
 import { CannotCreateEntityIdMapError } from "../error/CannotCreateEntityIdMapError"
@@ -23,6 +22,8 @@ import { ClosureTreeOptions } from "./types/ClosureTreeOptions"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { shorten } from "../util/StringUtils"
+import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Contains all entity metadata.
@@ -99,7 +100,7 @@ export class EntityMetadata {
      * View's expression.
      * Used in views
      */
-    expression?: string | ((connection: DataSource) => SelectQueryBuilder<any>)
+    expression?: string | ((dataSource: DataSource) => SelectQueryBuilder<any>)
 
     /**
      * View's dependencies.

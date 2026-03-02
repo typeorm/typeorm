@@ -9,11 +9,11 @@ import { expect } from "chai"
 import { Item, NEW_COLLATION } from "./entity/item.entity"
 
 describe("github issues > #8647 Collation changes are not synced to RDBMS", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres"],
                 driverSpecific: {
                     applicationName: "collation-detection-test",
@@ -23,14 +23,14 @@ describe("github issues > #8647 Collation changes are not synced to RDBMS", () =
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     const COLUMN_NAME = "name"
 
     it("ALTER ... COLLATE query should be created", async () => {
         await Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // change metadata
                 const meta = connection.getMetadata(Item)
                 const col = meta.columns.find(

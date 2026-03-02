@@ -10,9 +10,9 @@ import { Post } from "./entity/Post"
 
 // Tests for PostGIS geometry types
 describe("postgis spatial types", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Post],
             schemaCreate: true,
             dropSchema: true,
@@ -21,7 +21,7 @@ describe("postgis spatial types", () => {
     })
     beforeEach(async () => {
         try {
-            await reloadTestingDatabases(connections)
+            await reloadTestingDatabases(dataSources)
         } catch (err) {
             console.warn(err.stack)
             throw err
@@ -29,7 +29,7 @@ describe("postgis spatial types", () => {
     })
     after(async () => {
         try {
-            await closeTestingConnections(connections)
+            await closeTestingConnections(dataSources)
         } catch (err) {
             console.warn(err.stack)
             throw err
@@ -38,7 +38,7 @@ describe("postgis spatial types", () => {
 
     it("should create correct schema with Postgres' geometry type", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const schema = await queryRunner.getTable("post")
                 await queryRunner.release()
@@ -58,7 +58,7 @@ describe("postgis spatial types", () => {
 
     it("should create correct schema with Postgres' geography type", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const schema = await queryRunner.getTable("post")
                 await queryRunner.release()
@@ -75,7 +75,7 @@ describe("postgis spatial types", () => {
 
     it("should create correct schema with Postgres' geometry indices", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const schema = await queryRunner.getTable("post")
                 await queryRunner.release()
@@ -93,7 +93,7 @@ describe("postgis spatial types", () => {
 
     it("should persist geometry correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
@@ -114,7 +114,7 @@ describe("postgis spatial types", () => {
 
     it("should persist geography correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
@@ -135,7 +135,7 @@ describe("postgis spatial types", () => {
 
     it("should update geometry correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
@@ -170,7 +170,7 @@ describe("postgis spatial types", () => {
 
     it("should re-save geometry correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const geom: Point = {
                     type: "Point",
                     coordinates: [0, 0],
@@ -199,7 +199,7 @@ describe("postgis spatial types", () => {
 
     it("should be able to order geometries by distance", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const geoJson1: Point = {
                     type: "Point",
                     coordinates: [139.9341032213472, 36.80798008559315],

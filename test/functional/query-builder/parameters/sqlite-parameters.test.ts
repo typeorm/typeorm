@@ -9,20 +9,20 @@ import {
 import { Example } from "./entity/Example"
 
 describe("query builder > parameters > sqlite", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Example],
-                enabledDrivers: ["sqlite"],
+                enabledDrivers: ["better-sqlite3"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should replace basic parameters when executing", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Example)
 
                 await repo.save({ id: "bar" })
@@ -39,7 +39,7 @@ describe("query builder > parameters > sqlite", () => {
 
     it("should prevent invalid characters from being used as identifiers", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const b = connection.createQueryBuilder()
 
                 expect(() => b.setParameter(":foo", "bar")).to.throw()
@@ -51,7 +51,7 @@ describe("query builder > parameters > sqlite", () => {
 
     it("should allow periods in parameters", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repo = connection.getRepository(Example)
 
                 await repo.save({ id: "bar" })

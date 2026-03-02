@@ -1,11 +1,9 @@
-import {
-    DataSource,
-    Driver,
-    EntityMetadata,
-    SelectQueryBuilder,
-    TableIndex,
-} from "../.."
+import { DataSource } from "../../data-source"
+import { Driver } from "../../driver/Driver"
+import { EntityMetadata } from "../../metadata/EntityMetadata"
+import { SelectQueryBuilder } from "../../query-builder/SelectQueryBuilder"
 import { ViewOptions } from "../options/ViewOptions"
+import { TableIndex } from "../table/TableIndex"
 
 /**
  * View in the database represented in this class.
@@ -45,7 +43,7 @@ export class View {
     /**
      * View definition.
      */
-    expression: string | ((connection: DataSource) => SelectQueryBuilder<any>)
+    expression: string | ((dataSource: DataSource) => SelectQueryBuilder<any>)
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -81,6 +79,7 @@ export class View {
 
     /**
      * Add index
+     * @param index
      */
     addIndex(index: TableIndex): void {
         this.indices.push(index)
@@ -88,6 +87,7 @@ export class View {
 
     /**
      * Remove index
+     * @param viewIndex
      */
     removeIndex(viewIndex: TableIndex): void {
         const index = this.indices.find(
@@ -104,6 +104,8 @@ export class View {
 
     /**
      * Creates view from a given entity metadata.
+     * @param entityMetadata
+     * @param driver
      */
     static create(entityMetadata: EntityMetadata, driver: Driver): View {
         const options: ViewOptions = {

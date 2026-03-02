@@ -15,19 +15,19 @@ import { View } from "./entity/View"
 import { expect } from "chai"
 
 describe("columns > value-transformer functionality", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post, PhoneBook, User, Category, View],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should marshal data using the provided value-transformer", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // create and save a post first
@@ -68,7 +68,7 @@ describe("columns > value-transformer functionality", () => {
 
     it("should apply three transformers in the right order", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const userRepository = connection.getRepository(User)
                 const email = `${connection.name}@JOHN.doe`
                 const user = new User()
@@ -83,7 +83,7 @@ describe("columns > value-transformer functionality", () => {
 
     it("should apply all the transformers", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryRepository = connection.getRepository(Category)
                 const description = `  ${connection.name}-DESCRIPTION   `
                 const category = new Category()
@@ -102,7 +102,7 @@ describe("columns > value-transformer functionality", () => {
 
     it("should apply no transformer", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const viewRepository = connection.getRepository(View)
                 const title = `${connection.name}`
                 const view = new View()
@@ -117,7 +117,7 @@ describe("columns > value-transformer functionality", () => {
 
     it("should marshal data using a complex value-transformer", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 // create and save a post first

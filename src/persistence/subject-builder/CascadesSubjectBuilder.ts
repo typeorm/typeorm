@@ -19,6 +19,8 @@ export class CascadesSubjectBuilder {
 
     /**
      * Builds a cascade subjects tree and pushes them in into the given array of subjects.
+     * @param subject
+     * @param operationType
      */
     build(
         subject: Subject,
@@ -119,6 +121,8 @@ export class CascadesSubjectBuilder {
     /**
      * Finds subject where entity like given subject's entity.
      * Comparison made by entity id.
+     * @param entityTarget
+     * @param entity
      */
     protected findByPersistEntityLike(
         entityTarget: Function | string,

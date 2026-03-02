@@ -6,7 +6,6 @@ import { OrmUtils } from "../../util/OrmUtils"
  * Reads connection options from environment variables.
  * Environment variables can have only a single connection.
  * Its strongly required to define TYPEORM_CONNECTION env variable.
- *
  * @deprecated
  */
 export class ConnectionOptionsEnvReader {
@@ -91,6 +90,7 @@ export class ConnectionOptionsEnvReader {
 
     /**
      * Transforms logging string into real logging value connection requires.
+     * @param logging
      */
     protected transformLogging(logging: string): any {
         if (logging === "true" || logging === "TRUE" || logging === "1")
@@ -134,6 +134,7 @@ export class ConnectionOptionsEnvReader {
 
     /**
      * Converts a string which contains multiple elements split by comma into a string array of strings.
+     * @param variable
      */
     protected stringToArray(variable?: string) {
         if (!variable) return []
@@ -142,6 +143,7 @@ export class ConnectionOptionsEnvReader {
 
     /**
      * Converts a string which contains a number into a javascript number
+     * @param value
      */
     private stringToNumber(value: any): number | undefined {
         if (!value) {

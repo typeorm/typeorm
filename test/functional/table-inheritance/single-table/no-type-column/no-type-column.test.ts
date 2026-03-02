@@ -11,19 +11,19 @@ import { PostItNote } from "./entity/PostItNote"
 import { StickyNote } from "./entity/StickyNote"
 
 describe("table-inheritance > single-table > no-type-column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should return subclass in relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postItRepo = connection.getRepository(PostItNote)
                 const stickyRepo = connection.getRepository(StickyNote)
 

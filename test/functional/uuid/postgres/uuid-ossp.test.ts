@@ -11,9 +11,9 @@ import { Post } from "./entity/Post"
 import { Question } from "./entity/Question"
 
 describe("uuid-ossp", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
             driverSpecific: {
@@ -21,12 +21,12 @@ describe("uuid-ossp", () => {
             },
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should make correct schema with Postgres' uuid type", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const schema = await queryRunner.getTable("record")
                 await queryRunner.release()
@@ -44,7 +44,7 @@ describe("uuid-ossp", () => {
 
     it("should persist uuid correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const recordRepo = connection.getRepository(Record)
                 const record = new Record()
                 record.id = "fd357b8f-8838-42f6-b7a2-ae027444e895"
@@ -63,7 +63,7 @@ describe("uuid-ossp", () => {
 
     it("should persist uuid correctly when it is generated non primary column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const questionRepository = connection.getRepository(Question)
                 const queryRunner = connection.createQueryRunner()

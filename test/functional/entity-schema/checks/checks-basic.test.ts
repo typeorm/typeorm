@@ -10,10 +10,10 @@ import { PersonSchema2 } from "./entity/Person2"
 
 describe("entity-schema > checks", () => {
     describe("entity-schema > checks > postgres, cockroachdb, oracle, mssql", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     entities: [<any>PersonSchema],
                     enabledDrivers: [
                         "postgres",
@@ -23,12 +23,12 @@ describe("entity-schema > checks", () => {
                     ],
                 })),
         )
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should create a check constraints", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const table = await queryRunner.getTable("person")
                     await queryRunner.release()
@@ -39,20 +39,20 @@ describe("entity-schema > checks", () => {
     })
 
     describe("entity-schema > checks > spanner", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     entities: [<any>PersonSchema2],
                     enabledDrivers: ["spanner"],
                 })),
         )
-        beforeEach(() => reloadTestingDatabases(connections))
-        after(() => closeTestingConnections(connections))
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
         it("should create a check constraints", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryRunner = connection.createQueryRunner()
                     const table = await queryRunner.getTable("person")
                     await queryRunner.release()

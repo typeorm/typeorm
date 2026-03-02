@@ -27,6 +27,9 @@ export class FileLogger extends AbstractLogger {
 
     /**
      * Write log to specific output.
+     * @param level
+     * @param logMessage
+     * @param queryRunner
      */
     protected writeLog(
         level: LogLevel,
@@ -91,6 +94,7 @@ export class FileLogger extends AbstractLogger {
 
     /**
      * Writes given strings into the log file.
+     * @param strings
      */
     protected write(strings: string | string[]) {
         strings = Array.isArray(strings) ? strings : [strings]

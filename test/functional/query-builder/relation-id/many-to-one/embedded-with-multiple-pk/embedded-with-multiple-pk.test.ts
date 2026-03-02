@@ -13,19 +13,19 @@ import { User } from "./entity/User"
 import { Subcounters } from "./entity/Subcounters"
 
 describe("query builder > relation-id > many-to-one > embedded-with-multiple-pk", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should load ids when loadRelationIdAndMap used on embedded table and each table have primary key", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const user1 = new User()
                 user1.id = 1
                 user1.name = "Alice"

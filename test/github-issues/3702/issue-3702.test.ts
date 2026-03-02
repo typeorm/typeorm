@@ -10,10 +10,10 @@ import { LetterBox } from "./entity/LetterBox"
 // Another related path: test/functional/spatial
 describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText function is not supported", () => {
     describe("when legacySpatialSupport: true", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
 
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql"],
                 dropSchema: true,
@@ -23,11 +23,11 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
                 },
             })
         })
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should use GeomFromText", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     if (
                         DriverUtils.isReleaseVersionOrGreater(
                             connection.driver,
@@ -54,7 +54,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
 
         it("should provide SRID", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     if (
                         DriverUtils.isReleaseVersionOrGreater(
                             connection.driver,
@@ -80,7 +80,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
 
         it("should use AsText", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     if (
                         DriverUtils.isReleaseVersionOrGreater(
                             connection.driver,
@@ -105,11 +105,11 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
     })
 
     describe("when legacySpatialSupport: false", () => {
-        let connections: DataSource[]
+        let dataSources: DataSource[]
 
         before(
             async () =>
-                (connections = await createTestingConnections({
+                (dataSources = await createTestingConnections({
                     entities: [__dirname + "/entity/*{.js,.ts}"],
                     enabledDrivers: ["mysql"],
                     dropSchema: true,
@@ -119,11 +119,11 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
                     },
                 })),
         )
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should use ST_GeomFromText", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryBuilder = connection
                         .createQueryBuilder()
                         .insert()
@@ -140,7 +140,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
 
         it("should provide SRID", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const queryBuilder = connection
                         .createQueryBuilder()
                         .insert()
@@ -157,7 +157,7 @@ describe("github issues > #3702 MySQL Spatial Type Support : GeomFromText functi
 
         it("should use ST_AsText", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repository = connection.getRepository(LetterBox)
                     const queryBuilder = repository
                         .createQueryBuilder("letterBox")

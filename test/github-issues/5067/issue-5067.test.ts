@@ -7,17 +7,17 @@ import {
 } from "../../utils/test-utils"
 
 describe("github issues > #5067 ORA-00972: identifier is too long", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 enabledDrivers: ["oracle"],
             })),
     )
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("generated parameter name is within the size constraints", () => {
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             const paramName =
                 "output_that_is_really_long_and_must_be_truncated_in_this_driver"
             const createdParameter = connection.driver.createParameter(

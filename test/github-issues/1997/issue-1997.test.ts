@@ -9,17 +9,17 @@ import { Post } from "./entity/Post"
 import { Table, TableColumn } from "../../../src"
 
 describe("github issues > #1997 enum type not working in postgres when defined in a custom schema", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
             })),
     )
     beforeEach(() => {
         return Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 await queryRunner.dropSchema("schema", true, true)
                 await queryRunner.createSchema("schema")
@@ -29,25 +29,25 @@ describe("github issues > #1997 enum type not working in postgres when defined i
     })
     afterEach(() => {
         return Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 await queryRunner.dropSchema("schema", true, true)
                 await queryRunner.release()
             }),
         )
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create table with ENUM column", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
             }),
         ))
 
     it("should be able to read table data with ENUM", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
                 const queryRunner = connection.createQueryRunner()
                 const table = await queryRunner.getTable("schema.post")
@@ -58,7 +58,7 @@ describe("github issues > #1997 enum type not working in postgres when defined i
 
     it("should save data with ENUM", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const postRepository = connection.getRepository(Post)
@@ -80,7 +80,7 @@ describe("github issues > #1997 enum type not working in postgres when defined i
 
     it("should create ENUM column and revert creation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const queryRunner = connection.createQueryRunner()
@@ -107,7 +107,7 @@ describe("github issues > #1997 enum type not working in postgres when defined i
 
     it("should drop ENUM column and revert drop", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const queryRunner = connection.createQueryRunner()
@@ -128,7 +128,7 @@ describe("github issues > #1997 enum type not working in postgres when defined i
 
     it("should create table with ENUM column and revert creation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const queryRunner = connection.createQueryRunner()
@@ -161,7 +161,7 @@ describe("github issues > #1997 enum type not working in postgres when defined i
 
     it("should drop table with ENUM column and revert drop", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const queryRunner = connection.createQueryRunner()
@@ -181,7 +181,7 @@ describe("github issues > #1997 enum type not working in postgres when defined i
 
     it("should change non-enum column in to ENUM and revert change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const queryRunner = connection.createQueryRunner()
@@ -215,7 +215,7 @@ describe("github issues > #1997 enum type not working in postgres when defined i
 
     it("should change ENUM column in to non-enum and revert change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const queryRunner = connection.createQueryRunner()
@@ -249,7 +249,7 @@ describe("github issues > #1997 enum type not working in postgres when defined i
 
     it("should change ENUM column and revert change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const queryRunner = connection.createQueryRunner()
@@ -282,7 +282,7 @@ describe("github issues > #1997 enum type not working in postgres when defined i
 
     it("should rename ENUM when column renamed and revert rename", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const queryRunner = connection.createQueryRunner()
@@ -319,7 +319,7 @@ describe("github issues > #1997 enum type not working in postgres when defined i
 
     it("should rename ENUM when table renamed and revert rename", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.driver.createSchemaBuilder().build()
 
                 const queryRunner = connection.createQueryRunner()

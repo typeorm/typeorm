@@ -10,9 +10,9 @@ import { GeometryEntity } from "./entity/GeometryEntity"
 
 // Tests for standard geometric types
 describe("standard geometric types", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [GeometryEntity],
             schemaCreate: true,
             dropSchema: true,
@@ -21,7 +21,7 @@ describe("standard geometric types", () => {
     })
     beforeEach(async () => {
         try {
-            await reloadTestingDatabases(connections)
+            await reloadTestingDatabases(dataSources)
         } catch (err) {
             console.warn(err.stack)
             throw err
@@ -29,7 +29,7 @@ describe("standard geometric types", () => {
     })
     after(async () => {
         try {
-            await closeTestingConnections(connections)
+            await closeTestingConnections(dataSources)
         } catch (err) {
             console.warn(err.stack)
             throw err
@@ -39,7 +39,7 @@ describe("standard geometric types", () => {
     describe("Point type", () => {
         it("should handle point with string input", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
@@ -57,7 +57,7 @@ describe("standard geometric types", () => {
 
         it("should handle point with object input", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
@@ -77,7 +77,7 @@ describe("standard geometric types", () => {
     describe("Circle type", () => {
         it("should handle circle with string input", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
@@ -98,7 +98,7 @@ describe("standard geometric types", () => {
 
         it("should handle circle with object input", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
@@ -122,7 +122,7 @@ describe("standard geometric types", () => {
     describe("Box type", () => {
         it("should handle box round-trip with string input", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
@@ -143,7 +143,7 @@ describe("standard geometric types", () => {
     describe("Line type", () => {
         it("should handle line with string input", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
@@ -161,7 +161,7 @@ describe("standard geometric types", () => {
 
         it("should handle line alternative input format", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
@@ -182,7 +182,7 @@ describe("standard geometric types", () => {
     describe("Line Segment (lseg) type", () => {
         it("should handle lseg with string input", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
@@ -200,7 +200,7 @@ describe("standard geometric types", () => {
 
         it("should handle lseg alternative format", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
@@ -220,7 +220,7 @@ describe("standard geometric types", () => {
     describe("Path type", () => {
         it("should handle open path", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
@@ -238,7 +238,7 @@ describe("standard geometric types", () => {
 
         it("should handle closed path", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
@@ -258,7 +258,7 @@ describe("standard geometric types", () => {
     describe("Polygon type", () => {
         it("should handle polygon", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
@@ -276,7 +276,7 @@ describe("standard geometric types", () => {
 
         it("should handle polygon alternative format", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({
@@ -296,7 +296,7 @@ describe("standard geometric types", () => {
     describe("Mixed geometry types", () => {
         it("should handle all geometry types in a single entity", () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     const repo = connection.getRepository(GeometryEntity)
 
                     const entity = await repo.save({

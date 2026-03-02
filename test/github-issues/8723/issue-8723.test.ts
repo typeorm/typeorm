@@ -1,29 +1,28 @@
-import "reflect-metadata"
+import { DataSource } from "../../../src"
 import {
-    createTestingConnections,
     closeTestingConnections,
+    createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Connection } from "../../../src/connection/Connection"
-import { User } from "./entity/User"
 import { Photo } from "./entity/Photo"
+import { User } from "./entity/User"
 
 describe("github issues > #8723 Fail on Update when reference exists together with FK: multiple assignments to same column ", () => {
-    let connections: Connection[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should able to update when both reference and the id exist in the update object", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const photoRepository = connection.getRepository(Photo)
                 const userRepository = connection.getRepository(User)
 

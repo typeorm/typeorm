@@ -18,15 +18,15 @@ import { Employee } from "./entity/Employee"
 import { TimeSheet } from "./entity/TimeSheet"
 
 describe("column > virtual columns", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             schemaCreate: true,
             dropSchema: true,
             entities: [Company, Employee, TimeSheet, Activity],
         })
 
-        for (const connection of connections) {
+        for (const connection of dataSources) {
             // By default, MySQL uses backticks instead of quotes for identifiers
             if (DriverUtils.isMySQLFamily(connection.driver)) {
                 const totalEmployeesCountMetadata = connection
@@ -65,10 +65,10 @@ describe("column > virtual columns", () => {
             }
         }
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should generate expected sub-select & select statement", () =>
-        connections.map((connection) => {
+        dataSources.map((connection) => {
             const options1: FindManyOptions<Company> = {
                 select: {
                     name: true,
@@ -89,7 +89,7 @@ describe("column > virtual columns", () => {
         }))
 
     it("should generate expected sub-select & nested-subselect statement", () =>
-        connections.map((connection) => {
+        dataSources.map((connection) => {
             const findOptions: FindManyOptions<Company> = {
                 select: {
                     name: true,
@@ -123,7 +123,7 @@ describe("column > virtual columns", () => {
         }))
 
     it("should not generate sub-select if column is not selected", () =>
-        connections.map((connection) => {
+        dataSources.map((connection) => {
             const options: FindManyOptions<Company> = {
                 select: {
                     name: true,
@@ -144,7 +144,7 @@ describe("column > virtual columns", () => {
 
     it("should be able to save and find sub-select data in the database", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const companyRepository = connection.getRepository(Company)
 
                 const companyName = "My Company 1"
@@ -232,7 +232,7 @@ describe("column > virtual columns", () => {
 
     it("should be able to save and find sub-select data in the database (with query builder)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const companyRepository = connection.getRepository(Company)
 
                 const companyName = "My Company 2"
@@ -293,7 +293,7 @@ describe("column > virtual columns", () => {
 
     it("should be able to read non-selectable virtual columns (with query builder)", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const companyRepository = connection.getRepository(Company)
 
                 const companyName = "My Company 3"

@@ -9,20 +9,20 @@ import { Post } from "./entity/Post"
 import { expect } from "chai"
 
 describe("other issues > mongodb entity change in listeners should affect persistence", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 enabledDrivers: ["mongodb"],
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("if entity was changed in the listener, changed property should be updated in the db", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const postRepository = connection.getMongoRepository(Post)
 
                 // insert a post
@@ -54,7 +54,7 @@ describe("other issues > mongodb entity change in listeners should affect persis
 
     it("if entity was loaded in the listener, loaded property should be changed", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const postRepository = connection.getMongoRepository(Post)
 
                 // insert a post

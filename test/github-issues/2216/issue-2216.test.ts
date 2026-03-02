@@ -10,7 +10,7 @@ import { Foo } from "./entity/Foo"
 import { expect } from "chai"
 
 describe("github issues > #2216 - Ability to capture Postgres notifications in logger", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     let queryRunner: QueryRunner
     let manager: EntityManager
     let logInfoStub: sinon.SinonStub
@@ -19,23 +19,23 @@ describe("github issues > #2216 - Ability to capture Postgres notifications in l
         logInfoStub = sinon.stub(SimpleConsoleLogger.prototype, "log")
     })
     beforeEach(async () => {
-        await reloadTestingDatabases(connections)
+        await reloadTestingDatabases(dataSources)
     })
     afterEach(() => logInfoStub.resetHistory())
     after(() => logInfoStub.restore())
 
     describe("when logNotifications option is NOT enabled", () => {
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres"],
                 entities: [Foo],
                 createLogger: () => new SimpleConsoleLogger(),
             })
         })
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should NOT pass extension setup notices to client", () => {
-            connections.forEach((_connection) => {
+            dataSources.forEach((_connection) => {
                 sinon.assert.neverCalledWith(
                     logInfoStub,
                     "info",
@@ -51,7 +51,7 @@ describe("github issues > #2216 - Ability to capture Postgres notifications in l
 
         it("should NOT pass manual notices to client", async () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     queryRunner = connection.createQueryRunner()
                     await queryRunner.query(
                         `DO $do$ BEGIN RAISE NOTICE 'this is a notice'; END $do$`,
@@ -67,7 +67,7 @@ describe("github issues > #2216 - Ability to capture Postgres notifications in l
 
         it("should NOT pass 'listen -> notify' messages to client", async () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     queryRunner = connection.createQueryRunner()
                     await queryRunner.query("LISTEN foo;")
                     await queryRunner.query("NOTIFY foo, 'bar!'")
@@ -83,17 +83,17 @@ describe("github issues > #2216 - Ability to capture Postgres notifications in l
 
     describe("when logNotifications option is enabled", () => {
         before(async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
                 enabledDrivers: ["postgres"],
                 entities: [Foo],
                 createLogger: () => new SimpleConsoleLogger(),
                 driverSpecific: { logNotifications: true },
             })
         })
-        after(() => closeTestingConnections(connections))
+        after(() => closeTestingConnections(dataSources))
 
         it("should pass extension setup notices to client", () => {
-            connections.forEach((_connection) => {
+            dataSources.forEach((_connection) => {
                 sinon.assert.calledWith(
                     logInfoStub,
                     "info",
@@ -109,7 +109,7 @@ describe("github issues > #2216 - Ability to capture Postgres notifications in l
 
         it("should pass manual notices to client", async () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     queryRunner = connection.createQueryRunner()
                     await queryRunner.query(
                         `DO $do$ BEGIN RAISE NOTICE 'this is a notice'; END $do$`,
@@ -125,7 +125,7 @@ describe("github issues > #2216 - Ability to capture Postgres notifications in l
 
         it("should pass 'listen -> notify' messages to client", async () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     queryRunner = connection.createQueryRunner()
                     await queryRunner.query("LISTEN foo;")
                     await queryRunner.query("NOTIFY foo, 'bar!'")
@@ -140,7 +140,7 @@ describe("github issues > #2216 - Ability to capture Postgres notifications in l
 
         it("should not interfere with actual queries", async () =>
             Promise.all(
-                connections.map(async (connection) => {
+                dataSources.map(async (connection) => {
                     manager = connection.manager
                     const foo = new Foo()
                     await manager.save(

@@ -10,19 +10,19 @@ import {
 import { LessThan } from "../../../src"
 
 describe("github issues > #9152 Can't use LessThan for Union field", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Test],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not raise TypeScript error when LessThan with Union is passed to FindOptionsWhere", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.getRepository(Test).save({
                     value: 1,
                 })

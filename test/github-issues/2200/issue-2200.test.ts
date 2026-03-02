@@ -9,24 +9,24 @@ import { Booking } from "./entity/Booking"
 import { NamingStrategyUnderTest } from "./naming/NamingStrategyUnderTest"
 
 describe("github issue > #2200 Bug - Issue with snake_case naming strategy", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     const namingStrategy = new NamingStrategyUnderTest()
 
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 namingStrategy,
             })),
     )
     beforeEach(() => {
-        return reloadTestingDatabases(connections)
+        return reloadTestingDatabases(dataSources)
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("Renammed alias allow to query correctly", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.getRepository(Booking).find({ take: 10 })
             }),
         ))

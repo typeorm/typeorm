@@ -13,13 +13,13 @@ describe("persistence > persistence options > listeners", () => {
     // Configuration
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({ __dirname })),
+            (dataSources = await createTestingConnections({ __dirname })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications
@@ -27,7 +27,7 @@ describe("persistence > persistence options > listeners", () => {
 
     it("save listeners should work by default", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Bakhrom"
@@ -39,7 +39,7 @@ describe("persistence > persistence options > listeners", () => {
 
     it("save listeners should be disabled if save option is specified", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Bakhrom"
@@ -51,7 +51,7 @@ describe("persistence > persistence options > listeners", () => {
 
     it("remove listeners should work by default", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Bakhrom"
@@ -64,7 +64,7 @@ describe("persistence > persistence options > listeners", () => {
 
     it("remove listeners should be disabled if remove option is specified", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new Post()
                 post.id = 1
                 post.title = "Bakhrom"
@@ -77,7 +77,7 @@ describe("persistence > persistence options > listeners", () => {
 
     it("soft-remove listeners should work by default", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new PostWithDeleteDateColumn()
                 post.title = "Bakhrom"
                 post.description = "Hello"
@@ -90,7 +90,7 @@ describe("persistence > persistence options > listeners", () => {
 
     it("soft-remove listeners should be disabled if remove option is specified", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const post = new PostWithDeleteDateColumn()
                 post.title = "Bakhrom"
                 post.description = "Hello"

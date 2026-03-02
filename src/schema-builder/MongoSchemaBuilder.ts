@@ -23,7 +23,7 @@ export class MongoSchemaBuilder implements SchemaBuilder {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(protected connection: DataSource) {}
+    constructor(protected dataSource: DataSource) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -34,9 +34,9 @@ export class MongoSchemaBuilder implements SchemaBuilder {
      */
     async build(): Promise<void> {
         const queryRunner =
-            this.connection.createQueryRunner() as MongoQueryRunner
+            this.dataSource.createQueryRunner() as MongoQueryRunner
         const promises: Promise<any>[] = []
-        this.connection.entityMetadatas.forEach((metadata) => {
+        this.dataSource.entityMetadatas.forEach((metadata) => {
             metadata.indices.forEach((index) => {
                 const options: CreateIndexesOptions = Object.assign(
                     {},

@@ -10,21 +10,21 @@ import { expect } from "chai"
 import { AccessToken } from "./entity/AccessToken"
 
 describe("github issues > #57 cascade insert not working with OneToOne relationship", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // this test is no absolutely complete because cascade is now only allowed from one side of the relation
 
     it("should persist successfully from inverse side", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // create
                 const token = new AccessToken()
                 token.expireTime = 60000

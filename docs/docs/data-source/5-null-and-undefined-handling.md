@@ -46,7 +46,7 @@ const posts = await repository.find({
 
 ## Configuration
 
-You can customize how null and undefined values are handled using the `invalidWhereValuesBehavior` option in your connection configuration:
+You can customize how null and undefined values are handled using the `invalidWhereValuesBehavior` option in your data source configuration:
 
 ```typescript
 const dataSource = new DataSource({
@@ -122,7 +122,7 @@ const posts = await repository.find({
 })
 // Error: Null value encountered in property 'text' of a where condition.
 // To match with SQL NULL, the IsNull() operator must be used.
-// Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.
+// Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in data source options to skip or handle null values.
 ```
 
 ### Undefined Behavior Options
@@ -168,7 +168,7 @@ const posts = await repository.find({
     },
 })
 // Error: Undefined value encountered in property 'text' of a where condition.
-// Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.
+// Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in data source options to skip properties with undefined values.
 ```
 
 Note that this only applies to explicitly set `undefined` values, not omitted properties.

@@ -10,22 +10,22 @@ import { DummyJSONEntity } from "./entity/json-entity"
 import { DummyJSONBEntity } from "./entity/jsonb-entity"
 
 describe("other issues > correctly compute change for transformed json / jsonb columns", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,
                 enabledDrivers: ["postgres"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not update entity if transformed JSON column did not change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(DummyJSONEntity)
 
                 const dummy = repository.create({
@@ -47,7 +47,7 @@ describe("other issues > correctly compute change for transformed json / jsonb c
 
     it("should not update entity if transformed JSONB column did not change", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const repository = connection.getRepository(DummyJSONBEntity)
 
                 const dummy = repository.create({
