@@ -471,10 +471,6 @@ Change the name of an existing collection.
 
 Replace a document on MongoDB.
 
-### `stats`
-
-Get all the collection statistics.
-
 ### `updateMany`
 
 Update multiple documents within the collection based on the filter.

@@ -1,28 +1,14 @@
-import type { ObjectLiteral } from "../common/ObjectLiteral"
-import { Repository } from "./Repository"
-import type { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
-import type { MongoEntityManager } from "../entity-manager/MongoEntityManager"
-import type { QueryRunner } from "../query-runner/QueryRunner"
-import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
-import { TypeORMError } from "../error/TypeORMError"
-import type { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
-import type { FindOneOptions } from "../find-options/FindOneOptions"
-
 import type {
-    CreateIndexesOptions,
-    ObjectId,
-    ReplaceOptions,
-    //
     AggregateOptions,
     AggregationCursor,
     AnyBulkWriteOperation,
     BulkWriteOptions,
     BulkWriteResult,
     Collection,
-    CollStats,
-    CollStatsOptions,
     CommandOperationOptions,
+    CountDocumentsOptions,
     CountOptions,
+    CreateIndexesOptions,
     DeleteOptions,
     DeleteResult,
     Document,
@@ -38,14 +24,24 @@ import type {
     InsertOneResult,
     ListIndexesCursor,
     ListIndexesOptions,
+    ObjectId,
     OrderedBulkOperation,
+    ReplaceOptions,
     UnorderedBulkOperation,
     UpdateFilter,
     UpdateOptions,
     UpdateResult,
-    CountDocumentsOptions,
-} from "../driver/mongodb/typings"
+} from "mongodb"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { MongoEntityManager } from "../entity-manager/MongoEntityManager"
+import { TypeORMError } from "../error/TypeORMError"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { FindOneOptions } from "../find-options/FindOneOptions"
+import type { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
+import type { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import { Repository } from "./Repository"
 
 /**
  * Repository used to manage mongodb documents of a single entity type.
@@ -568,14 +564,6 @@ export class MongoRepository<
             doc,
             options,
         )
-    }
-
-    /**
-     * Get all the collection statistics.
-     * @param options
-     */
-    stats(options?: CollStatsOptions): Promise<CollStats> {
-        return this.manager.stats(this.metadata.tableName, options)
     }
 
     /**

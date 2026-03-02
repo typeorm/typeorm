@@ -208,14 +208,6 @@ export class MongoDriver implements Driver {
         "proxyPort",
         "proxyUsername",
         "proxyPassword",
-        // Undocumented deprecated options
-        // todo: remove next major version
-        "appname",
-        "fsync",
-        "j",
-        "useNewUrlParser",
-        "useUnifiedTopology",
-        "wtimeout",
     ]
 
     // -------------------------------------------------------------------------

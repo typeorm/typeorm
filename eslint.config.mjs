@@ -11,7 +11,7 @@ export default defineConfig([
         "docs/**",
         "node_modules/**",
         "sample/playground/**",
-        "src/driver/mongodb/{typings.ts,bson.typings.ts}",
+        "src/driver/mongodb/bson.typings.ts",
         "temp/**",
     ]),
 
@@ -97,6 +97,7 @@ export default defineConfig([
         // and then remove manual config in favor of `config: "flat/recommended-typescript-error"`
         rules: {
             "jsdoc/valid-types": "error",
+            "jsdoc/require-param-description": "off",
         },
     }),
 
