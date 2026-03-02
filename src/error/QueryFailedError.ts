@@ -1,3 +1,4 @@
+import { ObjectLiteral } from "../common/ObjectLiteral"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { TypeORMError } from "./TypeORMError"
 
@@ -7,7 +8,7 @@ import { TypeORMError } from "./TypeORMError"
 export class QueryFailedError<T extends Error = Error> extends TypeORMError {
     constructor(
         readonly query: string,
-        readonly parameters: any[] | undefined,
+        readonly parameters: any[] | ObjectLiteral | undefined,
         readonly driverError: T,
     ) {
         super(

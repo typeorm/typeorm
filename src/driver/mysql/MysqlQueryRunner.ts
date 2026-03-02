@@ -187,7 +187,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async query(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         useStructuredResult = false,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()

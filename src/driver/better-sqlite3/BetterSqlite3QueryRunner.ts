@@ -84,7 +84,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
      */
     async query(
         query: string,
-        parameters?: any[] | ObjectLiteral = [],
+        parameters: any[] | ObjectLiteral = [],
         useStructuredResult = false,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
