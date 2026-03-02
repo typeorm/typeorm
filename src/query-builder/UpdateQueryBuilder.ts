@@ -220,12 +220,27 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         aliasName: string,
     ): this {
-        if (this.connection.driver.isUpdateFromSqlSupported()) {
-            this.createFromAlias(entityTarget, aliasName)
-            return this
-        } else {
+        if (!this.connection.driver.isUpdateFromSqlSupported()) {
             throw new FromOnUpdateNotSupportedError()
         }
+
+        if (
+            typeof entityTarget === "function" &&
+            !this.connection.hasMetadata(entityTarget)
+        ) {
+            const selectQb = this.connection.createQueryBuilder()
+            const subQueryBuilder = (
+                entityTarget as (
+                    qb: SelectQueryBuilder<any>,
+                ) => SelectQueryBuilder<any>
+            )(selectQb)
+            this.setParameters(subQueryBuilder.getParameters())
+            this.createFromAlias(`(${subQueryBuilder.getQuery()})`, aliasName)
+        } else {
+            this.createFromAlias(entityTarget, aliasName)
+        }
+
+        return this
     }
 
     /**
@@ -755,6 +770,13 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                     this.escape(alias.name)
                 )
             })
+
+        if (
+            froms.length &&
+            !this.connection.driver.isUpdateFromSqlSupported()
+        ) {
+            throw new FromOnUpdateNotSupportedError()
+        }
 
         const fromExpression = froms.length ? " FROM " + froms.join(", ") : ""
 

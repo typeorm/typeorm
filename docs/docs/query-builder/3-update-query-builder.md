@@ -43,7 +43,7 @@ The following database drivers support `UPDATE ... FROM` syntax:
 
 - **PostgreSQL** and **Aurora PostgreSQL**
 - **SQL Server**
-- **SQLite** (requires SQLite engine version 3.33.0 or newer; `better-sqlite3` driver ships with a compatible version)
+- **SQLite** (`UPDATE ... FROM` was introduced in SQLite 3.33.0; most modern SQLite drivers like `better-sqlite3` and `sql.js` ship with a compatible version)
 - **CockroachDB**
 
 ### Using from() and addFrom()

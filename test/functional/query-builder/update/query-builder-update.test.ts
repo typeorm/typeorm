@@ -372,4 +372,66 @@ describe("query builder > update", () => {
                 }
             }),
         ))
+
+    it("should perform update with from subquery correctly", async () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const oldNames = ["Ezekiel Riley", "Neo Ward", "Charis Orozco"]
+                const newNames = ["Jimmy Hanson", "Georgiana Cordova"]
+
+                for (const name of oldNames) {
+                    const user = new User()
+                    user.name = name
+
+                    await connection.manager.save(user)
+                }
+
+                for (let i = 0; i < newNames.length; i++) {
+                    const userNameMap = new UserNameMap()
+                    userNameMap.newName = newNames[i]
+                    userNameMap.oldName = oldNames[i]
+
+                    await connection.manager.save(userNameMap)
+                }
+
+                try {
+                    await connection
+                        .createQueryBuilder()
+                        .update(User)
+                        .set({ name: () => 'um."newName"' })
+                        .from((qb) => {
+                            return qb
+                                .select(['um0."newName"', 'um0."oldName"'])
+                                .from(UserNameMap, "um0")
+                                .where(`um0."newName" <> 'Georgiana Cordova'`)
+                        }, "um")
+                        .where('name = um."oldName"')
+                        .execute()
+
+                    const res = await connection.getRepository(User).find({
+                        order: {
+                            id: "ASC",
+                        },
+                    })
+
+                    expect(res.map((user) => user.name)).to.be.deep.equal([
+                        "Jimmy Hanson",
+                        "Neo Ward",
+                        "Charis Orozco",
+                    ])
+                } catch (error) {
+                    if (
+                        !(
+                            DriverUtils.isPostgresFamily(connection.driver) ||
+                            DriverUtils.isSQLiteFamily(connection.driver) ||
+                            connection.driver.options.type === "mssql"
+                        )
+                    ) {
+                        expect(error).instanceOf(FromOnUpdateNotSupportedError)
+                    } else {
+                        throw error
+                    }
+                }
+            }),
+        ))
 })
