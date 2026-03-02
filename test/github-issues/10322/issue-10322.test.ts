@@ -4,7 +4,8 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { AbstractLogger, DataSource, LogLevel, LogMessage } from "../../../src"
+import type { DataSource, LogLevel, LogMessage } from "../../../src"
+import { AbstractLogger } from "../../../src"
 import sinon from "sinon"
 import { expect } from "chai"
 

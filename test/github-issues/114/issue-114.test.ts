@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import { DataSource } from "../../../src/data-source/DataSource"
-import { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
+import type { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
 
 describe.skip("github issues > #114 Can not be parsed correctly the URL of pg.", () => {
     let connection: DataSource

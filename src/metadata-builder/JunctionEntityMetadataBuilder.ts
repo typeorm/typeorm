@@ -1,10 +1,10 @@
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { DataSource } from "../data-source/DataSource"
+import type { DataSource } from "../data-source/DataSource"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
 import { IndexMetadata } from "../metadata/IndexMetadata"
-import { JoinTableMetadataArgs } from "../metadata-args/JoinTableMetadataArgs"
-import { RelationMetadata } from "../metadata/RelationMetadata"
+import type { JoinTableMetadataArgs } from "../metadata-args/JoinTableMetadataArgs"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
 

@@ -1,7 +1,7 @@
 import ansi from "ansis"
 import { exec } from "child_process"
 import path from "path"
-import yargs from "yargs"
+import type yargs from "yargs"
 import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
 import { CommandUtils } from "./CommandUtils"

@@ -1,5 +1,5 @@
-import { QueryResultCacheOptions } from "./QueryResultCacheOptions"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { QueryResultCacheOptions } from "./QueryResultCacheOptions"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Implementations of this interface provide different strategies to cache query builder results.

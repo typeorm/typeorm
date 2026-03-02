@@ -4,7 +4,8 @@ import {
     createTestingConnections,
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
-import { LessThan, DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
+import { LessThan } from "../../../../src"
 import { expect } from "chai"
 
 describe("repository > aggregate methods", () => {

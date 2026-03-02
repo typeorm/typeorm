@@ -5,7 +5,8 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource, TypeORMError } from "../../../../src"
+import type { DataSource } from "../../../../src"
+import { TypeORMError } from "../../../../src"
 import { Parent } from "./entity/Parent"
 import { Child } from "./entity/Child"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"

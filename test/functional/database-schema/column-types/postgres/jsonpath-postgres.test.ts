@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { JsonPathExample } from "./entity/JsonPathExample"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,

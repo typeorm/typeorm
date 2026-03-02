@@ -1,7 +1,8 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { Test, ValueUnion } from "./entity/Test"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { ValueUnion } from "./entity/Test"
+import { Test } from "./entity/Test"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,

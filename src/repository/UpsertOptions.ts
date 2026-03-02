@@ -1,6 +1,6 @@
-import { InsertOrUpdateOptions } from "../query-builder/InsertOrUpdateOptions"
-import { UpsertType } from "../driver/types/UpsertType"
-import { ReturningOption } from "../query-builder/ReturningOption"
+import type { InsertOrUpdateOptions } from "../query-builder/InsertOrUpdateOptions"
+import type { UpsertType } from "../driver/types/UpsertType"
+import type { ReturningOption } from "../query-builder/ReturningOption"
 
 /**
  * Special options passed to Repository#upsert

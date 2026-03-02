@@ -1,11 +1,12 @@
 import sinon from "sinon"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     createTestingConnections,
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { EntityManager, QueryRunner, SimpleConsoleLogger } from "../../../src"
+import type { EntityManager, QueryRunner } from "../../../src"
+import { SimpleConsoleLogger } from "../../../src"
 import { Foo } from "./entity/Foo"
 import { expect } from "chai"
 

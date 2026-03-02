@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { DeepPartial } from "../../../src"
+import type { DeepPartial } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {
