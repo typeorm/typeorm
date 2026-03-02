@@ -229,13 +229,14 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             !this.connection.hasMetadata(entityTarget)
         ) {
             const selectQb = this.connection.createQueryBuilder()
+            selectQb.expressionMap.subQuery = true
+            ;(selectQb as any).parentQueryBuilder = this
             const subQueryBuilder = (
                 entityTarget as (
                     qb: SelectQueryBuilder<any>,
                 ) => SelectQueryBuilder<any>
             )(selectQb)
-            this.setParameters(subQueryBuilder.getParameters())
-            this.createFromAlias(`(${subQueryBuilder.getQuery()})`, aliasName)
+            this.createFromAlias(subQueryBuilder.getQuery(), aliasName)
         } else {
             this.createFromAlias(entityTarget, aliasName)
         }
@@ -256,6 +257,13 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     ): this {
         return this.from(entityTarget, aliasName)
     }
+
+    // subQuery(): SelectQueryBuilder<any> {
+    //     const qb = this.connection.createQueryBuilder()
+    //     qb.expressionMap.subQuery = true
+    //     (qb as any).parentQueryBuilder = this
+    //     return qb
+    // }
 
     /**
      * Sets WHERE condition in the query builder.
