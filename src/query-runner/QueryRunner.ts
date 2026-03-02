@@ -115,7 +115,7 @@ export interface QueryRunner extends AsyncDisposable {
     /**
      * Executes a given SQL query and returns raw database results.
      *
-     * Note: Parameters may be named if using mysql2 with extras.namedPlaceholders set:
+     * Note: Parameters may be named if using mysql2 with extra.namedPlaceholders set:
      * Example:
      * ```ts
      * query(

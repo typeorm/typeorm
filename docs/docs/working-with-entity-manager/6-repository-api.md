@@ -488,7 +488,7 @@ const rawData = await repository.query(
 )
 
 // mysql2 additionally supports named placeholders
-// when extras.namedPlaceholders is true
+// when extra.namedPlaceholders is true
 const rawData = await repository.query(
     "SELECT * FROM USERS WHERE name = :name and age = :age",
     { name: "John", age: 24 },

@@ -5,6 +5,7 @@ import { CapacitorDriver } from "./CapacitorDriver"
 import { Broadcaster } from "../../subscriber/Broadcaster"
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { DriverNotSupportNamedPlaceholdersError } from "../../error/DriverNotSupportNamedPlaceholdersError"
 
 /**
  * Runs queries on a single sqlite database connection.
@@ -56,10 +57,12 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
      */
     async query(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         useStructuredResult = false,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        if (parameters && !Array.isArray(parameters))
+            throw new DriverNotSupportNamedPlaceholdersError()
 
         const databaseConnection = await this.connect()
 
