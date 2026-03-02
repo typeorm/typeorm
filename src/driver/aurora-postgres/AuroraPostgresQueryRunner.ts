@@ -9,7 +9,7 @@ import { QueryResult } from "../../query-runner/QueryResult"
 import { Table } from "../../schema-builder/table/Table"
 import { TypeORMError } from "../../error"
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DriverNotSupportNamedPlaceholdersError } from "../../error/DriverNotSupportNamedPlaceholdersError"
+import { NamedPlaceholdersNotSupportedError } from "../../error/DriverNotSupportNamedPlaceholdersError"
 
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
     declare driver: any
@@ -170,7 +170,7 @@ export class AuroraPostgresQueryRunner
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         if (parameters && !Array.isArray(parameters))
-            throw new DriverNotSupportNamedPlaceholdersError()
+            throw new NamedPlaceholdersNotSupportedError()
 
         const raw = await this.client.query(query, parameters)
 

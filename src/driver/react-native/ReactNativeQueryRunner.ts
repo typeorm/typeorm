@@ -1,5 +1,5 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DriverNotSupportNamedPlaceholdersError } from "../../error/DriverNotSupportNamedPlaceholdersError"
+import { NamedPlaceholdersNotSupportedError } from "../../error/DriverNotSupportNamedPlaceholdersError"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
@@ -56,7 +56,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         if (parameters && !Array.isArray(parameters))
-            throw new DriverNotSupportNamedPlaceholdersError()
+            throw new NamedPlaceholdersNotSupportedError()
 
         const databaseConnection = await this.connect()
 

@@ -1,8 +1,5 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import {
-    DriverNotSupportNamedPlaceholdersError,
-    TypeORMError,
-} from "../../error"
+import { NamedPlaceholdersNotSupportedError, TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
@@ -58,7 +55,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         if (parameters && !Array.isArray(parameters))
-            throw new DriverNotSupportNamedPlaceholdersError()
+            throw new NamedPlaceholdersNotSupportedError()
 
         const databaseConnection = await this.connect()
 

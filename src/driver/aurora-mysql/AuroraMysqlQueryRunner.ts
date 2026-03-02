@@ -1,6 +1,6 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
-import { DriverNotSupportNamedPlaceholdersError } from "../../error/DriverNotSupportNamedPlaceholdersError"
+import { NamedPlaceholdersNotSupportedError } from "../../error/DriverNotSupportNamedPlaceholdersError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
 import { ReadStream } from "../../platform/PlatformTools"
@@ -167,7 +167,7 @@ export class AuroraMysqlQueryRunner
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         if (parameters && !Array.isArray(parameters))
-            throw new DriverNotSupportNamedPlaceholdersError()
+            throw new NamedPlaceholdersNotSupportedError()
 
         const raw = await this.client.query(query, parameters)
 

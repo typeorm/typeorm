@@ -1,5 +1,5 @@
 import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { DriverNotSupportNamedPlaceholdersError } from "../../error"
+import { NamedPlaceholdersNotSupportedError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
@@ -56,7 +56,7 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
             throw new QueryRunnerAlreadyReleasedError()
         }
         if (parameters && !Array.isArray(parameters))
-            throw new DriverNotSupportNamedPlaceholdersError()
+            throw new NamedPlaceholdersNotSupportedError()
 
         const connection = this.driver.connection
 
