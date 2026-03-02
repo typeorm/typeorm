@@ -395,9 +395,11 @@ export class SubjectExecutor {
                     // - when there is no values in insert (only defaults are inserted), since we cannot use DEFAULT VALUES expression for multiple inserted rows
                     // - when entity is a tree table, since tree tables require extra operation per each inserted row
                     // - when oracle is used, since oracle's bulk insertion is very bad
+                    // - when CTI child, since we need two separate inserts (parent + child table)
                     if (
                         subject.changeMaps.length === 0 ||
                         subject.metadata.treeType ||
+                        subject.metadata.isCtiChild ||
                         this.queryRunner.connection.driver.options.type ===
                             "oracle" ||
                         this.queryRunner.connection.driver.options.type ===
@@ -457,6 +459,12 @@ export class SubjectExecutor {
                     for (const subject of singleInsertSubjects) {
                         subject.insertedValueSet =
                             subject.createValueSetAndPopChangeMap() // important to have because query builder sets inserted values into it
+
+                        // CTI children need two-step insert: parent table first, then child table
+                        if (subject.metadata.isCtiChild) {
+                            await this.executeCtiInsert(subject)
+                            continue
+                        }
 
                         // for nested set we execute additional queries
                         if (subject.metadata.treeType === "nested-set")
@@ -569,6 +577,12 @@ export class SubjectExecutor {
                     partialEntity,
                 )
             } else {
+                // CTI children need split update: parent columns → parent table, child columns → child table
+                if (subject.metadata.isCtiChild) {
+                    await this.executeCtiUpdate(subject)
+                    return
+                }
+
                 const updateMap: ObjectLiteral =
                     subject.createValueSetAndPopChangeMap()
 
@@ -719,6 +733,170 @@ export class SubjectExecutor {
                     .where(deleteMaps)
                     .callListeners(false)
                     .execute()
+
+                // For CTI children, also delete from all ancestor tables (child → root order)
+                if (subjects[0].metadata.isCtiChild) {
+                    for (const ancestor of subjects[0].metadata
+                        .ctiAncestorChain) {
+                        await this.queryRunner.manager
+                            .createQueryBuilder()
+                            .delete()
+                            .from(ancestor.target)
+                            .where(deleteMaps)
+                            .callListeners(false)
+                            .execute()
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Executes an N-step INSERT for CTI child entities.
+     * Inserts from root ancestor down to the child table, propagating the generated PK.
+     * For User → Contributor → Actor: insert Actor → Contributor → User.
+     * @param subject
+     */
+    private async executeCtiInsert(subject: Subject): Promise<void> {
+        const valueSet = subject.insertedValueSet!
+        const reload = !(this.options && this.options.reload === false)
+
+        // Build insert order: root-first. ctiAncestorChain is [immediate parent, ..., root]
+        const ancestorChain = subject.metadata.ctiAncestorChain
+        const rootMetadata = ancestorChain[ancestorChain.length - 1]
+
+        // Add discriminator value to value set (lives on root table)
+        const discriminatorColumn = rootMetadata.discriminatorColumn
+        if (discriminatorColumn) {
+            discriminatorColumn.setEntityValue(
+                valueSet,
+                subject.metadata.discriminatorValue,
+            )
+        }
+
+        let firstIdentifier: ObjectLiteral | undefined
+        const mergedGeneratedMap: ObjectLiteral = {}
+
+        // Insert into each ancestor table, root-first.
+        // Always use updateEntity(true) for ancestor inserts so the generated PK
+        // is available in insertResult.identifiers/generatedMaps for propagation
+        // to subsequent child inserts, even when the caller sets reload=false.
+        for (let i = ancestorChain.length - 1; i >= 0; i--) {
+            const ancestorMetadata = ancestorChain[i]
+            const insertResult = await this.queryRunner.manager
+                .createQueryBuilder()
+                .insert()
+                .into(ancestorMetadata.target)
+                .values(valueSet)
+                .updateEntity(true)
+                .callListeners(false)
+                .execute()
+
+            const generatedMap = insertResult.generatedMaps[0] || {}
+            OrmUtils.mergeDeep(valueSet, generatedMap)
+            Object.assign(mergedGeneratedMap, generatedMap)
+
+            if (!firstIdentifier) {
+                firstIdentifier = insertResult.identifiers[0]
+            }
+        }
+
+        // Insert into the child's own table last
+        const childInsertResult = await this.queryRunner.manager
+            .createQueryBuilder()
+            .insert()
+            .into(subject.metadata.target)
+            .values(valueSet)
+            .updateEntity(reload)
+            .callListeners(false)
+            .execute()
+
+        subject.identifier = firstIdentifier!
+        subject.generatedMap = {
+            ...mergedGeneratedMap,
+            ...(childInsertResult.generatedMaps[0] || {}),
+        }
+    }
+
+    /**
+     * Executes a split UPDATE for CTI child entities.
+     * Routes each column/relation to the table that physically owns it,
+     * using entityMetadata ownership from changeMaps (not string-key matching).
+     * @param subject
+     */
+    private async executeCtiUpdate(subject: Subject): Promise<void> {
+        if (!subject.identifier)
+            throw new SubjectWithoutIdentifierError(subject)
+
+        const { tableUpdateMaps, childUpdateMap } =
+            subject.createPerTableValueMaps()
+
+        const reload = !(this.options && this.options.reload === false)
+
+        // Ensure the ancestor that owns version/updateDate is always updated,
+        // even when no ancestor columns changed (UpdateQueryBuilder auto-adds
+        // version+1 and CURRENT_TIMESTAMP even for empty value sets)
+        const ancestorChain = subject.metadata.ctiAncestorChain
+        const rootMeta = ancestorChain[ancestorChain.length - 1]
+        if (
+            rootMeta &&
+            (rootMeta.versionColumn || rootMeta.updateDateColumn)
+        ) {
+            if (!tableUpdateMaps.has(rootMeta)) {
+                tableUpdateMaps.set(rootMeta, {})
+            }
+        }
+
+        // Update each ancestor table that has changed columns or version/updateDate
+        for (const [meta, map] of tableUpdateMaps) {
+            if (
+                Object.keys(map).length === 0 &&
+                !meta.versionColumn &&
+                !meta.updateDateColumn
+            )
+                continue
+
+            const updateQb = this.queryRunner.manager
+                .createQueryBuilder()
+                .update(meta.target)
+                .set(map)
+                .updateEntity(reload)
+                .callListeners(false)
+
+            if (subject.entity) {
+                updateQb.whereEntity(subject.identifier)
+            } else {
+                updateQb.where(subject.identifier)
+            }
+
+            const updateResult = await updateQb.execute()
+            const updateGeneratedMap = updateResult.generatedMaps[0]
+            if (updateGeneratedMap) {
+                if (!subject.generatedMap) subject.generatedMap = {}
+                Object.assign(subject.generatedMap, updateGeneratedMap)
+            }
+        }
+
+        // Update child table if there are child column changes
+        if (Object.keys(childUpdateMap).length > 0) {
+            const childUpdateQb = this.queryRunner.manager
+                .createQueryBuilder()
+                .update(subject.metadata.target)
+                .set(childUpdateMap)
+                .updateEntity(reload)
+                .callListeners(false)
+
+            if (subject.entity) {
+                childUpdateQb.whereEntity(subject.identifier)
+            } else {
+                childUpdateQb.where(subject.identifier)
+            }
+
+            const updateResult = await childUpdateQb.execute()
+            const updateGeneratedMap = updateResult.generatedMaps[0]
+            if (updateGeneratedMap) {
+                if (!subject.generatedMap) subject.generatedMap = {}
+                Object.assign(subject.generatedMap, updateGeneratedMap)
             }
         }
     }

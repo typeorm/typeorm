@@ -99,6 +99,13 @@ export class EmbeddedMetadata {
     isArray: boolean = false
 
     /**
+     * The entity class (constructor) that declared this embedded property.
+     * For STI hierarchies this is the child entity that owns the `@Column(() => Embed)`,
+     * not the embedded type itself.  Used to scope eager relations correctly.
+     */
+    declaringEntityTarget: Function | string
+
+    /**
      * Prefix of the embedded, used instead of propertyName.
      * If set to empty string or false, then prefix is not set at all.
      */
@@ -185,6 +192,7 @@ export class EmbeddedMetadata {
         this.propertyName = options.args.propertyName
         this.customPrefix = options.args.prefix
         this.isArray = options.args.isArray
+        this.declaringEntityTarget = options.args.target
     }
 
     // ---------------------------------------------------------------------

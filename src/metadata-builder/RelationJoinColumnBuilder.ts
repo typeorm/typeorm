@@ -76,6 +76,19 @@ export class RelationJoinColumnBuilder {
             relation,
             referencedColumns,
         )
+
+        // Auto-detect shared-PK pattern: when all join columns are also the
+        // entity's primary key columns, the relation is effectively primary.
+        // This was previously handled by an explicit `primary` option on
+        // @OneToOne/@ManyToOne, removed in 0.3.0. Without auto-detection,
+        // the relation is treated as nullable, which breaks cascade insert
+        // ordering in SubjectTopologicalSorter for entities that share
+        // their PK as FK (e.g. @JoinColumn({ name: 'id' })).
+        if (columns.length > 0 && columns.every((col) => col.isPrimary)) {
+            relation.isPrimary = true
+            relation.isNullable = false
+        }
+
         if (!referencedColumns.length || !relation.createForeignKeyConstraints)
             return {
                 foreignKey: undefined,

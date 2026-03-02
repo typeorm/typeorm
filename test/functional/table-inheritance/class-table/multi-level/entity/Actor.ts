@@ -1,0 +1,14 @@
+import { Entity } from "../../../../../../src/decorator/entity/Entity"
+import { TableInheritance } from "../../../../../../src/decorator/entity/TableInheritance"
+import { PrimaryGeneratedColumn } from "../../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Column } from "../../../../../../src/decorator/columns/Column"
+
+@Entity()
+@TableInheritance({ pattern: "CTI", column: { name: "type", type: String } })
+export class Actor {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    name: string
+}

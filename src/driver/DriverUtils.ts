@@ -181,6 +181,54 @@ export class DriverUtils {
         )
     }
 
+    /**
+     * Builds a deterministic CTI ancestor table alias, respecting driver
+     * maxAliasLength limits.
+     *
+     * Format (when within length limit):
+     *   level 0: "${baseAlias}__cti_parent"
+     *   level N>0: "${baseAlias}__cti_parent${N+1}"
+     * @param driver
+     * @param baseAlias
+     * @param level
+     */
+    static buildCtiAncestorAlias(
+        driver: Driver,
+        baseAlias: string,
+        level: number,
+    ): string {
+        const suffix = level === 0 ? "cti_parent" : `cti_parent${level + 1}`
+        return DriverUtils.buildAlias(
+            driver,
+            { joiner: "__" },
+            baseAlias,
+            suffix,
+        )
+    }
+
+    /**
+     * Builds a deterministic CTI child table alias, respecting driver
+     * maxAliasLength limits.
+     *
+     * Format (when within length limit):
+     *   "${mainAlias}__cti_child_${childTargetName}"
+     * @param driver
+     * @param mainAlias
+     * @param childTargetName
+     */
+    static buildCtiChildAlias(
+        driver: Driver,
+        mainAlias: string,
+        childTargetName: string,
+    ): string {
+        return DriverUtils.buildAlias(
+            driver,
+            { joiner: "__" },
+            mainAlias,
+            `cti_child_${childTargetName}`,
+        )
+    }
+
     // -------------------------------------------------------------------------
     // Private Static Methods
     // -------------------------------------------------------------------------
