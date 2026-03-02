@@ -725,6 +725,7 @@ export class EntityManager {
             | QueryDeepPartialEntity<Entity>
             | QueryDeepPartialEntity<Entity>[],
     ): Promise<InsertResult> {
+        this.rejectCtiChild(target, "insert")
         return this.createQueryBuilder()
             .insert()
             .into(target)
@@ -739,6 +740,7 @@ export class EntityManager {
             | QueryDeepPartialEntity<Entity>[],
         conflictPathsOrOptions: string[] | UpsertOptions<Entity>,
     ): Promise<InsertResult> {
+        this.rejectCtiChild(target, "upsert")
         const metadata = this.connection.getMetadata(target)
 
         let options: UpsertOptions<Entity>
@@ -826,6 +828,7 @@ export class EntityManager {
         partialEntity: QueryDeepPartialEntity<Entity>,
         options?: UpdateOptions,
     ): Promise<UpdateResult> {
+        this.rejectCtiChild(target, "update")
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
@@ -906,6 +909,7 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<DeleteResult> {
+        this.rejectCtiChild(targetOrEntity, "delete")
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
@@ -966,6 +970,7 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
+        this.rejectCtiChild(targetOrEntity, "softDelete")
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
@@ -1012,6 +1017,7 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
+        this.rejectCtiChild(targetOrEntity, "restore")
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
@@ -1160,6 +1166,26 @@ export class EntityManager {
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
         return this.callAggregateFun(entityClass, "MAX", columnName, where)
+    }
+
+    /**
+     * Throws if the target is a CTI child entity, since primitive DML APIs
+     * (insert/update/delete/softDelete/restore/upsert) operate on a single
+     * table and cannot handle CTI's multi-table layout.
+     * @param target
+     * @param method
+     */
+    private rejectCtiChild<Entity>(
+        target: EntityTarget<Entity>,
+        method: string,
+    ): void {
+        const metadata = this.connection.getMetadata(target)
+        if (metadata.isCtiChild) {
+            throw new TypeORMError(
+                `${method}() is not supported for CTI (class table inheritance) child entities. ` +
+                    `Use save()/remove() instead, which correctly handle multi-table operations.`,
+            )
+        }
     }
 
     private async callAggregateFun<Entity extends ObjectLiteral>(
