@@ -353,7 +353,8 @@ export abstract class AbstractLogger implements Logger {
                 if (
                     options.appendParameterAsComment &&
                     message.parameters &&
-                    message.parameters.length
+                    (!Array.isArray(message.parameters) ||
+                        message.parameters.length)
                 ) {
                     sql += ` -- PARAMETERS: ${this.stringifyParams(
                         message.parameters,
