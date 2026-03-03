@@ -1463,6 +1463,7 @@ export class EntityManager {
         entityClass: EntityTarget<Entity>,
         options?: { cascade?: boolean },
     ): Promise<void> {
+        this.rejectCtiChild(entityClass, "clear")
         const metadata = this.connection.getMetadata(entityClass)
 
         const queryRunner =
@@ -1487,6 +1488,7 @@ export class EntityManager {
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
+        this.rejectCtiChild(entityClass, "increment")
         const metadata = this.connection.getMetadata(entityClass)
         const column = metadata.findColumnWithPropertyPath(propertyPath)
         if (!column)
@@ -1528,6 +1530,7 @@ export class EntityManager {
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
+        this.rejectCtiChild(entityClass, "decrement")
         const metadata = this.connection.getMetadata(entityClass)
         const column = metadata.findColumnWithPropertyPath(propertyPath)
         if (!column)
