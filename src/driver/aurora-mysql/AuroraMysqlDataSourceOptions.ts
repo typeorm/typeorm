@@ -1,5 +1,5 @@
-import { AuroraMysqlConnectionCredentialsOptions } from "./AuroraMysqlConnectionCredentialsOptions"
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { AuroraMysqlConnectionCredentialsOptions } from "./AuroraMysqlConnectionCredentialsOptions"
+import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 
 /**
  * MySQL specific connection options.

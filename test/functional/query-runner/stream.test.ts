@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { expect } from "chai"
 import {
     closeTestingConnections,
@@ -9,9 +9,9 @@ import {
 import { Book } from "./entity/Book"
 
 describe("query runner > stream", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [Book],
             enabledDrivers: [
                 "cockroachdb",
@@ -24,12 +24,12 @@ describe("query runner > stream", () => {
             ],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should stream data", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await connection.manager.save(Book, { ean: "a" })
                 await connection.manager.save(Book, { ean: "b" })
                 await connection.manager.save(Book, { ean: "c" })

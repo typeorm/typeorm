@@ -1,15 +1,7 @@
 import "reflect-metadata"
 import "../../../utils/test-setup"
-import {
-    And,
-    DataSource,
-    In,
-    IsNull,
-    LessThan,
-    MoreThan,
-    Not,
-    Or,
-} from "../../../../src"
+import type { DataSource } from "../../../../src"
+import { And, In, IsNull, LessThan, MoreThan, Not, Or } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -22,19 +14,19 @@ import { Tag } from "./entity/Tag"
 import { prepareData } from "./find-options-test-utils"
 
 describe("find options > where", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 __dirname,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("where id", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -59,7 +51,7 @@ describe("find options > where", () => {
 
     it("where title", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -83,7 +75,7 @@ describe("find options > where", () => {
 
     it("where two criteria", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -108,7 +100,7 @@ describe("find options > where", () => {
 
     it("where two criteria without match", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -126,7 +118,7 @@ describe("find options > where", () => {
 
     it("where relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts1 = await connection
@@ -183,7 +175,7 @@ describe("find options > where", () => {
 
     it("where column and relation", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -210,7 +202,7 @@ describe("find options > where", () => {
 
     it("where nested relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -254,7 +246,7 @@ describe("find options > where", () => {
 
     it("where complex nested relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -286,7 +278,7 @@ describe("find options > where", () => {
 
     it("where or + optional relations", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -340,7 +332,7 @@ describe("find options > where", () => {
 
     it("where column in embed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -381,7 +373,7 @@ describe("find options > where", () => {
 
     it("where relation in embed", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -418,7 +410,7 @@ describe("find options > where", () => {
 
     it("where complex with or + and", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -479,7 +471,7 @@ describe("find options > where", () => {
 
     it("where with or + and find operator", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts = await connection
@@ -531,7 +523,7 @@ describe("find options > where", () => {
 
     it("where relations with operators", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const posts1 = await connection
@@ -647,7 +639,7 @@ describe("find options > where", () => {
 
     it("should not apply inner join if all conditions return undefined", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const post4 = new Post()
@@ -703,7 +695,7 @@ describe("find options > where", () => {
 
     it("should apply inner join if true is applied", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection.manager)
 
                 const post4 = new Post()

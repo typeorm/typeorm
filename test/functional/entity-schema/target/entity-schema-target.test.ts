@@ -4,24 +4,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import { PostEntity } from "./entity/PostEntity"
 import { Post } from "./model/Post"
 
 describe("entity schemas > target option", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [PostEntity],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create instance of the target", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = postRepository.create({
                     title: "First Post",
@@ -33,7 +33,7 @@ describe("entity schemas > target option", () => {
 
     it("should find instances of the target", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
                 const post = new Post()
                 post.title = "First Post"

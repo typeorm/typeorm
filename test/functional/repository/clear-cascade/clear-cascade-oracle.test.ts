@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import { ParentOracle } from "./entity/ParentOracle"
 import { ChildOracle } from "./entity/ChildOracle"
 import { ChildNoDelete } from "./entity/ChildNoDelete"

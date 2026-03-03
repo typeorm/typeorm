@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 import { Category } from "./entity/Category"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,20 +11,20 @@ import { Post } from "./entity/Post"
 import { PostCategory } from "./entity/PostCategory"
 
 describe("view entity > mysql", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql", "mariadb"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should create entity view from string definition", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
                 const postCategory = await queryRunner.getView("post_category")
                 expect(postCategory).to.be.exist
@@ -34,7 +34,7 @@ describe("view entity > mysql", () => {
 
     it("should correctly return data from View", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const category1 = new Category()
                 category1.name = "Cars"
                 await connection.manager.save(category1)

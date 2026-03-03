@@ -1,9 +1,9 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { PrimaryGeneratedColumnNumericOptions } from "../options/PrimaryGeneratedColumnNumericOptions"
-import { PrimaryGeneratedColumnUUIDOptions } from "../options/PrimaryGeneratedColumnUUIDOptions"
-import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs"
-import { ColumnOptions } from "../options/ColumnOptions"
-import { PrimaryGeneratedColumnIdentityOptions } from "../options/PrimaryGeneratedColumnIdentityOptions"
+import type { PrimaryGeneratedColumnNumericOptions } from "../options/PrimaryGeneratedColumnNumericOptions"
+import type { PrimaryGeneratedColumnUUIDOptions } from "../options/PrimaryGeneratedColumnUUIDOptions"
+import type { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs"
+import type { ColumnOptions } from "../options/ColumnOptions"
+import type { PrimaryGeneratedColumnIdentityOptions } from "../options/PrimaryGeneratedColumnIdentityOptions"
 import { ObjectUtils } from "../../util/ObjectUtils"
 
 /**

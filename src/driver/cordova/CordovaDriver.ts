@@ -1,9 +1,9 @@
-import { DataSource } from "../../data-source/DataSource"
+import type { DataSource } from "../../data-source/DataSource"
 import { DriverPackageNotInstalledError } from "../../error/DriverPackageNotInstalledError"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { AbstractSqliteDriver } from "../sqlite-abstract/AbstractSqliteDriver"
-import { ReplicationMode } from "../types/ReplicationMode"
-import { CordovaDataSourceOptions } from "./CordovaDataSourceOptions"
+import type { ReplicationMode } from "../types/ReplicationMode"
+import type { CordovaDataSourceOptions } from "./CordovaDataSourceOptions"
 import { CordovaQueryRunner } from "./CordovaQueryRunner"
 
 // needed for typescript compiler

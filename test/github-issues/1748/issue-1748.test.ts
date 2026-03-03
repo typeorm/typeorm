@@ -5,24 +5,25 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, Equal } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Equal } from "../../../src"
 import { Post, Uuid } from "./entity/Post"
 
 describe("github issues > #1748 PrimaryColumn combined with transformer leads to error on save", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post],
                 dropSchema: true,
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should work as expected", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 if (connection.driver.options.type === "mssql") return
 
                 const postRepository = connection.getRepository(Post)

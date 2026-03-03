@@ -1,7 +1,7 @@
-import { ColumnType } from "../driver/types/ColumnTypes"
-import { ValueTransformer } from "../decorator/options/ValueTransformer"
-import { SpatialColumnOptions } from "../decorator/options/SpatialColumnOptions"
-import { EntitySchemaColumnForeignKeyOptions } from "./EntitySchemaColumnForeignKeyOptions"
+import type { ColumnType } from "../driver/types/ColumnTypes"
+import type { ValueTransformer } from "../decorator/options/ValueTransformer"
+import type { SpatialColumnOptions } from "../decorator/options/SpatialColumnOptions"
+import type { EntitySchemaColumnForeignKeyOptions } from "./EntitySchemaColumnForeignKeyOptions"
 
 export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     /**

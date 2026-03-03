@@ -1,4 +1,4 @@
-import { DataSource, TableForeignKey } from "../../../../src"
+import type { DataSource, TableForeignKey } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

@@ -4,24 +4,24 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 // TODO: https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_explicit_defaults_for_timestamp
 describe.skip("github issues > #1960 Migration generator produces duplicated changes", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["mysql"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should not execute any alter queries", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()

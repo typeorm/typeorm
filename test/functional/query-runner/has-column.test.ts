@@ -1,24 +1,24 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
 
 describe("query runner > has column", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    after(() => closeTestingConnections(connections))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly check if column exist", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
                 const hasIdColumn = await queryRunner.hasColumn("post", "id")

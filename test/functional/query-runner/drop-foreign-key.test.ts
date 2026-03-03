@@ -1,6 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource, Table, TableColumn, TableForeignKey } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Table, TableColumn, TableForeignKey } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,20 +10,20 @@ import {
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > drop foreign key", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly drop foreign key and revert drop", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
 
                 let table = await queryRunner.getTable("student")
@@ -44,7 +45,7 @@ describe("query runner > drop foreign key", () => {
 
     it("should drop all foreign keys without skipping any when iterating over array", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 // Skip databases that don't support foreign keys
                 if (connection.driver.options.type === "spanner") {
                     return

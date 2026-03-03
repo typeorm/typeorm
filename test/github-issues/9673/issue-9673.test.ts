@@ -4,7 +4,8 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource, SelectQueryBuilder } from "../../../src"
+import type { DataSource } from "../../../src"
+import { SelectQueryBuilder } from "../../../src"
 import { expect } from "chai"
 import sinon from "sinon"
 import { Node } from "./entity/Node"

@@ -1,6 +1,6 @@
-import { EntityManager } from "../../entity-manager/EntityManager"
-import { DataSource } from "../../data-source/DataSource"
-import { QueryRunner } from "../../query-runner/QueryRunner"
+import type { EntityManager } from "../../entity-manager/EntityManager"
+import type { DataSource } from "../../data-source/DataSource"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
 
 /**
  * TransactionRollbackEvent is an object that broadcaster sends to the entity subscriber on transaction rollback.

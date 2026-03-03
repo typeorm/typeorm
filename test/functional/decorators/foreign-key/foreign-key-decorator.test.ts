@@ -1,4 +1,5 @@
-import { DataSource, TableForeignKey, TypeORMError } from "../../../../src"
+import type { TableForeignKey } from "../../../../src"
+import { DataSource, TypeORMError } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
