@@ -14,10 +14,7 @@ import type { TableCheck } from "../schema-builder/table/TableCheck"
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import type { TableExclusion } from "../schema-builder/table/TableExclusion"
 import type { QueryResult } from "./QueryResult"
-import type {
-    LegacyReplicationMode,
-    ReplicationMode,
-} from "../driver/types/ReplicationMode"
+import type { LegacyReplicationMode } from "../driver/types/ReplicationMode"
 
 /**
  * Runs queries on a single database connection.
