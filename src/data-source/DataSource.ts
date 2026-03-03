@@ -210,7 +210,52 @@ export class DataSource {
     setOptions(options: Partial<DataSourceOptions>): this {
         const normalizedOptions =
             DataSource.normalizeReplicationOptions(options)
-        Object.assign(this.options, normalizedOptions)
+        const optionsToAssign = {
+            ...normalizedOptions,
+        } as Partial<DataSourceOptions> & {
+            replication?: unknown
+        }
+
+        const hasReplicationUpdate = Object.prototype.hasOwnProperty.call(
+            optionsToAssign,
+            "replication",
+        )
+
+        if (hasReplicationUpdate) {
+            const replicationUpdate = optionsToAssign.replication
+            delete optionsToAssign.replication
+
+            const currentReplication = (
+                this.options as { replication?: unknown }
+            ).replication
+
+            const shouldMergeReplication =
+                replicationUpdate !== undefined &&
+                typeof replicationUpdate === "object" &&
+                replicationUpdate !== null &&
+                currentReplication !== undefined &&
+                typeof currentReplication === "object" &&
+                currentReplication !== null &&
+                !Array.isArray(replicationUpdate) &&
+                !Array.isArray(currentReplication)
+
+            if (shouldMergeReplication) {
+                const optionsWithReplication = this.options as {
+                    replication?: object
+                }
+                optionsWithReplication.replication = {
+                    ...(currentReplication as object),
+                    ...(replicationUpdate as object),
+                }
+            } else {
+                const optionsWithReplication = this.options as {
+                    replication?: unknown
+                }
+                optionsWithReplication.replication = replicationUpdate
+            }
+        }
+
+        Object.assign(this.options, optionsToAssign)
 
         if (normalizedOptions.logger || normalizedOptions.logging) {
             this.logger = new LoggerFactory().create(
