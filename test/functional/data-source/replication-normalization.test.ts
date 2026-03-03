@@ -1,6 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 import { DataSource } from "../../../src/data-source/DataSource"
+import { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
 import { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
 
 const BASE_OPTIONS: PostgresDataSourceOptions = {
@@ -76,5 +77,71 @@ describe("DataSource replication option normalization", () => {
         expect(() => new DataSource(options)).to.throw(
             `Replication options cannot define both "slaves" and "replicas" with different values.`,
         )
+    })
+
+    it("should preserve replication endpoints when setOptions updates only defaultMode", () => {
+        const dataSource = new DataSource({
+            ...BASE_OPTIONS,
+            replication: {
+                master: MASTER,
+                slaves: [SLAVE],
+            },
+        })
+
+        dataSource.setOptions({
+            replication: {
+                defaultMode: "replica",
+            },
+        } as Partial<DataSourceOptions>)
+
+        const replication = (dataSource.options as PostgresDataSourceOptions)
+            .replication
+        expect(replication).to.deep.equal({
+            master: MASTER,
+            slaves: [SLAVE],
+            defaultMode: "slave",
+        })
+    })
+
+    it("should preserve replicas when setOptions updates only alias primary endpoint", () => {
+        const dataSource = new DataSource({
+            ...BASE_OPTIONS,
+            replication: {
+                master: MASTER,
+                slaves: [SLAVE],
+            },
+        })
+
+        dataSource.setOptions({
+            replication: {
+                primary: PRIMARY,
+            },
+        } as Partial<DataSourceOptions>)
+
+        const replication = (dataSource.options as PostgresDataSourceOptions)
+            .replication
+        expect(replication).to.deep.equal({
+            master: PRIMARY,
+            slaves: [SLAVE],
+            primary: PRIMARY,
+        })
+    })
+
+    it("should allow clearing replication via setOptions", () => {
+        const dataSource = new DataSource({
+            ...BASE_OPTIONS,
+            replication: {
+                master: MASTER,
+                slaves: [SLAVE],
+            },
+        })
+
+        dataSource.setOptions({
+            replication: undefined,
+        } as Partial<DataSourceOptions>)
+
+        expect(
+            (dataSource.options as PostgresDataSourceOptions).replication,
+        ).to.equal(undefined)
     })
 })
