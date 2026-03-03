@@ -1,6 +1,6 @@
-import type { FindOperator } from "./FindOperator"
-import type { ObjectId } from "../driver/mongodb/bson.typings"
+import type { ObjectId } from "mongodb"
 import type { EqualOperator } from "./EqualOperator"
+import type { FindOperator } from "./FindOperator"
 
 /**
  * A single property handler for FindOptionsWhere.
