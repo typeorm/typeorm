@@ -4152,7 +4152,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     } else {
                         // join
                         this.joins.push({
-                            type: "left",
+                            type: relation.isNullable ? "left" : "inner",
                             select: true,
                             selection:
                                 selection &&
@@ -4262,7 +4262,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             )
                             if (!existJoin) {
                                 this.joins.push({
-                                    type: "left",
+                                    type: eagerRelation.isNullable
+                                        ? "left"
+                                        : "inner",
                                     select: true,
                                     alias: eagerRelationJoinAlias,
                                     parentAlias: joinAlias,
@@ -4393,7 +4395,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 )
                 if (!existJoin) {
                     this.joins.push({
-                        type: "left",
+                        type: relation.isNullable ? "left" : "inner",
                         select: false,
                         alias: joinAlias,
                         parentAlias: alias,
@@ -4711,7 +4713,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         )
                         if (!existJoin) {
                             this.joins.push({
-                                type: "left",
+                                type: relation.isNullable ? "left" : "inner",
                                 select: false,
                                 selection: undefined,
                                 alias: joinAlias,

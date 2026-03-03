@@ -162,7 +162,11 @@ export class FindOptionsUtils {
             if (qb.expressionMap.relationLoadStrategy === "query") {
                 qb.concatRelationMetadata(relation)
             } else {
-                qb.leftJoinAndSelect(selection, relationAlias)
+                if (relation.isNullable) {
+                    qb.leftJoinAndSelect(selection, relationAlias)
+                } else {
+                    qb.innerJoinAndSelect(selection, relationAlias)
+                }
             }
 
             // remove added relations from the allRelations array, this is needed to find all not found relations at the end
@@ -246,7 +250,7 @@ export class FindOptionsUtils {
                 if (
                     join.mapToProperty !== undefined ||
                     join.isMappingMany !== undefined ||
-                    join.direction !== "LEFT" ||
+                    (join.direction !== "LEFT" && join.direction !== "INNER") ||
                     join.entityOrProperty !==
                         `${alias}.${relation.propertyPath}`
                 ) {
@@ -265,7 +269,17 @@ export class FindOptionsUtils {
             )
 
             if (addJoin && !joinAlreadyAdded) {
-                qb.leftJoin(alias + "." + relation.propertyPath, relationAlias)
+                if (relation.isNullable) {
+                    qb.leftJoin(
+                        alias + "." + relation.propertyPath,
+                        relationAlias,
+                    )
+                } else {
+                    qb.innerJoin(
+                        alias + "." + relation.propertyPath,
+                        relationAlias,
+                    )
+                }
             }
 
             // Checking whether the relation wasn't selected yet.
