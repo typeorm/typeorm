@@ -292,6 +292,31 @@ JPA의 `orphanRemoval`은 `@OneToMany`에 설정하고, TypeORM의 `cascade`도 
 
 관련 이슈: [typeorm/typeorm#12033](https://github.com/typeorm/typeorm/issues/12033)
 
+### Cascade Remove vs Orphan Remove
+
+두 개념 모두 자식 엔티티를 삭제하지만, **트리거 조건**이 다르다.
+
+|               | Cascade Remove                                              | Orphan Remove                 |
+| ------------- | ----------------------------------------------------------- | ----------------------------- |
+| **동작 시점** | 부모가 삭제될 때                                            | 컬렉션에서 자식이 빠질 때     |
+| **부모 상태** | 삭제됨                                                      | 살아있음                      |
+| **의미**      | "부모가 죽으면 자식도 죽는다"                               | "부모에게 버림받으면 죽는다"  |
+| **JPA**       | `CascadeType.REMOVE`                                        | `orphanRemoval = true`        |
+| **TypeORM**   | `cascade: ["remove"]` (ORM) / `onDelete: "CASCADE"` (DB FK) | `orphanedRowAction: "delete"` |
+
+```java
+// Cascade Remove — 부모 자체를 삭제하면 자식도 함께 삭제
+em.remove(article);  // → Article DELETE + 모든 Image DELETE
+
+// Orphan Remove — 부모는 유지, 컬렉션에서 빠진 자식만 삭제
+article.getImages().remove(0);  // → 해당 Image만 DELETE
+em.flush();
+```
+
+Cascade Remove만 설정하면 `article.getImages().remove(0)`을 해도 Image는 삭제되지 않는다.
+Orphan Remove만 설정하면 `em.remove(article)`로 Article을 삭제할 때 자식 Image가 함께 삭제되지 않는다.
+따라서 실전에서는 `cascade = ALL, orphanRemoval = true`를 함께 사용하는 것이 일반적이다.
+
 ---
 
 ## 6. JPA의 `mappedBy` vs TypeORM의 `inverseSide`
