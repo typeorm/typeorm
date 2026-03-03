@@ -1179,6 +1179,7 @@ export class EntityManager {
         target: EntityTarget<Entity>,
         method: string,
     ): void {
+        if (!this.connection.hasMetadata(target)) return
         const metadata = this.connection.getMetadata(target)
         if (metadata.isCtiChild) {
             throw new TypeORMError(
