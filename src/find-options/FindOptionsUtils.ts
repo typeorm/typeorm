@@ -19,6 +19,7 @@ export class FindOptionsUtils {
 
     /**
      * Checks if given object is really instance of FindOneOptions interface.
+     * @param obj
      */
     static isFindOneOptions<Entity = any>(
         obj: any,
@@ -50,6 +51,7 @@ export class FindOptionsUtils {
 
     /**
      * Checks if given object is really instance of FindManyOptions interface.
+     * @param obj
      */
     static isFindManyOptions<Entity = any>(
         obj: any,
@@ -71,6 +73,7 @@ export class FindOptionsUtils {
 
     /**
      * Checks if given object is really instance of FindOptions interface.
+     * @param object
      */
     static extractFindManyOptionsAlias(object: any): string | undefined {
         if (this.isFindManyOptions(object) && object.join)
@@ -111,6 +114,11 @@ export class FindOptionsUtils {
 
     /**
      * Adds joins for all relations and sub-relations of the given relations provided in the find options.
+     * @param qb
+     * @param allRelations
+     * @param alias
+     * @param metadata
+     * @param prefix
      */
     public static applyRelationsRecursively(
         qb: SelectQueryBuilder<any>,
@@ -154,7 +162,11 @@ export class FindOptionsUtils {
             if (qb.expressionMap.relationLoadStrategy === "query") {
                 qb.concatRelationMetadata(relation)
             } else {
-                qb.leftJoinAndSelect(selection, relationAlias)
+                if (relation.isNullable) {
+                    qb.leftJoinAndSelect(selection, relationAlias)
+                } else {
+                    qb.innerJoinAndSelect(selection, relationAlias)
+                }
             }
 
             // remove added relations from the allRelations array, this is needed to find all not found relations at the end
@@ -240,7 +252,7 @@ export class FindOptionsUtils {
                     join.condition !== undefined ||
                     join.mapToProperty !== undefined ||
                     join.isMappingMany !== undefined ||
-                    join.direction !== "LEFT" ||
+                    (join.direction !== "LEFT" && join.direction !== "INNER") ||
                     join.entityOrProperty !==
                         `${alias}.${relation.propertyPath}`
                 ) {
@@ -259,7 +271,17 @@ export class FindOptionsUtils {
             )
 
             if (addJoin && !joinAlreadyAdded) {
-                qb.leftJoin(alias + "." + relation.propertyPath, relationAlias)
+                if (relation.isNullable) {
+                    qb.leftJoin(
+                        alias + "." + relation.propertyPath,
+                        relationAlias,
+                    )
+                } else {
+                    qb.innerJoin(
+                        alias + "." + relation.propertyPath,
+                        relationAlias,
+                    )
+                }
             }
 
             // Checking whether the relation wasn't selected yet.
