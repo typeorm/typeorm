@@ -747,6 +747,13 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
+            // When alias prefixing is disabled (e.g. UpdateQueryBuilder), only
+            // build replacements for the main alias.
+            if (
+                !this.expressionMap.aliasNamePrefixingEnabled &&
+                alias !== this.expressionMap.mainAlias
+            )
+                continue
             const replaceAliasNamePrefix =
                 this.expressionMap.aliasNamePrefixingEnabled && alias.name
                     ? `${alias.name}.`
