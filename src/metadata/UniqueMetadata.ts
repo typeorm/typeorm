@@ -1,10 +1,10 @@
-import { EmbeddedMetadata } from "./EmbeddedMetadata"
-import { EntityMetadata } from "./EntityMetadata"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { ColumnMetadata } from "./ColumnMetadata"
-import { UniqueMetadataArgs } from "../metadata-args/UniqueMetadataArgs"
+import type { EmbeddedMetadata } from "./EmbeddedMetadata"
+import type { EntityMetadata } from "./EntityMetadata"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { ColumnMetadata } from "./ColumnMetadata"
+import type { UniqueMetadataArgs } from "../metadata-args/UniqueMetadataArgs"
 import { TypeORMError } from "../error"
-import { DeferrableType } from "./types/DeferrableType"
+import type { DeferrableType } from "./types/DeferrableType"
 
 /**
  * Unique metadata contains all information about table's unique constraints.

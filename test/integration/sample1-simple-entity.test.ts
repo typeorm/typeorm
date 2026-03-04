@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../src/data-source/DataSource"
+import type { DataSource } from "../../src/data-source/DataSource"
 import { Post } from "../../sample/sample1-simple-entity/entity/Post"
 import {
     closeTestingConnections,
@@ -13,15 +13,15 @@ describe("insertion", function () {
     // Setup
     // -------------------------------------------------------------------------
 
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Post],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // -------------------------------------------------------------------------
     // Specifications: persist
@@ -29,7 +29,7 @@ describe("insertion", function () {
 
     it("basic insert functionality", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const postRepository = connection.getRepository(Post)
 
                 const newPost = new Post()

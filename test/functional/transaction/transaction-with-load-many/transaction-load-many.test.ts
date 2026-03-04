@@ -5,27 +5,27 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import { Post } from "./entity/Post"
-import { MysqlDriver } from "../../../../src/driver/mysql/MysqlDriver"
-import { PostgresDriver } from "../../../../src/driver/postgres/PostgresDriver"
+import type { MysqlDriver } from "../../../../src/driver/mysql/MysqlDriver"
+import type { PostgresDriver } from "../../../../src/driver/postgres/PostgresDriver"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("transaction > transaction with load many", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres", "mariadb", "mysql"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should loadMany in same transaction with same query runner", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 let acquireCount = 0
 
                 const driver = connection.driver

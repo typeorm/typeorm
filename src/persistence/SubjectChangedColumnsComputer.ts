@@ -1,9 +1,9 @@
-import { ObjectLiteral } from "../common/ObjectLiteral"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { DateUtils } from "../util/DateUtils"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { OrmUtils } from "../util/OrmUtils"
-import { Subject } from "./Subject"
+import type { Subject } from "./Subject"
 
 /**
  * Finds what columns are changed in the subject entities.

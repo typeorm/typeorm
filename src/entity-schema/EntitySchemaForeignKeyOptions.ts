@@ -1,5 +1,5 @@
-import { EntityTarget } from "../common/EntityTarget"
-import { ForeignKeyOptions } from "../decorator/options/ForeignKeyOptions"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { ForeignKeyOptions } from "../decorator/options/ForeignKeyOptions"
 
 export interface EntitySchemaForeignKeyOptions extends ForeignKeyOptions {
     /**

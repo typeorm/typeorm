@@ -1,4 +1,4 @@
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import { TypeORMError } from "./TypeORMError"
 
 export class MissingPrimaryColumnError extends TypeORMError {

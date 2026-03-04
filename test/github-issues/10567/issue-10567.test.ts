@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/index.js"
+import type { DataSource } from "../../../src/index.js"
 
 describe("github issues > #10567 Postgres: Gist index on daterange column recreated every migration", () => {
     let dataSources: DataSource[]

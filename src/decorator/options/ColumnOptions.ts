@@ -1,6 +1,6 @@
-import { ColumnType } from "../../driver/types/ColumnTypes"
-import { ValueTransformer } from "./ValueTransformer"
-import { ColumnCommonOptions } from "./ColumnCommonOptions"
+import type { ColumnType } from "../../driver/types/ColumnTypes"
+import type { ValueTransformer } from "./ValueTransformer"
+import type { ColumnCommonOptions } from "./ColumnCommonOptions"
 
 /**
  * Describes all column's options.

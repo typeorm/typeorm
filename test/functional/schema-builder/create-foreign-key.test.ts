@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { UniqueMetadata } from "../../../src/metadata/UniqueMetadata"
 import {
     closeTestingConnections,
@@ -9,20 +9,20 @@ import {
 import { ForeignKeyMetadata } from "../../../src/metadata/ForeignKeyMetadata"
 
 describe("schema builder > create foreign key", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly create foreign key", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const categoryMetadata = connection.getMetadata("category")
                 const postMetadata = connection.getMetadata("post")
                 const columns = categoryMetadata.columns.filter(

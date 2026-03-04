@@ -1,12 +1,13 @@
 import "reflect-metadata"
 import "../../../utils/test-setup"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { Post, WithType } from "./entity/Post"
+import type { WithType } from "./entity/Post"
+import { Post } from "./entity/Post"
 
 describe("find options > opaque-types-over-primitives", () => {
     let dataSources: DataSource[]

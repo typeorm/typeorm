@@ -2,7 +2,7 @@ import "reflect-metadata"
 import { Foo1Entity } from "./entity/Foo1"
 import { Foo2Entity } from "./entity/Foo2"
 import { Foo3Entity } from "./entity/Foo3"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,19 +11,19 @@ import {
 import { expect } from "chai"
 
 describe("mysql > tree tables > closure-table", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(
         async () =>
-            (connections = await createTestingConnections({
+            (dataSources = await createTestingConnections({
                 entities: [Foo1Entity, Foo2Entity, Foo3Entity],
                 enabledDrivers: ["mysql"],
             })),
     )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("foo1 should create closure columns unsigned", () => {
-        connections.forEach((dataSource) => {
+        dataSources.forEach((dataSource) => {
             const fooMetadata = dataSource.entityMetadatas.find(
                 (el) => el.tableName === "foo1",
             )!
@@ -54,7 +54,7 @@ describe("mysql > tree tables > closure-table", () => {
     })
 
     it("foo2 should create closure columns with specified zerofill, width, precision and scale", () => {
-        connections.forEach((dataSource) => {
+        dataSources.forEach((dataSource) => {
             const fooMetadata = dataSource.entityMetadatas.find(
                 (el) => el.tableName === "foo2",
             )!
@@ -94,7 +94,7 @@ describe("mysql > tree tables > closure-table", () => {
     })
 
     it("foo3 should create closure columns with specified length, charset and collation", () => {
-        connections.forEach((dataSource) => {
+        dataSources.forEach((dataSource) => {
             const fooMetadata = dataSource.entityMetadatas.find(
                 (el) => el.tableName === "foo3",
             )!

@@ -1,4 +1,4 @@
-import { OrderByCondition } from "../../find-options/OrderByCondition"
+import type { OrderByCondition } from "../../find-options/OrderByCondition"
 
 /**
  * Describes all entity's options.
