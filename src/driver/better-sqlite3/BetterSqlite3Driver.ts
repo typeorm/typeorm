@@ -1,5 +1,5 @@
-import fs from "fs/promises"
-import path from "path"
+import fs from "node:fs/promises"
+import path from "node:path"
 import type { DataSource } from "../../data-source"
 import { DriverPackageNotInstalledError } from "../../error"
 import { PlatformTools } from "../../platform/PlatformTools"
@@ -20,7 +20,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: BetterSqlite3DataSourceOptions
 
@@ -28,11 +28,9 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
-        this.connection = connection
-        this.options = connection.options as BetterSqlite3DataSourceOptions
         this.database = this.options.database
 
         // load sqlite package
@@ -204,7 +202,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
             await this.createDatabaseDirectory(
                 path.dirname(attachFilepathAbsolute),
             )
-            await this.connection.query(
+            await this.dataSource.query(
                 `ATTACH "${attachFilepathAbsolute}" AS "${attachHandle}"`,
             )
         }
