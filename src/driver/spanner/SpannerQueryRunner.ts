@@ -56,7 +56,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     constructor(driver: SpannerDriver, mode: ReplicationMode) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.mode = mode
         this.broadcaster = new Broadcaster(this)
     }
@@ -108,7 +108,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.connect()
         await this.sessionTransaction.begin()
-        this.connection.logger.logQuery("START TRANSACTION")
+        this.dataSource.logger.logQuery("START TRANSACTION")
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -124,7 +124,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
         await this.sessionTransaction.commit()
-        this.connection.logger.logQuery("COMMIT")
+        this.dataSource.logger.logQuery("COMMIT")
         this.isTransactionActive = false
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
@@ -141,7 +141,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         await this.sessionTransaction.rollback()
-        this.connection.logger.logQuery("ROLLBACK")
+        this.dataSource.logger.logQuery("ROLLBACK")
         this.isTransactionActive = false
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
@@ -162,7 +162,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.connect()
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
@@ -234,7 +234,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
             )
-                this.driver.connection.logger.logQuerySlow(
+                this.driver.dataSource.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
                     parameters,
@@ -255,7 +255,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             return result
         } catch (err) {
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,
@@ -287,7 +287,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     async updateDDL(query: string, parameters?: any[]): Promise<void> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         try {
             const queryStartTime = Date.now()
             const [operation] =
@@ -302,14 +302,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
             )
-                this.driver.connection.logger.logQuerySlow(
+                this.driver.dataSource.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
                     parameters,
                     this,
                 )
         } catch (err) {
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,
@@ -335,7 +335,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         try {
-            this.driver.connection.logger.logQuery(query, parameters, this)
+            this.driver.dataSource.logger.logQuery(query, parameters, this)
             const request = {
                 sql: query,
                 params: parameters
@@ -358,7 +358,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             return stream
         } catch (err) {
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,
@@ -552,7 +552,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
                 if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(
+                    index.name = this.dataSource.namingStrategy.indexName(
                         table,
                         index.columnNames,
                         index.where,
@@ -744,7 +744,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(this.dropIndexSql(table, columnIndex))
         } else if (column.isUnique) {
             const uniqueIndex = new TableIndex({
-                name: this.connection.namingStrategy.indexName(table, [
+                name: this.dataSource.namingStrategy.indexName(table, [
                     column.name,
                 ]),
                 columnNames: [column.name],
@@ -937,7 +937,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique === true) {
                     const uniqueIndex = new TableIndex({
-                        name: this.connection.namingStrategy.indexName(table, [
+                        name: this.dataSource.namingStrategy.indexName(table, [
                             newColumn.name,
                         ]),
                         columnNames: [newColumn.name],
@@ -1226,7 +1226,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         // new check constraint may be passed without name. In this case we generate unique name manually.
         if (!checkConstraint.name)
             checkConstraint.name =
-                this.connection.namingStrategy.checkConstraintName(
+                this.dataSource.namingStrategy.checkConstraintName(
                     table,
                     checkConstraint.expression!,
                 )
@@ -1367,7 +1367,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
                 table,
                 foreignKey.columnNames,
                 this.getTablePath(foreignKey),
@@ -1417,7 +1417,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
 
         if (!foreignKey.name) {
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
                 table,
                 foreignKey.columnNames,
                 this.getTablePath(foreignKey),
@@ -1808,7 +1808,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                             )
 
                             const tableMetadata =
-                                this.connection.entityMetadatas.find(
+                                this.dataSource.entityMetadatas.find(
                                     (metadata) =>
                                         this.getTablePath(table) ===
                                         this.getTablePath(metadata),
@@ -2034,7 +2034,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 if (!isUniqueIndexExist && !isUniqueConstraintExist)
                     table.indices.push(
                         new TableIndex({
-                            name: this.connection.namingStrategy.uniqueConstraintName(
+                            name: this.dataSource.namingStrategy.uniqueConstraintName(
                                 table,
                                 [column.name],
                             ),
@@ -2067,7 +2067,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 .map((check) => {
                     const checkName = check.name
                         ? check.name
-                        : this.connection.namingStrategy.checkConstraintName(
+                        : this.dataSource.namingStrategy.checkConstraintName(
                               table,
                               check.expression!,
                           )
@@ -2085,7 +2085,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                         .map((columnName) => `\`${columnName}\``)
                         .join(", ")
                     if (!fk.name)
-                        fk.name = this.connection.namingStrategy.foreignKeyName(
+                        fk.name = this.dataSource.namingStrategy.foreignKeyName(
                             table,
                             fk.columnNames,
                             this.getTablePath(fk),
@@ -2136,7 +2136,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const expression =
             typeof view.expression === "string"
                 ? view.expression
-                : view.expression(this.connection).getQuery()
+                : view.expression(this.dataSource).getQuery()
         return new Query(
             `CREATE ${materializedClause}VIEW ${viewName} SQL SECURITY INVOKER AS ${expression}`,
         )
@@ -2151,7 +2151,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const expression =
             typeof view.expression === "string"
                 ? view.expression.trim()
-                : view.expression(this.connection).getQuery()
+                : view.expression(this.dataSource).getQuery()
         return this.insertTypeormMetadataSql({
             type,
             schema,
@@ -2314,7 +2314,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected buildCreateColumnSql(column: TableColumn) {
         let c = `${this.driver.escape(
             column.name,
-        )} ${this.connection.driver.createFullType(column)}`
+        )} ${this.dataSource.driver.createFullType(column)}`
 
         // Spanner supports only STORED generated column type
         if (column.generatedType === "STORED" && column.asExpression) {

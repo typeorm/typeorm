@@ -8,7 +8,7 @@ import type { DataSource } from "../../../src/data-source/DataSource"
 import type { Migration } from "../../../src/migration/Migration"
 import { QueryFailedError } from "../../../src/error/QueryFailedError"
 
-describe("github issues > #2875 Option to run migrations in 1-transaction-per-migration mode", () => {
+describe("github issues > #2693 Option to run migrations in 1-transaction-per-migration mode", () => {
     let dataSources: DataSource[]
     before(
         async () =>

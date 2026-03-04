@@ -58,7 +58,7 @@ export class SqlServerQueryRunner
     constructor(driver: SqlServerDriver, mode: ReplicationMode) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.broadcaster = new Broadcaster(this)
         this.mode = mode
     }
@@ -112,13 +112,13 @@ export class SqlServerQueryRunner
                     ? this.driver.obtainSlaveConnection()
                     : this.driver.obtainMasterConnection())
                 this.databaseConnection = pool.transaction()
-                this.connection.logger.logQuery("BEGIN TRANSACTION")
+                this.dataSource.logger.logQuery("BEGIN TRANSACTION")
                 if (isolationLevel) {
                     this.databaseConnection.begin(
                         this.convertIsolationLevel(isolationLevel),
                         transactionCallback,
                     )
-                    this.connection.logger.logQuery(
+                    this.dataSource.logger.logQuery(
                         "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
                     )
                 } else {
@@ -157,7 +157,7 @@ export class SqlServerQueryRunner
                     await this.broadcaster.broadcast("AfterTransactionCommit")
 
                     ok()
-                    this.connection.logger.logQuery("COMMIT")
+                    this.dataSource.logger.logQuery("COMMIT")
                     this.transactionDepth -= 1
                 })
             })
@@ -191,7 +191,7 @@ export class SqlServerQueryRunner
                     await this.broadcaster.broadcast("AfterTransactionRollback")
 
                     ok()
-                    this.connection.logger.logQuery("ROLLBACK")
+                    this.dataSource.logger.logQuery("ROLLBACK")
                     this.transactionDepth -= 1
                 })
             })
@@ -213,7 +213,7 @@ export class SqlServerQueryRunner
 
         const release = await this.lock.acquire()
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
@@ -269,7 +269,7 @@ export class SqlServerQueryRunner
                         maxQueryExecutionTime &&
                         queryExecutionTime > maxQueryExecutionTime
                     ) {
-                        this.driver.connection.logger.logQuerySlow(
+                        this.driver.dataSource.logger.logQuerySlow(
                             queryExecutionTime,
                             query,
                             parameters,
@@ -311,7 +311,7 @@ export class SqlServerQueryRunner
                 return result.raw
             }
         } catch (err) {
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,
@@ -352,7 +352,7 @@ export class SqlServerQueryRunner
 
         const release = await this.lock.acquire()
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         const pool = await (this.mode === "slave"
             ? this.driver.obtainSlaveConnection()
             : this.driver.obtainMasterConnection())
@@ -380,7 +380,7 @@ export class SqlServerQueryRunner
 
         streamRequest.on("error", (err: any) => {
             release()
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,
@@ -648,7 +648,7 @@ export class SqlServerQueryRunner
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
                 if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(
+                    index.name = this.dataSource.namingStrategy.indexName(
                         table,
                         index.columnNames,
                         index.where,
@@ -882,11 +882,11 @@ export class SqlServerQueryRunner
                 (column) => column.name,
             )
 
-            const oldPkName = this.connection.namingStrategy.primaryKeyName(
+            const oldPkName = this.dataSource.namingStrategy.primaryKeyName(
                 oldTable,
                 columnNames,
             )
-            const newPkName = this.connection.namingStrategy.primaryKeyName(
+            const newPkName = this.dataSource.namingStrategy.primaryKeyName(
                 newTable,
                 columnNames,
             )
@@ -911,7 +911,7 @@ export class SqlServerQueryRunner
         // rename unique constraints
         newTable.uniques.forEach((unique) => {
             const oldUniqueName =
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     oldTable,
                     unique.columnNames,
                 )
@@ -921,7 +921,7 @@ export class SqlServerQueryRunner
 
             // build new constraint name
             const newUniqueName =
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     newTable,
                     unique.columnNames,
                 )
@@ -948,7 +948,7 @@ export class SqlServerQueryRunner
 
         // rename index constraints
         newTable.indices.forEach((index) => {
-            const oldIndexName = this.connection.namingStrategy.indexName(
+            const oldIndexName = this.dataSource.namingStrategy.indexName(
                 oldTable,
                 index.columnNames,
                 index.where,
@@ -958,7 +958,7 @@ export class SqlServerQueryRunner
             if (index.name !== oldIndexName) return
 
             // build new constraint name
-            const newIndexName = this.connection.namingStrategy.indexName(
+            const newIndexName = this.dataSource.namingStrategy.indexName(
                 newTable,
                 index.columnNames,
                 index.where,
@@ -987,7 +987,7 @@ export class SqlServerQueryRunner
         // rename foreign key constraints
         newTable.foreignKeys.forEach((foreignKey) => {
             const oldForeignKeyName =
-                this.connection.namingStrategy.foreignKeyName(
+                this.dataSource.namingStrategy.foreignKeyName(
                     oldTable,
                     foreignKey.columnNames,
                     this.getTablePath(foreignKey),
@@ -999,7 +999,7 @@ export class SqlServerQueryRunner
 
             // build new constraint name
             const newForeignKeyName =
-                this.connection.namingStrategy.foreignKeyName(
+                this.dataSource.namingStrategy.foreignKeyName(
                     newTable,
                     foreignKey.columnNames,
                     this.getTablePath(foreignKey),
@@ -1086,7 +1086,7 @@ export class SqlServerQueryRunner
             if (primaryColumns.length > 0) {
                 const pkName = primaryColumns[0].primaryKeyConstraintName
                     ? primaryColumns[0].primaryKeyConstraintName
-                    : this.connection.namingStrategy.primaryKeyName(
+                    : this.dataSource.namingStrategy.primaryKeyName(
                           clonedTable,
                           primaryColumns.map((column) => column.name),
                       )
@@ -1114,7 +1114,7 @@ export class SqlServerQueryRunner
             primaryColumns.push(column)
             const pkName = primaryColumns[0].primaryKeyConstraintName
                 ? primaryColumns[0].primaryKeyConstraintName
-                : this.connection.namingStrategy.primaryKeyName(
+                : this.dataSource.namingStrategy.primaryKeyName(
                       clonedTable,
                       primaryColumns.map((column) => column.name),
                   )
@@ -1152,7 +1152,7 @@ export class SqlServerQueryRunner
         // create unique constraint
         if (column.isUnique) {
             const uniqueConstraint = new TableUnique({
-                name: this.connection.namingStrategy.uniqueConstraintName(
+                name: this.dataSource.namingStrategy.uniqueConstraintName(
                     table,
                     [column.name],
                 ),
@@ -1178,7 +1178,7 @@ export class SqlServerQueryRunner
         // remove default constraint
         if (column.default !== null && column.default !== undefined) {
             const defaultName =
-                this.connection.namingStrategy.defaultConstraintName(
+                this.dataSource.namingStrategy.defaultConstraintName(
                     table,
                     column.name,
                 )
@@ -1364,7 +1364,7 @@ export class SqlServerQueryRunner
                         (column) => column.name,
                     )
                     const oldPkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             columnNames,
                         )
@@ -1375,7 +1375,7 @@ export class SqlServerQueryRunner
 
                     // build new primary constraint name
                     const newPkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             columnNames,
                         )
@@ -1400,7 +1400,7 @@ export class SqlServerQueryRunner
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach((index) => {
                     const oldIndexName =
-                        this.connection.namingStrategy.indexName(
+                        this.dataSource.namingStrategy.indexName(
                             clonedTable,
                             index.columnNames,
                             index.where,
@@ -1416,7 +1416,7 @@ export class SqlServerQueryRunner
                     )
                     index.columnNames.push(newColumn.name)
                     const newIndexName =
-                        this.connection.namingStrategy.indexName(
+                        this.dataSource.namingStrategy.indexName(
                             clonedTable,
                             index.columnNames,
                             index.where,
@@ -1447,7 +1447,7 @@ export class SqlServerQueryRunner
                     .findColumnForeignKeys(oldColumn)
                     .forEach((foreignKey) => {
                         const foreignKeyName =
-                            this.connection.namingStrategy.foreignKeyName(
+                            this.dataSource.namingStrategy.foreignKeyName(
                                 clonedTable,
                                 foreignKey.columnNames,
                                 this.getTablePath(foreignKey),
@@ -1464,7 +1464,7 @@ export class SqlServerQueryRunner
                         )
                         foreignKey.columnNames.push(newColumn.name)
                         const newForeignKeyName =
-                            this.connection.namingStrategy.foreignKeyName(
+                            this.dataSource.namingStrategy.foreignKeyName(
                                 clonedTable,
                                 foreignKey.columnNames,
                                 this.getTablePath(foreignKey),
@@ -1504,7 +1504,7 @@ export class SqlServerQueryRunner
                     )
                     check.columnNames!.push(newColumn.name)
                     const newCheckName =
-                        this.connection.namingStrategy.checkConstraintName(
+                        this.dataSource.namingStrategy.checkConstraintName(
                             clonedTable,
                             check.expression!,
                         )
@@ -1532,7 +1532,7 @@ export class SqlServerQueryRunner
                 // rename unique constraints
                 clonedTable.findColumnUniques(oldColumn).forEach((unique) => {
                     const oldUniqueName =
-                        this.connection.namingStrategy.uniqueConstraintName(
+                        this.dataSource.namingStrategy.uniqueConstraintName(
                             clonedTable,
                             unique.columnNames,
                         )
@@ -1547,7 +1547,7 @@ export class SqlServerQueryRunner
                     )
                     unique.columnNames.push(newColumn.name)
                     const newUniqueName =
-                        this.connection.namingStrategy.uniqueConstraintName(
+                        this.dataSource.namingStrategy.uniqueConstraintName(
                             clonedTable,
                             unique.columnNames,
                         )
@@ -1578,12 +1578,12 @@ export class SqlServerQueryRunner
                     oldColumn.default !== undefined
                 ) {
                     const oldDefaultName =
-                        this.connection.namingStrategy.defaultConstraintName(
+                        this.dataSource.namingStrategy.defaultConstraintName(
                             table,
                             oldColumn.name,
                         )
                     const newDefaultName =
-                        this.connection.namingStrategy.defaultConstraintName(
+                        this.dataSource.namingStrategy.defaultConstraintName(
                             table,
                             newColumn.name,
                         )
@@ -1673,7 +1673,7 @@ export class SqlServerQueryRunner
             if (this.isEnumChanged(oldColumn, newColumn)) {
                 const oldExpression = this.getEnumExpression(oldColumn)
                 const oldCheck = new TableCheck({
-                    name: this.connection.namingStrategy.checkConstraintName(
+                    name: this.dataSource.namingStrategy.checkConstraintName(
                         table,
                         oldExpression,
                         true,
@@ -1683,7 +1683,7 @@ export class SqlServerQueryRunner
 
                 const newExpression = this.getEnumExpression(newColumn)
                 const newCheck = new TableCheck({
-                    name: this.connection.namingStrategy.checkConstraintName(
+                    name: this.dataSource.namingStrategy.checkConstraintName(
                         table,
                         newExpression,
                         true,
@@ -1705,7 +1705,7 @@ export class SqlServerQueryRunner
                 if (primaryColumns.length > 0) {
                     const pkName = primaryColumns[0].primaryKeyConstraintName
                         ? primaryColumns[0].primaryKeyConstraintName
-                        : this.connection.namingStrategy.primaryKeyName(
+                        : this.dataSource.namingStrategy.primaryKeyName(
                               clonedTable,
                               primaryColumns.map((column) => column.name),
                           )
@@ -1738,7 +1738,7 @@ export class SqlServerQueryRunner
                     column!.isPrimary = true
                     const pkName = primaryColumns[0].primaryKeyConstraintName
                         ? primaryColumns[0].primaryKeyConstraintName
-                        : this.connection.namingStrategy.primaryKeyName(
+                        : this.dataSource.namingStrategy.primaryKeyName(
                               clonedTable,
                               primaryColumns.map((column) => column.name),
                           )
@@ -1780,7 +1780,7 @@ export class SqlServerQueryRunner
                         const pkName = primaryColumns[0]
                             .primaryKeyConstraintName
                             ? primaryColumns[0].primaryKeyConstraintName
-                            : this.connection.namingStrategy.primaryKeyName(
+                            : this.dataSource.namingStrategy.primaryKeyName(
                                   clonedTable,
                                   primaryColumns.map((column) => column.name),
                               )
@@ -1809,7 +1809,7 @@ export class SqlServerQueryRunner
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique === true) {
                     const uniqueConstraint = new TableUnique({
-                        name: this.connection.namingStrategy.uniqueConstraintName(
+                        name: this.dataSource.namingStrategy.uniqueConstraintName(
                             table,
                             [newColumn.name],
                         ),
@@ -1874,7 +1874,7 @@ export class SqlServerQueryRunner
                     oldColumn.default !== undefined
                 ) {
                     const defaultName =
-                        this.connection.namingStrategy.defaultConstraintName(
+                        this.dataSource.namingStrategy.defaultConstraintName(
                             table,
                             oldColumn.name,
                         )
@@ -1901,7 +1901,7 @@ export class SqlServerQueryRunner
                     newColumn.default !== undefined
                 ) {
                     const defaultName =
-                        this.connection.namingStrategy.defaultConstraintName(
+                        this.dataSource.namingStrategy.defaultConstraintName(
                             table,
                             newColumn.name,
                         )
@@ -1971,7 +1971,7 @@ export class SqlServerQueryRunner
         if (column.isPrimary) {
             const pkName = column.primaryKeyConstraintName
                 ? column.primaryKeyConstraintName
-                : this.connection.namingStrategy.primaryKeyName(
+                : this.dataSource.namingStrategy.primaryKeyName(
                       clonedTable,
                       clonedTable.primaryColumns.map((column) => column.name),
                   )
@@ -2004,7 +2004,7 @@ export class SqlServerQueryRunner
                 const pkName = clonedTable.primaryColumns[0]
                     .primaryKeyConstraintName
                     ? clonedTable.primaryColumns[0].primaryKeyConstraintName
-                    : this.connection.namingStrategy.primaryKeyName(
+                    : this.dataSource.namingStrategy.primaryKeyName(
                           clonedTable,
                           clonedTable.primaryColumns.map(
                               (column) => column.name,
@@ -2082,7 +2082,7 @@ export class SqlServerQueryRunner
         // drop default constraint
         if (column.default !== null && column.default !== undefined) {
             const defaultName =
-                this.connection.namingStrategy.defaultConstraintName(
+                this.dataSource.namingStrategy.defaultConstraintName(
                     table,
                     column.name,
                 )
@@ -2222,7 +2222,7 @@ export class SqlServerQueryRunner
         if (primaryColumns.length > 0) {
             const pkName = primaryColumns[0].primaryKeyConstraintName
                 ? primaryColumns[0].primaryKeyConstraintName
-                : this.connection.namingStrategy.primaryKeyName(
+                : this.dataSource.namingStrategy.primaryKeyName(
                       clonedTable,
                       primaryColumns.map((column) => column.name),
                   )
@@ -2254,7 +2254,7 @@ export class SqlServerQueryRunner
 
         const pkName = primaryColumns[0].primaryKeyConstraintName
             ? primaryColumns[0].primaryKeyConstraintName
-            : this.connection.namingStrategy.primaryKeyName(
+            : this.dataSource.namingStrategy.primaryKeyName(
                   clonedTable,
                   columnNames,
               )
@@ -2322,7 +2322,7 @@ export class SqlServerQueryRunner
         // new unique constraint may be passed without name. In this case we generate unique name manually.
         if (!uniqueConstraint.name)
             uniqueConstraint.name =
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     table,
                     uniqueConstraint.columnNames,
                 )
@@ -2405,7 +2405,7 @@ export class SqlServerQueryRunner
         // new unique constraint may be passed without name. In this case we generate unique name manually.
         if (!checkConstraint.name)
             checkConstraint.name =
-                this.connection.namingStrategy.checkConstraintName(
+                this.dataSource.namingStrategy.checkConstraintName(
                     table,
                     checkConstraint.expression!,
                 )
@@ -2540,8 +2540,8 @@ export class SqlServerQueryRunner
         const table = InstanceChecker.isTable(tableOrName)
             ? tableOrName
             : await this.getCachedTable(tableOrName)
-        const metadata = this.connection.hasMetadata(table.name)
-            ? this.connection.getMetadata(table.name)
+        const metadata = this.dataSource.hasMetadata(table.name)
+            ? this.dataSource.getMetadata(table.name)
             : undefined
 
         if (
@@ -2558,7 +2558,7 @@ export class SqlServerQueryRunner
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
                 table,
                 foreignKey.columnNames,
                 this.getTablePath(foreignKey),
@@ -2607,7 +2607,7 @@ export class SqlServerQueryRunner
             )
 
         if (!foreignKey.name) {
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
                 table,
                 foreignKey.columnNames,
                 this.getTablePath(foreignKey),
@@ -3398,7 +3398,7 @@ export class SqlServerQueryRunner
 
                                 // build default primary key constraint name
                                 const pkName =
-                                    this.connection.namingStrategy.primaryKeyName(
+                                    this.dataSource.namingStrategy.primaryKeyName(
                                         table,
                                         columnNames,
                                     )
@@ -3675,7 +3675,7 @@ export class SqlServerQueryRunner
                 if (!isUniqueExist)
                     table.uniques.push(
                         new TableUnique({
-                            name: this.connection.namingStrategy.uniqueConstraintName(
+                            name: this.dataSource.namingStrategy.uniqueConstraintName(
                                 table,
                                 [column.name],
                             ),
@@ -3689,7 +3689,7 @@ export class SqlServerQueryRunner
                 .map((unique) => {
                     const uniqueName = unique.name
                         ? unique.name
-                        : this.connection.namingStrategy.uniqueConstraintName(
+                        : this.dataSource.namingStrategy.uniqueConstraintName(
                               table,
                               unique.columnNames,
                           )
@@ -3708,7 +3708,7 @@ export class SqlServerQueryRunner
                 .map((check) => {
                     const checkName = check.name
                         ? check.name
-                        : this.connection.namingStrategy.checkConstraintName(
+                        : this.dataSource.namingStrategy.checkConstraintName(
                               table,
                               check.expression!,
                           )
@@ -3726,7 +3726,7 @@ export class SqlServerQueryRunner
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
                     if (!fk.name)
-                        fk.name = this.connection.namingStrategy.foreignKeyName(
+                        fk.name = this.dataSource.namingStrategy.foreignKeyName(
                             table,
                             fk.columnNames,
                             this.getTablePath(fk),
@@ -3757,7 +3757,7 @@ export class SqlServerQueryRunner
         if (primaryColumns.length > 0) {
             const primaryKeyName = primaryColumns[0].primaryKeyConstraintName
                 ? primaryColumns[0].primaryKeyConstraintName
-                : this.connection.namingStrategy.primaryKeyName(
+                : this.dataSource.namingStrategy.primaryKeyName(
                       table,
                       primaryColumns.map((column) => column.name),
                   )
@@ -3803,7 +3803,7 @@ export class SqlServerQueryRunner
         } else {
             return new Query(
                 `CREATE VIEW ${viewIdentifier} AS ${view
-                    .expression(this.connection)
+                    .expression(this.dataSource)
                     .getQuery()}`,
             )
         }
@@ -3819,7 +3819,7 @@ export class SqlServerQueryRunner
         const expression =
             typeof view.expression === "string"
                 ? view.expression.trim()
-                : view.expression(this.connection).getQuery()
+                : view.expression(this.dataSource).getQuery()
         return this.insertTypeormMetadataSql({
             type: MetadataTableType.VIEW,
             database: parsedTableName.database,
@@ -3906,7 +3906,7 @@ export class SqlServerQueryRunner
     ): Query {
         const primaryKeyName = constraintName
             ? constraintName
-            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
+            : this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
 
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
@@ -3927,7 +3927,7 @@ export class SqlServerQueryRunner
         const constraintName = table.primaryColumns[0].primaryKeyConstraintName
         const primaryKeyName = constraintName
             ? constraintName
-            : this.connection.namingStrategy.primaryKeyName(table, columnNames)
+            : this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
 
         return new Query(
             `ALTER TABLE ${this.escapePath(
@@ -4134,14 +4134,14 @@ export class SqlServerQueryRunner
         createDefault: boolean,
         skipEnum?: boolean,
     ) {
-        let c = `"${column.name}" ${this.connection.driver.createFullType(
+        let c = `"${column.name}" ${this.dataSource.driver.createFullType(
             column,
         )}`
 
         if (!skipEnum && column.enum) {
             const expression = this.getEnumExpression(column)
             const checkName =
-                this.connection.namingStrategy.checkConstraintName(
+                this.dataSource.namingStrategy.checkConstraintName(
                     table,
                     expression,
                     true,
@@ -4178,7 +4178,7 @@ export class SqlServerQueryRunner
         ) {
             // we create named constraint to be able to delete this constraint when column been dropped
             const defaultName =
-                this.connection.namingStrategy.defaultConstraintName(
+                this.dataSource.namingStrategy.defaultConstraintName(
                     table,
                     column.name,
                 )
@@ -4192,7 +4192,7 @@ export class SqlServerQueryRunner
         ) {
             // we create named constraint to be able to delete this constraint when column been dropped
             const defaultName =
-                this.connection.namingStrategy.defaultConstraintName(
+                this.dataSource.namingStrategy.defaultConstraintName(
                     table,
                     column.name,
                 )

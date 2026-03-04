@@ -60,7 +60,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     constructor(driver: SapDriver, mode: ReplicationMode) {
         super()
         this.driver = driver
-        this.connection = driver.connection
+        this.dataSource = driver.dataSource
         this.broadcaster = new Broadcaster(this)
         this.mode = mode
     }
@@ -180,7 +180,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         connection.setAutoCommit(options.status === "on")
 
         const query = `SET TRANSACTION AUTOCOMMIT DDL ${options.status.toUpperCase()}`
-        this.driver.connection.logger.logQuery(query, [], this)
+        this.driver.dataSource.logger.logQuery(query, [], this)
         try {
             await promisify(connection.exec).call(connection, query)
         } catch (error) {
@@ -208,7 +208,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         let statement: any
         const result = new QueryResult()
 
-        this.driver.connection.logger.logQuery(query, parameters, this)
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
@@ -243,7 +243,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
-                this.driver.connection.options.maxQueryExecutionTime
+                this.driver.dataSource.options.maxQueryExecutionTime
             const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
@@ -261,7 +261,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
             ) {
-                this.driver.connection.logger.logQuerySlow(
+                this.driver.dataSource.logger.logQuerySlow(
                     queryExecutionTime,
                     query,
                     parameters,
@@ -279,7 +279,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             if (isInsertQuery) {
                 const lastIdQuery = `SELECT CURRENT_IDENTITY_VALUE() FROM "SYS"."DUMMY"`
-                this.driver.connection.logger.logQuery(lastIdQuery, [], this)
+                this.driver.dataSource.logger.logQuery(lastIdQuery, [], this)
                 try {
                     const identityValueResult: [
                         { "CURRENT_IDENTITY_VALUE()": unknown },
@@ -296,7 +296,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 }
             }
         } catch (err) {
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
                 parameters,
@@ -366,7 +366,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         try {
             const databaseConnection = await this.connect()
-            this.driver.connection.logger.logQuery(query, parameters, this)
+            this.driver.dataSource.logger.logQuery(query, parameters, this)
 
             statement = await promisify(databaseConnection.prepare).call(
                 databaseConnection,
@@ -384,7 +384,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 stream.on("end", onEnd)
             }
             stream.on("error", (error: Error) => {
-                this.driver.connection.logger.logQueryError(
+                this.driver.dataSource.logger.logQueryError(
                     error,
                     query,
                     parameters,
@@ -396,7 +396,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             return stream
         } catch (error) {
-            this.driver.connection.logger.logQueryError(
+            this.driver.dataSource.logger.logQueryError(
                 error,
                 query,
                 parameters,
@@ -635,7 +635,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
                 if (!index.name)
-                    index.name = this.connection.namingStrategy.indexName(
+                    index.name = this.dataSource.namingStrategy.indexName(
                         table,
                         index.columnNames,
                         index.where,
@@ -846,11 +846,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 .map((columnName) => `"${columnName}"`)
                 .join(", ")
 
-            const oldPkName = this.connection.namingStrategy.primaryKeyName(
+            const oldPkName = this.dataSource.namingStrategy.primaryKeyName(
                 oldTable,
                 columnNames,
             )
-            const newPkName = this.connection.namingStrategy.primaryKeyName(
+            const newPkName = this.dataSource.namingStrategy.primaryKeyName(
                 newTable,
                 columnNames,
             )
@@ -891,7 +891,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         // recreate foreign keys with new constraint names
         newTable.foreignKeys.forEach((foreignKey) => {
             // replace constraint name
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
                 newTable,
                 foreignKey.columnNames,
                 this.getTablePath(foreignKey),
@@ -919,7 +919,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         // rename index constraints
         newTable.indices.forEach((index) => {
             // build new constraint name
-            const newIndexName = this.connection.namingStrategy.indexName(
+            const newIndexName = this.dataSource.namingStrategy.indexName(
                 newTable,
                 index.columnNames,
                 index.where,
@@ -1045,7 +1045,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     })
                 }
 
-                const pkName = this.connection.namingStrategy.primaryKeyName(
+                const pkName = this.dataSource.namingStrategy.primaryKeyName(
                     clonedTable,
                     primaryColumns.map((column) => column.name),
                 )
@@ -1085,7 +1085,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
 
             primaryColumns.push(column)
-            const pkName = this.connection.namingStrategy.primaryKeyName(
+            const pkName = this.dataSource.namingStrategy.primaryKeyName(
                 clonedTable,
                 primaryColumns.map((column) => column.name),
             )
@@ -1119,7 +1119,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(this.dropIndexSql(table, columnIndex))
         } else if (column.isUnique) {
             const uniqueIndex = new TableIndex({
-                name: this.connection.namingStrategy.indexName(table, [
+                name: this.dataSource.namingStrategy.indexName(table, [
                     column.name,
                 ]),
                 columnNames: [column.name],
@@ -1256,7 +1256,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         (column) => column.name,
                     )
                     const oldPkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             columnNames,
                         )
@@ -1286,7 +1286,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     // build new primary constraint name
                     const newPkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             columnNames,
                         )
@@ -1317,7 +1317,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     )
                     index.columnNames.push(newColumn.name)
                     const newIndexName =
-                        this.connection.namingStrategy.indexName(
+                        this.dataSource.namingStrategy.indexName(
                             clonedTable,
                             index.columnNames,
                             index.where,
@@ -1346,7 +1346,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         )
                         foreignKey.columnNames.push(newColumn.name)
                         const newForeignKeyName =
-                            this.connection.namingStrategy.foreignKeyName(
+                            this.dataSource.namingStrategy.foreignKeyName(
                                 clonedTable,
                                 foreignKey.columnNames,
                                 this.getTablePath(foreignKey),
@@ -1381,7 +1381,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     )
                     check.columnNames!.push(newColumn.name)
                     const newCheckName =
-                        this.connection.namingStrategy.checkConstraintName(
+                        this.dataSource.namingStrategy.checkConstraintName(
                             clonedTable,
                             check.expression!,
                         )
@@ -1466,7 +1466,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // if primary column state changed, we must always drop existed constraint.
                 if (primaryColumns.length > 0) {
                     const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             primaryColumns.map((column) => column.name),
                         )
@@ -1497,7 +1497,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     )
                     column!.isPrimary = true
                     const pkName =
-                        this.connection.namingStrategy.primaryKeyName(
+                        this.dataSource.namingStrategy.primaryKeyName(
                             clonedTable,
                             primaryColumns.map((column) => column.name),
                         )
@@ -1536,7 +1536,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     // if we have another primary keys, we must recreate constraint.
                     if (primaryColumns.length > 0) {
                         const pkName =
-                            this.connection.namingStrategy.primaryKeyName(
+                            this.dataSource.namingStrategy.primaryKeyName(
                                 clonedTable,
                                 primaryColumns.map((column) => column.name),
                             )
@@ -1564,7 +1564,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique === true) {
                     const uniqueIndex = new TableIndex({
-                        name: this.connection.namingStrategy.indexName(table, [
+                        name: this.dataSource.namingStrategy.indexName(table, [
                             newColumn.name,
                         ]),
                         columnNames: [newColumn.name],
@@ -1724,7 +1724,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 })
             }
 
-            const pkName = this.connection.namingStrategy.primaryKeyName(
+            const pkName = this.dataSource.namingStrategy.primaryKeyName(
                 clonedTable,
                 clonedTable.primaryColumns.map((column) => column.name),
             )
@@ -1752,7 +1752,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // if primary key have multiple columns, we must recreate it without dropped column
             if (clonedTable.primaryColumns.length > 0) {
-                const pkName = this.connection.namingStrategy.primaryKeyName(
+                const pkName = this.dataSource.namingStrategy.primaryKeyName(
                     clonedTable,
                     clonedTable.primaryColumns.map((column) => column.name),
                 )
@@ -1805,7 +1805,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         } else if (column.isUnique) {
             // we splice constraints both from table uniques and indices.
             const uniqueName =
-                this.connection.namingStrategy.uniqueConstraintName(table, [
+                this.dataSource.namingStrategy.uniqueConstraintName(table, [
                     column.name,
                 ])
             const foundUnique = clonedTable.uniques.find(
@@ -1826,7 +1826,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )
             }
 
-            const indexName = this.connection.namingStrategy.indexName(table, [
+            const indexName = this.dataSource.namingStrategy.indexName(table, [
                 column.name,
             ])
             const foundIndex = clonedTable.indices.find(
@@ -1998,7 +1998,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns
         if (primaryColumns.length > 0) {
-            const pkName = this.connection.namingStrategy.primaryKeyName(
+            const pkName = this.dataSource.namingStrategy.primaryKeyName(
                 clonedTable,
                 primaryColumns.map((column) => column.name),
             )
@@ -2026,7 +2026,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             .filter((column) => columnNames.indexOf(column.name) !== -1)
             .forEach((column) => (column.isPrimary = true))
 
-        const pkName = this.connection.namingStrategy.primaryKeyName(
+        const pkName = this.dataSource.namingStrategy.primaryKeyName(
             clonedTable,
             columnNames,
         )
@@ -2239,7 +2239,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         // new unique constraint may be passed without name. In this case we generate unique name manually.
         if (!checkConstraint.name)
             checkConstraint.name =
-                this.connection.namingStrategy.checkConstraintName(
+                this.dataSource.namingStrategy.checkConstraintName(
                     table,
                     checkConstraint.expression!,
                 )
@@ -2377,7 +2377,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // new FK may be passed without name. In this case we generate FK name manually.
         if (!foreignKey.name)
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
                 table,
                 foreignKey.columnNames,
                 this.getTablePath(foreignKey),
@@ -2426,7 +2426,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
 
         if (!foreignKey.name) {
-            foreignKey.name = this.connection.namingStrategy.foreignKeyName(
+            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
                 table,
                 foreignKey.columnNames,
                 this.getTablePath(foreignKey),
@@ -2560,7 +2560,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async clearDatabase(): Promise<void> {
         const schemas: string[] = []
-        this.connection.entityMetadatas
+        this.dataSource.entityMetadatas
             .filter((metadata) => metadata.schema)
             .forEach((metadata) => {
                 const isSchemaExist = !!schemas.find(
@@ -2795,7 +2795,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         )
                     })
 
-                    const tableMetadata = this.connection.entityMetadatas.find(
+                    const tableMetadata = this.dataSource.entityMetadatas.find(
                         (metadata) =>
                             this.getTablePath(table) ===
                             this.getTablePath(metadata),
@@ -3086,7 +3086,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 if (!isUniqueIndexExist && !isUniqueConstraintExist)
                     table.indices.push(
                         new TableIndex({
-                            name: this.connection.namingStrategy.uniqueConstraintName(
+                            name: this.dataSource.namingStrategy.uniqueConstraintName(
                                 table,
                                 [column.name],
                             ),
@@ -3119,7 +3119,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 .map((check) => {
                     const checkName = check.name
                         ? check.name
-                        : this.connection.namingStrategy.checkConstraintName(
+                        : this.dataSource.namingStrategy.checkConstraintName(
                               table,
                               check.expression!,
                           )
@@ -3137,7 +3137,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         .map((columnName) => `"${columnName}"`)
                         .join(", ")
                     if (!fk.name)
-                        fk.name = this.connection.namingStrategy.foreignKeyName(
+                        fk.name = this.dataSource.namingStrategy.foreignKeyName(
                             table,
                             fk.columnNames,
                             this.getTablePath(fk),
@@ -3183,7 +3183,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
         if (primaryColumns.length > 0) {
             const primaryKeyName =
-                this.connection.namingStrategy.primaryKeyName(
+                this.dataSource.namingStrategy.primaryKeyName(
                     table,
                     primaryColumns.map((column) => column.name),
                 )
@@ -3225,7 +3225,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         } else {
             return new Query(
                 `CREATE VIEW ${this.escapePath(view)} AS ${view
-                    .expression(this.connection)
+                    .expression(this.dataSource)
                     .getQuery()}`,
             )
         }
@@ -3241,7 +3241,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const expression =
             typeof view.expression === "string"
                 ? view.expression.trim()
-                : view.expression(this.connection).getQuery()
+                : view.expression(this.dataSource).getQuery()
         return this.insertTypeormMetadataSql({
             type: MetadataTableType.VIEW,
             schema: schema,
@@ -3341,7 +3341,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param columnNames
      */
     protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
+        const primaryKeyName = this.dataSource.namingStrategy.primaryKeyName(
             table,
             columnNames,
         )
@@ -3361,7 +3361,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropPrimaryKeySql(table: Table): Query {
         const columnNames = table.primaryColumns.map((column) => column.name)
-        const primaryKeyName = this.connection.namingStrategy.primaryKeyName(
+        const primaryKeyName = this.dataSource.namingStrategy.primaryKeyName(
             table,
             columnNames,
         )
@@ -3514,7 +3514,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         explicitNullable?: boolean,
     ) {
         let c =
-            `"${column.name}" ` + this.connection.driver.createFullType(column)
+            `"${column.name}" ` + this.dataSource.driver.createFullType(column)
         if (column.default !== undefined && column.default !== null) {
             c += " DEFAULT " + column.default
         } else if (explicitDefault) {

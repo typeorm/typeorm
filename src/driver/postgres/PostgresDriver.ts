@@ -20,13 +20,14 @@ import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
-import type { Driver, ReturningType } from "../Driver"
+import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import type { ReturningType } from "../types/ReturningType"
 import type { UpsertType } from "../types/UpsertType"
 import type { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 import type { PostgresDataSourceOptions } from "./PostgresDataSourceOptions"
@@ -41,9 +42,17 @@ export class PostgresDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection used by driver.
+     * DataSource used by the driver.
      */
-    connection: DataSource
+    dataSource: DataSource
+
+    /**
+     * DataSource used by the driver.
+     * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
+     */
+    get connection(): DataSource {
+        return this.dataSource
+    }
 
     /**
      * Postgres underlying library.
@@ -71,7 +80,7 @@ export class PostgresDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: PostgresDataSourceOptions
 
@@ -321,13 +330,13 @@ export class PostgresDriver implements Driver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection?: DataSource) {
-        if (!connection) {
+    constructor(dataSource?: DataSource) {
+        if (!dataSource) {
             return
         }
 
-        this.connection = connection
-        this.options = connection.options as PostgresDataSourceOptions
+        this.dataSource = dataSource
+        this.options = dataSource.options as PostgresDataSourceOptions
         this.isReplicated = this.options.replication ? true : false
         if (this.options.useUTC) {
             process.env.PGTZ = "UTC"
@@ -437,7 +446,7 @@ export class PostgresDriver implements Driver {
 
     protected async getAvailableExtensions(connection: any) {
         const availableExtensions = new Set<string>()
-        const { logger } = this.connection
+        const { logger } = this.dataSource
         try {
             const result: any = await this.executeQuery(
                 connection,
@@ -458,7 +467,7 @@ export class PostgresDriver implements Driver {
     }
 
     protected async enableExtensions(extensionsMetadata: any, connection: any) {
-        const { logger } = this.connection
+        const { logger } = this.dataSource
 
         const {
             hasUuidColumns,
@@ -580,7 +589,7 @@ export class PostgresDriver implements Driver {
         connection: any,
     ) {
         if (!extensionsToInstall) return
-        const logger = this.connection.logger
+        const logger = this.dataSource.logger
         for (const extension of extensionsToInstall) {
             if (availableExtensions.has(extension)) {
                 try {
@@ -604,7 +613,7 @@ export class PostgresDriver implements Driver {
     }
 
     protected async checkMetadataForExtensions() {
-        const hasUuidColumns = this.connection.entityMetadatas.some(
+        const hasUuidColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return (
                     metadata.generatedColumns.filter(
@@ -613,7 +622,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasCitextColumns = this.connection.entityMetadatas.some(
+        const hasCitextColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return (
                     metadata.columns.filter(
@@ -622,7 +631,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasHstoreColumns = this.connection.entityMetadatas.some(
+        const hasHstoreColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return (
                     metadata.columns.filter(
@@ -631,7 +640,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasCubeColumns = this.connection.entityMetadatas.some(
+        const hasCubeColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return (
                     metadata.columns.filter((column) => column.type === "cube")
@@ -639,7 +648,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasGeometryColumns = this.connection.entityMetadatas.some(
+        const hasGeometryColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return (
                     metadata.columns.filter(
@@ -648,7 +657,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasLtreeColumns = this.connection.entityMetadatas.some(
+        const hasLtreeColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return (
                     metadata.columns.filter((column) => column.type === "ltree")
@@ -656,7 +665,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasVectorColumns = this.connection.entityMetadatas.some(
+        const hasVectorColumns = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return metadata.columns.some(
                     (column) =>
@@ -664,7 +673,7 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasExclusionConstraints = this.connection.entityMetadatas.some(
+        const hasExclusionConstraints = this.dataSource.entityMetadatas.some(
             (metadata) => {
                 return metadata.exclusions.length > 0
             },
@@ -709,7 +718,7 @@ export class PostgresDriver implements Driver {
      * Creates a schema builder used to build and sync a schema.
      */
     createSchemaBuilder() {
-        return new RdbmsSchemaBuilder(this.connection)
+        return new RdbmsSchemaBuilder(this.dataSource)
     }
 
     /**
@@ -1656,7 +1665,7 @@ export class PostgresDriver implements Driver {
         options: PostgresDataSourceOptions,
         credentials: PostgresConnectionCredentialsOptions,
     ): Promise<any> {
-        const { logger } = this.connection
+        const { logger } = this.dataSource
         credentials = Object.assign({}, credentials)
 
         // build connection options for the driver
@@ -1717,12 +1726,12 @@ export class PostgresDriver implements Driver {
                 if (options.logNotifications) {
                     connection.on("notice", (msg: any) => {
                         if (msg) {
-                            this.connection.logger.log("info", msg.message)
+                            this.dataSource.logger.log("info", msg.message)
                         }
                     })
                     connection.on("notification", (msg: any) => {
                         if (msg) {
-                            this.connection.logger.log(
+                            this.dataSource.logger.log(
                                 "info",
                                 `Received NOTIFY on channel ${msg.channel}: ${msg.payload}.`,
                             )
@@ -1755,7 +1764,7 @@ export class PostgresDriver implements Driver {
      * @param query
      */
     protected executeQuery(connection: any, query: string) {
-        this.connection.logger.logQuery(query)
+        this.dataSource.logger.logQuery(query)
 
         return new Promise((ok, fail) => {
             connection.query(query, (err: any, result: any) =>
