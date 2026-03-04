@@ -6,6 +6,9 @@
 
 /* You can override the default Infima variables here. */
 :root {
+  --ifm-font-family-base: 'Geist', system-ui, -apple-system, sans-serif;
+  --ifm-heading-font-family: 'Sofia Sans', system-ui, -apple-system, sans-serif;
+
   --ifm-color-primary: #D94400;
   --ifm-color-primary-dark: #C33D00;
   --ifm-color-primary-darker: #B33800;
@@ -33,6 +36,8 @@
   --ifm-footer-color: #FFFFFF;
   --ifm-footer-link-color: #FFE6D9; /* Slightly warmer white for better contrast */
   --ifm-footer-title-color: #FFFFFF;
+
+  --ifm-heading-font-weight: 700;
 
   /* Enhanced link colors for better contrast */
   --ifm-link-color: #B33800;
@@ -74,6 +79,12 @@
   --ifm-link-hover-color: #FF9259;
 }
 
+
+.navbar__title,
+.navbar__link {
+  font-family: var(--ifm-heading-font-family);
+  font-weight: 700;
+}
 
 html .navbar__link:hover {
   color: var(--ifm-color-primary);
