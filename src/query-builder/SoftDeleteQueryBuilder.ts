@@ -322,7 +322,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
      */
     returning(returning: string | string[]): this {
         // not all databases support returning/output cause
-        if (!this.connection.driver.isReturningSqlSupported("update")) {
+        if (!this.dataSource.driver.isReturningSqlSupported("update")) {
             throw new ReturningStatementNotSupportedError()
         }
 
@@ -534,7 +534,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
                 this.getMainTableName(),
             )} SET ${updateColumnAndValues.join(", ")}${whereExpression}` // todo: how do we replace aliases in where to nothing?
         }
-        if (this.connection.driver.options.type === "mssql") {
+        if (this.dataSource.driver.options.type === "mssql") {
             return `UPDATE ${this.getTableName(
                 this.getMainTableName(),
             )} SET ${updateColumnAndValues.join(
@@ -587,7 +587,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
         const limit: number | undefined = this.expressionMap.limit
 
         if (limit) {
-            if (DriverUtils.isMySQLFamily(this.connection.driver)) {
+            if (DriverUtils.isMySQLFamily(this.dataSource.driver)) {
                 return " LIMIT " + limit
             } else {
                 throw new LimitOnUpdateNotSupportedError()
