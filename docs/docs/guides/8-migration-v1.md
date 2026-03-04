@@ -14,6 +14,21 @@ TypeORM requires newer versions of the database client libraries.
 
 The `connectorPackage` option was removed, together with the support for the old `mysql` client. The only database client supported is now `mysql2`, which TypeORM will try to load by default. If you were using `mysql` in your project, simply replace it with `mysql2`.
 
+## SAP HANA
+
+Several deprecated SAP HANA connection aliases were removed.
+
+- `hanaClientDriver` was removed. Use `driver`.
+- `pool.max` was removed. Use `pool.maxConnectedOrPooled`.
+- `pool.requestTimeout` was removed. Use `pool.maxWaitTimeoutIfPoolExhausted`.
+- `pool.idleTimeout` was removed. Use `pool.maxPooledIdleTime` (seconds).
+- `pool.min`, `pool.maxWaitingRequests`, and `pool.checkInterval` were removed with no replacement.
+
+Also note the default behavior changes in pool configuration:
+
+- `pool.maxPooledIdleTime` now defaults to `30` seconds and no longer falls back to `pool.idleTimeout`.
+- `pool.maxWaitTimeoutIfPoolExhausted` now defaults to `0` and no longer falls back to `pool.requestTimeout`.
+
 ## SQLite
 
 Drop support to `sqlite3` in favour of `better-sqlite3` as the primary driver for `sqlite` databases:
