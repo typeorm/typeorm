@@ -53,6 +53,10 @@ const config: Config = {
               ]
             : [],
 
+    stylesheets: [
+        "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Sofia+Sans:wght@700&display=swap",
+    ],
+
     presets: [
         [
             "@docusaurus/preset-classic",
