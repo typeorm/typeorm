@@ -1,19 +1,3 @@
-import { EntityManager } from "./EntityManager"
-import type { EntityTarget } from "../common/EntityTarget"
-
-import type { ObjectLiteral } from "../common/ObjectLiteral"
-import type { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
-import type { MongoDriver } from "../driver/mongodb/MongoDriver"
-import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer"
-import type { FindManyOptions } from "../find-options/FindManyOptions"
-import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
-import { PlatformTools } from "../platform/PlatformTools"
-import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
-import { InsertResult } from "../query-builder/result/InsertResult"
-import { UpdateResult } from "../query-builder/result/UpdateResult"
-import { DeleteResult } from "../query-builder/result/DeleteResult"
-import type { EntityMetadata } from "../metadata/EntityMetadata"
-
 import type {
     AggregateOptions,
     AggregationCursor,
@@ -23,8 +7,6 @@ import type {
     ChangeStream,
     ChangeStreamOptions,
     Collection,
-    CollStats,
-    CollStatsOptions,
     CommandOperationOptions,
     CountDocumentsOptions,
     CountOptions,
@@ -55,16 +37,30 @@ import type {
     UpdateFilter,
     UpdateOptions,
     UpdateResult as UpdateResultMongoDb,
-} from "../driver/mongodb/typings"
+} from "mongodb"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { DataSource } from "../data-source/DataSource"
-import type { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
-import type { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
+import type { MongoDriver } from "../driver/mongodb/MongoDriver"
+import type { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
 import type {
     FindOptionsSelect,
     FindOptionsSelectByString,
 } from "../find-options/FindOptionsSelect"
-import { ObjectUtils } from "../util/ObjectUtils"
+import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
+import type { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
+import type { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import { PlatformTools } from "../platform/PlatformTools"
+import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
+import { DeleteResult } from "../query-builder/result/DeleteResult"
+import { InsertResult } from "../query-builder/result/InsertResult"
+import { UpdateResult } from "../query-builder/result/UpdateResult"
+import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer"
+import { ObjectUtils } from "../util/ObjectUtils"
+import { EntityManager } from "./EntityManager"
 
 /**
  * Entity manager supposed to work with any entity, automatically find its repository and call its methods,
@@ -197,21 +193,21 @@ export class MongoEntityManager extends EntityManager {
             this.convertFindManyOptionsOrConditionsToMongodbQuery(
                 optionsOrConditions,
             ) || {}
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
+        const objectIdClass = PlatformTools.load("mongodb").ObjectId
         query["_id"] = {
             $in: ids.map((id) => {
                 if (typeof id === "string") {
-                    return new objectIdInstance(id)
+                    return new objectIdClass(id)
                 }
 
                 if (typeof id === "object") {
-                    if (id instanceof objectIdInstance) {
+                    if (id instanceof objectIdClass) {
                         return id
                     }
 
                     const propertyName = metadata.objectIdColumn!.propertyName
 
-                    if (id[propertyName] instanceof objectIdInstance) {
+                    if (id[propertyName] instanceof objectIdClass) {
                         return id[propertyName]
                     }
                 }
@@ -946,19 +942,6 @@ export class MongoEntityManager extends EntityManager {
         )
     }
 
-    /**
-     * Get all the collection statistics.
-     * @param entityClassOrName
-     * @param options
-     */
-    stats<Entity>(
-        entityClassOrName: EntityTarget<Entity>,
-        options?: CollStatsOptions,
-    ): Promise<CollStats> {
-        const metadata = this.connection.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.stats(metadata.tableName, options)
-    }
-
     watch<Entity>(
         entityClassOrName: EntityTarget<Entity>,
         pipeline?: Document[],
@@ -1212,9 +1195,9 @@ export class MongoEntityManager extends EntityManager {
         optionsOrConditions?: any,
         maybeOptions?: MongoFindOneOptions<Entity>,
     ): Promise<Entity | null> {
-        const objectIdInstance = PlatformTools.load("mongodb").ObjectId
+        const objectIdClass = PlatformTools.load("mongodb").ObjectId
         const id =
-            optionsOrConditions instanceof objectIdInstance ||
+            optionsOrConditions instanceof objectIdClass ||
             typeof optionsOrConditions === "string"
                 ? optionsOrConditions
                 : undefined
@@ -1227,7 +1210,7 @@ export class MongoEntityManager extends EntityManager {
             ) || {}
         if (id) {
             query["_id"] =
-                id instanceof objectIdInstance ? id : new objectIdInstance(id)
+                id instanceof objectIdClass ? id : new objectIdClass(id)
         }
         const cursor = this.createEntityCursor<Entity>(entityClassOrName, query)
         const deleteDateColumn =

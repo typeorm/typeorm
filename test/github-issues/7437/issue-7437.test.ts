@@ -1,35 +1,30 @@
-import "reflect-metadata"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
 import { expect } from "chai"
+import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { setupTestingConnections } from "../../utils/test-utils"
 
 describe("github issues > #7437 MongoDB options never parse in connectionUrl and after my fix was parse incorrect", () => {
-    it("should parse options in ConnectionUrl", () => {
+    it("should parse options in ConnectionUrl", function () {
+        const isMongoTested =
+            setupTestingConnections({ enabledDrivers: ["mongodb"] }).length > 0
+
+        if (!isMongoTested) {
+            return
+        }
+
         const options = DriverUtils.buildMongoDBDriverOptions({
             url: "mongodb://testuser:testpwd@test-primary.example.com:27017/testdb?retryWrites=true&w=majority&useUnifiedTopology=true",
         })
 
-        expect(options.host ? (options.host as string) : "").to.equal(
-            "test-primary.example.com",
-        )
-        expect(options.username ? (options.username as string) : "").to.equal(
-            "testuser",
-        )
-        expect(options.password ? (options.password as string) : "").to.equal(
-            "testpwd",
-        )
-        expect(options.port ? (options.port as number) : 0).to.equal(27017)
-        expect(options.database ? (options.database as string) : "").to.equal(
-            "testdb",
-        )
-
-        expect(
-            options.retryWrites ? (options.retryWrites as string) : "",
-        ).to.equal("true")
-        expect(options.w ? (options.w as string) : "").to.equal("majority")
-        expect(
-            options.useUnifiedTopology
-                ? (options.useUnifiedTopology as string)
-                : "",
-        ).to.equal("true")
+        expect(options).to.deep.include({
+            type: "mongodb",
+            host: "test-primary.example.com",
+            username: "testuser",
+            password: "testpwd",
+            port: 27017,
+            database: "testdb",
+            retryWrites: "true",
+            w: "majority",
+            useUnifiedTopology: "true",
+        })
     })
 })

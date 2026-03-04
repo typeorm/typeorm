@@ -4,6 +4,7 @@ import { jsdoc } from "eslint-plugin-jsdoc"
 import { defineConfig, globalIgnores } from "eslint/config"
 import globals from "globals"
 import ts from "typescript-eslint"
+import packageJson from "./package.json" with { type: "json" }
 
 export default defineConfig([
     globalIgnores([
@@ -11,10 +12,9 @@ export default defineConfig([
         "docs/**",
         "node_modules/**",
         "sample/playground/**",
-        "src/driver/mongodb/{typings.ts,bson.typings.ts}",
+        "src/driver/mongodb/bson.typings.ts",
         "temp/**",
     ]),
-
     {
         files: ["**/*.ts"],
         languageOptions: {
@@ -97,9 +97,26 @@ export default defineConfig([
         // and then remove manual config in favor of `config: "flat/recommended-typescript-error"`
         rules: {
             "jsdoc/valid-types": "error",
+            "jsdoc/require-param-description": "off",
         },
     }),
-
+    {
+        files: ["src/**/*.ts"],
+        rules: {
+            "@typescript-eslint/no-restricted-imports": [
+                "error",
+                {
+                    paths: Object.entries(packageJson.peerDependenciesMeta)
+                        .filter(([, meta]) => meta.optional)
+                        .map(([name]) => ({
+                            name,
+                            message: `Optional peer dependency "${name}" should only be imported as a type`,
+                            allowTypeImports: true,
+                        })),
+                },
+            ],
+        },
+    },
     {
         files: ["test/**/*.ts"],
         ...chaiFriendly.configs.recommendedFlat,

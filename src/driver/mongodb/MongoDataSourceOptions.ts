@@ -1,5 +1,5 @@
+import type { ReadPreference } from "mongodb"
 import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
-import type { ReadPreference } from "./typings"
 
 /**
  * MongoDB specific connection options.

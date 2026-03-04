@@ -1,61 +1,57 @@
-import type { QueryRunner } from "../../query-runner/QueryRunner"
-import type { TableColumn } from "../../schema-builder/table/TableColumn"
-import type { Table } from "../../schema-builder/table/Table"
-import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import type { TableIndex } from "../../schema-builder/table/TableIndex"
-import type { View } from "../../schema-builder/view/View"
-// import {Connection} from "../../connection/Connection";
-import type { ReadStream } from "../../platform/PlatformTools"
-import type { MongoEntityManager } from "../../entity-manager/MongoEntityManager"
-import type { SqlInMemory } from "../SqlInMemory"
-import type { TableUnique } from "../../schema-builder/table/TableUnique"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import type { TableCheck } from "../../schema-builder/table/TableCheck"
-import type { TableExclusion } from "../../schema-builder/table/TableExclusion"
-import { TypeORMError } from "../../error"
-
 import type {
-    BulkWriteResult,
-    AggregationCursor,
-    MongoClient,
-    Collection,
-    FindCursor,
-    Document,
     AggregateOptions,
+    AggregationCursor,
     AnyBulkWriteOperation,
     BulkWriteOptions,
-    Filter,
-    CountOptions,
-    CountDocumentsOptions,
-    IndexSpecification,
-    CreateIndexesOptions,
-    IndexDescription,
-    DeleteResult,
-    DeleteOptions,
+    BulkWriteResult,
+    ChangeStream,
+    ChangeStreamOptions,
+    Collection,
     CommandOperationOptions,
+    CountDocumentsOptions,
+    CountOptions,
+    CreateIndexesOptions,
+    DeleteOptions,
+    DeleteResult,
+    Document,
+    Filter,
+    FindCursor,
     FindOneAndDeleteOptions,
     FindOneAndReplaceOptions,
-    UpdateFilter,
     FindOneAndUpdateOptions,
-    RenameOptions,
-    ReplaceOptions,
-    UpdateResult,
-    CollStats,
-    CollStatsOptions,
-    ChangeStreamOptions,
-    ChangeStream,
-    UpdateOptions,
-    ListIndexesOptions,
-    ListIndexesCursor,
-    OptionalId,
+    IndexDescription,
+    IndexInformationOptions,
+    IndexSpecification,
+    InsertManyResult,
     InsertOneOptions,
     InsertOneResult,
-    InsertManyResult,
-    UnorderedBulkOperation,
+    ListIndexesCursor,
+    ListIndexesOptions,
+    MongoClient,
+    OptionalId,
     OrderedBulkOperation,
-    IndexInformationOptions,
-} from "../../driver/mongodb/typings"
+    RenameOptions,
+    ReplaceOptions,
+    UnorderedBulkOperation,
+    UpdateFilter,
+    UpdateOptions,
+    UpdateResult,
+} from "mongodb"
 import type { DataSource } from "../../data-source/DataSource"
+import type { MongoEntityManager } from "../../entity-manager/MongoEntityManager"
+import { TypeORMError } from "../../error"
+import type { ReadStream } from "../../platform/PlatformTools"
+import type { QueryRunner } from "../../query-runner/QueryRunner"
+import type { Table } from "../../schema-builder/table/Table"
+import type { TableCheck } from "../../schema-builder/table/TableCheck"
+import type { TableColumn } from "../../schema-builder/table/TableColumn"
+import type { TableExclusion } from "../../schema-builder/table/TableExclusion"
+import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
+import type { TableIndex } from "../../schema-builder/table/TableIndex"
+import type { TableUnique } from "../../schema-builder/table/TableUnique"
+import type { View } from "../../schema-builder/view/View"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import type { SqlInMemory } from "../SqlInMemory"
 import type { ReplicationMode } from "../types/ReplicationMode"
 
 /**
@@ -325,7 +321,7 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops all indexes from the collection.
      * @param collectionName
      */
-    async dropCollectionIndexes(collectionName: string): Promise<Document> {
+    async dropCollectionIndexes(collectionName: string): Promise<boolean> {
         return this.getCollection(collectionName).dropIndexes()
     }
 
@@ -534,18 +530,6 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
-     * Get all the collection statistics.
-     * @param collectionName
-     * @param options
-     */
-    async stats(
-        collectionName: string,
-        options?: CollStatsOptions,
-    ): Promise<CollStats> {
-        return this.getCollection(collectionName).stats(options || {})
-    }
-
-    /**
      * Watching new changes as stream.
      * @param collectionName
      * @param pipeline
@@ -693,45 +677,6 @@ export class MongoQueryRunner implements QueryRunner {
             `Stream is not supported by MongoDB driver. Use watch instead.`,
         )
     }
-
-    /**
-     * Insert a new row with given values into the given table.
-     * Returns value of inserted object id.
-     
-    async insert(collectionName: string, keyValues: ObjectLiteral): Promise<any> { // todo: fix any
-        const results = await this.databaseConnection
-            .collection(collectionName)
-            .insertOne(keyValues);
-        const generatedMap = this.connection.getMetadata(collectionName).objectIdColumn!.createValueMap(results.insertedId);
-        return {
-            result: results,
-            generatedMap: generatedMap
-        };
-    }
-     */
-
-    /**
-     * Updates rows that match given conditions in the given table.
-     
-    async update(collectionName: string, valuesMap: ObjectLiteral, conditions: ObjectLiteral): Promise<any> { // todo: fix any
-        await this.databaseConnection
-            .collection(collectionName)
-            .updateOne(conditions, valuesMap);
-    }
-     */
-
-    /**
-     * Deletes from the given table by a given conditions.
-     
-    async delete(collectionName: string, conditions: ObjectLiteral|ObjectLiteral[]|string, maybeParameters?: any[]): Promise<any> { // todo: fix any
-        if (typeof conditions === "string")
-            throw new TypeORMError(`String condition is not supported by MongoDB driver.`);
-     
-        await this.databaseConnection
-            .collection(collectionName)
-            .deleteOne(conditions);
-    }
-     */
 
     /**
      * Returns all available database names including system databases.
