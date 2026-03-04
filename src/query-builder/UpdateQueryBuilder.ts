@@ -491,6 +491,92 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     // -------------------------------------------------------------------------
 
     /**
+     * Helper method to process update values and create column assignment expressions.
+     * Eliminates code duplication for value processing logic.
+     */
+    protected createColumnAssignment(
+        columnName: string,
+        value: any,
+        column?: ColumnMetadata,
+    ): string {
+        // Handle function values (SQL expressions)
+        if (typeof value === "function") {
+            return this.escape(columnName) + " = " + value()
+        }
+
+        // Handle null values for SAP and Spanner drivers
+        if (
+            (this.connection.driver.options.type === "sap" ||
+                this.connection.driver.options.type === "spanner") &&
+            value === null
+        ) {
+            return this.escape(columnName) + " = NULL"
+        }
+
+        // Handle regular values
+        let processedValue = value
+
+        // Apply MSSQL parametrization if column metadata is available
+        if (column && this.connection.driver.options.type === "mssql") {
+            processedValue = (
+                this.connection.driver as SqlServerDriver
+            ).parametrizeValue(column, processedValue)
+        }
+
+        const paramName = this.createParameter(processedValue)
+
+        // Handle spatial types with column metadata
+        if (column) {
+            let expression: string | null = null
+
+            if (
+                (DriverUtils.isMySQLFamily(this.connection.driver) ||
+                    this.connection.driver.options.type === "aurora-mysql") &&
+                this.connection.driver.spatialTypes.indexOf(column.type) !== -1
+            ) {
+                const useLegacy = (
+                    this.connection.driver as MysqlDriver | AuroraMysqlDriver
+                ).options.legacySpatialSupport
+                const geomFromText = useLegacy
+                    ? "GeomFromText"
+                    : "ST_GeomFromText"
+                if (column.srid != null) {
+                    expression = `${geomFromText}(${paramName}, ${column.srid})`
+                } else {
+                    expression = `${geomFromText}(${paramName})`
+                }
+            } else if (
+                DriverUtils.isPostgresFamily(this.connection.driver) &&
+                this.connection.driver.spatialTypes.indexOf(column.type) !== -1
+            ) {
+                if (column.srid != null) {
+                    expression = `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
+                } else {
+                    expression = `ST_GeomFromGeoJSON(${paramName})::${column.type}`
+                }
+            } else if (
+                this.connection.driver.options.type === "mssql" &&
+                this.connection.driver.spatialTypes.indexOf(column.type) !== -1
+            ) {
+                expression =
+                    column.type +
+                    "::STGeomFromText(" +
+                    paramName +
+                    ", " +
+                    (column.srid || "0") +
+                    ")"
+            } else {
+                expression = paramName
+            }
+
+            return this.escape(columnName) + " = " + expression
+        }
+
+        // Default case for non-spatial types
+        return this.escape(columnName) + " = " + paramName
+    }
+
+    /**
      * Creates UPDATE express used to perform insert query.
      */
     protected createUpdateExpression() {
@@ -553,94 +639,13 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                 )
                         }
 
-                        // todo: duplication zone
-                        if (typeof value === "function") {
-                            // support for SQL expressions in update query
-                            updateColumnAndValues.push(
-                                this.escape(column.databaseName) +
-                                    " = " +
-                                    value(),
-                            )
-                        } else if (
-                            (this.connection.driver.options.type === "sap" ||
-                                this.connection.driver.options.type ===
-                                    "spanner") &&
-                            value === null
-                        ) {
-                            updateColumnAndValues.push(
-                                this.escape(column.databaseName) + " = NULL",
-                            )
-                        } else {
-                            if (
-                                this.connection.driver.options.type === "mssql"
-                            ) {
-                                value = (
-                                    this.connection.driver as SqlServerDriver
-                                ).parametrizeValue(column, value)
-                            }
-
-                            const paramName = this.createParameter(value)
-
-                            let expression = null
-                            if (
-                                (DriverUtils.isMySQLFamily(
-                                    this.connection.driver,
-                                ) ||
-                                    this.connection.driver.options.type ===
-                                        "aurora-mysql") &&
-                                this.connection.driver.spatialTypes.indexOf(
-                                    column.type,
-                                ) !== -1
-                            ) {
-                                const useLegacy = (
-                                    this.connection.driver as
-                                        | MysqlDriver
-                                        | AuroraMysqlDriver
-                                ).options.legacySpatialSupport
-                                const geomFromText = useLegacy
-                                    ? "GeomFromText"
-                                    : "ST_GeomFromText"
-                                if (column.srid != null) {
-                                    expression = `${geomFromText}(${paramName}, ${column.srid})`
-                                } else {
-                                    expression = `${geomFromText}(${paramName})`
-                                }
-                            } else if (
-                                DriverUtils.isPostgresFamily(
-                                    this.connection.driver,
-                                ) &&
-                                this.connection.driver.spatialTypes.indexOf(
-                                    column.type,
-                                ) !== -1
-                            ) {
-                                if (column.srid != null) {
-                                    expression = `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
-                                } else {
-                                    expression = `ST_GeomFromGeoJSON(${paramName})::${column.type}`
-                                }
-                            } else if (
-                                this.connection.driver.options.type ===
-                                    "mssql" &&
-                                this.connection.driver.spatialTypes.indexOf(
-                                    column.type,
-                                ) !== -1
-                            ) {
-                                expression =
-                                    column.type +
-                                    "::STGeomFromText(" +
-                                    paramName +
-                                    ", " +
-                                    (column.srid || "0") +
-                                    ")"
-                            } else {
-                                expression = paramName
-                            }
-                            updateColumnAndValues.push(
-                                this.escape(column.databaseName) +
-                                    " = " +
-                                    expression,
-                            )
-                        }
+                        updateColumnAndValues.push(
+                            this.createColumnAssignment(
+                                column.databaseName,
+                                value,
+                                column,
+                            ),
+                        )
                     })
                 },
             )
@@ -663,38 +668,23 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 if (
                     metadata.updateDateColumn &&
                     updatedColumns.indexOf(metadata.updateDateColumn) === -1
-                )
-                    updateColumnAndValues.push(
-                        this.escape(metadata.updateDateColumn.databaseName) +
-                            " = CURRENT_TIMESTAMP",
-                    ) // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
-            }
-        } else {
-            Object.keys(valuesSetNormalized).map((key) => {
-                const value = valuesSetNormalized[key]
-
-                // todo: duplication zone
-                if (typeof value === "function") {
-                    // support for SQL expressions in update query
-                    updateColumnAndValues.push(
-                        this.escape(key) + " = " + value(),
-                    )
-                } else if (
-                    (this.connection.driver.options.type === "sap" ||
-                        this.connection.driver.options.type === "spanner") &&
-                    value === null
                 ) {
-                    updateColumnAndValues.push(this.escape(key) + " = NULL")
-                } else {
-                    // we need to store array values in a special class to make sure parameter replacement will work correctly
-                    // if (value instanceof Array)
-                    //     value = new ArrayParameter(value);
-
-                    const paramName = this.createParameter(value)
+                    const updateDateColumn = metadata.updateDateColumn
                     updateColumnAndValues.push(
-                        this.escape(key) + " = " + paramName,
+                        this.createColumnAssignment(
+                            updateDateColumn.databaseName,
+                            updateDateColumn.default,
+                        ),
                     )
                 }
+            }
+        } else {
+            Object.keys(valuesSetNormalized).forEach((key) => {
+                const value = valuesSetNormalized[key]
+
+                updateColumnAndValues.push(
+                    this.createColumnAssignment(key, value),
+                )
             })
         }
 
