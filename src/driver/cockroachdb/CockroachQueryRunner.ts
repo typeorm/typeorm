@@ -3127,10 +3127,12 @@ export class CockroachQueryRunner
             `WHERE "t"."relkind" = 'm' AND ("cnst"."contype" IS NULL OR "cnst"."contype" != 'p')${indicesCondition ? ` AND (${indicesCondition})` : ""}`
 
         const query =
-            `SELECT "t".*, "v"."check_option" FROM ${this.escapePath(
+            `SELECT "t".* FROM ${this.escapePath(
                 this.getTypeormMetadataTableName(),
             )} "t" ` +
-            `INNER JOIN "information_schema"."views" "v" ON "v"."table_schema" = "t"."schema" AND "v"."table_name" = "t"."name" WHERE "t"."type" IN ('${
+            `INNER JOIN "pg_catalog"."pg_class" "c" ON "c"."relname" = "t"."name" ` +
+            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "c"."relnamespace" AND "n"."nspname" = "t"."schema" ` +
+            `WHERE "t"."type" IN ('${
                 MetadataTableType.VIEW
             }', '${MetadataTableType.MATERIALIZED_VIEW}') ${viewsCondition ? `AND (${viewsCondition})` : ""}`
         const dbViews = await this.query(query)

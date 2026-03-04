@@ -1,15 +1,16 @@
 import { expect } from "chai"
 import "reflect-metadata"
-import { DataSource, TableIndex, TypeORMError } from "../../../../src"
+import type { DataSource } from "../../../../src"
+import { TableIndex, TypeORMError } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../../utils/test-utils"
 import { PostByCategory } from "./entity/PostByCategory"
-import { CockroachQueryRunner } from "../../../../src/driver/cockroachdb/CockroachQueryRunner"
+import type { CockroachQueryRunner } from "../../../../src/driver/cockroachdb/CockroachQueryRunner"
 import { IndexMetadata } from "../../../../src/metadata/IndexMetadata"
 
-describe.only("view entity > cockroachdb > materialized view indices", () => {
+describe("view entity > cockroachdb > materialized view indices", () => {
     const tableIndex: TableIndex = new TableIndex({
         columnNames: ["categoryName"],
         name: "category_name_idx",
