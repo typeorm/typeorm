@@ -32,6 +32,9 @@ importers:
       lucide-react:
         specifier: ^0.577.0
         version: 0.577.0(react@18.3.1)
+      lunr:
+        specifier: ^2.3.9
+        version: 2.3.9
       prism-react-renderer:
         specifier: ^2.4.1
         version: 2.4.1(react@18.3.1)
