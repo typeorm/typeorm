@@ -52,7 +52,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Entity metadata of the entity current repository manages.
      */
     get metadata() {
-        return this.manager.connection.getMetadata(this.target)
+        return this.manager.dataSource.getMetadata(this.target)
     }
 
     // -------------------------------------------------------------------------
@@ -750,7 +750,7 @@ export class Repository<Entity extends ObjectLiteral> {
         ...values: unknown[]
     ): Promise<T> {
         const { query, parameters } = buildSqlTag({
-            driver: this.manager.connection.driver,
+            driver: this.manager.dataSource.driver,
             strings: strings,
             expressions: values,
         })

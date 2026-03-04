@@ -2110,7 +2110,7 @@ function getNestedSetIds(
     ids: ObjectLiteral[],
 ): Promise<any> {
     const escape = (alias: string) =>
-        repo.manager.connection.driver.escape(alias)
+        repo.manager.dataSource.driver.escape(alias)
     const select = {
         left: `${repo.metadata.targetName}.${
             repo.metadata.nestedSetLeftColumn!.propertyPath
