@@ -88,10 +88,7 @@ function MaintainerCard({ name, github, role }) {
 
 export default function Maintainers(): ReactNode {
     return (
-        <Layout
-            title="Maintainers"
-            description="Meet the team behind TypeORM"
-        >
+        <Layout title="Maintainers" description="Meet the team behind TypeORM">
             <header className={styles.heroBanner}>
                 <div className="container">
                     <Heading as="h1">Maintainers</Heading>

@@ -55,7 +55,9 @@
     padding: 1.5rem 1rem;
     border-radius: 10px;
     background-color: var(--ifm-color-emphasis-100);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
     text-decoration: none !important;
     color: inherit !important;
 }
