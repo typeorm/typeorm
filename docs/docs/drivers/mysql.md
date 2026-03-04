@@ -66,7 +66,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 - `multipleStatements` - Allow multiple mysql statements per query. Be careful with this, it could increase the scope
   of SQL injection attacks. (Default: `false`)
 
-- `legacySpatialSupport` - Use legacy spatial functions like `GeomFromText` and `AsText` which have been replaced by the standard-compliant `ST_GeomFromText` or `ST_AsText` in MySQL 8.0. (Current default: true)
+- `legacySpatialSupport` - Use legacy spatial functions like `GeomFromText` and `AsText` which have been replaced by the standard-compliant `ST_GeomFromText` or `ST_AsText` in MySQL 8.0. (Default: `false`)
 
 - `flags` - List of connection flags to use other than the default ones. It is also possible to blacklist default ones.
   For more information, check [Connection Flags](https://github.com/mysqljs/mysql#connection-flags).
