@@ -12,13 +12,12 @@ import { expect } from "chai"
 
 describe("github issues > #1055 ind with relations not working, correct syntax causes type error", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mysql"], // only one driver is enabled because this example uses lazy relations
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql"], // only one driver is enabled because this example uses lazy relations
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

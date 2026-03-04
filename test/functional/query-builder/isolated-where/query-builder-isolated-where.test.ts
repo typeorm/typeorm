@@ -10,14 +10,13 @@ import { User } from "./entity/User"
 
 describe("query builder > isolated-where", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User],
-                enabledDrivers: ["better-sqlite3"],
-                isolateWhereStatements: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User],
+            enabledDrivers: ["better-sqlite3"],
+            isolateWhereStatements: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

@@ -14,14 +14,13 @@ import { Setting } from "./entity/Setting"
 describe("relations > multiple-primary-keys > one-to-many", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User, Setting],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User, Setting],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     after(() => closeTestingConnections(dataSources))
 

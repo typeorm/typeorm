@@ -2036,13 +2036,12 @@ describe("github issues > #7155", () => {
 
 describe("github issues > #7155 > tree relations", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/RelationEntities{.js,.ts}"],
-                enabledDrivers: ["mysql", "postgres", "mssql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/RelationEntities{.js,.ts}"],
+            enabledDrivers: ["mysql", "postgres", "mssql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

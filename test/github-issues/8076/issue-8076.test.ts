@@ -13,14 +13,13 @@ import { Member } from "./entity/Member"
 describe("github issues > #8076 Add relation options to all tree queries (missing ones)", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Category, Site, Member],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Category, Site, Member],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     beforeEach(async () => {
         await reloadTestingDatabases(dataSources)

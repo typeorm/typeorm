@@ -8,16 +8,15 @@ import type { DataSource } from "../../../src/data-source/DataSource"
 
 describe("github issues > #4697 Revert migrations running in reverse order.", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                migrations: [__dirname + "/migration/*.js"],
-                enabledDrivers: ["mongodb"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            migrations: [__dirname + "/migration/*.js"],
+            enabledDrivers: ["mongodb"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

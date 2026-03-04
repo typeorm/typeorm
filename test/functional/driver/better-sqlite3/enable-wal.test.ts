@@ -9,16 +9,15 @@ import {
 
 describe("sqlite driver > enable wal", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [],
-                enabledDrivers: ["better-sqlite3"],
-                driverSpecific: {
-                    enableWAL: true,
-                },
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [],
+            enabledDrivers: ["better-sqlite3"],
+            driverSpecific: {
+                enableWAL: true,
+            },
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

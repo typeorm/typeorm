@@ -14,13 +14,12 @@ import { expect } from "chai"
 
 describe("mongodb > embedded columns", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post, Counters, Information],
-                enabledDrivers: ["mongodb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, Counters, Information],
+            enabledDrivers: ["mongodb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

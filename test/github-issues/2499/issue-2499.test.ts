@@ -10,25 +10,24 @@ import { expect } from "chai"
 
 describe("github issues > #2499 Postgres DELETE query result is useless", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-                // skip test for sqlite because sqlite doesn't return any data on delete
-                // sqljs -- the same
-                // mongodb requires another test and it is also doesn't return correct number
-                // of removed documents (possibly a bug with mongodb itself)
-                enabledDrivers: [
-                    "mysql",
-                    "mariadb",
-                    "mssql",
-                    "postgres",
-                    "aurora-mysql",
-                ],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+            // skip test for sqlite because sqlite doesn't return any data on delete
+            // sqljs -- the same
+            // mongodb requires another test and it is also doesn't return correct number
+            // of removed documents (possibly a bug with mongodb itself)
+            enabledDrivers: [
+                "mysql",
+                "mariadb",
+                "mssql",
+                "postgres",
+                "aurora-mysql",
+            ],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

@@ -11,13 +11,12 @@ import { MongoRepository } from "../../../../../src/repository/MongoRepository"
 
 describe("mongodb > MongoRepository", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post, PostWithDeleted],
-                enabledDrivers: ["mongodb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, PostWithDeleted],
+            enabledDrivers: ["mongodb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

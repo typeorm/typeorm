@@ -12,13 +12,12 @@ import { UserSchema } from "./entity/User"
 describe("database schema > custom constraint names > primary key", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres", "cockroachdb", "mssql", "oracle"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["postgres", "cockroachdb", "mssql", "oracle"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

@@ -11,13 +11,12 @@ import { expect } from "chai"
 
 describe("mongodb > object id columns", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Post, PostWithUnderscoreId],
-                enabledDrivers: ["mongodb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Post, PostWithUnderscoreId],
+            enabledDrivers: ["mongodb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

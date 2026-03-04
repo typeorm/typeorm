@@ -12,13 +12,12 @@ import { expect } from "chai"
 
 describe("mysql > tree tables > closure-table", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Foo1Entity, Foo2Entity, Foo3Entity],
-                enabledDrivers: ["mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Foo1Entity, Foo2Entity, Foo3Entity],
+            enabledDrivers: ["mysql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

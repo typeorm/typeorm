@@ -11,15 +11,14 @@ import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("github issues > #1780 Support for insertion ignore on duplicate error", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [User],
-                schemaCreate: true,
-                dropSchema: true,
-                enabledDrivers: ["mysql", "mariadb", "postgres", "cockroachdb"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [User],
+            schemaCreate: true,
+            dropSchema: true,
+            enabledDrivers: ["mysql", "mariadb", "postgres", "cockroachdb"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
     const user1 = new User()

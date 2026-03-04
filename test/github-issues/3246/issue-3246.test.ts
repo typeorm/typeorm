@@ -14,15 +14,14 @@ import { BrokerRepository } from "./repository/BrokerRepository"
 
 describe("github issues > #3246 Saving an entity with a 1:1 cascading insert does not return id if entity has nullable many:one relationship", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Order, OrderCustomer, Broker],
-                enabledDrivers: ["postgres"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Order, OrderCustomer, Broker],
+            enabledDrivers: ["postgres"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

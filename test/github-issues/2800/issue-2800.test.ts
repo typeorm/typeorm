@@ -10,14 +10,13 @@ import { Plane } from "./entity/Plane"
 describe("github issues > #2800 - Can't override embedded entities in STI implementation", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
 
     beforeEach(() => reloadTestingDatabases(dataSources))
 

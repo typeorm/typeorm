@@ -9,13 +9,12 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #190 too many SQL variables when using setMaxResults in SQLite", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["better-sqlite3"], // this issue only related to sqlite
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["better-sqlite3"], // this issue only related to sqlite
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

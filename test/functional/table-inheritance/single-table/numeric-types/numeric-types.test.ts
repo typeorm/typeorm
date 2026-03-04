@@ -12,12 +12,11 @@ import { Person } from "./entity/Person"
 
 describe("table-inheritance > single-table > numeric types", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Person, Student, Teacher],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Person, Student, Teacher],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
