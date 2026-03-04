@@ -12,6 +12,8 @@ TypeORM requires newer versions of the database client libraries.
 
 ## MySQL / MariaDB
 
+### `connectorPackage`
+
 The `connectorPackage` option was removed, together with the support for the old `mysql` client. The only database client supported is now `mysql2`, which TypeORM will try to load by default. If you were using `mysql` in your project, simply replace it with `mysql2`.
 
 ### `legacySpatialSupport` default changed to `false`
@@ -27,6 +29,37 @@ new DataSource({
     // ...
 })
 ```
+
+### `width` and `zerofill` column options removed
+
+MySQL 8.0.17 deprecated display width for integer types and the `ZEROFILL` attribute, and MySQL 8.4 removed them entirely. TypeORM no longer supports the `width` and `zerofill` column options. If you were using these options, remove them from your column definitions:
+
+```typescript
+// Before
+@Column({ type: "int", width: 9, zerofill: true })
+postCode: number
+
+// After
+@Column({ type: "int" })
+postCode: number
+```
+
+If you need zero-padded display formatting, handle it in your application layer using `String.prototype.padStart()` or the MySQL `LPAD()` function in a raw query. The `unsigned` option for integer types is **not** affected by this change and continues to work as before.
+
+## SAP HANA
+
+Several deprecated SAP HANA connection aliases were removed.
+
+- `hanaClientDriver` was removed. Use `driver`.
+- `pool.max` was removed. Use `pool.maxConnectedOrPooled`.
+- `pool.requestTimeout` was removed. Use `pool.maxWaitTimeoutIfPoolExhausted`.
+- `pool.idleTimeout` was removed. Use `pool.maxPooledIdleTime` (seconds).
+- `pool.min`, `pool.maxWaitingRequests`, and `pool.checkInterval` were removed with no replacement.
+
+Also note the default behavior changes in pool configuration:
+
+- `pool.maxPooledIdleTime` now defaults to `30` seconds and no longer falls back to `pool.idleTimeout`.
+- `pool.maxWaitTimeoutIfPoolExhausted` now defaults to `0` and no longer falls back to `pool.requestTimeout`.
 
 ## SQLite
 

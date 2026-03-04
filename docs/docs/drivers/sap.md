@@ -22,12 +22,15 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 - `encrypt` - Whether to encrypt the connection. For example, `true`.
 - `sslValidateCertificate` - Whether to validate the SSL certificate. For example, `true`.
 - `key`, `cert` and `ca` - Private key, public certificate and certificate authority for the encrypted connection.
+- `driver` - Optional explicit `@sap/hana-client` module instance. If omitted, TypeORM loads `@sap/hana-client` automatically.
 - `pool` — Connection pool configuration object:
     - `maxConnectedOrPooled` (number) — Max active or idle connections in the pool (default: 10).
     - `maxPooledIdleTime` (seconds) — Time before an idle connection is closed (default: 30).
     - `maxWaitTimeoutIfPoolExhausted` (milliseconds) - Time to wait for a connection to become available (default: 0, no wait). Requires `@sap/hana-client` version `2.27` or later.
     - `pingCheck` (boolean) — Whether to validate connections before use (default: false).
     - `poolCapacity` (number) — Maximum number of connections to be kept available (default: no limit).
+
+Removed legacy aliases: `hanaClientDriver`, `pool.max`, `pool.requestTimeout`, `pool.idleTimeout`, `pool.min`, `pool.maxWaitingRequests`, and `pool.checkInterval`.
 
 See the official documentation of SAP HANA Client for more details as well as the `extra` properties: [Node.js Connection Properties](https://help.sap.com/docs/SAP_HANA_CLIENT/f1b440ded6144a54ada97ff95dac7adf/4fe9978ebac44f35b9369ef5a4a26f4c.html).
 
