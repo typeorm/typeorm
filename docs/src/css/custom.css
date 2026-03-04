@@ -6,9 +6,11 @@
 
 /* You can override the default Infima variables here. */
 :root {
-    --ifm-font-family-base: 'Geist', system-ui, -apple-system, sans-serif;
-    --ifm-font-family-monospace: 'Geist Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    --ifm-heading-font-family: 'Sofia Sans', system-ui, -apple-system, sans-serif;
+    --ifm-font-family-base: "Geist", system-ui, -apple-system, sans-serif;
+    --ifm-font-family-monospace:
+        "Geist Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --ifm-heading-font-family:
+        "Sofia Sans", system-ui, -apple-system, sans-serif;
 
     --ifm-color-primary: #d94400;
     --ifm-color-primary-dark: #c33d00;
