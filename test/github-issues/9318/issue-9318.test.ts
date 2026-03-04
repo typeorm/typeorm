@@ -1,8 +1,8 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import { DataSource } from "../../../src"
-import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
+import type { DataSource } from "../../../src"
+import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import {
     closeTestingConnections,
     createTestingConnections,

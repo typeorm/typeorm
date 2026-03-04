@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Human } from "./entity/Human"
 import { Animal } from "./entity/Animal"
 import { Gender } from "./entity/GenderEnum"

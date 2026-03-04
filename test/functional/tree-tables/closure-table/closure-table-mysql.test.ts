@@ -2,7 +2,7 @@ import "reflect-metadata"
 import { Foo1Entity } from "./entity/Foo1"
 import { Foo2Entity } from "./entity/Foo2"
 import { Foo3Entity } from "./entity/Foo3"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,

@@ -1,4 +1,5 @@
-import { DataSource, Equal } from "../../../src"
+import type { DataSource } from "../../../src"
+import { Equal } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,

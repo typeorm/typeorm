@@ -1,7 +1,7 @@
 import { PlatformTools } from "../platform/PlatformTools"
 import { AbstractLogger } from "./AbstractLogger"
-import { LogLevel, LogMessage } from "./Logger"
-import { QueryRunner } from "../query-runner/QueryRunner"
+import type { LogLevel, LogMessage } from "./Logger"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 
 /**
  * Performs logging of the events in TypeORM.

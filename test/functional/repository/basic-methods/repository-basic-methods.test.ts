@@ -1,10 +1,11 @@
 import "reflect-metadata"
 import { scheduler } from "timers/promises"
-import { EntitySchema, Like, Repository, TypeORMError } from "../../../../src"
-import { DeepPartial } from "../../../../src/common/DeepPartial"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { Repository } from "../../../../src"
+import { EntitySchema, Like, TypeORMError } from "../../../../src"
+import type { DeepPartial } from "../../../../src/common/DeepPartial"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { QueryBuilder } from "../../../../src/query-builder/QueryBuilder"
-import { UpsertOptions } from "../../../../src/repository/UpsertOptions"
+import type { UpsertOptions } from "../../../../src/repository/UpsertOptions"
 import "../../../utils/test-setup"
 import {
     closeTestingConnections,
@@ -21,8 +22,8 @@ import { RelationAsPrimaryKey } from "./entity/RelationAsPrimaryKey"
 import { TwoUniqueColumnsEntity } from "./entity/TwoUniqueColumns"
 import questionSchema from "./model-schema/QuestionSchema"
 import userSchema from "./model-schema/UserSchema"
-import { Question } from "./model/Question"
-import { User } from "./model/User"
+import type { Question } from "./model/Question"
+import type { User } from "./model/User"
 
 describe("repository > basic methods", () => {
     const UserEntity = new EntitySchema<any>(userSchema as any)

@@ -1,6 +1,6 @@
 import { getMetadataArgsStorage } from "../globals"
-import { EntityRepositoryMetadataArgs } from "../metadata-args/EntityRepositoryMetadataArgs"
-import { EntitySchema } from "../entity-schema/EntitySchema"
+import type { EntityRepositoryMetadataArgs } from "../metadata-args/EntityRepositoryMetadataArgs"
+import type { EntitySchema } from "../entity-schema/EntitySchema"
 
 /**
  * Used to declare a class as a custom repository.

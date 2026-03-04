@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { runInNewContext } from "node:vm"
-import { DeepPartial } from "../../../src"
+import type { DeepPartial } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {

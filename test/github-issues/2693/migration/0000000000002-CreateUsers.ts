@@ -1,5 +1,5 @@
-import { MigrationInterface } from "../../../../src/migration/MigrationInterface"
-import { QueryRunner } from "../../../../src/query-runner/QueryRunner"
+import type { MigrationInterface } from "../../../../src/migration/MigrationInterface"
+import type { QueryRunner } from "../../../../src/query-runner/QueryRunner"
 import { Table } from "../../../../src/schema-builder/table/Table"
 
 export class CreateUsers0000000000002 implements MigrationInterface {

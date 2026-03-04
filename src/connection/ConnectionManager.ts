@@ -1,6 +1,6 @@
 import { DataSource } from "../data-source/DataSource"
 import { ConnectionNotFoundError } from "../error/ConnectionNotFoundError"
-import { DataSourceOptions } from "../data-source/DataSourceOptions"
+import type { DataSourceOptions } from "../data-source/DataSourceOptions"
 import { AlreadyHasActiveConnectionError } from "../error/AlreadyHasActiveConnectionError"
 
 /**

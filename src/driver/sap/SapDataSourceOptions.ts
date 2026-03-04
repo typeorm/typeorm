@@ -1,5 +1,5 @@
-import { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
-import { SapConnectionCredentialsOptions } from "./SapConnectionCredentialsOptions"
+import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { SapConnectionCredentialsOptions } from "./SapConnectionCredentialsOptions"
 
 /**
  * SAP Hana specific connection options.

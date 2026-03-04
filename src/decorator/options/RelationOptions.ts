@@ -1,6 +1,6 @@
-import { DeferrableType } from "../../metadata/types/DeferrableType"
-import { OnDeleteType } from "../../metadata/types/OnDeleteType"
-import { OnUpdateType } from "../../metadata/types/OnUpdateType"
+import type { DeferrableType } from "../../metadata/types/DeferrableType"
+import type { OnDeleteType } from "../../metadata/types/OnDeleteType"
+import type { OnUpdateType } from "../../metadata/types/OnUpdateType"
 
 /**
  * Describes all relation's options.

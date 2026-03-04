@@ -3,9 +3,9 @@ import {
     createTestingConnections,
     closeTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { assert, expect } from "chai"
-import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryRunner"
+import type { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryRunner"
 import { TableIndex } from "../../../src"
 import { PostCategory } from "./entity/PostCategory"
 import { IndexMetadata } from "../../../src/metadata/IndexMetadata"

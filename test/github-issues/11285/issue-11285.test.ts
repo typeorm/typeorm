@@ -7,14 +7,8 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import {
-    And,
-    DataSource,
-    In,
-    MssqlParameter,
-    Not,
-    Raw,
-} from "../../../src/index.js"
+import type { DataSource } from "../../../src/index.js"
+import { And, In, MssqlParameter, Not, Raw } from "../../../src/index.js"
 import { SqlServerQueryRunner } from "../../../src/driver/sqlserver/SqlServerQueryRunner"
 import { User } from "./entity/user"
 import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryRunner"

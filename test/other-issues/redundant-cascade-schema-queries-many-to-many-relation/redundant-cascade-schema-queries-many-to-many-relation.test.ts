@@ -4,7 +4,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { TeamEntity } from "./entity/TeamEntity"
 import { UserEntity } from "./entity/UserEntity"
 

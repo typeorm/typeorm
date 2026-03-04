@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 import { DataSource } from "../../../../src/data-source/DataSource"
-import { Repository } from "../../../../src/repository/Repository"
+import type { Repository } from "../../../../src/repository/Repository"
 import { setupSingleTestingConnection } from "../../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { CategoryMetadata } from "./entity/CategoryMetadata"

@@ -4,7 +4,7 @@ import "reflect-metadata"
 import sinon from "sinon"
 import { scheduler } from "timers/promises"
 import { FileLogger } from "../../../../src"
-import { DataSource } from "../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,

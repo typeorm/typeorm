@@ -1,7 +1,7 @@
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { EntityManager } from "../../entity-manager/EntityManager"
-import { RelationMetadata } from "../../metadata/RelationMetadata"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { EntityManager } from "../../entity-manager/EntityManager"
+import type { RelationMetadata } from "../../metadata/RelationMetadata"
 
 /**
  */
