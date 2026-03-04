@@ -89,8 +89,6 @@ describe("view entity > cockroachdb", () => {
                 const postCategories =
                     await connection.manager.find(PostCategory)
 
-                console.log(postCategories)
-
                 postCategories.length.should.be.equal(2)
 
                 postCategories[0].id.should.be.equal("1")

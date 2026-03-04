@@ -1,4 +1,4 @@
-import { DataSource } from "../../../../../src"
+import { DataSource, Index } from "../../../../../src"
 import { ViewColumn } from "../../../../../src/decorator/columns/ViewColumn"
 import { ViewEntity } from "../../../../../src/decorator/entity-view/ViewEntity"
 import { Category } from "./Category"
@@ -16,6 +16,7 @@ import { Post } from "./Post"
             .groupBy("category.name"),
 })
 export class PostByCategory {
+    @Index("category_name_idx")
     @ViewColumn()
     categoryName: string
 
