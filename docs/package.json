@@ -50,7 +50,6 @@
   },
   "pnpm": {
     "ignoredBuiltDependencies": [
-      "typesense-instantsearch-adapter",
       "core-js-pure",
       "core-js"
     ]
