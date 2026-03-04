@@ -16,7 +16,7 @@ export class NativescriptDriver extends AbstractSqliteDriver {
     // -------------------------------------------------------------------------
 
     /**
-     * Connection options.
+     * DataSource options.
      */
     options: NativescriptDataSourceOptions
 
@@ -31,11 +31,9 @@ export class NativescriptDriver extends AbstractSqliteDriver {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(connection: DataSource) {
-        super(connection)
+    constructor(dataSource: DataSource) {
+        super(dataSource)
 
-        this.connection = connection
-        this.options = connection.options as NativescriptDataSourceOptions
         this.database = this.options.database
         this.driver = this.options.driver
 

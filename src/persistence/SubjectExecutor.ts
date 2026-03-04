@@ -364,7 +364,7 @@ export class SubjectExecutor {
             const bulkInsertMaps: ObjectLiteral[] = []
             const bulkInsertSubjects: Subject[] = []
             const singleInsertSubjects: Subject[] = []
-            if (this.queryRunner.connection.driver.options.type === "mongodb") {
+            if (this.queryRunner.dataSource.driver.options.type === "mongodb") {
                 subjects.forEach((subject) => {
                     if (subject.metadata.createDateColumn && subject.entity) {
                         subject.entity[
@@ -384,7 +384,7 @@ export class SubjectExecutor {
                     bulkInsertMaps.push(subject.entity!)
                 })
             } else if (
-                this.queryRunner.connection.driver.options.type === "oracle"
+                this.queryRunner.dataSource.driver.options.type === "oracle"
             ) {
                 subjects.forEach((subject) => {
                     singleInsertSubjects.push(subject)
@@ -398,9 +398,9 @@ export class SubjectExecutor {
                     if (
                         subject.changeMaps.length === 0 ||
                         subject.metadata.treeType ||
-                        this.queryRunner.connection.driver.options.type ===
+                        this.queryRunner.dataSource.driver.options.type ===
                             "oracle" ||
-                        this.queryRunner.connection.driver.options.type ===
+                        this.queryRunner.dataSource.driver.options.type ===
                             "sap"
                     ) {
                         singleInsertSubjects.push(subject)
@@ -506,7 +506,7 @@ export class SubjectExecutor {
                         )
                         if (value !== undefined && value !== null) {
                             const preparedValue =
-                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                this.queryRunner.dataSource.driver.prepareHydratedValue(
                                     value,
                                     column,
                                 )
@@ -622,7 +622,7 @@ export class SubjectExecutor {
                         const value = column.getEntityValue(updateGeneratedMap!)
                         if (value !== undefined && value !== null) {
                             const preparedValue =
-                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                this.queryRunner.dataSource.driver.prepareHydratedValue(
                                     value,
                                     column,
                                 )
@@ -834,7 +834,7 @@ export class SubjectExecutor {
                         )
                         if (value !== undefined && value !== null) {
                             const preparedValue =
-                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                this.queryRunner.dataSource.driver.prepareHydratedValue(
                                     value,
                                     column,
                                 )
@@ -957,7 +957,7 @@ export class SubjectExecutor {
                         )
                         if (value !== undefined && value !== null) {
                             const preparedValue =
-                                this.queryRunner.connection.driver.prepareHydratedValue(
+                                this.queryRunner.dataSource.driver.prepareHydratedValue(
                                     value,
                                     column,
                                 )
@@ -1157,7 +1157,7 @@ export class SubjectExecutor {
         })
         const groupingAllowed =
             type === "delete" ||
-            this.queryRunner.connection.driver.isReturningSqlSupported(
+            this.queryRunner.dataSource.driver.isReturningSqlSupported(
                 "insert",
             ) ||
             hasReturningDependColumns === false
