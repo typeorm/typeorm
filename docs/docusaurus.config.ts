@@ -108,6 +108,11 @@ const config: Config = {
                     label: "Docs",
                 },
                 {
+                    to: "/maintainers",
+                    label: "Maintainers",
+                    position: "left",
+                },
+                {
                     type: "dropdown",
                     label: "Version",
                     position: "right",
