@@ -18,8 +18,6 @@ export class Foo2Entity {
     @PrimaryColumn({
         type: "decimal",
         name: "id",
-        zerofill: true,
-        width: 13,
         precision: 9,
         scale: 3,
     })
@@ -28,8 +26,6 @@ export class Foo2Entity {
     @Column({
         type: "decimal",
         name: "parent_id",
-        zerofill: true,
-        width: 13,
         precision: 9,
         scale: 3,
     })

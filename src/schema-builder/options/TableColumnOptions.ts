@@ -68,12 +68,6 @@ export interface TableColumnOptions {
     length?: string
 
     /**
-     * Column type's display width. Used only on some column types in MySQL.
-     * For example, INT(4) specifies an INT with a display width of four digits.
-     */
-    width?: number
-
-    /**
      * Defines column character set.
      */
     charset?: string
@@ -94,12 +88,6 @@ export interface TableColumnOptions {
      * of digits to the right of the decimal point and must not be greater than precision.
      */
     scale?: number
-
-    /**
-     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
-     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
-     */
-    zerofill?: boolean
 
     /**
      * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
