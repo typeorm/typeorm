@@ -1947,7 +1947,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         // update columns in table.
         clonedTable.columns
             .filter((column) => columnNames.indexOf(column.name) !== -1)
-            .forEach((column) => (column.isPrimary = true))
+            .forEach((column) => {
+                column.isPrimary = true
+            })
 
         const columnNamesString = columnNames
             .map((columnName) => `\`${columnName}\``)
