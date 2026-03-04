@@ -264,6 +264,8 @@ export class OrmUtils {
 
     /**
      * Returns items that are missing/extraneous in the second array
+     * @param arr1
+     * @param arr2
      */
     public static getArraysDiff<T>(
         arr1: T[],
@@ -409,6 +411,24 @@ export class OrmUtils {
         }
 
         return OrmUtils.isSinglePrimitiveCriteria(criteria)
+    }
+
+    /**
+     * Strips null and undefined values from an object criteria.
+     * This prevents internal operations (e.g. softDelete, delete) from
+     * accidentally passing null entity properties to where conditions.
+     * @param criteria
+     */
+    public static stripNullAndUndefined(
+        criteria: ObjectLiteral,
+    ): ObjectLiteral {
+        const result: ObjectLiteral = {}
+        for (const key of Object.keys(criteria)) {
+            if (criteria[key] !== null && criteria[key] !== undefined) {
+                result[key] = criteria[key]
+            }
+        }
+        return result
     }
 
     // -------------------------------------------------------------------------

@@ -809,6 +809,7 @@ export class EntityManager {
      * @param target
      * @param criteria
      * @param partialEntity
+     * @param options
      */
     update<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -849,7 +850,7 @@ export class EntityManager {
             const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
-                .where(criteria)
+                .where(OrmUtils.stripNullAndUndefined(criteria))
 
             if (options?.returning !== undefined) {
                 qb.returning(options.returning)
@@ -867,6 +868,7 @@ export class EntityManager {
      * WARNING! This method updates ALL rows in the target table.
      * @param target
      * @param partialEntity
+     * @param options
      */
     updateAll<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
@@ -923,7 +925,7 @@ export class EntityManager {
             return this.createQueryBuilder()
                 .delete()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(OrmUtils.stripNullAndUndefined(criteria))
                 .execute()
         }
     }
@@ -983,7 +985,7 @@ export class EntityManager {
             return this.createQueryBuilder()
                 .softDelete()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(OrmUtils.stripNullAndUndefined(criteria))
                 .execute()
         }
     }
@@ -1029,7 +1031,7 @@ export class EntityManager {
             return this.createQueryBuilder()
                 .restore()
                 .from(targetOrEntity)
-                .where(criteria)
+                .where(OrmUtils.stripNullAndUndefined(criteria))
                 .execute()
         }
     }

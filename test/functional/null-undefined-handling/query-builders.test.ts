@@ -269,79 +269,54 @@ describe("repository methods > invalidWhereValuesBehavior", () => {
         return { category, post }
     }
 
-    it("should throw error for null values in Repository.update()", async () => {
+    it("should strip null values from criteria in Repository.update()", async () => {
         for (const connection of connections) {
-            await prepareData(connection)
+            const { post } = await prepareData(connection)
 
-            try {
-                await connection
-                    .getRepository(Post)
-                    .update({ text: null } as any, { title: "Updated" })
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
-        }
-    })
-
-    it("should throw error for null values in EntityManager.update()", async () => {
-        for (const connection of connections) {
-            await prepareData(connection)
-
-            try {
-                await connection.manager.update(Post, { text: null } as any, {
+            // null values are stripped from criteria, so {id, text: null}
+            // becomes just {id}, which updates the matching post
+            const result = await connection
+                .getRepository(Post)
+                .update({ id: post.id, text: null } as any, {
                     title: "Updated",
                 })
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+            expect(result.affected).to.equal(1)
         }
     })
 
-    it("should throw error for null values in EntityManager.delete()", async () => {
+    it("should strip null values from criteria in EntityManager.update()", async () => {
         for (const connection of connections) {
-            await prepareData(connection)
+            const { post } = await prepareData(connection)
 
-            try {
-                await connection.manager.delete(Post, { text: null } as any)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+            const result = await connection.manager.update(
+                Post,
+                { id: post.id, text: null } as any,
+                { title: "Updated" },
+            )
+            expect(result.affected).to.equal(1)
         }
     })
 
-    it("should throw error for null values in Repository.delete()", async () => {
+    it("should strip null values from criteria in EntityManager.delete()", async () => {
         for (const connection of connections) {
-            await prepareData(connection)
+            const { post } = await prepareData(connection)
 
-            try {
-                await connection
-                    .getRepository(Post)
-                    .delete({ text: null } as any)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+            const result = await connection.manager.delete(Post, {
+                id: post.id,
+                text: null,
+            } as any)
+            expect(result.affected).to.equal(1)
         }
     })
 
-    it("should throw error for null values in EntityManager.softDelete()", async () => {
+    it("should strip null values from criteria in Repository.delete()", async () => {
         for (const connection of connections) {
-            await prepareData(connection)
+            const { post } = await prepareData(connection)
 
-            try {
-                await connection.manager.softDelete(Post, { text: null } as any)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+            const result = await connection
+                .getRepository(Post)
+                .delete({ id: post.id, text: null } as any)
+            expect(result.affected).to.equal(1)
         }
     })
 })
