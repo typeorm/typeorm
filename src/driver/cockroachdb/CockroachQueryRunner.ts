@@ -3175,7 +3175,11 @@ export class CockroachQueryRunner
                     columnNames: indices.map((i) => i["column_name"]),
                     isUnique: constraint["is_unique"] === "TRUE",
                     where: constraint["condition"],
-                    isSpatial: false,
+                    isSpatial: indices.every(
+                        (i) =>
+                            this.driver.spatialTypes.indexOf(i["type_name"]) >=
+                            0,
+                    ),
                     isFulltext: false,
                     type: "btree",
                 })
