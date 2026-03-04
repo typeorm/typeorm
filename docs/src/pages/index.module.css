@@ -324,6 +324,37 @@
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
+.maintainersSection {
+  padding: 4rem 0;
+  background-color: var(--ifm-color-emphasis-0);
+  text-align: center;
+}
+
+[data-theme='dark'] .maintainersSection {
+  background-color: var(--ifm-background-color);
+}
+
+.maintainersAvatars {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.maintainerAvatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+  border: 2px solid var(--ifm-color-emphasis-200);
+}
+
+.maintainerAvatar:hover {
+  transform: scale(1.15);
+}
+
 .ctaSection {
   padding: 5rem 0;
   background-color: var(--ifm-color-white);

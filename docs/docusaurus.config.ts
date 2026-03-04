@@ -144,6 +144,10 @@ const config: Config = {
                             label: "Stack Overflow",
                             href: "https://stackoverflow.com/questions/tagged/typeorm",
                         },
+                        {
+                            label: "Maintainers",
+                            to: "/maintainers",
+                        },
                     ],
                 },
                 {
