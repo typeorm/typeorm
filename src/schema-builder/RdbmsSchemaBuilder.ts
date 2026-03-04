@@ -1012,8 +1012,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     protected async createNewViewIndices(): Promise<void> {
         // Only PostgreSQL and CockroachDB support indices for materialized views.
         if (
-            this.dataSource.options.type !== "postgres" ||
-            !DriverUtils.isPostgresFamily(this.dataSource.driver)
+            !["postgres", "cockroachdb"].includes(
+                this.dataSource.driver.options.type,
+            )
         ) {
             return
         }
