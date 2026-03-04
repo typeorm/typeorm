@@ -14,6 +14,20 @@ TypeORM requires newer versions of the database client libraries.
 
 The `connectorPackage` option was removed, together with the support for the old `mysql` client. The only database client supported is now `mysql2`, which TypeORM will try to load by default. If you were using `mysql` in your project, simply replace it with `mysql2`.
 
+### `legacySpatialSupport` default changed to `false`
+
+The `legacySpatialSupport` option now defaults to `false`, meaning TypeORM uses the standard-compliant `ST_GeomFromText` and `ST_AsText` spatial functions introduced in MySQL 5.7 and required by MySQL 8.0+. The legacy `GeomFromText` and `AsText` functions were removed in MySQL 8.0.
+
+If you are running MySQL 5.6 or earlier and rely on spatial types, set `legacySpatialSupport: true` explicitly:
+
+```typescript
+new DataSource({
+    type: "mysql",
+    legacySpatialSupport: true,
+    // ...
+})
+```
+
 ## SQLite
 
 Drop support to `sqlite3` in favour of `better-sqlite3` as the primary driver for `sqlite` databases:
