@@ -621,9 +621,9 @@ export declare interface AutoEncryptionOptions {
         local?: {
             /**
              * The master key used to encrypt/decrypt data keys.
-             * A 96-byte long Uint8Array or base64 encoded string.
+             * A 96-byte long Buffer or base64 encoded string.
              */
-            key: Uint8Array | string
+            key: Buffer | string
         }
         /** Configuration options for using 'azure' as your KMS provider */
         azure?:
@@ -654,8 +654,8 @@ export declare interface AutoEncryptionOptions {
             | {
                   /** The service account email to authenticate */
                   email: string
-                  /** A PKCS#8 encrypted key. This can either be a base64 string or a Uint8Array */
-                  privateKey: Uint8Array | string
+                  /** A PKCS#8 encrypted key. This can either be a base64 string or a binary representation */
+                  privateKey: string | Buffer
                   /**
                    * If present, a host with optional port. E.g. "example.com" or "example.com:443".
                    * Defaults to "oauth2.googleapis.com"
@@ -3806,7 +3806,7 @@ export declare class GridFSBucketWriteStream {
     done: boolean
     id: ObjectId
     chunkSizeBytes: number
-    bufToStore: Uint8Array
+    bufToStore: Buffer
     length: number
     n: number
     pos: number
@@ -3830,19 +3830,16 @@ export declare class GridFSBucketWriteStream {
     /**
      * Write a buffer to the stream.
      *
-     * @param chunk - Uint8Array to write
+     * @param chunk - Buffer to write
      * @param encodingOrCallback - Optional encoding for the buffer
      * @param callback - Function to call when the chunk was added to the buffer, or if the entire chunk was persisted to MongoDB if this chunk caused a flush.
      * @returns False if this write required flushing a chunk to MongoDB. True otherwise.
      */
-    write(chunk: Uint8Array | string): boolean
-    write(chunk: Uint8Array | string, callback: Callback<void>): boolean
+    write(chunk: Buffer | string): boolean
+    write(chunk: Buffer | string, callback: Callback<void>): boolean
+    write(chunk: Buffer | string, encoding: BufferEncoding | undefined): boolean
     write(
-        chunk: Uint8Array | string,
-        encoding: BufferEncoding | undefined,
-    ): boolean
-    write(
-        chunk: Uint8Array | string,
+        chunk: Buffer | string,
         encoding: BufferEncoding | undefined,
         callback: Callback<void>,
     ): boolean
@@ -3856,17 +3853,17 @@ export declare class GridFSBucketWriteStream {
      * persist the remaining data to MongoDB, write the files document, and
      * then emit a 'finish' event.
      *
-     * @param chunk - Uint8Array to write
+     * @param chunk - Buffer to write
      * @param encoding - Optional encoding for the buffer
      * @param callback - Function to call when all files and chunks have been persisted to MongoDB
      */
     end(): this
-    end(chunk: Uint8Array): this
+    end(chunk: Buffer): this
     end(callback: Callback<GridFSFile | void>): this
-    end(chunk: Uint8Array, callback: Callback<GridFSFile | void>): this
-    end(chunk: Uint8Array, encoding: BufferEncoding): this
+    end(chunk: Buffer, callback: Callback<GridFSFile | void>): this
+    end(chunk: Buffer, encoding: BufferEncoding): this
     end(
-        chunk: Uint8Array,
+        chunk: Buffer,
         encoding: BufferEncoding | undefined,
         callback: Callback<GridFSFile | void>,
     ): this
@@ -3891,7 +3888,7 @@ export declare interface GridFSChunk {
     _id: ObjectId
     files_id: ObjectId
     n: number
-    data: Uint8Array
+    data: Buffer | Uint8Array
 }
 
 /** @public */
@@ -5327,6 +5324,7 @@ export declare type NestedPaths<
             | boolean
             | Date
             | RegExp
+            | Buffer
             | Uint8Array
             | ((...args: any[]) => any)
             | {

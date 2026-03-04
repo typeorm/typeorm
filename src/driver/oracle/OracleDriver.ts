@@ -646,8 +646,8 @@ export class OracleDriver implements Driver {
         } else if (column.type === Date) {
             return "timestamp"
         } else if (
-            (column.type as any) === Uint8Array ||
-            (typeof Buffer !== "undefined" && (column.type as any) === Buffer)
+            typeof column.type === "function" &&
+            column.type.prototype instanceof Uint8Array
         ) {
             return "blob"
         } else if (column.type === "uuid") {
