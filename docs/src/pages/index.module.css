@@ -87,10 +87,10 @@
 }
 
 .featureIcon {
-  font-size: 2.5rem;
   margin-bottom: 1rem;
   position: relative;
   z-index: 1;
+  color: var(--ifm-color-primary);
 }
 
 .featureContent h3 {
@@ -106,12 +106,11 @@
 
 .codeExampleSection {
   padding: 5rem 0;
-  background: linear-gradient(165deg, var(--ifm-color-secondary-lightest) 0%, var(--ifm-color-secondary) 100%);
-  color: #fff;
+  background-color: var(--ifm-color-emphasis-100);
 }
 
 [data-theme='dark'] .codeExampleSection {
-  background: linear-gradient(165deg, var(--ifm-color-secondary-darkest) 0%, var(--ifm-color-secondary-dark) 100%);
+  background-color: var(--ifm-background-color);
 }
 
 .codeExampleContent {
@@ -135,19 +134,18 @@
   font-size: 1.1rem;
   margin-bottom: 2rem;
   text-align: center;
-  opacity: 0.9;
 }
 
 .codeTabs {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--ifm-color-emphasis-200);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 .codeTabHeader {
   display: flex;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--ifm-color-emphasis-300);
 }
 
 .codeTabHeader div {
@@ -286,20 +284,19 @@
 
 .platformsSection {
   padding: 4rem 0;
-  background: linear-gradient(165deg, var(--ifm-color-primary-lightest) 0%, var(--ifm-color-primary) 100%);
-  color: white;
+  background-color: var(--ifm-color-emphasis-100);
   text-align: center;
 }
 
 [data-theme='dark'] .platformsSection {
-  background: linear-gradient(165deg, var(--ifm-color-primary-darker) 0%, var(--ifm-color-primary) 100%);
+  background-color: var(--ifm-background-color);
 }
 
 .platformsDescription {
   max-width: 800px;
   margin: 0 auto 2rem;
   font-size: 1.1rem;
-  opacity: 0.9;
+  color: var(--ifm-color-emphasis-700);
 }
 
 .platformsIcons {
@@ -311,17 +308,22 @@
 }
 
 .platformsIcons span {
-  background: rgba(255, 255, 255, 0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--ifm-color-emphasis-0);
+  border: 1px solid var(--ifm-color-emphasis-300);
   padding: 0.75rem 1.25rem;
   border-radius: 50px;
   font-weight: 600;
+  color: var(--ifm-color-primary);
   transition: all 0.3s ease;
 }
 
 .platformsIcons span:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--ifm-color-emphasis-200);
   transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
 }
 
 .maintainersSection {

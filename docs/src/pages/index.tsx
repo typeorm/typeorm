@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import type { ReactNode, ElementType } from "react"
 import React from "react"
 import clsx from "clsx"
 import Link from "@docusaurus/Link"
@@ -6,6 +6,18 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext"
 import Layout from "@theme/Layout"
 import Heading from "@theme/Heading"
 import CodeBlock from "@theme/CodeBlock"
+import {
+    Settings,
+    FileCode,
+    Database,
+    Search,
+    Rocket,
+    Globe,
+    Monitor,
+    Smartphone,
+    Atom,
+    AppWindow,
+} from "lucide-react"
 
 import styles from "./index.module.css"
 
@@ -15,37 +27,37 @@ const features = [
         title: "Flexible Patterns",
         description:
             "Supports both DataMapper and ActiveRecord patterns, giving you the flexibility to choose what works best for your project.",
-        icon: "⚙️",
+        icon: Settings,
     },
     {
         title: "TypeScript First",
         description:
             "Built from the ground up with TypeScript support, providing complete type safety for your database models.",
-        icon: "📝",
+        icon: FileCode,
     },
     {
         title: "Multi-Database Support",
         description:
             "Works with MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB, and more.",
-        icon: "🗄️",
+        icon: Database,
     },
     {
         title: "Powerful QueryBuilder",
         description:
             "Elegant syntax for building complex queries with joins, pagination, and caching.",
-        icon: "🔍",
+        icon: Search,
     },
     {
         title: "Migrations & Schema",
         description:
             "First-class support for database migrations with automatic generation.",
-        icon: "🚀",
+        icon: Rocket,
     },
     {
         title: "Cross-Platform",
         description:
             "Works in Node.js, browsers, mobile, and desktop applications.",
-        icon: "🌐",
+        icon: Globe,
     },
 ]
 
@@ -150,10 +162,20 @@ function HomepageHeader() {
     )
 }
 
-function Feature({ title, description, icon }) {
+function Feature({
+    title,
+    description,
+    icon: Icon,
+}: {
+    title: string
+    description: string
+    icon: ElementType
+}) {
     return (
         <div className={clsx("col col--4", styles.featureItem)}>
-            <div className={styles.featureIcon}>{icon}</div>
+            <div className={styles.featureIcon}>
+                <Icon size={32} strokeWidth={1.5} />
+            </div>
             <div className={styles.featureContent}>
                 <Heading as="h3">{title}</Heading>
                 <p>{description}</p>
@@ -302,6 +324,14 @@ function SupportedDatabases() {
     )
 }
 
+const platforms = [
+    { name: "NodeJS", icon: Monitor },
+    { name: "Browser", icon: Globe },
+    { name: "Mobile", icon: Smartphone },
+    { name: "React Native", icon: Atom },
+    { name: "Electron", icon: AppWindow },
+]
+
 function PlatformsSection() {
     return (
         <section className={styles.platformsSection}>
@@ -314,11 +344,11 @@ function PlatformsSection() {
                     Native, NativeScript, Expo, and Electron platforms.
                 </p>
                 <div className={styles.platformsIcons}>
-                    <span>🖥️ NodeJS</span>
-                    <span>🌐 Browser</span>
-                    <span>📱 Mobile</span>
-                    <span>⚛️ React Native</span>
-                    <span>🖼️ Electron</span>
+                    {platforms.map((p) => (
+                        <span key={p.name}>
+                            <p.icon size={18} strokeWidth={1.5} /> {p.name}
+                        </span>
+                    ))}
                 </div>
             </div>
         </section>
