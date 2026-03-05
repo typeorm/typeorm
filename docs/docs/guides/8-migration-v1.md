@@ -65,3 +65,36 @@ Glob patterns are now handled by `tinyglobby` instead of `glob`. While `tinyglob
 `DataSource` replaced `Connection` in v0.3 to provide a better meaning to the abstract concept represented by this class. For backwards compatibility, `Connection` was kept as an alias to `DataSource`, now this alias was removed. Similarly, `ConnectionOptions` is now `DataSourceOptions`.
 
 In addition, the old method names of the `DataSource` class have been removed, so `Connection.connect()` is now only `DataSource.initialize()`, `Connection.close()` is `DataSource.destroy()` etc.
+
+### Global convenience functions
+
+The following deprecated global functions have been removed:
+
+- `createConnection` / `createConnections`
+- `getConnection`
+- `getConnectionManager`
+- `getConnectionOptions`
+- `getManager`
+- `getMongoManager`
+- `getSqljsManager`
+- `getRepository`
+- `getTreeRepository`
+- `getCustomRepository`
+- `getMongoRepository`
+- `createQueryBuilder`
+
+Use the equivalent methods on your `DataSource` instance instead. For example:
+
+```typescript
+// Before
+const repo = getRepository(User)
+const qb = createQueryBuilder("user")
+
+// After
+const repo = dataSource.getRepository(User)
+const qb = dataSource.createQueryBuilder("user")
+```
+
+### `ConnectionManager`
+
+The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
