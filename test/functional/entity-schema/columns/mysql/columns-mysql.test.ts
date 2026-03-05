@@ -6,17 +6,15 @@ import {
 } from "../../../../utils/test-utils"
 import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { PersonSchema } from "./entity/Person"
-import { DriverUtils } from "../../../../../src/driver/DriverUtils"
 
 describe("entity-schema > columns > mysql", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [PersonSchema],
-                enabledDrivers: ["mysql"],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [PersonSchema],
+            enabledDrivers: ["mysql"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
@@ -28,20 +26,6 @@ describe("entity-schema > columns > mysql", () => {
                 await queryRunner.release()
 
                 table!.findColumnByName("Id")!.unsigned.should.equal(true)
-                table!.findColumnByName("PostCode")!.zerofill.should.equal(true)
-                table!.findColumnByName("PostCode")!.unsigned.should.equal(true)
-
-                if (
-                    connection.driver.options.type !== "mysql" ||
-                    !DriverUtils.isReleaseVersionOrGreater(
-                        connection.driver,
-                        "8.0",
-                    )
-                ) {
-                    table!
-                        .findColumnByName("PostCode")!
-                        .width!.should.be.equal(9)
-                }
 
                 table!
                     .findColumnByName("VirtualFullName")!

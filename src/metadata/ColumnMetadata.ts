@@ -63,11 +63,6 @@ export class ColumnMetadata {
     length: string = ""
 
     /**
-     * Type's display width in the database.
-     */
-    width?: number
-
-    /**
      * Defines column character set.
      */
     charset?: string
@@ -157,12 +152,6 @@ export class ColumnMetadata {
      * which represents the number of digits to the right of the decimal point and must not be greater than precision.
      */
     scale?: number
-
-    /**
-     * Puts ZEROFILL attribute on to numeric column. Works only for MySQL.
-     * If you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
-     */
-    zerofill: boolean = false
 
     /**
      * Puts UNSIGNED attribute on to numeric column. Works only for MySQL.
@@ -378,7 +367,6 @@ export class ColumnMetadata {
             this.length = options.args.options.length
                 ? options.args.options.length.toString()
                 : ""
-        if (options.args.options.width) this.width = options.args.options.width
         if (options.args.options.charset)
             this.charset = options.args.options.charset
         if (options.args.options.collation)
@@ -413,10 +401,6 @@ export class ColumnMetadata {
             options.args.options.scale !== undefined
         )
             this.scale = options.args.options.scale
-        if (options.args.options.zerofill) {
-            this.zerofill = options.args.options.zerofill
-            this.unsigned = true // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
-        }
         if (options.args.options.unsigned)
             this.unsigned = options.args.options.unsigned
         if (options.args.options.precision !== null)

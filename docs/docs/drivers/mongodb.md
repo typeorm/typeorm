@@ -202,8 +202,7 @@ user.photos = [
     new Photo("me-and-chakram.jpg", "Me and Chakram", 200),
 ]
 
-const manager = dataSource.mongoManager
-await manager.save(user)
+await myDataSource.manager.save(user)
 ```
 
 The following document will be saved in the database:

@@ -10,14 +10,13 @@ import { Organization, Admin, User, OrganizationMembership } from "./entity"
 
 describe("github issues > #7041 When requesting nested relations on foreign key primary entities, relation becomes empty entity rather than null", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Organization, Admin, User, OrganizationMembership],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Organization, Admin, User, OrganizationMembership],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

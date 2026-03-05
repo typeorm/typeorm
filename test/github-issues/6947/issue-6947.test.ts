@@ -9,12 +9,11 @@ import {
 
 describe("github issues > #6947 Custom primary column for TreeRepository based entities unable to get tree descendants", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Category],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Category],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

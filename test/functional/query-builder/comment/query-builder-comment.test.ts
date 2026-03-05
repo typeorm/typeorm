@@ -10,12 +10,11 @@ import { expect } from "chai"
 
 describe("query builder > comment", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Test],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Test],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

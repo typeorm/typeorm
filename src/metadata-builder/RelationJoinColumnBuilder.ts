@@ -230,12 +230,10 @@ export class RelationJoinColumnBuilder {
                                     referencedColumn.type === "uuid")
                                     ? "36"
                                     : referencedColumn.length, // fix https://github.com/typeorm/typeorm/issues/3604
-                            width: referencedColumn.width,
                             charset: referencedColumn.charset,
                             collation: referencedColumn.collation,
                             precision: referencedColumn.precision,
                             scale: referencedColumn.scale,
-                            zerofill: referencedColumn.zerofill,
                             unsigned: referencedColumn.unsigned,
                             comment: referencedColumn.comment,
                             enum: referencedColumn.enum,

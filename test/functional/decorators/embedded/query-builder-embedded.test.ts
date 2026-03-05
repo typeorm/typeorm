@@ -13,7 +13,9 @@ describe("decorators > embedded", () => {
     beforeEach(() =>
         createTestingConnections({
             entities: [Post, Counters],
-        }).then((all) => (dataSources = all)),
+        }).then((all) => {
+            dataSources = all
+        }),
     )
     beforeEach(() => reloadTestingDatabases(dataSources))
     afterEach(() => closeTestingConnections(dataSources))

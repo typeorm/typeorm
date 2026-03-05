@@ -549,8 +549,6 @@ export class SpannerDriver implements Driver {
         // used 'getColumnLength()' method, because Spanner requires column length for `string` and `bytes` data types
         if (this.getColumnLength(column)) {
             type += `(${this.getColumnLength(column)})`
-        } else if (column.width) {
-            type += `(${column.width})`
         } else if (
             column.precision !== null &&
             column.precision !== undefined &&

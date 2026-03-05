@@ -8,15 +8,14 @@ import { TestEntity } from "./entity/Test"
 
 describe("github issues > #7541 Column of type `enum` throws missing properties error", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                enabledDrivers: ["postgres"],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [TestEntity],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [TestEntity],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should recognize model changes", () =>

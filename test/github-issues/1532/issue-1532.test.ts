@@ -8,16 +8,15 @@ import { User } from "./entity/User"
 
 describe("github issues > #1532 Array type default value doesnt work. PostgreSQL", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                migrations: [],
-                enabledDrivers: ["postgres"],
-                schemaCreate: false,
-                dropSchema: true,
-                entities: [User],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            migrations: [],
+            enabledDrivers: ["postgres"],
+            schemaCreate: false,
+            dropSchema: true,
+            entities: [User],
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("can recognize model changes", () =>

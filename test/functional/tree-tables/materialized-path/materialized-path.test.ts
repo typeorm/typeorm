@@ -10,12 +10,11 @@ import { Product } from "./entity/Product"
 
 describe("tree tables > materialized-path", () => {
     let dataSources: DataSource[]
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [Product, Category],
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Product, Category],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 

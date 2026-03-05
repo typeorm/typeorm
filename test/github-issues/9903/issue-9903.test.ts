@@ -26,15 +26,14 @@ describe("github issues > #9903 json data type", () => {
             jsonData: `'''faux---'''`,
         }
 
-        before(
-            async () =>
-                (dataSources = await createTestingConnections({
-                    entities: [__dirname + "/entity/*{.js,.ts}"],
-                    schemaCreate: true,
-                    dropSchema: true,
-                    enabledDrivers: ["mariadb"],
-                })),
-        )
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [__dirname + "/entity/*{.js,.ts}"],
+                schemaCreate: true,
+                dropSchema: true,
+                enabledDrivers: ["mariadb"],
+            })
+        })
         beforeEach(() => reloadTestingDatabases(dataSources))
 
         it("should create table with json constraint", () =>

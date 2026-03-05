@@ -217,9 +217,9 @@ export class IndexMetadata {
                         return columnName.trim()
                     },
                 )
-                columnPropertyPaths.forEach(
-                    (propertyPath) => (map[propertyPath] = 1),
-                )
+                columnPropertyPaths.forEach((propertyPath) => {
+                    map[propertyPath] = 1
+                })
             } else {
                 // todo: indices in embeds are not implemented in this syntax. deprecate this syntax?
                 // if columns is a function that returns array of field names then execute it and get columns names from it
@@ -230,15 +230,16 @@ export class IndexMetadata {
                     columnPropertyPaths = columnsFnResult.map((i: any) =>
                         String(i),
                     )
-                    columnPropertyPaths.forEach((name) => (map[name] = 1))
+                    columnPropertyPaths.forEach((name) => {
+                        map[name] = 1
+                    })
                 } else {
                     columnPropertyPaths = Object.keys(columnsFnResult).map(
                         (i: any) => String(i),
                     )
-                    Object.keys(columnsFnResult).forEach(
-                        (columnName) =>
-                            (map[columnName] = columnsFnResult[columnName]),
-                    )
+                    Object.keys(columnsFnResult).forEach((columnName) => {
+                        map[columnName] = columnsFnResult[columnName]
+                    })
                 }
             }
 
