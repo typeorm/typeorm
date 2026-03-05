@@ -142,3 +142,39 @@ const UserRepository = dataSource.getRepository(User).extend({
 ```
 
 The following error classes were also removed: `CustomRepositoryDoesNotHaveEntityError`, `CustomRepositoryCannotInheritRepositoryError`, `CustomRepositoryNotFoundError`.
+
+### Deprecated lock modes
+
+The `pessimistic_partial_write` and `pessimistic_write_or_fail` lock modes have been removed. Use `pessimistic_write` with the `onLocked` option instead:
+
+```typescript
+// Before
+.setLock("pessimistic_partial_write")
+
+// After
+.setLock("pessimistic_write")
+.setOnLocked("skip_locked")
+
+// Before
+.setLock("pessimistic_write_or_fail")
+
+// After
+.setLock("pessimistic_write")
+.setOnLocked("nowait")
+```
+
+The same applies to find options:
+
+```typescript
+// Before
+{ lock: { mode: "pessimistic_partial_write" } }
+
+// After
+{ lock: { mode: "pessimistic_write", onLocked: "skip_locked" } }
+
+// Before
+{ lock: { mode: "pessimistic_write_or_fail" } }
+
+// After
+{ lock: { mode: "pessimistic_write", onLocked: "nowait" } }
+```
